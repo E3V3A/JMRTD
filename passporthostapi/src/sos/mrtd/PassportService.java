@@ -51,7 +51,7 @@ import sos.smartcards.JPCSCService;
 
 
 /**
- * Card fileService for using the passport.
+ * Card service for using the passport.
  * Defines high-level commands to access the information on the passport.
  * Based on ICAO-TR-LDS.
  * 
@@ -72,14 +72,13 @@ public class PassportService implements CardService
    private static final int AUTHENTICATED_STATE = 2;
    private int state;
 
-   private PassportApduService apduService;
-   private PassportFileService fileService;
+   private PassportFileService service;
    KeyFactory factory;
    
    /**
-    * Creates a new passport fileService for accessing the passport.
+    * Creates a new passport service for accessing the passport.
     * 
-    * @param fileService another fileService which will deal with sending
+    * @param service another service which will deal with sending
     *        the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
@@ -88,27 +87,25 @@ public class PassportService implements CardService
    public PassportService(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
       if (service instanceof PassportService) {
-         apduService = ((PassportService)service).apduService;
-         fileService = ((PassportService)service).fileService;
+         this.service = ((PassportService)service).service;
       } else {
-         apduService = new PassportApduService(service);
-         fileService = new PassportFileService(apduService);
+         this.service = new PassportFileService(service);
       }
       factory = KeyFactory.getInstance("RSA");
       state = SESSION_STOPPED_STATE;
    }
    
    /**
-    * Hack to construct a passport fileService from a fileService that is already open.
+    * Hack to construct a passport service from a service that is already open.
     * This should be removed some day.
     * 
-    * @param fileService underlying fileService
+    * @param service underlying service
     * @param wrapper encapsulates secure messaging state
     */
    public PassportService(CardService service, SecureMessagingWrapper wrapper)
    throws GeneralSecurityException, UnsupportedEncodingException {
       this(service);
-      this.fileService.setSecureMessagingWrapper(wrapper);
+      this.service.setSecureMessagingWrapper(wrapper);
       state = AUTHENTICATED_STATE;
    }
 
@@ -117,7 +114,7 @@ public class PassportService implements CardService
     * passport applet.
     */
    public void open() {
-      fileService.open();
+      service.open();
       state = SESSION_STARTED_STATE;
    }
 
@@ -130,27 +127,27 @@ public class PassportService implements CardService
     */
    public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
          throws GeneralSecurityException, UnsupportedEncodingException {
-      fileService.doBAC(docNr, dateOfBirth, dateOfExpiry);
+      service.doBAC(docNr, dateOfBirth, dateOfExpiry);
    }
    
    public byte[] sendAPDU(Apdu capdu) {
-      return fileService.sendAPDU(capdu);
+      return service.sendAPDU(capdu);
    }
 
    public void close() {
       try {
-         fileService.close();
+         service.close();
       } finally {
          state = SESSION_STOPPED_STATE;
       }
    }
 
    public void addAPDUListener(APDUListener l) {
-      fileService.addAPDUListener(l);
+      service.addAPDUListener(l);
    }
 
    public void removeAPDUListener(APDUListener l) {
-      fileService.removeAPDUListener(l);
+      service.removeAPDUListener(l);
    }
 
    /**
@@ -396,13 +393,13 @@ public class PassportService implements CardService
    }
    
    private BERTLVObject readObject(short fid, byte[] tag) throws IOException {
-      BERTLVObject fileObject = new BERTLVObject(fileService.readFile(fid));
+      BERTLVObject fileObject = new BERTLVObject(service.readFile(fid));
       BERTLVObject object = fileObject.getChild(tag);
       return object;
    }
 
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
-      byte[] file = fileService.readFile(PassportFileService.EF_DG15);
+      byte[] file = service.readFile(PassportFileService.EF_DG15);
       BERTLVObject fileObj = new BERTLVObject(file);
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(fileObj.getValueAsBytes());
       return factory.generatePublic(pubKeySpec);
