@@ -26,6 +26,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,7 +40,8 @@ import sos.smartcards.CardService;
 
 /**
  * Card service for using the filesystem on the passport.
- * Defines basic access control and reading of complete files.
+ * Defines basic access control, active authentication,
+ * and reading of complete files.
  * 
  * Based on ICAO-TR-PKI and ICAO-TR-LDS.
  * 
@@ -84,6 +87,8 @@ public class PassportFileService implements CardService
    public static final short EF_DG14 = 0x010E;
    /** Data group 15 contains the public key used for Active Authentication. */
    public static final short EF_DG15 = 0x010F;
+   /** Data group 16 contains person(s) to notify. */
+   public static final short EF_DG16 = 0x0110;
    /** The security document. */
    public static final short EF_SOD = 0x011D;
    /** File indicating which data groups are present. */
@@ -97,6 +102,7 @@ public class PassportFileService implements CardService
    private PassportApduService service;
    private SecretKey kEnc, kMac;
    private SecureMessagingWrapper wrapper;
+   private Signature aaSignature;
 
    /** Files read during this session. */
    private Map files;
@@ -126,6 +132,7 @@ public class PassportFileService implements CardService
          this.service = new PassportApduService(service);
          files = new HashMap();
       }
+      aaSignature = Signature.getInstance("RSA");
       state = SESSION_STOPPED_STATE;
    }
    
@@ -141,6 +148,7 @@ public class PassportFileService implements CardService
       this(service);
       this.wrapper = wrapper;
       files = new HashMap();
+      aaSignature = Signature.getInstance("RSA");
       state = AUTHENTICATED_STATE;
    }
 
@@ -197,6 +205,17 @@ public class PassportFileService implements CardService
       long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
       wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
       state = AUTHENTICATED_STATE;
+   }
+   
+   /**
+    * FIXME: implement active authentication.
+    * FIXME: maybe move to lower level service?
+    */
+   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
+      byte[] rndIFD = new byte[8]; /* Random */
+      byte[] response = service.sendInternalAuthenticate(wrapper, rndIFD);
+      aaSignature.initVerify(pubkey);
+      return aaSignature.verify(response);
    }
    
    public byte[] sendAPDU(Apdu capdu) {

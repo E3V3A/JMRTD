@@ -228,24 +228,24 @@ public class Util
     */
    public static short lookupFIDbyTag(byte tag) {
       switch(tag) {
-         case (byte)0x60: return (short)0x011E;
-         case (byte)0x61: return (short)0x0101;
-         case (byte)0x75: return (short)0x0102;
-         case (byte)0x63: return (short)0x0103;
-         case (byte)0x76: return (short)0x0104;
-         case (byte)0x65: return (short)0x0105;
-         case (byte)0x66: return (short)0x0106;
-         case (byte)0x67: return (short)0x0107;
-         case (byte)0x68: return (short)0x0108;
-         case (byte)0x69: return (short)0x0109;
-         case (byte)0x6A: return (short)0x010A;
-         case (byte)0x6B: return (short)0x010B;
-         case (byte)0x6C: return (short)0x010C;
-         case (byte)0x6D: return (short)0x010D;
-         case (byte)0x6E: return (short)0x010E;
-         case (byte)0x6F: return (short)0x010F;
-         case (byte)0x70: return (short)0x0110;
-         case (byte)0x77: return (short)0x011D;
+         case (byte)0x60: return PassportFileService.EF_COM;
+         case (byte)0x61: return PassportFileService.EF_DG1;
+         case (byte)0x75: return PassportFileService.EF_DG2;
+         case (byte)0x63: return PassportFileService.EF_DG3;
+         case (byte)0x76: return PassportFileService.EF_DG4;
+         case (byte)0x65: return PassportFileService.EF_DG5;
+         case (byte)0x66: return PassportFileService.EF_DG6;
+         case (byte)0x67: return PassportFileService.EF_DG7;
+         case (byte)0x68: return PassportFileService.EF_DG8;
+         case (byte)0x69: return PassportFileService.EF_DG9;
+         case (byte)0x6A: return PassportFileService.EF_DG10;
+         case (byte)0x6B: return PassportFileService.EF_DG11;
+         case (byte)0x6C: return PassportFileService.EF_DG12;
+         case (byte)0x6D: return PassportFileService.EF_DG13;
+         case (byte)0x6E: return PassportFileService.EF_DG14;
+         case (byte)0x6F: return PassportFileService.EF_DG15;
+         case (byte)0x70: return PassportFileService.EF_DG16;
+         case (byte)0x77: return PassportFileService.EF_SOD;
          default:
             throw new NumberFormatException("Unknown tag "
                                             + Integer.toHexString(tag));

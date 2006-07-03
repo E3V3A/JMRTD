@@ -173,6 +173,19 @@ public class PassportApduService implements CardService {
             p2, le);
       return apdu;
    }
+   
+   Apdu createInternalAuthenticateAPDU(byte[] rndIFD) {
+      if (rndIFD == null || rndIFD.length != 8) {
+         throw new IllegalArgumentException("rndIFD wrong length");
+      }
+      byte p1 = (byte)0x00;
+      byte p2 = (byte)0x00;
+      byte[] data = rndIFD;
+      int le = 0;
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_INTERNAL_AUTHENTICATE,
+            p1, p2, data, le);
+      return apdu;
+   }
 
    // FIXME
    Apdu createCreateFileAPDU(byte[] fid, byte[] len) {
@@ -343,6 +356,16 @@ public class PassportApduService implements CardService {
       return result;
    }
 
+   public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
+      Apdu capdu = createInternalAuthenticateAPDU(rndIFD);
+      capdu.wrapWith(wrapper);
+      byte[] rapdu = sendAPDU(capdu);
+      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      byte[] result = new byte[rapdu.length - 2];
+      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
+      return result;
+   }
+   
    /**
     * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport.
     * The resulting byte array has length 32 and contains <code>rndICC</code> 

@@ -139,6 +139,10 @@ public class PassportService implements CardService
       service.doBAC(docNr, dateOfBirth, dateOfExpiry);
    }
    
+   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
+      return service.doAA(pubkey);
+   }
+   
    public byte[] sendAPDU(Apdu capdu) {
       return service.sendAPDU(capdu);
    }
@@ -412,14 +416,6 @@ public class PassportService implements CardService
       BERTLVObject fileObj = new BERTLVObject(file);
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(fileObj.getValueAsBytes());
       return factory.generatePublic(pubKeySpec);
-   }
-   
-   /**
-    * FIXME: implement active authentication.
-    * FIXME: maybe move to lower level service?
-    */
-   public boolean doAA(PublicKey pubkey) {
-      return false;
    }
    
    /**
