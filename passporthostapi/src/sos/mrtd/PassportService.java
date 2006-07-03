@@ -117,6 +117,15 @@ public class PassportService implements CardService
       service.open();
       state = SESSION_STARTED_STATE;
    }
+   
+   public String[] getTerminals() {
+      return service.getTerminals();
+   }
+
+   public void open(String id) {
+      service.open(id);
+      state = SESSION_STARTED_STATE;
+   }
 
    /**
     * Performs the Basic Access Control protocol.
@@ -443,5 +452,6 @@ public class PassportService implements CardService
          e.printStackTrace();
       }
    }
+
 
 }

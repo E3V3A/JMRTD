@@ -42,15 +42,23 @@ public class JPCSCService extends AbstractCardService
    private Context context;
    private Card card;
 
+   public JPCSCService() {
+      super();
+      context = new Context();
+      context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
+      card = null;
+   }
+   
+   public String[] getTerminals() {
+      return context.ListReaders();
+   }
+   
    /**
     * Opens a session with the card.
     * Selects a reader. Connects to the card.
     */
    public void open() {
-      context = new Context();
-      context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
-      card = null;
-      String[] readers = context.ListReaders();
+      String[] readers = getTerminals();
       if (readers.length == 1) {
          /* Only one reader, take it. */
          card = context.Connect();

@@ -31,6 +31,8 @@ package sos.smartcards;
  */
 public interface CardService
 {
+   String[] getTerminals();
+   
    /**
     * Adds a listener.
     *
@@ -46,10 +48,17 @@ public interface CardService
    void removeAPDUListener(APDUListener l);
 
    /**
-    * Opens a session with the card.
+    * Opens a session with the card in the default terminal.
     */
    void open();
 
+   /**
+    * Opens a session with the card designated by <code>id</code>.
+    * 
+    * @param id some identifier (typically the name of a card terminal)
+    */
+   void open(String id);
+   
    /**
     * Sends an apdu to the card.
     *

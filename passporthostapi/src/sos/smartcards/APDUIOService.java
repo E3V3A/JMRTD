@@ -42,8 +42,14 @@ import com.sun.javacard.apduio.CadTransportException;
  */
 public class APDUIOService extends AbstractCardService {
 
+    private static final String TERMINAL_NAME = "CREF simulator";
+    private static final String[] TERMINALS = { TERMINAL_NAME };
+    
     private CadClientInterface cad;
 
+    public String[] getTerminals() {
+       return TERMINALS;
+    }
 
     /**
      * Opens a session with the card. Selects a reader. Connects to the card.
@@ -71,6 +77,13 @@ public class APDUIOService extends AbstractCardService {
         notifyStartedAPDUSession();
     }
 
+    public void open(String id) {
+       if (!id.equals(TERMINAL_NAME)) {
+          throw new IllegalArgumentException("Unknown terminal " + id);
+       }
+       open();
+    }
+    
     /**
      * Sends and apdu to the card. Notifies any interested listeners.
      * 

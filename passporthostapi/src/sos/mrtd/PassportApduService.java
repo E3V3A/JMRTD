@@ -36,7 +36,6 @@ import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
 
-
 /**
  * Low level card service for sending apdus to the passport.
  * This service is not responsible for maintaining information about the
@@ -51,8 +50,6 @@ import sos.smartcards.ISO7816;
  *    <li><code>SELECT FILE</code> (using secure messaging)</li>
  *    <li><code>READ BINARY</code> (using secure messaging)</li>
  * </ul>
- * 
- * TODO: (MO) check dependency on Apdu.command.
  *
  * @see PassportApduService
  *
@@ -61,15 +58,14 @@ import sos.smartcards.ISO7816;
  *
  * @version $Revision: 1.13 $
  */
-public class PassportApduService implements CardService
-{
+public class PassportApduService implements CardService {
    /** The applet we select when we start a session. */
-   private static final byte[] APPLET_AID =
-      { (byte)0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
+   private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02,
+         0x47, 0x10, 0x01 };
 
    /** Initialization vector used by the cipher below. */
-   private static final IvParameterSpec ZERO_IV_PARAM_SPEC =
-      new IvParameterSpec(new byte[8]);
+   private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
+         new byte[8]);
 
    /** The service we decorate. */
    private CardService service;
@@ -94,7 +90,7 @@ public class PassportApduService implements CardService
     *         </ul>
     */
    public PassportApduService(CardService service)
-   throws GeneralSecurityException {
+         throws GeneralSecurityException {
       this.service = service;
       cipher = Cipher.getInstance("DESede/CBC/NoPadding");
       mac = Mac.getInstance("ISO9797Alg3Mac");
@@ -108,7 +104,15 @@ public class PassportApduService implements CardService
       service.open();
       sendSelectApplet(APPLET_AID);
    }
+   public String[] getTerminals() {
+      return service.getTerminals();
+   }
 
+   public void open(String id) {
+      service.open(id);
+      sendSelectApplet(APPLET_AID);
+   }
+   
    public byte[] sendAPDU(Apdu capdu) {
       return service.sendAPDU(capdu);
    }
@@ -126,55 +130,61 @@ public class PassportApduService implements CardService
    }
 
    Apdu createSelectAppletAPDU(byte[] aid) {
-      byte lc = (byte)(aid.length & 0x000000FF);
+      byte lc = (byte) (aid.length & 0x000000FF);
       byte[] data = aid;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE, (byte)0x004, (byte)0x00, data);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+            (byte) 0x004, (byte) 0x00, data);
       return apdu;
    }
 
    Apdu createSelectFileAPDU(short fid) {
-       byte[] fiddle = { (byte)((fid >> 8) & 0x000000FF),
-                         (byte)(fid & 0x000000FF) };
-       return createSelectFileAPDU(fiddle);
+      byte[] fiddle = { (byte) ((fid >> 8) & 0x000000FF),
+            (byte) (fid & 0x000000FF) };
+      return createSelectFileAPDU(fiddle);
    }
-   
+
    Apdu createSelectFileAPDU(byte[] fid) {
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE, (byte)0x02, (byte)0x0c, fid, 0);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+            (byte) 0x02, (byte) 0x0c, fid, 0);
       return apdu;
    }
 
    Apdu createUpdateBinaryAPDU(short offset, int le, byte[] data) {
-       byte p1 = (byte)((offset & 0x0000FF00) >> 8);
-       byte p2 = (byte)(offset & 0x000000FF);
-       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_UPDATE_BINARY, 
-               p1, p2, data, le);
-       return apdu;  
+      byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
+      byte p2 = (byte) (offset & 0x000000FF);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_UPDATE_BINARY, p1,
+            p2, data, le);
+      return apdu;
    }
-   
+
    Apdu createReadBinaryAPDU(short offset, int le) {
-      byte p1 = (byte)((offset & 0x0000FF00) >> 8);
-      byte p2 = (byte)(offset & 0x000000FF);
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, p1, p2, le);
+      byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
+      byte p2 = (byte) (offset & 0x000000FF);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, p1,
+            p2, le);
       return apdu;
    }
 
    Apdu createGetChallengeAPDU() {
-      byte p1 = (byte)0x00;
-      byte p2 = (byte)0x00;
+      byte p1 = (byte) 0x00;
+      byte p2 = (byte) 0x00;
       int le = 8;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, p1, p2, le);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, p1,
+            p2, le);
       return apdu;
    }
 
    // FIXME
    Apdu createCreateFileAPDU(byte[] fid, byte[] len) {
-       byte p1 = (byte)0x00;
-       byte p2 = (byte)0x00;
-       int le = 0;
-       byte[] data = { 0x63, 4, len[0], len[1], fid[0], fid[1] };
-       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_CREATE_FILE, p1, p2, data, le);
-       return apdu;
-    }
+      byte p1 = (byte) 0x00;
+      byte p2 = (byte) 0x00;
+      int le = 0;
+      byte[] data = { 0x63, 4, len[0], len[1], fid[0], fid[1] };
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_CREATE_FILE, p1,
+            p2, data, le);
+      return apdu;
+   }
+
    /**
     * Creates an <code>EXTERNAL AUTHENTICATE</code> command.
     *
@@ -187,8 +197,7 @@ public class PassportApduService implements CardService
     * @return the apdu to be sent to the card.
     */
    Apdu createMututalAuthAPDU(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
-                                     SecretKey kEnc, SecretKey kMac)
-   throws GeneralSecurityException {
+         SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
       if (rndIFD == null || rndIFD.length != 8) {
          throw new IllegalArgumentException("rndIFD wrong length");
       }
@@ -206,13 +215,13 @@ public class PassportApduService implements CardService
       }
 
       cipher.init(Cipher.ENCRYPT_MODE, kEnc, ZERO_IV_PARAM_SPEC);
-/*
-      cipher.update(rndIFD);
-      cipher.update(rndICC);
-      cipher.update(kIFD);
-      // This doesn't work, apparently we need to create plaintext array.
-      // Probably has something to do with ZERO_IV_PARAM_SPEC.
-*/
+      /*
+       cipher.update(rndIFD);
+       cipher.update(rndICC);
+       cipher.update(kIFD);
+       // This doesn't work, apparently we need to create plaintext array.
+       // Probably has something to do with ZERO_IV_PARAM_SPEC.
+       */
       byte[] plaintext = new byte[32];
       System.arraycopy(rndIFD, 0, plaintext, 0, 8);
       System.arraycopy(rndICC, 0, plaintext, 8, 8);
@@ -220,17 +229,17 @@ public class PassportApduService implements CardService
       byte[] ciphertext = cipher.doFinal(plaintext);
       if (ciphertext.length != 32) {
          throw new IllegalStateException("Cryptogram wrong length "
-                                         + ciphertext.length);
+               + ciphertext.length);
       }
 
       mac.init(kMac);
-      byte[] mactext =  mac.doFinal(Util.pad(ciphertext));
+      byte[] mactext = mac.doFinal(Util.pad(ciphertext));
       if (mactext.length != 8) {
          throw new IllegalStateException("MAC wrong length");
       }
 
-      byte p1 = (byte)0x00;
-      byte p2 = (byte)0x00;
+      byte p1 = (byte) 0x00;
+      byte p2 = (byte) 0x00;
 
       byte[] data = new byte[32 + 8];
       System.arraycopy(ciphertext, 0, data, 0, 32);
@@ -238,7 +247,8 @@ public class PassportApduService implements CardService
 
       byte lc = 40;
       int le = 40;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_EXTERNAL_AUTHENTICATE, p1, p2, data, le);
+      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
+            ISO7816.INS_EXTERNAL_AUTHENTICATE, p1, p2, data, le);
       return apdu;
    }
 
@@ -260,15 +270,15 @@ public class PassportApduService implements CardService
     * @param fid the file to select.
     */
    public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
-   throws IOException {
-       Apdu capdu = createSelectFileAPDU(fid);
-       capdu.wrapWith(wrapper);
-       byte[] rapdu = sendAPDU(capdu);
-       rapdu = wrapper.unwrap(rapdu, rapdu.length);
-    }
-   
+         throws IOException {
+      Apdu capdu = createSelectFileAPDU(fid);
+      capdu.wrapWith(wrapper);
+      byte[] rapdu = sendAPDU(capdu);
+      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+   }
+
    public void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
-   throws IOException {
+         throws IOException {
       Apdu capdu = createSelectFileAPDU(fid);
       capdu.wrapWith(wrapper);
       byte[] rapdu = sendAPDU(capdu);
@@ -287,8 +297,8 @@ public class PassportApduService implements CardService
     * @return a byte array of length <code>le</code> with (part of)
     *         the contents of the currently selected file.
     */
-   public byte[] sendReadBinary(SecureMessagingWrapper wrapper,
-                                short offset, int le) throws IOException {
+   public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
+         int le) throws IOException {
       Apdu capdu = createReadBinaryAPDU(offset, le);
       capdu.wrapWith(wrapper);
       byte[] rapdu = sendAPDU(capdu);
@@ -298,29 +308,29 @@ public class PassportApduService implements CardService
       return result;
    }
 
-   public byte[] sendUpdateBinary(SecureMessagingWrapper wrapper, 
-           short offset, int le, byte[] data) throws IOException {
-       Apdu capdu = createUpdateBinaryAPDU(offset, le, data);
-       capdu.wrapWith(wrapper);
-       byte[] rapdu = sendAPDU(capdu);
-       rapdu = wrapper.unwrap(rapdu, rapdu.length);
-       byte[] result = new byte[rapdu.length - 2];
-       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-       return result;
-       
+   public byte[] sendUpdateBinary(SecureMessagingWrapper wrapper, short offset,
+         int le, byte[] data) throws IOException {
+      Apdu capdu = createUpdateBinaryAPDU(offset, le, data);
+      capdu.wrapWith(wrapper);
+      byte[] rapdu = sendAPDU(capdu);
+      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      byte[] result = new byte[rapdu.length - 2];
+      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
+      return result;
+
    }
-   
-   public byte[] sendCreateFile(SecureMessagingWrapper wrapper,
-           byte[] fid, byte[] len) {
-       Apdu capdu = createCreateFileAPDU(fid, len);
-       capdu.wrapWith(wrapper);
-       byte[] rapdu = sendAPDU(capdu);
-       rapdu = wrapper.unwrap(rapdu, rapdu.length);
-       byte[] result = new byte[rapdu.length - 2];
-       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-       return result;       
+
+   public byte[] sendCreateFile(SecureMessagingWrapper wrapper, byte[] fid,
+         byte[] len) {
+      Apdu capdu = createCreateFileAPDU(fid, len);
+      capdu.wrapWith(wrapper);
+      byte[] rapdu = sendAPDU(capdu);
+      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      byte[] result = new byte[rapdu.length - 2];
+      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
+      return result;
    }
-   
+
    /**
     * Sends a <code>GET CHALLENGE</code> command to the passport.
     *
@@ -350,59 +360,59 @@ public class PassportApduService implements CardService
     *         and verified (using <code>kMac</code>).
     */
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
-                                SecretKey kEnc, SecretKey kMac)
-   throws GeneralSecurityException {
-      byte[] rapdu =
-         sendAPDU(createMututalAuthAPDU(rndIFD, rndICC, kIFD, kEnc, kMac));
+         SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
+      byte[] rapdu = sendAPDU(createMututalAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
+            kMac));
 
       if (rapdu.length != 42) {
-         throw new IllegalStateException("Response wrong length: " + rapdu.length + "!=" + 42 );
+         throw new IllegalStateException("Response wrong length: "
+               + rapdu.length + "!=" + 42);
       }
 
-/*
-      byte[] eICC = new byte[32];
-      System.arraycopy(rapdu, 0, eICC, 0, 32);
+      /*
+       byte[] eICC = new byte[32];
+       System.arraycopy(rapdu, 0, eICC, 0, 32);
 
-      byte[] mICC = new byte[8];
-      System.arraycopy(rapdu, 32, mICC, 0, 8);
-*/
+       byte[] mICC = new byte[8];
+       System.arraycopy(rapdu, 32, mICC, 0, 8);
+       */
 
       /* Decrypt the response. */
       cipher.init(Cipher.DECRYPT_MODE, kEnc, ZERO_IV_PARAM_SPEC);
       byte[] result = cipher.doFinal(rapdu, 0, rapdu.length - 8 - 2);
       if (result.length != 32) {
          throw new IllegalStateException("Cryptogram wrong length "
-                                         + result.length);
+               + result.length);
       }
       return result;
    }
-   
-   public void writeFile(SecureMessagingWrapper wrapper, 
-           short fid,  BufferedInputStream i) 
-   throws IOException {
-       byte[] data = new byte[56];
-       
-       int r = 0;
-       short offset = 0;
-       while (true) {
-           r = i.read(data, (short)0, data.length);
-           if(r == -1)
-               break;
-           sendUpdateBinary(wrapper, offset, r, data);
-           offset += r;
-       }
+
+   public void writeFile(SecureMessagingWrapper wrapper, short fid,
+         BufferedInputStream i) throws IOException {
+      byte[] data = new byte[56];
+
+      int r = 0;
+      short offset = 0;
+      while (true) {
+         r = i.read(data, (short) 0, data.length);
+         if (r == -1)
+            break;
+         sendUpdateBinary(wrapper, offset, r, data);
+         offset += r;
+      }
    }
 
-public void selectFile(SecureMessagingWrapper wrapper, 
-        byte[] fid) throws IOException {
-    sendSelectFile(wrapper, fid); 
-    
-    
-}
+   public void selectFile(SecureMessagingWrapper wrapper, byte[] fid)
+         throws IOException {
+      sendSelectFile(wrapper, fid);
 
-public void createFile(SecureMessagingWrapper wrapper, byte[] fid, byte[] len) {
-    sendCreateFile(wrapper, fid, len);
-}
+   }
+
+   public void createFile(SecureMessagingWrapper wrapper, byte[] fid, byte[] len) {
+      sendCreateFile(wrapper, fid, len);
+   }
+
+
   
 }
 

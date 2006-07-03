@@ -33,7 +33,9 @@ import com.ibm.jc.terminal.RemoteJCTerminal;
  * @version $Revision: 1.8 $
  */
 public class JCOPEmulatorService extends AbstractCardService {
-
+   
+    private static final String TERMINAL_NAME = "JCOP emulator";
+    private static final String[] TERMINALS = { TERMINAL_NAME };
 	private RemoteJCTerminal terminal;
 	
 	public void open() {
@@ -48,7 +50,18 @@ public class JCOPEmulatorService extends AbstractCardService {
 		state = SESSION_STARTED_STATE;
 	    notifyStartedAPDUSession();
 	}
-
+    
+    public String[] getTerminals() {
+       return TERMINALS;
+    }
+    
+    public void open(String id) {
+       if (!id.equals(TERMINAL_NAME)) {
+          throw new IllegalArgumentException("Unknown terminal " + id);
+       }
+       open();
+    }
+    
 	public byte[] sendAPDU(Apdu apdu) {
 		if(terminal == null) {
 			throw new IllegalStateException("Terminal session seems not to be opened.");			

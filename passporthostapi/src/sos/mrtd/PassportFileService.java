@@ -156,7 +156,20 @@ public class PassportFileService implements CardService
       files = new HashMap();
       state = SESSION_STARTED_STATE;
    }
+   
+   public String[] getTerminals() {
+      return service.getTerminals();
+   }
 
+   public void open(String id) {
+      if (state == SESSION_STARTED_STATE) {
+         return;
+      }
+      service.open(id);
+      files = new HashMap();
+      state = SESSION_STARTED_STATE;
+   }
+   
    /**
     * Performs the Basic Access Control protocol.
     *

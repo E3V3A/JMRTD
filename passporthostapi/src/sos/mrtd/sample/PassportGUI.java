@@ -42,6 +42,7 @@ import javax.crypto.SecretKey;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -99,6 +100,7 @@ public class PassportGUI extends JPanel
    private SecureMessagingWrapper wrapper;
 
    private JButton openButton, closeButton;
+   private JComboBox terminalsComboBox;
 
    /**
     * Constructs the GUI.
@@ -131,14 +133,22 @@ public class PassportGUI extends JPanel
          setLayout(new BorderLayout());
 
          JPanel northPanel = new JPanel(new FlowLayout());
+         terminalsComboBox = new JComboBox();
+         String[] terminals = service.getTerminals();
+         for (int i = 0; i < terminals.length; i++) {
+            terminalsComboBox.addItem(terminals[i]);
+         }
          openButton = new JButton("Open");
          openButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+               String[] terminals = service.getTerminals();
+               String terminal = terminals[terminalsComboBox.getSelectedIndex()];
                service.open();
                openButton.setEnabled(false);
                closeButton.setEnabled(true);
             }
          });
+         northPanel.add(terminalsComboBox);
          northPanel.add(openButton);
          closeButton = new JButton("Close");
          closeButton.setEnabled(false);
