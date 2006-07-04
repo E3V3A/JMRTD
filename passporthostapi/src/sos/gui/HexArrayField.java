@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: HexArrayField.java,v 1.5 2006/06/08 17:09:25 martijno Exp $
+ * $Id$
  */
 
 package sos.gui;
@@ -37,9 +37,9 @@ import javax.swing.plaf.basic.BasicArrowButton;
  * A panel with a variable number of singleton <code>HexField</code> cells.
  * It provides resizing buttons and a length indicator.
  *
- * @version $Revision: 1.5 $
- *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * 
+ * @version $Revision: 1.5 $
  */
 public class HexArrayField extends JPanel implements ActionListener {
 
