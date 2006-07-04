@@ -57,9 +57,13 @@ public class HexViewPanel extends JPanel
     * @param data the data to view.
     */
    public HexViewPanel(byte[] data) {
+      this(data, 0);
+   }
+   
+   public HexViewPanel(byte[] data, int startOffset) {
       super(new FlowLayout());
       columnModel = new DefaultTableColumnModel();
-      dataModel = new HexViewPanelDataModel(data);
+      dataModel = new HexViewPanelDataModel(data, startOffset);
       table = new JTable();
       table.setColumnModel(columnModel);
       table.setModel(dataModel);
@@ -85,10 +89,12 @@ public class HexViewPanel extends JPanel
 
    private class HexViewPanelDataModel extends DefaultTableModel
    {
+      int startOffset;
       private byte[][] rows;
 
-      public HexViewPanelDataModel(byte[] data) {
+      public HexViewPanelDataModel(byte[] data, int startOffset) {
          super();
+         this.startOffset = startOffset;
          rows = Hex.split(data, COLUMNS);
       }
 
@@ -114,7 +120,7 @@ public class HexViewPanel extends JPanel
       public Object getValueAt(int row, int col) {
          switch (col) {
             case 0:
-               return Hex.intToHexString(COLUMNS * row);
+               return Hex.intToHexString(startOffset + COLUMNS * row);
             case COLUMNS + 1:
                return Hex.bytesToASCIIString(rows[row]);
             default:

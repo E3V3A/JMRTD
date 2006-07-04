@@ -132,7 +132,7 @@ public class PassportFileService implements CardService
          this.service = new PassportApduService(service);
          files = new HashMap();
       }
-      aaSignature = Signature.getInstance("RSA");
+      aaSignature = Signature.getInstance("SHA1withRSA");
       state = SESSION_STOPPED_STATE;
    }
    
@@ -148,7 +148,7 @@ public class PassportFileService implements CardService
       this(service);
       this.wrapper = wrapper;
       files = new HashMap();
-      aaSignature = Signature.getInstance("RSA");
+      aaSignature = Signature.getInstance("SHA1withRSA");
       state = AUTHENTICATED_STATE;
    }
 
@@ -207,10 +207,6 @@ public class PassportFileService implements CardService
       state = AUTHENTICATED_STATE;
    }
    
-   /**
-    * FIXME: implement active authentication.
-    * FIXME: maybe move to lower level service?
-    */
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
       byte[] rndIFD = new byte[8]; /* Random */
       byte[] response = service.sendInternalAuthenticate(wrapper, rndIFD);

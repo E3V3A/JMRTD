@@ -441,7 +441,9 @@ public class PassportGUI extends JPanel
    {
       private HexField fidTF, offsetTF, leTF;
       private HexViewPanel hexviewer;
-      private JButton selectButton, readButton, saveButton;
+      private JButton selectButton, readBinaryButton, readNextButton, saveButton;
+      short offset;
+      int bytesRead;
 
       public LDSPanel() {
          super(new BorderLayout());
@@ -460,13 +462,16 @@ public class PassportGUI extends JPanel
          leTF = new HexField(1);
          leTF.setValue(0xFF);
          offsetTF = new HexField(2);
-         readButton = new JButton("Read Binary");
-         readButton.addActionListener(this);
+         readBinaryButton = new JButton("Read Binary");
+         readBinaryButton.addActionListener(this);
+         readNextButton = new JButton("Read Next");
+         readNextButton.addActionListener(this);
          south.add(new JLabel("Offset: "));
          south.add(offsetTF);
          south.add(new JLabel("Length: "));
          south.add(leTF);
-         south.add(readButton);
+         south.add(readBinaryButton);
+         south.add(readNextButton);
          add(north, BorderLayout.NORTH);
          add(hexviewer, BorderLayout.CENTER);
          add(south, BorderLayout.SOUTH);
@@ -477,8 +482,10 @@ public class PassportGUI extends JPanel
             JButton but = (JButton)ae.getSource();
             if (but == selectButton) {
                pressedSelectButton();
-            } else if (but == readButton) {
-               pressedReadButton();
+            } else if (but == readBinaryButton) {
+               pressedReadBinaryButton();
+            } else if (but == readNextButton) {
+               pressedReadNextButton();
             } else if (but == saveButton) {
                pressedSaveButton();
             }
@@ -512,43 +519,33 @@ public class PassportGUI extends JPanel
                }
             }
          }).start();
- 
       }
       
       private void pressedSelectButton() throws Exception {
          byte[] fid = fidTF.getValue();
          service.sendSelectFile(wrapper, (short)(((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
-/*
-         Apdu apdu =
-            service.createSelectFileAPDU((short)(((fid[0] & 0x000000FF) << 8)
-               | (fid[1] & 0x000000FF)));
-         apdu.wrapWith(wrapper);
-         byte[] rapdu = service.sendAPDU(apdu);
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
-*/
       }
-
-      private void pressedReadButton() throws Exception {
-         byte[] le = leTF.getValue();
-         byte[] offset = offsetTF.getValue();
-         byte[] data = service.sendReadBinary(wrapper, (short)(((offset[0] & 0x000000FF) << 8)
-               | (offset[1] & 0x000000FF)), le[0] & 0x000000FF);
-/*
-         Apdu apdu =
-            service.createReadBinaryAPDU((short)(((offset[0] & 0x000000FF) << 8)
-               | (offset[1] & 0x000000FF)), le[0] & 0x000000FF);
-         apdu.wrapWith(wrapper);
-         byte[] rapdu = service.sendAPDU(apdu);
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      
+      private void pressedReadBinaryButton() throws Exception {
+         bytesRead = 0;
+         int le = leTF.getValue()[0] & 0x000000FF;
+         byte[] offsetBytes = offsetTF.getValue();
+         offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
+               | (offsetBytes[1] & 0x000000FF));
+         byte[] data = service.sendReadBinary(wrapper, offset, le);
          remove(hexviewer);
-         byte[] data = new byte[rapdu.length - 2];
-         System.arraycopy(rapdu, 0, data, 0, data.length); // FIXME: efficiency
-*/
-         hexviewer = new HexViewPanel(data);
+         hexviewer = new HexViewPanel(data, offset);
          add(hexviewer, BorderLayout.CENTER);
+         bytesRead = data.length;
          setVisible(false);
          setVisible(true);
          // repaint();
+      }
+      
+      private void pressedReadNextButton() throws Exception {
+         offset += bytesRead;
+         offsetTF.setValue(offset & 0x000000000000FFFFL);
+         pressedReadBinaryButton();
       }
    }
 
