@@ -50,6 +50,9 @@ public class JPCSCService extends AbstractCardService
    }
    
    public String[] getTerminals() {
+      context = new Context();
+      context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
+      card = null;
       return context.ListReaders();
    }
    
@@ -58,7 +61,10 @@ public class JPCSCService extends AbstractCardService
     * Selects a reader. Connects to the card.
     */
    public void open() {
-      String[] readers = getTerminals();
+      context = new Context();
+      context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
+      card = null;
+      String[] readers = context.ListReaders();
       if (readers.length == 1) {
          /* Only one reader, take it. */
          card = context.Connect();
@@ -88,8 +94,6 @@ public class JPCSCService extends AbstractCardService
    public void open(String reader) {
       context = new Context();
       context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
-      card = null;
-      String[] readers = context.ListReaders();
       card = context.Connect(reader);
       if (card == null) {
          throw new IllegalStateException("Reader \"" + reader + "\" not found!");
