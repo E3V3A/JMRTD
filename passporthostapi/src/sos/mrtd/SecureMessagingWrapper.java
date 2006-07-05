@@ -302,7 +302,7 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
          buf = in.readUnsignedByte(); /* should be 0x01... */
          if (buf != 0x01) {
             throw new IllegalStateException("DO'87 expected 0x01 marker "
-+ Integer.toHexString(buf));
+                  + Integer.toHexString(buf));
          }
       } else {
          /* Long form */
@@ -316,14 +316,11 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
          }
       }
       length--; /* takes care of the extra 0x01 marker... */
-      System.out.println("DEBUG: DO'87: length == " + length + " (in hex: " + Integer.toHexString(length)+ ")");
-
+      
       /* Read, decrypt, unpad the data... */
       byte[] ciphertext = new byte[length];
       in.read(ciphertext, 0, length);
-      System.out.println("DEBUG: ciphertext = " + Hex.bytesToHexString(ciphertext));
       byte[] paddedData = cipher.doFinal(ciphertext);
-      System.out.println("DEBUG: paddedData = " + Hex.bytesToHexString(paddedData));
       byte[] data = Util.unpad(paddedData);
       return data;
    }
