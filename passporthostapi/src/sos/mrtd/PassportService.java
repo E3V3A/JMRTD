@@ -72,7 +72,7 @@ public class PassportService implements CardService
    private int state;
 
    private PassportFileService service;
-   KeyFactory factory;
+   private KeyFactory factory;
    
    /**
     * Creates a new passport service for accessing the passport.
