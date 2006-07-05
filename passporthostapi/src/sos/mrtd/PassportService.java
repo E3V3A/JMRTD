@@ -440,14 +440,25 @@ public class PassportService implements CardService
          Security.insertProviderAt(PROVIDER, 2);
          PassportService service = new PassportService(new JPCSCService());
          service.open();
-         service.doBAC("XX0000026", "711019", "110601");
+         service.doBAC("ZZ0062725", "710121", "091130");
          PublicKey pubKey = service.readAAPublicKey();
          System.out.println("pubKey = " + pubKey);
-         if (service.doAA(pubKey)) {
-            System.out.println("AA succeeded!");
-         } else {
-            System.out.println("AA failed!");
-         }    
+         int attempt = 0;
+         while (true) {
+            try {
+               System.out.println("Attempt " + attempt);
+               if (service.doAA(pubKey)) {
+                  System.out.println("AA succeeded!");
+               } else {
+                  System.out.println("AA failed!");
+               }
+            } catch (Exception e) {
+               System.out.println(e);
+               attempt ++;
+               continue;
+            }
+            break;
+         }
          service.close();
       } catch (Exception e) {
          e.printStackTrace();

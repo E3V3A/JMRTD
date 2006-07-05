@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.util.HashMap;
@@ -105,10 +106,18 @@ public class PassportFileService implements CardService
    private SecretKey kEnc, kMac;
    private SecureMessagingWrapper wrapper;
    private Signature aaSignature;
+   private MessageDigest aaDigest = MessageDigest.getInstance("SHA1");
+   private Cipher aaCipher = Cipher.getInstance("RSA");
 
    /** Files read during this session. */
    private Map files;
 
+   private PassportFileService() throws GeneralSecurityException {
+      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
+      aaDigest = MessageDigest.getInstance("SHA1");
+      aaCipher = Cipher.getInstance("RSA");
+   }
+   
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -120,6 +129,7 @@ public class PassportFileService implements CardService
     */
    public PassportFileService(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
+      this();
       if (service instanceof PassportFileService) {
          this.service = ((PassportFileService)service).service;
          if (((PassportFileService)service).files != null) {
@@ -133,8 +143,7 @@ public class PassportFileService implements CardService
       } else {
          this.service = new PassportApduService(service);
          files = new HashMap();
-      }
-      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
+      }   
       state = SESSION_STOPPED_STATE;
    }
    
@@ -150,7 +159,6 @@ public class PassportFileService implements CardService
       this(service);
       this.wrapper = wrapper;
       files = new HashMap();
-      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
       state = AUTHENTICATED_STATE;
    }
 
@@ -209,21 +217,64 @@ public class PassportFileService implements CardService
       state = AUTHENTICATED_STATE;
    }
    
+   /**
+    * Ronny (ronny@cs.ru.nl) stole this from bouncy castle.
+    * 
+    * @param digestLength should be 20
+    * @param block already decrypted (using RSA pub key) response
+    * @return m1
+    */
+   private static byte[] getRecoveredMessage(int digestLength, byte[] block) {
+      if (((block[0] & 0xC0) ^ 0x40) != 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+      if (((block[block.length - 1] & 0xF) ^ 0xC) != 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+      int delta = 0;
+      if (((block[block.length - 1] & 0xFF) ^ 0xBC) == 0) {
+         delta = 1;
+      } else {
+         throw new NumberFormatException("Could not get M1");
+      }
+
+      /* find out how much padding we've got */
+      int mStart = 0;
+      for (mStart = 0; mStart != block.length; mStart++) {
+         if (((block[mStart] & 0x0f) ^ 0x0a) == 0) {
+            break;
+         }
+      }
+      mStart++;
+
+      int off = block.length - delta - digestLength;
+
+      /* there must be at least one byte of message string */
+      if ((off - mStart) <= 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+
+      /* if we contain the whole message as well, check the hash of that. */
+      if ((block[0] & 0x20) == 0) {
+         throw new NumberFormatException("Could not get M1");
+      } else {
+         byte[] recoveredMessage = new byte[off - mStart];
+         System.arraycopy(block, mStart, recoveredMessage, 0,
+               recoveredMessage.length);
+         return recoveredMessage;
+      }
+   }
+   
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      byte[] rndIFD = new byte[8]; /* random */
-      byte[] response = service.sendInternalAuthenticate(wrapper, rndIFD);
-      /* do some parsing of the response to actually get the plaintext and the signature */
-      System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
-      Cipher cipher = Cipher.getInstance("RSA");
-      cipher.init(Cipher.ENCRYPT_MODE, pubkey);
-      byte[] plaintext = cipher.doFinal(response);
-      System.out.println("DEBUG: plaintext = " + Hex.bytesToHexString(plaintext));
- /*
+      aaCipher.init(Cipher.ENCRYPT_MODE, pubkey);
       aaSignature.initVerify(pubkey);
-      aaSignature.update(response);
+      byte[] m2 = new byte[8]; /* random rndIFD */
+      byte[] response = service.sendInternalAuthenticate(wrapper, m2);
+      int digestLength = aaDigest.getDigestLength();
+      byte[] m1 = getRecoveredMessage(digestLength, aaCipher.doFinal(response));
+      aaSignature.update(m1);
+      aaSignature.update(m2);
       return aaSignature.verify(response);
- */
-      return false;
    }
    
    public byte[] sendAPDU(Apdu capdu) {
