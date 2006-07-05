@@ -36,7 +36,6 @@ import javax.crypto.spec.IvParameterSpec;
 
 import sos.smartcards.Apdu;
 import sos.smartcards.ISO7816;
-import sos.util.*;
 
 /**
  * Secure messaging wrapper for apdus.

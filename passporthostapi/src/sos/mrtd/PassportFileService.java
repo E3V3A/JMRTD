@@ -39,8 +39,6 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 
-import sos.util.*;
-
 /**
  * Card service for using the filesystem on the passport.
  * Defines basic access control, active authentication,
@@ -218,21 +216,22 @@ public class PassportFileService implements CardService
    }
    
    /**
-    * Ronny (ronny@cs.ru.nl) stole this from bouncy castle.
+    * Ronny (ronny@cs.ru.nl) ripped this from bouncy castle.
     * 
     * @param digestLength should be 20
-    * @param block already decrypted (using RSA pub key) response
-    * @return m1
+    * @param plaintext response from card, already decrypted (using pubkey)
+    * 
+    * @return the m1 part of the message
     */
-   private static byte[] getRecoveredMessage(int digestLength, byte[] block) {
-      if (((block[0] & 0xC0) ^ 0x40) != 0) {
+   private static byte[] getRecoveredMessage(int digestLength, byte[] plaintext) {
+      if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
          throw new NumberFormatException("Could not get M1");
       }
-      if (((block[block.length - 1] & 0xF) ^ 0xC) != 0) {
+      if (((plaintext[plaintext.length - 1] & 0xF) ^ 0xC) != 0) {
          throw new NumberFormatException("Could not get M1");
       }
       int delta = 0;
-      if (((block[block.length - 1] & 0xFF) ^ 0xBC) == 0) {
+      if (((plaintext[plaintext.length - 1] & 0xFF) ^ 0xBC) == 0) {
          delta = 1;
       } else {
          throw new NumberFormatException("Could not get M1");
@@ -240,14 +239,14 @@ public class PassportFileService implements CardService
 
       /* find out how much padding we've got */
       int mStart = 0;
-      for (mStart = 0; mStart != block.length; mStart++) {
-         if (((block[mStart] & 0x0f) ^ 0x0a) == 0) {
+      for (mStart = 0; mStart != plaintext.length; mStart++) {
+         if (((plaintext[mStart] & 0x0f) ^ 0x0a) == 0) {
             break;
          }
       }
       mStart++;
 
-      int off = block.length - delta - digestLength;
+      int off = plaintext.length - delta - digestLength;
 
       /* there must be at least one byte of message string */
       if ((off - mStart) <= 0) {
@@ -255,16 +254,25 @@ public class PassportFileService implements CardService
       }
 
       /* if we contain the whole message as well, check the hash of that. */
-      if ((block[0] & 0x20) == 0) {
+      if ((plaintext[0] & 0x20) == 0) {
          throw new NumberFormatException("Could not get M1");
       } else {
          byte[] recoveredMessage = new byte[off - mStart];
-         System.arraycopy(block, mStart, recoveredMessage, 0,
+         System.arraycopy(plaintext, mStart, recoveredMessage, 0,
                recoveredMessage.length);
          return recoveredMessage;
       }
    }
    
+   /**
+    * Performs the active authentication protocol.
+    * 
+    * @param pubkey the public key to use (usually read from the card)
+    * 
+    * @return a boolean indicating whether the card was authenticated
+    * 
+    * @throws GeneralSecurityException if something goes wrong
+    */
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
       aaCipher.init(Cipher.ENCRYPT_MODE, pubkey);
       aaSignature.initVerify(pubkey);
