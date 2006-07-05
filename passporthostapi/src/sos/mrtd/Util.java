@@ -37,7 +37,7 @@ import javax.crypto.spec.DESedeKeySpec;
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.16 $
+ * @version $Revision$
  */
 public class Util
 {

@@ -32,7 +32,7 @@ import javacardx.crypto.*;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
- * @version $Revision: 23 $
+ * @version $Revision$
  */
 public class PassportApplet extends Applet implements ISO7816 {
     private static byte state = 0;

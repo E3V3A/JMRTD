@@ -30,7 +30,7 @@ import java.util.EventListener;
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.6 $
+ * @version $Revision$
  */
 public interface APDUListener extends EventListener
 {

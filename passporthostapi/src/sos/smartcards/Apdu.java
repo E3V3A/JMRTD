@@ -31,7 +31,7 @@ import sos.util.Hex;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
- * @version $Revision: 1.13 $
+ * @version $Revision$
  */
 public class Apdu implements ISO7816 {
 
@@ -85,7 +85,7 @@ public class Apdu implements ISO7816 {
     * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
     * @author Martijn Oostdijk (martijno@cs.ru.nl)
     * 
-    * @version $Revision: 1.13 $
+    * @version $Revision$
     */
    public interface Wrapper {
 

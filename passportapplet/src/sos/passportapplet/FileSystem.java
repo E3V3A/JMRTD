@@ -32,7 +32,7 @@ import javacard.framework.ISO7816;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 
- * @version $Revision: 23 $
+ * @version $Revision$
  */
 public class FileSystem {
    private static final short EF_DG1_FID = (short) 0x0101;

@@ -27,7 +27,7 @@ package sos.smartcards;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.7 $
+ * @version $Revision$
  */
 public interface CardService
 {

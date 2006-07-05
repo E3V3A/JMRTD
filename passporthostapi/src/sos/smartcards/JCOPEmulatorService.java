@@ -30,7 +30,7 @@ import com.ibm.jc.terminal.RemoteJCTerminal;
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
- * @version $Revision: 1.8 $
+ * @version $Revision$
  */
 public class JCOPEmulatorService extends AbstractCardService {
    

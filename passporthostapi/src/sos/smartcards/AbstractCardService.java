@@ -33,7 +33,7 @@ import java.util.Iterator;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
- * @version $Revision: 1.12 $
+ * @version $Revision$
  */
 public abstract class AbstractCardService implements CardService {
     static protected final int SESSION_STOPPED_STATE = 0;

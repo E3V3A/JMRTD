@@ -28,7 +28,7 @@ package sos.smartcards;
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.5 $
+ * @version $Revision$
  */
 public interface ISO7816
 {

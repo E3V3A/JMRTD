@@ -40,7 +40,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.12 $
+ * @version $Revision$
  */
 public class BERTLVObject
 {

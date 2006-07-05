@@ -44,7 +44,7 @@ import sos.smartcards.ISO7816;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.17 $
+ * @version $Revision$
  */
 public class SecureMessagingWrapper implements Apdu.Wrapper
 {

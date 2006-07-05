@@ -38,7 +38,7 @@ import com.sun.javacard.apduio.CadTransportException;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
- * @version $Revision: 1.8 $
+ * @version $Revision$
  */
 public class APDUIOService extends AbstractCardService {
 
