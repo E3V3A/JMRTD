@@ -53,7 +53,7 @@ import sos.smartcards.CardService;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.3 $
+ * @version $Revision$
  */
 public class PassportFileService implements CardService
 {

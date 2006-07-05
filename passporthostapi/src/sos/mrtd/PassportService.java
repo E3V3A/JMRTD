@@ -49,7 +49,6 @@ import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.JPCSCService;
 
-
 /**
  * Card service for using the passport.
  * Defines high-level commands to access the information on the passport.
@@ -63,7 +62,7 @@ import sos.smartcards.JPCSCService;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.29 $
+ * @version $Revision$
  */
 public class PassportService implements CardService
 {
