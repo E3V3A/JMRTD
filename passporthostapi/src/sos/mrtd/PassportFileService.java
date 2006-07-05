@@ -270,7 +270,7 @@ public class PassportFileService implements CardService
       aaSignature.initVerify(pubkey);
       byte[] m2 = new byte[8]; /* random rndIFD */
       byte[] response = service.sendInternalAuthenticate(wrapper, m2);
-      int digestLength = aaDigest.getDigestLength();
+      int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
       byte[] m1 = getRecoveredMessage(digestLength, aaCipher.doFinal(response));
       aaSignature.update(m1);
       aaSignature.update(m2);
