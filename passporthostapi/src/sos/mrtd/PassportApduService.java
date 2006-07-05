@@ -23,6 +23,7 @@
 package sos.mrtd;
 
 import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 
@@ -149,11 +150,11 @@ public class PassportApduService implements CardService {
       return apdu;
    }
 
-   Apdu createUpdateBinaryAPDU(short offset, int le, byte[] data) {
+   Apdu createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
       byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
       byte p2 = (byte) (offset & 0x000000FF);
       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_UPDATE_BINARY, p1,
-            p2, data, le);
+            p2, data_len, data, -1);
       return apdu;
    }
 
@@ -322,8 +323,8 @@ public class PassportApduService implements CardService {
    }
 
    public byte[] sendUpdateBinary(SecureMessagingWrapper wrapper, short offset,
-         int le, byte[] data) throws IOException {
-      Apdu capdu = createUpdateBinaryAPDU(offset, le, data);
+         int data_len, byte[] data) throws IOException {
+      Apdu capdu = createUpdateBinaryAPDU(offset, data_len, data);
       capdu.wrapWith(wrapper);
       byte[] rapdu = sendAPDU(capdu);
       rapdu = wrapper.unwrap(rapdu, rapdu.length);
@@ -414,7 +415,7 @@ public class PassportApduService implements CardService {
    }
 
    public void writeFile(SecureMessagingWrapper wrapper, short fid,
-         BufferedInputStream i) throws IOException {
+         FileInputStream i) throws IOException {
       byte[] data = new byte[56];
 
       int r = 0;

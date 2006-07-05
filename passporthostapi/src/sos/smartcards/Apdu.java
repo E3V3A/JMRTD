@@ -49,12 +49,15 @@ public class Apdu implements ISO7816 {
    public Apdu(byte cla, byte ins, byte p1, byte p2, byte[] data) {
       this(cla, ins, p1, p2, data, -1);
    }
-   
+
    public Apdu(byte cla, byte ins, byte p1, byte p2, byte[] data, int le) {
-      if (data == null || data.length == 0) {
+       this(cla, ins, p1, p2, data == null ? 0 : data.length, data, le);
+   }
+
+   public Apdu(byte cla, byte ins, byte p1, byte p2, int lc, byte[] data, int le) {
+      if (data == null || lc == 0) {
          commandApduBuffer = new byte[4 + ((le < 0) ? 0 : 1)];
       } else {
-         int lc = data.length;
          /*@ assert lc > 0; */
          commandApduBuffer = new byte[4 + 1 + lc + ((le < 0) ? 0 : 1)];
          

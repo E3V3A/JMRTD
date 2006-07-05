@@ -341,20 +341,26 @@ public class PassportGUI extends JPanel
    {
        private JButton createFileButton;
        private JButton selectFileButton;
+       private JButton selectLocalFileButton;
        private JButton updateBinaryButton;
        private HexField lenField;
        private HexField fidField;
+       private File fileToUpload;
        
        public InitPassportPanel() {
            super(new FlowLayout());
-           updateBinaryButton = new JButton("Upload local file ... ");
+           selectLocalFileButton = new JButton("Select local file ... ");
            createFileButton = new JButton("Create file");
            selectFileButton = new JButton("Select file");
-           updateBinaryButton.addActionListener(this);
+           updateBinaryButton = new JButton("Update binary");
+           selectLocalFileButton.addActionListener(this);
            createFileButton.addActionListener(this);
            selectFileButton.addActionListener(this);
+           updateBinaryButton.addActionListener(this);
            fidField = new HexField(2);
            lenField = new HexField(2);
+           lenField.setEditable(false);
+           add(selectLocalFileButton);
            add(new JLabel("file: "));
            add(fidField);
            add(new JLabel("length:"));
@@ -368,12 +374,14 @@ public class PassportGUI extends JPanel
            JButton butt = (JButton)ae.getSource();
                      
            try {
-           if(butt == updateBinaryButton) {
-               pressedUploadButton();
+           if(butt == selectLocalFileButton) {
+               pressedSelectLocalFileButton();
            } else if(butt == createFileButton) {
                pressedCreateFileButton();
            } else if(butt == selectFileButton) {
                pressedSelectFileButton();
+           } else if(butt == updateBinaryButton) {
+               pressedUpdateBinaryButton();
            }
            } catch(Exception e) {
                e.printStackTrace();
@@ -381,6 +389,23 @@ public class PassportGUI extends JPanel
        }
   
        
+    private void pressedUpdateBinaryButton() {
+      final byte[] fid = fidField.getValue();
+        
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+                FileInputStream in = new FileInputStream(fileToUpload);
+               service.writeFile(wrapper, (short)(((fid[0] & 0x000000FF) << 8)
+                     | (fid[1] & 0x000000FF)), in);
+               in.close();
+            } catch (IOException ioe) {
+               ioe.printStackTrace();
+            }
+         }
+      }).start();
+    }
+
     private void pressedSelectFileButton() {  
         final byte[] fid = fidField.getValue();
         
@@ -407,9 +432,9 @@ public class PassportGUI extends JPanel
          }).start();
     }
 
-    private void pressedUploadButton() throws Exception {
+    private void pressedSelectLocalFileButton() throws Exception {
            final JFileChooser chooser = new JFileChooser();
-           chooser.setDialogTitle("Upload file");
+           chooser.setDialogTitle("Select file");
            // chooser.setCurrentDirectory(currentDir);
            chooser.setFileHidingEnabled(false);
            int n = chooser.showOpenDialog(this);
@@ -417,23 +442,9 @@ public class PassportGUI extends JPanel
               System.out.println("DEBUG: select file canceled...");
               return;
            }        
-           
-           final byte[] fid = fidField.getValue();
-           
-           new Thread(new Runnable() {
-              public void run() {
-                 try {
-                     BufferedInputStream in = new BufferedInputStream(
-                             new FileInputStream(chooser.getSelectedFile()));
-                    service.writeFile(wrapper, (short)(((fid[0] & 0x000000FF) << 8)
-                          | (fid[1] & 0x000000FF)), in);
-                    in.close();
-                 } catch (IOException ioe) {
-                    ioe.printStackTrace();
-                 }
-              }
-           }).start();
-   
+ 
+           fileToUpload = chooser.getSelectedFile();
+           lenField.setValue(fileToUpload.length());
         }
    }
    
