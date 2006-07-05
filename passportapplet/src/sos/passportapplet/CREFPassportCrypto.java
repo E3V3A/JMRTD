@@ -44,7 +44,7 @@ import javacardx.crypto.Cipher;
  * @author Martijn Oostdijk <martijno@cs.ru.nl>
  * @author Ronny Wichers Schreur <ronny@cs.ru.nl>
  * 
- * @version $Revision$
+ * @version $Revision: 23 $
  */
 public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
     private static DESKey ma_kMac_a, ma_kMac_b, ma_kEnc;
