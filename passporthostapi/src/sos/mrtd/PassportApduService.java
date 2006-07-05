@@ -47,6 +47,7 @@ import sos.smartcards.ISO7816;
  * <ul>
  *    <li><code>GET CHALLENGE</code></li>
  *    <li><code>EXTERNAL AUTHENTICATE</code></li>
+ *    <li><code>INTERNAL AUTHENTICATE</code> (using secure messaging)</li>
  *    <li><code>SELECT FILE</code> (using secure messaging)</li>
  *    <li><code>READ BINARY</code> (using secure messaging)</li>
  * </ul>
