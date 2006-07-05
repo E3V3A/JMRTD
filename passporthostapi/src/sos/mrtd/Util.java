@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: Util.java,v 1.16 2006/06/08 14:52:30 martijno Exp $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -155,7 +155,8 @@ public class Util
         i--;
       }
       if ((in[i] & 0x000000FF) != 0x00000080) {
-         throw new IllegalStateException("unpad expected constant 0x80");
+         throw new IllegalStateException("unpad expected constant 0x80, found 0x"
+               + Integer.toHexString((in[i] & 0x000000FF)));
       }
       byte[] out = new byte[i];
       System.arraycopy(in, 0, out, 0, i);

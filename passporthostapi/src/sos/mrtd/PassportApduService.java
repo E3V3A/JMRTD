@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportApduService.java,v 1.13 2006/06/20 15:27:20 ceesb Exp $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -181,7 +181,7 @@ public class PassportApduService implements CardService {
       byte p1 = (byte)0x00;
       byte p2 = (byte)0x00;
       byte[] data = rndIFD;
-      int le = 0;
+      int le = 255; /* whatever... */
       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_INTERNAL_AUTHENTICATE,
             p1, p2, data, le);
       return apdu;
@@ -358,8 +358,11 @@ public class PassportApduService implements CardService {
 
    public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
       Apdu capdu = createInternalAuthenticateAPDU(rndIFD);
+      System.out.println("Ongewrapped = " + capdu);
       capdu.wrapWith(wrapper);
+      System.out.println("Gewrapped = " + capdu);
       byte[] rapdu = sendAPDU(capdu);
+      System.out.println("DEBUG: rapdu.length == " + rapdu.length);
       rapdu = wrapper.unwrap(rapdu, rapdu.length);
       byte[] result = new byte[rapdu.length - 2];
       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);

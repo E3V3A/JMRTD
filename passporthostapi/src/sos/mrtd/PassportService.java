@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportService.java,v 1.29 2006/07/01 18:26:47 martijno Exp $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -440,9 +440,14 @@ public class PassportService implements CardService
          Security.insertProviderAt(PROVIDER, 2);
          PassportService service = new PassportService(new JPCSCService());
          service.open();
-         service.doBAC("ZZ0062725", "710121", "091130");
+         service.doBAC("XX0000026", "711019", "110601");
          PublicKey pubKey = service.readAAPublicKey();
          System.out.println("pubKey = " + pubKey);
+         if (service.doAA(pubKey)) {
+            System.out.println("AA succeeded!");
+         } else {
+            System.out.println("AA failed!");
+         }    
          service.close();
       } catch (Exception e) {
          e.printStackTrace();

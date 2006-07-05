@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: SecureMessagingWrapper.java,v 1.17 2006/06/08 14:52:30 martijno Exp $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -36,7 +36,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import sos.smartcards.Apdu;
 import sos.smartcards.ISO7816;
-
+import sos.util.*;
 
 /**
  * Secure messaging wrapper for apdus.
@@ -316,11 +316,14 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
          }
       }
       length--; /* takes care of the extra 0x01 marker... */
+      System.out.println("DEBUG: DO'87: length == " + length + " (in hex: " + Integer.toHexString(length)+ ")");
 
       /* Read, decrypt, unpad the data... */
       byte[] ciphertext = new byte[length];
       in.read(ciphertext, 0, length);
+      System.out.println("DEBUG: ciphertext = " + Hex.bytesToHexString(ciphertext));
       byte[] paddedData = cipher.doFinal(ciphertext);
+      System.out.println("DEBUG: paddedData = " + Hex.bytesToHexString(paddedData));
       byte[] data = Util.unpad(paddedData);
       return data;
    }

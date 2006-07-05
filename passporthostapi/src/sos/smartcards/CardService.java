@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: CardService.java,v 1.7 2006/06/08 15:04:47 martijno Exp $
+ * $Id$
  */
 
 package sos.smartcards;

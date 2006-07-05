@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportFileService.java,v 1.3 2006/06/15 00:34:09 martijno Exp $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -31,12 +31,14 @@ import java.security.Signature;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 
+import sos.util.*;
 
 /**
  * Card service for using the filesystem on the passport.
@@ -132,7 +134,7 @@ public class PassportFileService implements CardService
          this.service = new PassportApduService(service);
          files = new HashMap();
       }
-      aaSignature = Signature.getInstance("SHA1withRSA");
+      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
       state = SESSION_STOPPED_STATE;
    }
    
@@ -148,7 +150,7 @@ public class PassportFileService implements CardService
       this(service);
       this.wrapper = wrapper;
       files = new HashMap();
-      aaSignature = Signature.getInstance("SHA1withRSA");
+      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
       state = AUTHENTICATED_STATE;
    }
 
@@ -208,10 +210,20 @@ public class PassportFileService implements CardService
    }
    
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      byte[] rndIFD = new byte[8]; /* Random */
+      byte[] rndIFD = new byte[8]; /* random */
       byte[] response = service.sendInternalAuthenticate(wrapper, rndIFD);
+      /* do some parsing of the response to actually get the plaintext and the signature */
+      System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
+      Cipher cipher = Cipher.getInstance("RSA");
+      cipher.init(Cipher.ENCRYPT_MODE, pubkey);
+      byte[] plaintext = cipher.doFinal(response);
+      System.out.println("DEBUG: plaintext = " + Hex.bytesToHexString(plaintext));
+ /*
       aaSignature.initVerify(pubkey);
+      aaSignature.update(response);
       return aaSignature.verify(response);
+ */
+      return false;
    }
    
    public byte[] sendAPDU(Apdu capdu) {
