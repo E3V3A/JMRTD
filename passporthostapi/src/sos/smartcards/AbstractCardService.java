@@ -47,7 +47,6 @@ public abstract class AbstractCardService implements CardService {
      */
     protected int state;
 
-
     /**
      * Creates a new service.
      */

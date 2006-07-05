@@ -31,6 +31,12 @@ package sos.smartcards;
  */
 public interface CardService
 {
+   /**
+    * Gives a list of terminals (card accepting devices) accessible by
+    * this service.
+    *
+    * @return a list of terminal names
+    */
    String[] getTerminals();
    
    /**

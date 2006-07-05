@@ -48,8 +48,7 @@ import sos.smartcards.CardService;
  * 
  * Usage:
  *    <pre>
- *       &lt;&lt;create&gt;&gt; ==&gt; open() ==&gt;
- *       doBAC(...) ==&gt; readFile(fid) ==&gt; close()
+ *       &lt;&lt;create&gt;&gt; ==&gt; open() ==&gt; doBAC(...) ==&gt; readFile(fid)* ==&gt; close()
  *    </pre> 
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
@@ -187,7 +186,7 @@ public class PassportFileService implements CardService
    }
    
    /**
-    * Performs the Basic Access Control protocol.
+    * Performs the <i>Basic Access Control</i> protocol.
     *
     * @param docNr the document number
     * @param dateOfBirth card holder's birth date
@@ -265,7 +264,7 @@ public class PassportFileService implements CardService
    }
    
    /**
-    * Performs the active authentication protocol.
+    * Performs the <i>Active Authentication</i> protocol.
     * 
     * @param pubkey the public key to use (usually read from the card)
     * 
