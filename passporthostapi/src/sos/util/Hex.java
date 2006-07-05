@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: Hex.java 12 2006-07-05 10:11:46Z martijno $
  */
 
 package sos.util;
@@ -27,7 +27,7 @@ package sos.util;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.5 $
+ * @version $Revision$
  */
 public final class Hex {
 

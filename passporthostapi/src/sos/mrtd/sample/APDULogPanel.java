@@ -40,7 +40,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.13 $
+ * @version $Revision$
  */
 public class APDULogPanel extends JPanel implements APDUListener
 {

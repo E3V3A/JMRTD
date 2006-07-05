@@ -47,7 +47,7 @@ import sos.smartcards.ISO7816;
  * A GUI component for entering a CommandAPDU.
  * TODO: (MO) check dependency on Apdu.command.
  *
- * @version $Revision: 1.5 $
+ * @version $Revision$
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  */

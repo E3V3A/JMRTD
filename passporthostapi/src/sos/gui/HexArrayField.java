@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: HexArrayField.java 11 2006-07-04 12:15:45Z martijno $
  */
 
 package sos.gui;
@@ -39,7 +39,7 @@ import javax.swing.plaf.basic.BasicArrowButton;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
- * @version $Revision: 1.5 $
+ * @version $Revision$
  */
 public class HexArrayField extends JPanel implements ActionListener {
 

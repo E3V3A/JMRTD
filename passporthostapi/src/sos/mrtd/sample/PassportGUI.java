@@ -73,7 +73,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.39 $
+ * @version $Revision$
  */
 public class PassportGUI extends JPanel
 {

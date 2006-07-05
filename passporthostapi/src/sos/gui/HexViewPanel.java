@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: HexViewPanel.java 12 2006-07-05 10:11:46Z martijno $
  */
 
 package sos.gui;
@@ -38,7 +38,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 1.7 $
+ * @version $Revision$
  */
 public class HexViewPanel extends JPanel
 {
