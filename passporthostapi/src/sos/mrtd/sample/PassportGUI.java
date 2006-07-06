@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportGUI.java,v 1.39 2006/06/20 15:27:20 ceesb Exp $
+ * $Id$
  */
 
 package sos.mrtd.sample;
@@ -172,7 +172,7 @@ public class PassportGUI extends JPanel
 
          JTabbedPane tabbedPane = new JTabbedPane();
          tabbedPane.addTab("BAC", bacPanel);
-         tabbedPane.addTab("APDU", new APDUSenderPanel());
+         tabbedPane.addTab("APDU", new APDUSenderPanel(service, wrapper));
          tabbedPane.addTab("LDS", new LDSPanel());
          tabbedPane.addTab("Face", new FacePanel());
          tabbedPane.addTab("Init", new InitPassportPanel());
@@ -182,100 +182,6 @@ public class PassportGUI extends JPanel
       } catch (Exception e) {
          e.printStackTrace();
          System.exit(1);
-      }
-   }
-
-   private class APDUSenderPanel extends JPanel implements ActionListener, Runnable
-   {
-      private CommandAPDUField bApduField, eApduField;
-      private JCheckBox smCheckBox;
-      private JButton copyButton, sendButton;
-
-      public APDUSenderPanel() {
-         super(new GridLayout(3,1));
- 
-         JPanel beginPanel = new JPanel(new FlowLayout());
-         beginPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Begin APDU"));
-         bApduField = new CommandAPDUField();
-         beginPanel.add(bApduField);
-
-         JPanel endPanel = new JPanel(new FlowLayout());
-         endPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "End APDU"));
-         eApduField = new CommandAPDUField();
-         copyButton = new JButton("Copy");
-         copyButton.addActionListener(this);
-         endPanel.add(copyButton);
-         endPanel.add(eApduField);
-
-         JPanel controlPanel = new JPanel(new FlowLayout());
-         smCheckBox = new JCheckBox();
-         sendButton = new JButton("Send");
-         sendButton.addActionListener(this);
-         controlPanel.add(new JLabel("Wrap: "));
-         controlPanel.add(smCheckBox);
-         controlPanel.add(new JLabel(" Send APDUs: "));
-         controlPanel.add(sendButton);
-
-         add(beginPanel);
-         add(endPanel);
-         add(controlPanel);
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         JButton button = (JButton)ae.getSource();
-
-         if (button == copyButton) {
-            eApduField.setAPDU(bApduField.getAPDU());
-         } else if (button == sendButton) {          
-            (new Thread(this)).start();           
-         }
-      }
-
-      public void run() {
-         sendButton.setEnabled(false);
-         Apdu bApdu = bApduField.getAPDU();
-         Apdu eApdu = eApduField.getAPDU();
-         boolean isWrapped = smCheckBox.isSelected();
-         send(bApdu, eApdu, isWrapped);
-         sendButton.setEnabled(true);
-      }
-
-      private void send(Apdu bApdu, Apdu eApdu, boolean isWrapped) {
-         /* FIXME: Need to take care of le? */
-         byte[] a = bApdu.getCommandApduBuffer();
-         byte[] b = eApdu.getCommandApduBuffer();
-         if (a.length != b.length) {
-            throw new IllegalArgumentException("APDUs should have same length");
-         }
-         byte[] c = new byte[a.length];
-         for (int i = 0; i < a.length; i++) {
-            c[i] = (byte)Math.min(a[i] & 0x000000FF, b[i] & 0x000000FF);
-         }
-         sendAll(a, b, c, 0, isWrapped);
-      }
-      
-      private void sendAll(byte[] a, byte[] b, byte[] c, int offset, boolean isWrapped) {
-         int n = a.length - offset;
-         Apdu apdu;
-         if (n > 0) {
-            int min = Math.min(a[offset] & 0x000000FF, b[offset] & 0x000000FF);
-            int max = Math.max(a[offset] & 0x000000FF, b[offset] & 0x000000FF);
-
-            for (int i = min; i <= max; i++) {
-               c[offset] = (byte)i;
-               sendAll(a, b, c, offset + 1, isWrapped);
-            }
-         } else {
-            apdu = new Apdu(c);
-            if (isWrapped) {
-               apdu.wrapWith(wrapper);
-            }
-            byte[] rapdu = service.sendAPDU(apdu);
-            if (isWrapped) {
-               rapdu = wrapper.unwrap(rapdu, rapdu.length);
-               System.out.println("PLAIN TEXT RAPDU: " + Hex.bytesToHexString(rapdu));
-            }
-         }
       }
    }
 
