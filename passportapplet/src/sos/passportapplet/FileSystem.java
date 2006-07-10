@@ -144,10 +144,6 @@ public class FileSystem {
    public byte[] getFile(short fid) {
       return (byte[]) files[getFileIndex(fid)];
    }
-
-   public static byte exists(short fid) {
-       return (getFileIndex(fid) != 0 ? (byte)1 : 0);
-   }
    
    private static short getFileIndex(short fid) throws ISOException {
       switch (fid) {

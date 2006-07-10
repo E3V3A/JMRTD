@@ -66,8 +66,17 @@ public class PassportUtil implements ISO7816 {
         }
     }
 
+    public static short sign(short a) {
+        return (byte)((a >>> (short)15) & 1); 
+    }
+    
     public static short min(short a, short b) {
-        return ((a & 0xff) < (b & 0xff) ? a : b);
+        if(sign(a) == sign(b))
+          return (a < b ? a : b);
+        else if(sign(a) == 1)
+            return b;
+        else 
+            return a;
     }
 
     public static void throwShort(short s) {

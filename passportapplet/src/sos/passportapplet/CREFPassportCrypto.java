@@ -96,14 +96,6 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                                  (short) 8) == 0;
     }
 
-    // probably good when Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3
-    // public static void UNUSED_createMac(Signature sig, DESKey kMac, byte[]
-    // msg,
-    // short msg_offset, short msg_len, byte[] mac, short mac_offset) {
-    // sig.init(kMac, Signature.MODE_SIGN);
-    // sig.sign(msg, msg_offset, msg_len, mac, mac_offset);
-    // }
-
     // no more way to go for Signature.ALG_DES_MAC8_ISO9797_M2
     // public static void OLD_createMac(Cipher ciph, byte[] kMac, byte[] msg,
     // short msg_offset, short msg_len, byte[] mac, short mac_offset) {
@@ -270,166 +262,77 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                        (short) 8);
     }
 
-    /**
-     * Does the actual encoding of a command apdu. Based on Section E.3 of
-     * ICAO-TR-PKI, especially the examples.
-     * 
-     * @param capdu
-     *            buffer containing the apdu data.
-     * @param capdu_len
-     *            length of the apdu data.
-     * 
-     * @return a byte array containing the wrapped apdu buffer.
-     */
-    /*
-     * @ requires apdu != null && 4 <= len && len <= apdu.length;
-     */
-    // private static void wrapCommandAPDU(byte[] ssc, DESKey ksMac_a, DESKey
-    // ksMac_b, DESKey ksEnc_key, Cipher ciph, byte[] capdu, short capdu_len,
-    // byte[] out, short out_len) {
-    // if (capdu == null || capdu.length < 4 || capdu_len < 4) {
-    // // maybe copy "IDIOT" in out buffer as well?
-    // return;
-    // }
-    //
-    // /* Determine lc and le... */
-    // byte lc = 0;
-    // byte le = capdu[(short)(capdu_len - 1)];
-    // if (capdu_len == 4) {
-    // lc = 0;
-    // le = 0;
-    // } else if (capdu_len == 5) {
-    // /* No command data, byte at index 5 is le. */
-    // lc = 0;
-    // } else if (capdu_len > 5) {
-    // /* Byte at index 5 is not le, so it must be lc. */
-    // lc = capdu[ISO7816.OFFSET_LC];
-    // }
-    // if (4 + lc >= capdu_len) {
-    // /* Value of lc covers rest of apdu length, there is no le. */
-    // le = 0;
-    // }
-    //
-    // short current;
-    // short hdr_len = PassportUtil.min((short)4, capdu_len);
-    // Util.arrayCopy(capdu, (short)0, out, (short)0, hdr_len);
-    // out[ISO7816.OFFSET_CLA] = (byte)0x0C;
-    // // we pad the header only for calculating the mac, later
-    // Util.arrayCopy(PAD_DATA, (short)0, out, hdr_len, (short)(8 - hdr_len));
-    //      
-    // current = (short)8;
-    //       
-    // // write this now, we need it for the mac, overwritten later
-    // incrementSSC(ssc);
-    // Util.arrayCopy(ssc, (short)0, out, current, (short)ssc.length);
-    // current += (short)ssc.length;
-    //       
-    // if (lc > 0) {
-    // // do87, optional
-    // short count;
-    // ciph.init(ksEnc_key, Cipher.MODE_ENCRYPT);
-    // count = ciph.doFinal(capdu, (short)(ISO7816.OFFSET_CDATA & 0xff),
-    // (short)(lc & 0xff), out, (short)(current + 3));
-    //
-    // out[current++] = (byte)0x87;
-    // out[current++] = (byte)count;
-    // out[current++] = (byte)0x01;
-    //           
-    // current = (short)(current + count);
-    // }
-    //
-    // if (le > 0) {
-    // // do97, optional
-    // out[current++] = (byte)0x97;
-    // out[current++] = (byte)0x01;
-    // out[current++] = le;
-    // }
-    //       
-    // /* Compute cryptographic checksum... */
-    //
-    // // save the mac for now, note we don't add new padding,
-    // // as the des mac iso9797 m2 does it for us
-    // byte[] mac = new byte[8];
-    // createMac(ciph, ksMac_a, ksMac_b, out, (short)0, current, mac, (short)0);
-    //       
-    // // kill ssc in out (first 8 bytes)
-    // current -= ssc.length;
-    // Util.arrayCopy(out, (short)ssc.length, out, (short)0, current);
-    //       
-    // // kill the padding of the header in out
-    // current -= (short)(8 - hdr_len);
-    // Util.arrayCopy(out, (short)8, out, hdr_len, current);
-    //       
-    // // add do8E
-    // out[current++] = (byte)0x8E;
-    // out[current++] = (byte)8;
-    // Util.arrayCopy(mac, (short)0, out, current, (short)8);
-    //       
-    // // set lc
-    // out[4] = (byte)(current - 4);
-    //
-    // // trailing zero?
-    // out[current++] = 0;
-    // }
     public static short wrapResponseAPDU(byte[] ssc, DESKey kMac_a,
             DESKey kMac_b, DESKey kEnc, Cipher ciph, APDU aapdu,
-            short rapdu_len, short sw1sw2) {
+            short plaintextLen, short sw1sw2) {
         byte[] apdu = aapdu.getBuffer();
-        short count = 0;
+        short apdu_p = 0;
+        // smallest mod 8 strictly larger than plaintextLen, including do87 0x01 byte
+        short do87DataLen = (short)((((plaintextLen + 8) / 8) * 8) + 1); 
+        short do87HeaderLen = (short)(do87DataLen < 0x80 ? 3 : (4 + do87DataLen/0xff));
+        short do87LenBytes = (short)(1 + do87DataLen/0xff);
 
-        // write this now, we need it for the mac only, overwritten later
+        // insert SSC in front of apdu and reserve space for do87 header
         PassportCrypto.incrementSSC(ssc);
-        Util.arrayCopy(ssc, (short) 0, apdu, count, (short) ssc.length);
-        count += (short) ssc.length;
+        short plaintext_p = (short)(ssc.length + do87HeaderLen);        
+        Util.arrayCopy(apdu, (short)0, apdu, plaintext_p, plaintextLen); 
+        Util.arrayCopy(ssc, (short) 0, apdu, apdu_p, (short) ssc.length);
+        apdu_p += (short) ssc.length;
 
-        if (rapdu_len > 0) {
+        if (plaintextLen > 0) {
             // build do87
-            apdu[count++] = (byte) 0x87;
-            apdu[count++] = (byte) 0xff;
-            short do87_L_pos = count;
-            apdu[count++] = 0x01;
+            apdu[apdu_p++] = (byte) 0x87;
+            if(do87HeaderLen > 3) {
+                apdu[apdu_p++] = (byte)(0x80 + do87LenBytes);
+            }
+            for(short i=0; i<do87LenBytes; i++) {
+                apdu[apdu_p++] = (byte)((do87DataLen >>> i) & 0xff);
+            }   
+                  
+            apdu[apdu_p++] = 0x01;
+            
             ciph.init(kEnc, Cipher.MODE_ENCRYPT);
-            short L = ciph.doFinal(apdu, (short) 0, rapdu_len, apdu, count);
-            apdu[do87_L_pos] = (byte) (L & 0xff);
+            if(plaintext_p != apdu_p) // sanity check
+                ISOException.throwIt((short)0x6d66);
+            short ciphertextLen = ciph.doFinal(apdu, plaintext_p, plaintextLen, apdu, apdu_p);
+            if((do87DataLen - 1) != ciphertextLen) // sanity check
+                ISOException.throwIt((short)0x6d66);
+            apdu_p += ciphertextLen;
         }
-
+        
         // build do99
-        byte sw1 = (byte) 0x90, sw2 = 0;
-        if (sw1sw2 != 0) {
-            sw1 = (byte) ((sw1sw2 & (short) 0xff00) >>> (short) 8);
-            sw2 = (byte) (sw1sw2 & 0xff);
-        }
-
-        apdu[count++] = (byte) 0x99;
-        apdu[count++] = 0x02;
-        apdu[count++] = sw1;
-        apdu[count++] = sw2;
-
-        // build do8e
-        createMac(kMac_a, kMac_b, apdu, (short) 0, count,
-        // apdu, (short)(count + 2)
+        apdu[apdu_p++] = (byte) 0x99;
+        apdu[apdu_p++] = 0x02;
+        Util.setShort(apdu, apdu_p, sw1sw2);
+        apdu_p += 2;
+        
+        // calculate mac on apdu[0 ... apdu_p]
+        createMac(kMac_a, kMac_b, apdu, (short) 0, apdu_p,
                   tempSpace_unwrapCommandAPDU, (short) 0);
-        apdu[count++] = (byte) 0x8e;
-        apdu[count++] = 0x08;
-        Util.arrayCopy(tempSpace_unwrapCommandAPDU,
-                       (short) 0,
-                       apdu,
-                       count,
-                       (short) 8);
-        count += 8; // compensate for mac len
 
         // now delete ssc from apdu (shift left apdu by 8 bytes)
+        // so we have room to write the do8e
         Util.arrayCopy(apdu,
                        (short) ssc.length,
                        apdu,
                        (short) 0,
-                       (short) (count - ssc.length));
-        count -= (short) ssc.length;
+                       (short) (apdu_p - ssc.length));
+        apdu_p -= (short) ssc.length;
 
-        return count;
+        // write do8e
+        apdu[apdu_p++] = (byte) 0x8e;
+        apdu[apdu_p++] = 0x08;
+        Util.arrayCopy(tempSpace_unwrapCommandAPDU,
+                       (short) 0,
+                       apdu,
+                       apdu_p,
+                       (short) 8);
+        apdu_p += 8;
+
+        return apdu_p;
     }
 
-    public static void unwrapCommandAPDU(byte[] ssc, DESKey ksMac_a,
+    public static short unwrapCommandAPDU(byte[] ssc, DESKey ksMac_a,
             DESKey ksMac_b, DESKey ksEnc, Cipher ciph, APDU aapdu) {
         byte[] apdu = aapdu.getBuffer();
         short count = (short) (ISO7816.OFFSET_CDATA & 0xff); // len and
@@ -470,14 +373,6 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                 ISOException.throwIt((short) (0x6d52));
             le = (short) (apdu[++count] & 0xff);
             count++;
-        }
-
-        if ((PassportApplet.getState() & PassportApplet.FILE_SELECTED) != 0) {
-            if (apdu[count] != (byte) 0x8e) {
-                PassportUtil.returnBuffer(apdu, (short) (count + 1), aapdu);
-                PassportUtil.throwArrayIndex(apdu, count);
-                return;
-            }
         }
 
         // do8e
@@ -527,7 +422,7 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
 
             PassportUtil.returnBuffer(apdu, (short) 0, count, aapdu);
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
-            return;
+            return 0;
         }
         //   
 
@@ -550,13 +445,23 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                                                               (short) (hdr_len + 1),
                                                               (short) (do87_L & 0xff));
         }
-        // set le
-        apdu[(short) ((short) (hdr_len + 1) + apdu[hdr_len])] = (byte) (le & 0xff);
+        // set le FIXME: remove
+        if(do87_L == 0)
+            apdu[hdr_len] = (byte)(le & 0xff);
+        else
+            apdu[(short) ((short) (hdr_len + 1) + (do87_L & 0xff))] = (byte) (le & 0xff);
 
+        // empty out the rest
+        short offset = (short)(hdr_len + 1 + (do87_L & 0xff));
+        for(short i=offset; i<apdu.length; i++) {
+            apdu[i] = 0;
+        }
+        
         // ISOException.throwIt((short)0x6d68);
         // PassportUtil.returnBuffer(apdu, (short)0,
         // (short)((short)((short)(do87_L & 0xff) + hdr_len) + 1), aapdu);
 
+        return le;
     }
 
     public void createTempSpace() {
@@ -626,14 +531,16 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
         }
     }
 
-    public void unwrapCommandAPDU(byte[] ssc, APDU apdu) {
-        // TODO Auto-generated method stub
+    public short  unwrapCommandAPDU(byte[] ssc, APDU apdu) {
+        return unwrapCommandAPDU(ssc, sm_kMac_a,
+                          sm_kMac_b, sm_kEnc, ciph, apdu);
 
     }
 
     public short wrapResponseAPDU(byte[] ssc, APDU apdu, short len, short sw1sw2) {
-        // TODO Auto-generated method stub
-        return (short)0;
+        return wrapResponseAPDU(ssc, sm_kMac_a, sm_kMac_b, sm_kEnc, ciph, apdu,
+                         len, sw1sw2);
+               
 
     }
 
