@@ -173,7 +173,6 @@ implements ActionListener, AuthListener
    }
    
    public void performedBAC(SecureMessagingWrapper wrapper) {
-      System.out.println("DEBUG: LDS PANEL WRAPPER SET!");
       this.wrapper = wrapper;
    }
    

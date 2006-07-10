@@ -25,6 +25,7 @@ package sos.smartcards;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -44,13 +45,16 @@ import sos.util.Hex;
  */
 public class BERTLVObject
 {
+   /** Universal tag class. */
    public static final int UNIVERSAL_CLASS = 0;
+   /** Application tag class. */
    public static final int APPLICATION_CLASS = 1;
+   /** Context specific tag class. */
    public static final int CONTEXT_SPECIFIC_CLASS = 2;
+   /** Private tag class. */
    public static final int PRIVATE_CLASS = 3;
 
    private int tagClass;
-
    private boolean isPrimitive;
 
    /** Tag. */
@@ -62,6 +66,17 @@ public class BERTLVObject
    /** Value, is usually just a byte[]. */
    private Object value;
    private byte[] valueBytes;
+
+   /**
+    * Creates a new TLV object by parsing <code>in</code>.
+    * 
+    * @param in a binary representation of the TLV object
+    * @return a TLV object
+    * @throws IOException if something goes wrong
+    */
+   public static BERTLVObject getInstance(InputStream in) throws IOException {
+      return new BERTLVObject(new DataInputStream(in));
+   }
    
    /**
     * Constructs a new TLV object by parsing input <code>in</code>.
@@ -69,10 +84,6 @@ public class BERTLVObject
     * @param in a TLV object
     * @throws IOException if something goes wrong
     */
-   public BERTLVObject(byte[] in) throws IOException {
-      this(new DataInputStream(new ByteArrayInputStream(in)));
-   }
-
    private BERTLVObject(DataInputStream in) throws IOException {
       readTag(in);
       readLength(in);

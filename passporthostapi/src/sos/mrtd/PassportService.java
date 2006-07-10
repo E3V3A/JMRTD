@@ -405,14 +405,15 @@ public class PassportService implements CardService
    }
    
    private BERTLVObject readObject(short fid, byte[] tag) throws IOException {
-      BERTLVObject fileObject = new BERTLVObject(service.readFile(fid));
+      byte[] file = service.readFile(fid);
+      BERTLVObject fileObject = BERTLVObject.getInstance(new ByteArrayInputStream(file));
       BERTLVObject object = fileObject.getChild(tag);
       return object;
    }
 
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
       byte[] file = service.readFile(PassportFileService.EF_DG15);
-      BERTLVObject fileObj = new BERTLVObject(file);
+      BERTLVObject fileObj = BERTLVObject.getInstance(new ByteArrayInputStream(file));
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(fileObj.getValueAsBytes());
       return factory.generatePublic(pubKeySpec);
    }
