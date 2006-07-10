@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: HexViewPanel.java 12 2006-07-05 10:11:46Z martijno $
+ * $Id$
  */
 
 package sos.gui;
@@ -54,12 +54,18 @@ public class HexViewPanel extends JPanel
    /**
     * Constructs a hex view panel.
     *
-    * @param data the data to view.
+    * @param data the data to view
     */
    public HexViewPanel(byte[] data) {
       this(data, 0);
    }
    
+   /**
+    * Constructs a hex view panel.
+    *
+    * @param data the data to view
+    * @param startOffset the offset to display next to the first byte
+    */
    public HexViewPanel(byte[] data, int startOffset) {
       super(new FlowLayout());
       columnModel = new DefaultTableColumnModel();
@@ -81,7 +87,7 @@ public class HexViewPanel extends JPanel
    /**
     * The font used.
     *
-    * @return the font used.
+    * @return the font used
     */
    public Font getFont() {
       return FONT;

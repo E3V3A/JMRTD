@@ -1,3 +1,25 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006  SoS group, Radboud University
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id$
+ */
+
 package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
@@ -21,21 +43,25 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportFileService;
 import sos.mrtd.SecureMessagingWrapper;
 
-public class LDSPanel extends JPanel implements ActionListener, AuthListener {
+/**
+ * Convenient GUI component for accessing the LDS.
+ *
+ * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ *
+ * @version $Revision$
+ */
+public class LDSPanel extends JPanel
+implements ActionListener, AuthListener
+{
    private static final byte[] ZERO_DATA = new byte[256];
-
    private HexField fidTF, offsetTF, leTF;
-
    private HexViewPanel hexviewer;
-
    private JButton selectButton, readBinaryButton, readNextButton, saveButton;
 
    short offset;
-
    int bytesRead;
 
    private PassportApduService service;
-
    private SecureMessagingWrapper wrapper;
 
    public LDSPanel(PassportApduService service) {
@@ -105,7 +131,9 @@ public class LDSPanel extends JPanel implements ActionListener, AuthListener {
          public void run() {
             try {
                PassportFileService s = new PassportFileService(service, wrapper);
-               byte[] data = s.readFile((short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
+               byte[] data =
+                  s.readFile((short) (((fid[0] & 0x000000FF) << 8)
+                                      | (fid[1] & 0x000000FF)));
                OutputStream out = new FileOutputStream(file);
                out.write(data, 0, data.length);
                out.close();
@@ -126,7 +154,8 @@ public class LDSPanel extends JPanel implements ActionListener, AuthListener {
       bytesRead = 0;
       int le = leTF.getValue()[0] & 0x000000FF;
       byte[] offsetBytes = offsetTF.getValue();
-      offset = (short) (((offsetBytes[0] & 0x000000FF) << 8) | (offsetBytes[1] & 0x000000FF));
+      offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
+                 | (offsetBytes[1] & 0x000000FF));
       byte[] data = service.sendReadBinary(wrapper, offset, le);
       remove(hexviewer);
       hexviewer = new HexViewPanel(data, offset);
@@ -150,6 +179,5 @@ public class LDSPanel extends JPanel implements ActionListener, AuthListener {
    
    public void performedAA(PublicKey pubkey, boolean success) {
    }
-
-
 }
+

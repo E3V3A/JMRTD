@@ -26,17 +26,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.MessageDigest;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
@@ -44,8 +36,7 @@ import sos.smartcards.CardService;
 
 /**
  * Card service for using the filesystem on the passport.
- * Defines basic access control, active authentication,
- * and reading of complete files.
+ * Defines reading of complete files.
  * 
  * Based on ICAO-TR-PKI and ICAO-TR-LDS.
  * 

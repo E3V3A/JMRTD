@@ -23,7 +23,7 @@
 package sos.smartcards;
 
 /**
- * Service for communicating with a smart card.
+ * Service type for communicating with a smart card.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
