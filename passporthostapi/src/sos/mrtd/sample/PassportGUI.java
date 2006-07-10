@@ -25,47 +25,31 @@ package sos.mrtd.sample;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.Provider;
 import java.security.Security;
 
-import javax.crypto.SecretKey;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
 import sos.gui.HexField;
-import sos.gui.HexViewPanel;
-import sos.gui.ImagePanel;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportFileService;
-import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.mrtd.Util;
 import sos.smartcards.APDUIOService;
-import sos.smartcards.Apdu;
 import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.JPCSCService;
-import sos.util.Hex;
 
 /**
  * Simple graphical application for experimenting with the passport
@@ -78,9 +62,9 @@ import sos.util.Hex;
 public class PassportGUI extends JPanel
 {
    /* Default passport... */
-   private static String DEFAULT_DOC_NR;
-   private static String DEFAULT_DATE_OF_BIRTH;
-   private static String DEFAULT_DATE_OF_EXPIRY;
+   public static String DEFAULT_DOC_NR;
+   public static String DEFAULT_DATE_OF_BIRTH;
+   public static String DEFAULT_DATE_OF_EXPIRY;
 
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
@@ -92,11 +76,6 @@ public class PassportGUI extends JPanel
 
    private PassportApduService service;
    private APDULogPanel log;
-
-   private SecretKey kEnc, kMac, ksEnc, ksMac;
-   private byte[] rndICC, rndIFD, kICC, kIFD;
-   private long ssc;
-
    private SecureMessagingWrapper wrapper;
 
    private JButton openButton, closeButton;
@@ -165,17 +144,21 @@ public class PassportGUI extends JPanel
          log = new APDULogPanel();
          add(log, BorderLayout.SOUTH);
 
-         JPanel bacPanel = new JPanel(new GridLayout(3, 1));
-         bacPanel.add(new ChallengePanel());
-         bacPanel.add(new MRZPanel());
-         bacPanel.add(new MutualAuthPanel());
-
          JTabbedPane tabbedPane = new JTabbedPane();
+         BACPanel bacPanel = new BACPanel(service);
+         APDUSenderPanel apduSenderPanel = new APDUSenderPanel(service);
+         LDSPanel ldsPanel = new LDSPanel(service);
+         FacePanel facePanel = new FacePanel(service);
+         InitPassportPanel initPanel = new InitPassportPanel(service);
+         bacPanel.addAuthenticationListener(apduSenderPanel);
+         bacPanel.addAuthenticationListener(ldsPanel);
+         bacPanel.addAuthenticationListener(facePanel);
+         bacPanel.addAuthenticationListener(initPanel);
          tabbedPane.addTab("BAC", bacPanel);
-         tabbedPane.addTab("APDU", new APDUSenderPanel(service, wrapper));
-         tabbedPane.addTab("LDS", new LDSPanel());
-         tabbedPane.addTab("Face", new FacePanel());
-         tabbedPane.addTab("Init", new InitPassportPanel());
+         tabbedPane.addTab("APDU", apduSenderPanel);
+         tabbedPane.addTab("LDS", ldsPanel);
+         tabbedPane.addTab("Face", facePanel);
+         tabbedPane.addTab("Init", initPanel);
          add(tabbedPane, BorderLayout.CENTER);
          
          service.addAPDUListener(log);
@@ -185,434 +168,8 @@ public class PassportGUI extends JPanel
       }
    }
 
-   private class FacePanel extends JPanel implements Runnable, ActionListener
-   {
-      private ImagePanel ipanel;
-      private JFrame iframe;
-      private JButton showButton, hideButton, readButton;
 
-      public FacePanel() {
-         super(new FlowLayout());
-         showButton = new JButton("Show Image");
-         showButton.addActionListener(this);
-         hideButton = new JButton("Hide Image");
-         hideButton.addActionListener(this);
-         hideButton.setEnabled(false);
-         readButton = new JButton("Read Image");
-         readButton.addActionListener(this);
-         ipanel = new ImagePanel();
-         add(showButton);
-         add(hideButton);
-         add(readButton);
-         iframe = new JFrame("Face");
-         Container cp = iframe.getContentPane();
-         cp.add(new JScrollPane(ipanel));
-         iframe.pack();
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         JButton but = (JButton)ae.getSource();
-         if (but.getText().startsWith("Show")) {
-            iframe.setVisible(true);
-            showButton.setEnabled(false);
-            hideButton.setEnabled(true);
-         } else if (but.getText().startsWith("Hide")) {
-            iframe.setVisible(false);
-            hideButton.setEnabled(false);
-            showButton.setEnabled(true);
-         } else if (but.getText().startsWith("Read")) {
-            ipanel.clearImage();
-            (new Thread(this)).start();
-            showButton.setEnabled(false);
-            iframe.setVisible(true);
-            hideButton.setEnabled(true);
-         }
-      }
-
-      public void run() {
-         try {
-            readButton.setEnabled(false);
-            PassportService s = new PassportService(service, wrapper);
-            BufferedImage img = s.readFace();
-            ipanel.setImage(img);
-         } catch (Exception e) {
-            e.printStackTrace();
-         } finally {
-            readButton.setEnabled(true);
-         }
-      }     
-   }
-
-   private class InitPassportPanel extends JPanel implements ActionListener 
-   {
-       private JButton createFileButton;
-       private JButton selectFileButton;
-       private JButton selectLocalFileButton;
-       private JButton updateBinaryButton;
-       private HexField lenField;
-       private HexField fidField;
-       private File fileToUpload;
-       
-       public InitPassportPanel() {
-           super(new FlowLayout());
-           selectLocalFileButton = new JButton("Select local file ... ");
-           createFileButton = new JButton("Create file");
-           selectFileButton = new JButton("Select file");
-           updateBinaryButton = new JButton("Update binary");
-           selectLocalFileButton.addActionListener(this);
-           createFileButton.addActionListener(this);
-           selectFileButton.addActionListener(this);
-           updateBinaryButton.addActionListener(this);
-           fidField = new HexField(2);
-           lenField = new HexField(2);
-           lenField.setEditable(false);
-           add(selectLocalFileButton);
-           add(new JLabel("file: "));
-           add(fidField);
-           add(new JLabel("length:"));
-           add(lenField);
-           add(createFileButton);
-           add(selectFileButton);
-           add(updateBinaryButton);
-       }
-       
-       public void actionPerformed(ActionEvent ae) {
-           JButton butt = (JButton)ae.getSource();
-                     
-           try {
-           if(butt == selectLocalFileButton) {
-               pressedSelectLocalFileButton();
-           } else if(butt == createFileButton) {
-               pressedCreateFileButton();
-           } else if(butt == selectFileButton) {
-               pressedSelectFileButton();
-           } else if(butt == updateBinaryButton) {
-               pressedUpdateBinaryButton();
-           }
-           } catch(Exception e) {
-               e.printStackTrace();
-           }
-       }
-  
-       
-    private void pressedUpdateBinaryButton() {
-      final byte[] fid = fidField.getValue();
-        
-      new Thread(new Runnable() {
-         public void run() {
-            try {
-                FileInputStream in = new FileInputStream(fileToUpload);
-               service.writeFile(wrapper, (short)(((fid[0] & 0x000000FF) << 8)
-                     | (fid[1] & 0x000000FF)), in);
-               in.close();
-            } catch (IOException ioe) {
-               ioe.printStackTrace();
-            }
-         }
-      }).start();
-    }
-
-    private void pressedSelectFileButton() {  
-        final byte[] fid = fidField.getValue();
-        
-        new Thread(new Runnable() {
-            public void run() {
-              try {
-                  service.selectFile(wrapper, fid);
-              } catch (IOException e) {
-                  // TODO Auto-generated catch block
-                  e.printStackTrace();
-              }
-            }
-         }).start();
-    }
-
-    private void pressedCreateFileButton() {
-        final byte[] fid = fidField.getValue();
-        final byte[] len = lenField.getValue();
-        
-        new Thread(new Runnable() {
-            public void run() {
-               service.createFile(wrapper, fid, len);
-            }
-         }).start();
-    }
-
-    private void pressedSelectLocalFileButton() throws Exception {
-           final JFileChooser chooser = new JFileChooser();
-           chooser.setDialogTitle("Select file");
-           // chooser.setCurrentDirectory(currentDir);
-           chooser.setFileHidingEnabled(false);
-           int n = chooser.showOpenDialog(this);
-           if (n != JFileChooser.APPROVE_OPTION) {
-              System.out.println("DEBUG: select file canceled...");
-              return;
-           }        
- 
-           fileToUpload = chooser.getSelectedFile();
-           lenField.setValue(fileToUpload.length());
-        }
-   }
    
-   private class LDSPanel extends JPanel implements ActionListener
-   {
-      private HexField fidTF, offsetTF, leTF;
-      private HexViewPanel hexviewer;
-      private JButton selectButton, readBinaryButton, readNextButton, saveButton;
-      short offset;
-      int bytesRead;
-
-      public LDSPanel() {
-         super(new BorderLayout());
-         hexviewer = new HexViewPanel(ZERO_DATA);
-         JPanel north = new JPanel(new FlowLayout());
-         fidTF = new HexField(2);
-         selectButton = new JButton("Select File");
-         selectButton.addActionListener(this);
-         saveButton = new JButton("Save File");
-         saveButton.addActionListener(this);
-         north.add(new JLabel("File: "));
-         north.add(fidTF);
-         north.add(selectButton);
-         north.add(saveButton);
-         JPanel south = new JPanel(new FlowLayout());
-         leTF = new HexField(1);
-         leTF.setValue(0xFF);
-         offsetTF = new HexField(2);
-         readBinaryButton = new JButton("Read Binary");
-         readBinaryButton.addActionListener(this);
-         readNextButton = new JButton("Read Next");
-         readNextButton.addActionListener(this);
-         south.add(new JLabel("Offset: "));
-         south.add(offsetTF);
-         south.add(new JLabel("Length: "));
-         south.add(leTF);
-         south.add(readBinaryButton);
-         south.add(readNextButton);
-         add(north, BorderLayout.NORTH);
-         add(hexviewer, BorderLayout.CENTER);
-         add(south, BorderLayout.SOUTH);
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         try {
-            JButton but = (JButton)ae.getSource();
-            if (but == selectButton) {
-               pressedSelectButton();
-            } else if (but == readBinaryButton) {
-               pressedReadBinaryButton();
-            } else if (but == readNextButton) {
-               pressedReadNextButton();
-            } else if (but == saveButton) {
-               pressedSaveButton();
-            }
-        } catch (Exception e) {
-           e.printStackTrace();
-        }
-      }
-
-      private void pressedSaveButton() throws Exception {
-         JFileChooser chooser = new JFileChooser();
-         chooser.setDialogTitle("Save file");
-         // chooser.setCurrentDirectory(currentDir);
-         chooser.setFileHidingEnabled(false);
-         int n = chooser.showOpenDialog(this);
-         if (n != JFileChooser.APPROVE_OPTION) {
-            System.out.println("DEBUG: select file canceled...");
-            return;
-         }        
-         final byte[] fid = fidTF.getValue();
-         final File file = chooser.getSelectedFile();
-         new Thread(new Runnable() {
-            public void run() {
-               try {
-                  PassportFileService s = new PassportFileService(service, wrapper);
-                  byte[] data = s.readFile((short)(((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
-                  OutputStream out = new FileOutputStream(file);
-                  out.write(data, 0, data.length);
-                  out.close();
-               } catch (Exception e) {
-                  e.printStackTrace();
-               }
-            }
-         }).start();
-      }
-      
-      private void pressedSelectButton() throws Exception {
-         byte[] fid = fidTF.getValue();
-         service.sendSelectFile(wrapper, (short)(((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
-      }
-      
-      private void pressedReadBinaryButton() throws Exception {
-         bytesRead = 0;
-         int le = leTF.getValue()[0] & 0x000000FF;
-         byte[] offsetBytes = offsetTF.getValue();
-         offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
-               | (offsetBytes[1] & 0x000000FF));
-         byte[] data = service.sendReadBinary(wrapper, offset, le);
-         remove(hexviewer);
-         hexviewer = new HexViewPanel(data, offset);
-         add(hexviewer, BorderLayout.CENTER);
-         bytesRead = data.length;
-         setVisible(false);
-         setVisible(true);
-         // repaint();
-      }
-      
-      private void pressedReadNextButton() throws Exception {
-         offset += bytesRead;
-         offsetTF.setValue(offset & 0x000000000000FFFFL);
-         pressedReadBinaryButton();
-      }
-   }
-
-   private class MRZPanel extends JPanel implements ActionListener
-   {
-      private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
-      private HexField kEncTF, kMacTF;
-
-      public MRZPanel() {
-         super(new BorderLayout());
-         setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
-         JPanel top = new JPanel(new FlowLayout());
-         docNrTF = new JTextField(9);
-         dateOfBirthTF = new JTextField(6);
-         dateOfExpiryTF = new JTextField(6);
-         docNrTF.setText(DEFAULT_DOC_NR);
-         dateOfBirthTF.setText(DEFAULT_DATE_OF_BIRTH);
-         dateOfExpiryTF.setText(DEFAULT_DATE_OF_EXPIRY);
-         kEncTF = new HexField(24); kEncTF.setEditable(false);
-         kMacTF = new HexField(24); kMacTF.setEditable(false);
-         top.add(new JLabel("Document number: ")); top.add(docNrTF);
-         top.add(new JLabel("Date of birth: ")); top.add(dateOfBirthTF);
-         top.add(new JLabel("Date of expiry: ")); top.add(dateOfExpiryTF);
-         JButton updateButton = new JButton("Derive Keys");
-         top.add(updateButton);
-         updateButton.addActionListener(this);
-         JPanel center = new JPanel(new FlowLayout());
-         JPanel bottom = new JPanel(new GridLayout(2, 2));
-         bottom.add(new JLabel("K.ENC: ", JLabel.RIGHT)); bottom.add(kEncTF);
-         bottom.add(new JLabel("K.MAC: ", JLabel.RIGHT)); bottom.add(kMacTF);
-         add(top, BorderLayout.NORTH);
-         add(center, BorderLayout.CENTER);
-         add(bottom, BorderLayout.SOUTH);
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         try {
-            byte[] keySeed = Util.computeKeySeed(docNrTF.getText(),
-                                                 dateOfBirthTF.getText(),
-                                                 dateOfExpiryTF.getText());
-            kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-            kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-            kEncTF.setValue(kEnc.getEncoded());
-            kMacTF.setValue(kMac.getEncoded());
-         } catch (Exception e) {
-            kEnc = null;
-            kMac = null;
-            kEncTF.clearText();
-            kMacTF.clearText();
-         }
-      }
-   }
-
-   private class ChallengePanel extends JPanel implements ActionListener
-   {
-      private HexField challengeField;
- 
-      public ChallengePanel() {
-         super(new FlowLayout());
-         setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-                   "Get Challenge"));
-         challengeField = new HexField(8);
-         challengeField.setEditable(false);
-         JButton challengeButton = new JButton("Get Challenge");
-         challengeButton.addActionListener(this);
-         add(new JLabel("RND.ICC: "));
-         add(challengeField);
-         add(challengeButton);
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         rndICC = service.sendGetChallenge();
-         challengeField.setValue(rndICC);
-      }
-   }
-
-   private class MutualAuthPanel extends JPanel implements ActionListener
-   {
-      private HexField challengeField, keyField;
-      private HexField plaintextField;
-      private HexField ksEncTF, ksMacTF, sscTF;
-
-      public MutualAuthPanel() {
-         super(new BorderLayout());
-         setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-                   "Mutual Authenticate"));
-         JPanel top = new JPanel(new FlowLayout());
-         challengeField = new HexField(8);
-         challengeField.setValue(Hex.hexStringToBytes("781723860C06C226"));
-         keyField = new HexField(16);
-         keyField.setValue(Hex.hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
-         JButton authButton = new JButton("Mutual Authenticate");
-         authButton.addActionListener(this);
-         top.add(new JLabel("RND.IFD: ")); top.add(challengeField);
-         top.add(new JLabel("K.IFD: ")); top.add(keyField);
-         top.add(authButton);
-         JPanel center = new JPanel(new FlowLayout());
-         plaintextField = new HexField(32);
-         plaintextField.setEditable(false);
-         center.add(new JLabel("[E.ICC]: "));
-         center.add(plaintextField);
-         JPanel bottom = new JPanel(new GridLayout(3,2));
-         ksEncTF = new HexField(24);
-         ksEncTF.setEditable(false);
-         ksMacTF = new HexField(24);
-         ksMacTF.setEditable(false);
-         sscTF = new HexField(8);
-         sscTF.setEditable(false);
-         bottom.add(new JLabel("KS.ENC: ", JLabel.RIGHT)); bottom.add(ksEncTF);
-         bottom.add(new JLabel("KS.MAC: ", JLabel.RIGHT)); bottom.add(ksMacTF);
-         bottom.add(new JLabel("SSC: ", JLabel.RIGHT)); bottom.add(sscTF);
-         add(top, BorderLayout.NORTH);
-         add(center, BorderLayout.CENTER);
-         add(bottom, BorderLayout.SOUTH);
-      }
-
-      /**
-       * FIXME:
-       *    preallocate kIFD, kICC, rndIFD, rndICC and copy here from TFs
-       *    to prevent allocate & gc.
-       */
-      public void actionPerformed(ActionEvent ae) {
-         try {
-            rndIFD = challengeField.getValue();
-            kIFD = keyField.getValue();
-            byte[] plaintext =
-               service.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
-            plaintextField.setValue(plaintext);
-            if (kICC == null || kICC.length < 16) {
-               kICC = new byte[16];
-            }
-            System.arraycopy(plaintext, 16, kICC, 0, 16);
-            byte[] keySeed = new byte[16];
-            for (int i = 0; i < 16; i++) {
-               keySeed[i] =
-                  (byte)((kIFD[i] & 0x000000FF) ^ (kICC[i] & 0x000000FF));
-            }
-            ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-            ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-            ksEncTF.setValue(ksEnc.getEncoded());
-            ksMacTF.setValue(ksMac.getEncoded());
-            ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-            sscTF.setValue(ssc);
-            wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-         } catch (Exception e) {
-            e.printStackTrace();
-         }
-      }
-   }  
-
    /**
     * Main method creates a GUI instance and puts it in a frame.
     *

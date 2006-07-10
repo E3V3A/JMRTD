@@ -29,7 +29,10 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.crypto.Cipher;
@@ -94,26 +97,11 @@ public class PassportFileService implements CardService
    /** File indicating which data groups are present. */
    public static final short EF_COM = 0x011E;
 
-   private static final int SESSION_STOPPED_STATE = 0;
-   private static final int SESSION_STARTED_STATE = 1;
-   private static final int AUTHENTICATED_STATE = 2;
-   private int state;
-
    private PassportApduService service;
-   private SecretKey kEnc, kMac;
-   private SecureMessagingWrapper wrapper;
-   private Signature aaSignature;
-   private MessageDigest aaDigest = MessageDigest.getInstance("SHA1");
-   private Cipher aaCipher = Cipher.getInstance("RSA");
+   private PassportAuthService authService;
 
    /** Files read during this session. */
    private Map files;
-
-   private PassportFileService() throws GeneralSecurityException {
-      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
-      aaDigest = MessageDigest.getInstance("SHA1");
-      aaCipher = Cipher.getInstance("RSA");
-   }
    
    /**
     * Creates a new passport service for accessing the passport.
@@ -126,22 +114,18 @@ public class PassportFileService implements CardService
     */
    public PassportFileService(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
-      this();
       if (service instanceof PassportFileService) {
-         this.service = ((PassportFileService)service).service;
-         if (((PassportFileService)service).files != null) {
-            files = ((PassportFileService)service).files;
-         } else {
-            files = new HashMap();
-         }
+         PassportFileService copy = (PassportFileService)service;
+         this.service = copy.service;
+         this.files = (copy.files != null) ? copy.files : new HashMap();
       } else if (service instanceof PassportApduService) {
          this.service = (PassportApduService)service;
          files = new HashMap();
       } else {
          this.service = new PassportApduService(service);
          files = new HashMap();
-      }   
-      state = SESSION_STOPPED_STATE;
+      }
+      authService = new PassportAuthService(service);
    }
    
    /**
@@ -154,9 +138,7 @@ public class PassportFileService implements CardService
    public PassportFileService(CardService service, SecureMessagingWrapper wrapper)
    throws GeneralSecurityException, UnsupportedEncodingException {
       this(service);
-      this.wrapper = wrapper;
-      files = new HashMap();
-      state = AUTHENTICATED_STATE;
+      authService.setWrapper(wrapper);
    }
 
    /**
@@ -164,12 +146,8 @@ public class PassportFileService implements CardService
     * passport applet.
     */
    public void open() {
-      if (state == SESSION_STARTED_STATE) {
-         return;
-      }
       service.open();
       files = new HashMap();
-      state = SESSION_STARTED_STATE;
    }
    
    public String[] getTerminals() {
@@ -177,12 +155,8 @@ public class PassportFileService implements CardService
    }
 
    public void open(String id) {
-      if (state == SESSION_STARTED_STATE) {
-         return;
-      }
       service.open(id);
       files = new HashMap();
-      state = SESSION_STARTED_STATE;
    }
    
    /**
@@ -194,94 +168,11 @@ public class PassportFileService implements CardService
     */
    public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
          throws GeneralSecurityException, UnsupportedEncodingException {
-      byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
-      kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-      kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-      byte[] rndICC = service.sendGetChallenge();
-      byte[] rndIFD = new byte[8]; /* random */
-      byte[] kIFD = new byte[16]; /* random */
-      byte[] response = service.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
-      byte[] kICC = new byte[16];
-      System.arraycopy(response, 16, kICC, 0, 16);
-      keySeed = new byte[16];
-      for (int i = 0; i < 16; i++) {
-         keySeed[i] = (byte) ((kIFD[i] & 0x000000FF) ^ (kICC[i] & 0x000000FF));
-      }
-      SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-      SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-      long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-      wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-      state = AUTHENTICATED_STATE;
+      authService.doBAC(docNr, dateOfBirth, dateOfExpiry);
    }
    
-   /**
-    * Ronny (ronny@cs.ru.nl) ripped this from bouncy castle.
-    * 
-    * @param digestLength should be 20
-    * @param plaintext response from card, already decrypted (using pubkey)
-    * 
-    * @return the m1 part of the message
-    */
-   private static byte[] getRecoveredMessage(int digestLength, byte[] plaintext) {
-      if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
-      if (((plaintext[plaintext.length - 1] & 0xF) ^ 0xC) != 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
-      int delta = 0;
-      if (((plaintext[plaintext.length - 1] & 0xFF) ^ 0xBC) == 0) {
-         delta = 1;
-      } else {
-         throw new NumberFormatException("Could not get M1");
-      }
-
-      /* find out how much padding we've got */
-      int mStart = 0;
-      for (mStart = 0; mStart != plaintext.length; mStart++) {
-         if (((plaintext[mStart] & 0x0f) ^ 0x0a) == 0) {
-            break;
-         }
-      }
-      mStart++;
-
-      int off = plaintext.length - delta - digestLength;
-
-      /* there must be at least one byte of message string */
-      if ((off - mStart) <= 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
-
-      /* if we contain the whole message as well, check the hash of that. */
-      if ((plaintext[0] & 0x20) == 0) {
-         throw new NumberFormatException("Could not get M1");
-      } else {
-         byte[] recoveredMessage = new byte[off - mStart];
-         System.arraycopy(plaintext, mStart, recoveredMessage, 0,
-               recoveredMessage.length);
-         return recoveredMessage;
-      }
-   }
-   
-   /**
-    * Performs the <i>Active Authentication</i> protocol.
-    * 
-    * @param pubkey the public key to use (usually read from the card)
-    * 
-    * @return a boolean indicating whether the card was authenticated
-    * 
-    * @throws GeneralSecurityException if something goes wrong
-    */
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      aaCipher.init(Cipher.ENCRYPT_MODE, pubkey);
-      aaSignature.initVerify(pubkey);
-      byte[] m2 = new byte[8]; /* random rndIFD */
-      byte[] response = service.sendInternalAuthenticate(wrapper, m2);
-      int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
-      byte[] m1 = getRecoveredMessage(digestLength, aaCipher.doFinal(response));
-      aaSignature.update(m1);
-      aaSignature.update(m2);
-      return aaSignature.verify(response);
+      return authService.doAA(pubkey);
    }
    
    public byte[] sendAPDU(Apdu capdu) {
@@ -289,13 +180,9 @@ public class PassportFileService implements CardService
    }
 
    public void close() {
-      try {
-         wrapper = null;
-         files = null;
-         service.close();
-      } finally {
-         state = SESSION_STOPPED_STATE;
-      }
+      files = null;
+      authService.close();
+      service.close();
    }
 
    public void addAPDUListener(APDUListener l) {
@@ -320,6 +207,7 @@ public class PassportFileService implements CardService
          return (byte[])files.get(fidKey);
       }
       /* No? Read it from document... */
+      SecureMessagingWrapper wrapper = getWrapper();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       service.sendSelectFile(wrapper, fid);
       int offset = 0;
@@ -336,8 +224,16 @@ public class PassportFileService implements CardService
       files.put(fidKey, file);
       return file;
    }
-
-   void setSecureMessagingWrapper(SecureMessagingWrapper wrapper) {
-      this.wrapper = wrapper;
+   
+   public SecureMessagingWrapper getWrapper() {
+      return authService.getWrapper();
+   }
+   
+   /**
+    * @deprecated hack
+    * @param wrapper
+    */
+   void setWrapper(SecureMessagingWrapper wrapper) {
+      authService.setWrapper(wrapper);
    }
 }

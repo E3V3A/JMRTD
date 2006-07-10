@@ -252,5 +252,54 @@ public class Util
                                             + Integer.toHexString(tag));
       }
    }
+   
+   /**
+    * Ronny (ronny@cs.ru.nl) ripped this from bouncy castle.
+    * 
+    * @param digestLength should be 20
+    * @param plaintext response from card, already decrypted (using pubkey)
+    * 
+    * @return the m1 part of the message
+    */
+   public static byte[] getAARecoveredMessage(int digestLength, byte[] plaintext) {
+      if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+      if (((plaintext[plaintext.length - 1] & 0xF) ^ 0xC) != 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+      int delta = 0;
+      if (((plaintext[plaintext.length - 1] & 0xFF) ^ 0xBC) == 0) {
+         delta = 1;
+      } else {
+         throw new NumberFormatException("Could not get M1");
+      }
+
+      /* find out how much padding we've got */
+      int mStart = 0;
+      for (mStart = 0; mStart != plaintext.length; mStart++) {
+         if (((plaintext[mStart] & 0x0f) ^ 0x0a) == 0) {
+            break;
+         }
+      }
+      mStart++;
+
+      int off = plaintext.length - delta - digestLength;
+
+      /* there must be at least one byte of message string */
+      if ((off - mStart) <= 0) {
+         throw new NumberFormatException("Could not get M1");
+      }
+
+      /* if we contain the whole message as well, check the hash of that. */
+      if ((plaintext[0] & 0x20) == 0) {
+         throw new NumberFormatException("Could not get M1");
+      } else {
+         byte[] recoveredMessage = new byte[off - mStart];
+         System.arraycopy(plaintext, mStart, recoveredMessage, 0,
+               recoveredMessage.length);
+         return recoveredMessage;
+      }
+   }
 }
 

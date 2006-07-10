@@ -7,6 +7,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.security.PublicKey;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -16,12 +17,12 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
-import sos.mrtd.SecureMessagingWrapper;
+import sos.mrtd.*;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 import sos.util.Hex;
 
-public class APDUSenderPanel extends JPanel implements ActionListener, Runnable {
+public class APDUSenderPanel extends JPanel implements ActionListener, Runnable, AuthListener {
 
    private static final Border PANEL_BORDER = BorderFactory
          .createEtchedBorder(EtchedBorder.RAISED);
@@ -36,10 +37,10 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable 
 
    private SecureMessagingWrapper wrapper;
 
-   public APDUSenderPanel(CardService service, SecureMessagingWrapper wrapper) {
+   public APDUSenderPanel(CardService service) {
       super(new GridLayout(3, 1));
       this.service = service;
-      this.wrapper = wrapper;
+      this.wrapper =  null;
       JPanel beginPanel = new JPanel(new FlowLayout());
       beginPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
             "Begin APDU"));
@@ -126,5 +127,12 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable 
                   + Hex.bytesToHexString(rapdu));
          }
       }
+   }
+
+   public void performedBAC(SecureMessagingWrapper wrapper) {
+      this.wrapper = wrapper; 
+   }
+
+   public void performedAA(PublicKey pubkey, boolean success) {
    }
 }

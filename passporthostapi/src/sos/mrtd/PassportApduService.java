@@ -275,6 +275,10 @@ public class PassportApduService implements CardService {
       sendAPDU(createSelectAppletAPDU(aid));
    }
 
+   public void sendSelectFile(short fid) throws IOException {
+      sendSelectFile(null, fid);
+   }
+   
    /**
     * Sends a <code>SELECT FILE</code> command to the passport.
     * Secure messaging will be applied to the command and response
@@ -286,19 +290,31 @@ public class PassportApduService implements CardService {
    public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
          throws IOException {
       Apdu capdu = createSelectFileAPDU(fid);
-      capdu.wrapWith(wrapper);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
    }
 
    public void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
          throws IOException {
       Apdu capdu = createSelectFileAPDU(fid);
-      capdu.wrapWith(wrapper);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
    }
 
+   public byte[] sendReadBinary(short offset, int le) throws IOException {
+      return sendReadBinary(null, offset, le);
+   }
+   
    /**
     * Sends a <code>READ BINARY</code> command to the passport.
     * Secure messaging will be applied to the command and response
@@ -314,9 +330,13 @@ public class PassportApduService implements CardService {
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws IOException {
       Apdu capdu = createReadBinaryAPDU(offset, le);
-      capdu.wrapWith(wrapper);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
       byte[] result = new byte[rapdu.length - 2];
       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
       return result;
@@ -325,9 +345,13 @@ public class PassportApduService implements CardService {
    public byte[] sendUpdateBinary(SecureMessagingWrapper wrapper, short offset,
          int data_len, byte[] data) throws IOException {
       Apdu capdu = createUpdateBinaryAPDU(offset, data_len, data);
-      capdu.wrapWith(wrapper);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
       byte[] result = new byte[rapdu.length - 2];
       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
       return result;
@@ -337,9 +361,13 @@ public class PassportApduService implements CardService {
    public byte[] sendCreateFile(SecureMessagingWrapper wrapper, byte[] fid,
          byte[] len) {
       Apdu capdu = createCreateFileAPDU(fid, len);
-      capdu.wrapWith(wrapper);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
       byte[] result = new byte[rapdu.length - 2];
       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
       return result;
@@ -357,14 +385,26 @@ public class PassportApduService implements CardService {
       return result;
    }
 
+   public byte[] sendInternalAuthenticate(byte[] rndIFD) {
+      return sendInternalAuthenticate(null, rndIFD);
+   }
+   
+   /**
+    * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport.
+    * 
+    * @param rndIFD the challenge to send
+    * 
+    * @return the response from the passport (status word removed)
+    */
    public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
       Apdu capdu = createInternalAuthenticateAPDU(rndIFD);
-      System.out.println("Ongewrapped = " + capdu);
-      capdu.wrapWith(wrapper);
-      System.out.println("Gewrapped = " + capdu);
+      if (wrapper != null) {
+         capdu.wrapWith(wrapper);
+      }
       byte[] rapdu = sendAPDU(capdu);
-      System.out.println("DEBUG: rapdu.length == " + rapdu.length);
-      rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      if (wrapper != null) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+      }
       byte[] result = new byte[rapdu.length - 2];
       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
       return result;
@@ -432,14 +472,11 @@ public class PassportApduService implements CardService {
    public void selectFile(SecureMessagingWrapper wrapper, byte[] fid)
          throws IOException {
       sendSelectFile(wrapper, fid);
-
    }
 
    public void createFile(SecureMessagingWrapper wrapper, byte[] fid, byte[] len) {
       sendCreateFile(wrapper, fid, len);
    }
-
-
-  
 }
+
 

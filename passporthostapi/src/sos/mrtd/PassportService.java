@@ -104,7 +104,7 @@ public class PassportService implements CardService
    public PassportService(CardService service, SecureMessagingWrapper wrapper)
    throws GeneralSecurityException, UnsupportedEncodingException {
       this(service);
-      this.service.setSecureMessagingWrapper(wrapper);
+      this.service.setWrapper(wrapper);
       state = AUTHENTICATED_STATE;
    }
 
