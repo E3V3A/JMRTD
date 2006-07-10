@@ -17,34 +17,44 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: $
  */
 
 package sos.mrtd;
 
 import java.security.PublicKey;
+import java.util.EventObject;
 
 /**
- * Listener for authentication events.
+ * Event to indicate BAC protocol was executed.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- * 
- * @version $Revision$
+ *
+ * @version $Revision: $
  */
-public interface AuthListener {
-
-   /**
-    * Called when an attempt was made to perform the BAC protocol.
-    *
-    * @param be contains the resulting wrapper
-    */
-   void performedBAC(BACEvent be);
+public class BACEvent extends EventObject
+{	
+   private SecureMessagingWrapper wrapper;
+   private boolean success;
+   private byte[] rndICC, rndIFD, kICC, kIFD;
    
-   /**
-    * Called when an attempt was made to perform the AA protocol.
-    *
-    * @param ae contains the used public key and resulting status of the protocol 
-    */
-   void performedAA(AAEvent ae);
-}
+   public BACEvent(Object src, SecureMessagingWrapper wrapper,
+		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
+		   boolean success) {
+	   super(src);
+	   this.wrapper = wrapper;
+	   this.rndICC = rndICC;
+	   this.rndIFD = rndIFD;
+	   this.kICC = kICC;
+	   this.kIFD = kIFD;
+	   this.success = success;
+   }
 
+	public SecureMessagingWrapper getWrapper() {
+		return wrapper;
+	}
+	
+	public boolean isSuccess() {
+		return success;
+	}
+}

@@ -17,34 +17,49 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: $
  */
 
 package sos.mrtd;
 
 import java.security.PublicKey;
+import java.util.EventObject;
 
 /**
- * Listener for authentication events.
+ * Event to indicate AA protocol was executed.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- * 
- * @version $Revision$
+ *
+ * @version $Revision: $
  */
-public interface AuthListener {
-
-   /**
-    * Called when an attempt was made to perform the BAC protocol.
-    *
-    * @param be contains the resulting wrapper
-    */
-   void performedBAC(BACEvent be);
+public class AAEvent extends EventObject
+{	
+   private PublicKey pubkey;
+   private byte[] m1;
+   private byte[] m2;
+   private boolean success;
    
-   /**
-    * Called when an attempt was made to perform the AA protocol.
-    *
-    * @param ae contains the used public key and resulting status of the protocol 
-    */
-   void performedAA(AAEvent ae);
-}
+   public AAEvent(Object src, PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
+	  super(src);
+	  this.pubkey = pubkey;
+	  this.m1 = m1;
+	  this.m2 = m2;
+	  this.success = success;
+   }
 
+	public PublicKey getPubkey() {
+		return pubkey;
+	}
+
+	public byte[] getM1() {
+		return m1;
+	}
+
+	public byte[] getM2() {
+		return m2;
+	}
+
+	public boolean isSuccess() {
+		return success;
+	}
+}

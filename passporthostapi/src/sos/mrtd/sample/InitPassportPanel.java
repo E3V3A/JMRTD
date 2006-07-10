@@ -36,7 +36,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import sos.gui.HexField;
+import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
+import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.SecureMessagingWrapper;
 
@@ -164,10 +166,10 @@ implements ActionListener, AuthListener
       lenField.setValue(fileToUpload.length());
    }
 
-   public void performedBAC(SecureMessagingWrapper wrapper) {
-      this.wrapper = wrapper;
+   public void performedBAC(BACEvent be) {
+      this.wrapper = be.getWrapper();
    }
 
-   public void performedAA(PublicKey pubkey, boolean success) {
+   public void performedAA(AAEvent ae) {
    }
 }

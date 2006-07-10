@@ -164,7 +164,7 @@ public class PassportAuthService implements CardService
       SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
       long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
       wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-      notifyBACPerformed(wrapper);
+      notifyBACPerformed(wrapper, rndICC, rndIFD, kIFD, kICC, true);
       state = BAC_AUTHENTICATED_STATE;
    }
    
@@ -176,11 +176,13 @@ public class PassportAuthService implements CardService
       authListeners.remove(l);
    }
    
-   protected void notifyBACPerformed(SecureMessagingWrapper wrapper) {
+   protected void notifyBACPerformed(SecureMessagingWrapper wrapper,
+		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
+		   boolean success) {
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
-          listener.performedBAC(wrapper);
+          listener.performedBAC(new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, success));
       }
   }
 
@@ -203,18 +205,18 @@ public class PassportAuthService implements CardService
       aaSignature.update(m1);
       aaSignature.update(m2);
       boolean success = aaSignature.verify(response);
-      notifyAAPerformed(pubkey, success);
+      notifyAAPerformed(pubkey, m1, m2, success);
       if (success) {
          state = AA_AUTHENTICATED_STATE;
       }
       return success;
    }
    
-   protected void notifyAAPerformed(PublicKey pubkey, boolean success) {
+   protected void notifyAAPerformed(PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
-          listener.performedAA(pubkey, success);
+          listener.performedAA(new AAEvent(this, pubkey, m1, m2, success));
       }
   }
    
@@ -249,6 +251,6 @@ public class PassportAuthService implements CardService
     */
    public void setWrapper(SecureMessagingWrapper wrapper) {
       this.wrapper = wrapper;
-      notifyBACPerformed(wrapper);
+      notifyBACPerformed(wrapper, null, null, null, null, true);
    }
 }
