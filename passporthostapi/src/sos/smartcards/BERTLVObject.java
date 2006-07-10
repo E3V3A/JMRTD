@@ -24,10 +24,14 @@ package sos.smartcards;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 
 import sos.util.Hex;
 
@@ -47,13 +51,28 @@ public class BERTLVObject
 {
    /** Universal tag class. */
    public static final int UNIVERSAL_CLASS = 0;
+   
    /** Application tag class. */
    public static final int APPLICATION_CLASS = 1;
+   
    /** Context specific tag class. */
    public static final int CONTEXT_SPECIFIC_CLASS = 2;
+   
    /** Private tag class. */
    public static final int PRIVATE_CLASS = 3;
 
+   public static final int INTEGER_TYPE_TAG = 0x02;
+   public static final int BIT_STRING_TYPE_TAG = 0x03;
+   public static final int OCTET_STRING_TYPE_TAG = 0x04;
+   public static final int NULL_TYPE_TAG = 0x05;
+   public static final int OBJECT_IDENTIFIER_TYPE_TAG = 0x06;
+   public static final int SEQUENCE_TYPE_TAG = 0x10;
+   public static final int SET_TYPE_TAG = 0x11;
+   public static final int PRINTABLE_STRING_TYPE_TAG = 0x13;
+   public static final int T61_STRING_TYPE_TAG = 0x14;
+   public static final int IA5_STRING_TYPE_TAG = 0x16;
+   public static final int UTC_TIME_TYPE_TAG = 0x17;
+   
    private int tagClass;
    private boolean isPrimitive;
 
@@ -150,10 +169,26 @@ public class BERTLVObject
       if (isPrimitive) {
          /*
           * Primitive, the value consists of 0 or more Simple-TLV objects,
-          * or just (application-dependent) bytes. If tag is not known to
-          * consist of Simple-TLVs we assume the value is just bytes.
+          * or just (application-dependent) bytes. If tag is not known
+          * (or universal) we assume the value is just bytes.
           */
-         value = valueBytes;
+    	  
+    	  if (tagClass == UNIVERSAL_CLASS)
+    	  switch (tag[0]) {
+    	     case INTEGER_TYPE_TAG: value = valueBytes; break;
+    	     case BIT_STRING_TYPE_TAG: value = valueBytes; break;
+       	     case OCTET_STRING_TYPE_TAG: value = valueBytes; break;
+    	     case NULL_TYPE_TAG: value = null; break;
+    	     case OBJECT_IDENTIFIER_TYPE_TAG: value = valueBytes; break;
+    	     case SEQUENCE_TYPE_TAG: value = valueBytes; break;
+    	     case SET_TYPE_TAG: value = valueBytes; break;
+    	     case PRINTABLE_STRING_TYPE_TAG:
+    	     case T61_STRING_TYPE_TAG:
+    	     case IA5_STRING_TYPE_TAG: value = new String(valueBytes); break;
+    	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String(valueBytes)); break;
+    	     default: value = valueBytes;
+    	  }
+    	 
       } else {
          /*
           * Not primitive, the value itself consists of 0 or more
@@ -163,7 +198,16 @@ public class BERTLVObject
          value = readSubObjects(in);
       }
    }
-
+   
+   private static Date parseUTCTime(String in) {
+	   try {
+	   SimpleDateFormat sdf = new SimpleDateFormat("yyMMddhhmmss'Z'");
+	      return sdf.parse(in);
+	   } catch (ParseException pe) {
+		  return null;
+	   }
+   }
+   
    private BERTLVObject[] readSubObjects(DataInputStream in)
    throws IOException {
       ArrayList subObjects = new ArrayList();
@@ -292,11 +336,25 @@ public class BERTLVObject
          }
          result.append(prefix);
          result.append("\n");
+      } else if (value instanceof String) {
+    	  result.append("\"");
+          result.append(value.toString());
+    	  result.append("\"\n");
       } else {
-         result.append(value.toString());
+         result.append(value != null ? value.toString() : "null");
          result.append("\n");
       }
       return result.toString();
+   }
+   
+   public static final void main(String[] arg) {
+	   try {
+	      FileInputStream in = new FileInputStream("/tmp/ef011D.bin");
+	      BERTLVObject obj = BERTLVObject.getInstance(in);
+	      System.out.println(obj);
+	   } catch (Exception e) {
+		   e.printStackTrace();
+	   }
    }
 }
 
