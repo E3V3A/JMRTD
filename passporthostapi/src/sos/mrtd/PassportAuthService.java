@@ -73,7 +73,7 @@ public class PassportAuthService implements CardService
    private PassportAuthService() throws GeneralSecurityException {
       aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
       aaDigest = MessageDigest.getInstance("SHA1");
-      aaCipher = Cipher.getInstance("RSA");
+      aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
       authListeners = new ArrayList();
    }
    
@@ -202,8 +202,12 @@ public class PassportAuthService implements CardService
       aaSignature.initVerify(pubkey);
       byte[] m2 = new byte[8]; /* random rndIFD */
       byte[] response = service.sendInternalAuthenticate(wrapper, m2);
+      System.out.println("DEBUG: response.length = " + response.length);
+      System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
       int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
-      byte[] m1 = Util.getAARecoveredMessage(digestLength, aaCipher.doFinal(response));
+      byte[] plaintext = aaCipher.doFinal(response);
+      byte[] m1 = Util.getAARecoveredMessage(digestLength, plaintext);
+      // System.out.println("DEBUG: m1 = " + Hex.bytesToHexString(m1));
       aaSignature.update(m1);
       aaSignature.update(m2);
       boolean success = aaSignature.verify(response);
