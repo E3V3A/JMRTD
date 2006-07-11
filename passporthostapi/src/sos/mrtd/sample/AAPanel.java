@@ -44,7 +44,7 @@ import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;
 
 /**
- * Convenient GUI component for accessing the LDS.
+ * Convenient GUI component for doing AA.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
