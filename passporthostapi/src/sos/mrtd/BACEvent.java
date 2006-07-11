@@ -38,6 +38,17 @@ public class BACEvent extends EventObject
    private boolean success;
    private byte[] rndICC, rndIFD, kICC, kIFD;
    
+   /**
+    * Constructs a new event.
+    * 
+    * @param src event source
+    * @param wrapper resulting wrapper
+    * @param rndICC nonce sent by ICC
+    * @param rndIFD nonce sent by IFD
+    * @param kICC key material provided by ICC
+    * @param kIFD key material provided by IFD
+    * @param success status of protocol
+    */
    public BACEvent(Object src, SecureMessagingWrapper wrapper,
 		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
 		   boolean success) {
@@ -50,11 +61,59 @@ public class BACEvent extends EventObject
 	   this.success = success;
    }
 
-	public SecureMessagingWrapper getWrapper() {
-		return wrapper;
-	}
+   /**
+    * Gets the resulting wrapper.
+    * 
+    * @return the resulting wrapper
+    */
+   public SecureMessagingWrapper getWrapper() {
+      return wrapper;
+   }
 	
+	/**
+     * Gets the status of the executed BAC protocol run.
+     * 
+	 * @return status of the BAC protocol run.
+	 */
 	public boolean isSuccess() {
 		return success;
 	}
+
+    /**
+     * Gets the kICC key.
+     * 
+     * @return the kICC key material
+     */
+   public byte[] getKICC() {
+      return kICC;
+   }
+   
+   /**
+    * Gets the kIFD key.
+    * 
+    * @return the kIFD key material
+    */
+   public byte[] getKIFD() {
+      return kIFD;
+   }
+
+   /**
+    * Gets the random nonce sent by the ICC during
+    * this BAC protocol run.
+    * 
+    * @return a random nonce
+    */
+   public byte[] getRndICC() {
+      return rndICC;
+   }
+
+   /**
+    * Gets the random nonce sent by the IFD during
+    * this BAC protocol run.
+    * 
+    * @return a random nonce
+    */
+   public byte[] getRndIFD() {
+      return rndIFD;
+   }
 }
