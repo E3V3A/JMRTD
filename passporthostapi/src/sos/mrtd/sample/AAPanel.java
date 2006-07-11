@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
 package sos.mrtd.sample;
@@ -48,7 +48,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 34 $
+ * @version $Revision$
  */
 public class AAPanel extends JPanel
 implements AuthListener
