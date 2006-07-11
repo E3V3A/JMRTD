@@ -28,6 +28,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -232,7 +233,7 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
       /* Compute cryptographic checksum... */
       mac.init(ksMac);
       byte[] cc = mac.doFinal(n);
-      ssc++; // TODO dit snappen
+      // ssc++; // TODO dit snappen
 
       out.reset();
       out.write((byte)0x8E);
@@ -276,7 +277,7 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
          switch (tag) {
             case (byte)0x87: data = readDO87(in); break;
             case (byte)0x99: sw = readDO99(in); break;
-            case (byte)0x8E: readDO8E(in); finished = true; break;
+            case (byte)0x8E: readDO8E(in, rapdu); finished = true; break;
          }
       }
       ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -343,14 +344,27 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
 
    /**
     * The <code>0x8E</code> tag has already been read.
-    * FIXME: we should actually check the mac, not just the length :).
     *
     * @param in inputstream to read from.
     */
-   private void readDO8E(DataInputStream in) throws IOException {
+   private void readDO8E(DataInputStream in, byte[] rapdu) throws IOException, GeneralSecurityException {
       int length = in.readUnsignedByte();
       if (length != 8) {
          throw new IllegalStateException("DO'8E wrong length");
+      }
+      byte[] cc1 = new byte[8];
+      in.readFully(cc1);
+      mac.init(ksMac);
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      DataOutputStream dataOut = new DataOutputStream(out); 
+      ssc++;
+      dataOut.writeLong(ssc);
+      byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
+      dataOut.write(paddedData, 0, paddedData.length);
+      dataOut.flush();
+      byte[] cc2 = mac.doFinal(out.toByteArray());
+      if (!Arrays.equals(cc1, cc2)) {
+         throw new IllegalStateException("Incorrect MAC!");
       }
    }
 }

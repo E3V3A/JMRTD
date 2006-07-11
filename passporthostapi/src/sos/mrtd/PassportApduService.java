@@ -35,6 +35,7 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
+import sos.util.Hex;
 
 /**
  * Low level card service for sending apdus to the passport.
