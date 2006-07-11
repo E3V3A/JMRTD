@@ -116,7 +116,7 @@ public class PassportGUI extends JPanel
             public void actionPerformed(ActionEvent e) {
                String[] terminals = service.getTerminals();
                String terminal = terminals[terminalsComboBox.getSelectedIndex()];
-               service.open();
+               service.open(terminal);
                openButton.setEnabled(false);
                closeButton.setEnabled(true);
             }
