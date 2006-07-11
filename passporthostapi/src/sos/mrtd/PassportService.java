@@ -339,7 +339,10 @@ public class PassportService implements CardService
     */
    public BufferedImage readFace() throws IOException {
       byte[] tag = { 0x5F, 0x2E }; 
-      byte[] facialRecordData = (byte[])readObject(PassportFileService.EF_DG2, tag).getValue();
+      byte[] facialRecordData = (byte[])readObject(PassportFileService.EF_DG2, tag).getValueAsBytes();
+      if (facialRecordData == null) {
+         System.out.println("DEBUG: facialRecordData == null");
+      }
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(facialRecordData));
 
       /* Facial Record Header (14) */
@@ -463,5 +466,13 @@ public class PassportService implements CardService
       } catch (Exception e) {
          e.printStackTrace();
       }
+   }
+   
+   /**
+    * @deprecated hack
+    * @param wrapper
+    */
+   public void setWrapper(SecureMessagingWrapper wrapper) {
+      service.setWrapper(wrapper);
    }
 }

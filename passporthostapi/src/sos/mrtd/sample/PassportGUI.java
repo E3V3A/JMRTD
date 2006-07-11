@@ -143,15 +143,18 @@ public class PassportGUI extends JPanel
          APDUSenderPanel apduSenderPanel = new APDUSenderPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
          FacePanel facePanel = new FacePanel(service);
+         AAPanel aaPanel = new AAPanel(service);
          InitPassportPanel initPanel = new InitPassportPanel(service);
          bacPanel.addAuthenticationListener(apduSenderPanel);
          bacPanel.addAuthenticationListener(ldsPanel);
          bacPanel.addAuthenticationListener(facePanel);
+         bacPanel.addAuthenticationListener(aaPanel);
          bacPanel.addAuthenticationListener(initPanel);
          tabbedPane.addTab("BAC", bacPanel);
          tabbedPane.addTab("APDU", apduSenderPanel);
          tabbedPane.addTab("LDS", ldsPanel);
          tabbedPane.addTab("Face", facePanel);
+         tabbedPane.addTab("AA", aaPanel);
          tabbedPane.addTab("Init", initPanel);
          add(tabbedPane, BorderLayout.CENTER);
          
