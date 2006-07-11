@@ -33,7 +33,7 @@ import javacard.security.DESKey;
  *
  */
 public class PassportUtil implements ISO7816 {
-
+    
     public static void throwArrayIndex(byte[] capdu, short s) {
         ISOException.throwIt((short)(0x6d00 | (capdu[s] & 0xff)));
     }
@@ -55,17 +55,45 @@ public class PassportUtil implements ISO7816 {
         return (byte) (count % 2);
     }
 
-    public static void xor(byte[] in1, byte[] in2, byte[] out) {
-        if(in1.length != in2.length || in2.length != out.length)
-            ISOException.throwIt((short)0x6d06);
-        
-        short len = (short)in1.length;
+    public static void xor(byte[] in1, short in1_offset, byte[] in2, short in2_offset, byte[] out, short out_offset, short len) {
+        if(in1.length < (short)(in1_offset + len) ||  // sanity checks
+           in2.length < (short)(in2_offset + len) ||
+           out.length < (short)(out_offset + len)) {        
+           ISOException.throwIt((short)0x6d66);
+        }
+        // untested
+        if(in1 == out && ((out_offset >= in1_offset && out_offset < (short)(in1_offset + len)) ||
+                          (in1_offset >= out_offset && in1_offset < (short)(out_offset + len)))) {
+            ISOException.throwIt((short)0x6d66);
+        }
+        // untested
+        if(in2 == out && ((out_offset >= in2_offset && out_offset < (short)(in2_offset + len)) ||
+                          (in2_offset >= out_offset && in2_offset < (short)(out_offset + len)))) {
+            ISOException.throwIt((short)0x6d66);
+        }
         
         for(short s=0; s < len; s++) {
-            out[s] = (byte)(in1[s] ^ in2[s]);
+            out[s] = (byte)(in1[(short)(in1_offset + s)] ^ in2[(short)(in2_offset + s)]);
         }
     }
 
+    public static void swap(byte[] buffer, short offset1, short offset2, short len) {
+        if(buffer.length < (short)(offset1 + len) ||  // sanity checks
+           buffer.length < (short)(offset2 + len) ||
+           (offset1 <= offset2 && offset2 < (short)(offset1 + len)) || // no overlap
+           (offset2 <= offset1 && offset1 < (short)(offset2 + len))) {
+                ISOException.throwIt((short)0x6d66);
+        }
+        
+        byte byte1, byte2;
+        for(short i=0; i<len; i++) {
+            byte1 = buffer[(short)(offset1 + i)];
+            byte2 = buffer[(short)(offset2 + i)];
+            buffer[(short)(offset1 + i)] = byte2;
+            buffer[(short)(offset2 + i)] = byte1;
+        }
+    }
+    
     public static short sign(short a) {
         return (byte)((a >>> (short)15) & 1); 
     }
@@ -90,6 +118,20 @@ public class PassportUtil implements ISO7816 {
         returnBuffer(b, apdu);
     }
 
+    public static short pad(byte[] buffer, short offset, short len) {
+        short padbytes = (short)(8 - (len % 8));
+        
+        if((short)buffer.length < (short)(padbytes + offset + len)) {
+            ISOException.throwIt((short)0x6d66);
+        }
+        
+        for(short i=0; i<padbytes; i++) {
+            buffer[(short)(offset+len+i)] = (i == 0 ? (byte)0x80 : 0x00);
+        }
+        
+        return (short)(len + padbytes);
+    }
+    
     public static void pad(APDU aapdu, short pad_len) {
         byte[] apdu = aapdu.getBuffer();
         short apdu_len=0;
@@ -158,6 +200,10 @@ public class PassportUtil implements ISO7816 {
                     return (byte)(i & 0xff);       
         
         return 0;
+    }
+
+    public static boolean hasBitMask(byte state, byte bitmask) {
+        return (state & bitmask) == bitmask;
     }
 
 }

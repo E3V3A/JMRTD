@@ -22,9 +22,14 @@
 
 package sos.passportapplet;
 
-import javacard.framework.*;
-import javacard.security.*;
-import javacardx.crypto.*;
+import javacard.framework.APDU;
+import javacard.framework.Applet;
+import javacard.framework.CardRuntimeException;
+import javacard.framework.ISO7816;
+import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
+import javacard.framework.Util;
+import javacard.security.RandomData;
 
 /**
  * PassportApplet
@@ -49,21 +54,10 @@ public class PassportApplet extends Applet implements ISO7816 {
     private static final byte INS_CREATE_FILE = (byte) 0xe0;
     private static final byte CLA_PROTECTED_APDU = 0x0c;
 
-    private static final short RESERVED_RAPDU_LENGTH = 18; // sw1sw2 + 8 bytes padding
-
     private short selectedFile;
     private FileSystem fileSystem;
 
-//    private DESKey ma_kEnc;
-//    private DESKey ma_kMac;
-//    private DESKey ma_kMac_a, ma_kMac_b;
-
     private byte[] rnd;
-
-//    private DESKey sm_kEnc;
-//    private DESKey sm_kMac_a, sm_kMac_b;
-
-//    private byte[] ksSeed;
 
     /* sample data */
     byte[] docNr = { 'L', '8', '9', '8', '9', '0', '2', 'C', '<' };
@@ -84,12 +78,14 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
         
- 
-        if(mode == PassportCrypto.CREF_MODE) {
+        switch(mode) {
+        case PassportCrypto.CREF_MODE:
             crypto = new CREFPassportCrypto();
+            break;
+        case PassportCrypto.JCOP_MODE:
+            crypto = new JCOPPassportCrypto();
+            break;                
         }
-
-        crypto.createTempSpace();
 
         byte[] kSeed = PassportInit.computeKeySeed(docNr,
                 dateOfBirth, dateOfExpiry);
@@ -98,9 +94,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte[] kMac_bytes = PassportCrypto.deriveKey(kSeed,
                 PassportCrypto.MAC_MODE);
         crypto.setMutualAuthKeys(kMac_bytes, kEnc_bytes);
-        rnd = JCSystem
-                .makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
-        ssc = new byte[8]; // TODO: transient?
+        rnd = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
+        ssc = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
 
         register();
     }
@@ -226,7 +221,11 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         if (bytesLeft != (short) 40)
             ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
-
+        
+        short e_ifd_p = OFFSET_CDATA;
+        short e_ifd_length = 32;
+        short m_ifd_p = (short)(e_ifd_p + e_ifd_length);
+        
 //        if((state ^ MUTUAL_AUTHENTICATED) == 0)
 //            ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
        
@@ -238,71 +237,30 @@ public class PassportApplet extends Applet implements ISO7816 {
             readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
         }
 
-        byte[] e_ifd = new byte[32];
-        Util.arrayCopy(buffer, ISO7816.OFFSET_CDATA, e_ifd, (short) 0,
-                (short) 32);
-
-        byte[] e_ifd_padded = new byte[40];
-        Util.arrayCopy(e_ifd, (short) 0, e_ifd_padded, (short) 0, (short) 32);
-        Util.arrayCopy(CREFPassportCrypto.PAD_DATA, (short) 0, e_ifd_padded,
-                (short) 32, (short) 8);
-
-        byte[] m_ifd = new byte[8];
-        Util.arrayCopy(buffer, (short) (ISO7816.OFFSET_CDATA + e_ifd.length),
-                m_ifd, (short) 0, (short) 8);
-
+        // buffer[OFFSET_CDATA ... +40] consists of e_ifd || m_ifd
         // verify checksum m_ifd of cryptogram e_ifd
-        // boolean b=false;
-        // try {
-        // sig.init(ma_kMac,Signature.MODE_VERIFY);
-        // b = sig.verify(e_ifd,(short)0,(short)32,m_ifd, (short)0, (short)8);
-        // }catch(CryptoException ce) {
-        //
-        // short reason = ce.getReason();
-        // ISOException.throwIt((short) 0x6d01);
-        // }
-        // if(!b)
-        // ISOException.throwIt((short) 0x6d01);
-
-        if (!crypto.verifyMac(state, e_ifd, (short)0, (short)e_ifd.length, m_ifd, (short)0))
+        if (!crypto.verifyMac(state, buffer, e_ifd_p, e_ifd_length, buffer, m_ifd_p))
             ISOException.throwIt((short) 0x6d01);
 
-        // decrypt e_ifd into s where s = rnd.ifd || rnd.icc || k.ifd
-        byte[] s = new byte[32 + 16];
-        // ciph.init(kEnc, Cipher.MODE_DECRYPT);
-        crypto.decrypt(state, e_ifd, (short) 0, (short)32, s, (short) 0);
-
-        // try {
-        // ciph.doFinal(e_ifd_padded, (short) 0, (short) e_ifd_padded.length,
-        // s, (short) 0);
-        // } catch (CryptoException e) {
-        // // see comment for PassportUtil.PAD_DATA
-        // if (e.getReason() != CryptoException.ILLEGAL_USE)
-        // ISOException.throwIt((short) 0x6d66);
-        // }
-
-        byte[] rnd_ifd = new byte[8];
-        byte[] rnd_icc = new byte[8];
-        byte[] k_ifd = new byte[16];
-        Util.arrayCopy(s, (short) 0, rnd_ifd, (short) 0, (short) 8);
-        Util.arrayCopy(s, (short) 8, rnd_icc, (short) 0, (short) 8);
-        Util.arrayCopy(s, (short) 16, k_ifd, (short) 0, (short) 16);
-
+        // decrypt e_ifd into buffer where buffer = rnd.ifd || rnd.icc || k.ifd
+        short plaintext_len = crypto.decrypt(state, buffer, e_ifd_p, e_ifd_length, buffer, (short)0);
+        if(plaintext_len != 32) // sanity check
+            ISOException.throwIt((short)0x6d66);
+        short rnd_ifd_p = 0;
+        short rnd_icc_p = 8;
+        short k_ifd_p = 16;
+        
         // verify that rnd.icc equals value generated in getChallenge
-        if (Util.arrayCompare(rnd_icc, (short) 0, rnd, (short) 0, (short) 8) != 0)
+        if (Util.arrayCompare(buffer, rnd_icc_p, rnd, (short)0, (short)8) != 0)
             ISOException.throwIt((short) 0x6d02);
 
         // generate keying material k.icc
-//        byte[] k_icc = { (byte) 0x0b, (byte) 0x4f, (byte) 0x80, (byte) 0x32,
-//                (byte) 0x3e, (byte) 0xb3, (byte) 0x19, (byte) 0x1c,
-//                (byte) 0xb0, (byte) 0x49, (byte) 0x70, (byte) 0xcb,
-//                (byte) 0x40, (byte) 0x52, (byte) 0x79, (byte) 0x0b }; // new
         byte[] k_icc = new byte[16];;
         randomData.generateData(k_icc, (short) 0, (short) 16);
 
         // calculate keySeed for session keys
         byte[] keySeed = new byte[16];
-        PassportUtil.xor(k_ifd, k_icc, keySeed);
+        PassportUtil.xor(buffer, k_ifd_p, k_icc, (short)0, keySeed, (short)0, (short)16);
 
         // calculate session keys
         byte[] ksEnc_bytes = PassportCrypto.deriveKey(keySeed,
@@ -312,30 +270,22 @@ public class PassportApplet extends Applet implements ISO7816 {
         crypto.setSessionKeys(ksMac, ksEnc_bytes);
 
         // compute ssc
-        PassportCrypto.computeSSC(rnd_icc, rnd_ifd, ssc);
+        PassportCrypto.computeSSC(buffer, rnd_icc_p, buffer, rnd_ifd_p, ssc);
 
-        // create r where r = rnd.icc || rnd.ifd || k.icc
-        byte[] r = new byte[32];
-        Util.arrayCopy(rnd_icc, (short) 0, r, (short) 0, (short) 8);
-        Util.arrayCopy(rnd_ifd, (short) 0, r, (short) 8, (short) 8);
-        Util.arrayCopy(k_icc, (short) 0, r, (short) 16, (short) 16);
+        // create response in buffer where response = rnd.icc || rnd.ifd || k.icc
+        PassportUtil.swap(buffer, rnd_icc_p, rnd_ifd_p, (short)8);
+        Util.arrayCopy(k_icc, (short) 0, buffer, (short) 16, (short) 16);
 
-        // create e_icc which is r encrypted using k_enc
-        byte[] e_icc = new byte[(short) (r.length + CREFPassportCrypto.PAD_DATA.length)];
-        crypto.encrypt(state, r, (short)0, (short)r.length, e_icc, (short)0);
+        // make buffer encrypted using k_enc
+        short ciphertext_len = crypto.encrypt(state, PassportCrypto.DONT_PAD_INPUT,
+                                              buffer, (short)0, (short)32, buffer, (short)0);
         
-        // create m_icc which is a checksum of e_icc
-        byte[] m_icc = new byte[8];
-        crypto.createMac(state, e_icc, (short) 0, (short) r.length, m_icc, (short) 0);
-
-        // prepare e_icc || m_icc in buffer
-        Util.arrayCopy(e_icc, (short) 0, buffer, (short) 0, (short) r.length);
-        Util.arrayCopy(m_icc, (short) 0, buffer, (short) r.length,
-                (short) m_icc.length);
+        // create m_icc which is a checksum of response
+        crypto.createMac(state, buffer, (short) 0, ciphertext_len, buffer, ciphertext_len);
 
         state |= MUTUAL_AUTHENTICATED;
         
-        return (short) (r.length + m_icc.length);
+        return (short)(ciphertext_len + 8);
     }
 
     /**
@@ -346,13 +296,8 @@ public class PassportApplet extends Applet implements ISO7816 {
 
     private void processSelectFile(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        byte cla = buffer[OFFSET_CLA];
-        byte ins = buffer[OFFSET_INS];
         short lc = (short) (buffer[OFFSET_LC] & 0x00FF);
-        short le = 0;
-        short response_len = 0;
-        short sw1sw2 = 0;
-
+        
         if (lc != 2)
             ISOException.throwIt(SW_WRONG_LENGTH);
 
@@ -373,8 +318,6 @@ public class PassportApplet extends Applet implements ISO7816 {
      */
     private short processReadBinary(APDU apdu, short le) {
         byte[] buffer = apdu.getBuffer();
-        byte cla = buffer[OFFSET_CLA];
-        byte ins = buffer[OFFSET_INS];
         byte p1 = buffer[OFFSET_P1];
         byte p2 = buffer[OFFSET_P2];
         short offset = Util.makeShort(p1, p2);
@@ -396,12 +339,8 @@ public class PassportApplet extends Applet implements ISO7816 {
 
     private void processUpdateBinary(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        byte cla = buffer[OFFSET_CLA];
-        byte ins = buffer[OFFSET_INS];
         byte p1 = buffer[OFFSET_P1];
         byte p2 = buffer[OFFSET_P2];
-        short le = 0;
-        short sw1sw2 = 0;
 
         short lc = (short) (buffer[OFFSET_LC] & 0xff);
 
@@ -425,12 +364,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      */
     private void processCreateFile(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        byte cla = buffer[OFFSET_CLA];
-        byte ins = buffer[OFFSET_INS];
-        byte p1 = buffer[OFFSET_P1];
-        byte p2 = buffer[OFFSET_P2];
-        // short le = apdu.setIncomingAndReceive(); // FIXME:mo
-        short lc = (short) (buffer[OFFSET_LC] & 0xff);// apdu.getIncomingLength();
+        short lc = (short) (buffer[OFFSET_LC] & 0xff);
 
         if (lc < (short) 6 || (buffer[OFFSET_CDATA + 1] & 0xff) < 4)
             ISOException.throwIt(SW_WRONG_LENGTH);
