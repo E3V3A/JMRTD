@@ -39,6 +39,15 @@ public class AAEvent extends EventObject
    private byte[] m2;
    private boolean success;
    
+   /**
+    * Constructs a new event.
+    * 
+    * @param src event source
+    * @param pubkey public key
+    * @param m1 recoverable part
+    * @param m2 nonce sent by host
+    * @param success resulting status of authentication protocol
+    */
    public AAEvent(Object src, PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
 	  super(src);
 	  this.pubkey = pubkey;
@@ -47,18 +56,39 @@ public class AAEvent extends EventObject
 	  this.success = success;
    }
 
+   /**
+    * Gets the public key used in the protocol.
+    * 
+    * @return a public key
+    */
 	public PublicKey getPubkey() {
 		return pubkey;
 	}
 
+	/**
+	 * Gets m1.
+	 * 
+	 * @return m1
+	 */
 	public byte[] getM1() {
 		return m1;
 	}
 
+	/**
+	 * Gets m2.
+	 * 
+	 * @return m2.
+	 */
 	public byte[] getM2() {
 		return m2;
 	}
 
+	/**
+	 * Indicates whether the authentication protocol
+	 * was successfully executed.
+	 * 
+	 * @return status of the protocol
+	 */
 	public boolean isSuccess() {
 		return success;
 	}

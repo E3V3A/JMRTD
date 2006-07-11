@@ -41,7 +41,9 @@ import sos.util.Hex;
  * (MO) of the Security of Systems group (SoS) of the Institute of Computing and
  * Information Sciences (ICIS) at Radboud University (RU).
  *
- * Based on ISO 7816-4 Annex D (which apparently is based on ISO 8825).
+ * Based on ISO 7816-4 Annex D (which apparently is based on ISO 8825
+ * and/or X.208, X.209, X.680, X.690).
+ * See <a href="http://en.wikipedia.org/wiki/ASN.1">ASN.1</a>.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
@@ -61,17 +63,21 @@ public class BERTLVObject
    /** Private tag class. */
    public static final int PRIVATE_CLASS = 3;
 
+   public static final int BOOLEAN_TYPE_TAG = 0x01;
    public static final int INTEGER_TYPE_TAG = 0x02;
    public static final int BIT_STRING_TYPE_TAG = 0x03;
    public static final int OCTET_STRING_TYPE_TAG = 0x04;
    public static final int NULL_TYPE_TAG = 0x05;
    public static final int OBJECT_IDENTIFIER_TYPE_TAG = 0x06;
+   public static final int REAL_TYPE_TAG = 0x09;
+   public static final int ENUMERATED_TYPE_TAG = 0x0A;
    public static final int SEQUENCE_TYPE_TAG = 0x10;
    public static final int SET_TYPE_TAG = 0x11;
    public static final int PRINTABLE_STRING_TYPE_TAG = 0x13;
    public static final int T61_STRING_TYPE_TAG = 0x14;
    public static final int IA5_STRING_TYPE_TAG = 0x16;
    public static final int UTC_TIME_TYPE_TAG = 0x17;
+   public static final int GENERAL_TIME_TYPE_TAG = 0x18;
    
    private int tagClass;
    private boolean isPrimitive;
@@ -182,7 +188,7 @@ public class BERTLVObject
     	     case OBJECT_IDENTIFIER_TYPE_TAG: value = valueBytes; break;
     	     case SEQUENCE_TYPE_TAG: value = valueBytes; break;
     	     case SET_TYPE_TAG: value = valueBytes; break;
-             case 0x0C: /* FIXME: find out what 12 is... */
+             case 0x0C: /* FIXME: find out what 12 is... something printable */
     	     case PRINTABLE_STRING_TYPE_TAG:
     	     case T61_STRING_TYPE_TAG:
     	     case IA5_STRING_TYPE_TAG: value = new String(valueBytes); break;
@@ -315,8 +321,8 @@ public class BERTLVObject
       Arrays.fill(prefixBytes, (byte)' ');
       String prefix = new String(prefixBytes);
       StringBuffer result = new StringBuffer();
-      result.append(prefix); result.append("'0x");
-      result.append(Hex.bytesToHexString(tag)); result.append("' ");
+      result.append(prefix); 
+      result.append(tagToString(tag)); result.append(" ");
       result.append(Integer.toString(length)); result.append(" ");
       if (value instanceof byte[]) {
          byte[] valueData = (byte[])value;
@@ -337,16 +343,36 @@ public class BERTLVObject
          }
          result.append(prefix);
          result.append("\n");
-      } else if (value instanceof String) {
+      } else  {
     	  result.append("\"");
-          result.append(value.toString());
+          result.append(value != null ? value.toString() : "null");
     	  result.append("\"\n");
-      } else {
-         result.append(value != null ? value.toString() : "null");
-         result.append("\n");
       }
       return result.toString();
    }
+   
+   private static String tagToString(byte[] tag) {
+		if (tag.length == 1) {
+			switch (tag[0] & 0xFF) {
+			case BOOLEAN_TYPE_TAG: return "BOOLEAN";
+		    case INTEGER_TYPE_TAG: return "INTEGER";
+			case BIT_STRING_TYPE_TAG: return "BIT_STRING";
+			case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
+			case NULL_TYPE_TAG: return "NULL";
+			case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
+			case REAL_TYPE_TAG: return "REAL";
+			case ENUMERATED_TYPE_TAG: return "ENUMERATED";
+			case SEQUENCE_TYPE_TAG: return "SEQUENCE";
+			case SET_TYPE_TAG: return "SET";
+			case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
+			case T61_STRING_TYPE_TAG: return "T61_STRING";
+			case IA5_STRING_TYPE_TAG: return "IA5_STRING";
+			case UTC_TIME_TYPE_TAG: return "UTC_TIME";
+			case GENERAL_TIME_TYPE_TAG: return "GENERAL_TIME";
+			}
+		}
+		return "'0x" + Hex.bytesToHexString(tag) + "'";
+	}
    
    public static final void main(String[] arg) {
 	   try {

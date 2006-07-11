@@ -50,7 +50,7 @@ import sos.smartcards.CardService;
 import sos.smartcards.JPCSCService;
 
 /**
- * Card service for using the passport.
+ * High level card service for using the passport.
  * Defines high-level commands to access the information on the passport.
  * Based on ICAO-TR-LDS.
  * 
