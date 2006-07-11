@@ -182,13 +182,15 @@ public class BERTLVObject
     	     case OBJECT_IDENTIFIER_TYPE_TAG: value = valueBytes; break;
     	     case SEQUENCE_TYPE_TAG: value = valueBytes; break;
     	     case SET_TYPE_TAG: value = valueBytes; break;
+             case 0x0C: /* FIXME: find out what 12 is... */
     	     case PRINTABLE_STRING_TYPE_TAG:
     	     case T61_STRING_TYPE_TAG:
     	     case IA5_STRING_TYPE_TAG: value = new String(valueBytes); break;
     	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String(valueBytes)); break;
     	     default: value = valueBytes;
-    	  }
-    	 
+    	  } else {
+             value = valueBytes;   
+          }
       } else {
          /*
           * Not primitive, the value itself consists of 0 or more
@@ -201,7 +203,7 @@ public class BERTLVObject
    
    private static Date parseUTCTime(String in) {
 	   try {
-	   SimpleDateFormat sdf = new SimpleDateFormat("yyMMddhhmmss'Z'");
+	      SimpleDateFormat sdf = new SimpleDateFormat("yyMMddhhmmss'Z'");
 	      return sdf.parse(in);
 	   } catch (ParseException pe) {
 		  return null;
@@ -315,8 +317,7 @@ public class BERTLVObject
       StringBuffer result = new StringBuffer();
       result.append(prefix); result.append("'0x");
       result.append(Hex.bytesToHexString(tag)); result.append("' ");
-      result.append("'");
-      result.append(Integer.toString(length)); result.append("' ");
+      result.append(Integer.toString(length)); result.append(" ");
       if (value instanceof byte[]) {
          byte[] valueData = (byte[])value;
          result.append("'0x");
