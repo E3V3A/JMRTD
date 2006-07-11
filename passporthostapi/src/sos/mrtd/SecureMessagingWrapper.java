@@ -36,6 +36,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import sos.smartcards.Apdu;
 import sos.smartcards.ISO7816;
+import sos.util.Hex;
 
 /**
  * Secure messaging wrapper for apdus.
@@ -320,6 +321,7 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
       byte[] ciphertext = new byte[length];
       in.read(ciphertext, 0, length);
       byte[] paddedData = cipher.doFinal(ciphertext);
+      // System.out.println("DEBUG: paddedData = " + Hex.bytesToHexString(paddedData));
       byte[] data = Util.unpad(paddedData);
       return data;
    }

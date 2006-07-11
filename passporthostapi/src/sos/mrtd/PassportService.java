@@ -440,7 +440,7 @@ public class PassportService implements CardService
          Security.insertProviderAt(PROVIDER, 2);
          PassportService service = new PassportService(new JPCSCService());
          service.open();
-         service.doBAC("ZZ0062725", "710121", "091130");
+         service.doBAC("XX0001302", "711019", "111001");
          PublicKey pubKey = service.readAAPublicKey();
          System.out.println("pubKey = " + pubKey);
          int attempt = 0;
@@ -453,7 +453,7 @@ public class PassportService implements CardService
                   System.out.println("AA failed!");
                }
             } catch (Exception e) {
-               System.out.println(e);
+               e.printStackTrace();
                attempt ++;
                continue;
             }
@@ -464,6 +464,4 @@ public class PassportService implements CardService
          e.printStackTrace();
       }
    }
-
-
 }

@@ -37,6 +37,7 @@ import javax.crypto.SecretKey;
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
+import sos.util.Hex;
 
 /**
  * Card service for using the BAC and AA protocols on the passport.
@@ -179,10 +180,11 @@ public class PassportAuthService implements CardService
    protected void notifyBACPerformed(SecureMessagingWrapper wrapper,
 		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
 		   boolean success) {
+      BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, success);
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
-          listener.performedBAC(new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, success));
+          listener.performedBAC(event);
       }
   }
 
@@ -200,6 +202,7 @@ public class PassportAuthService implements CardService
       aaSignature.initVerify(pubkey);
       byte[] m2 = new byte[8]; /* random rndIFD */
       byte[] response = service.sendInternalAuthenticate(wrapper, m2);
+      System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
       int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
       byte[] m1 = Util.getAARecoveredMessage(digestLength, aaCipher.doFinal(response));
       aaSignature.update(m1);
@@ -214,9 +217,10 @@ public class PassportAuthService implements CardService
    
    protected void notifyAAPerformed(PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
       Iterator it = authListeners.iterator();
+      AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
-          listener.performedAA(new AAEvent(this, pubkey, m1, m2, success));
+          listener.performedAA(event);
       }
   }
    

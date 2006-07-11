@@ -173,7 +173,7 @@ public class PassportFileService implements CardService
    public void close() {
       files = null;
       authService.close();
-      service.close();
+      // service.close();
    }
 
    public void addAPDUListener(APDUListener l) {
