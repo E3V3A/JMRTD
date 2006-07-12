@@ -140,7 +140,7 @@ public class BERTLVObject
       switch (b & 0x0000001F) {
          case 0x0000001F:
             ArrayList tagBytes = new ArrayList();
-            tagBytes.add(new Integer(b));
+            tagBytes.add(new Integer(b)); // TODO: maybe change b to (b & 0x1F) ?
             b = in.readUnsignedByte();
             while ((b & 0x00000080) == 0x00000080) {
                tagBytes.add(new Integer(b));
@@ -152,7 +152,7 @@ public class BERTLVObject
             }
             break;
          default:
-            tag = new byte[1]; tag[0] = (byte)b; break;
+            tag = new byte[1]; tag[0] = (byte)b; break; // TODO: maybe change b to (b & 0x1F) ?
       }
       if (tag == null) {
          throw new NumberFormatException("Could not read tag");
@@ -184,10 +184,9 @@ public class BERTLVObject
           * Primitive, the value consists of 0 or more Simple-TLV objects,
           * or just (application-dependent) bytes. If tag is not known
           * (or universal) we assume the value is just bytes.
-          */
-    	  
+          */   	  
     	  if (tagClass == UNIVERSAL_CLASS)
-    	  switch (tag[0]) {
+    	  switch (tag[0] & 0x1F) {
     	     case INTEGER_TYPE_TAG: value = valueBytes; break;
     	     case BIT_STRING_TYPE_TAG: value = valueBytes; break;
        	     case OCTET_STRING_TYPE_TAG: value = valueBytes; break;
@@ -362,29 +361,34 @@ public class BERTLVObject
    
    private static String tagToString(byte[] tag) {
 		if (tag.length == 1) {
-			switch (tag[0] & 0xFF) {
-			case BOOLEAN_TYPE_TAG: return "BOOLEAN";
-		    case INTEGER_TYPE_TAG: return "INTEGER";
-			case BIT_STRING_TYPE_TAG: return "BIT_STRING";
-			case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
-			case NULL_TYPE_TAG: return "NULL";
-			case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
-			case REAL_TYPE_TAG: return "REAL";
-			case ENUMERATED_TYPE_TAG: return "ENUMERATED";
-            case 0x30:
-			case SEQUENCE_TYPE_TAG: return "SEQUENCE";
-            case 0x31:
-			case SET_TYPE_TAG: return "SET";
-            case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
-			case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
-			case T61_STRING_TYPE_TAG: return "T61_STRING";
-			case IA5_STRING_TYPE_TAG: return "IA5_STRING";
-            case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
-            case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
-            case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
-            case BMP_STRING_TYPE_TAG: return "BMP_STRING";
-			case UTC_TIME_TYPE_TAG: return "UTC_TIME";
-			case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
+			if ((tag[0] & 0x20) == 0x00) {
+				/* primitive */
+				switch (tag[0] & 0x1F) {
+				   case BOOLEAN_TYPE_TAG: return "BOOLEAN";
+				   case INTEGER_TYPE_TAG: return "INTEGER";
+				   case BIT_STRING_TYPE_TAG: return "BIT_STRING";
+				   case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
+				   case NULL_TYPE_TAG: return "NULL";
+				   case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
+				   case REAL_TYPE_TAG: return "REAL";
+				   case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
+				   case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
+				   case T61_STRING_TYPE_TAG: return "T61_STRING";
+				   case IA5_STRING_TYPE_TAG: return "IA5_STRING";
+				   case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
+				   case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
+				   case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
+				   case BMP_STRING_TYPE_TAG: return "BMP_STRING";
+				   case UTC_TIME_TYPE_TAG: return "UTC_TIME";
+				   case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
+				}
+			} else {
+				/* constructed */
+				switch (tag[0] & 0x1F) {
+				   case ENUMERATED_TYPE_TAG: return "ENUMERATED";
+				   case SEQUENCE_TYPE_TAG: return "SEQUENCE";
+				   case SET_TYPE_TAG: return "SET";
+				}
 			}
 		}
 		return "'0x" + Hex.bytesToHexString(tag) + "'";
