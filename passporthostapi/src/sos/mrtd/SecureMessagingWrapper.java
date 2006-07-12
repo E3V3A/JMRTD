@@ -266,27 +266,31 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
    throws GeneralSecurityException, IOException {
       long oldssc = ssc;
       try {
-      if (rapdu == null || rapdu.length < 2 || len < 2) {
-         throw new IllegalArgumentException("Invalid type");
-      }
-      cipher.init(Cipher.DECRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(rapdu));
-      byte[] data = new byte[0];
-      short sw = 0;
-      boolean finished = false;
-      while (!finished) {
-         int tag = in.readByte();
-         switch (tag) {
-            case (byte)0x87: data = readDO87(in); break;
-            case (byte)0x99: sw = readDO99(in); break;
-            case (byte)0x8E: readDO8E(in, rapdu); finished = true; break;
+         if (rapdu == null || rapdu.length < 2 || len < 2) {
+            throw new IllegalArgumentException("Invalid response APDU");
          }
-      }
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      out.write(data, 0, data.length);
-      out.write((sw & 0x0000FF00) >> 8);
-      out.write(sw & 0x000000FF);
-      return out.toByteArray();
+         cipher.init(Cipher.DECRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
+         DataInputStream in = new DataInputStream(new ByteArrayInputStream(rapdu));
+         byte[] data = new byte[0];
+         short sw = 0;
+         boolean finished = false;
+         byte[] cc = null;
+         while (!finished) {
+            int tag = in.readByte();
+            switch (tag) {
+               case (byte)0x87: data = readDO87(in); break;
+               case (byte)0x99: sw = readDO99(in); break;
+               case (byte)0x8E: cc = readDO8E(in); finished = true; break;
+            }
+         }
+         if (!checkMac(rapdu, cc)) {
+            throw new IllegalStateException("Invalid MAC");
+         }
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         out.write(data, 0, data.length);
+         out.write((sw & 0x0000FF00) >> 8);
+         out.write(sw & 0x000000FF);
+         return out.toByteArray();
       } finally {
          /*
           * If we fail to unwrap, at least make sure we have
@@ -359,26 +363,31 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
     *
     * @param in inputstream to read from.
     */
-   private void readDO8E(DataInputStream in, byte[] rapdu) throws IOException, GeneralSecurityException {
-      
+   private byte[] readDO8E(DataInputStream in) throws IOException, GeneralSecurityException {
       int length = in.readUnsignedByte();
       if (length != 8) {
          throw new IllegalStateException("DO'8E wrong length");
       }
       byte[] cc1 = new byte[8];
       in.readFully(cc1);
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      DataOutputStream dataOut = new DataOutputStream(out);
-      ssc++;
-      dataOut.writeLong(ssc);
-      byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
-      dataOut.write(paddedData, 0, paddedData.length);
-      dataOut.flush();
-      mac.init(ksMac);
-      byte[] cc2 = mac.doFinal(out.toByteArray());
-      dataOut.close();
-      if (!Arrays.equals(cc1, cc2)) {
-         throw new IllegalStateException("Incorrect MAC!");
+      return cc1;
+   }
+   
+   private boolean checkMac(byte[] rapdu, byte[] cc1) throws GeneralSecurityException {
+      try {
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         DataOutputStream dataOut = new DataOutputStream(out);
+         ssc++;
+         dataOut.writeLong(ssc);
+         byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
+         dataOut.write(paddedData, 0, paddedData.length);
+         dataOut.flush();
+         mac.init(ksMac);
+         byte[] cc2 = mac.doFinal(out.toByteArray());
+         dataOut.close();
+         return Arrays.equals(cc1, cc2);
+      } catch (IOException ioe) {
+         return false;
       }
    }
 }
