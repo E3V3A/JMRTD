@@ -152,8 +152,8 @@ public class PassportAuthService implements CardService
       SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
       SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
       byte[] rndICC = service.sendGetChallenge();
-      byte[] rndIFD = new byte[8]; /* random */
-      byte[] kIFD = new byte[16]; /* random */
+      byte[] rndIFD = new byte[8]; /* TODO: random */
+      byte[] kIFD = new byte[16]; /* TODO: random */
       byte[] response = service.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
       byte[] kICC = new byte[16];
       System.arraycopy(response, 16, kICC, 0, 16);

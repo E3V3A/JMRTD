@@ -43,6 +43,8 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import org.mozilla.jss.pkcs7.SignedData;
+
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.BERTLVObject;
@@ -428,10 +430,12 @@ public class PassportService implements CardService
     * 
     * @throws IOException
     */
-   public byte[] readSecurityObject() throws IOException {
+   public SignedData readSecurityObject() throws IOException {
       byte[] tag = { 0x77 };
       BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
-      return object.getValueAsBytes(); // TODO: do something with this
+      BERTLVObject[] children = (BERTLVObject[])object.getValue();
+      System.out.println("children.length = " + children.length);
+      return null; // HIER
    }
 
    private static final Provider PROVIDER =
@@ -443,25 +447,8 @@ public class PassportService implements CardService
          Security.insertProviderAt(PROVIDER, 2);
          PassportService service = new PassportService(new JPCSCService());
          service.open();
-         service.doBAC("XX0001302", "711019", "111001");
-         PublicKey pubKey = service.readAAPublicKey();
-         System.out.println("pubKey = " + pubKey);
-         int attempt = 0;
-         while (true) {
-            try {
-               System.out.println("Attempt " + attempt);
-               if (service.doAA(pubKey)) {
-                  System.out.println("AA succeeded!");
-               } else {
-                  System.out.println("AA failed!");
-               }
-            } catch (Exception e) {
-               e.printStackTrace();
-               attempt ++;
-               continue;
-            }
-            break;
-         }
+         service.doBAC("ZZ0062725", "710121", "091130");
+         service.readSecurityObject();
          service.close();
       } catch (Exception e) {
          e.printStackTrace();
