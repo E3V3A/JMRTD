@@ -52,14 +52,11 @@ import sos.util.Hex;
 public class BERTLVObject
 {
    /** Universal tag class. */
-   public static final int UNIVERSAL_CLASS = 0;
-   
+   public static final int UNIVERSAL_CLASS = 0;  
    /** Application tag class. */
-   public static final int APPLICATION_CLASS = 1;
-   
+   public static final int APPLICATION_CLASS = 1;  
    /** Context specific tag class. */
    public static final int CONTEXT_SPECIFIC_CLASS = 2;
-   
    /** Private tag class. */
    public static final int PRIVATE_CLASS = 3;
 
@@ -69,15 +66,25 @@ public class BERTLVObject
    public static final int OCTET_STRING_TYPE_TAG = 0x04;
    public static final int NULL_TYPE_TAG = 0x05;
    public static final int OBJECT_IDENTIFIER_TYPE_TAG = 0x06;
+   public static final int OBJECT_DESCRIPTOR_TYPE_TAG = 0x07;
+   public static final int EXTERNAL_TYPE_TAG = 0x08;
    public static final int REAL_TYPE_TAG = 0x09;
    public static final int ENUMERATED_TYPE_TAG = 0x0A;
+   public static final int EMBEDDED_PDV_TYPE_TAG = 0x0B;
+   public static final int UTF8_STRING_TYPE_TAG = 0x0C;
    public static final int SEQUENCE_TYPE_TAG = 0x10;
    public static final int SET_TYPE_TAG = 0x11;
+   public static final int NUMERIC_STRING_TYPE_TAG = 0x12;
    public static final int PRINTABLE_STRING_TYPE_TAG = 0x13;
    public static final int T61_STRING_TYPE_TAG = 0x14;
    public static final int IA5_STRING_TYPE_TAG = 0x16;
    public static final int UTC_TIME_TYPE_TAG = 0x17;
-   public static final int GENERAL_TIME_TYPE_TAG = 0x18;
+   public static final int GENERALIZED_TIME_TYPE_TAG = 0x18;
+   public static final int GRAPHIC_STRING_TYPE_TAG = 0x19;
+   public static final int VISIBLE_STRING_TYPE_TAG = 0x1A;
+   public static final int GENERAL_STRING_TYPE_TAG = 0x1B;
+   public static final int UNIVERSAL_STRING_TYPE_TAG = 0x1C;
+   public static final int BMP_STRING_TYPE_TAG = 0x1E;
    
    private int tagClass;
    private boolean isPrimitive;
@@ -186,12 +193,14 @@ public class BERTLVObject
        	     case OCTET_STRING_TYPE_TAG: value = valueBytes; break;
     	     case NULL_TYPE_TAG: value = null; break;
     	     case OBJECT_IDENTIFIER_TYPE_TAG: value = valueBytes; break;
-    	     case SEQUENCE_TYPE_TAG: value = valueBytes; break;
-    	     case SET_TYPE_TAG: value = valueBytes; break;
-             case 0x0C: /* FIXME: find out what 12 is... something printable */
+             case UTF8_STRING_TYPE_TAG:
     	     case PRINTABLE_STRING_TYPE_TAG:
     	     case T61_STRING_TYPE_TAG:
-    	     case IA5_STRING_TYPE_TAG: value = new String(valueBytes); break;
+    	     case IA5_STRING_TYPE_TAG:
+             case VISIBLE_STRING_TYPE_TAG:
+             case GENERAL_STRING_TYPE_TAG:
+             case UNIVERSAL_STRING_TYPE_TAG:
+             case BMP_STRING_TYPE_TAG: value = new String(valueBytes); break;
     	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String(valueBytes)); break;
     	     default: value = valueBytes;
     	  } else {
@@ -336,13 +345,13 @@ public class BERTLVObject
          }
          result.append("'\n");
       } else if (value instanceof BERTLVObject[]) {
-         result.append("\n");
+         result.append("{\n");
          BERTLVObject[] subObjects = (BERTLVObject[])value;
          for (int i = 0; i < subObjects.length; i++) {
             result.append(subObjects[i].toString(indent + 3));
          }
          result.append(prefix);
-         result.append("\n");
+         result.append("}\n");
       } else  {
     	  result.append("\"");
           result.append(value != null ? value.toString() : "null");
@@ -362,13 +371,20 @@ public class BERTLVObject
 			case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
 			case REAL_TYPE_TAG: return "REAL";
 			case ENUMERATED_TYPE_TAG: return "ENUMERATED";
+            case 0x30:
 			case SEQUENCE_TYPE_TAG: return "SEQUENCE";
+            case 0x31:
 			case SET_TYPE_TAG: return "SET";
+            case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
 			case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
 			case T61_STRING_TYPE_TAG: return "T61_STRING";
 			case IA5_STRING_TYPE_TAG: return "IA5_STRING";
+            case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
+            case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
+            case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
+            case BMP_STRING_TYPE_TAG: return "BMP_STRING";
 			case UTC_TIME_TYPE_TAG: return "UTC_TIME";
-			case GENERAL_TIME_TYPE_TAG: return "GENERAL_TIME";
+			case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
 			}
 		}
 		return "'0x" + Hex.bytesToHexString(tag) + "'";

@@ -254,14 +254,20 @@ public class Util
    }
    
    /**
-    * Ronny (ronny@cs.ru.nl) ripped this from bouncy castle.
+    * Recovers the M1 part of the message sent back by the AA protocol
+    * (INTERNAL AUTHENTICATE command). The algorithm is described in
+    * ISO 9796-2:2002 9.3.
+    * 
+    * Based on code by Ronny (ronny@cs.ru.nl) who presumably ripped this
+    * from Bouncy Castle. 
     * 
     * @param digestLength should be 20
-    * @param plaintext response from card, already decrypted (using pubkey)
+    * @param plaintext response from card, already 'decrypted' (using the
+    * AA public key)
     * 
     * @return the m1 part of the message
     */
-   public static byte[] getAARecoveredMessage(int digestLength, byte[] plaintext) {
+   public static byte[] recoverMessage(int digestLength, byte[] plaintext) {
       if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
          throw new NumberFormatException("Could not get M1");
       }
@@ -277,8 +283,8 @@ public class Util
 
       /* find out how much padding we've got */
       int mStart = 0;
-      for (mStart = 0; mStart != plaintext.length; mStart++) {
-         if (((plaintext[mStart] & 0x0f) ^ 0x0a) == 0) {
+      for (mStart = 0; mStart < plaintext.length; mStart++) {
+         if (((plaintext[mStart] & 0x0F) ^ 0x0A) == 0) {
             break;
          }
       }
