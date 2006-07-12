@@ -264,6 +264,8 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
     */
    private byte[] unwrapResponseAPDU(byte[] rapdu, int len)
    throws GeneralSecurityException, IOException {
+      long oldssc = ssc;
+      try {
       if (rapdu == null || rapdu.length < 2 || len < 2) {
          throw new IllegalArgumentException("Invalid type");
       }
@@ -285,6 +287,16 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
       out.write((sw & 0x0000FF00) >> 8);
       out.write(sw & 0x000000FF);
       return out.toByteArray();
+      } finally {
+         /*
+          * If we fail to unwrap, at least make sure we have
+          * the same counter as the ICC, so that we can continue
+          * to communicate using secure messaging...
+          */
+         if (ssc == oldssc) {
+            ssc++;
+         }
+      }
    }
 
    /**
@@ -302,8 +314,8 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
          length = buf;
          buf = in.readUnsignedByte(); /* should be 0x01... */
          if (buf != 0x01) {
-            throw new IllegalStateException("DO'87 expected 0x01 marker "
-                  + Integer.toHexString(buf));
+            throw new IllegalStateException("DO'87 expected 0x01 marker, found "
+                  + Hex.byteToHexString((byte)buf));
          }
       } else {
          /* Long form */
@@ -348,21 +360,23 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
     * @param in inputstream to read from.
     */
    private void readDO8E(DataInputStream in, byte[] rapdu) throws IOException, GeneralSecurityException {
+      
       int length = in.readUnsignedByte();
       if (length != 8) {
          throw new IllegalStateException("DO'8E wrong length");
       }
       byte[] cc1 = new byte[8];
       in.readFully(cc1);
-      mac.init(ksMac);
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      DataOutputStream dataOut = new DataOutputStream(out); 
+      DataOutputStream dataOut = new DataOutputStream(out);
       ssc++;
       dataOut.writeLong(ssc);
       byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
       dataOut.write(paddedData, 0, paddedData.length);
       dataOut.flush();
+      mac.init(ksMac);
       byte[] cc2 = mac.doFinal(out.toByteArray());
+      dataOut.close();
       if (!Arrays.equals(cc1, cc2)) {
          throw new IllegalStateException("Incorrect MAC!");
       }
