@@ -43,13 +43,17 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.mozilla.jss.pkcs7.SignedData;
+import org.mozilla.jss.asn1.*;
+import org.mozilla.jss.pkcs7.*;
+import org.mozilla.jss.pkix.cert.Certificate;
+import org.mozilla.jss.pkix.cert.CertificateInfo;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.JPCSCService;
+import sos.util.Hex;
 
 /**
  * High level card service for using the passport.
@@ -430,12 +434,14 @@ public class PassportService implements CardService
     * 
     * @throws IOException
     */
-   public SignedData readSecurityObject() throws IOException {
+   public SignedData readSecurityObject() throws IOException, Exception {
       byte[] tag = { 0x77 };
       BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
-      BERTLVObject[] children = (BERTLVObject[])object.getValue();
-      System.out.println("children.length = " + children.length);
-      return null; // HIER
+      object = ((BERTLVObject[])object.getValue())[0];
+      object = ((BERTLVObject[])object.getValue())[1];
+      SignedData value = (SignedData)ASN1Util.decode(new SignedData.Template(), object.getValueAsBytes());
+      System.out.println(value);
+      return value;
    }
 
    private static final Provider PROVIDER =
@@ -448,7 +454,17 @@ public class PassportService implements CardService
          PassportService service = new PassportService(new JPCSCService());
          service.open();
          service.doBAC("ZZ0062725", "710121", "091130");
-         service.readSecurityObject();
+         SignedData signedData = service.readSecurityObject();
+         SET certificates = signedData.getCertificates();
+         for (int i = 0; i < certificates.size(); i++) {
+            CertificateInfo cert = ((Certificate)certificates.elementAt(i)).getInfo();
+            System.out.println(cert.getIssuer().getRFC1485());
+            PublicKey pubkey = cert.getSubjectPublicKeyInfo().toPublicKey();
+            System.out.println("pubkey = " + pubkey);
+         }
+         ContentInfo signedContent = signedData.getContentInfo();
+         byte[] content = ((ANY)signedContent.getInterpretedContent()).getContents();
+         System.out.println("content = " + Hex.bytesToHexString(content));
          service.close();
       } catch (Exception e) {
          e.printStackTrace();
