@@ -505,6 +505,17 @@ public class PassportService implements CardService
       }
       return cert;
    }
+   
+   public SignerInfo readSignerInfo() throws Exception {
+      SignedData signedData = readSignedData();
+      ASN1Set signerInfos = signedData.getSignerInfos();
+      for (int i = 0; i < signerInfos.size(); i++) {
+         SignerInfo info = new SignerInfo((DERSequence) signerInfos
+               .getObjectAt(i));
+         return info;
+      }
+      return null;
+   }
 
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
@@ -531,13 +542,14 @@ public class PassportService implements CardService
             System.out.println("cert " + i + " = " + cert);
          }
       
-         FileInputStream fileIn = new FileInputStream("/tmp/nl.cer");
+        /*  FileInputStream fileIn = new FileInputStream("/tmp/nl.cer");
          CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
          Collection coll = certFactory.generateCertificates(fileIn);
          for (Iterator it = coll.iterator(); it.hasNext();) {
             cert = (X509Certificate) it.next();
             System.out.println("cert = " + cert);
          }
+         */
          
 
          LDSSecurityObject sod = service.readSecurityObject();
@@ -547,55 +559,33 @@ public class PassportService implements CardService
          System.out.println("aid.getObjectId() = " + aid.getObjectId());
          System.out.println("aid.getObjectId().getId() = " + aid.getObjectId().getId());
          System.out.println("aid.getParametes() = " + aid.getParameters());
-                
-         DataGroupHash[] hashes = sod.getDatagroupHash();
-         for (int i = 0; i < hashes.length; i++) {
-            System.out.print(" stored hash of DG" + hashes[i].getDataGroupNumber() + " = ");
-            System.out.println(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
-         }
+         
+         SignerInfo info = service.readSignerInfo();
+         byte[] dig = info.getEncryptedDigest().getOctets();
+         System.out.println("dig = " + Hex.bytesToHexString(dig));
+         System.out.println("dig.length = " + dig.length);
 
          Signature sig = Signature.getInstance("SHA256WithRSA");
          
-         sig.initVerify(cert.getPublicKey());
-         if (sig.verify(sod.getDEREncoded())) {
+         
+         ContentInfo contentInfo = signedData.getContentInfo();
+         byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
+         System.out.println("content = " + Hex.bytesToHexString(content));
+  
+         System.out.println("sigalgname = " + cert.getSigAlgName());
+         
+         sig.initVerify(cert);
+         sig.update(content);
+         if (sig.verify(dig)) {
             System.out.println("Signature check succeeded!");
          } else {
             System.out.println("Signature check failed!");
          }   
-
-         byte[] dg1 = service.readFile(PassportFileService.EF_DG1);
-         byte[] dg2 = service.readFile(PassportFileService.EF_DG2);
-         byte[] dg15 = service.readFile(PassportFileService.EF_DG15);
-         MessageDigest digest = MessageDigest.getInstance("SHA256");
-         byte[] computedHashDG1 = digest.digest(dg1);
-         byte[] computedHashDG2 = digest.digest(dg2);
-         byte[] computedHashDG15 = digest.digest(dg15);
-         System.out.println("computed hash of DG1: " + Hex.bytesToHexString(computedHashDG1));
-         System.out.println("computed hash of DG2: " + Hex.bytesToHexString(computedHashDG2));
-         System.out.println("computed hash of DG15: " + Hex.bytesToHexString(computedHashDG15));
-         
-    
-         
-         ASN1Set signerInfos = signedData.getSignerInfos();
-         for (int i = 0; i < signerInfos.size(); i++) {
-            SignerInfo info = new SignerInfo((DERSequence)signerInfos.getObjectAt(i));
-            byte[] dig = info.getEncryptedDigest().getOctets();
-            
-            System.out.println("info dig " + i + " = " + Hex.bytesToHexString(dig));
-            System.out.println("dig.length = " + dig.length);
-            
-            sig.initVerify(cert.getPublicKey());
-            if (sig.verify(dig)) {
-               System.out.println("Signature check succeeded!");
-            } else {
-               System.out.println("Signature check failed!");
-            }   
-         }
-         
          service.close();
       } catch (Exception e) {
          e.printStackTrace();
       }
+      
    }
    
    /**
