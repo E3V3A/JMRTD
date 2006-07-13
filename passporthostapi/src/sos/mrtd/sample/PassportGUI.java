@@ -144,20 +144,22 @@ public class PassportGUI extends JPanel
          LDSPanel ldsPanel = new LDSPanel(service);
          FacePanel facePanel = new FacePanel(service);
          AAPanel aaPanel = new AAPanel(service);
+         SOPanel soPanel = new SOPanel(service);
          InitPassportPanel initPanel = new InitPassportPanel(service);
          bacPanel.addAuthenticationListener(apduSenderPanel);
          bacPanel.addAuthenticationListener(ldsPanel);
          bacPanel.addAuthenticationListener(facePanel);
          bacPanel.addAuthenticationListener(aaPanel);
+         bacPanel.addAuthenticationListener(soPanel);
          bacPanel.addAuthenticationListener(initPanel);
          tabbedPane.addTab("BAC", bacPanel);
          tabbedPane.addTab("APDU", apduSenderPanel);
          tabbedPane.addTab("LDS", ldsPanel);
          tabbedPane.addTab("Face", facePanel);
          tabbedPane.addTab("AA", aaPanel);
+         tabbedPane.addTab("SO", soPanel);
          tabbedPane.addTab("Init", initPanel);
          add(tabbedPane, BorderLayout.CENTER);
-         
          service.addAPDUListener(log);
       } catch (Exception e) {
          e.printStackTrace();

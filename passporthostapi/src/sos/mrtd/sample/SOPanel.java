@@ -27,12 +27,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.PublicKey;
+import java.security.cert.Certificate;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+
+import org.bouncycastle.asn1.icao.DataGroupHash;
+import org.bouncycastle.asn1.icao.LDSSecurityObject;
 
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
@@ -44,17 +47,17 @@ import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;
 
 /**
- * Convenient GUI component for doing AA.
+ * Convenient GUI component examining the security object.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision$
+ * @version $Revision: 43 $
  */
-public class AAPanel extends JPanel
+public class SOPanel extends JPanel
 implements AuthListener
 {
    private JTextArea area;
-   private JButton readPubKeyButton, aaButton;
+   private JButton readObjectButton, readCertButton, computeHashButton;
 
    private PassportApduService apduService;
    private PassportAuthService authService;
@@ -62,42 +65,52 @@ implements AuthListener
    
    private SecureMessagingWrapper wrapper;
    
-   private PublicKey pubkey;
+   private LDSSecurityObject sod;
+   private Certificate docSigningCert;
+   private Certificate countrySigningCert;
 
-   public AAPanel(PassportApduService service)
+   public SOPanel(PassportApduService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(new FlowLayout());
       this.apduService = service;
       this.authService = new PassportAuthService(apduService);
       this.passportService = new PassportService(authService);
       this.wrapper = null;
-      readPubKeyButton = new JButton("Read Public Key");
-      add(readPubKeyButton);
-      readPubKeyButton.addActionListener(new ActionListener() {
+      JPanel buttonPanel = new JPanel(new FlowLayout());
+      readObjectButton = new JButton("Read Security Object");
+      buttonPanel.add(readObjectButton);
+      readObjectButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               pubkey = passportService.readAAPublicKey();
-               area.append("Read pubkey = " + pubkey + "\n");
-            } catch (Exception e) {
-               e.printStackTrace();
-            }
-         }
-      });
-      aaButton = new JButton("Do AA");
-      add(aaButton);
-      aaButton.addActionListener(new ActionListener() {
-         public void actionPerformed(ActionEvent ae) {
-            try {
-               if (authService.doAA(pubkey)) {
-                  area.append("AA succeeded!\n");
-                  return;
+               sod = passportService.readSecurityObject();
+               area.append("Read pubkey security object\n");
+               DataGroupHash[] hashes = sod.getDatagroupHash();
+               for (int i = 0; i < hashes.length; i++) {
+                  area.append(" stored hash of ");
+                  area.append("DG" + hashes[i].getDataGroupNumber());
+                  area.append(": ");
+                  area.append(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
+                  area.append("\n");
                }
             } catch (Exception e) {
                e.printStackTrace();
             }
-            area.append("AA failed!\n");
          }
       });
+      readCertButton = new JButton("Card cert");
+      buttonPanel.add(readCertButton);
+      readCertButton.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent ae) {
+            try {
+               docSigningCert = passportService.readDocSigningCertificate();
+               area.append("docSigningCert = \n" + docSigningCert);
+               area.append("\n");
+            } catch (Exception e) {
+               e.printStackTrace();
+            }
+         }
+      });
+      add(buttonPanel);
       area = new JTextArea(20, 30);
       add(new JScrollPane(area));
    }

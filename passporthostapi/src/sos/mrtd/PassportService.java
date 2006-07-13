@@ -31,10 +31,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
@@ -48,12 +50,8 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEREncodable;
-import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.icao.DataGroupHash;
@@ -62,7 +60,6 @@ import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.asn1.pkcs.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.AttributeCertificate;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
@@ -115,7 +112,8 @@ public class PassportService implements CardService
    private int state;
 
    private PassportFileService service;
-   private KeyFactory factory;
+   private KeyFactory keyFactory;
+   private CertificateFactory certFactory;
    
    /**
     * Creates a new passport service for accessing the passport.
@@ -133,7 +131,8 @@ public class PassportService implements CardService
       } else {
          this.service = new PassportFileService(service);
       }
-      factory = KeyFactory.getInstance("RSA");
+      keyFactory = KeyFactory.getInstance("RSA");
+      certFactory = CertificateFactory.getInstance("X.509");
       state = SESSION_STOPPED_STATE;
    }
    
@@ -451,17 +450,21 @@ public class PassportService implements CardService
    }
    
    BERTLVObject readObject(short fid, byte[] tag) throws IOException {
-      byte[] file = service.readFile(fid);
+      byte[] file = readFile(fid);
       BERTLVObject fileObject = BERTLVObject.getInstance(new ByteArrayInputStream(file));
       BERTLVObject object = fileObject.getChild(tag);
       return object;
    }
+   
+   byte[] readFile(short fid) throws IOException {
+      return service.readFile(fid);
+   }
 
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
-      byte[] file = service.readFile(PassportFileService.EF_DG15);
+      byte[] file = readFile(PassportFileService.EF_DG15);
       BERTLVObject fileObj = BERTLVObject.getInstance(new ByteArrayInputStream(file));
       X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(fileObj.getValueAsBytes());
-      return factory.generatePublic(pubKeySpec);
+      return keyFactory.generatePublic(pubKeySpec);
    }
    
    private SignedData readSignedData() throws IOException, Exception {
@@ -488,6 +491,19 @@ public class PassportService implements CardService
       ASN1InputStream asn1In = new ASN1InputStream(new ByteArrayInputStream(content)); 
       LDSSecurityObject sod = new LDSSecurityObject((DERSequence)asn1In.readObject());
       return sod;
+   }
+   
+   public Certificate readDocSigningCertificate() throws IOException, Exception {
+      X509Certificate cert = null;
+      SignedData signedData = readSignedData();
+      ASN1Set certs = signedData.getCertificates();
+      for (int i = 0; i < certs.size(); i++) {
+         X509CertificateStructure e =
+            new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
+          cert = new X509CertificateObject(e);
+         System.out.println("cert " + i + " = " + cert);
+      }
+      return cert;
    }
 
    private static final Provider PROVIDER =
@@ -516,8 +532,8 @@ public class PassportService implements CardService
          }
       
          FileInputStream fileIn = new FileInputStream("/tmp/nl.cer");
-         CertificateFactory   fact = CertificateFactory.getInstance("X.509");
-         Collection coll = fact.generateCertificates(fileIn);
+         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+         Collection coll = certFactory.generateCertificates(fileIn);
          for (Iterator it = coll.iterator(); it.hasNext();) {
             cert = (X509Certificate) it.next();
             System.out.println("cert = " + cert);
@@ -529,13 +545,12 @@ public class PassportService implements CardService
          AlgorithmIdentifier aid = sod.getDigestAlgorithmIdentifier();
          System.out.println("aid = " + aid);
          System.out.println("aid.getObjectId() = " + aid.getObjectId());
-
          System.out.println("aid.getObjectId().getId() = " + aid.getObjectId().getId());
          System.out.println("aid.getParametes() = " + aid.getParameters());
                 
          DataGroupHash[] hashes = sod.getDatagroupHash();
          for (int i = 0; i < hashes.length; i++) {
-            System.out.print(" hash(DG" + hashes[i].getDataGroupNumber() + ") =");
+            System.out.print(" stored hash of DG" + hashes[i].getDataGroupNumber() + " = ");
             System.out.println(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
          }
 
@@ -548,8 +563,18 @@ public class PassportService implements CardService
             System.out.println("Signature check failed!");
          }   
 
-         // BERTLVObject dg1 = service.readObject(PassportFileService.EF_DG1, null);
-         // BERTLVObject dg2 = service.readObject(PassportFileService.EF_DG2, null);
+         byte[] dg1 = service.readFile(PassportFileService.EF_DG1);
+         byte[] dg2 = service.readFile(PassportFileService.EF_DG2);
+         byte[] dg15 = service.readFile(PassportFileService.EF_DG15);
+         MessageDigest digest = MessageDigest.getInstance("SHA256");
+         byte[] computedHashDG1 = digest.digest(dg1);
+         byte[] computedHashDG2 = digest.digest(dg2);
+         byte[] computedHashDG15 = digest.digest(dg15);
+         System.out.println("computed hash of DG1: " + Hex.bytesToHexString(computedHashDG1));
+         System.out.println("computed hash of DG2: " + Hex.bytesToHexString(computedHashDG2));
+         System.out.println("computed hash of DG15: " + Hex.bytesToHexString(computedHashDG15));
+         
+    
          
          ASN1Set signerInfos = signedData.getSignerInfos();
          for (int i = 0; i < signerInfos.size(); i++) {
@@ -558,7 +583,6 @@ public class PassportService implements CardService
             
             System.out.println("info dig " + i + " = " + Hex.bytesToHexString(dig));
             System.out.println("dig.length = " + dig.length);
-            
             
             sig.initVerify(cert.getPublicKey());
             if (sig.verify(dig)) {
