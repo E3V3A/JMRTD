@@ -33,6 +33,7 @@ import java.security.KeyFactory;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -43,10 +44,17 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import org.mozilla.jss.asn1.*;
-import org.mozilla.jss.pkcs7.*;
-import org.mozilla.jss.pkix.cert.Certificate;
-import org.mozilla.jss.pkix.cert.CertificateInfo;
+
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DEREncodable;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.icao.LDSSecurityObject;
+import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.x509.AttributeCertificate;
+import org.bouncycastle.asn1.x509.X509CertificateStructure;
+import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
@@ -434,14 +442,12 @@ public class PassportService implements CardService
     * 
     * @throws IOException
     */
-   public SignedData readSecurityObject() throws IOException, Exception {
+   public BERTLVObject readSecurityObject() throws IOException, Exception {
       byte[] tag = { 0x77 };
       BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
       object = ((BERTLVObject[])object.getValue())[0];
       object = ((BERTLVObject[])object.getValue())[1];
-      SignedData value = (SignedData)ASN1Util.decode(new SignedData.Template(), object.getValueAsBytes());
-      System.out.println(value);
-      return value;
+      return object;
    }
 
    private static final Provider PROVIDER =
@@ -454,17 +460,29 @@ public class PassportService implements CardService
          PassportService service = new PassportService(new JPCSCService());
          service.open();
          service.doBAC("ZZ0062725", "710121", "091130");
-         SignedData signedData = service.readSecurityObject();
-         SET certificates = signedData.getCertificates();
-         for (int i = 0; i < certificates.size(); i++) {
-            CertificateInfo cert = ((Certificate)certificates.elementAt(i)).getInfo();
-            System.out.println(cert.getIssuer().getRFC1485());
-            PublicKey pubkey = cert.getSubjectPublicKeyInfo().toPublicKey();
-            System.out.println("pubkey = " + pubkey);
+         BERTLVObject object = service.readSecurityObject();
+         System.out.println(object);
+         byte[] value = object.getValueAsBytes();
+         
+         /*
+          * Using Bouncy Castle stuff...
+          */
+         ASN1InputStream in = new ASN1InputStream(value);
+         SignedData signedData = new SignedData((DERSequence)in.readObject());
+         
+         ASN1Set certs = signedData.getCertificates();
+         for (int i = 0; i < certs.size(); i++) {
+            X509CertificateStructure e =
+               new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
+            X509Certificate cert = new X509CertificateObject(e);
+            System.out.println("cert = " + cert);
          }
-         ContentInfo signedContent = signedData.getContentInfo();
-         byte[] content = ((ANY)signedContent.getInterpretedContent()).getContents();
-         System.out.println("content = " + Hex.bytesToHexString(content));
+        
+         ASN1Set signerInfos = signedData.getSignerInfos();
+         for (int i = 0; i < signerInfos.size(); i++) {
+           // SignerInfo info =
+         }
+         
          service.close();
       } catch (Exception e) {
          e.printStackTrace();
