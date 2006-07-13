@@ -464,19 +464,30 @@ public class PassportService implements CardService
       return factory.generatePublic(pubKeySpec);
    }
    
+   private SignedData readSignedData() throws IOException, Exception {
+	   byte[] tag = { 0x77 };
+	   BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
+	   object = ((BERTLVObject[])object.getValue())[0];
+	   object = ((BERTLVObject[])object.getValue())[1];
+	   ASN1InputStream in = new ASN1InputStream(object.getValueAsBytes());
+	   SignedData signedData = new SignedData((DERSequence)in.readObject());
+	   return signedData;
+   }
+
    /**
     * Reads the security object.
     * 
-    * @return the security object data
+    * @return the security object
     * 
     * @throws IOException
     */
-   public BERTLVObject readSecurityObject() throws IOException, Exception {
-      byte[] tag = { 0x77 };
-      BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
-      object = ((BERTLVObject[])object.getValue())[0];
-      object = ((BERTLVObject[])object.getValue())[1];
-      return object;
+   public LDSSecurityObject readSecurityObject() throws IOException, Exception {
+      SignedData signedData = readSignedData();
+      ContentInfo contentInfo = signedData.getContentInfo();
+      byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
+      ASN1InputStream asn1In = new ASN1InputStream(new ByteArrayInputStream(content)); 
+      LDSSecurityObject sod = new LDSSecurityObject((DERSequence)asn1In.readObject());
+      return sod;
    }
 
    private static final Provider PROVIDER =
@@ -490,15 +501,9 @@ public class PassportService implements CardService
          service.open();
          // service.doBAC("ZZ0062725", "710121", "091130");
          service.doBAC("XX0001328", "711019", "111001");
-         BERTLVObject object = service.readSecurityObject();
-         System.out.println(object);
-         byte[] value = object.getValueAsBytes();
          
-         /*
-          * Using Bouncy Castle stuff...
-          */
-         ASN1InputStream in = new ASN1InputStream(value);
-         SignedData signedData = new SignedData((DERSequence)in.readObject());
+
+         SignedData signedData = service.readSignedData();
          
          X509Certificate cert = null;
  
@@ -518,15 +523,8 @@ public class PassportService implements CardService
             System.out.println("cert = " + cert);
          }
          
-         ContentInfo contentInfo = signedData.getContentInfo();
-         byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-         System.out.println("content = " + Hex.bytesToHexString(content));
-         System.out.println("content.length = " + content.length);
-         
-         ASN1InputStream asn1In = new ASN1InputStream(new ByteArrayInputStream(content));
-         DERSequence obj2 = (DERSequence)asn1In.readObject();       
-         LDSSecurityObject sod = new LDSSecurityObject((DERSequence)obj2);
-         System.out.println(sod);
+
+         LDSSecurityObject sod = service.readSecurityObject();
          
          AlgorithmIdentifier aid = sod.getDigestAlgorithmIdentifier();
          System.out.println("aid = " + aid);
@@ -534,27 +532,25 @@ public class PassportService implements CardService
 
          System.out.println("aid.getObjectId().getId() = " + aid.getObjectId().getId());
          System.out.println("aid.getParametes() = " + aid.getParameters());
-         
-         
+                
          DataGroupHash[] hashes = sod.getDatagroupHash();
          for (int i = 0; i < hashes.length; i++) {
-            System.out.println(" dg = " + hashes[i].getDataGroupNumber());
-            System.out.println(" value = " + Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
+            System.out.print(" hash(DG" + hashes[i].getDataGroupNumber() + ") =");
+            System.out.println(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
          }
-         
-         
-       
+
          Signature sig = Signature.getInstance("SHA256WithRSA");
-         // BERTLVObject dg1 = service.readObject(PassportFileService.EF_DG1, null);
-         // BERTLVObject dg2 = service.readObject(PassportFileService.EF_DG2, null);
          
          sig.initVerify(cert.getPublicKey());
-         if (sig.verify(content)) {
+         if (sig.verify(sod.getDEREncoded())) {
             System.out.println("Signature check succeeded!");
          } else {
             System.out.println("Signature check failed!");
          }   
 
+         // BERTLVObject dg1 = service.readObject(PassportFileService.EF_DG1, null);
+         // BERTLVObject dg2 = service.readObject(PassportFileService.EF_DG2, null);
+         
          ASN1Set signerInfos = signedData.getSignerInfos();
          for (int i = 0; i < signerInfos.size(); i++) {
             SignerInfo info = new SignerInfo((DERSequence)signerInfos.getObjectAt(i));
