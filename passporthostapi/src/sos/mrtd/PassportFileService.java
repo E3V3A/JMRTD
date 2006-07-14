@@ -224,7 +224,7 @@ public class PassportFileService implements CardService
     * @deprecated hack
     * @param wrapper
     */
-   void setWrapper(SecureMessagingWrapper wrapper) {
+   public void setWrapper(SecureMessagingWrapper wrapper) {
       authService.setWrapper(wrapper);
    }
 }

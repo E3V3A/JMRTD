@@ -27,6 +27,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.cert.Certificate;
 
 import javax.swing.JButton;
@@ -41,7 +42,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;
@@ -57,10 +58,10 @@ public class SOPanel extends JPanel
 implements AuthListener
 {
    private JTextArea area;
-   private JButton readObjectButton, readCertButton, computeHashButton;
+   private JButton readObjectButton, readDSCert, computeHashButton;
 
    private PassportApduService apduService;
-   private PassportAuthService authService;
+   private PassportFileService fileService;
    private PassportService passportService;
    
    private SecureMessagingWrapper wrapper;
@@ -73,8 +74,8 @@ implements AuthListener
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(new FlowLayout());
       this.apduService = service;
-      this.authService = new PassportAuthService(apduService);
-      this.passportService = new PassportService(authService);
+      this.fileService = new PassportFileService(apduService);
+      this.passportService = new PassportService(fileService);
       this.wrapper = null;
       JPanel buttonPanel = new JPanel(new FlowLayout());
       readObjectButton = new JButton("Read Security Object");
@@ -87,8 +88,7 @@ implements AuthListener
                DataGroupHash[] hashes = sod.getDatagroupHash();
                for (int i = 0; i < hashes.length; i++) {
                   area.append(" stored hash of ");
-                  area.append("DG" + hashes[i].getDataGroupNumber());
-                  area.append(": ");
+                  area.append("DG" + hashes[i].getDataGroupNumber() + ": ");
                   area.append(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
                   area.append("\n");
                }
@@ -97,14 +97,33 @@ implements AuthListener
             }
          }
       });
-      readCertButton = new JButton("Card cert");
-      buttonPanel.add(readCertButton);
-      readCertButton.addActionListener(new ActionListener() {
+      readDSCert = new JButton("Read DS cert");
+      buttonPanel.add(readDSCert);
+      readDSCert.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
                docSigningCert = passportService.readDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
+            } catch (Exception e) {
+               e.printStackTrace();
+            }
+         }
+      });
+      computeHashButton = new JButton("Compute Hashes");
+      buttonPanel.add(computeHashButton);
+      computeHashButton.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent ae) {
+            try {
+               MessageDigest digest = MessageDigest.getInstance("SHA256");
+               short[] dg = passportService.readDataGroupList();
+               for (int i = 0; i < dg.length; i++) {
+                  byte[] file = fileService.readFile(dg[i]);
+                  area.append(" computed hash of ");
+                  area.append("DG" + (dg[i] & 0xFF) + ": ");
+                  area.append(Hex.bytesToHexString(digest.digest(file)));
+                  area.append("\n");
+               }
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -117,7 +136,7 @@ implements AuthListener
    
    public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper();
-      authService.setWrapper(wrapper);
+      fileService.setWrapper(wrapper);
       passportService.setWrapper(wrapper);
    }
    
