@@ -167,7 +167,7 @@ public class SOPanel extends JPanel implements AuthListener
                   countrySigningCert = (Certificate)it.next();
                   area.append("Contents of: ");
                   area.append("\"" + file.toString() + "\"\n");
-                  area.append(countrySigningCert.toString());
+                  area.append(countrySigningCert.toString() + "\n");
                }
             } catch (Exception e) {
                e.printStackTrace();
