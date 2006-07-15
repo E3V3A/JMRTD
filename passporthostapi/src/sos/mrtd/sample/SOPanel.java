@@ -22,18 +22,29 @@
 
 package sos.mrtd.sample;
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.util.Collection;
+import java.util.Iterator;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
@@ -54,11 +65,13 @@ import sos.util.Hex;
  *
  * @version $Revision: 43 $
  */
-public class SOPanel extends JPanel
-implements AuthListener
+public class SOPanel extends JPanel implements AuthListener
 {
+   private static final Border PANEL_BORDER =
+      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+   
    private JTextArea area;
-   private JButton readObjectButton, readDSCert, computeHashButton;
+   private JButton readObjectButton, readDSCertButton, loadCSCertButton, computeHashButton;
 
    private PassportApduService apduService;
    private PassportFileService fileService;
@@ -72,14 +85,15 @@ implements AuthListener
 
    public SOPanel(PassportApduService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
-      super(new FlowLayout());
+      super(new BorderLayout());
       this.apduService = service;
       this.fileService = new PassportFileService(apduService);
       this.passportService = new PassportService(fileService);
       this.wrapper = null;
-      JPanel buttonPanel = new JPanel(new FlowLayout());
-      readObjectButton = new JButton("Read Security Object");
-      buttonPanel.add(readObjectButton);
+      
+      final JPanel hashesPanel = new JPanel(new FlowLayout());
+      readObjectButton = new JButton("Read from SO");
+      hashesPanel.add(readObjectButton);
       readObjectButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
@@ -87,19 +101,40 @@ implements AuthListener
                area.append("Read pubkey security object\n");
                DataGroupHash[] hashes = sod.getDatagroupHash();
                for (int i = 0; i < hashes.length; i++) {
-                  area.append(" stored hash of ");
+                  area.append("   stored hash of ");
                   area.append("DG" + hashes[i].getDataGroupNumber() + ": ");
                   area.append(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
-                  area.append("\n");
+                  area.append("\n\n");
                }
             } catch (Exception e) {
                e.printStackTrace();
             }
          }
       });
-      readDSCert = new JButton("Read DS cert");
-      buttonPanel.add(readDSCert);
-      readDSCert.addActionListener(new ActionListener() {
+      computeHashButton = new JButton("Compute");
+      hashesPanel.add(computeHashButton);
+      computeHashButton.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent ae) {
+            try {
+               MessageDigest digest = MessageDigest.getInstance("SHA256");
+               short[] dg = passportService.readDataGroupList();
+               for (int i = 0; i < dg.length; i++) {
+                  byte[] file = fileService.readFile(dg[i]);
+                  area.append("   computed hash of ");
+                  area.append("DG" + (dg[i] & 0xFF) + ": ");
+                  area.append(Hex.bytesToHexString(digest.digest(file)));
+                  area.append("\n\n");
+               }
+            } catch (Exception e) {
+               e.printStackTrace();
+            }
+         }
+      });
+      
+      JPanel certsPanel = new JPanel();
+      readDSCertButton = new JButton("Doc Signing cert");
+      certsPanel.add(readDSCertButton);
+      readDSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
                docSigningCert = passportService.readDocSigningCertificate();
@@ -110,28 +145,41 @@ implements AuthListener
             }
          }
       });
-      computeHashButton = new JButton("Compute Hashes");
-      buttonPanel.add(computeHashButton);
-      computeHashButton.addActionListener(new ActionListener() {
+      loadCSCertButton = new JButton("Country Signing cert");
+      certsPanel.add(loadCSCertButton);
+      loadCSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               MessageDigest digest = MessageDigest.getInstance("SHA256");
-               short[] dg = passportService.readDataGroupList();
-               for (int i = 0; i < dg.length; i++) {
-                  byte[] file = fileService.readFile(dg[i]);
-                  area.append(" computed hash of ");
-                  area.append("DG" + (dg[i] & 0xFF) + ": ");
-                  area.append(Hex.bytesToHexString(digest.digest(file)));
-                  area.append("\n");
+               final JFileChooser chooser = new JFileChooser();
+               chooser.setDialogTitle("Select certificate file");
+               // chooser.setCurrentDirectory(currentDir);
+               chooser.setFileHidingEnabled(false);
+               int n = chooser.showOpenDialog(hashesPanel);
+               if (n != JFileChooser.APPROVE_OPTION) {
+                  System.out.println("DEBUG: select file canceled...");
+                  return;
+               }
+               File file = chooser.getSelectedFile();
+               FileInputStream fileIn = new FileInputStream(file);
+               CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+               Collection coll = certFactory.generateCertificates(fileIn);
+               for (Iterator it = coll.iterator(); it.hasNext();) {
+                  countrySigningCert = (Certificate)it.next();
                }
             } catch (Exception e) {
                e.printStackTrace();
             }
          }
       });
-      add(buttonPanel);
+      
+      hashesPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Hashes"));
+      certsPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Certificates"));
+      JPanel leftPanel = new JPanel(new GridLayout(2,1));
+      leftPanel.add(hashesPanel);
+      leftPanel.add(certsPanel);
+      add(leftPanel, BorderLayout.WEST);
       area = new JTextArea(20, 30);
-      add(new JScrollPane(area));
+      add(new JScrollPane(area), BorderLayout.CENTER);
    }
    
    public void performedBAC(BACEvent be) {
