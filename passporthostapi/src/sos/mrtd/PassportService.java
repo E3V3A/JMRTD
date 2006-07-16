@@ -42,20 +42,23 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 
+import javax.crypto.Cipher;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.pkcs.ContentInfo;
-import org.bouncycastle.asn1.pkcs.SignedData;
-import org.bouncycastle.asn1.pkcs.SignerInfo;
+import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
@@ -463,23 +466,21 @@ public class PassportService implements CardService
       return keyFactory.generatePublic(pubKeySpec);
    }
    
-   private SignedData readSignedData() throws IOException, Exception {
+   private SignedData readSignedData() throws IOException, Exception { // TODO: can be private?
 	   byte[] tag = { 0x77 };
 	   BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
 	   object = ((BERTLVObject[])object.getValue())[0];
 	   object = ((BERTLVObject[])object.getValue())[1];
 	   ASN1InputStream in = new ASN1InputStream(object.getValueAsBytes());
 	   SignedData signedData = new SignedData((DERSequence)in.readObject());
+       Object nextObject = in.readObject();
+       if (nextObject != null) {
+          System.out.println("DEBUG: WARNING: extra object found after SignedData...");
+       }
 	   return signedData;
    }
    
-   public ContentInfo readContentInfo() throws Exception {
-      SignedData signedData = readSignedData();
-      ContentInfo contentInfo = signedData.getContentInfo();
-      return contentInfo;
-   }
-   
-   public SignerInfo readSignerInfo() throws Exception {
+   private SignerInfo readSignerInfo() throws Exception {
       SignedData signedData = readSignedData();
       ASN1Set signerInfos = signedData.getSignerInfos();
       if (signerInfos.size() > 1) {
@@ -501,10 +502,15 @@ public class PassportService implements CardService
     * @throws IOException
     */
    public LDSSecurityObject readSecurityObject() throws IOException, Exception {
-      ContentInfo contentInfo = readContentInfo();
+      SignedData signedData = readSignedData();
+      ContentInfo contentInfo = signedData.getEncapContentInfo();
       byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-      ASN1InputStream asn1In = new ASN1InputStream(new ByteArrayInputStream(content)); 
-      LDSSecurityObject sod = new LDSSecurityObject((DERSequence)asn1In.readObject());
+      ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(content)); 
+      LDSSecurityObject sod = new LDSSecurityObject((DERSequence)in.readObject());
+      Object nextObject = in.readObject();
+      if (nextObject != null) {
+         System.out.println("DEBUG: WARNING: extra object found after LDSSecurityObject...");
+      }
       return sod;
    }
    
@@ -516,82 +522,27 @@ public class PassportService implements CardService
          X509CertificateStructure e =
             new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
           cert = new X509CertificateObject(e);
-         System.out.println("cert " + i + " = " + cert);
       }
       return cert;
    }
-   
-
-
-   private static final Provider PROVIDER =
-      new org.bouncycastle.jce.provider.BouncyCastleProvider();
-   
-
-   public static void main(String[] arg) {
-      try {
-         Security.insertProviderAt(PROVIDER, 2);
-         PassportService service = new PassportService(new JPCSCService());
-         service.open();
-         // service.doBAC("ZZ0062725", "710121", "091130");
-         service.doBAC("XX0001328", "711019", "111001");
-         
-
-         SignedData signedData = service.readSignedData();
-         
-         X509Certificate cert = null;
- 
-         ASN1Set certs = signedData.getCertificates();
-         for (int i = 0; i < certs.size(); i++) {
-            X509CertificateStructure e =
-               new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
-             cert = new X509CertificateObject(e);
-            System.out.println("cert " + i + " = " + cert);
-         }
-      
-        /*  FileInputStream fileIn = new FileInputStream("/tmp/nl.cer");
-         CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-         Collection coll = certFactory.generateCertificates(fileIn);
-         for (Iterator it = coll.iterator(); it.hasNext();) {
-            cert = (X509Certificate) it.next();
-            System.out.println("cert = " + cert);
-         }
-         */
-         
-
-         LDSSecurityObject sod = service.readSecurityObject();
-         
-         AlgorithmIdentifier aid = sod.getDigestAlgorithmIdentifier();
-         System.out.println("aid = " + aid);
-         System.out.println("aid.getObjectId() = " + aid.getObjectId());
-         System.out.println("aid.getObjectId().getId() = " + aid.getObjectId().getId());
-         System.out.println("aid.getParametes() = " + aid.getParameters());
-         
-         SignerInfo info = service.readSignerInfo();
-         byte[] dig = info.getEncryptedDigest().getOctets();
-         System.out.println("dig = " + Hex.bytesToHexString(dig));
-         System.out.println("dig.length = " + dig.length);
-
-         Signature sig = Signature.getInstance("SHA256WithRSA");
-         
-         
-         ContentInfo contentInfo = signedData.getContentInfo();
-         byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-         System.out.println("content = " + Hex.bytesToHexString(content));
   
-         System.out.println("sigalgname = " + cert.getSigAlgName());
-         
-         sig.initVerify(cert);
-         sig.update(content);
-         if (sig.verify(dig)) {
-            System.out.println("Signature check succeeded!");
-         } else {
-            System.out.println("Signature check failed!");
-         }   
-         service.close();
-      } catch (Exception e) {
-         e.printStackTrace();
+   public byte[] readEncryptedDigest() throws Exception {
+      SignerInfo signerInfo = readSignerInfo();
+      return signerInfo.getEncryptedDigest().getOctets();
+   }
+   
+   public byte[] readContent() throws Exception {
+      SignerInfo signerInfo = readSignerInfo();
+      ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
+      if (signedAttributes.size() == 0) {
+         /* Signed attributes absent, digest the contents... */
+         SignedData signedData = readSignedData();
+         ContentInfo contentInfo = signedData.getEncapContentInfo();
+         return ((DEROctetString)contentInfo.getContent()).getOctets();
+      } else {
+         /* Signed attributes present, digest the attributes... */
+         return signedAttributes.getDEREncoded();
       }
-      
    }
    
    /**

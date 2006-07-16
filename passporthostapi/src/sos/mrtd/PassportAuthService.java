@@ -198,7 +198,7 @@ public class PassportAuthService implements CardService
     * @throws GeneralSecurityException if something goes wrong
     */
    public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      aaCipher.init(Cipher.ENCRYPT_MODE, pubkey);
+      aaCipher.init(Cipher.DECRYPT_MODE, pubkey);
       aaSignature.initVerify(pubkey);
       byte[] m2 = new byte[8]; /* TODO: random rndIFD */
       byte[] response = service.sendInternalAuthenticate(wrapper, m2);

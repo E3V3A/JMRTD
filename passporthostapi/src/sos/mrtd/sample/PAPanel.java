@@ -27,18 +27,25 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
+import javax.crypto.Cipher;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -48,12 +55,20 @@ import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.pkcs.ContentInfo;
-import org.bouncycastle.asn1.pkcs.SignedData;
-import org.bouncycastle.asn1.pkcs.SignerInfo;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.x509.DigestInfo;
 
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
@@ -62,6 +77,7 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.mrtd.Util;
 import sos.util.Hex;
 
 /**
@@ -122,20 +138,24 @@ public class PAPanel extends JPanel implements AuthListener
       hashesPanel.add(computeHashButton);
       computeHashButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
-            try {
-               MessageDigest digest = MessageDigest.getInstance("SHA256");
-               short[] dg = passportService.readDataGroupList();
-               for (int i = 0; i < dg.length; i++) {
-                  byte[] file = fileService.readFile(dg[i]);
-                  area.append("   computed hash of ");
-                  area.append("DG" + (dg[i] & 0xFF) + ": ");
-                  area.append(Hex.bytesToHexString(digest.digest(file)));
-                  area.append("\n");
+            (new Thread(new Runnable() {
+               public void run() {
+                  try {
+                     MessageDigest digest = MessageDigest.getInstance("SHA256");
+                     short[] dg = passportService.readDataGroupList();
+                     for (int i = 0; i < dg.length; i++) {
+                        byte[] file = fileService.readFile(dg[i]);
+                        area.append("   computed hash of ");
+                        area.append("DG" + (dg[i] & 0xFF) + ": ");
+                        area.append(Hex.bytesToHexString(digest.digest(file)));
+                        area.append("\n");
+                     }
+                     area.append("\n");
+                  } catch (Exception e) {
+                     e.printStackTrace();
+                  }
                }
-               area.append("\n");
-            } catch (Exception e) {
-               e.printStackTrace();
-            }
+            })).start();
          }
       });
       
@@ -145,30 +165,14 @@ public class PAPanel extends JPanel implements AuthListener
       readDSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               /* Read document signing cert from passport */
                docSigningCert = passportService.readDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
-               
-               /* Read original content from passport. */
-               ContentInfo contentInfo = passportService.readContentInfo();
-               byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-               System.out.println("content = " + Hex.bytesToHexString(content));
-               System.out.println("content.length = " + content.length);
-               
-               /* Read signature from passport */
-               SignerInfo signerInfo = passportService.readSignerInfo();
-               byte[] info = signerInfo.getEncryptedDigest().getOctets();
-               System.out.println("info = " + Hex.bytesToHexString(info));
-               System.out.println("info.length = " + info.length);
-               
-               /* Check signature. */
                Signature sig = Signature.getInstance("SHA256WithRSA");
                sig.initVerify(docSigningCert);
-               sig.update(content);
-               boolean success = sig.verify(info);
-               area.append("Signature check: " + success + "\n");
-               System.out.println("DEBUG: sig.provider = " + sig.getProvider());
+               sig.update(passportService.readContent());
+               boolean succes = sig.verify(passportService.readEncryptedDigest());
+               area.append("Signature check: " + succes + "\n");           
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -233,6 +237,49 @@ public class PAPanel extends JPanel implements AuthListener
       area.append("pubkey = " + ae.getPubkey());
       area.append("m1 = " + Hex.bytesToHexString(ae.getM1()));
       area.append("m2 = " + Hex.bytesToHexString(ae.getM2()));
+   }
+   
+   private static void debug(Object obj) {
+      debug("DEBUG: ", obj);
+   }
+   
+   private static void debug(String indent, Object obj) {
+      if (obj == null) {
+         System.out.println(indent + "null");
+         return;
+      } else if (obj instanceof byte[]) {
+         try {
+            ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(
+                  (byte[]) obj));
+            while (true) {
+               obj = in.readObject();
+               if (obj == null) {
+                  return;
+               }
+               debug(indent, obj);
+            }
+         } catch (Exception e) {
+            System.out.println(indent + Hex.bytesToHexString((byte[]) obj));
+         }
+      } else if (obj instanceof ASN1Sequence) {
+         ASN1Sequence s = (ASN1Sequence) obj;
+         System.out.println(indent + "SEQUENCE");
+         indent += "         ";
+         for (int j = 0; j < s.size(); j++) {
+            debug(indent + " " + j + " ", s.getObjectAt(j));
+         }
+      } else if (obj instanceof ASN1Set) {
+         ASN1Set s = (ASN1Set) obj;
+         System.out.println(indent + "SET");
+         indent += "         ";
+         for (int j = 0; j < s.size(); j++) {
+            debug(indent + " " + j + " ", s.getObjectAt(j));
+         }
+      } else if (obj instanceof ASN1OctetString) {
+         debug(indent + "OCTETSTRING ", ((ASN1OctetString) obj).getOctets());
+      } else {
+         System.out.println(indent + obj.toString());
+      }
    }
 }
 
