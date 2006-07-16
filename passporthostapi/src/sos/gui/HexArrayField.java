@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006  SoS group, Radboud University
+ * Copyright (C) 2006  SoS group, ICIS, Radboud University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: HexArrayField.java 11 2006-07-04 12:15:45Z martijno $
+ * $Id$
  */
 
 package sos.gui;

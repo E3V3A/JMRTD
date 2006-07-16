@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006  SoS group, Radboud University
+ * Copyright (C) 2006  SoS group, ICIS, Radboud University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 43 $
+ * @version $Revision$
  */
 public class PAPanel extends JPanel implements AuthListener
 {

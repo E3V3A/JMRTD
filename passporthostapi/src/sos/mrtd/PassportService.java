@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006  SoS group, Radboud University
+ * Copyright (C) 2006  SoS group, ICIS, Radboud University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -450,6 +450,11 @@ public class PassportService implements CardService
       return service.readFile(fid);
    }
 
+   /**
+    * Reads the <i>Active Authentication</i> public key from the passport.
+    *
+    * @return the public key to be used for AA
+    */
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
       byte[] file = readFile(PassportFileService.EF_DG15);
       BERTLVObject fileObj = BERTLVObject.getInstance(new ByteArrayInputStream(file));
@@ -505,6 +510,11 @@ public class PassportService implements CardService
       return sod;
    }
    
+   /**
+    * Reads the document signing certificate from the passport.
+    *
+    * @return the document signing certificate
+    */
    public Certificate readDocSigningCertificate() throws IOException, Exception {
       X509Certificate cert = null;
       SignedData signedData = readSignedData();
