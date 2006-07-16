@@ -40,6 +40,7 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Arrays;
 import java.util.Collection;
@@ -168,9 +169,12 @@ public class PAPanel extends JPanel implements AuthListener
                docSigningCert = passportService.readDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
-               Signature sig = Signature.getInstance("SHA256WithRSA");
+               // ((X509Certificate)docSigningCert).checkValidity();
+               String sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
+               // Signature sig = Signature.getInstance("SHA256WithRSA");
+               Signature sig = Signature.getInstance(sigAlg);
                sig.initVerify(docSigningCert);
-               sig.update(passportService.readContent());
+               sig.update(passportService.readSecurityObjectContent());
                boolean succes = sig.verify(passportService.readEncryptedDigest());
                area.append("Signature check: " + succes + "\n");           
             } catch (Exception e) {
@@ -198,7 +202,6 @@ public class PAPanel extends JPanel implements AuthListener
                Collection coll = certFactory.generateCertificates(fileIn);
                for (Iterator it = coll.iterator(); it.hasNext();) {
                   countrySigningCert = (Certificate)it.next();
-                  System.out.println("cert type = " + countrySigningCert.getType());
                   area.append("Contents of: ");
                   area.append("\"" + file.toString() + "\"\n");
                   area.append(countrySigningCert.toString() + "\n");

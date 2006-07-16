@@ -526,12 +526,29 @@ public class PassportService implements CardService
       return cert;
    }
   
+   /**
+    * Reads the stored signature of the security object.
+    * 
+    * @return the signature
+    * @throws Exception when something goes wrong
+    */
    public byte[] readEncryptedDigest() throws Exception {
       SignerInfo signerInfo = readSignerInfo();
       return signerInfo.getEncryptedDigest().getOctets();
    }
    
-   public byte[] readContent() throws Exception {
+   /**
+    * Reads the contents of the security object over which the
+    * signature is to be computed.
+    * 
+    * See RFC 3369, Cryptographic Message Syntax, August 2002,
+    * Section 5.4 for details.
+    * 
+    * @return the contents of the security object over which the
+    *         signature is to be computed
+    * @throws Exception when something is wrong
+    */
+   public byte[] readSecurityObjectContent() throws Exception {
       SignerInfo signerInfo = readSignerInfo();
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
       if (signedAttributes.size() == 0) {
