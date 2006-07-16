@@ -32,6 +32,8 @@ import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Collection;
@@ -46,8 +48,12 @@ import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
+import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.pkcs.SignerInfo;
 
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
@@ -65,7 +71,7 @@ import sos.util.Hex;
  *
  * @version $Revision: 43 $
  */
-public class SOPanel extends JPanel implements AuthListener
+public class PAPanel extends JPanel implements AuthListener
 {
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
@@ -83,7 +89,7 @@ public class SOPanel extends JPanel implements AuthListener
    private Certificate docSigningCert;
    private Certificate countrySigningCert;
 
-   public SOPanel(PassportApduService service)
+   public PAPanel(PassportApduService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(new BorderLayout());
       this.apduService = service;
@@ -104,8 +110,9 @@ public class SOPanel extends JPanel implements AuthListener
                   area.append("   stored hash of ");
                   area.append("DG" + hashes[i].getDataGroupNumber() + ": ");
                   area.append(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
-                  area.append("\n\n");
+                  area.append("\n");
                }
+               area.append("\n");
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -123,8 +130,9 @@ public class SOPanel extends JPanel implements AuthListener
                   area.append("   computed hash of ");
                   area.append("DG" + (dg[i] & 0xFF) + ": ");
                   area.append(Hex.bytesToHexString(digest.digest(file)));
-                  area.append("\n\n");
+                  area.append("\n");
                }
+               area.append("\n");
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -132,20 +140,41 @@ public class SOPanel extends JPanel implements AuthListener
       });
       
       JPanel certsPanel = new JPanel();
-      readDSCertButton = new JButton("Doc Signing cert");
+      readDSCertButton = new JButton("DS cert");
       certsPanel.add(readDSCertButton);
       readDSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
+               /* Read document signing cert from passport */
                docSigningCert = passportService.readDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
+               
+               /* Read signature from passport */
+               SignerInfo signerInfo = passportService.readSignerInfo();
+               byte[] info = signerInfo.getEncryptedDigest().getOctets();
+               System.out.println("info = " + Hex.bytesToHexString(info));
+               System.out.println("info.length = " + info.length);
+               
+               /* Read original content. */
+               ContentInfo contentInfo = passportService.readContentInfo();
+               byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
+               System.out.println("content = " + Hex.bytesToHexString(content));
+               
+               /* Check signature. */
+               System.out.println("cert type = " + docSigningCert.getType());
+               Signature sig = Signature.getInstance("SHA256WithRSA");
+               
+               sig.initVerify(docSigningCert);
+               sig.update(content);
+               boolean success = sig.verify(info);
+               area.append("Signature check: " + success + "\n");
             } catch (Exception e) {
                e.printStackTrace();
             }
          }
       });
-      loadCSCertButton = new JButton("Country Signing cert");
+      loadCSCertButton = new JButton("CS cert");
       certsPanel.add(loadCSCertButton);
       loadCSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
@@ -165,9 +194,18 @@ public class SOPanel extends JPanel implements AuthListener
                Collection coll = certFactory.generateCertificates(fileIn);
                for (Iterator it = coll.iterator(); it.hasNext();) {
                   countrySigningCert = (Certificate)it.next();
+                  System.out.println("cert type = " + countrySigningCert.getType());
                   area.append("Contents of: ");
                   area.append("\"" + file.toString() + "\"\n");
                   area.append(countrySigningCert.toString() + "\n");
+                  PublicKey pubkey = countrySigningCert.getPublicKey();
+                  try {
+                     docSigningCert.verify(pubkey);
+                     area.append("Signature check: DS cert was signed with CS key!");
+                  } catch (Exception se) {
+                     area.append("Signature check: failed \n" + se.toString());
+                     se.printStackTrace();
+                  }
                }
             } catch (Exception e) {
                e.printStackTrace();

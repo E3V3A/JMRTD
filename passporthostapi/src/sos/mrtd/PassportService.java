@@ -472,7 +472,27 @@ public class PassportService implements CardService
 	   SignedData signedData = new SignedData((DERSequence)in.readObject());
 	   return signedData;
    }
-
+   
+   public ContentInfo readContentInfo() throws Exception {
+      SignedData signedData = readSignedData();
+      ContentInfo contentInfo = signedData.getContentInfo();
+      return contentInfo;
+   }
+   
+   public SignerInfo readSignerInfo() throws Exception {
+      SignedData signedData = readSignedData();
+      ASN1Set signerInfos = signedData.getSignerInfos();
+      if (signerInfos.size() > 1) {
+         System.out.println("DEBUG: WARNING: found " + signerInfos.size() + " signerInfos");
+      }
+      for (int i = 0; i < signerInfos.size(); i++) {
+         SignerInfo info = new SignerInfo((DERSequence) signerInfos
+               .getObjectAt(i));
+         return info;
+      }
+      return null;
+   }
+   
    /**
     * Reads the security object.
     * 
@@ -481,8 +501,7 @@ public class PassportService implements CardService
     * @throws IOException
     */
    public LDSSecurityObject readSecurityObject() throws IOException, Exception {
-      SignedData signedData = readSignedData();
-      ContentInfo contentInfo = signedData.getContentInfo();
+      ContentInfo contentInfo = readContentInfo();
       byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
       ASN1InputStream asn1In = new ASN1InputStream(new ByteArrayInputStream(content)); 
       LDSSecurityObject sod = new LDSSecurityObject((DERSequence)asn1In.readObject());
@@ -502,16 +521,7 @@ public class PassportService implements CardService
       return cert;
    }
    
-   public SignerInfo readSignerInfo() throws Exception {
-      SignedData signedData = readSignedData();
-      ASN1Set signerInfos = signedData.getSignerInfos();
-      for (int i = 0; i < signerInfos.size(); i++) {
-         SignerInfo info = new SignerInfo((DERSequence) signerInfos
-               .getObjectAt(i));
-         return info;
-      }
-      return null;
-   }
+
 
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
