@@ -82,7 +82,7 @@ public class PassportGUI extends JPanel
     */
    public PassportGUI(String[] arg) {
       try {
-          Security.insertProviderAt(PROVIDER, 2);
+          Security.insertProviderAt(PROVIDER, 4);
           
           if(arg != null && arg.length > 0 && 
         		  (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
@@ -98,7 +98,7 @@ public class PassportGUI extends JPanel
           else {
               service = new PassportApduService(new JPCSCService());
               // Loes's passport
-              DEFAULT_DOC_NR = "XX0001027";
+              DEFAULT_DOC_NR = "XX0001328";
               DEFAULT_DATE_OF_BIRTH = "711019";
               DEFAULT_DATE_OF_EXPIRY = "111001";
          }
@@ -167,8 +167,6 @@ public class PassportGUI extends JPanel
       }
    }
 
-
-   
    /**
     * Main method creates a GUI instance and puts it in a frame.
     *

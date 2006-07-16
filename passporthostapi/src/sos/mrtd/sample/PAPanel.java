@@ -150,25 +150,25 @@ public class PAPanel extends JPanel implements AuthListener
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
                
+               /* Read original content from passport. */
+               ContentInfo contentInfo = passportService.readContentInfo();
+               byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
+               System.out.println("content = " + Hex.bytesToHexString(content));
+               System.out.println("content.length = " + content.length);
+               
                /* Read signature from passport */
                SignerInfo signerInfo = passportService.readSignerInfo();
                byte[] info = signerInfo.getEncryptedDigest().getOctets();
                System.out.println("info = " + Hex.bytesToHexString(info));
                System.out.println("info.length = " + info.length);
                
-               /* Read original content. */
-               ContentInfo contentInfo = passportService.readContentInfo();
-               byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-               System.out.println("content = " + Hex.bytesToHexString(content));
-               
                /* Check signature. */
-               System.out.println("cert type = " + docSigningCert.getType());
                Signature sig = Signature.getInstance("SHA256WithRSA");
-               
                sig.initVerify(docSigningCert);
                sig.update(content);
                boolean success = sig.verify(info);
                area.append("Signature check: " + success + "\n");
+               System.out.println("DEBUG: sig.provider = " + sig.getProvider());
             } catch (Exception e) {
                e.printStackTrace();
             }
