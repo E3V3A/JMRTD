@@ -29,7 +29,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
-import java.security.PublicKey;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;

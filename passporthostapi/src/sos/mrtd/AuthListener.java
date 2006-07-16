@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.security.PublicKey;
 
 /**
  * Listener for authentication events.
