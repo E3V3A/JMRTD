@@ -186,9 +186,9 @@ public class PAPanel extends JPanel implements AuthListener
                   PublicKey pubkey = countrySigningCert.getPublicKey();
                   try {
                      docSigningCert.verify(pubkey);
-                     area.append("Signature check: DS cert was signed with CS key!");
+                     area.append("Signature check: DS cert was signed with CS key!\n");
                   } catch (Exception se) {
-                     area.append("Signature check: failed \n" + se.toString());
+                     area.append("Signature check: failed \n" + se.toString() + "\n");
                      se.printStackTrace();
                   }
                }

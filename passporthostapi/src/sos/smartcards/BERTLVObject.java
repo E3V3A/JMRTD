@@ -393,24 +393,5 @@ public class BERTLVObject
 		}
 		return "'0x" + Hex.bytesToHexString(tag) + "'";
 	}
-   
-   public static final void main(String[] arg) {
-	   try {
-	      String[] files = {
-	    		  "/tmp/ef011E.bin",
-	    		  "/tmp/ef0101.bin",
-	    		  "/tmp/ef0102.bin",
-	    		  "/tmp/ef010F.bin",
-	    		  "/tmp/ef011D.bin",
-	    		  "/tmp/a.cer"
-	    		  };
-	      for (int i = 0; i < files.length; i++) {
-	         BERTLVObject obj = BERTLVObject.getInstance(new FileInputStream(files[i]));
-	         System.out.println(obj);
-	      }
-	   } catch (Exception e) {
-		   e.printStackTrace();
-	   }
-   }
 }
 
