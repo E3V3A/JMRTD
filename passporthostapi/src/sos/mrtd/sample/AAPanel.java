@@ -22,6 +22,7 @@
 
 package sos.mrtd.sample;
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -29,10 +30,13 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
@@ -53,6 +57,9 @@ import sos.util.Hex;
 public class AAPanel extends JPanel
 implements AuthListener
 {
+   private static final Border PANEL_BORDER =
+      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+
    private JTextArea area;
    private JButton readPubKeyButton, aaButton;
 
@@ -66,13 +73,14 @@ implements AuthListener
 
    public AAPanel(PassportApduService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
-      super(new FlowLayout());
+      super(new BorderLayout());
       this.apduService = service;
       this.authService = new PassportAuthService(apduService);
       this.passportService = new PassportService(authService);
       this.wrapper = null;
+      JPanel buttonPanel = new JPanel(new FlowLayout());
       readPubKeyButton = new JButton("Read Public Key");
-      add(readPubKeyButton);
+      buttonPanel.add(readPubKeyButton);
       readPubKeyButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
@@ -84,7 +92,7 @@ implements AuthListener
          }
       });
       aaButton = new JButton("Do AA");
-      add(aaButton);
+      buttonPanel.add(aaButton);
       aaButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
@@ -98,8 +106,10 @@ implements AuthListener
             area.append("AA failed!\n");
          }
       });
+      buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "AA"));
+      add(buttonPanel, BorderLayout.WEST);
       area = new JTextArea(20, 30);
-      add(new JScrollPane(area));
+      add(new JScrollPane(area), BorderLayout.CENTER);
    }
    
    public void performedBAC(BACEvent be) {
