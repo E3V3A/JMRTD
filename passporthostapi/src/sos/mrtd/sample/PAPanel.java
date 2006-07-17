@@ -37,6 +37,7 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -86,6 +87,8 @@ public class PAPanel extends JPanel implements AuthListener
    private Certificate docSigningCert;
    private Certificate countrySigningCert;
 
+   private Object[] storedHashes;
+   
    public PAPanel(PassportApduService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(new BorderLayout());
@@ -103,10 +106,12 @@ public class PAPanel extends JPanel implements AuthListener
                sod = passportService.readSecurityObject();
                area.append("Read pubkey security object\n");
                DataGroupHash[] hashes = sod.getDatagroupHash();
+               storedHashes = new Object[hashes.length];
                for (int i = 0; i < hashes.length; i++) {
+                  storedHashes[i] = hashes[i].getDataGroupHashValue().getOctets();
                   area.append("   stored hash of ");
                   area.append("DG" + hashes[i].getDataGroupNumber() + ": ");
-                  area.append(Hex.bytesToHexString(hashes[i].getDataGroupHashValue().getOctets()));
+                  area.append(Hex.bytesToHexString((byte[])storedHashes[i]));
                   area.append("\n");
                }
                area.append("\n");
@@ -122,13 +127,26 @@ public class PAPanel extends JPanel implements AuthListener
             (new Thread(new Runnable() {
                public void run() {
                   try {
-                     MessageDigest digest = MessageDigest.getInstance("SHA256");
+                     String alg = "SHA256";
+                     // TODO: this is a hack... find out how to properly parse the sig. alg from the security object
+                     if (storedHashes != null && storedHashes.length > 0
+                        && ((byte[])storedHashes[0]).length == 20) {
+                        alg = "SHA1";
+                     }
+                     MessageDigest digest = MessageDigest.getInstance(alg);
                      short[] dg = passportService.readDataGroupList();
                      for (int i = 0; i < dg.length; i++) {
                         byte[] file = fileService.readFile(dg[i]);
+                        byte[] computedHash = digest.digest(file);
                         area.append("   computed hash of ");
                         area.append("DG" + (dg[i] & 0xFF) + ": ");
-                        area.append(Hex.bytesToHexString(digest.digest(file)));
+                        area.append(Hex.bytesToHexString(computedHash));
+                        if (storedHashes != null && storedHashes.length > i
+                              && Arrays.equals((byte[])storedHashes[i], computedHash)) {
+                           area.append(" --> OK");
+                        } else {
+                           area.append(" --> FAIL");
+                        }
                         area.append("\n");
                      }
                      area.append("\n");
@@ -154,7 +172,7 @@ public class PAPanel extends JPanel implements AuthListener
                sig.initVerify(docSigningCert);
                sig.update(passportService.readSecurityObjectContent());
                boolean succes = sig.verify(passportService.readEncryptedDigest());
-               area.append("Signature check: " + succes + "\n");           
+               area.append(" --> Signature check: " + succes + "\n");           
             } catch (Exception e) {
                e.printStackTrace();
             }
@@ -184,11 +202,12 @@ public class PAPanel extends JPanel implements AuthListener
                   area.append("\"" + file.toString() + "\"\n");
                   area.append(countrySigningCert.toString() + "\n");
                   PublicKey pubkey = countrySigningCert.getPublicKey();
+                  area.append(" --> Signature check: ");
                   try {
                      docSigningCert.verify(pubkey);
-                     area.append("Signature check: DS cert was signed with CS key!\n");
+                     area.append("DS cert was signed with CS key!\n");
                   } catch (Exception se) {
-                     area.append("Signature check: failed \n" + se.toString() + "\n");
+                     area.append("failed \n" + se.toString() + "\n");
                      se.printStackTrace();
                   }
                }

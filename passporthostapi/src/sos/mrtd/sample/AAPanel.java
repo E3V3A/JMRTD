@@ -97,13 +97,13 @@ implements AuthListener
          public void actionPerformed(ActionEvent ae) {
             try {
                if (authService.doAA(pubkey)) {
-                  area.append("AA succeeded!\n");
+                  area.append(" --> AA succeeded!\n");
                   return;
                }
             } catch (Exception e) {
                e.printStackTrace();
             }
-            area.append("AA failed!\n");
+            area.append(" --> AA failed!\n");
          }
       });
       buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "AA"));
