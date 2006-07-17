@@ -25,19 +25,22 @@ package sos.passportapplet;
 import javacard.framework.ISOException;
 import javacard.framework.Util;
 
+/***
+ * Contains methods to initialize a fresh passport.
+ * 
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
+ * @author Engelbert Hubbers (hubbers@cs.ru.nl)
+ * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ *
+ */
 public class PassportInit {
 
     /**
      * Looks up the numerical value for MRZ characters. In order to be able to
      * compute check digits.
      * 
-     * @param ch
-     *            a character from the MRZ.
-     * 
+     * @param ch a character from the MRZ.
      * @return the numerical value of the character.
-     * 
-     * @throws NumberFormatException
-     *             if <code>ch</code> is not a valid MRZ character.
      */
     private static byte decodeMRZDigit(byte ch) {
         switch (ch) {
@@ -148,55 +151,59 @@ public class PassportInit {
     /**
      * Computes the 7-3-1 check digit for part of the MRZ.
      * 
-     * @param chars
-     *            a part of the MRZ.
-     * 
+     * @param chars a part of the MRZ.
      * @return the resulting check digit.
      */
-    private static byte checkDigit(byte[] chars) {
+    private static byte checkDigit(byte[] chars, short offset, short length) {
         byte[] weights = { 7, 3, 1 };
         byte result = 0;
-        for (short i = 0; i < chars.length; i++) {
+        for (short i=0; i < length; i++) {
             result = (byte) ((short) ((result + weights[i % 3]
-                    * decodeMRZDigit(chars[i]))) % 10);
+                    * decodeMRZDigit(chars[(short)(offset + i)]))) % 10);
         }
-        return result;
+        return (byte)(result + 0x30); // return as character
     }
 
+    public static short DOCNR_LEN = 9;
+    public static short DOB_LEN = 6;
+    public static short DOE_LEN = 6;
+    
     /**
      * Computes the static key seed, based on information from the MRZ.
      * 
-     * @param docNrStr
-     *            a string containing the document number.
-     * @param dateOfBirthStr
-     *            a string containing the date of birth (YYMMDD).
-     * @param dateOfExpiryStr
-     *            a string containing the date of expiry (YYMMDD).
-     * 
-     * @return a byte array of length 16 containing the key seed.
+     * @param buffer containing docNr || dateOfBirth || dateOfExpiry
+     * @param offset pointing to docNr 
+     * @returns offset in buffer pointing to keySeed.
      */
-    public static byte[] computeKeySeed(byte[] docNr,
-            byte[] dateOfBirth, byte[] dateOfExpiry) {
-        if (docNr.length != 9 || dateOfBirth.length != 6
-                || dateOfExpiry.length != 6) {
-            ISOException.throwIt((short) 0x6d03);
+    public static short computeKeySeed(byte[] buffer, short offset) {
+        // sanity checks (80 for hash, 3 for checkdigits)
+        if(buffer.length < (short)(offset + DOCNR_LEN + DOB_LEN + DOE_LEN + 80 + 3)) {
+            ISOException.throwIt((short)0x6d66);
         }
-    
-        byte[] mrz_info = new byte[24];
-        Util.arrayCopy(docNr, (short) 0, mrz_info, (short) 0, (short) 9);
-        mrz_info[9] = (byte) (checkDigit(docNr) + 0x30); // ascii character
-        Util.arrayCopy(dateOfBirth, (short) 0, mrz_info, (short) 10, (short) 6);
-        mrz_info[16] = (byte) (checkDigit(dateOfBirth) + 0x30); // ascii
-        // character
-        Util.arrayCopy(dateOfExpiry, (short) 0, mrz_info, (short) 17, (short) 6);
-        mrz_info[23] = (byte) (checkDigit(dateOfExpiry) + 0x30); // ascii
-        // character
-    
-        byte[] hash = new byte[(short) 80];
-        PassportCrypto.createHash(mrz_info, (short)0, (short)24, hash, (short)0);
-        byte[] keySeed = new byte[16];
-        Util.arrayCopy(hash, (short) 0, keySeed, (short) 0, (short) 16);
-        return keySeed;
-    }
+        short start_offset = offset;
+        // offset must initially point to docNr 
+        offset += DOCNR_LEN;
+        short len = (short)(DOB_LEN + DOE_LEN);
+        
+        // make room for checkdigit after docNr
+        Util.arrayCopy(buffer, offset, buffer, (short)(offset + 1), len);
+        buffer[offset] = checkDigit(buffer, (short)(offset - DOCNR_LEN), DOCNR_LEN);
+        
+        offset += (short)(1 + DOB_LEN);
+        len -= DOB_LEN;
+        
+        // make room for checkdigit after dateOfBirth
+        Util.arrayCopy(buffer, offset, buffer, (short)(offset + 1), len);
+        buffer[offset] = checkDigit(buffer, (short)(offset - DOB_LEN), DOB_LEN);
+        
+        offset += (short)(1 + DOE_LEN);
+        
+        buffer[offset] = checkDigit(buffer, (short)(offset - DOE_LEN), DOE_LEN);
 
+        offset++;
+        
+        PassportCrypto.createHash(buffer, start_offset, (short)(offset - start_offset), buffer, offset);
+        
+        return offset;
+    }
 }

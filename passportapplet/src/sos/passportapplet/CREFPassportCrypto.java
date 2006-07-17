@@ -31,7 +31,7 @@ import javacard.security.KeyBuilder;
 import javacardx.crypto.Cipher;
 
 /**
- * This class is hack. It actually implements 
+ * This class is a hack. It (probably) implements 
  * => encrypt/decrypt of ALG_DES_CBC_NOPAD using ALG_DES_CBC_ISO9797_M2
  * for use in
  * => sign/verify ALG_DES_MAC8_ISO9797_1_M2_ALG3
@@ -183,24 +183,16 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                        (short) 8);
     }
 
-    public void setMacSessionKey(byte[] macKey) {
-        sm_kMac_a.setKey(macKey, (short) 0);
-        sm_kMac_b.setKey(macKey, (short) 8);        
+    public void setMutualAuthKeys(byte[] keys, short macKey_p, short encKey_p) {
+        ma_kMac_a.setKey(keys, macKey_p);
+        ma_kMac_b.setKey(keys, (short)(macKey_p + 8));                
+        ma_kEnc.setKey(keys, encKey_p);
     }
     
-    public void setMacMutualAuthKey(byte[] macKey) {
-        ma_kMac_a.setKey(macKey, (short) 0);
-        ma_kMac_b.setKey(macKey, (short) 8);        
-    }
-    
-    public void setMutualAuthKeys(byte[] macKey, byte[] encKey) {
-        setMacMutualAuthKey(macKey);
-        ma_kEnc.setKey(encKey, (short)0);
-    }
-    
-    public void setSessionKeys(byte[] macKey, byte[] encKey) {
-        setMacSessionKey(macKey);
-        sm_kEnc.setKey(encKey, (short)0);
+    public void setSessionKeys(byte[] keys, short macKey_p, short encKey_p) {
+        sm_kMac_a.setKey(keys, macKey_p);
+        sm_kMac_b.setKey(keys, (short)(macKey_p + 8));                
+        sm_kEnc.setKey(keys, encKey_p);
     }
 
     public boolean verifyMac(byte state, byte[] msg, short msg_offset,

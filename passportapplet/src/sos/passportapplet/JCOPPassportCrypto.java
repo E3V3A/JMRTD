@@ -74,14 +74,14 @@ public class JCOPPassportCrypto extends PassportCrypto {
         sig.sign(msg, msg_offset, msg_len, mac, mac_offset);
     }
 
-    public void setMutualAuthKeys(byte[] macKey, byte[] encKey) {
-        ma_kMac.setKey(macKey, (short)0);
-        ma_kEnc.setKey(encKey, (short)0);
+    public void setMutualAuthKeys(byte[] keys, short macKey_p, short encKey_p) {
+        ma_kMac.setKey(keys, macKey_p);
+        ma_kEnc.setKey(keys, encKey_p);
     }
 
-    public void setSessionKeys(byte[] macKey, byte[] encKey) {
-        sm_kMac.setKey(macKey, (short)0);
-        sm_kEnc.setKey(encKey, (short)0);
+    public void setSessionKeys(byte[] keys, short macKey_p, short encKey_p) {
+        sm_kMac.setKey(keys, macKey_p);
+        sm_kEnc.setKey(keys, encKey_p);
     }
 
     public boolean verifyMac(byte state, byte[] msg, short msg_offset,

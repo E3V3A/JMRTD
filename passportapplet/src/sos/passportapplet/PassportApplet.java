@@ -42,33 +42,37 @@ import javacard.security.RandomData;
 public class PassportApplet extends Applet implements ISO7816 {
     private static byte state = 0;
 
+    /* values of state */
     public static final byte CHALLENGED = 1;
     public static final byte MUTUAL_AUTHENTICATED = 2;
     public static final byte FILE_SELECTED = 4;
+    public static final byte HAS_MUTUALAUTHENTICATION_KEYS = 8;
 
+    /* for authentication */
     private static final byte INS_MUTUAL_AUTHENTICATE = (byte) 0x82;
     private static final byte INS_GET_CHALLENGE = (byte) 0x84;
+    private static final byte CLA_PROTECTED_APDU = 0x0c;
+    
+    /* for reading */
     private static final byte INS_SELECT_FILE = (byte) 0xA4;
     private static final byte INS_READ_BINARY = (byte) 0xB0;
+    
+    /* for writing */
     private static final byte INS_UPDATE_BINARY = (byte) 0xd6;
     private static final byte INS_CREATE_FILE = (byte) 0xe0;
-    private static final byte CLA_PROTECTED_APDU = 0x0c;
+    private static final byte INS_SET_DOCNR_DOB_DOE = (byte)0x10;
 
-    private short selectedFile;
+    static final short KEY_LENGTH = 16;
+    static final short SEED_LENGTH = 16;
+    static final short MAC_LENGTH = 8;
+    
+    private byte[] rnd;
+    private byte[] ssc;
     private FileSystem fileSystem;
 
-    private byte[] rnd;
-
-    /* sample data */
-    byte[] docNr = { 'L', '8', '9', '8', '9', '0', '2', 'C', '<' };
-    byte[] dateOfBirth = { '6', '9', '0', '8', '0', '6' };
-    byte[] dateOfExpiry = { '9', '4', '0', '6', '2', '3' };
-
     private RandomData randomData;
-
-    private byte[] ssc;
-
-    PassportCrypto crypto;
+    private short selectedFile;
+    private PassportCrypto crypto;
     
     /**
      * Creates a new passport applet.
@@ -87,13 +91,6 @@ public class PassportApplet extends Applet implements ISO7816 {
             break;                
         }
 
-        byte[] kSeed = PassportInit.computeKeySeed(docNr,
-                dateOfBirth, dateOfExpiry);
-        byte[] kEnc_bytes = PassportCrypto.deriveKey(kSeed,
-                PassportCrypto.ENC_MODE);
-        byte[] kMac_bytes = PassportCrypto.deriveKey(kSeed,
-                PassportCrypto.MAC_MODE);
-        crypto.setMutualAuthKeys(kMac_bytes, kEnc_bytes);
         rnd = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
         ssc = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
 
@@ -109,7 +106,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        new PassportApplet(PassportCrypto.CREF_MODE);
+        new PassportApplet(PassportCrypto.JCOP_MODE);
     }
 
     /**
@@ -162,6 +159,9 @@ public class PassportApplet extends Applet implements ISO7816 {
             case INS_CREATE_FILE:
                 processCreateFile(apdu);
                 break;
+            case INS_SET_DOCNR_DOB_DOE:
+                processSetMutualAuthKeys(apdu);
+                break;
             default:
                 ISOException.throwIt(SW_INS_NOT_SUPPORTED);
                 break;
@@ -181,14 +181,58 @@ public class PassportApplet extends Applet implements ISO7816 {
                 apdu.setOutgoingLength(responseLength);
             apdu.sendBytes((short) 0, responseLength);
         }
+        
+        if(sw1sw2 != 0) {
+            ISOException.throwIt(sw1sw2);
+        }
+    }
+
+    /**
+     * Initializes the passport with the mutual authentication keys, which are 
+     * computed on card.
+     * 
+     * //@ ensures state == HAS_MUTUALAUTHENTICATION_KEYS
+     * 
+     * The data part of the APDU must contain:
+     *    docNr (9 bytes) || dateOfBirth (6) || dateOfExpiry (6)
+     * 
+     * @param apdu containing the initialization data
+     */    
+    private void processSetMutualAuthKeys(APDU apdu) {
+        byte[] buffer = apdu.getBuffer();
+        short lc = (short)(buffer[OFFSET_LC] & 0xff);
+        if(state != 0) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
+        if (lc != (short)(PassportInit.DOCNR_LEN + PassportInit.DOB_LEN + PassportInit.DOE_LEN)) {
+            ISOException.throwIt(SW_WRONG_LENGTH);
+        }
+        short readCount = apdu.setIncomingAndReceive();
+        short bytesLeft = 0;
+        while (bytesLeft > 0) {
+            bytesLeft -= readCount;
+            readCount = apdu.receiveBytes(OFFSET_CDATA);
+        }
+        
+        short keySeed_offset = PassportInit.computeKeySeed(buffer, OFFSET_CDATA);
+                
+        short macKey_p = (short)(keySeed_offset + SEED_LENGTH);
+        short encKey_p = (short)(keySeed_offset + SEED_LENGTH + KEY_LENGTH);
+        PassportCrypto.deriveKey(buffer, keySeed_offset, PassportCrypto.MAC_MODE, macKey_p);
+        PassportCrypto.deriveKey(buffer, keySeed_offset, PassportCrypto.ENC_MODE, encKey_p);
+        crypto.setMutualAuthKeys(buffer, macKey_p, encKey_p);
+
+        state = HAS_MUTUALAUTHENTICATION_KEYS;
     }
 
     /**
      * Processes incoming GET_CHALLENGE APDUs.
      * 
-     * Generates random 8 bytes, sends back result and stores result in rnd
+     * Generates random 8 bytes, sends back result and stores result in rnd.
      * 
-     * @param apdu
+     * //@ensures PassportUtil.hasBitMask(state, CHALLENGED); 
+     * 
+     * @param apdu is used for sending (8 bytes) only
      */
     private short processGetChallenge(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
@@ -208,33 +252,35 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Perform mutual authentication with terminal
+     * Perform mutual authentication with terminal.
      * 
-     * @param apdu
+     * //@requires apdu != null;
+     * //@modifies apdu.getBuffer()[0..80];
+     * //@ensures PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED);
+     *  
+     * @param apdu the APDU
+     * @return length of return APDU 
      */
     private short processMutualAuthenticate(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
-        short bytesLeft = (short) (buffer[ISO7816.OFFSET_LC] & 0x00FF);
+        short bytesLeft = (short) (buffer[OFFSET_LC] & 0x00FF);
 
-        if (buffer.length < 40)
+        if (buffer.length < 120)
             ISOException.throwIt((short) 0x6d66);
 
         if (bytesLeft != (short) 40)
-            ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+            ISOException.throwIt(SW_WRONG_LENGTH);
         
         short e_ifd_p = OFFSET_CDATA;
         short e_ifd_length = 32;
         short m_ifd_p = (short)(e_ifd_p + e_ifd_length);
         
-//        if((state ^ MUTUAL_AUTHENTICATED) == 0)
-//            ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
-       
         // FIXME: is this call allowed in current state?
 
         short readCount = apdu.setIncomingAndReceive();
         while (bytesLeft > 0) {
             bytesLeft -= readCount;
-            readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
+            readCount = apdu.receiveBytes(OFFSET_CDATA);
         }
 
         // buffer[OFFSET_CDATA ... +40] consists of e_ifd || m_ifd
@@ -242,40 +288,44 @@ public class PassportApplet extends Applet implements ISO7816 {
         if (!crypto.verifyMac(state, buffer, e_ifd_p, e_ifd_length, buffer, m_ifd_p))
             ISOException.throwIt((short) 0x6d01);
 
-        // decrypt e_ifd into buffer where buffer = rnd.ifd || rnd.icc || k.ifd
+        // decrypt e_ifd into buffer[0] where buffer = rnd.ifd || rnd.icc || k.ifd
         short plaintext_len = crypto.decrypt(state, buffer, e_ifd_p, e_ifd_length, buffer, (short)0);
         if(plaintext_len != 32) // sanity check
             ISOException.throwIt((short)0x6d66);
         short rnd_ifd_p = 0;
         short rnd_icc_p = 8;
         short k_ifd_p = 16;
+        /* pointers for writing intermediate data in buffer */
+        short k_icc_p = (short)(k_ifd_p + SEED_LENGTH);
+        short keySeed_p = (short)(k_icc_p + SEED_LENGTH); 
+        short keys_p = (short)(keySeed_p + SEED_LENGTH);
         
         // verify that rnd.icc equals value generated in getChallenge
         if (Util.arrayCompare(buffer, rnd_icc_p, rnd, (short)0, (short)8) != 0)
             ISOException.throwIt((short) 0x6d02);
 
         // generate keying material k.icc
-        byte[] k_icc = new byte[16];;
-        randomData.generateData(k_icc, (short) 0, (short) 16);
+        randomData.generateData(buffer, k_icc_p, SEED_LENGTH);
 
         // calculate keySeed for session keys
-        byte[] keySeed = new byte[16];
-        PassportUtil.xor(buffer, k_ifd_p, k_icc, (short)0, keySeed, (short)0, (short)16);
+        PassportUtil.xor(buffer, k_ifd_p, buffer, k_icc_p, buffer, keySeed_p, SEED_LENGTH);
 
         // calculate session keys
-        byte[] ksEnc_bytes = PassportCrypto.deriveKey(keySeed,
-                PassportCrypto.ENC_MODE);
-        byte[] ksMac = PassportCrypto.deriveKey(keySeed,
-                PassportCrypto.MAC_MODE);
-        crypto.setSessionKeys(ksMac, ksEnc_bytes);
+        PassportCrypto.deriveKey(buffer, keySeed_p, PassportCrypto.MAC_MODE, keys_p);
+        short macKey_p = keys_p;
+        keys_p += KEY_LENGTH;
+        PassportCrypto.deriveKey(buffer, keySeed_p, PassportCrypto.ENC_MODE, keys_p);
+        short encKey_p = keys_p;
+        keys_p += KEY_LENGTH;
+        crypto.setSessionKeys(buffer, macKey_p, encKey_p);
 
         // compute ssc
         PassportCrypto.computeSSC(buffer, rnd_icc_p, buffer, rnd_ifd_p, ssc);
 
         // create response in buffer where response = rnd.icc || rnd.ifd || k.icc
         PassportUtil.swap(buffer, rnd_icc_p, rnd_ifd_p, (short)8);
-        Util.arrayCopy(k_icc, (short) 0, buffer, (short) 16, (short) 16);
-
+        Util.arrayCopy(buffer, k_icc_p, buffer, (short) 16, SEED_LENGTH);
+        
         // make buffer encrypted using k_enc
         short ciphertext_len = crypto.encrypt(state, PassportCrypto.DONT_PAD_INPUT,
                                               buffer, (short)0, (short)32, buffer, (short)0);
@@ -291,9 +341,10 @@ public class PassportApplet extends Applet implements ISO7816 {
     /**
      * Processes incoming SELECT_FILE APDUs.
      * 
-     * @param apdu
+     * //@ensures PassportUtil.hasBitMask(state, FILE_SELECTED);
+     * 
+     * @param apdu where the first 2 data bytes encode the file to select.
      */
-
     private void processSelectFile(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         short lc = (short) (buffer[OFFSET_LC] & 0x00FF);
@@ -310,11 +361,14 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Processes incoming READ_BINARY APDUs.
+     * Processes incoming READ_BINARY APDUs. Returns data of the currently selected 
+     * file.
      * 
-     * TODO secure messaging...
+     * //@ensures state == \old(state); 
      * 
-     * @param apdu
+     * @param apdu where the offset is carried in header bytes p1 and p2.
+     * @param le expected length by terminal
+     * @return length of the return APDU
      */
     private short processReadBinary(APDU apdu, short le) {
         byte[] buffer = apdu.getBuffer();
@@ -327,7 +381,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         // FIXME: how do we use sendBytesLong with secure messaging???!
 
         if (buffer.length < le)
-            ISOException.throwIt(ISO7816.SW_WRONG_LENGTH);
+            ISOException.throwIt(SW_WRONG_LENGTH);
         
         len = PassportUtil.min(le, (short)(file.length - offset));
         len = PassportUtil.min(len, (short)0xe0); //FIXME: magic
@@ -337,6 +391,13 @@ public class PassportApplet extends Applet implements ISO7816 {
         return len;
     }
 
+    /***
+     * Processes and UPDATE_BINARY apdu. Writes data in the currently selected file.
+     * 
+     * //@ensures state == \old(state);
+     * 
+     * @param apdu carries the offset where to write date in header bytes p1 and p2.
+     */
     private void processUpdateBinary(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         byte p1 = buffer[OFFSET_P1];
@@ -344,23 +405,22 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         short lc = (short) (buffer[OFFSET_LC] & 0xff);
 
-        if ((state & FILE_SELECTED) != FILE_SELECTED)
-            ISOException.throwIt(ISO7816.SW_COMMAND_NOT_ALLOWED);
-
+        if(!PassportUtil.hasBitMask(state, FILE_SELECTED)) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
+        
         short offset = Util.makeShort(p1, p2);
         fileSystem.writeData(selectedFile, offset, buffer, OFFSET_CDATA, lc);
     }
 
-    /*
-     * Byte Information 1 always 63 (hex) 2 length of subsequent header (bytes 3
-     * to end) 3..4 file size 5..6 file identifier. Files in the range
-     * fd01..fd1e can be referenced with Short File Identifiers (least
-     * significate 5 bits). 7..8 key identifiers for use in access conditions 9
-     * access conditions for read / update 10 access conditions for create /
-     * delete 11 access conditions for invalidate / rehabilitate 12 file status.
-     * In general, leave this as 1. 13 Length of following header (e.g. 1 if
-     * byte 14 is the last byte) 14 file type. 00=transparent, 01=fixed length
-     * record, 02=variable length record, 03 = cyclical. 15 record size
+    /***
+     * Processes and CREATE_FILE apdu. This functionality is only partly implemented.
+     * Only non-directories (files) can be created, all options for CREATE_FILE are 
+     * ignored.
+     * 
+     * //@ensures state == \old(state);
+     * 
+     * @param apdu containing 6 bytes: 0x64 || (1 byte) || size (2) || fid (2)
      */
     private void processCreateFile(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
@@ -370,7 +430,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             ISOException.throwIt(SW_WRONG_LENGTH);
 
         if (buffer[OFFSET_CDATA] != 0x63)
-            ISOException.throwIt(ISO7816.SW_DATA_INVALID);
+            ISOException.throwIt(SW_DATA_INVALID);
 
         short size = Util.makeShort(buffer[(short) (OFFSET_CDATA + 2)],
                 buffer[(short) (OFFSET_CDATA + 3)]);
@@ -379,9 +439,5 @@ public class PassportApplet extends Applet implements ISO7816 {
                 buffer[(short) (OFFSET_CDATA + 5)]);
 
         fileSystem.createFile(fid, size);
-    }
-
-    public final static byte getState() {
-        return state;
     }
 }
