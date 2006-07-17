@@ -130,7 +130,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             return;
         }
 
-        if (protectedApdu == 1) {
+        if (protectedApdu == 1 && PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
             try {
                 le = crypto.unwrapCommandAPDU(ssc, apdu);
             } catch (CardRuntimeException e) {
@@ -170,7 +170,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             sw1sw2 = e.getReason();
         }
 
-        if (protectedApdu == 1) {
+        if (protectedApdu == 1 && PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
             responseLength = crypto.wrapResponseAPDU(ssc, apdu, responseLength, sw1sw2);
         }
 
@@ -235,18 +235,23 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @param apdu is used for sending (8 bytes) only
      */
     private short processGetChallenge(APDU apdu) {
+        if(!PassportUtil.hasBitMask(state, HAS_MUTUALAUTHENTICATION_KEYS)) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
         byte[] buffer = apdu.getBuffer();
         short le = apdu.setOutgoing();
         if (le != 8) {
             ISOException.throwIt(SW_WRONG_LENGTH);
         }
-
-        // FIXME: is this call allowed in current state?
         
         randomData.generateData(rnd, (short)0, le);
         Util.arrayCopy(rnd, (short) 0, buffer, (short) 0, (short) 8);
 
-        state |= CHALLENGED;
+        if(PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
+            state = PassportUtil.minBitMask(state, MUTUAL_AUTHENTICATED);
+        }
+        state = PassportUtil.plusBitMask(state, CHALLENGED);
+//        state |= CHALLENGED;
 
         return le;
     }
@@ -262,6 +267,11 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @return length of return APDU 
      */
     private short processMutualAuthenticate(APDU apdu) {
+        if(!PassportUtil.hasBitMask(state, CHALLENGED) ||
+            PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
+            
         byte[] buffer = apdu.getBuffer();
         short bytesLeft = (short) (buffer[OFFSET_LC] & 0x00FF);
 
@@ -275,8 +285,6 @@ public class PassportApplet extends Applet implements ISO7816 {
         short e_ifd_length = 32;
         short m_ifd_p = (short)(e_ifd_p + e_ifd_length);
         
-        // FIXME: is this call allowed in current state?
-
         short readCount = apdu.setIncomingAndReceive();
         while (bytesLeft > 0) {
             bytesLeft -= readCount;
@@ -333,7 +341,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         // create m_icc which is a checksum of response
         crypto.createMac(state, buffer, (short) 0, ciphertext_len, buffer, ciphertext_len);
 
-        state |= MUTUAL_AUTHENTICATED;
+        state = PassportUtil.plusBitMask(state, MUTUAL_AUTHENTICATED);
+        //state |= MUTUAL_AUTHENTICATED;
         
         return (short)(ciphertext_len + 8);
     }
@@ -356,7 +365,10 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         if (fileSystem.getFile(fid) != null) {
             selectedFile = fid;
-            state |= FILE_SELECTED;
+            if(!PassportUtil.hasBitMask(state, FILE_SELECTED)) { 
+               state = PassportUtil.plusBitMask(state, FILE_SELECTED);
+            }
+            //state |= FILE_SELECTED;
         }
     }
 
@@ -371,6 +383,9 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @return length of the return APDU
      */
     private short processReadBinary(APDU apdu, short le) {
+        if(!PassportUtil.hasBitMask(state, FILE_SELECTED)) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
         byte[] buffer = apdu.getBuffer();
         byte p1 = buffer[OFFSET_P1];
         byte p2 = buffer[OFFSET_P2];
@@ -399,17 +414,16 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @param apdu carries the offset where to write date in header bytes p1 and p2.
      */
     private void processUpdateBinary(APDU apdu) {
+        if(!PassportUtil.hasBitMask(state, FILE_SELECTED)) {
+            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+        }
         byte[] buffer = apdu.getBuffer();
         byte p1 = buffer[OFFSET_P1];
         byte p2 = buffer[OFFSET_P2];
 
-        short lc = (short) (buffer[OFFSET_LC] & 0xff);
-
-        if(!PassportUtil.hasBitMask(state, FILE_SELECTED)) {
-            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
-        }
-        
+        short lc = (short) (buffer[OFFSET_LC] & 0xff);        
         short offset = Util.makeShort(p1, p2);
+        
         fileSystem.writeData(selectedFile, offset, buffer, OFFSET_CDATA, lc);
     }
 

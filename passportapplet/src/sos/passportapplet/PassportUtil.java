@@ -267,4 +267,21 @@ public class PassportUtil implements ISO7816 {
         return (state & bitmask) == bitmask;
     }
 
-}
+    /***
+     * 
+     */
+    public static byte plusBitMask(byte state, byte mask) {
+        return (byte)(state | mask);
+    }
+    
+    
+     public static byte minBitMask(byte state, byte mask) {
+         if(hasBitMask(state, mask)) {
+             return (byte)(state - mask);
+         }
+         else {
+             ISOException.throwIt((short)0x6d66);
+             return state;
+         }
+     }             
+}  
