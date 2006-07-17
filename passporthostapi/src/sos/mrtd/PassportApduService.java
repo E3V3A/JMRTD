@@ -456,7 +456,7 @@ public class PassportApduService implements CardService {
 
    public void writeFile(SecureMessagingWrapper wrapper, short fid,
          FileInputStream i) throws IOException {
-      byte[] data = new byte[56];
+      byte[] data = new byte[0xdf]; //FIXME: magic
 
       int r = 0;
       short offset = 0;
@@ -476,6 +476,41 @@ public class PassportApduService implements CardService {
 
    public void createFile(SecureMessagingWrapper wrapper, byte[] fid, byte[] len) {
       sendCreateFile(wrapper, fid, len);
+   }
+
+   private static final byte INS_SET_DOCNR_DOB_DOE = (byte)0x10;
+   
+   public Apdu createMRZApdu(byte[] docNr, byte[] dob, byte[] doe) {
+       byte cla = 0;
+       byte ins = INS_SET_DOCNR_DOB_DOE;
+       byte p1 = 0;
+       byte p2 = 0;
+       int lc = docNr.length + dob.length + doe.length;
+       if(lc != 9 + 6 + 6) // sanity check
+           return null;
+       byte[] data = new byte[lc];
+       byte data_p=0;
+       System.arraycopy(docNr, (short)0, data, data_p, docNr.length);
+       data_p += docNr.length;
+       System.arraycopy(dob, (short)0, data, data_p, dob.length);
+       data_p += dob.length;
+       System.arraycopy(doe, (short)0, data, data_p, doe.length);
+       
+       return new Apdu(cla, ins, p1, p2, data);
+   }
+   
+   public void writeMRZ(SecureMessagingWrapper wrapper, byte[] docNr, byte[] dob, byte[] doe) {
+       Apdu capdu = createMRZApdu(docNr, dob, doe);
+       if (wrapper != null) {
+          capdu.wrapWith(wrapper);
+       }
+       byte[] rapdu = sendAPDU(capdu);
+       if (wrapper != null) {
+          rapdu = wrapper.unwrap(rapdu, rapdu.length);
+       }
+//       byte[] result = new byte[rapdu.length - 2];
+//       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
+//       return result;       
    }
 }
 
