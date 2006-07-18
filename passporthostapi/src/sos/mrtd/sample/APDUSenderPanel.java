@@ -32,6 +32,7 @@ import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -58,6 +59,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
    private CommandAPDUField bApduField, eApduField;
 
    private JCheckBox smCheckBox;
+   private JCheckBox enabledCheckBox;
 
    private JButton copyButton, sendButton;
 
@@ -79,12 +81,24 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       endPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
             "End APDU"));
       eApduField = new CommandAPDUField();
+
+      endPanel.add(eApduField);
+ 
+      JPanel controlPanel = new JPanel(new FlowLayout());
+      enabledCheckBox = new JCheckBox();
+      enabledCheckBox.setSelected(true);
+      controlPanel.add(new JLabel("Enable end: "));
+      controlPanel.add(enabledCheckBox);
       copyButton = new JButton("Copy");
       copyButton.addActionListener(this);
-      endPanel.add(copyButton);
-      endPanel.add(eApduField);
+      controlPanel.add(copyButton);
+      enabledCheckBox.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent ae) {
+            eApduField.setEnabled(enabledCheckBox.isSelected());
+            copyButton.setEnabled(enabledCheckBox.isSelected());
+         }
+      });
 
-      JPanel controlPanel = new JPanel(new FlowLayout());
       smCheckBox = new JCheckBox();
       sendButton = new JButton("Send");
       sendButton.addActionListener(this);
@@ -109,14 +123,35 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
    }
 
    public void run() {
-      sendButton.setEnabled(false);
-      Apdu bApdu = bApduField.getAPDU();
-      Apdu eApdu = eApduField.getAPDU();
-      boolean isWrapped = smCheckBox.isSelected();
-      send(bApdu, eApdu, isWrapped);
-      sendButton.setEnabled(true);
+      try {
+         sendButton.setEnabled(false);
+         Apdu bApdu = bApduField.getAPDU();
+         boolean isWrapped = smCheckBox.isSelected();
+         if (enabledCheckBox.isSelected()) {
+            Apdu eApdu = eApduField.getAPDU();
+            send(bApdu, eApdu, isWrapped);
+         } else {
+            send(bApdu, isWrapped);
+         }
+      } finally {
+         sendButton.setEnabled(true);
+      }
    }
 
+   private void send(Apdu apdu, boolean isWrapped) {
+      if (isWrapped) {
+         apdu.wrapWith(wrapper);
+      }
+      byte[] rapdu = service.sendAPDU(apdu);
+      if (isWrapped) {
+         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         System.out.println("PLAIN: C: "
+               + Hex.bytesToHexString(apdu.getCommandApduBuffer())
+               + ", R: "
+               + Hex.bytesToHexString(rapdu));
+      }
+   }
+   
    private void send(Apdu bApdu, Apdu eApdu, boolean isWrapped) {
       /* FIXME: Need to take care of le? */
       byte[] a = bApdu.getCommandApduBuffer();
@@ -145,15 +180,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
          }
       } else {
          apdu = new Apdu(c);
-         if (isWrapped) {
-            apdu.wrapWith(wrapper);
-         }
-         byte[] rapdu = service.sendAPDU(apdu);
-         if (isWrapped) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.length);
-            System.out.println("PLAIN TEXT RAPDU: "
-                  + Hex.bytesToHexString(rapdu));
-         }
+         send(apdu, isWrapped);
       }
    }
 

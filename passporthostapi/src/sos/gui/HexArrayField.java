@@ -130,6 +130,13 @@ public class HexArrayField extends JPanel implements ActionListener {
       }
    }
 
+   public void setEnabled(boolean b) {
+      super.setEnabled(b);
+      for (int i = 0; i < 4 + length; i++) {
+         getComponent(i).setEnabled(b);
+      }
+   }
+   
    /**
     * The number of cells in this field.
     *

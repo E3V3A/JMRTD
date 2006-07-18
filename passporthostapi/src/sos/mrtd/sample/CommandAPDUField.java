@@ -106,6 +106,14 @@ public class CommandAPDUField extends JPanel {
       cdataTF.reset();
       validate();
    }
+   
+   public void setEnabled(boolean b) {
+      reset();
+      for (int i = 0; i < getComponentCount(); i++) {
+         getComponent(i).setEnabled(b);
+      }
+      validate();
+   }
 
    /**
     * Gets the <code>CommandAPDU</code> entered in this field.

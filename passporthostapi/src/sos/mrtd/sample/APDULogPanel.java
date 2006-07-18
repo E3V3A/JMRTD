@@ -33,6 +33,7 @@ import javax.swing.JTextArea;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
+import sos.smartcards.ISO7816;
 import sos.util.Hex;
 
 /**
@@ -42,7 +43,7 @@ import sos.util.Hex;
  *
  * @version $Revision$
  */
-public class APDULogPanel extends JPanel implements APDUListener
+public class APDULogPanel extends JPanel implements APDUListener, ISO7816
 {
    private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
@@ -88,10 +89,13 @@ public class APDULogPanel extends JPanel implements APDUListener
     */
    public void exchangedAPDU(Apdu capdu, byte[] rapdu) {
       append(Integer.toString(count)); append(".");
-      append(" Command: "); append(capdu.toString());
+      append(" C: "); append(capdu.toString());
       append("\n");
       append(whiteSpace(count)); append(" ");
-      append(" Response: "); append(Hex.toHexString(rapdu));
+      append(" R: "); append(Hex.toHexString(rapdu));
+      short sw = (short)(((rapdu[rapdu.length - 2] & 0xFF) << 8)
+            | (rapdu[rapdu.length - 1] & 0xFF));
+      append(" ("); append(swToString(sw)); append(")");
       append("\n\n");
       count++;
    }
@@ -104,7 +108,7 @@ public class APDULogPanel extends JPanel implements APDUListener
    /**
     * The whitespace needed to indent line following the first line
     * of an entry with entry number <code>count</code>.
-    * 
+    *
     * @param count an entry number.
     *
     * @return a string containing spaces.
@@ -116,6 +120,36 @@ public class APDULogPanel extends JPanel implements APDUListener
       char[] result = new char[(int)(Math.log(count) / Math.log(10)) + 1];
       Arrays.fill(result, ' ');
       return new String(result);
+   }
+
+   private static String swToString(short sw) {
+      switch(sw) {
+         case SW_BYTES_REMAINING_00: return "BYTES REMAINING";
+         case SW_END_OF_FILE: return "END OF FILE";
+         case SW_WRONG_LENGTH: return "WRONG LENGTH";
+         case SW_SECURITY_STATUS_NOT_SATISFIED: return "SECURITY STATUS NOT SATISFIED";
+         case SW_FILE_INVALID: return "FILE INVALID";
+         case SW_DATA_INVALID: return "DATA INVALID";
+         case SW_CONDITIONS_NOT_SATISFIED: return "CONDITIONS NOT SATISFIED";
+         case SW_COMMAND_NOT_ALLOWED: return "COMMAND NOT ALLOWED";
+         case SW_APPLET_SELECT_FAILED: return "APPLET SELECT FAILED";
+         case SW_KEY_USAGE_ERROR: return "KEY USAGE ERROR";
+         case SW_WRONG_DATA: return "WRONG DATA";
+         case SW_FUNC_NOT_SUPPORTED: return "FUNC NOT SUPPORTED";
+         case SW_FILE_NOT_FOUND: return "FILE NOT FOUND";
+         case SW_RECORD_NOT_FOUND: return "RECORD NOT FOUND";
+         case SW_FILE_FULL: return "FILE FULL";
+         case SW_INCORRECT_P1P2: return "INCORRECT P1P2";
+         case SW_KEY_NOT_FOUND: return "KEY NOT FOUND";
+         case SW_WRONG_P1P2: return "WRONG P1P2";
+         case SW_CORRECT_LENGTH_00: return "CORRECT LENGTH";
+         case SW_INS_NOT_SUPPORTED: return "INS NOT SUPPORTED";
+         case SW_CLA_NOT_SUPPORTED: return "CLA NOT SUPPORTED";
+         case SW_UNKNOWN: return "UNKNOWN";
+         case SW_CARD_TERMINATED: return "CARD TERMINATED";
+         case SW_NO_ERROR: return "NO ERROR";
+      }
+      return "";
    }
 }
 
