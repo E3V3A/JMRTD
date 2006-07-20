@@ -499,18 +499,9 @@ public class PassportApduService implements CardService {
        return new Apdu(cla, ins, p1, p2, data);
    }
    
-   public void writeMRZ(SecureMessagingWrapper wrapper, byte[] docNr, byte[] dob, byte[] doe) {
+   public void writeMRZ(byte[] docNr, byte[] dob, byte[] doe) {
        Apdu capdu = createMRZApdu(docNr, dob, doe);
-       if (wrapper != null) {
-          capdu.wrapWith(wrapper);
-       }
-       byte[] rapdu = sendAPDU(capdu);
-       if (wrapper != null) {
-          rapdu = wrapper.unwrap(rapdu, rapdu.length);
-       }
-//       byte[] result = new byte[rapdu.length - 2];
-//       System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-//       return result;       
+       sendAPDU(capdu);
    }
 }
 
