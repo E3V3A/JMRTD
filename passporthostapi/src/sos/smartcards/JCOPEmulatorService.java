@@ -72,8 +72,8 @@ public class JCOPEmulatorService extends AbstractCardService {
 			apdu.setResponseApduBuffer(buffer);
 			notifyExchangedAPDU(apdu);
 			return buffer;
-		}catch(JCException jce){
-			throw new IllegalStateException("Send APDU failed: "+terminal.getErrorMessage());			
+		} catch(JCException jce){
+			throw new IllegalStateException("Send APDU failed: " + terminal.getErrorMessage());			
 		}
 	}
 
@@ -82,7 +82,8 @@ public class JCOPEmulatorService extends AbstractCardService {
 			terminal.close();
 			terminal = null;
 		} catch(JCException jce){
-			throw new IllegalStateException("Couldn't establish connection to the emulator: "+terminal.getErrorMessage());
+			throw new IllegalStateException("Couldn't establish connection to the emulator: "
+                  + terminal.getErrorMessage());
 		}
         state = SESSION_STOPPED_STATE;
         notifyStoppedAPDUSession();	
