@@ -155,7 +155,7 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         
             new Thread(new Runnable() {
                 public void run() {
-                    service.writeMRZ(wrapper, docNr, dob, doe);
+                    service.writeMRZ(docNr, dob, doe);
                 }
             }).start();        
         }
