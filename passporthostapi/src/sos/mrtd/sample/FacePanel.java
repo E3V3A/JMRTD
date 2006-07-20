@@ -22,16 +22,20 @@
 
 package sos.mrtd.sample;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 
 import sos.gui.ImagePanel;
 import sos.mrtd.AAEvent;
@@ -51,50 +55,33 @@ import sos.smartcards.CardService;
 public class FacePanel extends JPanel
 implements Runnable, ActionListener, AuthListener
 {
+   private static final Border PANEL_BORDER =
+      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+   
    private ImagePanel ipanel;
-   private JFrame iframe;
-   private JButton showButton, hideButton, readButton;
+   private JButton readButton;
    private CardService service;
    private SecureMessagingWrapper wrapper;
 
    public FacePanel(CardService service) {
-      super(new FlowLayout());
+      super(new BorderLayout());
       this.service = service;
       this.wrapper = null;
-      showButton = new JButton("Show Image");
-      showButton.addActionListener(this);
-      hideButton = new JButton("Hide Image");
-      hideButton.addActionListener(this);
-      hideButton.setEnabled(false);
-      readButton = new JButton("Read Image");
+      JPanel buttonPanel = new JPanel(new FlowLayout());
+      readButton = new JButton("Read from DG2");
       readButton.addActionListener(this);
       ipanel = new ImagePanel();
-      add(showButton);
-      add(hideButton);
-      add(readButton);
-      iframe = new JFrame("Face");
-      Container cp = iframe.getContentPane();
-      cp.add(new JScrollPane(ipanel));
-      iframe.pack();
+      // buttonPanel.add(showButton);
+      // buttonPanel.add(hideButton);
+      buttonPanel.add(readButton);
+      buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Face"));
+      add(buttonPanel, BorderLayout.WEST);
+      add(new JScrollPane(ipanel), BorderLayout.CENTER);
    }
 
    public void actionPerformed(ActionEvent ae) {
-      JButton but = (JButton)ae.getSource();
-      if (but.getText().startsWith("Show")) {
-         iframe.setVisible(true);
-         showButton.setEnabled(false);
-         hideButton.setEnabled(true);
-      } else if (but.getText().startsWith("Hide")) {
-         iframe.setVisible(false);
-         hideButton.setEnabled(false);
-         showButton.setEnabled(true);
-      } else if (but.getText().startsWith("Read")) {
-         ipanel.clearImage();
-         (new Thread(this)).start();
-         showButton.setEnabled(false);
-         iframe.setVisible(true);
-         hideButton.setEnabled(true);
-      }
+      ipanel.clearImage();
+      (new Thread(this)).start();
    }
 
    public void run() {

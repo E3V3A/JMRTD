@@ -50,7 +50,8 @@ public class ImagePanel extends JPanel
    public ImagePanel() {
       super(new FlowLayout());
       BufferedImage image =
-         new BufferedImage(480, 640, BufferedImage.TYPE_INT_ARGB);
+         // new BufferedImage(480, 640, BufferedImage.TYPE_INT_ARGB);
+      new BufferedImage(40, 60, BufferedImage.TYPE_INT_ARGB);
       icon = new ImageIcon(image);
       add(new JLabel(icon));
       clearImage(image);
