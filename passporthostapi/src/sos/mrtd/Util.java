@@ -96,11 +96,17 @@ public class Util
 
       MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
       shaDigest.update(docNr);
+      System.out.println("docNr: " + sos.util.Hex.bytesToHexString(docNr));
       shaDigest.update(cd1);
+      System.out.println("cd1: " + sos.util.Hex.bytesToHexString(cd1));
       shaDigest.update(dateOfBirth);
+      System.out.println("dateOfBirth: " + sos.util.Hex.bytesToHexString(dateOfBirth));
       shaDigest.update(cd2);
+      System.out.println("cd2: " + sos.util.Hex.bytesToHexString(cd2));
       shaDigest.update(dateOfExpiry);
+      System.out.println("dateOfExpiry: " + sos.util.Hex.bytesToHexString(dateOfExpiry));
       shaDigest.update(cd3);
+      System.out.println("cd3: " + sos.util.Hex.bytesToHexString(cd3));
       byte[] hash = shaDigest.digest();
       byte[] keySeed = new byte[16];
       System.arraycopy(hash, 0, keySeed, 0, 16);

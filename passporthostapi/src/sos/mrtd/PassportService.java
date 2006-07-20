@@ -25,16 +25,23 @@ package sos.mrtd;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.RSAKeyGenParameterSpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -63,6 +70,8 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
+import sos.util.ASN1Utils;
+import sos.util.Hex;
 
 /**
  * High level card service for using the passport.
@@ -462,8 +471,38 @@ public class PassportService implements CardService
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
       byte[] file = readFile(PassportFileService.EF_DG15);
       BERTLVObject fileObj = BERTLVObject.getInstance(new ByteArrayInputStream(file));
-      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(fileObj.getValueAsBytes());
+      System.out.println(Hex.bytesToHexString(file));
+      byte [] b = fileObj.getValueAsBytes();
+      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(b);
+      System.out.println(Hex.bytesToHexString(b));      
       return keyFactory.generatePublic(pubKeySpec);
+   }
+   
+    
+   public KeyPair generateAAKeyPair() 
+   throws GeneralSecurityException, NoSuchAlgorithmException {
+       String preferredProvider = "BC";
+       Provider provider = Security.getProvider(preferredProvider);
+       if(provider == null) {
+           return null;    
+       }
+       KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA", provider);
+       generator.initialize(new RSAKeyGenParameterSpec(1024, RSAKeyGenParameterSpec.F4)); 
+       KeyPair keyPair = generator.generateKeyPair();
+       return keyPair;
+   }
+      
+   public static byte[] publicKey2DG15(PublicKey key) 
+   throws IOException {
+       ByteArrayOutputStream out = new ByteArrayOutputStream();
+       
+       byte[] keyBytes = key.getEncoded();
+       
+       out.write(0x6f);
+       out.write(ASN1Utils.lengthId(keyBytes.length));
+       out.write(keyBytes);
+
+       return out.toByteArray();
    }
    
    private SignedData readSignedData() throws IOException, Exception { // TODO: can be private?

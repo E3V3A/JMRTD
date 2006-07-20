@@ -30,6 +30,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -45,7 +49,10 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
+import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.util.Hex;
 
 /**
  * Convenient GUI component for sending initialization commands to the passport.
@@ -71,11 +78,17 @@ public class InitPassportPanel extends JPanel implements ActionListener,
     private JTextField docNrField;
     private JTextField dobField;
     private JTextField doeField;
+    private JButton generateKeyPairButton;
+    private JButton uploadPrivateKey;
+    private PassportApduService apduService;
+    private PassportService passportService;
+    private PassportAuthService authService;
 
     private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-    public InitPassportPanel(PassportApduService service) {
-        super(new GridLayout(2, 1));
+    public InitPassportPanel(PassportApduService service)
+    throws GeneralSecurityException, UnsupportedEncodingException {
+        super(new GridLayout(3, 1));
 
         JPanel personalisationPanel = new JPanel(new FlowLayout());
         personalisationPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
@@ -83,10 +96,17 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         JPanel fileSendingPanel = new JPanel(new FlowLayout());
         fileSendingPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
                                                                     "Upload raw passport data"));
+        JPanel initAAPanel = new JPanel(new FlowLayout());
+        initAAPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Generate Active Authentication keypair"));
+        
         add(personalisationPanel);
         add(fileSendingPanel);
+        add(initAAPanel);
 
         this.service = service;
+        this.apduService = service;
+        this.authService = new PassportAuthService(apduService);
+        this.passportService = new PassportService(authService);
         this.wrapper = null;
 
         selectLocalFileButton = new JButton("Select local file ... ");
@@ -125,6 +145,13 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         personalisationPanel.add(new JLabel("Date of expiry:"));
         personalisationPanel.add(doeField);
         personalisationPanel.add(personalisationButton);
+        
+        generateKeyPairButton = new JButton("Generate keypair");
+        generateKeyPairButton.addActionListener(this);
+        uploadPrivateKey = new JButton("Upload private key");
+        uploadPrivateKey.addActionListener(this);
+        initAAPanel.add(generateKeyPairButton);
+        initAAPanel.add(uploadPrivateKey);
     }
 
     public void actionPerformed(ActionEvent ae) {
@@ -141,10 +168,23 @@ public class InitPassportPanel extends JPanel implements ActionListener,
                 pressedUpdateBinaryButton();
             } else if (butt == personalisationButton) {
                 pressedPersonalisationButton();
+            } else if (butt == generateKeyPairButton) {
+                pressedGenerateKeyPairButton();
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private void pressedGenerateKeyPairButton() 
+    throws GeneralSecurityException {
+        KeyPair keyPair = passportService.generateAAKeyPair();
+        PublicKey pubKey = keyPair.getPublic();
+        PrivateKey privKey = keyPair.getPrivate();
+        
+        System.out.println(Hex.bytesToHexString(privKey.getEncoded()));
+        System.out.println(Hex.bytesToHexString(pubKey.getEncoded()));
+        
     }
 
     private void pressedPersonalisationButton() {
