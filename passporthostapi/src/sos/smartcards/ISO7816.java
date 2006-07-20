@@ -81,12 +81,15 @@ public interface ISO7816
 
    static final short SW_BYTES_REMAINING_00 = (short)0x6100;
    static final short SW_END_OF_FILE = (short)0x6282;
+   static final short SW_LESS_DATA_RESPONDED_THAN_REQUESTED = (short)0x6287;
    static final short SW_WRONG_LENGTH = (short)0x6700;
    static final short SW_SECURITY_STATUS_NOT_SATISFIED = (short)0x6982;
    static final short SW_FILE_INVALID = (short)0x6983;
    static final short SW_DATA_INVALID = (short)0x6984;
    static final short SW_CONDITIONS_NOT_SATISFIED = (short)0x6985;
    static final short SW_COMMAND_NOT_ALLOWED = (short)0x6986;
+   static final short SW_EXPECTED_SM_DATA_OBJECTS_MISSING = (short)0x6987;
+   static final short SW_SM_DATA_OBJECTS_INCORRECT = (short)0x6988;
    static final short SW_APPLET_SELECT_FAILED = (short)0x6999;
    static final short SW_KEY_USAGE_ERROR = (short)0x69C1;
    static final short SW_WRONG_DATA = (short)0x6A80;
