@@ -210,7 +210,15 @@ public class SecureMessagingWrapper implements Apdu.Wrapper
 
          out.reset();
          out.write((byte)0x87);
-         out.write((byte)(ciphertext.length + 1));
+         int do87DataLength = (ciphertext.length + 1);
+         int do87LengthBytes = 1;
+         if(do87DataLength > 0x80) {
+             do87LengthBytes += do87DataLength / 0xff;
+             out.write(0x80 + do87LengthBytes);
+         }   
+         for(int i=0; i<do87LengthBytes; i++) {
+             out.write((byte)((do87DataLength >>> (i * 8)) & 0xff));
+         }
          out.write(0x01);
          out.write(ciphertext, 0, ciphertext.length);
          do87 = out.toByteArray();
