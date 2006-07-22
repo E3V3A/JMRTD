@@ -220,40 +220,7 @@ public class Util
                                             + ch);
       }
    }
-
-   /**
-    * Corresponds to Table A1 in ICAO-TR-LDS_1.7_2004-05-18.
-    *
-    * @param tag the first byte of the EF.
-    *
-    * @return the file identifier.
-    */
-   public static short lookupFIDbyTag(byte tag) {
-      switch(tag) {
-         case (byte)0x60: return PassportFileService.EF_COM;
-         case (byte)0x61: return PassportFileService.EF_DG1;
-         case (byte)0x75: return PassportFileService.EF_DG2;
-         case (byte)0x63: return PassportFileService.EF_DG3;
-         case (byte)0x76: return PassportFileService.EF_DG4;
-         case (byte)0x65: return PassportFileService.EF_DG5;
-         case (byte)0x66: return PassportFileService.EF_DG6;
-         case (byte)0x67: return PassportFileService.EF_DG7;
-         case (byte)0x68: return PassportFileService.EF_DG8;
-         case (byte)0x69: return PassportFileService.EF_DG9;
-         case (byte)0x6A: return PassportFileService.EF_DG10;
-         case (byte)0x6B: return PassportFileService.EF_DG11;
-         case (byte)0x6C: return PassportFileService.EF_DG12;
-         case (byte)0x6D: return PassportFileService.EF_DG13;
-         case (byte)0x6E: return PassportFileService.EF_DG14;
-         case (byte)0x6F: return PassportFileService.EF_DG15;
-         case (byte)0x70: return PassportFileService.EF_DG16;
-         case (byte)0x77: return PassportFileService.EF_SOD;
-         default:
-            throw new NumberFormatException("Unknown tag "
-                                            + Integer.toHexString(tag));
-      }
-   }
-   
+  
    /**
     * Recovers the M1 part of the message sent back by the AA protocol
     * (INTERNAL AUTHENTICATE command). The algorithm is described in

@@ -27,7 +27,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -54,24 +53,21 @@ import javax.imageio.stream.ImageInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.x509.RSAPublicKeyStructure;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
-import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.util.ASN1Utils;
-import sos.util.Hex;
 
 /**
  * High level card service for using the passport.
@@ -90,31 +86,7 @@ import sos.util.Hex;
  */
 public class PassportService implements CardService
 {
-   public static final int EF_COM_TAG = 0x60;
-   public static final int EF_DG1_TAG = 0x61;
-   public static final int EF_DG2_TAG = 0x75;
-   public static final int EF_DG3_TAG = 0x63;
-   public static final int EF_DG4_TAG = 0x76;
-   public static final int EF_DG5_TAG = 0x65;
-   public static final int EF_DG6_TAG = 0x66;
-   public static final int EF_DG7_TAG = 0x67;
-   public static final int EF_DG8_TAG = 0x68;
-   public static final int EF_DG9_TAG = 0x69;
-   public static final int EF_DG10_TAG = 0x6A;
-   public static final int EF_DG11_TAG = 0x6B;
-   public static final int EF_DG12_TAG = 0x6C;
-   public static final int EF_DG13_TAG = 0x6D;
-   public static final int EF_DG14_TAG = 0x6E;
-   public static final int EF_DG15_TAG = 0x6F;
-   public static final int EF_DG16_TAG = 0x70;
-   public static final int EF_SOD_TAG = 0x77;
-
-   private static final int SESSION_STOPPED_STATE = 0;
-   private static final int SESSION_STARTED_STATE = 1;
-   private static final int AUTHENTICATED_STATE = 2;
-   private int state;
-
-   private PassportFileService service;
+   private PassportASN1Service service;
    private KeyFactory keyFactory;
    private CertificateFactory certFactory;
    
@@ -132,11 +104,10 @@ public class PassportService implements CardService
       if (service instanceof PassportService) {
          this.service = ((PassportService)service).service;
       } else {
-         this.service = new PassportFileService(service);
+         this.service = new PassportASN1Service(service);
       }
       keyFactory = KeyFactory.getInstance("RSA");
       certFactory = CertificateFactory.getInstance("X.509");
-      state = SESSION_STOPPED_STATE;
    }
    
    /**
@@ -149,9 +120,7 @@ public class PassportService implements CardService
    public PassportService(CardService service, SecureMessagingWrapper wrapper)
    throws GeneralSecurityException, UnsupportedEncodingException {
       this(service);
-      this.service.setWrapper(wrapper);
-      state = AUTHENTICATED_STATE;
-   }
+      this.service.setWrapper(wrapper);   }
 
    /**
     * Opens a session. This is done by connecting to the card, selecting the
@@ -159,7 +128,6 @@ public class PassportService implements CardService
     */
    public void open() {
       service.open();
-      state = SESSION_STARTED_STATE;
    }
    
    public String[] getTerminals() {
@@ -168,7 +136,6 @@ public class PassportService implements CardService
 
    public void open(String id) {
       service.open(id);
-      state = SESSION_STARTED_STATE;
    }
 
    /**
@@ -192,11 +159,7 @@ public class PassportService implements CardService
    }
 
    public void close() {
-      try {
-         service.close();
-      } finally {
-         state = SESSION_STOPPED_STATE;
-      }
+      service.close();
    }
 
    public void addAPDUListener(APDUListener l) {
@@ -215,11 +178,11 @@ public class PassportService implements CardService
     * @throws IOException if something goes wrong
     */
    public short[] readDataGroupList() throws IOException {
-      byte[] tag = { 0x5C };
-      byte[] tagList = readObject(PassportFileService.EF_COM, tag).getValueAsBytes();
+      int[] tags = { PassportASN1Service.EF_COM_TAG, 0x5C };
+      byte[] tagList = service.readObject(tags);
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
-         files[i] = Util.lookupFIDbyTag(tagList[i]);
+         files[i] = PassportASN1Service.lookupFIDbyTag(tagList[i]);
       }
       return files;
    }
@@ -336,7 +299,6 @@ public class PassportService implements CardService
       byte[] data = new byte[6];
       in.readFully(data);
       String dateString = new String(data).trim();
-      System.out.println("DEBUG: " + dateString);
       return makeDate(1900, dateString);
    }
 
@@ -383,8 +345,8 @@ public class PassportService implements CardService
     * @throws IOException if something goes wrong
     */
    public BufferedImage readFace() throws IOException {
-      byte[] tag = { 0x5F, 0x2E }; 
-      byte[] facialRecordData = (byte[])readObject(PassportFileService.EF_DG2, tag).getValueAsBytes();
+      int[] tags = { PassportASN1Service.EF_DG2_TAG, 0x5F2E }; 
+      byte[] facialRecordData = service.readObject(tags);
       if (facialRecordData == null) {
          System.out.println("DEBUG: facialRecordData == null");
       }
@@ -448,19 +410,8 @@ public class PassportService implements CardService
    }
 
    private byte[] readMRZ() throws IOException {
-      byte[] tag = { 0x5F, 0x1F };
-      return readObject(PassportFileService.EF_DG1, tag).getValueAsBytes();
-   }
-   
-   BERTLVObject readObject(short fid, byte[] tag) throws IOException {
-      byte[] file = readFile(fid);
-      BERTLVObject fileObject = BERTLVObject.getInstance(new ByteArrayInputStream(file));
-      BERTLVObject object = fileObject.getChild(tag);
-      return object;
-   }
-   
-   byte[] readFile(short fid) throws IOException {
-      return service.readFile(fid);
+      int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+      return service.readObject(tags);
    }
 
    /**
@@ -469,16 +420,11 @@ public class PassportService implements CardService
     * @return the public key to be used for AA
     */
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
-      byte[] file = readFile(PassportFileService.EF_DG15);
-      BERTLVObject fileObj = BERTLVObject.getInstance(new ByteArrayInputStream(file));
-      System.out.println(Hex.bytesToHexString(file));
-      byte [] b = fileObj.getValueAsBytes();
-      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(b);
-      System.out.println(Hex.bytesToHexString(b));      
+      int[] tags = { PassportASN1Service.EF_DG15_TAG };
+      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(service.readObject(tags));
       return keyFactory.generatePublic(pubKeySpec);
    }
-   
-    
+     
    public KeyPair generateAAKeyPair() 
    throws GeneralSecurityException, NoSuchAlgorithmException {
        String preferredProvider = "BC";
@@ -505,13 +451,14 @@ public class PassportService implements CardService
        return out.toByteArray();
    }
    
-   private SignedData readSignedData() throws IOException, Exception { // TODO: can be private?
-	   byte[] tag = { 0x77 };
-	   BERTLVObject object = readObject(PassportFileService.EF_SOD, tag);
-	   object = ((BERTLVObject[])object.getValue())[0];
-	   object = ((BERTLVObject[])object.getValue())[1];
-	   ASN1InputStream in = new ASN1InputStream(object.getValueAsBytes());
-	   SignedData signedData = new SignedData((DERSequence)in.readObject());
+   private SignedData readSignedData() throws IOException, Exception {
+	   int[] tags = { PassportASN1Service.EF_SOD_TAG };
+	   byte[] sd = service.readObject(tags);
+       ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
+       DERSequence seq = (DERSequence)in.readObject();
+       DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
+       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+	   SignedData signedData = new SignedData(s2);
        Object nextObject = in.readObject();
        if (nextObject != null) {
           System.out.println("DEBUG: WARNING: extra object found after SignedData...");

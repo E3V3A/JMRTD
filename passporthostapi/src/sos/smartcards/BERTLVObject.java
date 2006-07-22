@@ -23,8 +23,11 @@
 package sos.smartcards;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -90,7 +93,7 @@ public class BERTLVObject
    private boolean isPrimitive;
 
    /** Tag. */
-   private byte[] tag;
+   private int tag;
 
    /** Length in bytes, at most 65535. */
    private int length;
@@ -125,7 +128,8 @@ public class BERTLVObject
    private void readTag(DataInputStream in) throws IOException {
       int b = in.readUnsignedByte();
       if (b == 0x00000000 || b == 0x000000FF) {
-         throw new IllegalArgumentException("00 or FF tag not allowed");
+         // throw new IllegalArgumentException("00 or FF tag not allowed");
+         b = in.readUnsignedByte(); /* skip 00 and FF */
       }
       switch (b & 0x000000C0) {
          case 0x00000000: tagClass = UNIVERSAL_CLASS; break;
@@ -139,23 +143,18 @@ public class BERTLVObject
       }
       switch (b & 0x0000001F) {
          case 0x0000001F:
-            ArrayList tagBytes = new ArrayList();
-            tagBytes.add(new Integer(b)); // TODO: maybe change b to (b & 0x1F) ?
+            tag = b;
             b = in.readUnsignedByte();
             while ((b & 0x00000080) == 0x00000080) {
-               tagBytes.add(new Integer(b));
+               tag <<= 8;
+               tag |= (b  & 0x0000007F);
+               b = in.readUnsignedByte();
             }
-            tagBytes.add(new Integer(b));
-            tag = new byte[tagBytes.size()];
-            for (int i = 0; i < tagBytes.size(); i++) {
-               tag[i] = (byte)(((Integer)tagBytes.get(i)).intValue());
-            }
+            tag <<= 8;
+            tag |= (b & 0x0000007F);
             break;
          default:
-            tag = new byte[1]; tag[0] = (byte)b; break; // TODO: maybe change b to (b & 0x1F) ?
-      }
-      if (tag == null) {
-         throw new NumberFormatException("Could not read tag");
+            tag = b; break;
       }
    }
 
@@ -186,7 +185,7 @@ public class BERTLVObject
           * (or universal) we assume the value is just bytes.
           */   	  
     	  if (tagClass == UNIVERSAL_CLASS)
-    	  switch (tag[0] & 0x1F) {
+    	  switch (tag) {
     	     case INTEGER_TYPE_TAG: value = valueBytes; break;
     	     case BIT_STRING_TYPE_TAG: value = valueBytes; break;
        	     case OCTET_STRING_TYPE_TAG: value = valueBytes; break;
@@ -240,8 +239,23 @@ public class BERTLVObject
     * 
     * @return the tag bytes of this object.
     */
-   public byte[] getTag() {
-      return tag;
+   public byte[] getTagAsBytes() {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      int byteCount = (int)(Math.log(tag) / Math.log(256)) + 1;
+      for (int i = 0; i < byteCount; i++) {
+         int pos = 8 * (byteCount - i - 1);
+         out.write((tag & (0xFF << pos)) >> pos);
+      }
+      byte[] tagBytes = out.toByteArray();
+      switch(tagClass) {
+      case APPLICATION_CLASS: tagBytes[0] |= 0x40; break;
+      case CONTEXT_SPECIFIC_CLASS: tagBytes[0] |= 0x80; break;
+      case PRIVATE_CLASS: tagBytes[0] |= 0xC0; break;
+      }
+      if (!isPrimitive) {
+         tagBytes[0] |= 0x20;
+      }
+      return tagBytes;
    }
 
    /**
@@ -251,6 +265,35 @@ public class BERTLVObject
     */
    public int getLength() {
       return length;
+   }
+   
+   public byte[] getLengthAsBytes() {
+      if (length < 0x00000080) {
+         /* short form */
+         byte[] result = { (byte)length };
+         return result;
+      } else {
+         int byteCount = (int)(Math.log(length) / Math.log(256)) + 1;
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         out.write(0x80 | byteCount);
+         for (int i = 0; i < byteCount; i++) {
+            int pos = 8 * (byteCount - i - 1);
+            out.write((length & (0xFF << pos)) >> pos);
+         }
+         return out.toByteArray();
+      }
+   }
+   
+   public byte[] getEncoded() {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try {
+         out.write(getTagAsBytes());
+         out.write(getLengthAsBytes());
+         out.write(getValueAsBytes());
+      } catch (IOException ioe) {
+         ioe.printStackTrace();
+      }
+      return out.toByteArray();
    }
 
    /**
@@ -296,8 +339,8 @@ public class BERTLVObject
     * @param tag the tag to search for
     * @return the first
     */
-   public BERTLVObject getChild(byte[] tag) {
-      if (Arrays.equals(this.tag, tag)) {
+   public BERTLVObject getChild(int tag) {
+      if (this.tag == tag) {
          return this;
       } else if (value instanceof BERTLVObject[]) {
          BERTLVObject[] children = (BERTLVObject[])value;
@@ -330,7 +373,7 @@ public class BERTLVObject
       String prefix = new String(prefixBytes);
       StringBuffer result = new StringBuffer();
       result.append(prefix); 
-      result.append(tagToString(tag)); result.append(" ");
+      result.append(tagToString()); result.append(" ");
       result.append(Integer.toString(length)); result.append(" ");
       if (value instanceof byte[]) {
          byte[] valueData = (byte[])value;
@@ -359,39 +402,35 @@ public class BERTLVObject
       return result.toString();
    }
    
-   private static String tagToString(byte[] tag) {
-		if (tag.length == 1) {
-			if ((tag[0] & 0x20) == 0x00) {
-				/* primitive */
-				switch (tag[0] & 0x1F) {
-				   case BOOLEAN_TYPE_TAG: return "BOOLEAN";
-				   case INTEGER_TYPE_TAG: return "INTEGER";
-				   case BIT_STRING_TYPE_TAG: return "BIT_STRING";
-				   case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
-				   case NULL_TYPE_TAG: return "NULL";
-				   case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
-				   case REAL_TYPE_TAG: return "REAL";
-				   case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
-				   case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
-				   case T61_STRING_TYPE_TAG: return "T61_STRING";
-				   case IA5_STRING_TYPE_TAG: return "IA5_STRING";
-				   case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
-				   case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
-				   case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
-				   case BMP_STRING_TYPE_TAG: return "BMP_STRING";
-				   case UTC_TIME_TYPE_TAG: return "UTC_TIME";
-				   case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
-				}
-			} else {
-				/* constructed */
-				switch (tag[0] & 0x1F) {
-				   case ENUMERATED_TYPE_TAG: return "ENUMERATED";
-				   case SEQUENCE_TYPE_TAG: return "SEQUENCE";
-				   case SET_TYPE_TAG: return "SET";
-				}
-			}
-		}
-		return "'0x" + Hex.bytesToHexString(tag) + "'";
-	}
+   private String tagToString() {
+      if (isPrimitive()) {
+         switch (tag & 0x1F) {
+         case BOOLEAN_TYPE_TAG: return "BOOLEAN";
+         case INTEGER_TYPE_TAG: return "INTEGER";
+         case BIT_STRING_TYPE_TAG: return "BIT_STRING";
+         case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
+         case NULL_TYPE_TAG: return "NULL";
+         case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
+         case REAL_TYPE_TAG: return "REAL";
+         case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
+         case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
+         case T61_STRING_TYPE_TAG: return "T61_STRING";
+         case IA5_STRING_TYPE_TAG: return "IA5_STRING";
+         case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
+         case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
+         case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
+         case BMP_STRING_TYPE_TAG: return "BMP_STRING";
+         case UTC_TIME_TYPE_TAG: return "UTC_TIME";
+         case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
+         }
+      } else {
+         switch (tag & 0x1F) {
+         case ENUMERATED_TYPE_TAG: return "ENUMERATED";
+         case SEQUENCE_TYPE_TAG: return "SEQUENCE";
+         case SET_TYPE_TAG: return "SET";
+         }
+      }
+      return "'0x" + Hex.intToHexString(tag) + "'";
+   }
 }
 
