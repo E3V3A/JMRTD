@@ -182,7 +182,7 @@ public class PassportService implements CardService
       byte[] tagList = service.readObject(tags);
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
-         files[i] = PassportASN1Service.lookupFIDbyTag(tagList[i]);
+         files[i] = PassportASN1Service.lookupFIDByTag(tagList[i]);
       }
       return files;
    }

@@ -153,13 +153,10 @@ public class PassportASN1Service implements CardService
       if (tagPath == null || tagPath.length < 1) {
          throw new IllegalArgumentException("Tag path too short");
       }
-      byte[] file = service.readFile(lookupFIDbyTag(tagPath[0]));
+      byte[] file = service.readFile(lookupFIDByTag(tagPath[0]));
       BERTLVObject object = BERTLVObject.getInstance(new ByteArrayInputStream(file));
-      System.out.println("DEBUG: parent object = " + object);
       for (int i = 1; i < tagPath.length; i++) {
-         System.out.println("DEBUG: looking up " + Hex.intToHexString(tagPath[i]));
          object = object.getChild(tagPath[i]);
-         System.out.println("DEBUG: found " + object);
       }
       return object.getValueAsBytes();
    }
@@ -171,7 +168,7 @@ public class PassportASN1Service implements CardService
     *
     * @return the file identifier.
     */
-   static short lookupFIDbyTag(int tag) {
+   static short lookupFIDByTag(int tag) {
       switch(tag) {
          case EF_COM_TAG: return PassportFileService.EF_COM;
          case EF_DG1_TAG: return PassportFileService.EF_DG1;
