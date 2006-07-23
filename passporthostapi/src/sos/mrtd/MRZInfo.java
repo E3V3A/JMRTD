@@ -30,7 +30,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 /**
- * Data structure for storing the DG1. Based on ICAO 9303.
+ * Data structure for storing the DG1. Based on ICAO Doc 9303 part 1
+ * and supplement.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
@@ -38,55 +39,63 @@ import java.util.GregorianCalendar;
  */
 public class MRZInfo
 {
-   private String docType;
+   private String documentType;
    private String issuingState;
-   private String firstNames;
-   private String lastName;
+   private String name;
    private String nationality;
-   private String docNumber;
-   private String personNumber;
+   private String documentNumber;
+   private String personalNumber;
    private Date dateOfBirth;
+   private String sex;
    private Date dateOfExpiry;
    
-   public MRZInfo(String docType, String issuingState, String firstNames, String lastName,
-         String nationality, String docNumber, String personNumber, Date dateOfBirth, Date dateOfExpiry) {
-      this.docType = docType;
+   public MRZInfo(String documentType, String issuingState, String name,
+         String nationality, String docNumber, String personalNumber, Date dateOfBirth,
+         String sex, Date dateOfExpiry) {
+      this.documentType = documentType;
       this.issuingState = issuingState;
-      this.firstNames = firstNames;
-      this.lastName = lastName;
+      this.name = name;
       this.nationality = nationality;
-      this.docNumber = docNumber;
-      this.personNumber = personNumber;
+      this.documentNumber = docNumber;
+      this.personalNumber = personalNumber;
       this.dateOfBirth = dateOfBirth;
+      this.sex = sex;
       this.dateOfExpiry = dateOfExpiry;
    }
    
    public MRZInfo(InputStream in) {
       try {
          DataInputStream dataIn = new DataInputStream(in);
-         this.docType = readDocumentType(dataIn);
-         if (docType.startsWith("I")) {
-            /* Assume it's a I< document */
+         this.documentType = readDocumentType(dataIn);
+         if (documentType.startsWith("I")) {
+            /* Assume it's an I< document */
             this.issuingState = readIssuingState(dataIn);
-            this.docNumber = readDocumentNumber(dataIn);
-            this.personNumber = readPersonNumber(dataIn);
+            this.documentNumber = readDocumentNumber(dataIn, 9);
+            dataIn.skip(1); // check digit
+            this.personalNumber = readPersonNumber(dataIn, 14);
+            dataIn.skip(1); // check digit
             this.dateOfBirth = readDateOfBirth(dataIn);
+            dataIn.skip(1); // check digit
+            this.sex = readSex(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
+            dataIn.skip(1); // check digit
             this.nationality = readNationality(dataIn);
-            String fullName = readName(dataIn);
-            // this.firstNames = ...
-            // this.lastName = ...
+            dataIn.skip(12);
+            this.name = readName(dataIn, 30);
          } else {
             /* Assume it's a P< document */
             this.issuingState = readIssuingState(dataIn);
-            String fullName = readName(dataIn);
-            // this.firstNames = ...
-            // this.lastName = ...
-            this.docNumber = readDocumentNumber(dataIn);
+            this.name = readName(dataIn, 39);
+            this.documentNumber = readDocumentNumber(dataIn, 9);
+            dataIn.skip(1); // check digit
             this.nationality = readNationality(dataIn);
             this.dateOfBirth = readDateOfBirth(dataIn);
+            dataIn.skip(1); // check digit
+            this.sex = readSex(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
-            this.personNumber = readPersonNumber(dataIn);
+            dataIn.skip(1); // check digit
+            this.personalNumber = readPersonNumber(dataIn, 14);
+            dataIn.skip(1); // check digit
          }
       } catch (IOException ioe) {
          throw new IllegalArgumentException("Invalid MRZ input source");
@@ -100,7 +109,7 @@ public class MRZInfo
     * @return a string of length 2 containing the document type
     * @throws IOException if something goes wrong
     */
-   public String readDocumentType(DataInputStream in) throws IOException {
+   private String readDocumentType(DataInputStream in) throws IOException {
       byte[] result = new byte[2];
       in.readFully(result);
       return new String(result);
@@ -114,8 +123,7 @@ public class MRZInfo
     *         
     * @throws IOException if something goes wrong
     */
-   public String readIssuingState(DataInputStream in) throws IOException {
-      /* in.skip(2); */
+   private String readIssuingState(DataInputStream in) throws IOException {
       byte[] data = new byte[3];
       in.readFully(data);
       return new String(data);
@@ -128,15 +136,14 @@ public class MRZInfo
     * 
     * @throws IOException is something goes wrong
     */
-   public String readName(DataInputStream in) throws IOException {
-   /* in.skip(2);
-      in.skip(3); */
-      byte[] data = new byte[39]; // FIXME: check if we have ID3 type document (otherwise 30 or 31 instead of 39)
+   private String readName(DataInputStream in, int le) throws IOException {
+      byte[] data = new byte[le]; // FIXME: check if we have ID3 type document (otherwise 30 or 31 instead of 39)
       in.readFully(data);
       for (int i = 0; i < data.length; i++) {
+         /*
          if (data[i] == '<') {
             data[i] = ' ';
-         }
+         } */
       }
       String name = new String(data).trim();
       return name;
@@ -149,17 +156,14 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   public String readDocumentNumber(DataInputStream in) throws IOException {
-   /* in.skip(2);
-      in.skip(3);
-      in.skip(39); */
-      byte[] data = new byte[9];
+   private String readDocumentNumber(DataInputStream in, int le) throws IOException {
+      byte[] data = new byte[le];
       in.readFully(data);
       return new String(data).trim();
    }
    
-   public String readPersonNumber(DataInputStream in) throws IOException {
-      byte[] data = new byte[15];
+   private String readPersonNumber(DataInputStream in, int le) throws IOException {
+      byte[] data = new byte[le];
       in.readFully(data);
       return new String(data).trim();
    }
@@ -170,17 +174,18 @@ public class MRZInfo
     * @return a string of length 3 containing the nationality of the passport holder
     * @throws IOException if something goes wrong
     */
-   public String readNationality(DataInputStream in) throws IOException {
-   /* in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1); */
+   private String readNationality(DataInputStream in) throws IOException {
       byte[] data = new byte[3];
       in.readFully(data);
       return new String(data).trim();
    }
 
+   private String readSex(DataInputStream in) throws IOException {
+      byte[] data = new byte[1];
+      in.readFully(data);
+      return new String(data).trim();
+   }
+   
    /**
     * Reads the date of birth of the passport holder
     * 
@@ -189,13 +194,7 @@ public class MRZInfo
     * @throws IOException if something goes wrong
     * @throws NumberFormatException if something goes wrong
     */
-   public Date readDateOfBirth(DataInputStream in) throws IOException, NumberFormatException {
-   /* in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1);
-      in.skip(3); */
+   private Date readDateOfBirth(DataInputStream in) throws IOException, NumberFormatException {
       byte[] data = new byte[6];
       in.readFully(data);
       String dateString = new String(data).trim();
@@ -209,15 +208,7 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   public Date readDateOfExpiry(DataInputStream in) throws IOException {in.skip(2);
-   /* in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1);
-      in.skip(3);
-      in.skip(6);
-      in.skip(1);
-      in.skip(1); */
+   private Date readDateOfExpiry(DataInputStream in) throws IOException {
       byte[] data = new byte[6];
       in.readFully(data);
       return makeDate(2000, new String(data).trim());
@@ -232,5 +223,41 @@ public class MRZInfo
       int day = Integer.parseInt(dateString.substring(4, 6));
       GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
       return cal.getTime();
+   }
+
+   public Date getDateOfBirth() {
+      return dateOfBirth;
+   }
+
+   public Date getDateOfExpiry() {
+      return dateOfExpiry;
+   }
+
+   public String getDocumentNumber() {
+      return documentNumber;
+   }
+
+   public String getDocumentType() {
+      return documentType;
+   }
+
+   public String getIssuingState() {
+      return issuingState;
+   }
+
+   public String getName() {
+      return name;
+   }
+
+   public String getNationality() {
+      return nationality;
+   }
+
+   public String getPersonalNumber() {
+      return personalNumber;
+   }
+
+   public String getSex() {
+      return sex;
    }
 }
