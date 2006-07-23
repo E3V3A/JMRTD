@@ -25,9 +25,6 @@ package sos.smartcards;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -143,7 +140,7 @@ public class BERTLVObject
       }
       switch (b & 0x0000001F) {
          case 0x0000001F:
-            tag = b;
+            tag = b; /* We store the first byte including LHS nibble */
             b = in.readUnsignedByte();
             while ((b & 0x00000080) == 0x00000080) {
                tag <<= 8;
@@ -151,7 +148,7 @@ public class BERTLVObject
                b = in.readUnsignedByte();
             }
             tag <<= 8;
-            tag |= (b & 0x0000007F);
+            tag |= (b & 0x0000007F); /* Byte with MSB set is last byte of tag... */
             break;
          default:
             tag = b; break;
@@ -268,30 +265,17 @@ public class BERTLVObject
    }
    
    public byte[] getLengthAsBytes() {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
       if (length < 0x00000080) {
          /* short form */
-         byte[] result = { (byte)length };
-         return result;
+         out.write(length);
       } else {
          int byteCount = (int)(Math.log(length) / Math.log(256)) + 1;
-         ByteArrayOutputStream out = new ByteArrayOutputStream();
          out.write(0x80 | byteCount);
          for (int i = 0; i < byteCount; i++) {
             int pos = 8 * (byteCount - i - 1);
             out.write((length & (0xFF << pos)) >> pos);
          }
-         return out.toByteArray();
-      }
-   }
-   
-   public byte[] getEncoded() {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      try {
-         out.write(getTagAsBytes());
-         out.write(getLengthAsBytes());
-         out.write(getValueAsBytes());
-      } catch (IOException ioe) {
-         ioe.printStackTrace();
       }
       return out.toByteArray();
    }
@@ -332,6 +316,23 @@ public class BERTLVObject
       return isPrimitive;
    }
 
+   /**
+    * This object, including tag and length, as byte array.
+    * 
+    * @return this object, including tag and length, as byte array
+    */
+   public byte[] getEncoded() {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      try {
+         out.write(getTagAsBytes());
+         out.write(getLengthAsBytes());
+         out.write(getValueAsBytes());
+      } catch (IOException ioe) {
+         ioe.printStackTrace();
+      }
+      return out.toByteArray();
+   }
+   
    /**
     * Gets the first sub-object (including this object) whose
     * tag equals <code>tag</code>.
@@ -403,34 +404,35 @@ public class BERTLVObject
    }
    
    private String tagToString() {
-      if (isPrimitive()) {
-         switch (tag & 0x1F) {
-         case BOOLEAN_TYPE_TAG: return "BOOLEAN";
-         case INTEGER_TYPE_TAG: return "INTEGER";
-         case BIT_STRING_TYPE_TAG: return "BIT_STRING";
-         case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
-         case NULL_TYPE_TAG: return "NULL";
-         case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
-         case REAL_TYPE_TAG: return "REAL";
-         case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
-         case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
-         case T61_STRING_TYPE_TAG: return "T61_STRING";
-         case IA5_STRING_TYPE_TAG: return "IA5_STRING";
-         case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
-         case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
-         case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
-         case BMP_STRING_TYPE_TAG: return "BMP_STRING";
-         case UTC_TIME_TYPE_TAG: return "UTC_TIME";
-         case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
-         }
-      } else {
-         switch (tag & 0x1F) {
-         case ENUMERATED_TYPE_TAG: return "ENUMERATED";
-         case SEQUENCE_TYPE_TAG: return "SEQUENCE";
-         case SET_TYPE_TAG: return "SET";
+      if (getTagClass() == UNIVERSAL_CLASS) {
+         if (isPrimitive()) {
+            switch (tag & 0x1F) {
+               case BOOLEAN_TYPE_TAG: return "BOOLEAN";
+               case INTEGER_TYPE_TAG: return "INTEGER";
+               case BIT_STRING_TYPE_TAG: return "BIT_STRING";
+               case OCTET_STRING_TYPE_TAG: return "OCTET_STRING";
+               case NULL_TYPE_TAG: return "NULL";
+               case OBJECT_IDENTIFIER_TYPE_TAG: return "OBJECT_IDENTIFIER";
+               case REAL_TYPE_TAG: return "REAL";
+               case UTF8_STRING_TYPE_TAG: return "UTF_STRING";
+               case PRINTABLE_STRING_TYPE_TAG: return "PRINTABLE_STRING";
+               case T61_STRING_TYPE_TAG: return "T61_STRING";
+               case IA5_STRING_TYPE_TAG: return "IA5_STRING";
+               case VISIBLE_STRING_TYPE_TAG: return "VISIBLE_STRING";
+               case GENERAL_STRING_TYPE_TAG: return "GENERAL_STRING";
+               case UNIVERSAL_STRING_TYPE_TAG: return "UNIVERSAL_STRING";
+               case BMP_STRING_TYPE_TAG: return "BMP_STRING";
+               case UTC_TIME_TYPE_TAG: return "UTC_TIME";
+               case GENERALIZED_TIME_TYPE_TAG: return "GENERAL_TIME";
+            }
+         } else {
+            switch (tag & 0x1F) {
+               case ENUMERATED_TYPE_TAG: return "ENUMERATED";
+               case SEQUENCE_TYPE_TAG: return "SEQUENCE";
+               case SET_TYPE_TAG: return "SET";
+            }
          }
       }
       return "'0x" + Hex.intToHexString(tag) + "'";
    }
 }
-

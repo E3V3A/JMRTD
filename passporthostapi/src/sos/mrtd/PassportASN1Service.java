@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportService.java 84 2006-07-20 15:36:02Z ceesb $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -26,15 +26,12 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
-import sos.util.Hex;
 
 /**
  * DER TLV level card service for using the passport.
@@ -51,7 +48,7 @@ import sos.util.Hex;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 84 $
+ * @version $Revision$
  */
 public class PassportASN1Service implements CardService
 {
@@ -144,8 +141,11 @@ public class PassportASN1Service implements CardService
    
    /**
     * Reads the contents of object indicated by tags in <code>tagPath</code>.
+    * First component of the tag path is the file tag (one of
+    * <code>EF_COM_TAG</code> - <code>EF_SOD_TAG</code>). Last component of
+    * the tag path indicates the object who's content is returned.
     * 
-    * @param tagPath tags
+    * @param tagPath sequence of tags to search for
     * @return contents of object
     * @throws IOException when something goes wrong.
     */
