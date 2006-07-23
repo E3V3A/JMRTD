@@ -188,156 +188,6 @@ public class PassportService implements CardService
    }
 
    /**
-    * Reads the type of document.
-    * The ICAO documentation gives "P<" as an example.
-    * 
-    * @return a string of length 2 containing the document type
-    * @throws IOException if something goes wrong
-    */
-   public String readDocumentType() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      byte[] result = new byte[2];
-      in.readFully(result);
-      return new String(result);
-   }
-
-   /**
-    * Reads the issuing state.
-    * 
-    * @return a string of length 3 containing an abbreviation
-    *         of the issuing state or organization
-    *         
-    * @throws IOException if something goes wrong
-    */
-   public String readIssuingState() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      byte[] data = new byte[3];
-      in.readFully(data);
-      return new String(data);
-   }
-
-   /**
-    * Reads the passport holder's name.
-    * 
-    * @return a string containing last name and first names seperated by spaces
-    * 
-    * @throws IOException is something goes wrong
-    */
-   public String readName() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      in.skip(3);
-      byte[] data = new byte[39]; // FIXME: check if we have ID3 type document (otherwise 30 or 31 instead of 39)
-      in.readFully(data);
-      for (int i = 0; i < data.length; i++) {
-         if (data[i] == '<') {
-            data[i] = ' ';
-         }
-      }
-      String name = new String(data).trim();
-      return name;
-   }
-
-   /**
-    * Reads the document number.
-    * 
-    * @return the document number
-    * 
-    * @throws IOException if something goes wrong
-    */
-   public String readDocumentNumber() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      byte[] data = new byte[9];
-      in.readFully(data);
-      return new String(data).trim();
-   }
-
-   /**
-    * Reads the nationality of the passport holder.
-    * 
-    * @return a string of length 3 containing the nationality of the passport holder
-    * @throws IOException if something goes wrong
-    */
-   public String readNationality() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1);
-      byte[] data = new byte[3];
-      in.readFully(data);
-      return new String(data).trim();
-   }
-
-   /**
-    * Reads the date of birth of the passport holder
-    * 
-    * @return the date of birth
-    * 
-    * @throws IOException if something goes wrong
-    * @throws NumberFormatException if something goes wrong
-    */
-   public Date readDateOfBirth() throws IOException, NumberFormatException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1);
-      in.skip(3);
-      byte[] data = new byte[6];
-      in.readFully(data);
-      String dateString = new String(data).trim();
-      return makeDate(1900, dateString);
-   }
-
-   /**
-    * Reads the date of expiry of this document
-    * 
-    * @return the date of expiry
-    * 
-    * @throws IOException if something goes wrong
-    */
-   public Date readDateOfExpiry() throws IOException {
-      byte[] fileData = readMRZ();
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(fileData));
-      in.skip(2);
-      in.skip(3);
-      in.skip(39);
-      in.skip(9);
-      in.skip(1);
-      in.skip(3);
-      in.skip(6);
-      in.skip(1);
-      in.skip(1);
-      byte[] data = new byte[6];
-      in.readFully(data);
-      return makeDate(2000, new String(data).trim());
-   }
-   
-   private Date makeDate(int baseYear, String dateString) throws NumberFormatException {
-      if (dateString.length() != 6) {
-         throw new NumberFormatException("Wrong date format!");
-      }
-      int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
-      int month = Integer.parseInt(dateString.substring(2, 4));
-      int day = Integer.parseInt(dateString.substring(4, 6));
-      GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
-      return cal.getTime();
-   }
-
-   /**
     * Reads the face of the passport holder.
     * 
     * @return the first face found on the passport
@@ -409,9 +259,9 @@ public class PassportService implements CardService
       return null;
    }
 
-   private byte[] readMRZ() throws IOException {
+   private MRZInfo readMRZ() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
-      return service.readObject(tags);
+      return new MRZInfo(new ByteArrayInputStream(service.readObject(tags)));
    }
 
    /**
