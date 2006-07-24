@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +39,8 @@ import java.util.GregorianCalendar;
  */
 public class MRZInfo
 {
+   private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+   
    private String documentType;
    private String issuingState;
    private String name;
@@ -49,19 +50,39 @@ public class MRZInfo
    private Date dateOfBirth;
    private String sex;
    private Date dateOfExpiry;
+   private char documentNumberCheckDigit;
+   private char dateOfBirthCheckDigit;
+   private char dateOfExpiryCheckDigit;
+   private char personalNumberCheckDigit;
+   private char compositeCheckDigit;
    
    public MRZInfo(String documentType, String issuingState, String name,
-         String nationality, String docNumber, String personalNumber, Date dateOfBirth,
-         String sex, Date dateOfExpiry) {
+         String documentNumber, String nationality, Date dateOfBirth,
+         String sex, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
       this.name = name;
-      this.nationality = nationality;
-      this.documentNumber = docNumber;
-      this.personalNumber = personalNumber;
+      this.documentNumber = documentNumber;
+      this.nationality = nationality; 
       this.dateOfBirth = dateOfBirth;
       this.sex = sex;
       this.dateOfExpiry = dateOfExpiry;
+      this.personalNumber = personalNumber;
+      
+      this.documentNumberCheckDigit = checkDigit(documentNumber);
+      this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
+      this.dateOfExpiryCheckDigit = checkDigit(SDF.format(dateOfExpiry));
+      this.personalNumberCheckDigit = checkDigit(personalNumber);
+      StringBuffer composite = new StringBuffer();
+      composite.append(documentNumber);
+      composite.append(documentNumberCheckDigit);
+      composite.append(SDF.format(dateOfBirth));
+      composite.append(dateOfBirthCheckDigit);
+      composite.append(SDF.format(dateOfExpiry));
+      composite.append(dateOfExpiryCheckDigit);
+      composite.append(personalNumber);
+      composite.append(personalNumberCheckDigit);
+      this.compositeCheckDigit = checkDigit(composite.toString());
    }
    
    public MRZInfo(InputStream in) {
@@ -72,14 +93,14 @@ public class MRZInfo
             /* Assume it's an I< document */
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
-            dataIn.skip(1); // check digit
+            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.personalNumber = readPersonalNumber(dataIn, 14);
-            dataIn.skip(1); // check digit
+            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.dateOfBirth = readDateOfBirth(dataIn);
-            dataIn.skip(1); // check digit
+            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.sex = readSex(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
-            dataIn.skip(1); // check digit
+            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.nationality = readNationality(dataIn);
             dataIn.skip(12);
             this.name = readName(dataIn, 30);
@@ -88,15 +109,16 @@ public class MRZInfo
             this.issuingState = readIssuingState(dataIn);
             this.name = readName(dataIn, 39);
             this.documentNumber = readDocumentNumber(dataIn, 9);
-            dataIn.skip(1); // check digit
+            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.nationality = readNationality(dataIn);
             this.dateOfBirth = readDateOfBirth(dataIn);
-            dataIn.skip(1); // check digit
+            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.sex = readSex(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
-            dataIn.skip(1); // check digit
+            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
             this.personalNumber = readPersonalNumber(dataIn, 14);
-            dataIn.skip(1); // check digit
+            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.compositeCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
          }
       } catch (IOException ioe) {
          throw new IllegalArgumentException("Invalid MRZ input source");
@@ -284,19 +306,102 @@ public class MRZInfo
    }
    
    public String toString() {
-      SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
+      StringBuffer out = new StringBuffer();
       if (documentType.startsWith("I")) {
-         return documentType + issuingState + documentNumber + personalNumber + "\n"
-         + sdf.format(dateOfBirth) + sex + sdf.format(dateOfExpiry) + "\n"
-         + name + "\n";
+         out.append(documentType);
+         out.append(issuingState);
+         out.append(documentNumber);
+         out.append(documentNumberCheckDigit);
+         out.append(personalNumber);
+         out.append(personalNumberCheckDigit);
+         out.append("\n");
+         out.append(SDF.format(dateOfBirth));
+         out.append(dateOfBirthCheckDigit);
+         out.append(sex);
+         out.append(SDF.format(dateOfExpiry));
+         out.append(dateOfExpiryCheckDigit);
+         out.append(nationality);
+         out.append("\n");
+         out.append(name);
+         out.append("\n");
       } else {
-         return documentType + issuingState + name + "\n"
-         + documentNumber
-         + nationality
-         + sdf.format(dateOfBirth)
-         + sex
-         + sdf.format(dateOfExpiry)
-         + personalNumber + "\n";
+         out.append(documentType);
+         out.append(issuingState);
+         out.append(name);
+         out.append("\n");
+         out.append(documentNumber);
+         out.append(documentNumberCheckDigit);
+         out.append(nationality);
+         out.append(SDF.format(dateOfBirth));
+         out.append(dateOfBirthCheckDigit);
+         out.append(sex);
+         out.append(SDF.format(dateOfExpiry));
+         out.append(dateOfExpiryCheckDigit);
+         out.append(personalNumber);
+         out.append(personalNumberCheckDigit);
+         out.append(compositeCheckDigit);
+         out.append("\n");
+      }
+      return out.toString();
+   }
+   
+   /**
+    * Computes the 7-3-1 check digit for part of the MRZ.
+    *
+    * @param chars a part of the MRZ.
+    *
+    * @return the resulting check digit.
+    */
+   public static char checkDigit(String str) {
+      try {
+         byte[] chars = str.getBytes("UTF-8");
+         int[] weights = { 7, 3, 1 };
+         int result = 0;
+         for (int i = 0; i < chars.length; i++) {
+            result = (result + weights[i % 3] * decodeMRZDigit(chars[i])) % 10;
+         }
+         chars = Integer.toString(result).getBytes("UTF-8");
+         return (char)chars[0];
+      } catch (Exception e) {
+         e.printStackTrace();
+         throw new IllegalArgumentException(e.toString());
+      }
+   }
+
+   /**
+    * Looks up the numerical value for MRZ characters. In order to be able
+    * to compute check digits.
+    *
+    * @param ch a character from the MRZ.
+    *
+    * @return the numerical value of the character.
+    *
+    * @throws NumberFormatException if <code>ch</code> is not a valid MRZ
+    *                               character.
+    */
+   private static int decodeMRZDigit(byte ch) throws NumberFormatException {
+      switch (ch) {
+         case '<':
+         case '0': return 0; case '1': return 1; case '2': return 2;
+         case '3': return 3; case '4': return 4; case '5': return 5;
+         case '6': return 6; case '7': return 7; case '8': return 8;
+         case '9': return 9;
+         case 'a': case 'A': return 10; case 'b': case 'B': return 11;
+         case 'c': case 'C': return 12; case 'd': case 'D': return 13;
+         case 'e': case 'E': return 14; case 'f': case 'F': return 15;
+         case 'g': case 'G': return 16; case 'h': case 'H': return 17;
+         case 'i': case 'I': return 18; case 'j': case 'J': return 19;
+         case 'k': case 'K': return 20; case 'l': case 'L': return 21;
+         case 'm': case 'M': return 22; case 'n': case 'N': return 23;
+         case 'o': case 'O': return 24; case 'p': case 'P': return 25;
+         case 'q': case 'Q': return 26; case 'r': case 'R': return 27;
+         case 's': case 'S': return 28; case 't': case 'T': return 29;
+         case 'u': case 'U': return 30; case 'v': case 'V': return 31;
+         case 'w': case 'W': return 32; case 'x': case 'X': return 33;
+         case 'y': case 'Y': return 34; case 'z': case 'Z': return 35;
+         default:
+            throw new NumberFormatException("Could not decode MRZ character "
+                                            + ch);
       }
    }
 }

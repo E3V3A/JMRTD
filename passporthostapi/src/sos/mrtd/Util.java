@@ -80,26 +80,23 @@ public class Util
                                         String dateOfBirthStr,
                                         String dateOfExpiryStr)
    throws UnsupportedEncodingException, GeneralSecurityException {
-      byte[] docNr = docNrStr.getBytes("UTF-8");
-      byte[] dateOfBirth = dateOfBirthStr.getBytes("UTF-8");
-      byte[] dateOfExpiry = dateOfExpiryStr.getBytes("UTF-8");
-      if (docNr.length != 9
-          || dateOfBirth.length != 6
-          || dateOfExpiry.length != 6) {
+      if (docNrStr.length() != 9
+          || dateOfBirthStr.length() != 6
+          || dateOfExpiryStr.length() != 6) {
          throw new UnsupportedEncodingException("Wrong length MRZ input");
       }
 
       /* Check digits... */
-      byte[] cd1 = (Integer.toString(checkDigit(docNr))).getBytes("UTF-8");
-      byte[] cd2 = (Integer.toString(checkDigit(dateOfBirth))).getBytes("UTF-8");
-      byte[] cd3 = (Integer.toString(checkDigit(dateOfExpiry))).getBytes("UTF-8");
-
+      byte[] cd1 = { (byte)MRZInfo.checkDigit(docNrStr) };
+      byte[] cd2 = { (byte)MRZInfo.checkDigit(dateOfBirthStr) };
+      byte[] cd3 = { (byte)MRZInfo.checkDigit(dateOfExpiryStr) };
+      
       MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
-      shaDigest.update(docNr);
+      shaDigest.update(docNrStr.getBytes("UTF-8"));
       shaDigest.update(cd1);
-      shaDigest.update(dateOfBirth);
+      shaDigest.update(dateOfBirthStr.getBytes("UTF-8"));
       shaDigest.update(cd2);
-      shaDigest.update(dateOfExpiry);
+      shaDigest.update(dateOfExpiryStr.getBytes("UTF-8"));
       shaDigest.update(cd3);
       
       byte[] hash = shaDigest.digest();
@@ -164,63 +161,6 @@ public class Util
       return out;
    }
 
-   /**
-    * Computes the 7-3-1 check digit for part of the MRZ.
-    *
-    * @param chars a part of the MRZ.
-    *
-    * @return the resulting check digit.
-    */
-   private static int checkDigit(byte[] chars) {
-      try {
-         int[] weights = { 7, 3, 1 };
-         int result = 0;
-         for (int i = 0; i < chars.length; i++) {
-            result = (result + weights[i % 3] * decodeMRZDigit(chars[i])) % 10;
-         }
-         return result;
-      } catch (Exception e) {
-         throw new IllegalArgumentException(e.toString());
-      }
-   }
-
-   /**
-    * Looks up the numerical value for MRZ characters. In order to be able
-    * to compute check digits.
-    *
-    * @param ch a character from the MRZ.
-    *
-    * @return the numerical value of the character.
-    *
-    * @throws NumberFormatException if <code>ch</code> is not a valid MRZ
-    *                               character.
-    */
-   private static int decodeMRZDigit(byte ch) throws NumberFormatException {
-      switch (ch) {
-         case '<':
-         case '0': return 0; case '1': return 1; case '2': return 2;
-         case '3': return 3; case '4': return 4; case '5': return 5;
-         case '6': return 6; case '7': return 7; case '8': return 8;
-         case '9': return 9;
-         case 'a': case 'A': return 10; case 'b': case 'B': return 11;
-         case 'c': case 'C': return 12; case 'd': case 'D': return 13;
-         case 'e': case 'E': return 14; case 'f': case 'F': return 15;
-         case 'g': case 'G': return 16; case 'h': case 'H': return 17;
-         case 'i': case 'I': return 18; case 'j': case 'J': return 19;
-         case 'k': case 'K': return 20; case 'l': case 'L': return 21;
-         case 'm': case 'M': return 22; case 'n': case 'N': return 23;
-         case 'o': case 'O': return 24; case 'p': case 'P': return 25;
-         case 'q': case 'Q': return 26; case 'r': case 'R': return 27;
-         case 's': case 'S': return 28; case 't': case 'T': return 29;
-         case 'u': case 'U': return 30; case 'v': case 'V': return 31;
-         case 'w': case 'W': return 32; case 'x': case 'X': return 33;
-         case 'y': case 'Y': return 34; case 'z': case 'Z': return 35;
-         default:
-            throw new NumberFormatException("Could not decode MRZ character "
-                                            + ch);
-      }
-   }
-  
    /**
     * Recovers the M1 part of the message sent back by the AA protocol
     * (INTERNAL AUTHENTICATE command). The algorithm is described in
