@@ -47,12 +47,10 @@ import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
-import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 
 /**
- * High level card service for using the passport.
+ * High level card passportASN1Service for using the passport.
  * Defines high-level commands to access the information on the passport.
  * Based on ICAO-TR-LDS.
  * 
@@ -66,16 +64,16 @@ import sos.smartcards.CardService;
  *
  * @version $Revision$
  */
-public class PassportService implements CardService
+public class PassportService extends PassportAuthService
 {
-   private PassportASN1Service service;
+   private PassportASN1Service passportASN1Service;
    private KeyFactory keyFactory;
    private CertificateFactory certFactory;
    
    /**
-    * Creates a new passport service for accessing the passport.
+    * Creates a new passport passportASN1Service for accessing the passport.
     * 
-    * @param service another service which will deal with sending
+    * @param passportASN1Service another passportASN1Service which will deal with sending
     *        the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
@@ -83,73 +81,15 @@ public class PassportService implements CardService
     */
    public PassportService(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
+      super(service);
       if (service instanceof PassportService) {
-         this.service = ((PassportService)service).service;
+         this.passportASN1Service = ((PassportService)service).passportASN1Service;
       } else {
-         this.service = new PassportASN1Service(service);
+         this.passportASN1Service = new PassportASN1Service(service);
       }
+      addAuthenticationListener(passportASN1Service);
       keyFactory = KeyFactory.getInstance("RSA");
       certFactory = CertificateFactory.getInstance("X.509");
-   }
-   
-   /**
-    * Hack to construct a passport service from a service that is already open.
-    * This should be removed some day.
-    * 
-    * @param service underlying service
-    * @param wrapper encapsulates secure messaging state
-    */
-   public PassportService(CardService service, SecureMessagingWrapper wrapper)
-   throws GeneralSecurityException, UnsupportedEncodingException {
-      this(service);
-      this.service.setWrapper(wrapper);   }
-
-   /**
-    * Opens a session. This is done by connecting to the card, selecting the
-    * passport applet.
-    */
-   public void open() {
-      service.open();
-   }
-   
-   public String[] getTerminals() {
-      return service.getTerminals();
-   }
-
-   public void open(String id) {
-      service.open(id);
-   }
-
-   /**
-    * Performs the Basic Access Control protocol.
-    *
-    * @param docNr the document number
-    * @param dateOfBirth card holder's birth date
-    * @param dateOfExpiry document's expiry date
-    */
-   public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
-         throws GeneralSecurityException, UnsupportedEncodingException {
-      service.doBAC(docNr, dateOfBirth, dateOfExpiry);
-   }
-   
-   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      return service.doAA(pubkey);
-   }
-   
-   public byte[] sendAPDU(Apdu capdu) {
-      return service.sendAPDU(capdu);
-   }
-
-   public void close() {
-      service.close();
-   }
-
-   public void addAPDUListener(APDUListener l) {
-      service.addAPDUListener(l);
-   }
-
-   public void removeAPDUListener(APDUListener l) {
-      service.removeAPDUListener(l);
    }
 
    /**
@@ -161,7 +101,7 @@ public class PassportService implements CardService
     */
    public short[] readDataGroupList() throws IOException {
       int[] tags = { PassportASN1Service.EF_COM_TAG, 0x5C };
-      byte[] tagList = service.readObject(tags);
+      byte[] tagList = passportASN1Service.readObject(tags);
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
          files[i] = PassportASN1Service.lookupFIDByTag(tagList[i]);
@@ -178,7 +118,7 @@ public class PassportService implements CardService
     */
    public FaceInfo[] readFace() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG2_TAG, 0x5F2E }; 
-      byte[] facialRecordData = service.readObject(tags);
+      byte[] facialRecordData = passportASN1Service.readObject(tags);
       if (facialRecordData == null) {
          System.out.println("DEBUG: facialRecordData == null");
       }
@@ -199,7 +139,7 @@ public class PassportService implements CardService
 
    public MRZInfo readMRZ() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
-      return new MRZInfo(new ByteArrayInputStream(service.readObject(tags)));
+      return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));
    }
 
    /**
@@ -209,13 +149,13 @@ public class PassportService implements CardService
     */
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
       int[] tags = { PassportASN1Service.EF_DG15_TAG };
-      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(service.readObject(tags));
+      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(passportASN1Service.readObject(tags));
       return keyFactory.generatePublic(pubKeySpec);
    }
      
    private SignedData readSignedData() throws IOException, Exception {
 	   int[] tags = { PassportASN1Service.EF_SOD_TAG };
-	   byte[] sd = service.readObject(tags);
+	   byte[] sd = passportASN1Service.readObject(tags);
        ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
        DERSequence seq = (DERSequence)in.readObject();
        DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
@@ -313,13 +253,5 @@ public class PassportService implements CardService
          /* Signed attributes present, digest the attributes... */
          return signedAttributes.getDEREncoded();
       }
-   }
-   
-   /**
-    * @deprecated hack
-    * @param wrapper
-    */
-   public void setWrapper(SecureMessagingWrapper wrapper) {
-      service.setWrapper(wrapper);
    }
 }
