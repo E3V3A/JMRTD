@@ -76,7 +76,7 @@ public class PassportASN1Service extends PassportAuthService
    /**
     * Creates a new passport fileService for accessing the passport.
     * 
-    * @param fileService another fileService which will deal with sending
+    * @param service another service which will deal with sending
     *        the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
@@ -106,7 +106,8 @@ public class PassportASN1Service extends PassportAuthService
          throw new IllegalArgumentException("Tag path too short");
       }
       byte[] file = fileService.readFile(lookupFIDByTag(tagPath[0]));
-      BERTLVObject object = BERTLVObject.getInstance(new ByteArrayInputStream(file));
+      BERTLVObject object =
+         BERTLVObject.getInstance(new ByteArrayInputStream(file));
       for (int i = 1; i < tagPath.length; i++) {
          object = object.getChild(tagPath[i]);
       }
@@ -146,3 +147,4 @@ public class PassportASN1Service extends PassportAuthService
       }
    }
 }
+

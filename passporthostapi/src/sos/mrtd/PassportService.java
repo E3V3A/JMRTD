@@ -73,8 +73,8 @@ public class PassportService extends PassportAuthService
    /**
     * Creates a new passport passportASN1Service for accessing the passport.
     * 
-    * @param passportASN1Service another passportASN1Service which will deal with sending
-    *        the apdus to the card.
+    * @param service another passportASN1Service which will deal
+    *        with sending the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
     *         cannot provide the necessary cryptographic primitives.
@@ -83,7 +83,8 @@ public class PassportService extends PassportAuthService
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(service);
       if (service instanceof PassportService) {
-         this.passportASN1Service = ((PassportService)service).passportASN1Service;
+         this.passportASN1Service =
+            ((PassportService)service).passportASN1Service;
       } else {
          this.passportASN1Service = new PassportASN1Service(service);
       }
@@ -122,7 +123,8 @@ public class PassportService extends PassportAuthService
       if (facialRecordData == null) {
          System.out.println("DEBUG: facialRecordData == null");
       }
-      DataInputStream in = new DataInputStream(new ByteArrayInputStream(facialRecordData));
+      DataInputStream in =
+         new DataInputStream(new ByteArrayInputStream(facialRecordData));
 
       /* Facial Record Header (14) */
       in.skip(4); // 'F', 'A', 'C', 0
@@ -149,23 +151,24 @@ public class PassportService extends PassportAuthService
     */
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
       int[] tags = { PassportASN1Service.EF_DG15_TAG };
-      X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(passportASN1Service.readObject(tags));
+      X509EncodedKeySpec pubKeySpec =
+         new X509EncodedKeySpec(passportASN1Service.readObject(tags));
       return keyFactory.generatePublic(pubKeySpec);
    }
      
    private SignedData readSignedData() throws IOException, Exception {
-	   int[] tags = { PassportASN1Service.EF_SOD_TAG };
-	   byte[] sd = passportASN1Service.readObject(tags);
-       ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
-       DERSequence seq = (DERSequence)in.readObject();
-       DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
-       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-	   SignedData signedData = new SignedData(s2);
-       Object nextObject = in.readObject();
-       if (nextObject != null) {
-          System.out.println("DEBUG: WARNING: extra object found after SignedData...");
-       }
-	   return signedData;
+      int[] tags = { PassportASN1Service.EF_SOD_TAG };
+      byte[] sd = passportASN1Service.readObject(tags);
+      ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
+      DERSequence seq = (DERSequence)in.readObject();
+      DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
+      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+      SignedData signedData = new SignedData(s2);
+      Object nextObject = in.readObject();
+      if (nextObject != null) {
+         System.out.println("DEBUG: WARNING: extra object found after SignedData...");
+      }
+      return signedData;
    }
    
    private SignerInfo readSignerInfo() throws Exception {
@@ -175,8 +178,7 @@ public class PassportService extends PassportAuthService
          System.out.println("DEBUG: WARNING: found " + signerInfos.size() + " signerInfos");
       }
       for (int i = 0; i < signerInfos.size(); i++) {
-         SignerInfo info = new SignerInfo((DERSequence) signerInfos
-               .getObjectAt(i));
+         SignerInfo info = new SignerInfo((DERSequence)signerInfos.getObjectAt(i));
          return info;
       }
       return null;
@@ -193,8 +195,10 @@ public class PassportService extends PassportAuthService
       SignedData signedData = readSignedData();
       ContentInfo contentInfo = signedData.getEncapContentInfo();
       byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-      ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(content)); 
-      LDSSecurityObject sod = new LDSSecurityObject((DERSequence)in.readObject());
+      ASN1InputStream in =
+         new ASN1InputStream(new ByteArrayInputStream(content)); 
+      LDSSecurityObject sod =
+         new LDSSecurityObject((DERSequence)in.readObject());
       Object nextObject = in.readObject();
       if (nextObject != null) {
          System.out.println("DEBUG: WARNING: extra object found after LDSSecurityObject...");
@@ -207,7 +211,8 @@ public class PassportService extends PassportAuthService
     *
     * @return the document signing certificate
     */
-   public Certificate readDocSigningCertificate() throws IOException, Exception {
+   public Certificate readDocSigningCertificate()
+   throws IOException, Exception {
       X509Certificate cert = null;
       SignedData signedData = readSignedData();
       ASN1Set certs = signedData.getCertificates();
@@ -255,3 +260,4 @@ public class PassportService extends PassportAuthService
       }
    }
 }
+
