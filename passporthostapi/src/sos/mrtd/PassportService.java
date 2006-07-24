@@ -139,6 +139,13 @@ public class PassportService extends PassportAuthService
       return result;
    }
 
+   /**
+    * Reads the MRZ.
+    * 
+    * @return the MRZ
+    * 
+    * @throws IOException if something goes wrong
+    */
    public MRZInfo readMRZ() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
       return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));

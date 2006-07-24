@@ -124,7 +124,7 @@ public class BERTLVObject
 
    private void readTag(DataInputStream in) throws IOException {
       int b = in.readUnsignedByte();
-      if (b == 0x00000000 || b == 0x000000FF) {
+      while (b == 0x00000000 || b == 0x000000FF) {
          // throw new IllegalArgumentException("00 or FF tag not allowed");
          b = in.readUnsignedByte(); /* skip 00 and FF */
       }
