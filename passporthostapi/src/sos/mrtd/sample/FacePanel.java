@@ -86,7 +86,7 @@ implements Runnable, ActionListener, AuthListener
       try {
          readButton.setEnabled(false);
          PassportService s = new PassportService(service, wrapper);
-         BufferedImage img = s.readFace();
+         BufferedImage img = s.readFace()[0].getImage();
          ipanel.setImage(img);
       } catch (Exception e) {
          e.printStackTrace();

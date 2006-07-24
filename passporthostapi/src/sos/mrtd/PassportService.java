@@ -22,8 +22,6 @@
 
 package sos.mrtd;
 
-import java.awt.Rectangle;
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -35,12 +33,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Iterator;
-
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReadParam;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
@@ -184,7 +176,7 @@ public class PassportService implements CardService
     * 
     * @throws IOException if something goes wrong
     */
-   public BufferedImage readFace() throws IOException {
+   public FaceInfo[] readFace() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG2_TAG, 0x5F2E }; 
       byte[] facialRecordData = service.readObject(tags);
       if (facialRecordData == null) {
@@ -198,55 +190,11 @@ public class PassportService implements CardService
       long length = in.readInt() & 0x000000FFFFFFFFL;
       int faceCount = in.readUnsignedShort();
 
-      for (int face = 0; face < faceCount; face++) {
-
-         /* Facial Information (20) */
-         long faceImageBlockLength = in.readInt() & 0x00000000FFFFFFFFL;
-         int featurePointCount = in.readUnsignedShort();
-         byte gender = in.readByte();
-         byte eyeColor = in.readByte();
-         byte hairColor = in.readByte();
-         long featureMask = in.readUnsignedByte();
-         featureMask = (featureMask << 16) | in.readUnsignedShort();
-         short expression = in.readShort();
-         long poseAngle = in.readUnsignedByte();
-         poseAngle = (poseAngle << 16) | in.readUnsignedShort();
-         long poseAngleUncertainty = in.readUnsignedByte();
-         poseAngleUncertainty = (poseAngleUncertainty << 16) | in.readUnsignedShort();
-
-         /* Feature Point(s) (optional) (8 * featurePointCount) */
-         for (int i = 0; i < featurePointCount; i++) {
-            byte featureType = in.readByte();
-            byte featurePoint = in.readByte();
-            int x = in.readUnsignedShort();
-            int y = in.readUnsignedShort();
-            in.skip(2); // 2 bytes reserved
-         }
-
-         /* Image Information */
-         byte faceImageType = in.readByte();
-         byte imageDataType = in.readByte();
-         int width = in.readUnsignedShort();
-         int height = in.readUnsignedShort();
-         byte imageColorSpace = in.readByte();
-         int sourceType = in.readUnsignedByte();
-         int deviceType = in.readUnsignedShort();
-         int quality = in.readUnsignedShort();
-
-         /* Read JPEG2000 data */
-         ImageInputStream iis = ImageIO.createImageInputStream(in);
-         Iterator readers = ImageIO.getImageReadersByMIMEType("image/jpeg2000");
-         if (!readers.hasNext()) {
-            throw new IllegalStateException("No jpeg 2000 readers");
-         }
-         ImageReader reader = (ImageReader)readers.next();
-         reader.setInput(iis);
-         ImageReadParam pm = reader.getDefaultReadParam();
-         pm.setSourceRegion(new Rectangle(0, 0, width, height));
-         BufferedImage image = reader.read(0, pm);
-         return image; // FIXME: return all images, instead of only the first one :)
+      FaceInfo[] result = new FaceInfo[faceCount];
+      for (int i = 0; i < faceCount; i++) {
+         result[i] = new FaceInfo(in);
       }
-      return null;
+      return result;
    }
 
    public MRZInfo readMRZ() throws IOException {
