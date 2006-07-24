@@ -34,9 +34,11 @@ import javax.crypto.spec.DESedeKeySpec;
 /**
  * Some static helper functions. Mostly dealing with low-level crypto.
  *
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
+ * @author Ronny Wichers Schreur (ronny@cs.ru.nl)
+ * 
  * @version $Revision$
  */
 public class Util
