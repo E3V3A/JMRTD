@@ -29,6 +29,7 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -163,12 +164,12 @@ public class PassportService extends PassportAuthService
       return keyFactory.generatePublic(pubKeySpec);
    }
      
-   private SignedData readSignedData() throws IOException, Exception {
+   private SignedData readSignedData() throws IOException {
       int[] tags = { PassportASN1Service.EF_SOD_TAG };
       byte[] sd = passportASN1Service.readObject(tags);
       ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
       DERSequence seq = (DERSequence)in.readObject();
-      DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
+      // DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       SignedData signedData = new SignedData(s2);
       Object nextObject = in.readObject();
@@ -178,7 +179,7 @@ public class PassportService extends PassportAuthService
       return signedData;
    }
    
-   private SignerInfo readSignerInfo() throws Exception {
+   private SignerInfo readSignerInfo() throws IOException {
       SignedData signedData = readSignedData();
       ASN1Set signerInfos = signedData.getSignerInfos();
       if (signerInfos.size() > 1) {
@@ -192,7 +193,8 @@ public class PassportService extends PassportAuthService
    }
    
    /**
-    * Reads the security object.
+    * Reads the security object containing the hashes
+    * of the data groups.
     * 
     * @return the security object
     * 
@@ -214,7 +216,7 @@ public class PassportService extends PassportAuthService
    }
    
    /**
-    * Reads the document signing certificate from the passport.
+    * Reads the document signing certificate.
     *
     * @return the document signing certificate
     */
@@ -237,7 +239,7 @@ public class PassportService extends PassportAuthService
     * @return the signature
     * @throws Exception when something goes wrong
     */
-   public byte[] readEncryptedDigest() throws Exception {
+   private byte[] readEncryptedDigest() throws IOException {
       SignerInfo signerInfo = readSignerInfo();
       return signerInfo.getEncryptedDigest().getOctets();
    }
@@ -253,7 +255,7 @@ public class PassportService extends PassportAuthService
     *         signature is to be computed
     * @throws Exception when something is wrong
     */
-   public byte[] readSecurityObjectContent() throws Exception {
+   private byte[] readSecurityObjectContent() throws IOException {
       SignerInfo signerInfo = readSignerInfo();
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
       if (signedAttributes.size() == 0) {
@@ -266,5 +268,31 @@ public class PassportService extends PassportAuthService
          return signedAttributes.getDEREncoded();
       }
    }
+   /**
+    * Verifies the signature over the contents of the security object.
+    * 
+    * See RFC 3369, Cryptographic Message Syntax, August 2002,
+    * Section 5.4 for details.
+    * 
+    * @param docSigningCert the certificate to use
+    *        (should be X509 certificate)
+    * 
+    * @return status of the verification
+    * 
+    * @throws GeneralSecurityException if something goes wrong
+    * @throws IOException if something goes wrong
+    */
+   public boolean checkDocSignature(Certificate docSigningCert)
+   throws GeneralSecurityException, IOException {
+      String sigAlg = null;
+      if (docSigningCert instanceof X509Certificate) {
+         sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
+      } else {
+         sigAlg = "SHA256";
+      }
+      Signature sig = Signature.getInstance(sigAlg);
+      sig.initVerify(docSigningCert);
+      sig.update(readSecurityObjectContent());
+      return sig.verify(readEncryptedDigest());
+   }
 }
-

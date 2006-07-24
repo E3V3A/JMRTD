@@ -65,7 +65,7 @@ public class FaceInfo
    
    private BufferedImage image;
    
-   public FaceInfo(InputStream in) throws IOException {
+   FaceInfo(InputStream in) throws IOException {
       DataInputStream dataIn = new DataInputStream(in);
       
       /* Facial Information (20) */

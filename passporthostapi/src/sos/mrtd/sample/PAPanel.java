@@ -167,11 +167,7 @@ public class PAPanel extends JPanel implements AuthListener
                docSigningCert = passportService.readDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
-               String sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
-               Signature sig = Signature.getInstance(sigAlg);
-               sig.initVerify(docSigningCert);
-               sig.update(passportService.readSecurityObjectContent());
-               boolean succes = sig.verify(passportService.readEncryptedDigest());
+               boolean succes = passportService.checkDocSignature(docSigningCert);
                area.append(" --> Signature check: " + succes + "\n");           
             } catch (Exception e) {
                e.printStackTrace();
