@@ -30,8 +30,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 /**
- * Data structure for storing the DG1. Based on ICAO Doc 9303 part 1
- * and supplement.
+ * Data structure for storing the MRZ information in DG1.
+ * Based on ICAO Doc 9303 part 1.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
@@ -72,7 +72,7 @@ public class MRZInfo
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             dataIn.skip(1); // check digit
-            this.personalNumber = readPersonNumber(dataIn, 14);
+            this.personalNumber = readPersonalNumber(dataIn, 14);
             dataIn.skip(1); // check digit
             this.dateOfBirth = readDateOfBirth(dataIn);
             dataIn.skip(1); // check digit
@@ -94,7 +94,7 @@ public class MRZInfo
             this.sex = readSex(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
             dataIn.skip(1); // check digit
-            this.personalNumber = readPersonNumber(dataIn, 14);
+            this.personalNumber = readPersonalNumber(dataIn, 14);
             dataIn.skip(1); // check digit
          }
       } catch (IOException ioe) {
@@ -104,7 +104,7 @@ public class MRZInfo
    
    /**
     * Reads the type of document.
-    * The ICAO documentation gives "P<" as an example.
+    * ICAO Doc 9303 gives "P<" as an example.
     * 
     * @return a string of length 2 containing the document type
     * @throws IOException if something goes wrong
@@ -116,7 +116,7 @@ public class MRZInfo
    }
 
    /**
-    * Reads the issuing state.
+    * Reads the issuing state as a three letter string.
     * 
     * @return a string of length 3 containing an abbreviation
     *         of the issuing state or organization
@@ -130,7 +130,7 @@ public class MRZInfo
    }
 
    /**
-    * Reads the passport holder's name.
+    * Reads the passport holder's name, including &lt; characters.
     * 
     * @return a string containing last name and first names seperated by spaces
     * 
@@ -162,7 +162,17 @@ public class MRZInfo
       return new String(data).trim();
    }
    
-   private String readPersonNumber(DataInputStream in, int le) throws IOException {
+   /**
+    * Reads the personal number of the passport holder (or other optional data).
+    * 
+    * @param in input source
+    * @param le maximal length
+    * 
+    * @return the personal number
+    * 
+    * @throws IOException if something goes wrong
+    */
+   private String readPersonalNumber(DataInputStream in, int le) throws IOException {
       byte[] data = new byte[le];
       in.readFully(data);
       return new String(data).trim();
@@ -172,6 +182,7 @@ public class MRZInfo
     * Reads the nationality of the passport holder.
     * 
     * @return a string of length 3 containing the nationality of the passport holder
+    * 
     * @throws IOException if something goes wrong
     */
    private String readNationality(DataInputStream in) throws IOException {
@@ -180,6 +191,15 @@ public class MRZInfo
       return new String(data).trim();
    }
 
+   /**
+    * Reads the 1 letter gender information.
+    * 
+    * @param in input source
+    * 
+    * @return the gender of the passport holder
+    * 
+    * @throws IOException if something goes wrong
+    */
    private String readSex(DataInputStream in) throws IOException {
       byte[] data = new byte[1];
       in.readFully(data);
@@ -192,7 +212,7 @@ public class MRZInfo
     * @return the date of birth
     * 
     * @throws IOException if something goes wrong
-    * @throws NumberFormatException if something goes wrong
+    * @throws NumberFormatException if a data could not be constructed
     */
    private Date readDateOfBirth(DataInputStream in) throws IOException, NumberFormatException {
       byte[] data = new byte[6];
@@ -207,8 +227,9 @@ public class MRZInfo
     * @return the date of expiry
     * 
     * @throws IOException if something goes wrong
+    * @throws NumberFormatException if a date could not be constructed
     */
-   private Date readDateOfExpiry(DataInputStream in) throws IOException {
+   private Date readDateOfExpiry(DataInputStream in) throws IOException, NumberFormatException {
       byte[] data = new byte[6];
       in.readFully(data);
       return makeDate(2000, new String(data).trim());
@@ -259,5 +280,17 @@ public class MRZInfo
 
    public String getSex() {
       return sex;
+   }
+   
+   public String toString() {
+      return
+         "type: " + documentType
+         + "\nissuing state: " + issuingState
+         + "\nname: " + name
+         + "\ndoc number: " + documentNumber
+         + "\nnationality: " + nationality
+         + "\ndate of birth: " + dateOfBirth
+         + "\ndate of expiry: " + dateOfExpiry
+         + "\npersonal number: " + personalNumber;
    }
 }

@@ -259,7 +259,7 @@ public class PassportService implements CardService
       return null;
    }
 
-   private MRZInfo readMRZ() throws IOException {
+   public MRZInfo readMRZ() throws IOException {
       int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
       return new MRZInfo(new ByteArrayInputStream(service.readObject(tags)));
    }
