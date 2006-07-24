@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
 
@@ -218,7 +219,7 @@ public class MRZInfo
       byte[] data = new byte[6];
       in.readFully(data);
       String dateString = new String(data).trim();
-      return makeDate(1900, dateString);
+      return parseDate(1900, dateString);
    }
 
    /**
@@ -232,10 +233,10 @@ public class MRZInfo
    private Date readDateOfExpiry(DataInputStream in) throws IOException, NumberFormatException {
       byte[] data = new byte[6];
       in.readFully(data);
-      return makeDate(2000, new String(data).trim());
+      return parseDate(2000, new String(data).trim());
    }
    
-   private Date makeDate(int baseYear, String dateString) throws NumberFormatException {
+   private Date parseDate(int baseYear, String dateString) throws NumberFormatException {
       if (dateString.length() != 6) {
          throw new NumberFormatException("Wrong date format!");
       }
@@ -283,14 +284,19 @@ public class MRZInfo
    }
    
    public String toString() {
-      return
-         "type: " + documentType
-         + "\nissuing state: " + issuingState
-         + "\nname: " + name
-         + "\ndoc number: " + documentNumber
-         + "\nnationality: " + nationality
-         + "\ndate of birth: " + dateOfBirth
-         + "\ndate of expiry: " + dateOfExpiry
-         + "\npersonal number: " + personalNumber;
+      SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
+      if (documentType.startsWith("I")) {
+         return documentType + issuingState + documentNumber + personalNumber + "\n"
+         + sdf.format(dateOfBirth) + sex + sdf.format(dateOfExpiry) + "\n"
+         + name + "\n";
+      } else {
+         return documentType + issuingState + name + "\n"
+         + documentNumber
+         + nationality
+         + sdf.format(dateOfBirth)
+         + sex
+         + sdf.format(dateOfExpiry)
+         + personalNumber + "\n";
+      }
    }
 }
