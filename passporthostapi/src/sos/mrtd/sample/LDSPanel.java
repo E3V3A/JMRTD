@@ -131,7 +131,8 @@ implements ActionListener, AuthListener
       new Thread(new Runnable() {
          public void run() {
             try {
-               PassportFileService s = new PassportFileService(service, wrapper);
+               PassportFileService s = new PassportFileService(service);
+               s.setWrapper(wrapper);
                byte[] data =
                   s.readFile((short) (((fid[0] & 0x000000FF) << 8)
                                       | (fid[1] & 0x000000FF)));

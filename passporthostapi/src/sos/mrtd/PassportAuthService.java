@@ -53,7 +53,7 @@ import sos.smartcards.CardService;
  *
  * @version $Revision$
  */
-public class PassportAuthService implements CardService
+public class PassportAuthService implements CardService, AuthListener
 {
    private static final int SESSION_STOPPED_STATE = 0;
    private static final int SESSION_STARTED_STATE = 1;
@@ -63,8 +63,8 @@ public class PassportAuthService implements CardService
    
    private Collection authListeners;
 
-   private PassportApduService service;
-   private SecureMessagingWrapper wrapper;
+   protected PassportApduService service;
+   protected SecureMessagingWrapper wrapper;
    private Signature aaSignature;
    private MessageDigest aaDigest = MessageDigest.getInstance("SHA1");
    private Cipher aaCipher = Cipher.getInstance("RSA");
@@ -255,5 +255,12 @@ public class PassportAuthService implements CardService
    public void setWrapper(SecureMessagingWrapper wrapper) {
       this.wrapper = wrapper;
       notifyBACPerformed(wrapper, null, null, null, null, true);
+   }
+
+   public void performedBAC(BACEvent be) {
+      setWrapper(be.getWrapper());
+   }
+
+   public void performedAA(AAEvent ae) {
    }
 }

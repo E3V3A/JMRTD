@@ -348,7 +348,7 @@ public class MRZInfo
    /**
     * Computes the 7-3-1 check digit for part of the MRZ.
     *
-    * @param chars a part of the MRZ.
+    * @param str a part of the MRZ.
     *
     * @return the resulting check digit.
     */

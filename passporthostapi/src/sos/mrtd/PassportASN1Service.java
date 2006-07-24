@@ -34,7 +34,7 @@ import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 
 /**
- * DER TLV level card service for using the passport.
+ * DER TLV level card fileService for using the passport.
  * Defines access to the information on the passport
  * through selection of tags.
  * 
@@ -50,7 +50,7 @@ import sos.smartcards.CardService;
  *
  * @version $Revision$
  */
-public class PassportASN1Service implements CardService
+public class PassportASN1Service extends PassportAuthService
 {
    public static final int EF_COM_TAG = 0x60;
    public static final int EF_DG1_TAG = 0x61;
@@ -71,12 +71,12 @@ public class PassportASN1Service implements CardService
    public static final int EF_DG16_TAG = 0x70;
    public static final int EF_SOD_TAG = 0x77;
 
-   private PassportFileService service;
+   private PassportFileService fileService;
    
    /**
-    * Creates a new passport service for accessing the passport.
+    * Creates a new passport fileService for accessing the passport.
     * 
-    * @param service another service which will deal with sending
+    * @param fileService another fileService which will deal with sending
     *        the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
@@ -84,61 +84,11 @@ public class PassportASN1Service implements CardService
     */
    public PassportASN1Service(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
-      if (service instanceof PassportASN1Service) {
-         this.service = ((PassportASN1Service)service).service;
-      } else {
-         this.service = new PassportFileService(service);
-      }
+      super(service);
+      this.fileService = new PassportFileService(service);
+      addAuthenticationListener(fileService);
    }
 
-   /**
-    * Opens a session. This is done by connecting to the card, selecting the
-    * passport applet.
-    */
-   public void open() {
-      service.open();
-   }
-   
-   public String[] getTerminals() {
-      return service.getTerminals();
-   }
-
-   public void open(String id) {
-      service.open(id);
-   }
-
-   /**
-    * Performs the Basic Access Control protocol.
-    *
-    * @param docNr the document number
-    * @param dateOfBirth card holder's birth date
-    * @param dateOfExpiry document's expiry date
-    */
-   public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
-         throws GeneralSecurityException, UnsupportedEncodingException {
-      service.doBAC(docNr, dateOfBirth, dateOfExpiry);
-   }
-   
-   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      return service.doAA(pubkey);
-   }
-   
-   public byte[] sendAPDU(Apdu capdu) {
-      return service.sendAPDU(capdu);
-   }
-
-   public void close() {
-      service.close();
-   }
-
-   public void addAPDUListener(APDUListener l) {
-      service.addAPDUListener(l);
-   }
-
-   public void removeAPDUListener(APDUListener l) {
-      service.removeAPDUListener(l);
-   }
-   
    /**
     * Reads the contents of object indicated by tags in <code>tagPath</code>.
     * First component of the tag path is the file tag (one of
@@ -146,14 +96,16 @@ public class PassportASN1Service implements CardService
     * the tag path indicates the object who's content is returned.
     * 
     * @param tagPath sequence of tags to search for
+    * 
     * @return contents of object
+    * 
     * @throws IOException when something goes wrong.
     */
    public byte[] readObject(int[] tagPath) throws IOException {
       if (tagPath == null || tagPath.length < 1) {
          throw new IllegalArgumentException("Tag path too short");
       }
-      byte[] file = service.readFile(lookupFIDByTag(tagPath[0]));
+      byte[] file = fileService.readFile(lookupFIDByTag(tagPath[0]));
       BERTLVObject object = BERTLVObject.getInstance(new ByteArrayInputStream(file));
       for (int i = 1; i < tagPath.length; i++) {
          object = object.getChild(tagPath[i]);
@@ -192,13 +144,5 @@ public class PassportASN1Service implements CardService
             throw new NumberFormatException("Unknown tag "
                                             + Integer.toHexString(tag));
       }
-   }
-   
-   /**
-    * @deprecated hack
-    * @param wrapper
-    */
-   public void setWrapper(SecureMessagingWrapper wrapper) {
-      service.setWrapper(wrapper);
    }
 }

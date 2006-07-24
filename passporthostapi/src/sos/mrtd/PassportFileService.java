@@ -49,7 +49,7 @@ import sos.smartcards.CardService;
  *
  * @version $Revision$
  */
-public class PassportFileService implements CardService
+public class PassportFileService extends PassportAuthService
 {
    /** Data group 1 contains the MRZ. */
    public static final short EF_DG1 = 0x0101;
@@ -88,12 +88,6 @@ public class PassportFileService implements CardService
    /** File indicating which data groups are present. */
    public static final short EF_COM = 0x011E;
 
-   private PassportApduService service;
-   private PassportAuthService authService;
-
-   /** Files read during this session. */
-   private Map files;
-   
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -105,83 +99,7 @@ public class PassportFileService implements CardService
     */
    public PassportFileService(CardService service)
    throws GeneralSecurityException, UnsupportedEncodingException {
-      if (service instanceof PassportFileService) {
-         PassportFileService copy = (PassportFileService)service;
-         this.service = copy.service;
-         this.files = (copy.files != null) ? copy.files : new HashMap();
-      } else if (service instanceof PassportApduService) {
-         this.service = (PassportApduService)service;
-         files = new HashMap();
-      } else {
-         this.service = new PassportApduService(service);
-         files = new HashMap();
-      }
-      authService = new PassportAuthService(service);
-   }
-   
-   /**
-    * Hack to construct a passport service from a service that is already open.
-    * This should be removed some day.
-    * 
-    * @param service underlying service
-    * @param wrapper encapsulates secure messaging state
-    */
-   public PassportFileService(CardService service, SecureMessagingWrapper wrapper)
-   throws GeneralSecurityException, UnsupportedEncodingException {
-      this(service);
-      authService.setWrapper(wrapper);
-   }
-
-   /**
-    * Opens a session. This is done by connecting to the card, selecting the
-    * passport applet.
-    */
-   public void open() {
-      service.open();
-      files = new HashMap();
-   }
-   
-   public String[] getTerminals() {
-      return service.getTerminals();
-   }
-
-   public void open(String id) {
-      service.open(id);
-      files = new HashMap();
-   }
-   
-   /**
-    * Performs the <i>Basic Access Control</i> protocol.
-    *
-    * @param docNr the document number
-    * @param dateOfBirth card holder's birth date
-    * @param dateOfExpiry document's expiry date
-    */
-   public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
-         throws GeneralSecurityException, UnsupportedEncodingException {
-      authService.doBAC(docNr, dateOfBirth, dateOfExpiry);
-   }
-   
-   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      return authService.doAA(pubkey);
-   }
-   
-   public byte[] sendAPDU(Apdu capdu) {
-      return service.sendAPDU(capdu);
-   }
-
-   public void close() {
-      files = null;
-      authService.close();
-      // service.close();
-   }
-
-   public void addAPDUListener(APDUListener l) {
-      service.addAPDUListener(l);
-   }
-
-   public void removeAPDUListener(APDUListener l) {
-      service.removeAPDUListener(l);
+      super(service);
    }
 
    /**
@@ -192,11 +110,6 @@ public class PassportFileService implements CardService
     * @return the contents of the file.
     */
    public byte[] readFile(short fid) throws IOException {
-      /* Was this file read previously? */
-      Short fidKey = new Short(fid);
-      if (files.containsKey(fidKey)) {
-         return (byte[])files.get(fidKey);
-      }
       /* No? Read it from document... */
       SecureMessagingWrapper wrapper = getWrapper();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -212,19 +125,6 @@ public class PassportFileService implements CardService
          offset += data.length;
       }
       byte[] file = out.toByteArray();
-      files.put(fidKey, file);
       return file;
-   }
-   
-   public SecureMessagingWrapper getWrapper() {
-      return authService.getWrapper();
-   }
-   
-   /**
-    * @deprecated hack
-    * @param wrapper
-    */
-   public void setWrapper(SecureMessagingWrapper wrapper) {
-      authService.setWrapper(wrapper);
    }
 }
