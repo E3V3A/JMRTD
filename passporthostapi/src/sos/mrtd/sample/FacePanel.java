@@ -39,6 +39,7 @@ import sos.gui.ImagePanel;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.FaceInfo;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
@@ -86,8 +87,8 @@ implements Runnable, ActionListener, AuthListener
       try {
          readButton.setEnabled(false);
          PassportService s = new PassportService(service, wrapper);
-         BufferedImage img = s.readFace()[0].getImage();
-         ipanel.setImage(img);
+         FaceInfo info = s.readFace()[0];
+         ipanel.setImage(info.getImage());
       } catch (Exception e) {
          e.printStackTrace();
       } finally {

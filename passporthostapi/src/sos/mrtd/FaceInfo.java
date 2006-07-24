@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
 package sos.mrtd;
@@ -39,7 +39,7 @@ import javax.imageio.stream.ImageInputStream;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: $
+ * @version $Revision$
  */
 public class FaceInfo
 {   
@@ -52,7 +52,7 @@ public class FaceInfo
    private long poseAngle;
    private long poseAngleUncertainty;
    
-   private int featurePointCount; // TODO: replace with aggregate for featurepoints using internal class?
+   private FeaturePoint[] featurePoints;
    
    private byte faceImageType;
    private byte imageDataType;
@@ -70,7 +70,7 @@ public class FaceInfo
       
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
-      featurePointCount = dataIn.readUnsignedShort();
+      int featurePointCount = dataIn.readUnsignedShort();
       gender = dataIn.readByte();
       eyeColor = dataIn.readByte();
       hairColor = dataIn.readByte();
@@ -83,12 +83,14 @@ public class FaceInfo
       poseAngleUncertainty = (poseAngleUncertainty << 16) | dataIn.readUnsignedShort();
       
       /* Feature Point(s) (optional) (8 * featurePointCount) */
+      featurePoints = new FeaturePoint[featurePointCount];
       for (int i = 0; i < featurePointCount; i++) {
          byte featureType = dataIn.readByte();
          byte featurePoint = dataIn.readByte();
          int x = dataIn.readUnsignedShort();
          int y = dataIn.readUnsignedShort();
          dataIn.skip(2); // 2 bytes reserved
+         featurePoints[i] = new FeaturePoint(featureType, featurePoint, x, y);
       }
       
       /* Image Information */
@@ -116,5 +118,40 @@ public class FaceInfo
 
    public BufferedImage getImage() {
       return image;
+   }
+   
+   public FeaturePoint[] getFeaturePoints() {
+      return featurePoints;
+   }
+   
+   public class FeaturePoint
+   {
+      private int featureType;
+      private int featurePoint;
+      private int x;
+      private int y;
+      
+      public FeaturePoint(int featureType, int featurePoint, int x, int y) {
+         this.featureType = featureType;
+         this.featurePoint = featurePoint;
+         this.x = x;
+         this.y = y;
+      }
+
+      public int getFeaturePoint() {
+         return featurePoint;
+      }
+
+      public int getFeatureType() {
+         return featureType;
+      }
+
+      public int getX() {
+         return x;
+      }
+
+      public int getY() {
+         return y;
+      } 
    }
 }
