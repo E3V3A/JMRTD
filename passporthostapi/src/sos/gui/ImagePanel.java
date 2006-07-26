@@ -23,14 +23,18 @@
 package sos.gui;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -46,24 +50,18 @@ import javax.swing.JPanel;
  * @version $Revision$
  */
 public class ImagePanel extends JPanel
-{
-   /** Holds the image. */
-   private ImageIcon icon;
-   
-   Collection highlights;
+{  
+   private BufferedImage image;;
+
+   Map highlights;
 
    /**
     * Constructs a new image panel with empty image.
     */
    public ImagePanel() {
-      super(new FlowLayout());
-      highlights = new ArrayList();
-      BufferedImage image =
-         // new BufferedImage(480, 640, BufferedImage.TYPE_INT_ARGB);
-      new BufferedImage(40, 60, BufferedImage.TYPE_INT_ARGB);
-      icon = new ImageIcon(image);
-      add(new JLabel(icon));
-      clearImage(image);
+      super(null);
+      highlights = new HashMap();
+      image = null;
    }
 
    /**
@@ -73,7 +71,7 @@ public class ImagePanel extends JPanel
     */
    public void setImage(BufferedImage image) {
       setVisible(false);
-      icon.setImage(image);
+      this.image = image;
       setVisible(true);
    }
 
@@ -81,33 +79,56 @@ public class ImagePanel extends JPanel
     * Clears the currently displayed image.
     */
    public void clearImage() {
-      clearImage((BufferedImage)icon.getImage());
-   }
-
-   private void clearImage(BufferedImage image) {
       setVisible(false);
-      int w = image.getWidth();
-      int h = image.getHeight();
-      Graphics g = image.getGraphics();
-      g.setColor(getBackground());
-      g.fillRect(0, 0, w, h);
       setVisible(true);
    }
 
-   public void highlightPoint(int x, int y) {
-      highlights.add(new Point(x,y));
+   private void clearImage(BufferedImage image) {
+   }
+
+   public void highlightPoint(String key, int x, int y) {
+      setVisible(false);
+      highlights.put(key, new Point(x, y));
+      setVisible(true);
+   }
+   
+   public void deHighlightPoint(String key) {
+      setVisible(false);
+      highlights.remove(key);
+      setVisible(true);
+   }
+   
+   public Dimension getPreferredSize() {
+      if (image == null) {
+         return super.getPreferredSize();
+      } else {
+         return new Dimension(image.getWidth(), image.getHeight());
+      }
    }
    
    public void paint(Graphics g) {
       super.paint(g);
-      BufferedImage image = (BufferedImage)icon.getImage();
-      g = image.getGraphics();
-      Iterator it = highlights.iterator();
+      if (image == null) {
+         return;
+      }
+      g.drawImage(image, 0, 0, this);
+      Iterator it = highlights.keySet().iterator();
       while (it.hasNext()) {
+         String key = (String)it.next();
+         Point p = (Point)highlights.get(key);
+         int x = (int)p.getX();
+         int y = (int)p.getY();
+         // Graphics g = image.getGraphics();
          g.setColor(Color.red);
-         Point p = (Point)it.next();
-         g.drawLine((int)p.getX(), 0, (int)p.getX(), image.getWidth());
-         g.drawLine(0, (int)p.getY(), image.getHeight(), (int)p.getY());
+         g.drawLine(x, y - 25, x, y + 25);
+         g.drawLine(x - 25, y, x + 25, y);
+         g.setColor(Color.black);
+         g.drawString(key, x + 4, y + 14);
+         g.drawString(key, x + 6, y + 14);
+         g.drawString(key, x + 5, y + 13);
+         g.drawString(key, x + 5, y + 15);
+         g.setColor(Color.white);
+         g.drawString(key, x + 5, y + 14);
       }
    }
 }

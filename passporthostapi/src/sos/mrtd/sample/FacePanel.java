@@ -23,6 +23,7 @@
 package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -32,6 +33,7 @@ import java.awt.image.BufferedImage;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -78,23 +80,27 @@ implements Runnable, ActionListener, AuthListener
       featureCheckBox.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             JCheckBox cb = (JCheckBox)ae.getSource();
-            if (cb.isEnabled()) {
-               FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+            FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+            if (cb.isSelected()) {
                for (int i = 0; i < featurePoints.length; i++) {
                   FaceInfo.FeaturePoint p = featurePoints[i];
-                  ipanel.highlightPoint(p.getX(), p.getY());
+                  ipanel.highlightPoint(Integer.toHexString(p.getFeaturePoint()), p.getX(), p.getY());
                }
             } else {
-               // komt nog...   
+               for (int i = 0; i < featurePoints.length; i++) {
+                  FaceInfo.FeaturePoint p = featurePoints[i];
+                  ipanel.deHighlightPoint(Integer.toHexString(p.getFeaturePoint()));
+               } 
             }
             repaint();
          }
       });
-      buttonPanel.add(featureCheckBox);
       ipanel = new ImagePanel();
       // buttonPanel.add(showButton);
       // buttonPanel.add(hideButton);
       buttonPanel.add(readButton);
+      buttonPanel.add(new JLabel("FP: "));
+      buttonPanel.add(featureCheckBox);
       buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Face"));
       infoArea = new JTextArea(5, 5);
       infoArea.setEditable(false);
