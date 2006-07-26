@@ -174,10 +174,10 @@ public class BACPanel extends JPanel
                "Mutual Authenticate"));
          JPanel top = new JPanel(new FlowLayout());
          challengeField = new HexField(8);
-         challengeField.setValue(Hex.hexStringToBytes("781723860C06C226"));
+         // challengeField.setValue(Hex.hexStringToBytes("781723860C06C226"));
          keyField = new HexField(16);
-         keyField.setValue(Hex
-               .hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
+       //  keyField.setValue(Hex
+       //        .hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
          JButton authButton = new JButton("Mutual Authenticate");
          authButton.addActionListener(this);
          top.add(new JLabel("RND.IFD: "));

@@ -97,10 +97,14 @@ public class PassportGUI extends JPanel
          }
           else {
               service = new PassportApduService(new JPCSCService());
-              // Loes's passport
-              DEFAULT_DOC_NR = "XX0001328";
-              DEFAULT_DATE_OF_BIRTH = "711019";
-              DEFAULT_DATE_OF_EXPIRY = "111001";
+              // Loes' passport
+             // DEFAULT_DOC_NR = "XX0001328";
+             // DEFAULT_DATE_OF_BIRTH = "711019";
+             // DEFAULT_DATE_OF_EXPIRY = "111001";
+             // Elize Ludwina Jantine Noordhofs passport
+              DEFAULT_DOC_NR = "XX0005050";
+              DEFAULT_DATE_OF_BIRTH = "820411";
+              DEFAULT_DATE_OF_EXPIRY = "110720";
          }
           
          setLayout(new BorderLayout());

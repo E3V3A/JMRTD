@@ -31,6 +31,7 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -59,6 +60,7 @@ implements Runnable, ActionListener, AuthListener
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
    
+   private FaceInfo info;
    private ImagePanel ipanel;
    private JButton readButton;
    private JTextArea infoArea;
@@ -72,6 +74,23 @@ implements Runnable, ActionListener, AuthListener
       JPanel buttonPanel = new JPanel(new FlowLayout());
       readButton = new JButton("Read from DG2");
       readButton.addActionListener(this);
+      JCheckBox featureCheckBox = new JCheckBox();
+      featureCheckBox.addActionListener(new ActionListener() {
+         public void actionPerformed(ActionEvent ae) {
+            JCheckBox cb = (JCheckBox)ae.getSource();
+            if (cb.isEnabled()) {
+               FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+               for (int i = 0; i < featurePoints.length; i++) {
+                  FaceInfo.FeaturePoint p = featurePoints[i];
+                  ipanel.highlightPoint(p.getX(), p.getY());
+               }
+            } else {
+               // komt nog...   
+            }
+            repaint();
+         }
+      });
+      buttonPanel.add(featureCheckBox);
       ipanel = new ImagePanel();
       // buttonPanel.add(showButton);
       // buttonPanel.add(hideButton);
@@ -96,7 +115,7 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         FaceInfo info = s.readFace()[0];
+         info = s.readFace()[0];
          ipanel.setImage(info.getImage());
          infoArea.setText(info.toString());
       } catch (Exception e) {

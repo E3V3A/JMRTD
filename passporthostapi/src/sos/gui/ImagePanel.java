@@ -22,9 +22,15 @@
 
 package sos.gui;
 
+import java.awt.Color;
 import java.awt.FlowLayout;
 import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -43,12 +49,15 @@ public class ImagePanel extends JPanel
 {
    /** Holds the image. */
    private ImageIcon icon;
+   
+   Collection highlights;
 
    /**
     * Constructs a new image panel with empty image.
     */
    public ImagePanel() {
       super(new FlowLayout());
+      highlights = new ArrayList();
       BufferedImage image =
          // new BufferedImage(480, 640, BufferedImage.TYPE_INT_ARGB);
       new BufferedImage(40, 60, BufferedImage.TYPE_INT_ARGB);
@@ -83,6 +92,23 @@ public class ImagePanel extends JPanel
       g.setColor(getBackground());
       g.fillRect(0, 0, w, h);
       setVisible(true);
+   }
+
+   public void highlightPoint(int x, int y) {
+      highlights.add(new Point(x,y));
+   }
+   
+   public void paint(Graphics g) {
+      super.paint(g);
+      BufferedImage image = (BufferedImage)icon.getImage();
+      g = image.getGraphics();
+      Iterator it = highlights.iterator();
+      while (it.hasNext()) {
+         g.setColor(Color.red);
+         Point p = (Point)it.next();
+         g.drawLine((int)p.getX(), 0, (int)p.getX(), image.getWidth());
+         g.drawLine(0, (int)p.getY(), image.getHeight(), (int)p.getY());
+      }
    }
 }
 

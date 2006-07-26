@@ -37,6 +37,7 @@ import javax.crypto.SecretKey;
 import sos.smartcards.APDUListener;
 import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
+import sos.util.Hex;
 
 /**
  * Card service for using the BAC and AA protocols on the passport.
