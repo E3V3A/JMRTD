@@ -112,6 +112,14 @@ public class FaceInfo
       ImageReader reader = (ImageReader)readers.next();
       reader.setInput(iis);
       ImageReadParam pm = reader.getDefaultReadParam();
+      if (width <= 0) {
+         System.out.println("WARNING: FaceInfo: width = " + width);
+         width = 800;
+      }
+      if (height <= 0) {
+         System.out.println("WARNING: FaceInfo: height = " + height);
+         height = 600;
+      }
       pm.setSourceRegion(new Rectangle(0, 0, width, height));
       image = reader.read(0, pm);
    }
