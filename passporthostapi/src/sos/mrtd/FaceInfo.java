@@ -44,9 +44,9 @@ import javax.imageio.stream.ImageInputStream;
 public class FaceInfo
 {   
    private long faceImageBlockLength;
-   private byte gender;
-   private byte eyeColor;
-   private byte hairColor;
+   private int gender;
+   private int eyeColor;
+   private int hairColor;
    private long featureMask;
    private short expression;
    private long poseAngle;
@@ -71,9 +71,9 @@ public class FaceInfo
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
       int featurePointCount = dataIn.readUnsignedShort();
-      gender = dataIn.readByte();
-      eyeColor = dataIn.readByte();
-      hairColor = dataIn.readByte();
+      gender = dataIn.readUnsignedByte();
+      eyeColor = dataIn.readUnsignedByte();
+      hairColor = dataIn.readUnsignedByte();
       featureMask = dataIn.readUnsignedByte();
       featureMask = (featureMask << 16) | dataIn.readUnsignedShort();
       expression = dataIn.readShort();
@@ -103,15 +103,7 @@ public class FaceInfo
       deviceType = dataIn.readUnsignedShort();
       quality = dataIn.readUnsignedShort();
       
-      /* Read JPEG2000 data */
-      ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
-      Iterator readers = ImageIO.getImageReadersByMIMEType("image/jpeg2000");
-      if (!readers.hasNext()) {
-         throw new IllegalStateException("No jpeg 2000 readers");
-      }
-      ImageReader reader = (ImageReader)readers.next();
-      reader.setInput(iis);
-      ImageReadParam pm = reader.getDefaultReadParam();
+      /* Temporarily fix width and height if 0. */
       if (width <= 0) {
          System.out.println("WARNING: FaceInfo: width = " + width);
          width = 800;
@@ -120,10 +112,27 @@ public class FaceInfo
          System.out.println("WARNING: FaceInfo: height = " + height);
          height = 600;
       }
-      pm.setSourceRegion(new Rectangle(0, 0, width, height));
-      image = reader.read(0, pm);
+
+      /* Read JPEG2000 data */ // TODO: check if it's really jpeg2000 first...
+      image = readJPEG2000(dataIn);
+      
       width = image.getWidth();
       height = image.getHeight();
+   }
+   
+   private BufferedImage readJPEG2000(InputStream in) throws IOException {
+      ImageInputStream iis = ImageIO.createImageInputStream(in);
+      Iterator readers = ImageIO.getImageReadersByMIMEType("image/jpeg2000");
+      if (!readers.hasNext()) {
+         throw new IllegalStateException("No jpeg 2000 readers");
+      }
+      ImageReader reader = (ImageReader)readers.next();
+      reader.setInput(iis);
+      ImageReadParam pm = reader.getDefaultReadParam();
+
+      pm.setSourceRegion(new Rectangle(0, 0, width, height));
+      BufferedImage image = reader.read(0, pm);
+      return image;
    }
 
    public BufferedImage getImage() {
