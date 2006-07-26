@@ -54,11 +54,11 @@ public class FaceInfo
    
    private FeaturePoint[] featurePoints;
    
-   private byte faceImageType;
-   private byte imageDataType;
+   private int faceImageType;
+   private int imageDataType;
    private int width;
    private int height;
-   private byte imageColorSpace;
+   private int imageColorSpace;
    private int sourceType;
    private int deviceType;
    private int quality;
@@ -85,8 +85,8 @@ public class FaceInfo
       /* Feature Point(s) (optional) (8 * featurePointCount) */
       featurePoints = new FeaturePoint[featurePointCount];
       for (int i = 0; i < featurePointCount; i++) {
-         byte featureType = dataIn.readByte();
-         byte featurePoint = dataIn.readByte();
+         int featureType = dataIn.readUnsignedByte();
+         int featurePoint = dataIn.readUnsignedByte();
          int x = dataIn.readUnsignedShort();
          int y = dataIn.readUnsignedShort();
          dataIn.skip(2); // 2 bytes reserved
@@ -94,11 +94,11 @@ public class FaceInfo
       }
       
       /* Image Information */
-      faceImageType = dataIn.readByte();
-      imageDataType = dataIn.readByte();
+      faceImageType = dataIn.readUnsignedByte();
+      imageDataType = dataIn.readUnsignedByte();
       width = dataIn.readUnsignedShort();
       height = dataIn.readUnsignedShort();
-      imageColorSpace = dataIn.readByte();
+      imageColorSpace = dataIn.readUnsignedByte();
       sourceType = dataIn.readUnsignedByte();
       deviceType = dataIn.readUnsignedShort();
       quality = dataIn.readUnsignedShort();
@@ -122,6 +122,8 @@ public class FaceInfo
       }
       pm.setSourceRegion(new Rectangle(0, 0, width, height));
       image = reader.read(0, pm);
+      width = image.getWidth();
+      height = image.getHeight();
    }
 
    public BufferedImage getImage() {
@@ -130,6 +132,35 @@ public class FaceInfo
    
    public FeaturePoint[] getFeaturePoints() {
       return featurePoints;
+   }
+   
+   public String toString() {
+      StringBuffer out = new StringBuffer();
+      out.append("Image size: "); out.append(width + " x " + height); out.append("\n");
+      out.append("Gender: "); out.append(gender); out.append("\n");
+      out.append("Eye color: "); out.append(eyeColor); out.append("\n");
+      out.append("Hair color: "); out.append(hairColor); out.append("\n");
+      out.append("Feature mask: "); out.append(Long.toHexString(featureMask)); out.append("\n");
+      out.append("Expression: "); out.append(expression); out.append("\n");
+      out.append("Pose angle: "); out.append(poseAngle); out.append("\n");
+      out.append("Pose angle uncertainty: "); out.append(poseAngleUncertainty); out.append("\n");
+      out.append("Feature points: "); out.append("\n");
+      if (featurePoints == null || featurePoints.length == 0) {
+         out.append("   (none)\n");
+      } else {
+         for (int i = 0; i < featurePoints.length; i++) {
+            out.append("   ");
+            out.append(featurePoints[i].toString());
+            out.append("\n");
+         }
+      }
+      out.append("Face image type: "); out.append(faceImageType); out.append("\n");
+      out.append("Image data type: "); out.append(imageDataType); out.append("\n");
+      out.append("Image color space: "); out.append(imageColorSpace); out.append("\n");
+      out.append("Source type: "); out.append(sourceType); out.append("\n");
+      out.append("Device type: "); out.append(deviceType); out.append("\n");
+      out.append("Quality: "); out.append(quality); out.append("\n");
+      return out.toString();
    }
    
    public class FeaturePoint
@@ -160,6 +191,16 @@ public class FaceInfo
 
       public int getY() {
          return y;
-      } 
+      }
+      
+      public String toString() {
+         StringBuffer out = new StringBuffer();
+         out.append("( point: "); out.append(Integer.toHexString(featurePoint)); out.append(", ");
+         out.append("type: "); out.append(Integer.toHexString(featureType)); out.append(", ");
+         out.append("("); out.append(x); out.append(", ");
+         out.append(y); out.append(")");
+         out.append(")");
+         return out.toString();
+      }
    }
 }

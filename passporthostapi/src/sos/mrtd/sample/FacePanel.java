@@ -24,6 +24,7 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -32,6 +33,7 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -59,6 +61,7 @@ implements Runnable, ActionListener, AuthListener
    
    private ImagePanel ipanel;
    private JButton readButton;
+   private JTextArea infoArea;
    private CardService service;
    private SecureMessagingWrapper wrapper;
 
@@ -74,7 +77,12 @@ implements Runnable, ActionListener, AuthListener
       // buttonPanel.add(hideButton);
       buttonPanel.add(readButton);
       buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Face"));
-      add(buttonPanel, BorderLayout.WEST);
+      infoArea = new JTextArea(5, 5);
+      infoArea.setEditable(false);
+      JPanel westPanel = new JPanel(new GridLayout(2,1));
+      westPanel.add(buttonPanel);
+      westPanel.add(new JScrollPane(infoArea));
+      add(westPanel, BorderLayout.WEST);
       add(new JScrollPane(ipanel), BorderLayout.CENTER);
    }
 
@@ -90,6 +98,7 @@ implements Runnable, ActionListener, AuthListener
          s.setWrapper(wrapper);
          FaceInfo info = s.readFace()[0];
          ipanel.setImage(info.getImage());
+         infoArea.setText(info.toString());
       } catch (Exception e) {
          e.printStackTrace();
       } finally {
