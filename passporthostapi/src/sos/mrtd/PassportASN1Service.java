@@ -108,9 +108,7 @@ public class PassportASN1Service extends PassportAuthService
       byte[] file = fileService.readFile(lookupFIDByTag(tagPath[0]));
       BERTLVObject object =
          BERTLVObject.getInstance(new ByteArrayInputStream(file));
-      for (int i = 1; i < tagPath.length; i++) {
-         object = object.getChild(tagPath[i]);
-      }
+      object = object.getSubObject(tagPath, 0, tagPath.length);
       return object.getValueAsBytes();
    }
  

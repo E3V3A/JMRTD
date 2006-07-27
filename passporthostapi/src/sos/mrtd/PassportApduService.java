@@ -190,7 +190,7 @@ public class PassportApduService implements CardService {
     *
     * @return the apdu to be sent to the card.
     */
-   Apdu createMututalAuthAPDU(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
+   Apdu createMutualAuthAPDU(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
       if (rndIFD == null || rndIFD.length != 8) {
          throw new IllegalArgumentException("rndIFD wrong length");
@@ -377,7 +377,7 @@ public class PassportApduService implements CardService {
     */
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
-      byte[] rapdu = sendAPDU(createMututalAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
+      byte[] rapdu = sendAPDU(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
             kMac));
 
       if (rapdu.length != 42) {

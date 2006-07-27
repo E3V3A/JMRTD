@@ -340,17 +340,29 @@ public class BERTLVObject
     * @param tag the tag to search for
     * @return the first
     */
-   public BERTLVObject getChild(int tag) {
+   public BERTLVObject getSubObject(int tag) {
       if (this.tag == tag) {
          return this;
       } else if (value instanceof BERTLVObject[]) {
          BERTLVObject[] children = (BERTLVObject[])value;
          for (int i = 0; i < children.length; i++) {
             BERTLVObject child = children[i];
-            BERTLVObject candidate = child.getChild(tag);
+            BERTLVObject candidate = child.getSubObject(tag);
             if (candidate != null) {
                return candidate;
             }
+         }
+      }
+      return null;
+   }
+
+   public BERTLVObject getSubObject(int[] tagPath, int offset, int length) {
+      if (length == 0) {
+         return this;
+      } else  {
+         BERTLVObject child = getSubObject(tagPath[offset]);
+         if (child != null) {
+            return child.getSubObject(tagPath, offset + 1, length - 1);
          }
       }
       return null;
@@ -435,4 +447,5 @@ public class BERTLVObject
       }
       return "'0x" + Hex.intToHexString(tag) + "'";
    }
+
 }
