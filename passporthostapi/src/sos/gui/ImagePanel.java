@@ -64,11 +64,12 @@ public class ImagePanel extends JPanel
     */
    public ImagePanel() {
       super(null);
-      highlightColor = new Color(1, (float)0.1, (float)0.1, (float)0.5);
+      highlightColor = new Color(1, (float)0.1, (float)0.1, (float)0.7);
       radius = MAX_RADIUS;
       highlights = new HashMap();
       image = null;
       
+      /*
       (new Thread(new Runnable() {
          public void run() {
             try {
@@ -82,6 +83,7 @@ public class ImagePanel extends JPanel
             }
          }
       })).start();
+      */
    }
 
    /**
@@ -142,20 +144,21 @@ public class ImagePanel extends JPanel
          // Graphics g = image.getGraphics();
          g2.setColor(highlightColor);
          
-         /*
+         /* kruisje
          g2.drawLine(x, y - 5, x, y + 5);
          g2.drawLine(x - 5, y, x + 5, y);
          */
          
-         int r0 = radius;
-         // int r1 = (radius + (MAX_RADIUS / 4)) % MAX_RADIUS;
-         int r2 = (radius + 2 * (MAX_RADIUS / 4)) % MAX_RADIUS;
-         // int r3 = (radius + 3 * (MAX_RADIUS / 4)) % MAX_RADIUS;
-         g2.drawOval(x - r0/2, y - r0/2, r0, r0);
-         // g2.drawOval(x - r1/2, y - r1/2, r1, r1);
-         g2.drawOval(x - r2/2, y - r2/2, r2, r2);
-         // g2.drawOval(x - r3/2, y - r3/2, r3, r3);
+         /* lijnen */
+         g2.drawLine(x, y, image.getWidth(), y);
+         g2.drawLine(x, y, x, image.getHeight());
          
+         /* bewegende cirkels
+         int r0 = radius;
+         int r2 = (radius + 2 * (MAX_RADIUS / 4)) % MAX_RADIUS;
+         g2.drawOval(x - r0/2, y - r0/2, r0, r0);
+         g2.drawOval(x - r2/2, y - r2/2, r2, r2);    
+         */
          
          /* Draw key label... */
          g2.setColor(Color.black);
