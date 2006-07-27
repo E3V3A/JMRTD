@@ -174,24 +174,24 @@ public class FaceInfo
    
    public class FeaturePoint
    {
-      private int featureType;
-      private int featurePoint;
+      private int type;
+      private int code;
       private int x;
       private int y;
       
-      public FeaturePoint(int featureType, int featurePoint, int x, int y) {
-         this.featureType = featureType;
-         this.featurePoint = featurePoint;
+      public FeaturePoint(int type, int code, int x, int y) {
+         this.type = type;
+         this.code = code;
          this.x = x;
          this.y = y;
       }
 
-      public int getFeaturePoint() {
-         return featurePoint;
+      public int getCode() {
+         return code;
       }
 
-      public int getFeatureType() {
-         return featureType;
+      public int getType() {
+         return type;
       }
 
       public int getX() {
@@ -204,8 +204,8 @@ public class FaceInfo
       
       public String toString() {
          StringBuffer out = new StringBuffer();
-         out.append("( point: "); out.append(Integer.toHexString(featurePoint)); out.append(", ");
-         out.append("type: "); out.append(Integer.toHexString(featureType)); out.append(", ");
+         out.append("( point: "); out.append(Integer.toHexString(code)); out.append(", ");
+         out.append("type: "); out.append(Integer.toHexString(type)); out.append(", ");
          out.append("("); out.append(x); out.append(", ");
          out.append(y); out.append(")");
          out.append(")");
