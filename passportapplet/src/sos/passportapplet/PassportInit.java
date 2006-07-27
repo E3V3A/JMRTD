@@ -25,13 +25,13 @@ package sos.passportapplet;
 import javacard.framework.ISOException;
 import javacard.framework.Util;
 
-/***
+/*******************************************************************************
  * Contains methods to initialize a fresh passport.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
+ * 
  */
 public class PassportInit {
 
@@ -39,7 +39,8 @@ public class PassportInit {
      * Looks up the numerical value for MRZ characters. In order to be able to
      * compute check digits.
      * 
-     * @param ch a character from the MRZ.
+     * @param ch
+     *            a character from the MRZ.
      * @return the numerical value of the character.
      */
     private static byte decodeMRZDigit(byte ch) {
@@ -151,59 +152,125 @@ public class PassportInit {
     /**
      * Computes the 7-3-1 check digit for part of the MRZ.
      * 
-     * @param chars a part of the MRZ.
+     * @param chars
+     *            a part of the MRZ.
      * @return the resulting check digit.
      */
     private static byte checkDigit(byte[] chars, short offset, short length) {
         byte[] weights = { 7, 3, 1 };
         byte result = 0;
-        for (short i=0; i < length; i++) {
+        for (short i = 0; i < length; i++) {
             result = (byte) ((short) ((result + weights[i % 3]
-                    * decodeMRZDigit(chars[(short)(offset + i)]))) % 10);
+                    * decodeMRZDigit(chars[(short) (offset + i)]))) % 10);
         }
-        return (byte)(result + 0x30); // return as character
+        return (byte) (result + 0x30); // return as character
     }
 
     public static short DOCNR_LEN = 9;
     public static short DOB_LEN = 6;
     public static short DOE_LEN = 6;
-    
+
     /**
      * Computes the static key seed, based on information from the MRZ.
      * 
-     * @param buffer containing docNr || dateOfBirth || dateOfExpiry
-     * @param offset pointing to docNr 
+     * @param buffer
+     *            containing docNr || dateOfBirth || dateOfExpiry
+     * @param offset
+     *            pointing to docNr
+     * @returns offset in buffer pointing to keySeed.
+     */
+    public static short computeKeySeed(
+        byte[] buffer, 
+        short docNr_p,
+        short docNr_length,
+        short dateOfBirth_p,
+        short dateOfBirth_length,
+        short dateOfExpiry_p,
+        short dateOfExpiry_length) {
+
+        // sanity check: data is ordered
+        if(!((docNr_p < dateOfBirth_p) & (dateOfBirth_p < dateOfExpiry_p))) {
+            ISOException.throwIt((short)0x6d66);            
+        }
+        // sanity check: no overlap
+        if(((short)(docNr_p + docNr_length) > dateOfBirth_p) ||
+           ((short)(dateOfBirth_p + dateOfBirth_length) > dateOfExpiry_p)) {
+            ISOException.throwIt((short)0x6d66);               
+        }
+            
+        short buffer_p = 0;
+        Util.arrayCopy(buffer, docNr_p, buffer, buffer_p, docNr_length);
+        short offset = buffer_p;
+        buffer_p += docNr_length;
+        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer_p++;
+        
+        Util.arrayCopy(buffer, dateOfBirth_p, buffer, buffer_p, dateOfBirth_length);
+        offset = buffer_p;
+        buffer_p += dateOfBirth_length;
+        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer_p++;
+        
+        Util.arrayCopy(buffer, dateOfExpiry_p, buffer, buffer_p, dateOfExpiry_length);
+        offset = buffer_p;
+        buffer_p += dateOfExpiry_length;
+        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer_p++;
+        
+        PassportCrypto.createHash(buffer,
+                                  (short)0,
+                                  buffer_p,
+                                  buffer,
+                                  (short)0);
+       
+        
+        return 0;
+    }
+    /**
+     * Computes the static key seed, based on information from the MRZ.
+     * 
+     * @param buffer
+     *            containing docNr || dateOfBirth || dateOfExpiry
+     * @param offset
+     *            pointing to docNr
      * @returns offset in buffer pointing to keySeed.
      */
     public static short computeKeySeed(byte[] buffer, short offset) {
         // sanity checks (80 for hash, 3 for checkdigits)
-        if(buffer.length < (short)(offset + DOCNR_LEN + DOB_LEN + DOE_LEN + 80 + 3)) {
-            ISOException.throwIt((short)0x6d66);
+        if (buffer.length < (short) (offset + DOCNR_LEN + DOB_LEN + DOE_LEN
+                + 80 + 3)) {
+            ISOException.throwIt((short) 0x6d66);
         }
         short start_offset = offset;
-        // offset must initially point to docNr 
+        // offset must initially point to docNr
         offset += DOCNR_LEN;
-        short len = (short)(DOB_LEN + DOE_LEN);
-        
+        short len = (short) (DOB_LEN + DOE_LEN);
+
         // make room for checkdigit after docNr
-        Util.arrayCopy(buffer, offset, buffer, (short)(offset + 1), len);
-        buffer[offset] = checkDigit(buffer, (short)(offset - DOCNR_LEN), DOCNR_LEN);
-        
-        offset += (short)(1 + DOB_LEN);
+        Util.arrayCopy(buffer, offset, buffer, (short) (offset + 1), len);
+        buffer[offset] = checkDigit(buffer,
+                                    (short) (offset - DOCNR_LEN),
+                                    DOCNR_LEN);
+
+        offset += (short) (1 + DOB_LEN);
         len -= DOB_LEN;
-        
+
         // make room for checkdigit after dateOfBirth
-        Util.arrayCopy(buffer, offset, buffer, (short)(offset + 1), len);
-        buffer[offset] = checkDigit(buffer, (short)(offset - DOB_LEN), DOB_LEN);
-        
-        offset += (short)(1 + DOE_LEN);
-        
-        buffer[offset] = checkDigit(buffer, (short)(offset - DOE_LEN), DOE_LEN);
+        Util.arrayCopy(buffer, offset, buffer, (short) (offset + 1), len);
+        buffer[offset] = checkDigit(buffer, (short) (offset - DOB_LEN), DOB_LEN);
+
+        offset += (short) (1 + DOE_LEN);
+
+        buffer[offset] = checkDigit(buffer, (short) (offset - DOE_LEN), DOE_LEN);
 
         offset++;
-        
-        PassportCrypto.createHash(buffer, start_offset, (short)(offset - start_offset), buffer, offset);
-        
+
+        PassportCrypto.createHash(buffer,
+                                  start_offset,
+                                  (short) (offset - start_offset),
+                                  buffer,
+                                  offset);
+
         return offset;
     }
 }

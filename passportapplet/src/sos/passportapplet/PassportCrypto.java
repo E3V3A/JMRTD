@@ -29,6 +29,9 @@ import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.CryptoException;
 import javacard.security.MessageDigest;
+import javacard.security.KeyBuilder;
+import javacard.security.RSAPrivateKey;
+import javacard.security.RSAPublicKey;
 
 public abstract class PassportCrypto {
     public static final byte ENC_MODE = 1;
@@ -45,13 +48,28 @@ public abstract class PassportCrypto {
 
     private static MessageDigest shaDigest;
     static byte[] tempSpace_unwrapCommandAPDU;
+    RSAPrivateKey rsaPrivateKey;
+    RSAPublicKey rsaPublicKey;
 
     public PassportCrypto() {
         tempSpace_unwrapCommandAPDU = JCSystem.makeTransientByteArray((short) 8,
                                                                       JCSystem.CLEAR_ON_RESET);
         shaDigest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
+        
+        rsaPrivateKey = (RSAPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, KeyBuilder.LENGTH_RSA_1024,  false);
+        rsaPublicKey =  (RSAPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024,  false);
     }
 
+//    public void setAAPublicKey(byte[] buffer, short exp_offset, short exp_length) {
+//        rsaPublicKey.setExponent(buffer, offset, RSA_EXP_LENGTH);
+//        rsaPublicKey.setModulus(buffer, offset + RSA_EXP_LENGTH, RSA_MOD_LENGTH);
+//    }
+//    
+//    public void setAAPrivateKey(byte[] buffer, short offset, short length) {
+//        rsaPrivateKey.setExponent(buffer, offset, RSA_EXP_LENGTH);
+//        rsaPrivateKey.setModulus(buffer, offset + RSA_EXP_LENGTH, RSA_MOD_LENGTH);
+//    }
+    
     public abstract boolean verifyMac(byte state, byte[] msg, short msg_offset,
             short msg_len, byte[] mac, short mac_offset);
 
