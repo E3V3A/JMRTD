@@ -407,5 +407,12 @@ public class PassportApduService implements CardService {
          throws IOException {
       sendSelectFile(wrapper, fid);
    }
+   
+   public void selectFile(SecureMessagingWrapper wrapper, short fid)
+   throws IOException {
+       byte[] fiddle = { (byte)((fid >>> 8) & 0xff), (byte)(fid & 0xff) };  
+       selectFile(wrapper, fiddle);
+   }
+
 }
 

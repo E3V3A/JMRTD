@@ -32,6 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import sos.util.Hex;
 
@@ -46,6 +47,7 @@ import sos.util.Hex;
  * See <a href="http://en.wikipedia.org/wiki/ASN.1">ASN.1</a>.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  *
  * @version $Revision$
  */
@@ -109,6 +111,46 @@ public class BERTLVObject
    public static BERTLVObject getInstance(InputStream in) throws IOException {
       return new BERTLVObject(new DataInputStream(in));
    }
+ 
+   /**
+    * Constructs a new TLV object with tag <code>tag</code>.
+    * @param tag of TLV object.
+    * @throws IOException if something goes wrong.
+    */
+   public BERTLVObject(int tag) 
+   throws IOException {
+       byte[] tagBytes = {(byte) ((tag >>> 24) & 0xff),
+                          (byte) ((tag >>> 16) & 0xff),
+                          (byte) ((tag >>> 8) & 0xff),
+                          (byte) (tag & 0xff)};
+       readTag(new DataInputStream(new ByteArrayInputStream(tagBytes)));
+   }
+   
+   /**
+    * Constructs a new TLV object with tag <code>tag</code> containing 
+    * data <code>value</code>.
+    * @param tag of TLV object.
+    * @param value data of TLV object.
+    * @throws IOException if something goes wrong.
+    */
+   public BERTLVObject(int tag, byte[] value) 
+   throws IOException {
+       this(tag, new DataInputStream(new ByteArrayInputStream(value)));
+   }
+   
+   /**
+    * Constructs a new TLV object with tag <code>tag</code> containing 
+    * data <code>value</code>.
+    * @param tag of TLV object.
+    * @param value data of TLV object.
+    * @throws IOException if something goes wrong.
+    */
+   public BERTLVObject(int tag, DataInputStream value) 
+   throws IOException {
+       this(tag);
+       readLength(value);
+       readValue(value);
+   }
    
    /**
     * Constructs a new TLV object by parsing input <code>in</code>.
@@ -121,6 +163,7 @@ public class BERTLVObject
       readLength(in);
       readValue(in);
    }
+
 
    private void readTag(DataInputStream in) throws IOException {
       int b = in.readUnsignedByte();
@@ -220,7 +263,22 @@ public class BERTLVObject
 	   }
    }
    
-   private BERTLVObject[] readSubObjects(DataInputStream in)
+   /***
+    * Adds <code>object</object> as subobject of <code>this</code> TLV object when
+    * <code>this</code> is not a primitive object.
+    * 
+    * @param object to add as a subobject.
+    */
+   public void addSubObject(BERTLVObject object) {
+      if(value instanceof BERTLVObject[]) {
+          List l = Arrays.asList((BERTLVObject[])value);
+          ArrayList subObjects = new ArrayList(l);
+          subObjects.add(object);
+          value = subObjects.toArray();
+      }
+   }
+   
+   private static BERTLVObject[] readSubObjects(DataInputStream in)
    throws IOException {
       ArrayList subObjects = new ArrayList();
       while (in.available() > 0) {
@@ -356,6 +414,15 @@ public class BERTLVObject
       return null;
    }
 
+   /**
+    * Gets the first sub-object (including this object) following
+    * the tags in tagPath.
+    * 
+    * @param tagPath the path to follow
+    * @param offset in the tagPath
+    * @param length of the tagPath
+    * @return the first
+    */
    public BERTLVObject getSubObject(int[] tagPath, int offset, int length) {
       if (length == 0) {
          return this;
@@ -366,6 +433,22 @@ public class BERTLVObject
          }
       }
       return null;
+   }
+   
+   /***
+    * Returns the indexed child (starting from 0) or null otherwise.
+    * 
+    * @param index 
+    * @return the object pointed to by index.
+    */
+   public BERTLVObject getChildByIndex(int index) {
+       
+       if (value instanceof BERTLVObject[]) {
+           BERTLVObject[] children = (BERTLVObject[])value;
+           return children[index];
+       }
+       
+       return null;
    }
    
    /**
@@ -392,12 +475,12 @@ public class BERTLVObject
          byte[] valueData = (byte[])value;
          result.append("'0x");
          if (indent + 2 * valueData.length <= 60) {
-            result.append(Hex.bytesToHexString(valueData));
-         } else {
-            result.append(Hex.bytesToHexString(valueData,
-                                               0, (50 - indent) / 2));
-            result.append("...");
-         }
+             result.append(Hex.bytesToHexString(valueData));
+          } else {
+             result.append(Hex.bytesToHexString(valueData,
+                                                0, (50 - indent) / 2));
+             result.append("...");
+          }
          result.append("'\n");
       } else if (value instanceof BERTLVObject[]) {
          result.append("{\n");

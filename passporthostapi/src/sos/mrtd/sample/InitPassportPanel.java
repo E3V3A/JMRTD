@@ -26,15 +26,20 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -51,9 +56,13 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportInitService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.smartcards.BERTLVObject;
+import sos.smartcards.BERTLVObject_CB;
+
 import sos.smartcards.CardService;
 import sos.util.Hex;
 
@@ -83,17 +92,15 @@ public class InitPassportPanel extends JPanel implements ActionListener,
     private JTextField doeField;
     private JButton generateKeyPairButton;
     private JButton uploadPrivateKey;
-    private JButton savePublicKeyButton;
-
-    private PassportApduService apduService;
-    private PassportService passportService;
-    private PassportAuthService authService;
+    private JButton saveKeyPairButton;
     private JButton uploadPublicKey;
+
+    private KeyPair keyPair;
 
     private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
     public InitPassportPanel(CardService service)
-    throws GeneralSecurityException, UnsupportedEncodingException {
+            throws GeneralSecurityException, UnsupportedEncodingException {
         super(new GridLayout(3, 1));
 
         JPanel personalisationPanel = new JPanel(new FlowLayout());
@@ -103,16 +110,13 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         fileSendingPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
                                                                     "Upload raw passport data"));
         JPanel initAAPanel = new JPanel(new FlowLayout());
-        initAAPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "Generate Active Authentication keypair"));
-        
+        initAAPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
+                                                               "Generate Active Authentication keypair"));
+
         add(personalisationPanel);
         add(fileSendingPanel);
         add(initAAPanel);
 
-//        this.service = service;
-//        this.apduService = service;
-//        this.authService = new PassportAuthService(apduService);
-//        this.passportService = new PassportService(authService);
         this.service = new PassportInitService(service);
         this.wrapper = null;
 
@@ -152,17 +156,17 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         personalisationPanel.add(new JLabel("Date of expiry:"));
         personalisationPanel.add(doeField);
         personalisationPanel.add(personalisationButton);
-        
+
         generateKeyPairButton = new JButton("Generate keypair");
         generateKeyPairButton.addActionListener(this);
-        savePublicKeyButton = new JButton("Save public key");
-        savePublicKeyButton.addActionListener(this);
+        saveKeyPairButton = new JButton("Save public key");
+        saveKeyPairButton.addActionListener(this);
         uploadPrivateKey = new JButton("Upload private key");
         uploadPrivateKey.addActionListener(this);
         uploadPublicKey = new JButton("Upload public key (DG15)");
         uploadPublicKey.addActionListener(this);
         initAAPanel.add(generateKeyPairButton);
-        initAAPanel.add(savePublicKeyButton);
+        initAAPanel.add(saveKeyPairButton);
         initAAPanel.add(uploadPrivateKey);
         initAAPanel.add(uploadPublicKey);
     }
@@ -185,24 +189,40 @@ public class InitPassportPanel extends JPanel implements ActionListener,
                 pressedGenerateKeyPairButton();
             } else if (butt == uploadPrivateKey) {
                 pressedUploadPrivateKey();
-            } else if (butt == savePublicKeyButton) {
-                pressedSavePublicKeyButton();
+            } else if (butt == saveKeyPairButton) {
+                pressedSaveKeyPairButton();
             } else if (butt == uploadPublicKey) {
                 pressedUploadPublicKey();
             }
-            
-               
+
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void pressedUploadPublicKey() {
-        
+    private void pressedUploadPublicKey() throws IOException {
+
+        final InputStream DG15 = service.createDG15(keyPair.getPublic());
+
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    service.createFile(wrapper,
+                                       PassportFileService.EF_DG15,
+                                       (short) DG15.available());
+                    service.selectFile(wrapper, PassportFileService.EF_DG15);
+                    service.writeFile(wrapper,
+                                      PassportFileService.EF_DG15,
+                                      DG15);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
-    private void pressedSavePublicKeyButton() 
-    throws IOException {
+    private void pressedSaveKeyPairButton() throws IOException {
         final JFileChooser chooser = new JFileChooser();
         chooser.setDialogTitle("Save public key");
         // chooser.setCurrentDirectory(currentDir);
@@ -214,60 +234,106 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         }
 
         File file = chooser.getSelectedFile();
+        saveKey(keyPair.getPrivate(), new File(file.getPath() + ".priv"));
+        saveKey(keyPair.getPublic(), new File(file.getPath() + ".pub"));
+
+    }
+    
+    private void saveKey(Key k, File file) 
+    throws IOException {
         
-        
-        if(file.exists()) {
-            if(!file.canWrite()) {
-                System.out.println("DEBUG: file " + file + " exists, cannot write.");
+        if (file.exists()) {
+            if (!file.canWrite()) {
+                System.out.println("DEBUG: file " + file
+                        + " exists, cannot write.");
                 return;
             }
-        } 
-        else {
-            if(!file.createNewFile()) {
+        } else {
+            if (!file.createNewFile()) {
                 System.out.println("DEBUG: cannot create " + file + ".");
                 return;
             }
         }
-        
+
         FileOutputStream fileStream = new FileOutputStream(file);
-        fileStream.write(keyPair.getPublic().getEncoded());
+        fileStream.write(k.getEncoded());
         fileStream.close();
     }
 
-    private void pressedUploadPrivateKey() {
-        keyPair.getPrivate();
-        
+    private void pressedUploadPrivateKey() throws IOException {
+
+        final ByteArrayInputStream AAPriv = new ByteArrayInputStream(keyPair.getPrivate()
+                                                                            .getEncoded());
+
         new Thread(new Runnable() {
             public void run() {
-                service.sendAAPrivateKey(wrapper, keyPair.getPrivate());
+                try {
+                    service.createFile(wrapper,
+                                       PassportInitService.AAPRIVKEY_FID,
+                                       (short) AAPriv.available());
+                    service.selectFile(wrapper,
+                                       PassportInitService.AAPRIVKEY_FID);
+                    service.writeFile(wrapper,
+                                      PassportInitService.AAPRIVKEY_FID,
+                                      AAPriv);
+                } catch (IOException e) {
+                    // TODO Auto-generated catch block
+                    e.printStackTrace();
+                }
             }
-        }).start();       
+        }).start();
     }
-    
-    KeyPair keyPair;
-    
-    private void pressedGenerateKeyPairButton() 
-    throws GeneralSecurityException {
+
+    private void pressedGenerateKeyPairButton() throws GeneralSecurityException, IOException {
         keyPair = service.generateAAKeyPair();
+        RSAPrivateKey privKey = (RSAPrivateKey)keyPair.getPrivate();
+        RSAPublicKey pubKey = (RSAPublicKey)keyPair.getPublic();
+        
+        System.out.println("pub key: " + Hex.bytesToHexString(pubKey.getEncoded()));
+        byte[] pubExp = pubKey.getPublicExponent().toByteArray();
+        System.out.println("pub exp: " + Hex.bytesToHexString(pubExp));
+        System.out.println("priv key: " + Hex.bytesToHexString(privKey.getEncoded()));
+        byte[] privExp = privKey.getPrivateExponent().toByteArray();
+        System.out.println("priv exp: " + Hex.bytesToHexString(privExp));
+        byte[] modulus = privKey.getModulus().toByteArray();
+        System.out.println("modulus: " + Hex.bytesToHexString(modulus));
+        
+//        BERTLVObject BERTLVpubKey = BERTLVObject.getInstance(new ByteArrayInputStream(privKey.getEncoded()));
+//        System.out.println(BERTLVpubKey.toString());
+  
+        byte[] encodedPriv = keyPair.getPrivate().getEncoded();
+        BERTLVObject encodedPrivObject = BERTLVObject.getInstance(new ByteArrayInputStream(encodedPriv));
+        byte[] privKeyData = encodedPrivObject.getChildByIndex(2).getValueAsBytes();
+        BERTLVObject privKeyDataObject = BERTLVObject.getInstance(new ByteArrayInputStream(privKeyData));        
+        byte[] privModulus =  privKeyDataObject.getChildByIndex(1).getValueAsBytes();
+        byte[] privExponent =  privKeyDataObject.getChildByIndex(3).getValueAsBytes();
+        
+        
+        System.out.println(Hex.bytesToHexString(privModulus));
+        System.out.println(Hex.bytesToHexString(privExponent));
+//        BERTLVObject_CB root = BERTLVObject_CB.readObjects(encodedPriv, (short)0, (short)encodedPriv.length);
+//        BERTLVObject_CB root2 = BERTLVObject_CB.readObjects(root.value, root.child.next.next.valueOffset, root.child.next.next.valueLength); 
+//        System.out.println(root2); 
+        
     }
 
     private void pressedPersonalisationButton() {
         try {
             final byte[] docNr = docNrField.getText().getBytes("ASCII");
             final byte[] dob = dobField.getText().getBytes("ASCII");
-            final byte[] doe = doeField.getText().getBytes("ASCII");;
-        
+            final byte[] doe = doeField.getText().getBytes("ASCII");
+            ;
+
             new Thread(new Runnable() {
                 public void run() {
                     service.writeMRZ(docNr, dob, doe);
                 }
-            }).start();        
-        }
-        catch(UnsupportedEncodingException e) {
+            }).start();
+        } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         }
     }
-    
+
     private void pressedUpdateBinaryButton() {
         final byte[] fid = fidField.getValue();
 
@@ -302,14 +368,26 @@ public class InitPassportPanel extends JPanel implements ActionListener,
     }
 
     private void pressedCreateFileButton() {
-        final byte[] fid = fidField.getValue();
-        final byte[] len = lenField.getValue();
+        final short fid = bytesToShort(fidField.getValue());
+        final short len = bytesToShort(lenField.getValue());
+        System.out.println(len);
+        System.out.println(Hex.bytesToHexString(lenField.getValue()));
+        ;
 
         new Thread(new Runnable() {
             public void run() {
                 service.createFile(wrapper, fid, len);
             }
         }).start();
+    }
+
+    private short bytesToShort(byte[] value) {
+        short total = 0;
+        for (int i = 0; i < value.length; i++) {
+            total = (short) (total << 8);
+            total += (value[i] & 0xff);
+        }
+        return total;
     }
 
     private void pressedSelectLocalFileButton() throws Exception {
