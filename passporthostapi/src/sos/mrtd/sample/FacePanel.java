@@ -84,12 +84,16 @@ implements Runnable, ActionListener, AuthListener
             if (cb.isSelected()) {
                for (int i = 0; i < featurePoints.length; i++) {
                   FaceInfo.FeaturePoint p = featurePoints[i];
-                  ipanel.highlightPoint(Integer.toHexString(p.getCode()), p.getX(), p.getY());
+                  String key = Integer.toString(p.getMajorCode())
+                     + "."+ Integer.toString(p.getMinorCode());
+                  ipanel.highlightPoint(key, p.getX(), p.getY());
                }
             } else {
                for (int i = 0; i < featurePoints.length; i++) {
                   FaceInfo.FeaturePoint p = featurePoints[i];
-                  ipanel.deHighlightPoint(Integer.toHexString(p.getCode()));
+                  String key = Integer.toString(p.getMajorCode())
+                     + "." + Integer.toString(p.getMinorCode());
+                  ipanel.deHighlightPoint(key);
                } 
             }
             repaint();

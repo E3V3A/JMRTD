@@ -186,8 +186,12 @@ public class FaceInfo
          this.y = y;
       }
 
-      public int getCode() {
-         return code;
+      public int getMajorCode() {
+         return (int)((code & 0xF0) >> 4);
+      }
+      
+      public int getMinorCode() {
+         return (int)(code & 0x0F);
       }
 
       public int getType() {
@@ -204,12 +208,14 @@ public class FaceInfo
       
       public String toString() {
          StringBuffer out = new StringBuffer();
-         out.append("( point: "); out.append(Integer.toHexString(code)); out.append(", ");
+         out.append("( point: "); out.append(getMajorCode()); out.append("."); out.append(getMinorCode());
+         out.append(", ");
          out.append("type: "); out.append(Integer.toHexString(type)); out.append(", ");
          out.append("("); out.append(x); out.append(", ");
          out.append(y); out.append(")");
          out.append(")");
          return out.toString();
       }
+      
    }
 }
