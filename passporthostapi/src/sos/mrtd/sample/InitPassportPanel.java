@@ -61,7 +61,6 @@ import sos.mrtd.PassportInitService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.BERTLVObject;
-import sos.smartcards.BERTLVObject_CB;
 
 import sos.smartcards.CardService;
 import sos.util.Hex;
