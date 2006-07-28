@@ -39,8 +39,9 @@ import sos.util.Hex;
 /**
  * Generic data structure for storing Tag Length Value (TLV) objects encoded
  * according to the Basic Encoding Rules (BER). Written by Martijn Oostdijk
- * (MO) of the Security of Systems group (SoS) of the Institute of Computing and
- * Information Sciences (ICIS) at Radboud University (RU).
+ * (MO) and Cees-Bart Breunesse (CB) of the Security of Systems group (SoS)
+ * of the Institute of Computing and Information Sciences (ICIS) at Radboud
+ * University (RU).
  *
  * Based on ISO 7816-4 Annex D (which apparently is based on ISO 8825
  * and/or X.208, X.209, X.680, X.690).
