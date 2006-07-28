@@ -44,7 +44,6 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.Util;
-import sos.util.Hex;
 
 /**
  * Convenient GUI component for step-by-step execution of the

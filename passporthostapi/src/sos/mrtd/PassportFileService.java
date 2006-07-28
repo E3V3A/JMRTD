@@ -26,12 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.PublicKey;
-import java.util.HashMap;
-import java.util.Map;
 
-import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
 import sos.smartcards.CardService;
 
 /**

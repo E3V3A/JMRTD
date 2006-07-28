@@ -36,8 +36,6 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
@@ -54,14 +52,10 @@ import sos.gui.HexField;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
-import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportAuthService;
 import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportInitService;
-import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.BERTLVObject;
-
 import sos.smartcards.CardService;
 import sos.util.Hex;
 

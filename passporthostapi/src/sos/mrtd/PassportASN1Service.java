@@ -26,10 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.PublicKey;
 
-import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 
