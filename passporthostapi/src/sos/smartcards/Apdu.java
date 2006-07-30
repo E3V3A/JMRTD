@@ -38,18 +38,54 @@ public class Apdu implements ISO7816 {
    private byte[] commandApduBuffer;
    private byte[] responseApduBuffer;
 
+   /**
+    * Constructs a &quot;case 1&quot; APDU.
+    * 
+    * @param cla class byte
+    * @param ins instruction byte
+    * @param p1 parameter byte 1
+    * @param p2 parameter byte 2
+    */
    public Apdu(byte cla, byte ins, byte p1, byte p2) {
       this(cla, ins, p1, p2, null, -1);
    }
    
+   /**
+    * Constructs a &quot;case 2&quot; APDU.
+    * 
+    * @param cla class byte
+    * @param ins instruction byte
+    * @param p1 parameter byte 1
+    * @param p2 parameter byte 2
+    * @param le expected length of response
+    */
    public Apdu(byte cla, byte ins, byte p1, byte p2, int le) {
       this(cla, ins, p1, p2, null, le);
    }
    
+   /**
+    * Constructs a &quot;case 3&quot; APDU.
+    * 
+    * @param cla class byte
+    * @param ins instruction byte
+    * @param p1 parameter byte 1
+    * @param p2 parameter byte 2
+    * @param data command data
+    */
    public Apdu(byte cla, byte ins, byte p1, byte p2, byte[] data) {
       this(cla, ins, p1, p2, data, -1);
    }
 
+   /**
+    * Constructs a &quot;case 4&quot; APDU.
+    * 
+    * @param cla class byte
+    * @param ins instruction byte
+    * @param p1 parameter byte 1
+    * @param p2 parameter byte 2
+    * @param data command data
+    * @param le expected length of response
+    */
    public Apdu(byte cla, byte ins, byte p1, byte p2, byte[] data, int le) {
        this(cla, ins, p1, p2, data == null ? 0 : data.length, data, le);
    }
@@ -74,6 +110,11 @@ public class Apdu implements ISO7816 {
       responseApduBuffer = null;
    }
    
+   /**
+    * Constructs an APDU.
+    * 
+    * @param buffer command APDU buffer
+    */
    public Apdu(byte[] buffer) {
       setCommandApduBuffer(buffer);
       responseApduBuffer = null;
@@ -154,6 +195,11 @@ public class Apdu implements ISO7816 {
       responseApduBuffer = buffer;
    }
    
+   /**
+    * Gets the length of the command data, or 0 if not present.
+    * 
+    * @return length of the command data
+    */
    public int getLc() {
       if (commandApduBuffer == null) {
          throw new IllegalStateException("buffer is null!");
@@ -165,6 +211,12 @@ public class Apdu implements ISO7816 {
       return lc;
    }
    
+   /**
+    * Gets the expected length of the response data as indicated in
+    * the command apdu buffer.
+    * 
+    * @return expected length of response data
+    */
    public int getLe() {
       if (commandApduBuffer == null) {
          throw new IllegalStateException("buffer is null!");
@@ -183,6 +235,12 @@ public class Apdu implements ISO7816 {
       return le;
    }
    
+   /**
+    * Generates a textual representation of this command Apdu.
+    * 
+    * @return a textual representation of this Apdu
+    * @see java.lang.Object#toString()
+    */
    public String toString() {
       return Hex.bytesToHexString(commandApduBuffer);
    }
