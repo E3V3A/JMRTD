@@ -586,7 +586,7 @@ public class FaceInfo
     * 
     * @author Martijn Oostdijk (martijno@cs.ru.nl)
     * 
-    * @version $Revision: $
+    * @version $Revision$
     */
    public class FeaturePoint
    {
