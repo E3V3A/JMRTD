@@ -242,7 +242,6 @@ public class FaceInfo
       ImageReader reader = (ImageReader)readers.next();
       reader.setInput(iis);
       ImageReadParam pm = reader.getDefaultReadParam();
-
       pm.setSourceRegion(new Rectangle(0, 0, width, height));
       BufferedImage image = reader.read(0, pm);
       return image;
