@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.io.DataInputStream;
@@ -117,7 +118,7 @@ public class FaceInfo
                             COLOR_SPACE_GRAY8 = 0x03,
                             COLOR_SPACE_OTHER = 0x04;
    
-   /** Source type based on Sectin 5.7.6 of ISO 19794-5. */
+   /** Source type based on Section 5.7.6 of ISO 19794-5. */
    public static final int SOURCE_TYPE_UNSPECIFIED = 0x00,
                            SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE = 0x01,
                            SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM = 0x02,
@@ -252,7 +253,7 @@ public class FaceInfo
     * 
     * @return image
     */
-   public BufferedImage getImage() {
+   public Image getImage() {
       return image;
    }
    
@@ -366,6 +367,9 @@ public class FaceInfo
       }
       if ((featureMask & FEATURE_DARK_GLASSES) != 0) {
          features.add("dark glasses");
+      }
+      if ((featureMask & FEATURE_DISTORTING_MEDICAL_CONDITION) != 0) {
+         features.add("distorting medical condition (which could impact feature point detection)");
       }
       StringBuffer out = new StringBuffer();
       for (Iterator it = features.iterator(); it.hasNext(); ) {

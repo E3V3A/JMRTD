@@ -26,6 +26,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.util.HashMap;
@@ -84,9 +85,9 @@ public class ImagePanel extends JPanel
     *
     * @param image the image.
     */
-   public void setImage(BufferedImage image) {
+   public void setImage(Image image) {
       setVisible(false);
-      this.image = image;
+      this.image = (BufferedImage)image; // FIXME: what if image param is not a BufferedImage?
       setVisible(true);
    }
 
