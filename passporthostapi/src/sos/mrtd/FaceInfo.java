@@ -119,13 +119,13 @@ public class FaceInfo
    
    /** Source type based on Sectin 5.7.6 of ISO 19794-5. */
    public static final int SOURCE_TYPE_UNSPECIFIED = 0x00,
-                            SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE = 0x01,
-                            SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM = 0x02,
-                            SOURCE_TYPE_STATIC_PHOTO_SCANNER = 0x03,
-                            SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE = 0x04,
-                            SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM = 0x05,
-                            SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM = 0x06,
-                            SOURCE_TYPE_UNKNOWN = 0x07;
+                           SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE = 0x01,
+                           SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM = 0x02,
+                           SOURCE_TYPE_STATIC_PHOTO_SCANNER = 0x03,
+                           SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE = 0x04,
+                           SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM = 0x05,
+                           SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM = 0x06,
+                           SOURCE_TYPE_UNKNOWN = 0x07;
    
    private long faceImageBlockLength;
    private int gender;
@@ -580,5 +580,32 @@ public class FaceInfo
     */
    public int getHairColor() {
       return hairColor;
+   }
+
+   /**
+    * Gets the face image type.
+    * 
+    * @return face image type
+    */
+   public int getFaceImageType() {
+      return faceImageType;
+   }
+
+   /**
+    * Gets the quality.
+    * 
+    * @return quality
+    */
+   public int getQuality() {
+      return quality;
+   }
+
+   /**
+    * Gets the source type (camera, scanner, etc).
+    * 
+    * @return source type
+    */
+   public int getSourceType() {
+      return sourceType;
    }
 }
