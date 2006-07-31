@@ -213,11 +213,19 @@ public class FaceInfo
          height = 600;
       }
 
-      /* Read JPEG2000 data */
+      /*
+       * Read image data, image data type code based on Section 5.8.1
+       * ISO 19794-5
+       */
       switch (imageDataType) {
-      case IMAGE_DATA_TYPE_JPEG: image = readImage(dataIn, "image/jpeg"); break;
-      case IMAGE_DATA_TYPE_JPEG2000: image = readImage(dataIn, "image/jpeg2000"); break;
-      default: throw new IOException("Unknown image data type!");
+      case IMAGE_DATA_TYPE_JPEG:
+         image = readImage(dataIn, "image/jpeg");
+         break;
+      case IMAGE_DATA_TYPE_JPEG2000:
+         image = readImage(dataIn, "image/jpeg2000");
+         break;
+      default:
+         throw new IOException("Unknown image data type!");
       }
       
       /* Set width and height for real. */
@@ -291,9 +299,9 @@ public class FaceInfo
    
    private String genderToString() {
       switch(gender) {
-         case GENDER_UNSPECIFIED: return "unspecified";
-         case GENDER_MALE: return "male";
-         case GENDER_FEMALE: return "female";
+      case GENDER_UNSPECIFIED: return "unspecified";
+      case GENDER_MALE: return "male";
+      case GENDER_FEMALE: return "female";
       }
       return "unknown";
    }
@@ -436,7 +444,75 @@ public class FaceInfo
       }
       return "unknown";
    }
+   
+   /**
+    * Gets the expression
+    * (neutral, smiling, eyebrow raised, etc).
+    * 
+    * @return expression
+    */
+   public short getExpression() {
+      return expression;
+   }
 
+   /**
+    * Gets the eye color
+    * (black, blue, brown, etc).
+    * 
+    * @return eye color
+    */
+   public int getEyeColor() {
+      return eyeColor;
+   }
+
+   /**
+    * Gets the gender
+    * (male, female, etc).
+    * 
+    * @return gender
+    */
+   public int getGender() {
+      return gender;
+   }
+
+   /**
+    * Gets the hair color
+    * (bald, black, blonde, etc).
+    * 
+    * @return hair color
+    */
+   public int getHairColor() {
+      return hairColor;
+   }
+
+   /**
+    * Gets the face image type.
+    * 
+    * @return face image type
+    */
+   public int getFaceImageType() {
+      return faceImageType;
+   }
+
+   /**
+    * Gets the quality.
+    * 
+    * @return quality
+    */
+   public int getQuality() {
+      return quality;
+   }
+
+   /**
+    * Gets the source type
+    * (camera, scanner, etc).
+    * 
+    * @return source type
+    */
+   public int getSourceType() {
+      return sourceType;
+   }
+   
    /**
     * Feature points as described in Section 5.6.3 of ISO/IEC FCD 19794-5.
     * 
@@ -544,68 +620,5 @@ public class FaceInfo
          out.append(")");
          return out.toString();
       }
-   }
-
-   /**
-    * Gets the expression.
-    * 
-    * @return expression
-    */
-   public short getExpression() {
-      return expression;
-   }
-
-   /**
-    * Gets the eye color.
-    * 
-    * @return eye color
-    */
-   public int getEyeColor() {
-      return eyeColor;
-   }
-
-   /**
-    * Gets the gender.
-    * 
-    * @return gender
-    */
-   public int getGender() {
-      return gender;
-   }
-
-   /**
-    * Gets the hair color.
-    * 
-    * @return hair color
-    */
-   public int getHairColor() {
-      return hairColor;
-   }
-
-   /**
-    * Gets the face image type.
-    * 
-    * @return face image type
-    */
-   public int getFaceImageType() {
-      return faceImageType;
-   }
-
-   /**
-    * Gets the quality.
-    * 
-    * @return quality
-    */
-   public int getQuality() {
-      return quality;
-   }
-
-   /**
-    * Gets the source type (camera, scanner, etc).
-    * 
-    * @return source type
-    */
-   public int getSourceType() {
-      return sourceType;
    }
 }
