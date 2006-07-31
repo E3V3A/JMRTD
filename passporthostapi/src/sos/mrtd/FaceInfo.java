@@ -112,11 +112,11 @@ public class FaceInfo
                             IMAGE_DATA_TYPE_JPEG2000 = 0x01;
    
    /** Color space code based on Section 5.7.4 of ISO 19794-5. */
-   private static final int COLOR_SPACE_UNSPECIFIED = 0x00,
-                            COLOR_SPACE_RGB24 = 0x01,
-                            COLOR_SPACE_YUV422 = 0x02,
-                            COLOR_SPACE_GRAY8 = 0x03,
-                            COLOR_SPACE_OTHER = 0x04;
+   public static final int IMAGE_COLOR_SPACE_UNSPECIFIED = 0x00,
+                           IMAGE_COLOR_SPACE_RGB24 = 0x01,
+                           IMAGE_COLOR_SPACE_YUV422 = 0x02,
+                           IMAGE_COLOR_SPACE_GRAY8 = 0x03,
+                           IMAGE_COLOR_SPACE_OTHER = 0x04;
    
    /** Source type based on Section 5.7.6 of ISO 19794-5. */
    public static final int SOURCE_TYPE_UNSPECIFIED = 0x00,
@@ -128,18 +128,16 @@ public class FaceInfo
                            SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM = 0x06,
                            SOURCE_TYPE_UNKNOWN = 0x07;
    
+   private static final int YAW = 0, PITCH = 1, ROLL = 2;
+   
    private long faceImageBlockLength;
    private int gender;
    private int eyeColor;
    private int hairColor;
    private long featureMask;
    private short expression;
-   private int poseYawAngle,
-      poseYawAngleUncertainty,
-      posePitchAngle,
-      posePitchAngleUncertainty,
-      poseRollAngle,
-      poseRollAngleUncertainty;
+   private int[] poseAngle;
+   private int[] poseAngleUncertainty;
    
    private FeaturePoint[] featurePoints;
    
@@ -173,15 +171,17 @@ public class FaceInfo
       featureMask = dataIn.readUnsignedByte();
       featureMask = (featureMask << 16) | dataIn.readUnsignedShort();
       expression = dataIn.readShort();
+      poseAngle = new int[3];
       int by = dataIn.readUnsignedByte();
-      poseYawAngle = 2 * ((by <= 91) ? (by - 1) : (by - 181));
+      poseAngle[YAW] = 2 * ((by <= 91) ? (by - 1) : (by - 181));
       int bp = dataIn.readUnsignedByte();
-      posePitchAngle = 2 * ((bp <= 91) ? (bp - 1) : (bp - 181));
+      poseAngle[PITCH] = 2 * ((bp <= 91) ? (bp - 1) : (bp - 181));
       int br = dataIn.readUnsignedByte();
-      poseRollAngle = 2 * ((br <= 91) ? (br - 1) : (br - 181));
-      poseYawAngleUncertainty = dataIn.readUnsignedByte();
-      posePitchAngleUncertainty = dataIn.readUnsignedByte();
-      poseRollAngleUncertainty = dataIn.readUnsignedByte();
+      poseAngle[ROLL] = 2 * ((br <= 91) ? (br - 1) : (br - 181));
+      poseAngleUncertainty = new int[3];
+      poseAngleUncertainty[YAW] = dataIn.readUnsignedByte();
+      poseAngleUncertainty[PITCH] = dataIn.readUnsignedByte();
+      poseAngleUncertainty[ROLL] = dataIn.readUnsignedByte();
       
       /* Feature Point(s) (optional) (8 * featurePointCount) */
       featurePoints = new FeaturePoint[featurePointCount];
@@ -282,6 +282,8 @@ public class FaceInfo
       out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
       out.append("Expression: "); out.append(expressionToString()); out.append("\n");
       out.append("Pose angle: "); out.append(poseAngleToString()); out.append("\n");
+      out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
+      out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
       out.append("Feature points: "); out.append("\n");
       if (featurePoints == null || featurePoints.length == 0) {
          out.append("   (none)\n");
@@ -292,8 +294,6 @@ public class FaceInfo
             out.append("\n");
          }
       }
-      out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
-      out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
       return out.toString();
    }
    
@@ -406,19 +406,19 @@ public class FaceInfo
    private String poseAngleToString() {
       StringBuffer out = new StringBuffer();
       out.append("(");
-      out.append("y: "); out.append(poseYawAngle);
-      if (poseYawAngleUncertainty != 0) {
-         out.append(" ("); out.append(poseYawAngleUncertainty); out.append(")");
+      out.append("y: "); out.append(poseAngle[YAW]);
+      if (poseAngleUncertainty[YAW] != 0) {
+         out.append(" ("); out.append(poseAngleUncertainty[YAW]); out.append(")");
       }
       out.append(", ");
-      out.append("p:"); out.append(posePitchAngle);
-      if (posePitchAngleUncertainty != 0) {
-         out.append(" ("); out.append(posePitchAngleUncertainty); out.append(")");
+      out.append("p:"); out.append(poseAngle[PITCH]);
+      if (poseAngleUncertainty[PITCH] != 0) {
+         out.append(" ("); out.append(poseAngleUncertainty[PITCH]); out.append(")");
       }
       out.append(", ");
-      out.append("r: "); out.append(poseRollAngle);
-      if (poseRollAngleUncertainty != 0) {
-         out.append(" ("); out.append(poseRollAngleUncertainty); out.append(")");
+      out.append("r: "); out.append(poseAngle[ROLL]);
+      if (poseAngleUncertainty[ROLL] != 0) {
+         out.append(" ("); out.append(poseAngleUncertainty[ROLL]); out.append(")");
       }
       out.append(")");
       return out.toString();
@@ -436,14 +436,35 @@ public class FaceInfo
    }
    
    private String sourceTypeToString() {
-      switch(sourceType) {
-      case SOURCE_TYPE_UNSPECIFIED: return "unspecified";
-      case SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE: return "static photograph from an unknown source";
-      case SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM: return "static photograph from a digital still-image camera";
-      case SOURCE_TYPE_STATIC_PHOTO_SCANNER: return "static photograph fram a scanner";
-      case SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE: return "single video frame from an unknown source";
-      case SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM: return "single video frame from an analogue camera";
-      case SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM: return "single video frame from a digital camera";
+      switch (sourceType) {
+      case SOURCE_TYPE_UNSPECIFIED:
+         return "unspecified";
+      case SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE:
+         return "static photograph from an unknown source";
+      case SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM:
+         return "static photograph from a digital still-image camera";
+      case SOURCE_TYPE_STATIC_PHOTO_SCANNER:
+         return "static photograph fram a scanner";
+      case SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE:
+         return "single video frame from an unknown source";
+      case SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM:
+         return "single video frame from an analogue camera";
+      case SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM:
+         return "single video frame from a digital camera";
+      }
+      return "unknown";
+   }
+   
+   private String imageColorSpaceToString() {
+      switch(imageColorSpace) {
+      case IMAGE_COLOR_SPACE_UNSPECIFIED: return "unspecified";
+      case IMAGE_COLOR_SPACE_RGB24: return "24 bit RGB";
+      case IMAGE_COLOR_SPACE_YUV422: return "YUV422";
+      case IMAGE_COLOR_SPACE_GRAY8: return "8 bit grayscale";
+      case IMAGE_COLOR_SPACE_OTHER: return "other";
+      }
+      if (imageColorSpace >= 128) {
+         return "unknown (vendor specific)";
       }
       return "unknown";
    }
@@ -489,7 +510,8 @@ public class FaceInfo
    }
 
    /**
-    * Gets the face image type.
+    * Gets the face image type
+    * (full frontal, token frontal, etc).
     * 
     * @return face image type
     */
@@ -498,7 +520,7 @@ public class FaceInfo
    }
 
    /**
-    * Gets the quality.
+    * Gets the quality as unsigned integer.
     * 
     * @return quality
     */
@@ -514,6 +536,49 @@ public class FaceInfo
     */
    public int getSourceType() {
       return sourceType;
+   }
+   
+   /**
+    * Gets the image color space
+    * (rgb, grayscale, etc).
+    * 
+    * @return image color space
+    */
+   public int getImageColorSpace() {
+      return imageColorSpace;
+   }
+
+   /**
+    * Gets the device type.
+    * 
+    * @return device type
+    */
+   public int getDeviceType() {
+      return deviceType;
+   }
+   
+   /**
+    * Gets the pose angle as an integer array of length 3,
+    * containing yaw, pitch, and roll angle in degrees.
+    * 
+    * @return an integer array of length 3
+    */
+   public int[] getPoseAngle() {
+      int[] result = new int[3];
+      System.arraycopy(poseAngle, 0, result, 0, result.length);
+      return result;
+   }
+   
+   /**
+    * Gets the pose angle uncertainty as an integer array of length 3,
+    * containing yaw, pitch, and roll angle uncertainty in degrees.
+    * 
+    * @return an integer array of length 3
+    */
+   public int[] getPoseAngleUncertainty() {
+      int[] result = new int[3];
+      System.arraycopy(poseAngleUncertainty, 0, result, 0, result.length);
+      return result;
    }
    
    /**
