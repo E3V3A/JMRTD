@@ -261,14 +261,15 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    service.createFile(wrapper,
-                                       PassportInitService.AAPRIVKEY_FID,
-                                       (short) AAPriv.available());
-                    service.selectFile(wrapper,
-                                       PassportInitService.AAPRIVKEY_FID);
-                    service.writeFile(wrapper,
-                                      PassportInitService.AAPRIVKEY_FID,
-                                      AAPriv);
+                    service.putPrivateKey(wrapper, keyPair.getPrivate());
+                    //                    service.createFile(wrapper,
+//                                       PassportInitService.AAPRIVKEY_FID,
+//                                       (short) AAPriv.available());
+//                    service.selectFile(wrapper,
+//                                       PassportInitService.AAPRIVKEY_FID);
+//                    service.writeFile(wrapper,
+//                                      PassportInitService.AAPRIVKEY_FID,
+//                                      AAPriv);
                 } catch (IOException e) {
                     // TODO Auto-generated catch block
                     e.printStackTrace();

@@ -32,7 +32,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.List;
+import java.util.Iterator;
 
 import sos.util.Hex;
 
@@ -100,7 +100,6 @@ public class BERTLVObject
 
    /** Value, is usually just a byte[]. */
    private Object value;
-   private byte[] valueBytes;
 
    /**
     * Creates a new TLV object by parsing <code>in</code>.
@@ -112,21 +111,7 @@ public class BERTLVObject
    public static BERTLVObject getInstance(InputStream in) throws IOException {
       return new BERTLVObject(new DataInputStream(in));
    }
- 
-   /**
-    * Constructs a new TLV object with tag <code>tag</code>.
-    * @param tag of TLV object.
-    * @throws IOException if something goes wrong.
-    */
-   public BERTLVObject(int tag) 
-   throws IOException {
-       byte[] tagBytes = {(byte) ((tag >>> 24) & 0xff),
-                          (byte) ((tag >>> 16) & 0xff),
-                          (byte) ((tag >>> 8) & 0xff),
-                          (byte) (tag & 0xff)};
-       readTag(new DataInputStream(new ByteArrayInputStream(tagBytes)));
-   }
-   
+    
    /**
     * Constructs a new TLV object with tag <code>tag</code> containing 
     * data <code>value</code>.
@@ -134,23 +119,34 @@ public class BERTLVObject
     * @param value data of TLV object.
     * @throws IOException if something goes wrong.
     */
-   public BERTLVObject(int tag, byte[] value) 
+   public BERTLVObject(int tagByte, Object value) 
    throws IOException {
-       this(tag, new DataInputStream(new ByteArrayInputStream(value)));
-   }
-   
-   /**
-    * Constructs a new TLV object with tag <code>tag</code> containing 
-    * data <code>value</code>.
-    * @param tag of TLV object.
-    * @param value data of TLV object.
-    * @throws IOException if something goes wrong.
-    */
-   public BERTLVObject(int tag, DataInputStream value) 
-   throws IOException {
-       this(tag);
-       readLength(value);
-       readValue(value);
+       
+       byte[] tag = { (byte)(tagByte & 0xff) };
+       readTag(new DataInputStream(new ByteArrayInputStream(tag)));
+       if(isPrimitive) {
+           byte[] valueBytes;
+           if(value instanceof byte[]) {
+               valueBytes = (byte[])value;
+           }
+           else {
+               throw new IOException("unknown type of value argument (fix BERTLVObject constructor)");
+           }
+           length = valueBytes.length;
+           this.value = valueBytes;               
+       } else {
+           if(value instanceof byte[]) {
+               byte[] valueBytes = (byte[])value; 
+               readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)));
+           }
+           else if(value instanceof BERTLVObject) {
+               this.value = new BERTLVObject[1];
+               ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
+           } else {
+               throw new IOException("unknown type of value argument (fix BERTLVObject constructor)");
+           }
+       }
+
    }
    
    /**
@@ -164,8 +160,7 @@ public class BERTLVObject
       readLength(in);
       readValue(in);
    }
-
-
+   
    private void readTag(DataInputStream in) throws IOException {
       int b = in.readUnsignedByte();
       while (b == 0x00000000 || b == 0x000000FF) {
@@ -217,8 +212,8 @@ public class BERTLVObject
    }
 
    private void readValue(DataInputStream in) throws IOException {
-      valueBytes = new byte[length];
-      in.readFully(valueBytes);
+      value = new byte[length];
+      in.readFully((byte[])value);
       if (isPrimitive) {
          /*
           * Primitive, the value consists of 0 or more Simple-TLV objects,
@@ -227,11 +222,11 @@ public class BERTLVObject
           */   	  
     	  if (tagClass == UNIVERSAL_CLASS)
     	  switch (tag) {
-    	     case INTEGER_TYPE_TAG: value = valueBytes; break;
-    	     case BIT_STRING_TYPE_TAG: value = valueBytes; break;
-       	     case OCTET_STRING_TYPE_TAG: value = valueBytes; break;
+    	     case INTEGER_TYPE_TAG:  break;
+    	     case BIT_STRING_TYPE_TAG: break;
+       	     case OCTET_STRING_TYPE_TAG: break;
     	     case NULL_TYPE_TAG: value = null; break;
-    	     case OBJECT_IDENTIFIER_TYPE_TAG: value = valueBytes; break;
+    	     case OBJECT_IDENTIFIER_TYPE_TAG: break;
              case UTF8_STRING_TYPE_TAG:
     	     case PRINTABLE_STRING_TYPE_TAG:
     	     case T61_STRING_TYPE_TAG:
@@ -239,18 +234,16 @@ public class BERTLVObject
              case VISIBLE_STRING_TYPE_TAG:
              case GENERAL_STRING_TYPE_TAG:
              case UNIVERSAL_STRING_TYPE_TAG:
-             case BMP_STRING_TYPE_TAG: value = new String(valueBytes); break;
-    	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String(valueBytes)); break;
-    	     default: value = valueBytes;
-    	  } else {
-             value = valueBytes;   
-          }
+             case BMP_STRING_TYPE_TAG: value = new String((byte[])value); break;
+    	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String((byte[])value)); break;
+    	     default:
+    	  }
       } else {
          /*
           * Not primitive, the value itself consists of 0 or more
           * BER-TLV objects.
           */
-         in = new DataInputStream(new ByteArrayInputStream(valueBytes));
+         in = new DataInputStream(new ByteArrayInputStream((byte[])value));
          value = readSubObjects(in);
       }
    }
@@ -271,11 +264,17 @@ public class BERTLVObject
     * @param object to add as a subobject.
     */
    public void addSubObject(BERTLVObject object) {
-      if(value instanceof BERTLVObject[]) {
-          List l = Arrays.asList((BERTLVObject[])value);
-          ArrayList subObjects = new ArrayList(l);
+       ArrayList subObjects;
+       
+       if(!isPrimitive) {
+          if(value != null) {
+              subObjects = (ArrayList)Arrays.asList((BERTLVObject[])value);
+          } else {
+              subObjects = new ArrayList();
+              value = new BERTLVObject[1];
+          }
           subObjects.add(object);
-          value = subObjects.toArray();
+          subObjects.toArray((BERTLVObject[])value);
       }
    }
    
@@ -320,10 +319,27 @@ public class BERTLVObject
     * @return the length of the encoded value.
     */
    public int getLength() {
-      return length;
+       int length=0;
+       
+       if(isPrimitive) {
+           length = this.length;
+       }
+       else {
+           Iterator iter = Arrays.asList((BERTLVObject[])value).iterator();
+           while(iter.hasNext()) {
+               BERTLVObject o = (BERTLVObject)iter.next();
+               length += o.getTagAsBytes().length;
+               length += o.getLengthAsBytes().length;
+               length += ((BERTLVObject)o).getLength();
+           }
+       }
+       
+       return length;
    }
    
    public byte[] getLengthAsBytes() {
+       int length = getLength();
+      
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       if (length < 0x00000080) {
          /* short form */
@@ -351,10 +367,25 @@ public class BERTLVObject
    /**
     * The value of this object as a byte array.
     * 
+    * Similar to getEncoded, but does not contain length and tag data.
+    * 
     * @return the value of this object as a byte array
     */
-   public byte[] getValueAsBytes() {
-      return valueBytes;
+   public byte[] getValueAsBytes() 
+   throws IOException {
+       
+       if(isPrimitive) {
+           return (byte[])value;
+       } else {
+           ByteArrayOutputStream result = new ByteArrayOutputStream();
+
+           BERTLVObject[] chldrn = (BERTLVObject[])getValue();
+           for(int i=0; i<chldrn.length; i++) {
+               result.write(chldrn[i].getValueAsBytes());
+           }    
+           
+           return result.toByteArray();
+       }
    }
    
    /**
@@ -385,7 +416,14 @@ public class BERTLVObject
       try {
          out.write(getTagAsBytes());
          out.write(getLengthAsBytes());
-         out.write(getValueAsBytes());
+         if(isPrimitive) {
+             out.write((byte[])getValue());
+         } else {
+             BERTLVObject[] chldrn = (BERTLVObject[])getValue();
+             for(int i=0; i<chldrn.length; i++) {
+                 out.write(chldrn[i].getEncoded());
+             }
+         }
       } catch (IOException ioe) {
          ioe.printStackTrace();
       }
@@ -471,7 +509,7 @@ public class BERTLVObject
       StringBuffer result = new StringBuffer();
       result.append(prefix); 
       result.append(tagToString()); result.append(" ");
-      result.append(Integer.toString(length)); result.append(" ");
+      result.append(Integer.toString(getLength())); result.append(" ");
       if (value instanceof byte[]) {
          byte[] valueData = (byte[])value;
          result.append("'0x");

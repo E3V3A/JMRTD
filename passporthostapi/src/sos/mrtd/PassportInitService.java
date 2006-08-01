@@ -41,13 +41,13 @@ import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
 import sos.util.ASN1Utils;
+import sos.util.Hex;
 
 /**
  * Service for initializing blank passport reference applets.
  * 
- * Following MO's design, this class must be split in two:
- *  - PassportInitService
- *  - PassportInitApduService
+ * Following MO's design, this class must be split in two: - PassportInitService -
+ * PassportInitApduService
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 
@@ -55,17 +55,26 @@ import sos.util.ASN1Utils;
 public class PassportInitService extends PassportApduService {
     public static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
     public static final short AAPRIVKEY_FID = 0x0001;
-    private static final byte INS_PUT_DATA = (byte)0xda;;
-    private static final byte PRIVKEY_TAG = 0x41;
-    private static final byte MRZ_TAG = 0x42;
+    private static final byte INS_PUT_DATA = (byte) 0xda;;
     
+    private static final byte MRZ_TAG = 0x42;
+    private static final byte PRIVMODULUS_TAG = 0x60;
+    private static final byte PRIVEXPONENT_TAG = 0x61;
+
     public PassportInitService(CardService service)
             throws GeneralSecurityException {
         super(service);
     }
 
-    public KeyPair generateAAKeyPair() throws GeneralSecurityException,
-            NoSuchAlgorithmException {
+    /**
+     * Generates an RSA keypair fit for Active Authentication.
+     * 
+     * @return a KeyPair
+     * @throws GeneralSecurityException
+     * @throws NoSuchAlgorithmException when BouncyCastle provider cannot be found. 
+     */
+    public static KeyPair generateAAKeyPair() 
+    throws GeneralSecurityException, NoSuchAlgorithmException {
         String preferredProvider = "BC";
         Provider provider = Security.getProvider(preferredProvider);
         if (provider == null) {
@@ -79,65 +88,113 @@ public class PassportInitService extends PassportApduService {
         return keyPair;
     }
 
+    /***
+     * Creates a PUT_DATA APDU.
+     * 
+     * @param p1 byte of APDU
+     * @param p2 byte of APDU
+     * @param data bytes of APDU
+     * @return a PUT_DATA apdu.
+     */
     public Apdu createPutDataApdu(byte p1, byte p2, byte[] data) {
         byte cla = 0;
         byte ins = INS_PUT_DATA;
-        
+
         return new Apdu(cla, ins, p1, p2, data);
     }
-    
-    public void putData(SecureMessagingWrapper wrapper, byte p1, byte p2, byte[] data) {
+
+    /***
+     * Sends a PUT_DATA APDU to the card.
+     * 
+     * 
+     * @param wrapper for secure mesaging
+     * @param p1 byte of APDU
+     * @param p2 byte of APDU
+     * @param data of APDU
+     */
+    public byte[] putData(SecureMessagingWrapper wrapper, byte p1, byte p2,
+            byte[] data) {
         Apdu apdu = createPutDataApdu(p1, p2, data);
-        
-        if(wrapper != null) {
+
+        if (wrapper != null) {
             apdu.wrapWith(wrapper);
         }
-        sendAPDU(apdu);
+        byte[] rapdu = sendAPDU(apdu);
+        if (wrapper != null) {
+            rapdu = wrapper.unwrap(rapdu, rapdu.length);
+        }
+        byte[] result = new byte[rapdu.length - 2];
+        System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
+        return result;
     }
 
-    public void putPrivateKey(SecureMessagingWrapper wrapper, PrivateKey key) 
-    throws IOException {
+    /***
+     * Sends a PUT_DATA command to the card to set the private keys used for Active Authentication.
+     * 
+     * @param wrapper for secure mesaging.
+     * @param key holding the private key data.
+     * @throws IOException on error.
+     */
+    public void putPrivateKey(SecureMessagingWrapper wrapper, PrivateKey key)
+            throws IOException {
         byte[] encodedPriv = key.getEncoded();
         BERTLVObject encodedPrivObject = BERTLVObject.getInstance(new ByteArrayInputStream(encodedPriv));
-        byte[] privKeyData = encodedPrivObject.getChildByIndex(2).getValueAsBytes();
-        BERTLVObject privKeyDataObject = BERTLVObject.getInstance(new ByteArrayInputStream(privKeyData));        
-        byte[] privModulus =  privKeyDataObject.getChildByIndex(1).getValueAsBytes();
-        byte[] privExponent =  privKeyDataObject.getChildByIndex(3).getValueAsBytes();
-
+        byte[] privKeyData = (byte[])encodedPrivObject.getChildByIndex(2)
+                                              .getValue();
+        BERTLVObject privKeyDataObject = BERTLVObject.getInstance(new ByteArrayInputStream(privKeyData));
+        byte[] privModulus = (byte[])privKeyDataObject.getChildByIndex(1)
+                                              .getValue();
+        byte[] privExponent = (byte[])privKeyDataObject.getChildByIndex(3)
+                                               .getValue();
+        
         putPrivateKey(wrapper, privModulus, privExponent);
     }
-    
-    private void putPrivateKey(SecureMessagingWrapper wrapper, 
-             byte[] privModulus, byte[]  privExponent) 
-    throws IOException {
-        if(privExponent.length != 128 || privExponent.length != 128) {
-            return;
-        }
+
+    private void putPrivateKey(SecureMessagingWrapper wrapper,
+            byte[] privModulus, byte[] privExponent) throws IOException {
+
+        BERTLVObject object = 
+                new BERTLVObject(PRIVMODULUS_TAG,
+                                 new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
+                                                  privModulus));
+        System.out.println("encoded: " + Hex.bytesToHexString(object.getEncoded()));
         
-        BERTLVObject object = new BERTLVObject(PRIVKEY_TAG);
-        object.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, 
-                                             privModulus));
-        object.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, 
+        putData(wrapper, (byte) 0, PRIVMODULUS_TAG, object.getEncoded());
+
+        /*
+        object = new BERTLVObject(PRIVEXPONENT_TAG);
+        object.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
                                              privExponent));
         
-        putData(wrapper, (byte)0, PRIVKEY_TAG, object.getEncoded());           
+        putData(wrapper, (byte) 0, PRIVEXPONENT_TAG, object.getEncoded());
+        */
     }
 
-    public void createFile(SecureMessagingWrapper wrapper, short fid,
-            short len) {
-        
-        sendCreateFile(wrapper, fid, len);
+    /***
+     * Sends a CREATE_FILE APDU to the card.
+     * 
+     * @param wrapper for secure messaging.
+     * @param fid (file identifier) of the new file.
+     * @param length of the new file.
+     */
+    public void createFile(SecureMessagingWrapper wrapper, short fid, short length) {
+        sendCreateFile(wrapper, fid, length);
     }
 
-    // FIXME
-    public Apdu createCreateFileAPDU(short fid, short len) {
+    /***
+     * Creates a CREATE_FILE APDU.
+     * 
+     * @param fid (file indentifier) of the new file,
+     * @param length of the new file.
+     * @return a CREATE_FILE APDU.
+     */
+    public Apdu createCreateFileAPDU(short fid, short length) {
         byte p1 = (byte) 0x00;
         byte p2 = (byte) 0x00;
         int le = 0;
-        byte[] data = { 0x63, 4, (byte)((len >>> 8) & 0xff), 
-                                 (byte)(len & 0xff), 
-                                 (byte)((fid >>> 8) & 0xff), 
-                                 (byte)(fid & 0xff) };
+        byte[] data = { 0x63, 4, (byte) ((length >>> 8) & 0xff),
+                (byte) (length & 0xff), (byte) ((fid >>> 8) & 0xff),
+                (byte) (fid & 0xff) };
         Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
                              ISO7816.INS_CREATE_FILE,
                              p1,
@@ -147,9 +204,18 @@ public class PassportInitService extends PassportApduService {
         return apdu;
     }
 
+    
+    /***
+     * Sends a CREATE_FILE APDU to the card.
+     * 
+     * @param wrapper for secure messaging.
+     * @param fid of the new file
+     * @param length of the new file
+     * @return a return APDU with the response from the card.
+     */
     public byte[] sendCreateFile(SecureMessagingWrapper wrapper, short fid,
-            short len) {
-        Apdu capdu = createCreateFileAPDU(fid, len);
+            short length) {
+        Apdu capdu = createCreateFileAPDU(fid, length);
         if (wrapper != null) {
             capdu.wrapWith(wrapper);
         }
@@ -191,9 +257,31 @@ public class PassportInitService extends PassportApduService {
 
     }
 
+    /** 
+     * Returns the maximum allowable plaintext data length that causes the 
+     * wrapped apdu length to fit in a byte.
+     * 
+     * @param a wrapper.
+     * @return additional length of wrapped APDU.
+     */
+    private int getPlainDataMaxLength(SecureMessagingWrapper wrapper) {
+        int maxWithoutSM = 0xff;
+        byte[] dummyData = new byte[maxWithoutSM];
+        Apdu dummy = new Apdu((byte)0, (byte)0, (byte)0, (byte)0, dummyData);
+        byte[] wrappedApdu = wrapper.wrap(dummy.getCommandApduBuffer());
+        int x = wrappedApdu.length - dummy.getCommandApduBuffer().length;
+        int lowestMod8 = ((maxWithoutSM - x) / 8) * 8; 
+        return lowestMod8;
+    }
+
+
     public void writeFile(SecureMessagingWrapper wrapper, short fid,
             InputStream i) throws IOException {
-        byte[] data = new byte[0xdf]; // FIXME: magic
+        int length = 0xff;
+        if (wrapper != null) {
+            length -= 32;
+        }
+        byte[] data = new byte[length];
 
         int r = 0;
         short offset = 0;
@@ -230,16 +318,15 @@ public class PassportInitService extends PassportApduService {
         sendAPDU(capdu);
     }
 
-    public InputStream createDG15(PublicKey key) 
-    throws IOException {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-        
-      byte[] keyBytes = key.getEncoded();
-      
-      out.write(0x6f);
-      out.write(ASN1Utils.lengthId(keyBytes.length));
-      out.write(keyBytes);
-      
-      return new ByteArrayInputStream(out.toByteArray());
+    public InputStream createDG15(PublicKey key) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+        byte[] keyBytes = key.getEncoded();
+
+        out.write(0x6f);
+        out.write(ASN1Utils.lengthId(keyBytes.length));
+        out.write(keyBytes);
+
+        return new ByteArrayInputStream(out.toByteArray());
     }
 }
