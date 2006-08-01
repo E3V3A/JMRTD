@@ -96,8 +96,12 @@ public class BACPanel extends JPanel
       }
 
       public void actionPerformed(ActionEvent ae) {
-         rndICC = apduService.sendGetChallenge();
-         challengeField.setValue(rndICC);
+         byte[] tmpRndICC = new byte[8];
+         tmpRndICC = apduService.sendGetChallenge();
+         if (tmpRndICC != null && tmpRndICC.length == 8) {
+            rndICC = tmpRndICC;
+            challengeField.setValue(rndICC);
+         }
       }
       
       public byte[] getChallenge() {
@@ -175,8 +179,8 @@ public class BACPanel extends JPanel
          challengeField = new HexField(8);
          // challengeField.setValue(Hex.hexStringToBytes("781723860C06C226"));
          keyField = new HexField(16);
-       //  keyField.setValue(Hex
-       //        .hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
+         //  keyField.setValue(Hex
+         //        .hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
          JButton authButton = new JButton("Mutual Authenticate");
          authButton.addActionListener(this);
          top.add(new JLabel("RND.IFD: "));
@@ -216,8 +220,8 @@ public class BACPanel extends JPanel
          try {
             rndIFD = challengeField.getValue();
             kIFD = keyField.getValue();
-            byte[] plaintext = apduService.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc,
-                  kMac);
+            byte[] plaintext =
+               apduService.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
             plaintextField.setValue(plaintext);
             if (kICC == null || kICC.length < 16) {
                kICC = new byte[16];
@@ -239,7 +243,5 @@ public class BACPanel extends JPanel
             e.printStackTrace();
          }
       }
-   }
-   
-   
+   } 
 }
