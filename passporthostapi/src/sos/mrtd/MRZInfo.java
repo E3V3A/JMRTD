@@ -30,7 +30,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 
 /**
- * Data structure for storing the MRZ information in DG1.
+ * Data structure for storing the MRZ information
+ * as found in DG1.
  * Based on ICAO Doc 9303 part 1.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
@@ -39,7 +40,8 @@ import java.util.GregorianCalendar;
  */
 public class MRZInfo
 {
-   private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+   private static final SimpleDateFormat SDF =
+      new SimpleDateFormat("yyMMdd");
    
    private String documentType;
    private String issuingState;
@@ -48,7 +50,7 @@ public class MRZInfo
    private String documentNumber;
    private String personalNumber;
    private Date dateOfBirth;
-   private String sex;
+   private String gender;
    private Date dateOfExpiry;
    private char documentNumberCheckDigit;
    private char dateOfBirthCheckDigit;
@@ -56,16 +58,29 @@ public class MRZInfo
    private char personalNumberCheckDigit;
    private char compositeCheckDigit;
    
+   /**
+    * Constructs a new MRZ.
+    * 
+    * @param documentType document type
+    * @param issuingState issuing state 3 letter abreviation
+    * @param name card holder name
+    * @param documentNumber document number
+    * @param nationality nationality 3 letter abreviation
+    * @param dateOfBirth date of birth
+    * @param gender gender
+    * @param dateOfExpiry date of expiry
+    * @param personalNumber personal number
+    */
    public MRZInfo(String documentType, String issuingState, String name,
          String documentNumber, String nationality, Date dateOfBirth,
-         String sex, Date dateOfExpiry, String personalNumber) {
+         String gender, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
       this.name = name;
       this.documentNumber = documentNumber;
       this.nationality = nationality; 
       this.dateOfBirth = dateOfBirth;
-      this.sex = sex;
+      this.gender = gender;
       this.dateOfExpiry = dateOfExpiry;
       this.personalNumber = personalNumber;
       
@@ -85,7 +100,12 @@ public class MRZInfo
       this.compositeCheckDigit = checkDigit(composite.toString());
    }
    
-   public MRZInfo(InputStream in) {
+   /**
+    * Constructs a new MRZ.
+    * 
+    * @param in contains the contents of DG1 (without the tag and length)
+    */
+   MRZInfo(InputStream in) {
       try {
          DataInputStream dataIn = new DataInputStream(in);
          this.documentType = readDocumentType(dataIn);
@@ -93,14 +113,14 @@ public class MRZInfo
             /* Assume it's an I< document */
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
-            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.personalNumber = readPersonalNumber(dataIn, 14);
-            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.dateOfBirth = readDateOfBirth(dataIn);
-            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
-            this.sex = readSex(dataIn);
+            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
+            this.gender = readGender(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
-            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
             dataIn.skip(12);
             this.name = readName(dataIn, 30);
@@ -109,16 +129,16 @@ public class MRZInfo
             this.issuingState = readIssuingState(dataIn);
             this.name = readName(dataIn, 39);
             this.documentNumber = readDocumentNumber(dataIn, 9);
-            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
             this.dateOfBirth = readDateOfBirth(dataIn);
-            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
-            this.sex = readSex(dataIn);
+            this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
+            this.gender = readGender(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
-            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
             this.personalNumber = readPersonalNumber(dataIn, 14);
-            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
-            this.compositeCheckDigit = (char)dataIn.readUnsignedByte(); // check digit
+            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
+            this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
          }
       } catch (IOException ioe) {
          throw new IllegalArgumentException("Invalid MRZ input source");
@@ -160,7 +180,7 @@ public class MRZInfo
     * @throws IOException is something goes wrong
     */
    private String readName(DataInputStream in, int le) throws IOException {
-      byte[] data = new byte[le]; // FIXME: check if we have ID3 type document (otherwise 30 or 31 instead of 39)
+      byte[] data = new byte[le];
       in.readFully(data);
       for (int i = 0; i < data.length; i++) {
          /*
@@ -223,14 +243,15 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   private String readSex(DataInputStream in) throws IOException {
+   private String readGender(DataInputStream in) throws IOException {
       byte[] data = new byte[1];
       in.readFully(data);
       return new String(data).trim();
    }
    
    /**
-    * Reads the date of birth of the passport holder
+    * Reads the date of birth of the passport holder.
+    * Base year is 1900.
     * 
     * @return the date of birth
     * 
@@ -245,7 +266,8 @@ public class MRZInfo
    }
 
    /**
-    * Reads the date of expiry of this document
+    * Reads the date of expiry of this document.
+    * Base year = 2000.
     * 
     * @return the date of expiry
     * 
@@ -269,45 +291,104 @@ public class MRZInfo
       return cal.getTime();
    }
 
+   /**
+    * Gets the date of birth of the passport holder.
+    * 
+    * @return date of birth (with 1900 as base year)
+    */
    public Date getDateOfBirth() {
       return dateOfBirth;
    }
 
+   /**
+    * Gets the date of expiry
+    * 
+    * @return date of expiry (with 2000 as base year)
+    */
    public Date getDateOfExpiry() {
       return dateOfExpiry;
    }
 
+   /**
+    * Gets the document number.
+    * 
+    * @return document number
+    */
    public String getDocumentNumber() {
       return documentNumber;
    }
 
+   /**
+    * Gets the document type.
+    * 
+    * @return document type
+    */
    public String getDocumentType() {
       return documentType;
    }
 
+   /**
+    * Gets the issuing state
+    * 
+    * @return issuing state
+    */
    public String getIssuingState() {
       return issuingState;
    }
 
+   /**
+    * Gets the passport holder's name.
+    * 
+    * @return name (including &lt; signs)
+    */
    public String getName() {
       return name;
    }
 
+   /**
+    * Gets the passport holder's nationality.
+    * 
+    * @return a 3 letter country code
+    */
    public String getNationality() {
       return nationality;
    }
 
+   /**
+    * Gets the personal number.
+    * 
+    * @return personal number
+    */
    public String getPersonalNumber() {
       return personalNumber;
    }
 
-   public String getSex() {
-      return sex;
+   /**
+    * Gets the passport holder's gender.
+    * 
+    * @return gender
+    */
+   public String getGender() {
+      return gender;
    }
    
+   /**
+    * Creates a textual representation of this MRZ.
+    * This is the 2 or 3 line representation
+    * (depending on the document type) as it
+    * appears in the document. // check digit
+    * 
+    * @return the MRZ as text
+    * 
+    * @see java.lang.Object#toString()
+    */
    public String toString() {
       StringBuffer out = new StringBuffer();
       if (documentType.startsWith("I")) {
+         /* 
+          * FIXME: some composite check digit
+          *        should go into this one as well...
+          */
          out.append(documentType);
          out.append(issuingState);
          out.append(documentNumber);
@@ -317,7 +398,7 @@ public class MRZInfo
          out.append("\n");
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
-         out.append(sex);
+         out.append(gender);
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
@@ -334,7 +415,7 @@ public class MRZInfo
          out.append(nationality);
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
-         out.append(sex);
+         out.append(gender);
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(personalNumber);

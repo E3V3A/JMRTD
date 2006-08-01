@@ -190,7 +190,7 @@ public class Apdu implements ISO7816 {
     */
    public void setResponseApduBuffer(byte[] buffer) {
       if (!(2 <= buffer.length && buffer.length <= 256)) {
-         throw new IllegalArgumentException("Wrong length!");
+         throw new IllegalArgumentException("Wrong length! (length == " + buffer.length + ")");
       }
       responseApduBuffer = buffer;
    }

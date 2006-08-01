@@ -128,6 +128,7 @@ public class FaceInfo
                            SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM = 0x06,
                            SOURCE_TYPE_UNKNOWN = 0x07;
    
+   /** Indexes into poseAngle array. */
    private static final int YAW = 0, PITCH = 1, ROLL = 2;
    
    private long faceImageBlockLength;
@@ -138,9 +139,7 @@ public class FaceInfo
    private short expression;
    private int[] poseAngle;
    private int[] poseAngleUncertainty;
-   
    private FeaturePoint[] featurePoints;
-   
    private int faceImageType;
    private int imageDataType;
    private int width;
@@ -149,7 +148,6 @@ public class FaceInfo
    private int sourceType;
    private int deviceType;
    private int quality;
-   
    private BufferedImage image;
    
    /**
@@ -206,11 +204,11 @@ public class FaceInfo
       
       /* Temporarily fix width and height if 0. */
       if (width <= 0) {
-         System.out.println("WARNING: FaceInfo: width = " + width);
+         System.err.println("WARNING: FaceInfo: width = " + width);
          width = 800;
       }
       if (height <= 0) {
-         System.out.println("WARNING: FaceInfo: height = " + height);
+         System.err.println("WARNING: FaceInfo: height = " + height);
          height = 600;
       }
 
@@ -234,18 +232,26 @@ public class FaceInfo
       height = image.getHeight();
    }
    
-   private BufferedImage readImage(InputStream in, String mimeType) throws IOException {
+   private BufferedImage readImage(InputStream in, String mimeType)
+   throws IOException {
       ImageInputStream iis = ImageIO.createImageInputStream(in);
       Iterator readers = ImageIO.getImageReadersByMIMEType(mimeType);
-      if (!readers.hasNext()) {
-         throw new IOException("No \"" + mimeType + "\" readers");
+      while (readers.hasNext()) {
+         try {
+            ImageReader reader = (ImageReader)readers.next();
+            reader.setInput(iis);
+            ImageReadParam pm = reader.getDefaultReadParam();
+            pm.setSourceRegion(new Rectangle(0, 0, width, height));
+            BufferedImage image = reader.read(0, pm);
+            if (image != null) {
+               return image;
+            }
+         } catch (Exception e) {
+            e.printStackTrace();
+            continue;
+         }
       }
-      ImageReader reader = (ImageReader)readers.next();
-      reader.setInput(iis);
-      ImageReadParam pm = reader.getDefaultReadParam();
-      pm.setSourceRegion(new Rectangle(0, 0, width, height));
-      BufferedImage image = reader.read(0, pm);
-      return image;
+      throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
    /**
