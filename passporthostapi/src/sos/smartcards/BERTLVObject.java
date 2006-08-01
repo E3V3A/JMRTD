@@ -54,6 +54,8 @@ import sos.util.Hex;
  */
 public class BERTLVObject
 {
+   private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMddhhmmss'Z'");
+	
    /** Universal tag class. */
    public static final int UNIVERSAL_CLASS = 0;  
    /** Application tag class. */
@@ -123,31 +125,32 @@ public class BERTLVObject
     *
     * @throws IOException if something goes wrong.
     */
-   public BERTLVObject(int tagByte, Object value) 
-   throws IOException {
-       
-       byte[] tag = { (byte)(tagByte & 0xff) };
+   public BERTLVObject(int tagByte, Object value) throws IOException { 
+       byte[] tag = { (byte)(tagByte & 0xFF) };
        readTag(new DataInputStream(new ByteArrayInputStream(tag)));
        if(isPrimitive) {
-           byte[] valueBytes;
+           byte[] valueBytes = null;
            if(value instanceof byte[]) {
                valueBytes = (byte[])value;
-           }
-           else {
-               throw new IOException("Unknown type of value argument (fix BERTLVObject constructor)");
+           } else if (value instanceof String) {
+        	   valueBytes = ((String)value).getBytes();
+           } else if (value instanceof Date) {
+        	   valueBytes = SDF.format((Date)value).getBytes();
+           } else {
+               throw new IllegalArgumentException("Cannot encode value of type: " + value.getClass());
            }
            length = valueBytes.length;
-           this.value = valueBytes;               
+           // this.value = valueBytes;        // Ehm? -- MO        
+           this.value = value;
        } else {
            if(value instanceof byte[]) {
                byte[] valueBytes = (byte[])value; 
                readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)));
-           }
-           else if(value instanceof BERTLVObject) {
+           } else if(value instanceof BERTLVObject) {
                this.value = new BERTLVObject[1];
                ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
            } else {
-               throw new IOException("unknown type of value argument (fix BERTLVObject constructor)");
+               throw new IllegalArgumentException("Cannot encode value of type: " + value.getClass());
            }
        }
 
@@ -239,7 +242,11 @@ public class BERTLVObject
              case GENERAL_STRING_TYPE_TAG:
              case UNIVERSAL_STRING_TYPE_TAG:
              case BMP_STRING_TYPE_TAG: value = new String((byte[])value); break;
-    	     case UTC_TIME_TYPE_TAG: value = parseUTCTime(new String((byte[])value)); break;
+    	     case UTC_TIME_TYPE_TAG:
+    	    	 try {
+    	    		 value = SDF.parse(new String((byte[])value)); break;
+    	    	 } catch (ParseException pe) {
+    	    	 }
     	     default:
     	  }
       } else {
@@ -250,15 +257,6 @@ public class BERTLVObject
          in = new DataInputStream(new ByteArrayInputStream((byte[])value));
          value = readSubObjects(in);
       }
-   }
-   
-   private static Date parseUTCTime(String in) {
-	   try {
-	      SimpleDateFormat sdf = new SimpleDateFormat("yyMMddhhmmss'Z'");
-	      return sdf.parse(in);
-	   } catch (ParseException pe) {
-		  return null;
-	   }
    }
    
    /***
@@ -322,15 +320,14 @@ public class BERTLVObject
     * 
     * @return the length of the encoded value.
     */
-   public int getLength() {
-       int length=0;
+   public int getLength() { // TODO: Why not simply 'return this.length'? -- MO
+       int length = 0;
        
        if(isPrimitive) {
            length = this.length;
-       }
-       else {
+       } else {
            Iterator iter = Arrays.asList((BERTLVObject[])value).iterator();
-           while(iter.hasNext()) {
+           while (iter.hasNext()) {
                BERTLVObject o = (BERTLVObject)iter.next();
                length += o.getTagAsBytes().length;
                length += o.getLengthAsBytes().length;
@@ -373,21 +370,24 @@ public class BERTLVObject
     * 
     * @return the value of this object as a byte array
     */
-   public byte[] getValueAsBytes() 
-   throws IOException {
-       
-       if(isPrimitive) {
-           return (byte[])value;
-       } else {
-           ByteArrayOutputStream result = new ByteArrayOutputStream();
-
-           BERTLVObject[] chldrn = (BERTLVObject[])getValue();
-           for(int i=0; i<chldrn.length; i++) {
-               result.write(chldrn[i].getEncoded());
-           }    
-           
-           return result.toByteArray();
-       }
+   public byte[] getValueAsBytes() throws IOException {  
+	   if (isPrimitive) {
+		   if(value instanceof byte[]) {
+			   return (byte[])value;
+		   } else if (value instanceof String) {
+			   return ((String)value).getBytes();
+		   } else if (value instanceof Date) {
+			   return SDF.format((Date)value).getBytes();
+		   }
+		   throw new IllegalStateException("Cannot encode value of type: " + value.getClass());
+	   } else {
+		   ByteArrayOutputStream result = new ByteArrayOutputStream();
+		   BERTLVObject[] children = (BERTLVObject[])getValue();
+		   for (int i = 0; i < children.length; i++) {
+			   result.write(children[i].getEncoded());
+		   }
+		   return result.toByteArray();
+	   }
    }
    
    /**
@@ -418,14 +418,7 @@ public class BERTLVObject
       try {
          out.write(getTagAsBytes());
          out.write(getLengthAsBytes());
-         if(isPrimitive) {
-             out.write((byte[])getValue());
-         } else {
-             BERTLVObject[] chldrn = (BERTLVObject[])getValue();
-             for(int i=0; i<chldrn.length; i++) {
-                 out.write(chldrn[i].getEncoded());
-             }
-         }
+         out.write(getValueAsBytes());
       } catch (IOException ioe) {
          ioe.printStackTrace();
       }
