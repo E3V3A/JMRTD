@@ -225,7 +225,7 @@ public class BERTLVObject
     	     case INTEGER_TYPE_TAG:  break;
     	     case BIT_STRING_TYPE_TAG: break;
        	     case OCTET_STRING_TYPE_TAG: break;
-    	     case NULL_TYPE_TAG: value = null; break;
+    	     case NULL_TYPE_TAG: break;
     	     case OBJECT_IDENTIFIER_TYPE_TAG: break;
              case UTF8_STRING_TYPE_TAG:
     	     case PRINTABLE_STRING_TYPE_TAG:
@@ -367,8 +367,6 @@ public class BERTLVObject
    /**
     * The value of this object as a byte array.
     * 
-    * Similar to getEncoded, but does not contain length and tag data.
-    * 
     * @return the value of this object as a byte array
     */
    public byte[] getValueAsBytes() 
@@ -381,7 +379,7 @@ public class BERTLVObject
 
            BERTLVObject[] chldrn = (BERTLVObject[])getValue();
            for(int i=0; i<chldrn.length; i++) {
-               result.write(chldrn[i].getValueAsBytes());
+               result.write(chldrn[i].getEncoded());
            }    
            
            return result.toByteArray();
