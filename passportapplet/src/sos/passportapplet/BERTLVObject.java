@@ -9,7 +9,7 @@ package sos.passportapplet;
  * @see sos.mrtd.smartcards.BERTLVObject
  * 
  */
-class BERTLVObject {
+public class BERTLVObject {
     /** Universal tag class. */
     public static final int UNIVERSAL_CLASS = 0;
     /** Application tag class. */
@@ -22,7 +22,7 @@ class BERTLVObject {
     short tag;
     short tagClass;
     boolean isPrimitive;
-    byte[] value;
+//    public byte[] value;
     short valueOffset;
     short valueLength;
 
@@ -33,7 +33,7 @@ class BERTLVObject {
     }
 
     private short readBERTLVObject(byte[] in, short offset, short length) {
-        value = in;
+//        value = in;
         short in_p = offset;
         short len = length;
         in_p = readTag(in, in_p, len);

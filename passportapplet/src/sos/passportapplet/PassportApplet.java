@@ -52,6 +52,7 @@ public class PassportApplet extends Applet implements ISO7816 {
     public static final byte FILE_SELECTED = 4;
     public static final byte HAS_MUTUALAUTHENTICATION_KEYS = 8;
     public static final byte HAS_INTERNALAUTHENTICATION_KEYS = 16;
+    public static final byte LOCKED = 32;
 
     /* for authentication */
     private static final byte INS_EXTERNAL_AUTHENTICATE = (byte) 0x82;
@@ -67,14 +68,14 @@ public class PassportApplet extends Applet implements ISO7816 {
     private static final byte INS_UPDATE_BINARY = (byte) 0xd6;
     private static final byte INS_CREATE_FILE = (byte) 0xe0;
     private static final byte INS_PUT_DATA = (byte) 0xda;
-    private static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
 
     static final short KEY_LENGTH = 16;
     static final short SEED_LENGTH = 16;
     static final short MAC_LENGTH = 8;
 
-    private static final byte PRIVKEY_TAG = 0x41;
-    private static final byte MRZ_TAG = 0x42;
+    private static final byte PRIVMODULUS_TAG = 0x60;
+    private static final byte PRIVEXPONENT_TAG = 0x61;
+    private static final byte MRZ_TAG = 0x62;
 
     private byte[] rnd;
     private byte[] ssc;
@@ -129,7 +130,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte[] buffer = apdu.getBuffer();
         byte cla = buffer[OFFSET_CLA];
         byte ins = buffer[OFFSET_INS];
-        short sw1sw2 = 0;
+        short sw1sw2 = (short) 0x9000;
         byte protectedApdu = (byte) (cla == CLA_PROTECTED_APDU ? 1 : 0);
         short responseLength = 0;
         short le = 0;
@@ -148,6 +149,8 @@ public class PassportApplet extends Applet implements ISO7816 {
                 sw1sw2 = e.getReason();
                 ISOException.throwIt((short) 0x6d66);
             }
+        } else if (protectedApdu == 1) {
+            ISOException.throwIt(ISO7816.SW_SECURE_MESSAGING_NOT_SUPPORTED);
         }
 
         try {
@@ -168,20 +171,22 @@ public class PassportApplet extends Applet implements ISO7816 {
                 responseLength = processReadBinary(apdu, le);
                 break;
             case INS_UPDATE_BINARY:
-                processUpdateBinary(apdu);
-                break;
             case INS_CREATE_FILE:
-                processCreateFile(apdu);
-                break;
-            case INS_SET_DOCNR_DOB_DOE:
-                processSetMutualAuthKeys(apdu);
-                break;
             case INS_PUT_DATA:
-                processPutData(apdu);
-                break;
-            case 0x11:
-                createAAkeyObjects(apdu);
-                break;
+                if (!PassportUtil.hasBitMask(state, LOCKED)) {
+                    switch (ins) {
+                    case INS_UPDATE_BINARY:
+                        processUpdateBinary(apdu);
+                        break;
+                    case INS_CREATE_FILE:
+                        processCreateFile(apdu);
+                        break;
+                    case INS_PUT_DATA:
+                        processPutData(apdu);
+                        break;
+                    }
+                    break;
+                }
             default:
                 ISOException.throwIt(SW_INS_NOT_SUPPORTED);
                 break;
@@ -206,7 +211,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             apdu.sendBytes((short) 0, responseLength);
         }
 
-        if (sw1sw2 != 0) {
+        if (sw1sw2 != (short) 0x9000) {
             ISOException.throwIt(sw1sw2);
         }
     }
@@ -215,31 +220,33 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte[] buffer = apdu.getBuffer();
         short buffer_p = (short) (OFFSET_CDATA & 0xff);
         short lc = (short) (buffer[OFFSET_LC] & 0xff);
-        byte p1 = buffer[OFFSET_P1];
-        byte p2 = buffer[OFFSET_P2];
+        short p1 = (short)(buffer[OFFSET_P1] & 0xff);
+        short p2 = (short)(buffer[OFFSET_P2] & 0xff);
 
         // FIXME: state check
 
         // sanity check
-        if(buffer_p + lc < buffer.length) {
-            ISOException.throwIt((short)0x6d66);
+        if (buffer.length < (short) (buffer_p + lc)) {
+            ISOException.throwIt((short) 0x6d66);
         }
-        
-        if (p1 == 0 && p2 == PRIVKEY_TAG) {
-            // data is BERTLV object with two objects; modulus and exponent
-            BERTLVObject privkey = BERTLVObject.readObjects(buffer,
-                                                            buffer_p,
-                                                            lc);
-            short modOffset = privkey.child.valueOffset;
-            short modLength = privkey.child.valueLength;
-            short expOffset = privkey.child.next.valueOffset;
-            short expLength = privkey.child.next.valueOffset;
 
-            // leading zero
+        if (p1 == 0xde && p2 == 0xad) {
+            state = PassportUtil.plusBitMask(state, LOCKED);
+        } else if (p1 == 0 && p2 == PRIVMODULUS_TAG) {
+            BERTLVObject object = BERTLVObject.readObjects(buffer, buffer_p, lc);
+            short modOffset = object.child.valueOffset;
+            short modLength = object.child.valueLength;
+
             if (buffer[modOffset] == 0) {
                 modLength--;
                 modOffset++;
             }
+
+            crypto.rsaPrivateKey.setModulus(buffer, modOffset, modLength);
+        } else if (p1 == 0 && p2 == PRIVEXPONENT_TAG) {
+            BERTLVObject object = BERTLVObject.readObjects(buffer, buffer_p, lc);
+            short expOffset = object.child.valueOffset;
+            short expLength = object.child.valueLength;
 
             // leading zero
             if (buffer[expOffset] == 0) {
@@ -248,24 +255,24 @@ public class PassportApplet extends Applet implements ISO7816 {
             }
 
             crypto.rsaPrivateKey.setExponent(buffer, expOffset, expLength);
-            crypto.rsaPrivateKey.setModulus(buffer, modOffset, modLength);
-        } 
-        else if (p1 == 0 && p2 == MRZ_TAG) {
-            // data is BERTLV object with three objects; docNr, dataOfBirth, dateOfExpiry
-            BERTLVObject mrz = BERTLVObject.readObjects(buffer,
-                                                        buffer_p,
-                                                        lc);
-            short docNrOffset =  mrz.child.valueOffset;
+        } else if (p1 == 0 && p2 == MRZ_TAG) {
+            // data is BERTLV object with three objects; docNr, dataOfBirth,
+            // dateOfExpiry
+            BERTLVObject mrz = BERTLVObject.readObjects(buffer, buffer_p, lc);
+            short docNrOffset = mrz.child.valueOffset;
             short docNrLength = mrz.child.valueLength;
             short dobOffset = mrz.child.next.valueOffset;
             short dobLength = mrz.child.next.valueLength;
             short doeOffset = mrz.child.next.next.valueOffset;
             short doeLength = mrz.child.next.next.valueLength;
-            
-            short keySeed_offset = PassportInit.computeKeySeed(buffer, 
-                                                               docNrOffset, docNrLength,
-                                                               dobOffset, dobLength,
-                                                               doeOffset, doeLength);
+
+            short keySeed_offset = PassportInit.computeKeySeed(buffer,
+                                                               docNrOffset,
+                                                               docNrLength,
+                                                               dobOffset,
+                                                               dobLength,
+                                                               doeOffset,
+                                                               doeLength);
 
             short macKey_p = (short) (keySeed_offset + SEED_LENGTH);
             short encKey_p = (short) (keySeed_offset + SEED_LENGTH + KEY_LENGTH);
@@ -279,47 +286,50 @@ public class PassportApplet extends Applet implements ISO7816 {
                                      encKey_p);
             crypto.setMutualAuthKeys(buffer, macKey_p, encKey_p);
 
-            state = HAS_MUTUALAUTHENTICATION_KEYS;
+            state = PassportUtil.plusBitMask(state,
+                                             HAS_MUTUALAUTHENTICATION_KEYS);
         }
     }
 
-    private void createAAkeyObjects(APDU apdu) {
-        byte[] privKey = fileSystem.getFile(FileSystem.AAPRIVKEY_FID);
-
-        if (privKey == null) {
-            ISOException.throwIt((short) 0x6d66);
-        }
-
-        BERTLVObject x509KeyObject = BERTLVObject.readObjects(privKey,
-                                                              (short) 0,
-                                                              (short) privKey.length);
-        BERTLVObject privKeyObject = BERTLVObject.readObjects(x509KeyObject.value,
-                                                              x509KeyObject.child.next.next.valueOffset,
-                                                              x509KeyObject.child.next.next.valueLength);
-        short privKeyModulusOffset = privKeyObject.child.next.valueOffset;
-        short privKeyModulusLength = privKeyObject.child.next.valueLength;
-        short privKeyExponentOffset = privKeyObject.child.next.next.next.valueOffset;
-        short privKeyExponentLength = privKeyObject.child.next.next.next.valueLength;
-
-        // leading zero
-        if (privKey[privKeyModulusOffset] == 0) {
-            privKeyModulusLength--;
-            privKeyModulusOffset++;
-        }
-
-        // leading zero
-        if (privKey[privKeyExponentOffset] == 0) {
-            privKeyExponentLength--;
-            privKeyExponentOffset++;
-        }
-
-        crypto.rsaPrivateKey.setExponent(privKeyObject.child.next.value,
-                                         privKeyExponentOffset,
-                                         privKeyExponentLength);
-        crypto.rsaPrivateKey.setModulus(privKeyObject.child.next.next.next.value,
-                                        privKeyModulusOffset,
-                                        privKeyModulusLength);
-    }
+    // private void createAAkeyObjects(APDU apdu) {
+    // byte[] privKey = fileSystem.getFile(FileSystem.AAPRIVKEY_FID);
+    //
+    // if (privKey == null) {
+    // ISOException.throwIt((short) 0x6d66);
+    // }
+    //
+    // BERTLVObject x509KeyObject = BERTLVObject.readObjects(privKey,
+    // (short) 0,
+    // (short) privKey.length);
+    // BERTLVObject privKeyObject = BERTLVObject.readObjects(privKey,
+    // x509KeyObject.child.next.next.valueOffset,
+    // x509KeyObject.child.next.next.valueLength);
+    // short privKeyModulusOffset = privKeyObject.child.next.valueOffset;
+    // short privKeyModulusLength = privKeyObject.child.next.valueLength;
+    // short privKeyExponentOffset =
+    // privKeyObject.child.next.next.next.valueOffset;
+    // short privKeyExponentLength =
+    // privKeyObject.child.next.next.next.valueLength;
+    //
+    // // leading zero
+    // if (privKey[privKeyModulusOffset] == 0) {
+    // privKeyModulusLength--;
+    // privKeyModulusOffset++;
+    // }
+    //
+    // // leading zero
+    // if (privKey[privKeyExponentOffset] == 0) {
+    // privKeyExponentLength--;
+    // privKeyExponentOffset++;
+    // }
+    //
+    // crypto.rsaPrivateKey.setExponent(privKey,
+    // privKeyExponentOffset,
+    // privKeyExponentLength);
+    // crypto.rsaPrivateKey.setModulus(privKey,
+    // privKeyModulusOffset,
+    // privKeyModulusLength);
+    // }
 
     private short processInternalAuthenticate(APDU apdu) {
         if (!PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
@@ -394,50 +404,51 @@ public class PassportApplet extends Applet implements ISO7816 {
          */
     }
 
-    /**
-     * Initializes the passport with the mutual authentication keys, which are
-     * computed on card.
-     * 
-     * //@ ensures state == HAS_MUTUALAUTHENTICATION_KEYS
-     * 
-     * The data part of the APDU must contain: docNr (9 bytes) || dateOfBirth
-     * (6) || dateOfExpiry (6)
-     * 
-     * @param apdu
-     *            containing the initialization data
-     */
-    private void processSetMutualAuthKeys(APDU apdu) {
-        byte[] buffer = apdu.getBuffer();
-        short lc = (short) (buffer[OFFSET_LC] & 0xff);
-        if (state != 0) {
-            ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
-        }
-        if (lc != (short) (PassportInit.DOCNR_LEN + PassportInit.DOB_LEN + PassportInit.DOE_LEN)) {
-            ISOException.throwIt(SW_WRONG_LENGTH);
-        }
-        short readCount = apdu.setIncomingAndReceive();
-        short bytesLeft = 0;
-        while (bytesLeft > 0) {
-            bytesLeft -= readCount;
-            readCount = apdu.receiveBytes(OFFSET_CDATA);
-        }
-
-        short keySeed_offset = PassportInit.computeKeySeed(buffer, OFFSET_CDATA);
-
-        short macKey_p = (short) (keySeed_offset + SEED_LENGTH);
-        short encKey_p = (short) (keySeed_offset + SEED_LENGTH + KEY_LENGTH);
-        PassportCrypto.deriveKey(buffer,
-                                 keySeed_offset,
-                                 PassportCrypto.MAC_MODE,
-                                 macKey_p);
-        PassportCrypto.deriveKey(buffer,
-                                 keySeed_offset,
-                                 PassportCrypto.ENC_MODE,
-                                 encKey_p);
-        crypto.setMutualAuthKeys(buffer, macKey_p, encKey_p);
-
-        state = HAS_MUTUALAUTHENTICATION_KEYS;
-    }
+    // /**
+    // * Initializes the passport with the mutual authentication keys, which are
+    // * computed on card.
+    // *
+    // * //@ ensures state == HAS_MUTUALAUTHENTICATION_KEYS
+    // *
+    // * The data part of the APDU must contain: docNr (9 bytes) || dateOfBirth
+    // * (6) || dateOfExpiry (6)
+    // *
+    // * @param apdu
+    // * containing the initialization data
+    // */
+    // private void processSetMutualAuthKeys(APDU apdu) {
+    // byte[] buffer = apdu.getBuffer();
+    // short lc = (short) (buffer[OFFSET_LC] & 0xff);
+    // if (state != 0) {
+    // ISOException.throwIt(SW_COMMAND_NOT_ALLOWED);
+    // }
+    // if (lc != (short) (PassportInit.DOCNR_LEN + PassportInit.DOB_LEN +
+    // PassportInit.DOE_LEN)) {
+    // ISOException.throwIt(SW_WRONG_LENGTH);
+    // }
+    // short readCount = apdu.setIncomingAndReceive();
+    // short bytesLeft = 0;
+    // while (bytesLeft > 0) {
+    // bytesLeft -= readCount;
+    // readCount = apdu.receiveBytes(OFFSET_CDATA);
+    // }
+    //
+    // short keySeed_offset = PassportInit.computeKeySeed(buffer, OFFSET_CDATA);
+    //
+    // short macKey_p = (short) (keySeed_offset + SEED_LENGTH);
+    // short encKey_p = (short) (keySeed_offset + SEED_LENGTH + KEY_LENGTH);
+    // PassportCrypto.deriveKey(buffer,
+    // keySeed_offset,
+    // PassportCrypto.MAC_MODE,
+    // macKey_p);
+    // PassportCrypto.deriveKey(buffer,
+    // keySeed_offset,
+    // PassportCrypto.ENC_MODE,
+    // encKey_p);
+    // crypto.setMutualAuthKeys(buffer, macKey_p, encKey_p);
+    //
+    // state = HAS_MUTUALAUTHENTICATION_KEYS;
+    // }
 
     /**
      * Processes incoming GET_CHALLENGE APDUs.
@@ -655,7 +666,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         // ISOException.throwIt(SW_WRONG_LENGTH);
 
         len = PassportUtil.min((short) 0xe0, (short) (file.length - offset)); // FIXME:
-                                                                                // magic
+        // magic
         len = PassportUtil.min(len, (short) buffer.length);
         Util.arrayCopy(file, offset, buffer, (short) 0, len);
 
@@ -679,11 +690,26 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte[] buffer = apdu.getBuffer();
         byte p1 = buffer[OFFSET_P1];
         byte p2 = buffer[OFFSET_P2];
-
-        short lc = (short) (buffer[OFFSET_LC] & 0xff);
         short offset = Util.makeShort(p1, p2);
 
-        fileSystem.writeData(selectedFile, offset, buffer, OFFSET_CDATA, lc);
+        short readCount = (short) (buffer[ISO7816.OFFSET_LC] & 0xff);
+        if (apdu.getCurrentState() == APDU.STATE_INITIAL) {
+            readCount = apdu.setIncomingAndReceive();
+        }
+
+        while (true) {
+            fileSystem.writeData(selectedFile,
+                                 offset,
+                                 buffer,
+                                 OFFSET_CDATA,
+                                 readCount);
+            if (apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
+                readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
+            } else {
+                break;
+            }
+            offset += readCount;
+        }
     }
 
     /***************************************************************************

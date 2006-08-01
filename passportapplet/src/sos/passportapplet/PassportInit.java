@@ -202,19 +202,19 @@ public class PassportInit {
         Util.arrayCopy(buffer, docNr_p, buffer, buffer_p, docNr_length);
         short offset = buffer_p;
         buffer_p += docNr_length;
-        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer[buffer_p] = checkDigit(buffer, offset, docNr_length);
         buffer_p++;
         
         Util.arrayCopy(buffer, dateOfBirth_p, buffer, buffer_p, dateOfBirth_length);
         offset = buffer_p;
         buffer_p += dateOfBirth_length;
-        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer[buffer_p] = checkDigit(buffer, offset, dateOfBirth_length);
         buffer_p++;
         
         Util.arrayCopy(buffer, dateOfExpiry_p, buffer, buffer_p, dateOfExpiry_length);
         offset = buffer_p;
         buffer_p += dateOfExpiry_length;
-        buffer[buffer_p] = checkDigit(buffer, offset, buffer_p);
+        buffer[buffer_p] = checkDigit(buffer, offset, dateOfExpiry_length);
         buffer_p++;
         
         PassportCrypto.createHash(buffer,
