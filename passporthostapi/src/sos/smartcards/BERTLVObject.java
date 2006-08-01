@@ -105,7 +105,9 @@ public class BERTLVObject
     * Creates a new TLV object by parsing <code>in</code>.
     * 
     * @param in a binary representation of the TLV object
+    *
     * @return a TLV object
+    *
     * @throws IOException if something goes wrong
     */
    public static BERTLVObject getInstance(InputStream in) throws IOException {
@@ -115,8 +117,10 @@ public class BERTLVObject
    /**
     * Constructs a new TLV object with tag <code>tag</code> containing 
     * data <code>value</code>.
-    * @param tag of TLV object.
-    * @param value data of TLV object.
+    *
+    * @param tagByte tag of TLV object
+    * @param value data of TLV object
+    *
     * @throws IOException if something goes wrong.
     */
    public BERTLVObject(int tagByte, Object value) 
@@ -130,7 +134,7 @@ public class BERTLVObject
                valueBytes = (byte[])value;
            }
            else {
-               throw new IOException("unknown type of value argument (fix BERTLVObject constructor)");
+               throw new IOException("Unknown type of value argument (fix BERTLVObject constructor)");
            }
            length = valueBytes.length;
            this.value = valueBytes;               
@@ -567,5 +571,5 @@ public class BERTLVObject
       }
       return "'0x" + Hex.intToHexString(tag) + "'";
    }
-
 }
+

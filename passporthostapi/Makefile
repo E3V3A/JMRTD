@@ -15,6 +15,8 @@ doc:
 	javadoc -d apidocs -author -version\
 	   -sourcepath src\
 	   -classpath .:$(HOME)/java/java_card_kit-2_2_2/lib/apduio.jar:/usr/local/eclipse/plugins/com.ibm.bluez.jcop.eclipse_3.1.1.b/lib/offcard.jar\
+	   -windowtitle "JMRTD API"\
+	   -doctitle "JMRTD API"\
 	   -link http://java.sun.com/j2se/1.5/docs/api\
 	   -link http://www.bouncycastle.org/docs/docs1.5\
 	   -link http://java.sun.com/products/javacard/htmldoc\
