@@ -22,6 +22,7 @@
 
 package sos.mrtd.sample;
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Font;
 import java.util.Arrays;
@@ -56,7 +57,7 @@ public class APDULogPanel extends JPanel implements APDUListener, ISO7816
     * Creates the logger.
     */
    public APDULogPanel() {
-      super(new FlowLayout());
+      super(new BorderLayout());
       area = new JTextArea(10, 100);
       area.setFont(FONT);
       add(new JScrollPane(area));
