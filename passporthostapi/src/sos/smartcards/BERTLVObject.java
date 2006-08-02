@@ -25,6 +25,8 @@ package sos.smartcards;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -126,23 +128,33 @@ public class BERTLVObject {
      * @throws IOException
      *             if something goes wrong.
      */
-    public BERTLVObject(int tagByte, Object value) throws IOException {
-        byte[] tag = { (byte) (tagByte & 0xFF) };
+    public BERTLVObject(int tagBytes, Object value) throws IOException {
+        byte[] tag = { (byte) ((tagBytes >>> 24) & 0xff), 
+                       (byte) ((tagBytes >>> 16) & 0xFF),
+                       (byte) ((tagBytes >>> 8) & 0xff),
+                       (byte) (tagBytes & 0xff) };
         readTag(new DataInputStream(new ByteArrayInputStream(tag)));
         if (isPrimitive) {
             this.value = value;
         } else {
+            // arrays are interpreted (maybe remove this?)
             if (value instanceof byte[]) {
                 byte[] valueBytes = (byte[]) value;
                 readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)),
                           valueBytes.length);
-            } else if (value instanceof BERTLVObject) {
+            }
+            // BERTLVObjects are added as a child
+            else if (value instanceof BERTLVObject) {
                 this.value = new BERTLVObject[1];
                 ((BERTLVObject[]) this.value)[0] = (BERTLVObject) value;
+            } else if (value instanceof Integer){
+                this.value = new BERTLVObject[1];
+                ((BERTLVObject[]) this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
             } else {
                 throw new IllegalArgumentException("Cannot encode value of type: "
-                        + value.getClass());
+                                                   + value.getClass());
             }
+
         }
 
     }
@@ -346,6 +358,7 @@ public class BERTLVObject {
      * 
      * @return the length of the encoded value.
      */
+
     public int getLength()  { // TODO: Why not simply 'return this.length'? -- MO
         return getValueAsBytes().length;
     }
@@ -392,8 +405,17 @@ public class BERTLVObject {
                 return ((String) value).getBytes();
             } else if (value instanceof Date) {
                 return SDF.format((Date) value).getBytes();
+            } else if (value instanceof Integer) {
+                int intValue = ((Integer)value).intValue(); 
+                int byteCount = Integer.bitCount(intValue)/8 + 1;
+                byte[] result = new byte[byteCount];
+                for (int i = 0; i < byteCount; i++) {
+                    int pos = 8 * (byteCount - i - 1);
+                    result[i] = (byte)((intValue & (0xFF << pos)) >> pos);
+                }
+                return result;
             }
-            throw new IllegalStateException("Cannot encode value of type: "
+            throw new IllegalStateException("Cannot decode value of type: "
                     + value.getClass());
         } else {
             ByteArrayOutputStream result = new ByteArrayOutputStream();
@@ -611,4 +633,25 @@ public class BERTLVObject {
         }
         return "'0x" + Hex.intToHexString(tag) + "'";
     }
+    
+    /* For testing */
+    public static void main(String[] args) {
+        FileInputStream in=null;
+        try {
+            in = new FileInputStream(args[0]);
+        } catch (FileNotFoundException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        BERTLVObject object=null;
+        try {
+            object = new BERTLVObject(new DataInputStream(in));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        System.out.println(object);
+    }
+    
+    
 }

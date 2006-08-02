@@ -328,16 +328,42 @@ public class FaceInfo
       }
       
       dataOut.flush();
-      byte[] result = out.toByteArray();
-      faceImageBlockLength = result.length;
+      byte[] facialRecordData = out.toByteArray();
       dataOut.close();
+
+      faceImageBlockLength = facialRecordData.length;
+
       out = new ByteArrayOutputStream();
       dataOut = new DataOutputStream(out);
       dataOut.writeInt((int)faceImageBlockLength);
-      dataOut.write(result);
+      dataOut.write(facialRecordData);
       dataOut.flush();
-      result = out.toByteArray();
+      facialRecordData = out.toByteArray();
       dataOut.close();
+      
+      /* facial record header */
+      
+      out = new ByteArrayOutputStream();
+      dataOut = new DataOutputStream(out);
+      dataOut.writeChars("FAC");
+      dataOut.writeByte(0);
+      dataOut.writeChars("010");
+      dataOut.writeByte(0);
+      dataOut.flush();
+      byte[] headerData = out.toByteArray();
+      dataOut.close();
+      
+      int lengthOfRecord = headerData.length + 4 + 2 + facialRecordData.length;
+      short nrOfImages = 1;
+      out = new ByteArrayOutputStream();
+      dataOut = new DataOutputStream(out);
+      dataOut.write(headerData);
+      dataOut.writeInt(lengthOfRecord);
+      dataOut.writeShort(nrOfImages);
+      dataOut.write(facialRecordData);
+      dataOut.flush();
+      byte[] result = out.toByteArray();
+      
       return result;
    }
    
@@ -834,11 +860,32 @@ public class FaceInfo
          FaceInfo info = new FaceInfo(GENDER_MALE,
                EYE_COLOR_BLUE,HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
                SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM, image);
-         BERTLVObject fileObj =
-            new BERTLVObject(PassportASN1Service.EF_DG2_TAG, info.getEncoded());
-         FileOutputStream out = new FileOutputStream(arg[1]);
-         out.write(fileObj.getEncoded());
-         out.close();
+         byte[] zero0 = { 0x00 };
+         byte[] zero2 = { 0x02 };
+         byte[] zero101 = { 0x01, 0x01 };
+         byte[] zero008 = { 0x00, 0x08 };
+         
+         BERTLVObject objectA1 = new BERTLVObject(0xa1, new BERTLVObject(0x81, zero2));
+         objectA1.addSubObject(new BERTLVObject(0x82, zero0));
+         objectA1.addSubObject(new BERTLVObject(0x87, zero101));
+         objectA1.addSubObject(new BERTLVObject(0x88, zero008));
+         
+         BERTLVObject faceInfo = new BERTLVObject(0x5f2e, info.getEncoded());
+         
+         BERTLVObject object7f60 = new BERTLVObject(0x7f60, objectA1);
+         object7f60.addSubObject(faceInfo);
+         
+         BERTLVObject object7f61 = new BERTLVObject(0x7f61, new Integer(1));
+         object7f61.addSubObject(object7f60);
+   
+         BERTLVObject dg2 = new BERTLVObject(PassportASN1Service.EF_DG2_TAG, object7f61);
+         
+         System.out.println(dg2);
+         
+//            new BERTLVObject(PassportASN1Service.EF_DG2_TAG, info.getEncoded());
+//         FileOutputStream out = new FileOutputStream(arg[1]);
+//         out.write(fileObj.getEncoded());
+//         out.close();
       } catch (Exception e) {
          e.printStackTrace();
       }

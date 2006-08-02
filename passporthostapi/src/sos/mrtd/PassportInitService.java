@@ -57,9 +57,9 @@ public class PassportInitService extends PassportApduService {
     public static final short AAPRIVKEY_FID = 0x0001;
     private static final byte INS_PUT_DATA = (byte) 0xda;;
     
-    private static final byte MRZ_TAG = 0x42;
     private static final byte PRIVMODULUS_TAG = 0x60;
     private static final byte PRIVEXPONENT_TAG = 0x61;
+    private static final byte MRZ_TAG = 0x62;
 
     public PassportInitService(CardService service)
             throws GeneralSecurityException {
@@ -105,7 +105,6 @@ public class PassportInitService extends PassportApduService {
 
     /***
      * Sends a PUT_DATA APDU to the card.
-     * 
      * 
      * @param wrapper for secure mesaging
      * @param p1 byte of APDU
@@ -153,21 +152,19 @@ public class PassportInitService extends PassportApduService {
     private void putPrivateKey(SecureMessagingWrapper wrapper,
             byte[] privModulus, byte[] privExponent) throws IOException {
 
-        BERTLVObject object = 
+        BERTLVObject privModulusObject = 
                 new BERTLVObject(PRIVMODULUS_TAG,
                                  new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
                                                   privModulus));
-        System.out.println("encoded: " + Hex.bytesToHexString(object.getEncoded()));
         
-        putData(wrapper, (byte) 0, PRIVMODULUS_TAG, object.getEncoded());
+        putData(wrapper, (byte) 0, PRIVMODULUS_TAG, privModulusObject.getEncoded());
 
-        /*
-        object = new BERTLVObject(PRIVEXPONENT_TAG);
-        object.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
-                                             privExponent));
+        BERTLVObject privExponentObject = 
+            new BERTLVObject(PRIVEXPONENT_TAG,
+                             new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
+                                              privExponent));
         
-        putData(wrapper, (byte) 0, PRIVEXPONENT_TAG, object.getEncoded());
-        */
+        putData(wrapper, (byte) 0, PRIVEXPONENT_TAG, privExponentObject.getEncoded());
     }
 
     /***
@@ -313,6 +310,17 @@ public class PassportInitService extends PassportApduService {
         return new Apdu(cla, ins, p1, p2, data);
     }
 
+    public void putMRZ(byte[] docNr, byte[] dob, byte[] doe) 
+    throws IOException {
+        BERTLVObject mrzObject = new BERTLVObject(MRZ_TAG, 
+                                                  new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
+                                                                   docNr));
+        mrzObject.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, dob));
+        mrzObject.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, doe));
+        
+        putData(null, (byte)0, MRZ_TAG, mrzObject.getEncoded());  
+    }
+    
     public void writeMRZ(byte[] docNr, byte[] dob, byte[] doe) {
         Apdu capdu = createMRZApdu(docNr, dob, doe);
         sendAPDU(capdu);
@@ -328,5 +336,9 @@ public class PassportInitService extends PassportApduService {
         out.write(keyBytes);
 
         return new ByteArrayInputStream(out.toByteArray());
+    }
+
+    public void lockApplet(SecureMessagingWrapper wrapper) {
+        putData(wrapper, (byte)0xde, (byte)0xad, null);
     }
 }
