@@ -28,6 +28,8 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -42,6 +44,8 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+
+import sos.smartcards.BERTLVObject;
 
 /**
  * Data structure for storing face information as found in DG2.
@@ -97,7 +101,7 @@ public class FaceInfo
                             FEATURE_DISTORTING_MEDICAL_CONDITION = 0x000400;
 
    /** Expression code based on Section 5.5.7 of ISO 19794-5. */
-   public static final int EXPRESSION_UNSPECIFIED = 0x0000,
+   public static final short EXPRESSION_UNSPECIFIED = 0x0000,
                            EXPRESSION_NEUTRAL = 0x0001,
                            EXPRESSION_SMILE_CLOSED = 0x0002,
                            EXPRESSION_SMILE_OPEN = 0x0003,
@@ -178,6 +182,9 @@ public class FaceInfo
       this.poseAngle = new int[3];
       this.poseAngleUncertainty = new int[3];
       this.image = image;
+      this.width = image.getWidth();
+      this.height = image.getHeight();
+      this.featurePoints = new FeaturePoint[0];
    }
 
    /**
@@ -356,10 +363,13 @@ public class FaceInfo
       throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage writeImage(BufferedImage image, OutputStream out, String mimeType)
+   private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
       ImageOutputStream ios = ImageIO.createImageOutputStream(out);
       Iterator writers = ImageIO.getImageWritersByMIMEType(mimeType);
+      if (!writers.hasNext()) {
+         throw new IOException("No writers for \"" + mimeType + "\"");
+      }
       while (writers.hasNext()) {
          try {
             ImageWriter writer = (ImageWriter)writers.next();
@@ -372,7 +382,6 @@ public class FaceInfo
             continue;
          }
       }
-      throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
    
    /**
@@ -814,6 +823,24 @@ public class FaceInfo
          out.append(y); out.append(")");
          out.append(")");
          return out.toString();
+      }
+   }
+   
+   
+   /* For testing... */
+   public static void main(String[] arg) {
+      try {
+         BufferedImage image = ImageIO.read(new File(arg[0]));
+         FaceInfo info = new FaceInfo(GENDER_MALE,
+               EYE_COLOR_BLUE,HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
+               SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM, image);
+         BERTLVObject fileObj =
+            new BERTLVObject(PassportASN1Service.EF_DG2_TAG, info.getEncoded());
+         FileOutputStream out = new FileOutputStream(arg[1]);
+         out.write(fileObj.getEncoded());
+         out.close();
+      } catch (Exception e) {
+         e.printStackTrace();
       }
    }
 }
