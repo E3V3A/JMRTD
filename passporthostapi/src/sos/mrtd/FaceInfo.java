@@ -25,9 +25,12 @@ package sos.mrtd;
 import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -35,7 +38,10 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
+import javax.imageio.ImageWriteParam;
+import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 
 /**
  * Data structure for storing face information as found in DG2.
@@ -149,7 +155,31 @@ public class FaceInfo
    private int deviceType;
    private int quality;
    private BufferedImage image;
-   
+
+   /**
+    * Constructs a new face information data structure instance.
+    * 
+    * @param gender gender
+    * @param eyeColor eye color
+    * @param hairColor hair color
+    * @param expression expression
+    * @param sourceType source type
+    * @param image image
+    */
+   public FaceInfo(int gender, int eyeColor, int hairColor, short expression,
+         int sourceType, BufferedImage image) {
+      this.faceImageBlockLength = 0L;
+      this.gender = gender;
+      this.eyeColor = eyeColor;
+      this.hairColor = hairColor;
+      this.expression = expression;
+      this.sourceType = sourceType;
+      this.deviceType = 0;
+      this.poseAngle = new int[3];
+      this.poseAngleUncertainty = new int[3];
+      this.image = image;
+   }
+
    /**
     * Constructs a new face information structure.
     * 
@@ -232,6 +262,78 @@ public class FaceInfo
       height = image.getHeight();
    }
    
+   public byte[] getEncoded() throws IOException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      DataOutputStream dataOut = new DataOutputStream(out);
+      
+      /* Facial Information (20) */
+      // dataOut.writeInt((int)faceImageBlockLength);
+      dataOut.writeShort(featurePoints.length);
+      dataOut.writeByte(gender);
+      dataOut.writeByte(eyeColor);
+      dataOut.writeByte(hairColor);
+      dataOut.writeByte((byte)((featureMask & 0xFF0000L) >> 16));
+      dataOut.writeByte((byte)((featureMask & 0x00FF00L) >> 8));
+      dataOut.writeByte((byte)(featureMask & 0x0000FFL));
+      dataOut.writeShort(expression);
+      for (int i = 0; i < 3; i++) {
+         int b = (0 <= poseAngle[i] && poseAngle[i] <= 180) ?
+               poseAngle[i] / 2 + 1 : 181 + poseAngle[i] / 2;
+         dataOut.writeByte(b);
+      }
+      for (int i = 0; i < 3; i++) {
+         dataOut.writeByte(poseAngleUncertainty[i]);
+      }
+      
+      /* Feature Point(s) (optional) (8 * featurePointCount) */
+      for (int i = 0; i < featurePoints.length; i++) {
+         FeaturePoint fp = featurePoints[i];
+         dataOut.writeByte(fp.getType());
+         dataOut.writeByte((fp.getMajorCode() << 4) | fp.getMinorCode());
+         dataOut.writeShort(fp.getX());
+         dataOut.writeShort(fp.getY());
+         dataOut.writeShort(0x00); // 2 bytes reserved
+      }
+      
+      /* Image Information */
+      dataOut.writeByte(faceImageType);
+      dataOut.writeByte(imageDataType);
+      dataOut.writeShort(width);
+      dataOut.writeShort(height);
+      dataOut.writeByte(imageColorSpace);
+      dataOut.writeByte(sourceType);
+      dataOut.writeShort(deviceType);
+      dataOut.writeShort(quality);
+
+      /*
+       * Read image data, image data type code based on Section 5.8.1
+       * ISO 19794-5
+       */
+      switch (imageDataType) {
+      case IMAGE_DATA_TYPE_JPEG:
+         writeImage(image, dataOut, "image/jpeg");
+         break;
+      case IMAGE_DATA_TYPE_JPEG2000:
+         writeImage(image, dataOut, "image/jpeg2000");
+         break;
+      default:
+         throw new IOException("Unknown image data type!");
+      }
+      
+      dataOut.flush();
+      byte[] result = out.toByteArray();
+      faceImageBlockLength = result.length;
+      dataOut.close();
+      out = new ByteArrayOutputStream();
+      dataOut = new DataOutputStream(out);
+      dataOut.writeInt((int)faceImageBlockLength);
+      dataOut.write(result);
+      dataOut.flush();
+      result = out.toByteArray();
+      dataOut.close();
+      return result;
+   }
+   
    private BufferedImage readImage(InputStream in, String mimeType)
    throws IOException {
       ImageInputStream iis = ImageIO.createImageInputStream(in);
@@ -254,6 +356,25 @@ public class FaceInfo
       throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
+   private BufferedImage writeImage(BufferedImage image, OutputStream out, String mimeType)
+   throws IOException {
+      ImageOutputStream ios = ImageIO.createImageOutputStream(out);
+      Iterator writers = ImageIO.getImageWritersByMIMEType(mimeType);
+      while (writers.hasNext()) {
+         try {
+            ImageWriter writer = (ImageWriter)writers.next();
+            writer.setOutput(ios);
+            ImageWriteParam pm = writer.getDefaultWriteParam();
+            pm.setSourceRegion(new Rectangle(0, 0, width, height));
+            writer.write(image);
+         } catch (Exception e) {
+            e.printStackTrace();
+            continue;
+         }
+      }
+      throw new IOException("Could not decode \"" + mimeType + "\" image!");
+   }
+   
    /**
     * Gets the image.
     * 
