@@ -39,6 +39,15 @@ public class PassportUtil implements ISO7816 {
 //        ISOException.throwIt((short)(0x6d00 | (capdu[s] & 0xff)));
 //    }
 
+    public static short byteCount(short s) {
+        if(((s >>> 8) & 0xff) == 0) {
+            return 1;
+        }
+        else {
+            return 2;
+        }
+    }
+    
     /**
      * Counts the number of set bits in a byte
      * 

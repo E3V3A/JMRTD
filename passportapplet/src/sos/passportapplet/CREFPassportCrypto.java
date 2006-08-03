@@ -53,8 +53,8 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
 
     private static Cipher ciph;
     
-    CREFPassportCrypto() {
-        super();
+    CREFPassportCrypto(KeyStore keyStore) {
+        super(keyStore);
         ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_ISO9797_M2, false);
         sm_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
                                                  KeyBuilder.LENGTH_DES,
@@ -82,11 +82,9 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
                                                               JCSystem.CLEAR_ON_RESET);
 }
 
-    public  boolean verifyMac(DESKey kMac_a, DESKey kMac_b, byte[] msg,
-            short msg_offset, short msg_len, byte[] mac, short mac_offset) {
-        createMac(kMac_a,
-                  kMac_b,
-                  msg,
+    public boolean verifyMacFinal(byte[] msg, short msg_offset, short msg_len,
+            byte[] mac, short mac_offset) {
+        createMacFinal(msg,
                   msg_offset,
                   msg_len,
                   tempSpace_verifyMac,
@@ -128,8 +126,10 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
     private static final byte[] ZERO = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
     // FIXME: remove all references to ciph
-    public void createMac(DESKey kMac_a, DESKey kMac_b, byte[] msg,
+    public void createMacFinal(byte[] msg,
             short msg_offset, short msg_len, byte[] mac, short mac_offset) {
+        DESKey kMac_a = keyStore.getMacKey(KeyStore.KEY_A);
+        DESKey kMac_b = keyStore.getMacKey(KeyStore.KEY_B); 
         short blocksize = (short) 8;
         short blocks = (short) 3;
         if ((short) (blocksize * blocks) > (short) tempSpace_createMac.length)
@@ -193,75 +193,17 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
         sm_kEnc.setKey(keys, encKey_p);
     }
 
-    public boolean verifyMac(byte state, byte[] msg, short msg_offset,
-            short msg_len, byte[] mac, short mac_offset) {
-        if (state == PassportApplet.MUTUAL_AUTHENTICATED) {
-            return verifyMac(sm_kMac_a,
-                             sm_kMac_b,
-                             msg,
-                             msg_offset,
-                             msg_len,
-                             mac,
-                             mac_offset);
-        } else if (state == PassportApplet.CHALLENGED) {
-            return verifyMac(ma_kMac_a,
-                             ma_kMac_b,
-                             msg,
-                             msg_offset,
-                             msg_len,
-                             mac,
-                             mac_offset);
-        }
-
-        return false;
-    }
-
-    public void createMac(byte state, byte[] msg, short msg_offset,
-            short msg_len, byte[] mac, short mac_offset) {
-        if ((state & PassportApplet.MUTUAL_AUTHENTICATED) ==  PassportApplet.MUTUAL_AUTHENTICATED) {
-            createMac(sm_kMac_a,
-                      sm_kMac_b,
-                      msg,
-                      msg_offset,
-                      msg_len,
-                      mac,
-                      mac_offset);
-        } else if ((state & PassportApplet.CHALLENGED) == PassportApplet.CHALLENGED) {
-            createMac(ma_kMac_a,
-                      ma_kMac_b,
-                      msg,
-                      msg_offset,
-                      msg_len,
-                      mac,
-                      mac_offset);
-        }
-    }
-
-    public short decrypt(byte state, byte[] ctext, short ctext_offset,
-            short ctext_len, byte[] ptext, short ptext_offset) {
-        DESKey k=null;
-        
-        if (PassportUtil.hasBitMask(state, PassportApplet.MUTUAL_AUTHENTICATED)) {
-            k = sm_kEnc;
-        }
-        else if(PassportUtil.hasBitMask(state, PassportApplet.CHALLENGED)) {
-            k = ma_kEnc;            
-        }
+    public short decrypt(byte[] ctext, short ctext_offset, short ctext_len,
+            byte[] ptext, short ptext_offset) {
+        DESKey k=keyStore.getEncKey();
         
         return decryptDESusingDESCBCM2(k, ctext, ctext_offset, ptext, ptext_offset, ctext_len);
     }
 
-    public short encrypt(byte state, byte padding,  byte[] ptext, short ptext_offset,
-            short ptext_len, byte[] ctext, short ctext_offset) {
-        DESKey k=null;
+    public short encrypt(byte padding, byte[] ptext,  short ptext_offset, short ptext_len,
+            byte[] ctext, short ctext_offset) {
+        DESKey k=keyStore.getEncKey();
         
-        if (PassportUtil.hasBitMask(state, PassportApplet.MUTUAL_AUTHENTICATED)) {
-            k = sm_kEnc;
-        }
-        else if(PassportUtil.hasBitMask(state, PassportApplet.CHALLENGED)) {
-            k = ma_kEnc;
-        }
-
         ciph.init(k, Cipher.MODE_ENCRYPT);
         short len = ciph.doFinal(ptext, ptext_offset, ptext_len, ctext, ctext_offset);
 
@@ -274,4 +216,15 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
         }
         return 0;
     }
+
+    public void updateMac(byte[] msg, short msg_offset, short msg_len) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    public void initMac() {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

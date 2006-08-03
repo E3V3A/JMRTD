@@ -97,7 +97,6 @@ public class FileSystem {
 
     public void writeData(short fid, short file_offset, byte[] data,
             short data_offset, short length) {
-        short idx = getFileIndex(fid);
         byte[] file = getFile(fid);
         
         if ((short) file.length < (short) (file_offset + length))
