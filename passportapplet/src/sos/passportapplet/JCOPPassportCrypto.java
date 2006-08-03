@@ -35,16 +35,22 @@ import javacardx.crypto.Cipher;
  * @version $Revision$
  */
 public class JCOPPassportCrypto extends PassportCrypto {
-    private static Signature sig;
+    protected Signature sig;
     private static Cipher ciph;
-    private static DESKey ma_kMac, ma_kEnc, sm_kMac, sm_kEnc;
+    private DESKey ma_kMac, sm_kMac;
+    protected DESKey ma_kEnc, sm_kEnc;
 
+    protected void makeSignatureInstance() {
+        sig = Signature.getInstance(Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3,
+                                    false);
+    }
+    
     JCOPPassportCrypto() {
         super();
 
-        sig = Signature.getInstance(Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3,
-                                    false);
-        ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_NOPAD, false);
+        makeSignatureInstance();
+        ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_NOPAD, false);        
+        
         sm_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
                                                KeyBuilder.LENGTH_DES3_2KEY,
                                                false);

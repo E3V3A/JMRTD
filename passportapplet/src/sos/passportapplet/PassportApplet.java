@@ -88,6 +88,10 @@ public class PassportApplet extends Applet implements ISO7816 {
     /**
      * Creates a new passport applet.
      */
+    public PassportApplet() {
+        
+    }
+    
     public PassportApplet(byte mode) {
         fileSystem = new FileSystem();
 
@@ -100,12 +104,13 @@ public class PassportApplet extends Applet implements ISO7816 {
         case PassportCrypto.JCOP_MODE:
             crypto = new JCOPPassportCrypto();
             break;
+        case PassportCrypto.JCOP41_MODE:
+            crypto = new JCOP41PassportCrypto();
+            break;
         }
 
         rnd = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
         ssc = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
-
-        register();
     }
 
     /**
@@ -117,7 +122,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        new PassportApplet(PassportCrypto.JCOP_MODE);
+        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
     }
 
     /**
@@ -220,8 +225,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte[] buffer = apdu.getBuffer();
         short buffer_p = (short) (OFFSET_CDATA & 0xff);
         short lc = (short) (buffer[OFFSET_LC] & 0xff);
-        short p1 = (short)(buffer[OFFSET_P1] & 0xff);
-        short p2 = (short)(buffer[OFFSET_P2] & 0xff);
+        short p1 = (short) (buffer[OFFSET_P1] & 0xff);
+        short p2 = (short) (buffer[OFFSET_P2] & 0xff);
 
         // FIXME: state check
 

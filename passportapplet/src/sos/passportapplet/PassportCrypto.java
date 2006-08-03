@@ -39,7 +39,8 @@ public abstract class PassportCrypto {
 
     public static final byte CREF_MODE = 3;
     public static final byte JCOP_MODE = 4;
-
+    public static final byte JCOP41_MODE = 5;
+    
     public static final byte INPUT_IS_NOT_PADDED = 5;
     public static final byte INPUT_IS_PADDED = 6;
 
@@ -50,6 +51,8 @@ public abstract class PassportCrypto {
     static byte[] tempSpace_unwrapCommandAPDU;
     RSAPrivateKey rsaPrivateKey;
     RSAPublicKey rsaPublicKey;
+
+    public static byte[] PAD_DATA = { (byte) 0x80, 0, 0, 0, 0, 0, 0, 0 };
 
     public PassportCrypto() {
         tempSpace_unwrapCommandAPDU = JCSystem.makeTransientByteArray((short) 8,
@@ -107,11 +110,11 @@ public abstract class PassportCrypto {
             ISOException.throwIt((short)0x6d66);
         }
 
-        // pad the header now (needed to calculate the mac) so we don't have to
+        // pad the header, make room for ssc, so we don't have to
         // modify pointers to locations in the apdu later.
         Util.arrayCopy(apdu, (short) (hdrLen + 1), // toss away lc
                        apdu, (short) (hdrLen + hdrPadLen), lc);
-        Util.arrayCopy(CREFPassportCrypto.PAD_DATA,
+        Util.arrayCopy(PassportCrypto.PAD_DATA,
                        (short) 0,
                        apdu,
                        hdrLen,

@@ -49,8 +49,6 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
     private static DESKey sm_kMac_a, sm_kMac_b;
     private static DESKey sm_kEnc, ma_kEnc;
     
-    public static byte[] PAD_DATA = { (byte) 0x80, 0, 0, 0, 0, 0, 0, 0 };
-
     private static byte[] tempSpace_verifyMac;
 
     private static Cipher ciph;
