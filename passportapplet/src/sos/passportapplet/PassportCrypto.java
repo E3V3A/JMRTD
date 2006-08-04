@@ -28,12 +28,15 @@ import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.CryptoException;
+import javacard.security.DESKey;
 import javacard.security.MessageDigest;
 import javacard.security.KeyBuilder;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
+import javacard.security.Signature;
+import javacardx.crypto.Cipher;
 
-public abstract class PassportCrypto {
+public class PassportCrypto {
     public static final byte ENC_MODE = 1;
     public static final byte MAC_MODE = 2;
 
@@ -47,49 +50,74 @@ public abstract class PassportCrypto {
     public static final byte PAD_INPUT = 7;
     public static final byte DONT_PAD_INPUT = 8;
 
-    private static MessageDigest shaDigest;
-    static byte[] tempSpace_unwrapCommandAPDU;
-    RSAPrivateKey rsaPrivateKey;
-    RSAPublicKey rsaPublicKey;
+    MessageDigest shaDigest;
+    Signature sig;
+    Cipher ciph;
     KeyStore keyStore;
     
     public static byte[] PAD_DATA = { (byte) 0x80, 0, 0, 0, 0, 0, 0, 0 };
 
-    public PassportCrypto(KeyStore keyStore) {
-        this.keyStore = keyStore;
-        tempSpace_unwrapCommandAPDU = JCSystem.makeTransientByteArray((short) 8,
-                                                                      JCSystem.CLEAR_ON_RESET);
-        shaDigest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
-        
-        rsaPrivateKey = (RSAPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, KeyBuilder.LENGTH_RSA_1024,  false);
-        rsaPublicKey =  (RSAPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024,  false);
+    protected void makeSignatureInstance() {
+        sig = Signature.getInstance(Signature.ALG_DES_MAC8_ISO9797_1_M2_ALG3,
+                                    false);
     }
 
-//    public void setAAPublicKey(byte[] buffer, short exp_offset, short exp_length) {
-//        rsaPublicKey.setExponent(buffer, offset, RSA_EXP_LENGTH);
-//        rsaPublicKey.setModulus(buffer, offset + RSA_EXP_LENGTH, RSA_MOD_LENGTH);
-//    }
-//    
-//    public void setAAPrivateKey(byte[] buffer, short offset, short length) {
-//        rsaPrivateKey.setExponent(buffer, offset, RSA_EXP_LENGTH);
-//        rsaPrivateKey.setModulus(buffer, offset + RSA_EXP_LENGTH, RSA_MOD_LENGTH);
-//    }
+    public PassportCrypto(KeyStore keyStore) {
+        this.keyStore = keyStore;
+       
+        shaDigest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
+        makeSignatureInstance();
+        ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_NOPAD, false);        
+    }
     
-    public abstract void initMac();
+    public void createMacFinal(byte[] msg, short msg_offset, short msg_len,
+            byte[] mac, short mac_offset) {
+        DESKey k = keyStore.getMacKey();
 
-    public abstract boolean verifyMacFinal(byte[] msg, short msg_offset, short msg_len,
-            byte[] mac, short mac_offset);
+        sig.init(k, Signature.MODE_SIGN);
+        sig.sign(msg, msg_offset, msg_len, mac, mac_offset);
+    }
 
-    public abstract void updateMac(byte[] msg, short msg_offset, short msg_len);
-    
-    public abstract void createMacFinal(byte[] msg, short msg_offset, short msg_len,
-            byte[] mac, short mac_offset);
+    public boolean verifyMacFinal(byte[] msg, short msg_offset, short msg_len,
+            byte[] mac, short mac_offset) {
+        DESKey k = keyStore.getMacKey();
 
-    public abstract short decrypt(byte[] ctext, short ctext_offset, short ctext_len,
-            byte[] ptext, short ptext_offset);
+        sig.init(k, Signature.MODE_VERIFY);
+        return sig.verify(msg, msg_offset, msg_len, mac, mac_offset, (short) 8);
+    }
 
-    public abstract short encrypt(byte padding, byte[] ptext, short ptext_offset,
-            short ptext_len, byte[] ctext, short ctext_offset);
+    public short decrypt(byte[] ctext, short ctext_offset, short ctext_len,
+            byte[] ptext, short ptext_offset) {
+        DESKey k = keyStore.getEncKey();
+        
+        ciph.init(k, Cipher.MODE_DECRYPT);
+        return ciph.doFinal(ctext, ctext_offset, ctext_len, ptext, ptext_offset);
+    }
+
+    public short encrypt(byte padding, byte[] ptext,  short ptext_offset, short ptext_len,
+            byte[] ctext, short ctext_offset) {
+        DESKey k = keyStore.getEncKey();
+
+        if(padding == PAD_INPUT) {
+            // pad input
+            ptext_len = PassportUtil.pad(ptext, ptext_offset, ptext_len);
+        }
+ 
+        ciph.init(k, Cipher.MODE_ENCRYPT);
+        short len = ciph.doFinal(ptext, ptext_offset, ptext_len, ctext, ctext_offset);
+        
+        return len;
+    }
+
+    public void updateMac(byte[] msg, short msg_offset, short msg_len) {
+        sig.update(msg, msg_offset, msg_len);
+    }
+
+    public void initMac() {
+        DESKey k = keyStore.getMacKey();
+        
+        sig.init(k, Signature.MODE_SIGN);    
+    }
 
     public short unwrapCommandAPDU_werkt(byte[] ssc, APDU aapdu) {
         byte[] apdu = aapdu.getBuffer();
@@ -145,7 +173,7 @@ public abstract class PassportCrypto {
                 ISOException.throwIt((short) 0x6d66);
             }
             for (short i = 0; i < do87LenBytes; i++) {
-                do87DataLen += (short) ((apdu[apdu_p + i] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
+                do87DataLen += (short) ((apdu[(short)(apdu_p + i)] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
             }
             apdu_p += do87LenBytes;
 
@@ -218,7 +246,6 @@ public abstract class PassportCrypto {
         byte[] apdu = aapdu.getBuffer();
         short apdu_p = (short) (ISO7816.OFFSET_CDATA & 0xff);
         short start_p = apdu_p;
-        // offset
         short lc = (short) (apdu[ISO7816.OFFSET_LC] & 0xff);
         short le = 0;
         short do87DataLen = 0;
@@ -226,14 +253,14 @@ public abstract class PassportCrypto {
         short do87LenBytes = 0;
         short hdrLen = 4;
         short hdrPadLen = (short) (8 - hdrLen);
-        short apduLength = (short) (hdrLen + 1 + lc);
+//        short apduLength = (short) (hdrLen + 1 + lc);
 
         aapdu.setIncomingAndReceive();
 
         // sanity check
-        if (apdu.length < (short) (apduLength + hdrPadLen + ssc.length)) {
-            ISOException.throwIt((short)0x6d66);
-        }
+//        if (apdu.length < (short) (apduLength + hdrPadLen + ssc.length)) {
+//            ISOException.throwIt((short)0x6d66);
+//        }
 
         incrementSSC(ssc);
 
@@ -250,7 +277,7 @@ public abstract class PassportCrypto {
                 ISOException.throwIt((short) 0x6d66);
             }
             for (short i = 0; i < do87LenBytes; i++) {
-                do87DataLen += (short) ((apdu[apdu_p + i] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
+                do87DataLen += (short) ((apdu[(short)(apdu_p + i)] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
             }
             apdu_p += do87LenBytes;
 
@@ -308,7 +335,7 @@ public abstract class PassportCrypto {
             apdu[hdrLen] = (byte) (plaintextLc & 0xff);
         }
 
-        apduLength = (short) (hdrLen + 1 + plaintextLength);
+//        apduLength = (short) (hdrLen + 1 + plaintextLength);
 
         // empty out the rest
 //        for (short i = apduLength; i < apdu.length; i++) {
@@ -395,24 +422,19 @@ public abstract class PassportCrypto {
         Util.setShort(apdu, apdu_p, sw1sw2);
         apdu_p += 2;
 
-        // calculate mac
+        // calculate and write mac
         initMac();
         updateMac(ssc, (short)0, (short)ssc.length);
         createMacFinal(apdu,
                   (short) 0,
                   apdu_p,
-                  PassportCrypto.tempSpace_unwrapCommandAPDU,
-                  (short) 0);
+                  apdu,
+                  (short)(apdu_p+2));
 
         // write do8e
         apdu[apdu_p++] = (byte) 0x8e;
         apdu[apdu_p++] = 0x08;
-        Util.arrayCopy(PassportCrypto.tempSpace_unwrapCommandAPDU,
-                       (short) 0,
-                       apdu,
-                       apdu_p,
-                       (short) 8);
-        apdu_p += 8;
+        apdu_p += 8; // for mac written earlier
 
         return apdu_p;
     }
@@ -429,7 +451,7 @@ public abstract class PassportCrypto {
      */
     static byte[] c = { 0x00, 0x00, 0x00, 0x00 };
 
-    public static void deriveKey(byte[] buffer, short keySeed_offset, byte mode, short key_offset)
+    public void deriveKey(byte[] buffer, short keySeed_offset, byte mode, short key_offset)
             throws CryptoException {
         // only key_offset is a write pointer
         // sanity checks
@@ -491,7 +513,7 @@ public abstract class PassportCrypto {
                        (short) 4);
     }
 
-    public static void createHash(byte[] msg, short msg_offset, short length,
+    public void createHash(byte[] msg, short msg_offset, short length,
             byte[] dest, short dest_offset) throws CryptoException {
         if ((dest.length < (short) (dest_offset + length))
                 || (msg.length < (short) (msg_offset + length)))

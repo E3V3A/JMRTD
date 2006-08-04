@@ -25,17 +25,13 @@ package sos.passportapplet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
-import javacard.framework.Util;
 import javacard.security.DESKey;
-import javacard.security.KeyBuilder;
 import javacardx.crypto.Cipher;
 
 /**
  * This class is a hack. It (probably) implements 
  * => encrypt/decrypt of ALG_DES_CBC_NOPAD using ALG_DES_CBC_ISO9797_M2
- * for use in
- * => sign/verify ALG_DES_MAC8_ISO9797_1_M2_ALG3
- * 
+
  * This is because ALG_DES_CBC_NOPAD and ALG_DES_MAC8_ISO9797_1_M2_ALG3 do not 
  * exist on CREF.
  * 
@@ -44,56 +40,14 @@ import javacardx.crypto.Cipher;
  * 
  * @version $Revision$
  */
-public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
-    private static DESKey ma_kMac_a, ma_kMac_b;
-    private static DESKey sm_kMac_a, sm_kMac_b;
-    private static DESKey sm_kEnc, ma_kEnc;
-    
-    private static byte[] tempSpace_verifyMac;
-
-    private static Cipher ciph;
-    
+public class CREFPassportCrypto extends JCOP41PassportCrypto implements ISO7816 {
+  
     CREFPassportCrypto(KeyStore keyStore) {
         super(keyStore);
         ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_ISO9797_M2, false);
-        sm_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                                 KeyBuilder.LENGTH_DES,
-                                                 false);
-        sm_kMac_b = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                                 KeyBuilder.LENGTH_DES,
-                                                 false);
-        ma_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                                 KeyBuilder.LENGTH_DES,
-                                                 false);
-        ma_kMac_b = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                                 KeyBuilder.LENGTH_DES,
-                                                 false);
-        sm_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                               KeyBuilder.LENGTH_DES3_2KEY,
-                                               false);
-        ma_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
-                                               KeyBuilder.LENGTH_DES3_2KEY,
-                                               false);
-        tempSpace_createMac = JCSystem.makeTransientByteArray((short) 24,
-                                                              JCSystem.CLEAR_ON_RESET);
+
         tempSpace_decryptDES = JCSystem.makeTransientByteArray((short) 16,
                                                                JCSystem.CLEAR_ON_RESET);
-        tempSpace_verifyMac = JCSystem.makeTransientByteArray((short) 8,
-                                                              JCSystem.CLEAR_ON_RESET);
-}
-
-    public boolean verifyMacFinal(byte[] msg, short msg_offset, short msg_len,
-            byte[] mac, short mac_offset) {
-        createMacFinal(msg,
-                  msg_offset,
-                  msg_len,
-                  tempSpace_verifyMac,
-                  (short) 0);
-        return Util.arrayCompare(tempSpace_verifyMac,
-                                 (short) 0,
-                                 mac,
-                                 mac_offset,
-                                 (short) 8) == 0;
     }
 
     private short decryptDESusingDESCBCM2(DESKey key, byte[] in,
@@ -121,77 +75,8 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
         return (short)(written - 8); // FIXME: hack, compensate for padding
     }
 
-    private static byte[] tempSpace_createMac;
     private static byte[] tempSpace_decryptDES;
     private static final byte[] ZERO = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
-    // FIXME: remove all references to ciph
-    public void createMacFinal(byte[] msg,
-            short msg_offset, short msg_len, byte[] mac, short mac_offset) {
-        DESKey kMac_a = keyStore.getMacKey(KeyStore.KEY_A);
-        DESKey kMac_b = keyStore.getMacKey(KeyStore.KEY_B); 
-        short blocksize = (short) 8;
-        short blocks = (short) 3;
-        if ((short) (blocksize * blocks) > (short) tempSpace_createMac.length)
-            if (kMac_a == null || kMac_b == null || msg == null
-                    || msg_len != 32 || ciph == null
-                    || (ciph.getAlgorithm() != Cipher.ALG_DES_CBC_ISO9797_M2))
-                if (msg.length < (short) (msg_offset + msg_len))
-                    ISOException.throwIt((short) 0x6d67);
-
-        ciph.init(kMac_a, Cipher.MODE_ENCRYPT);
-
-        short off = msg_offset;
-        short aligned = (short) (((short) msg_len) / blocksize);
-        short rest = (short) (msg_len % blocksize);
-        for (short i = 0; i < aligned; i++) {
-            ciph.update(msg, off, blocksize, tempSpace_createMac, (short) 0);
-            off += blocksize;
-        }
-        short last = ciph.doFinal(msg,
-                                  off,
-                                  rest,
-                                  tempSpace_createMac,
-                                  (short) 0);
-
-        Util.arrayCopy(tempSpace_createMac,
-                       (short) (last - 8),
-                       mac,
-                       (short) 0,
-                       (short) 8);
-        decryptDESusingDESCBCM2(kMac_b,
-                                mac,
-                                (short) 0,
-                                tempSpace_createMac,
-                                (short) 0,
-                                (short) 8);
-        Util.arrayCopy(tempSpace_createMac,
-                       (short) 0,
-                       mac,
-                       (short) 0,
-                       (short) 8);
-
-        ciph.init(kMac_a, Cipher.MODE_ENCRYPT);
-        ciph.doFinal(mac, (short) 0, (short) 8, tempSpace_createMac, (short) 0);
-
-        Util.arrayCopy(tempSpace_createMac,
-                       (short) 0,
-                       mac,
-                       (short) 0,
-                       (short) 8);
-    }
-
-    public void setMutualAuthKeys(byte[] keys, short macKey_p, short encKey_p) {
-        ma_kMac_a.setKey(keys, macKey_p);
-        ma_kMac_b.setKey(keys, (short)(macKey_p + 8));                
-        ma_kEnc.setKey(keys, encKey_p);
-    }
-    
-    public void setSessionKeys(byte[] keys, short macKey_p, short encKey_p) {
-        sm_kMac_a.setKey(keys, macKey_p);
-        sm_kMac_b.setKey(keys, (short)(macKey_p + 8));                
-        sm_kEnc.setKey(keys, encKey_p);
-    }
 
     public short decrypt(byte[] ctext, short ctext_offset, short ctext_len,
             byte[] ptext, short ptext_offset) {
@@ -216,15 +101,4 @@ public class CREFPassportCrypto extends PassportCrypto implements ISO7816 {
         }
         return 0;
     }
-
-    public void updateMac(byte[] msg, short msg_offset, short msg_len) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    public void initMac() {
-        // TODO Auto-generated method stub
-        
-    }
-
 }

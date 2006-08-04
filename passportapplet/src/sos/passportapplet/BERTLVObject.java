@@ -11,13 +11,13 @@ package sos.passportapplet;
  */
 public class BERTLVObject {
     /** Universal tag class. */
-    public static final int UNIVERSAL_CLASS = 0;
+    public static final short UNIVERSAL_CLASS = 0;
     /** Application tag class. */
-    public static final int APPLICATION_CLASS = 1;
+    public static final short APPLICATION_CLASS = 1;
     /** Context specific tag class. */
-    public static final int CONTEXT_SPECIFIC_CLASS = 2;
+    public static final short CONTEXT_SPECIFIC_CLASS = 2;
     /** Private tag class. */
-    public static final int PRIVATE_CLASS = 3;
+    public static final short PRIVATE_CLASS = 3;
 
     short tag;
     short tagClass;

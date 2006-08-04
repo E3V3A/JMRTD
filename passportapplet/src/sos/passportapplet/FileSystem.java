@@ -38,9 +38,6 @@ import javacard.framework.ISO7816;
  * @version $Revision$
  */
 public class FileSystem {
-    static final short AAPRIVKEY_FID = (short) 0x0001;
-    private boolean AAPRIVKEY_SET = false;
-    
     static final short EF_DG1_FID = (short) 0x0101;
     static final short EF_DG2_FID = (short) 0x0102;
     static final short EF_DG3_FID = (short) 0x0103;
@@ -76,21 +73,15 @@ public class FileSystem {
     private static final short EF_DG15_INDEX = (short) 14;
     private static final short EF_SOD_INDEX = (short) 15;
     private static final short EF_COM_INDEX = (short) 16;
-    private static final short AAPRIVKEY_INDEX = (short) 17;
-
-    public static final short FILE_NOT_HERE = (short)0x6f00;;
 
     private Object[] files;
 
     public FileSystem() {
-        files = new Object[18];
+        files = new Object[17];
     }
 
     public void createFile(short fid, short size) {
         short idx = getFileIndex(fid);
-
-        if (files[idx] != null)
-            ISOException.throwIt(ISO7816.SW_FILE_INVALID);
 
         files[idx] = new byte[size];
     }
@@ -99,8 +90,12 @@ public class FileSystem {
             short data_offset, short length) {
         byte[] file = getFile(fid);
         
+        if(file == null) {
+            ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
+        }
+        
         if ((short) file.length < (short) (file_offset + length))
-            ISOException.throwIt((short) 0x6d42);
+            ISOException.throwIt(ISO7816.SW_FILE_FULL);
 
         Util.arrayCopy(data, data_offset, getFile(fid), file_offset, length);
     }
@@ -145,23 +140,9 @@ public class FileSystem {
             return EF_SOD_INDEX;
         case EF_COM_FID:
             return EF_COM_INDEX;
-        case AAPRIVKEY_FID:
-            return AAPRIVKEY_INDEX;
         default:
-            ISOException.throwIt(FILE_NOT_HERE); 
+            ISOException.throwIt(ISO7816.SW_FILE_INVALID); 
             return 0;
         }
-    }
-    
-    public boolean isSelectable(short fid) {
-        if(fid == AAPRIVKEY_FID) {
-            if(AAPRIVKEY_SET) {
-                return false;
-            } else {
-                AAPRIVKEY_SET = true;
-                return true;
-            }
-        }
-        return true;
     }
 }

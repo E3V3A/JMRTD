@@ -35,6 +35,11 @@ import javacard.framework.Util;
  */
 public class PassportInit {
 
+    private PassportCrypto crypto;
+
+    PassportInit(PassportCrypto crypto) {
+        this.crypto = crypto;
+    }
     /**
      * Looks up the numerical value for MRZ characters. In order to be able to
      * compute check digits.
@@ -179,7 +184,7 @@ public class PassportInit {
      *            pointing to docNr
      * @returns offset in buffer pointing to keySeed.
      */
-    public static short computeKeySeed(
+    public short computeKeySeed(
         byte[] buffer, 
         short docNr_p,
         short docNr_length,
@@ -217,7 +222,7 @@ public class PassportInit {
         buffer[buffer_p] = checkDigit(buffer, offset, dateOfExpiry_length);
         buffer_p++;
         
-        PassportCrypto.createHash(buffer,
+        crypto.createHash(buffer,
                                   (short)0,
                                   buffer_p,
                                   buffer,
@@ -235,7 +240,7 @@ public class PassportInit {
      *            pointing to docNr
      * @returns offset in buffer pointing to keySeed.
      */
-    public static short computeKeySeed(byte[] buffer, short offset) {
+    public short computeKeySeed(byte[] buffer, short offset) {
         // sanity checks (80 for hash, 3 for checkdigits)
         if (buffer.length < (short) (offset + DOCNR_LEN + DOB_LEN + DOE_LEN
                 + 80 + 3)) {
@@ -265,7 +270,7 @@ public class PassportInit {
 
         offset++;
 
-        PassportCrypto.createHash(buffer,
+        crypto.createHash(buffer,
                                   start_offset,
                                   (short) (offset - start_offset),
                                   buffer,
