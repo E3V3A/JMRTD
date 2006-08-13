@@ -130,7 +130,6 @@ public class PassportApduService implements CardService {
    }
 
    Apdu createSelectAppletAPDU(byte[] aid) {
-      byte lc = (byte) (aid.length & 0x000000FF);
       byte[] data = aid;
       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
             (byte) 0x004, (byte) 0x00, data);
@@ -239,7 +238,6 @@ public class PassportApduService implements CardService {
       System.arraycopy(ciphertext, 0, data, 0, 32);
       System.arraycopy(mactext, 0, data, 32, 8);
 
-      byte lc = 40;
       int le = 40;
       Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
             ISO7816.INS_EXTERNAL_AUTHENTICATE, p1, p2, data, le);

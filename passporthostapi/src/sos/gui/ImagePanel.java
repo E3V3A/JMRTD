@@ -99,9 +99,6 @@ public class ImagePanel extends JPanel
       setVisible(true);
    }
 
-   private void clearImage(BufferedImage image) {
-   }
-
    public void highlightPoint(String key, int x, int y) {
       setVisible(false);
       highlights.put(key, new Point(x, y));

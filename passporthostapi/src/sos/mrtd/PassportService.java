@@ -31,7 +31,6 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -68,7 +67,6 @@ public class PassportService extends PassportAuthService
 {
    private PassportASN1Service passportASN1Service;
    private KeyFactory keyFactory;
-   private CertificateFactory certFactory;
    
    /**
     * Creates a new passport passportASN1Service for accessing the passport.
@@ -90,7 +88,6 @@ public class PassportService extends PassportAuthService
       }
       addAuthenticationListener(passportASN1Service);
       keyFactory = KeyFactory.getInstance("RSA");
-      certFactory = CertificateFactory.getInstance("X.509");
    }
 
    /**
