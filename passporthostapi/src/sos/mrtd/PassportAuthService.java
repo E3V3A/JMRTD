@@ -164,7 +164,8 @@ public class PassportAuthService implements CardService, AuthListener
       SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
       long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
       wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-      notifyBACPerformed(wrapper, rndICC, rndIFD, kIFD, kICC, true);
+      BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, true);
+      notifyBACPerformed(event);
       state = BAC_AUTHENTICATED_STATE;
    }
    
@@ -176,10 +177,7 @@ public class PassportAuthService implements CardService, AuthListener
       authListeners.remove(l);
    }
    
-   protected void notifyBACPerformed(SecureMessagingWrapper wrapper,
-		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
-		   boolean success) {
-      BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, success);
+   protected void notifyBACPerformed(BACEvent event) {
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
@@ -207,16 +205,16 @@ public class PassportAuthService implements CardService, AuthListener
       aaSignature.update(m1);
       aaSignature.update(m2);
       boolean success = aaSignature.verify(response);
-      notifyAAPerformed(pubkey, m1, m2, success);
+      AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
+      notifyAAPerformed(event);
       if (success) {
          state = AA_AUTHENTICATED_STATE;
       }
       return success;
    }
    
-   protected void notifyAAPerformed(PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
+   protected void notifyAAPerformed(AAEvent event) {
       Iterator it = authListeners.iterator();
-      AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
       while (it.hasNext()) {
           AuthListener listener = (AuthListener)it.next();
           listener.performedAA(event);
@@ -254,7 +252,8 @@ public class PassportAuthService implements CardService, AuthListener
     */
    public void setWrapper(SecureMessagingWrapper wrapper) {
       this.wrapper = wrapper;
-      notifyBACPerformed(wrapper, null, null, null, null, true);
+      BACEvent event = new BACEvent(this, wrapper, null, null, null, null, true);
+      notifyBACPerformed(event);
    }
 
    public void performedBAC(BACEvent be) {
