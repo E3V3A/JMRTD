@@ -41,7 +41,6 @@ import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
 import sos.util.ASN1Utils;
-import sos.util.Hex;
 
 /**
  * Service for initializing blank passport reference applets.

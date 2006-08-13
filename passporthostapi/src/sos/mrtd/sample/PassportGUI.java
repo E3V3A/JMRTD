@@ -30,17 +30,13 @@ import java.awt.event.ActionListener;
 import java.security.Provider;
 import java.security.Security;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 
 import sos.mrtd.PassportApduService;
-import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.APDUIOService;
 import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.JPCSCService;
@@ -63,15 +59,8 @@ public class PassportGUI extends JPanel
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-   private static final byte[] ZERO_DATA = new byte[256];
-
-   private static final Border PANEL_BORDER =
-      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-
    private PassportApduService service;
    private APDULogPanel log;
-   private SecureMessagingWrapper wrapper;
-
    private JButton openButton, closeButton;
    private JComboBox terminalsComboBox;
 

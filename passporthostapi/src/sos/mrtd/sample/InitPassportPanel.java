@@ -26,18 +26,13 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.security.KeyPair;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -55,9 +50,7 @@ import sos.mrtd.BACEvent;
 import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportInitService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
-import sos.util.Hex;
 
 /**
  * Convenient GUI component for sending initialization commands to the passport.
