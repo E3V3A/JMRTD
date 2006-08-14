@@ -169,14 +169,29 @@ public class PassportAuthService implements CardService, AuthListener
       state = BAC_AUTHENTICATED_STATE;
    }
    
+   /**
+    * Adds an authentication event listener.
+    * 
+    * @param l listener
+    */
    public void addAuthenticationListener(AuthListener l) {
       authListeners.add(l);
    }
    
+   /**
+    * Removes an authentication event listener.
+    * 
+    * @param l listener
+    */
    public void removeAuthenticationListener(AuthListener l) {
       authListeners.remove(l);
    }
    
+   /**
+    * Notifies listeners about BAC events.
+    * 
+    * @param event BAC event
+    */
    protected void notifyBACPerformed(BACEvent event) {
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
@@ -213,6 +228,11 @@ public class PassportAuthService implements CardService, AuthListener
       return success;
    }
    
+   /**
+    * Notifies listeners about AA event.
+    * 
+    * @param event AA event.
+    */
    protected void notifyAAPerformed(AAEvent event) {
       Iterator it = authListeners.iterator();
       while (it.hasNext()) {
@@ -242,6 +262,12 @@ public class PassportAuthService implements CardService, AuthListener
       service.removeAPDUListener(l);
    }
    
+   /**
+    * Gets the wrapper. Returns <code>null</code> until a
+    * BAC has been performed.
+    * 
+    * @return the wrapper
+    */
    public SecureMessagingWrapper getWrapper() {
       return wrapper;
    }

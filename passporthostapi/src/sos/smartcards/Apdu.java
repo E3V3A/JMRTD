@@ -90,6 +90,17 @@ public class Apdu implements ISO7816 {
        this(cla, ins, p1, p2, data == null ? 0 : data.length, data, le);
    }
 
+   /**
+    * Constructs an APDU.
+    * 
+    * @param cla class bytes
+    * @param ins instruction byte
+    * @param p1 parameter byte 1
+    * @param p2 parameter byte 2
+    * @param lc length of command data
+    * @param data command data
+    * @param le expected length of response
+    */
    public Apdu(byte cla, byte ins, byte p1, byte p2, int lc, byte[] data, int le) {
       if (data == null || lc == 0) {
          commandApduBuffer = new byte[4 + ((le < 0) ? 0 : 1)];

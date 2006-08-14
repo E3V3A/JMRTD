@@ -58,7 +58,8 @@ import sos.smartcards.ISO7816;
  *
  * @version $Revision$
  */
-public class PassportApduService implements CardService {
+public class PassportApduService implements CardService
+{
    /** The applet we select when we start a session. */
    private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02,
          0x47, 0x10, 0x01 };
@@ -290,6 +291,16 @@ public class PassportApduService implements CardService {
       }
    }
 
+   /**
+    * Sends a <code>READ BINARY</code> command to the passport.
+    *
+    * @param offset offset into the file.
+    * @param le the expected length of the file to read.
+    *
+    * @return a byte array of length <code>le</code> with
+    *         (the specified part of) the contents of the
+    *         currently selected file.
+    */
    public byte[] sendReadBinary(short offset, int le) throws IOException {
       return sendReadBinary(null, offset, le);
    }
@@ -303,8 +314,9 @@ public class PassportApduService implements CardService {
     * @param offset offset into the file.
     * @param le the expected length of the file to read.
     *
-    * @return a byte array of length <code>le</code> with (part of)
-    *         the contents of the currently selected file.
+    * @return a byte array of length <code>le</code> with
+    *         (the specified part of) the contents of the
+    *         currently selected file.
     */
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws IOException {
@@ -333,13 +345,21 @@ public class PassportApduService implements CardService {
       return result;
    }
 
+   /**
+    * Sends an <code>INTERNAL AUTHENTICATE</code> command to the passport.
+    *
+    * @param rndIFD the challenge to send
+    * 
+    * @return the response from the passport (status word removed)
+    */
    public byte[] sendInternalAuthenticate(byte[] rndIFD) {
       return sendInternalAuthenticate(null, rndIFD);
    }
    
    /**
-    * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport.
+    * Sends an <code>INTERNAL AUTHENTICATE</code> command to the passport.
     * 
+    * @param wrapper secure messaging wrapper
     * @param rndIFD the challenge to send
     * 
     * @return the response from the passport (status word removed)
@@ -401,17 +421,5 @@ public class PassportApduService implements CardService {
       }
       return result;
    }
-
-   public void selectFile(SecureMessagingWrapper wrapper, byte[] fid)
-         throws IOException {
-      sendSelectFile(wrapper, fid);
-   }
-   
-   public void selectFile(SecureMessagingWrapper wrapper, short fid)
-   throws IOException {
-       byte[] fiddle = { (byte)((fid >>> 8) & 0xff), (byte)(fid & 0xff) };  
-       selectFile(wrapper, fiddle);
-   }
-
 }
 

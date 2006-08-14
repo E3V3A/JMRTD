@@ -340,4 +340,15 @@ public class PassportInitService extends PassportApduService {
     public void lockApplet(SecureMessagingWrapper wrapper) {
         putData(wrapper, (byte)0xde, (byte)0xad, null);
     }
+    
+    public void selectFile(SecureMessagingWrapper wrapper, byte[] fid)
+    throws IOException {
+       sendSelectFile(wrapper, fid);
+    }
+    
+    public void selectFile(SecureMessagingWrapper wrapper, short fid)
+    throws IOException {
+       byte[] fiddle = { (byte)((fid >>> 8) & 0xff), (byte)(fid & 0xff) };  
+       selectFile(wrapper, fiddle);
+    }
 }

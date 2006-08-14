@@ -107,6 +107,9 @@ public abstract class AbstractCardService implements CardService {
      */
     public abstract void close();
 
+    /**
+     * Notifes listeners about initialization of APDU session.
+     */
     protected void notifyStartedAPDUSession() {
         Iterator it = apduListeners.iterator();
         while (it.hasNext()) {
@@ -115,6 +118,11 @@ public abstract class AbstractCardService implements CardService {
         }
     }
 
+    /**
+     * Notifies listeners about APDU event.
+     * 
+     * @param apdu APDU event
+     */
     protected void notifyExchangedAPDU(Apdu apdu) {
         Iterator it = apduListeners.iterator();
         while (it.hasNext()) {
@@ -123,6 +131,9 @@ public abstract class AbstractCardService implements CardService {
         }
     }
 
+    /**
+     * Notifes listeners about termination of APDU session.
+     */
     protected void notifyStoppedAPDUSession() {
         Iterator it = apduListeners.iterator();
         while (it.hasNext()) {
