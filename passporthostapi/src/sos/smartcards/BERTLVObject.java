@@ -120,7 +120,7 @@ public class BERTLVObject {
      * Constructs a new TLV object with tag <code>tag</code> containing data
      * <code>value</code>.
      * 
-     * @param tagByte
+     * @param tagBytes
      *            tag of TLV object
      * @param value
      *            data of TLV object
