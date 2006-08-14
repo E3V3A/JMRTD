@@ -195,7 +195,8 @@ public class PassportApduService implements CardService {
          throw new IllegalArgumentException("rndIFD wrong length");
       }
       if (rndICC == null || rndICC.length != 8) {
-         throw new IllegalArgumentException("rndICC wrong length");
+         // throw new IllegalArgumentException("rndICC wrong length");
+         rndICC = new byte[8];
       }
       if (kIFD == null || kIFD.length != 16) {
          throw new IllegalArgumentException("kIFD wrong length");
