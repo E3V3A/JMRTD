@@ -49,7 +49,7 @@ import sos.smartcards.CardService;
  */
 public class PassportASN1Service extends PassportAuthService
 {
-   /** ICAO specific datagroup tags. */
+   /** ICAO specific datagroup tag. */
    public static final int EF_COM_TAG = 0x60,
                            EF_DG1_TAG = 0x61,
                            EF_DG2_TAG = 0x75,

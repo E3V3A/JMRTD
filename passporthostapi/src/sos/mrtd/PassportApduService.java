@@ -81,7 +81,7 @@ public class PassportApduService implements CardService
     * Creates a new passport apdu sending service.
     *
     * @param service another service which will deal with sending
-    *        the apdus to the card.
+    *        the apdus to the card
     *
     * @throws GeneralSecurityException when the available JCE providers
     *         cannot provide the necessary cryptographic primitives:
@@ -182,11 +182,11 @@ public class PassportApduService implements CardService
    /**
     * Creates an <code>EXTERNAL AUTHENTICATE</code> command.
     *
-    * @param rndIFD our challenge.
-    * @param rndICC their challenge.
-    * @param kIFD our key material.
-    * @param kEnc the static encryption key.
-    * @param kMac the static mac key.
+    * @param rndIFD our challenge
+    * @param rndICC their challenge
+    * @param kIFD our key material
+    * @param kEnc the static encryption key
+    * @param kMac the static mac key
     *
     * @return the apdu to be sent to the card.
     */
@@ -249,12 +249,17 @@ public class PassportApduService implements CardService
    /**
     * Sends a <code>SELECT APPLET</code> command to the card.
     *
-    * @param aid the applet to select.
+    * @param aid the applet to select
     */
    void sendSelectApplet(byte[] aid) {
       sendAPDU(createSelectAppletAPDU(aid));
    }
 
+   /**
+    * Sends a <code>SELECT FILE</code> command to the passport.
+    *
+    * @param fid the file to select
+    */
    public void sendSelectFile(short fid) throws IOException {
       sendSelectFile(null, fid);
    }
@@ -264,8 +269,8 @@ public class PassportApduService implements CardService
     * Secure messaging will be applied to the command and response
     * apdu.
     *
-    * @param wrapper the secure messaging wrapper to use.
-    * @param fid the file to select.
+    * @param wrapper the secure messaging wrapper to use
+    * @param fid the file to select
     */
    public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
          throws IOException {
@@ -279,7 +284,7 @@ public class PassportApduService implements CardService
       }
    }
 
-   public void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
+   void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
          throws IOException {
       Apdu capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
@@ -294,12 +299,12 @@ public class PassportApduService implements CardService
    /**
     * Sends a <code>READ BINARY</code> command to the passport.
     *
-    * @param offset offset into the file.
-    * @param le the expected length of the file to read.
+    * @param offset offset into the file
+    * @param le the expected length of the file to read
     *
     * @return a byte array of length <code>le</code> with
     *         (the specified part of) the contents of the
-    *         currently selected file.
+    *         currently selected file
     */
    public byte[] sendReadBinary(short offset, int le) throws IOException {
       return sendReadBinary(null, offset, le);
@@ -310,13 +315,13 @@ public class PassportApduService implements CardService
     * Secure messaging will be applied to the command and response
     * apdu.
     *
-    * @param wrapper the secure messaging wrapper to use.
-    * @param offset offset into the file.
-    * @param le the expected length of the file to read.
+    * @param wrapper the secure messaging wrapper to use
+    * @param offset offset into the file
+    * @param le the expected length of the file to read
     *
     * @return a byte array of length <code>le</code> with
     *         (the specified part of) the contents of the
-    *         currently selected file.
+    *         currently selected file
     */
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws IOException {
@@ -336,7 +341,7 @@ public class PassportApduService implements CardService
    /**
     * Sends a <code>GET CHALLENGE</code> command to the passport.
     *
-    * @return a byte array of length 8 containing the challenge.
+    * @return a byte array of length 8 containing the challenge
     */
    public byte[] sendGetChallenge() {
       byte[] rapdu = sendAPDU(createGetChallengeAPDU());
@@ -384,15 +389,15 @@ public class PassportApduService implements CardService
     * (first 8 bytes), <code>rndIFD</code> (next 8 bytes), their key
     * material "<code>kICC</code>" (last 16 bytes).
     *
-    * @param rndIFD our challenge.
-    * @param rndICC their challenge.
-    * @param kIFD our key material.
-    * @param kEnc the static encryption key.
-    * @param kMac the static mac key.
+    * @param rndIFD our challenge
+    * @param rndICC their challenge
+    * @param kIFD our key material
+    * @param kEnc the static encryption key
+    * @param kMac the static mac key
     *
     * @return a byte array of length 32 containing the response that was
     *         sent by the passport, decrypted (using <code>kEnc</code>)
-    *         and verified (using <code>kMac</code>).
+    *         and verified (using <code>kMac</code>)
     */
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
