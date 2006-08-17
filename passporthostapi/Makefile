@@ -7,7 +7,16 @@ build.stamp: $(javafiles)
 	javac -classpath build:$(jars) -d build -source 1.4 sos/mrtd/*.java
 	touch build.stamp
 
-run:	build
+release:
+	rm -rf /tmp/passporthostapi;\
+	   mkdir -p /tmp/passporthostapi;\
+	   svn export src /tmp/passporthostapi/src;\
+	   cp LICENSE /tmp/passporthostapi;\
+	   cp README /tmp/passporthostapi;\
+	   cd bin; jar -mcf ../MANIFEST.MF /tmp/passporthostapi/jmrtd.jar *; cd ..;\
+	   cd /tmp; zip -r passporthostapi.zip passporthostapi
+
+run: build
 	java $(main_memory_use) -classpath build:$(jars) sos.mrtd.PassportGUI
 
 doc:
