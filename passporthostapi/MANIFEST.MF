@@ -1,0 +1,2 @@
+Main-Class: sos.mrtd.sample.PassportGUI
+VMOptions: -Xms250M -Xmx256M
