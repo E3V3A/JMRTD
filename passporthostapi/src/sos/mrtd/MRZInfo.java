@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -65,6 +66,7 @@ public class MRZInfo
    private char dateOfExpiryCheckDigit;
    private char personalNumberCheckDigit;
    private char compositeCheckDigit;
+   private String unknownMRZField; // FIXME: Last field on line 2 of ID3 MRZ.
    
    /**
     * Constructs a new MRZ.
@@ -93,20 +95,34 @@ public class MRZInfo
       this.gender = gender;
       this.dateOfExpiry = dateOfExpiry;
       this.personalNumber = personalNumber;
-      
+      if (documentType.startsWith("I")) {
+         this.unknownMRZField = "<<<<<<<<<<<";
+      }
       this.documentNumberCheckDigit = checkDigit(documentNumber);
       this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
       this.dateOfExpiryCheckDigit = checkDigit(SDF.format(dateOfExpiry));
       this.personalNumberCheckDigit = checkDigit(personalNumber);
       StringBuffer composite = new StringBuffer();
-      composite.append(documentNumber);
-      composite.append(documentNumberCheckDigit);
-      composite.append(SDF.format(dateOfBirth));
-      composite.append(dateOfBirthCheckDigit);
-      composite.append(SDF.format(dateOfExpiry));
-      composite.append(dateOfExpiryCheckDigit);
-      composite.append(personalNumber);
-      composite.append(personalNumberCheckDigit);
+      if (documentType.startsWith("I")) {
+         // TODO: just guessing...
+         composite.append(documentNumber);
+         composite.append(documentNumberCheckDigit);
+         composite.append(personalNumber);
+         composite.append(personalNumberCheckDigit);
+         composite.append(SDF.format(dateOfBirth));
+         composite.append(dateOfBirthCheckDigit);
+         composite.append(SDF.format(dateOfExpiry));
+         composite.append(dateOfExpiryCheckDigit);
+      } else {
+         composite.append(documentNumber);
+         composite.append(documentNumberCheckDigit);
+         composite.append(SDF.format(dateOfBirth));
+         composite.append(dateOfBirthCheckDigit);
+         composite.append(SDF.format(dateOfExpiry));
+         composite.append(dateOfExpiryCheckDigit);
+         composite.append(personalNumber);
+         composite.append(personalNumberCheckDigit);
+      }
       this.compositeCheckDigit = checkDigit(composite.toString());
    }
    
@@ -132,7 +148,10 @@ public class MRZInfo
             this.dateOfExpiry = readDateOfExpiry(dataIn);
             this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
-            dataIn.skip(12);
+            byte[] unknownMRZFieldBytes = new byte[11];
+            dataIn.readFully(unknownMRZFieldBytes);
+            this.unknownMRZField = new String(unknownMRZFieldBytes);
+            this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
             String name = readName(dataIn, 30);
             processNameIdentifiers(name);
          } else {
@@ -190,7 +209,8 @@ public class MRZInfo
          writeDateOfExpiry(dataOut);
          dataOut.write(dateOfExpiryCheckDigit);
          writeNationality(dataOut);
-         dataOut.write(new byte[12]); // TODO: Understand these 12 chars...
+         dataOut.write(unknownMRZField.getBytes("UTF-8")); // TODO: Understand this...
+         dataOut.write(compositeCheckDigit);
          writeName(dataOut);
       } else {
          /* Assume it's a P< document */
@@ -532,6 +552,8 @@ public class MRZInfo
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
+         out.append(unknownMRZField);
+         out.append(compositeCheckDigit);
          out.append("\n");
          out.append(getName());
          out.append("\n");
@@ -560,10 +582,24 @@ public class MRZInfo
       if (obj == this) {
          return true;
       }
+      if (obj == null) {
+         return false;
+      }
       if (!(obj.getClass().equals(this.getClass()))) {
          return false;
       }
-      return this.toString().equals(obj.toString());
+      MRZInfo other = (MRZInfo)obj;
+      if (!documentType.equals(other.documentType)) { return false; }
+      if (!issuingState.equals(other.issuingState)) { return false; }
+      if (!primaryIdentifier.equals(other.primaryIdentifier)) { return false; }
+      if (!Arrays.equals(secondaryIdentifiers, other.secondaryIdentifiers)) { return false; }
+      if (!nationality.equals(other.nationality)) { return false; }
+      if (!documentNumber.equals(other.documentNumber)) { return false; }
+      if (!personalNumber.equals(other.personalNumber)) { return false; }
+      if (!dateOfBirth.equals(other.dateOfBirth)) { return false; }
+      if (!gender.equals(other.gender)) { return false; }
+      if (!dateOfExpiry.equals(other.dateOfExpiry)) { return false; }
+      return true;
    }
    
    /**
