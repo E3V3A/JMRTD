@@ -556,6 +556,16 @@ public class MRZInfo
       return out.toString();
    }
    
+   public boolean equals(Object obj) {
+      if (obj == this) {
+         return true;
+      }
+      if (!(obj.getClass().equals(this.getClass()))) {
+         return false;
+      }
+      return this.toString().equals(obj.toString());
+   }
+   
    /**
     * Computes the 7-3-1 check digit for part of the MRZ.
     *
