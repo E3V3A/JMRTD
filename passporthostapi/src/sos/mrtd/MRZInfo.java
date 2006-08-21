@@ -22,7 +22,9 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -145,6 +147,66 @@ public class MRZInfo
       }
    }
    
+   public byte[] getEncoded() throws IOException {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      DataOutputStream dataOut = new DataOutputStream(out);
+      writeDocumentType(dataOut);
+      writeIssuingState(dataOut);
+      writeName(dataOut);
+      writeDocumentNumber(dataOut);
+      dataOut.write(documentNumberCheckDigit);
+      writeNationality(dataOut);
+      writeDateOfBirth(dataOut);
+      dataOut.write(dateOfBirthCheckDigit);
+      writeGender(dataOut);
+      writeDateOfExpiry(dataOut);
+      dataOut.write(dateOfExpiryCheckDigit);
+      writePersonalNumber(dataOut);
+      dataOut.write(personalNumberCheckDigit);
+      dataOut.write(compositeCheckDigit);
+      byte[] result = out.toByteArray();
+      dataOut.close();
+      return result;
+   }
+   
+   private void writeIssuingState(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(issuingState);
+      
+   }
+
+   private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(personalNumber);
+   }
+
+   private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(SDF.format(dateOfExpiry));
+   }
+
+   private void writeGender(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(gender);
+      
+   }
+
+   private void writeDateOfBirth(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(SDF.format(dateOfBirth));
+   }
+
+   private void writeNationality(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(nationality);
+   }
+
+   private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(documentNumber);
+   }
+
+   private void writeName(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(name);
+   }
+
+   private void writeDocumentType(DataOutputStream dataOut) throws IOException {
+      dataOut.writeChars(documentType);
+   }
+
    /**
     * Reads the type of document.
     * ICAO Doc 9303 gives "P<" as an example.
