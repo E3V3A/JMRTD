@@ -22,14 +22,18 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.GregorianCalendar;
+
+import sos.util.Hex;
 
 /**
  * Data structure for storing the MRZ information
@@ -151,60 +155,78 @@ public class MRZInfo
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       DataOutputStream dataOut = new DataOutputStream(out);
       writeDocumentType(dataOut);
-      writeIssuingState(dataOut);
-      writeName(dataOut);
-      writeDocumentNumber(dataOut);
-      dataOut.write(documentNumberCheckDigit);
-      writeNationality(dataOut);
-      writeDateOfBirth(dataOut);
-      dataOut.write(dateOfBirthCheckDigit);
-      writeGender(dataOut);
-      writeDateOfExpiry(dataOut);
-      dataOut.write(dateOfExpiryCheckDigit);
-      writePersonalNumber(dataOut);
-      dataOut.write(personalNumberCheckDigit);
-      dataOut.write(compositeCheckDigit);
+      if (documentType.startsWith("I")) {
+         /* Assume it's an I< document */
+         writeIssuingState(dataOut);
+         writeDocumentNumber(dataOut);
+         dataOut.write(documentNumberCheckDigit);
+         writePersonalNumber(dataOut);
+         dataOut.write(personalNumberCheckDigit);
+         writeDateOfBirth(dataOut);
+         dataOut.write(dateOfBirthCheckDigit);
+         writeGender(dataOut);
+         writeDateOfExpiry(dataOut);
+         dataOut.write(dateOfExpiryCheckDigit);
+         writeNationality(dataOut);
+         dataOut.write(new byte[12]); // TODO: Understand these 12 chars...
+         writeName(dataOut);
+      } else {
+         /* Assume it's a P< document */
+         writeIssuingState(dataOut);
+         writeName(dataOut);
+         writeDocumentNumber(dataOut);
+         dataOut.write(documentNumberCheckDigit);
+         writeNationality(dataOut);
+         writeDateOfBirth(dataOut);
+         dataOut.write(dateOfBirthCheckDigit);
+         writeGender(dataOut);
+         writeDateOfExpiry(dataOut);
+         dataOut.write(dateOfExpiryCheckDigit);
+         writePersonalNumber(dataOut);
+         dataOut.write(personalNumberCheckDigit);
+         dataOut.write(compositeCheckDigit);
+      }
       byte[] result = out.toByteArray();
       dataOut.close();
       return result;
    }
    
    private void writeIssuingState(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(issuingState);
+      dataOut.write(issuingState.getBytes("UTF-8"));
       
    }
 
    private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(personalNumber);
+      dataOut.write(personalNumber.getBytes("UTF-8"));
    }
 
    private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(SDF.format(dateOfExpiry));
+      dataOut.write(SDF.format(dateOfExpiry).getBytes("UTF-8"));
    }
 
    private void writeGender(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(gender);
+      dataOut.write(gender.getBytes("UTF-8"));
       
    }
 
    private void writeDateOfBirth(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(SDF.format(dateOfBirth));
+      dataOut.write(SDF.format(dateOfBirth).getBytes("UTF-8"));
    }
 
    private void writeNationality(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(nationality);
+      dataOut.write(nationality.getBytes("UTF-8"));
    }
 
    private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(documentNumber);
+      dataOut.write(documentNumber.getBytes("UTF-8"));
    }
 
    private void writeName(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(name);
+      dataOut.write(name.getBytes("UTF-8"));
    }
 
    private void writeDocumentType(DataOutputStream dataOut) throws IOException {
-      dataOut.writeChars(documentType);
+      dataOut.write(documentType.getBytes("UTF-8"));
    }
 
    /**
@@ -545,6 +567,20 @@ public class MRZInfo
          default:
             throw new NumberFormatException("Could not decode MRZ character "
                                             + ch);
+      }
+   }
+   
+   public static void main(String[] arg) {
+      try {
+         FileInputStream fileIn = new FileInputStream(arg[0]);
+         MRZInfo mrzInfo = new MRZInfo(fileIn);
+         System.out.println(mrzInfo);
+         
+         ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
+         MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
+         System.out.println(mrzInfo2);
+      } catch (Exception e) {
+         e.printStackTrace();
       }
    }
 }
