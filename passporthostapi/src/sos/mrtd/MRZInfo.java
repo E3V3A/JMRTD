@@ -30,10 +30,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
-
-import sos.util.Hex;
+import java.util.StringTokenizer;
 
 /**
  * Data structure for storing the MRZ information
@@ -51,7 +52,8 @@ public class MRZInfo
    
    private String documentType;
    private String issuingState;
-   private String name;
+   private String primaryIdentifier;
+   private String[] secondaryIdentifiers;
    private String nationality;
    private String documentNumber;
    private String personalNumber;
@@ -77,12 +79,14 @@ public class MRZInfo
     * @param dateOfExpiry date of expiry
     * @param personalNumber personal number
     */
-   public MRZInfo(String documentType, String issuingState, String name,
+   public MRZInfo(String documentType, String issuingState,
+         String primaryIdentifier, String[] secondaryIdentifiers,
          String documentNumber, String nationality, Date dateOfBirth,
          String gender, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
-      this.name = name;
+      this.primaryIdentifier = primaryIdentifier;
+      this.secondaryIdentifiers = secondaryIdentifiers;
       this.documentNumber = documentNumber;
       this.nationality = nationality; 
       this.dateOfBirth = dateOfBirth;
@@ -129,11 +133,13 @@ public class MRZInfo
             this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
             dataIn.skip(12);
-            this.name = readName(dataIn, 30);
+            String name = readName(dataIn, 30);
+            processNameIdentifiers(name);
          } else {
             /* Assume it's a P< document */
             this.issuingState = readIssuingState(dataIn);
-            this.name = readName(dataIn, 39);
+            String name = readName(dataIn, 39);
+            processNameIdentifiers(name);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
@@ -149,6 +155,22 @@ public class MRZInfo
       } catch (IOException ioe) {
          throw new IllegalArgumentException("Invalid MRZ input source");
       }
+   }
+   
+   private void processNameIdentifiers(String mrzNameString) {
+      StringTokenizer st = new StringTokenizer(mrzNameString, "<");
+      if (!st.hasMoreTokens()) {
+         throw new IllegalArgumentException("Input does not contain primary identifier!");
+      }
+      primaryIdentifier = st.nextToken();
+      Collection result = new ArrayList();
+      while (st.hasMoreTokens()) {
+         String identifier = st.nextToken();
+         if (identifier != null && identifier.length() > 0) {
+            result.add(identifier);
+         }
+      }
+      secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
    }
    
    public byte[] getEncoded() throws IOException {
@@ -220,9 +242,24 @@ public class MRZInfo
    private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
       dataOut.write(documentNumber.getBytes("UTF-8"));
    }
-
+   
+   private String getName() {
+      int width = documentType.startsWith("I") ? 30 : 39;
+      StringBuffer name = new StringBuffer();
+      name.append(primaryIdentifier);
+      name.append("<");
+      for (int i = 0; i < secondaryIdentifiers.length; i++) {
+         name.append("<");
+         name.append(secondaryIdentifiers[i]);
+      }
+      while (name.length() < width) {
+         name.append("<");
+      }
+      return name.toString().toUpperCase();
+   }
+   
    private void writeName(DataOutputStream dataOut) throws IOException {
-      dataOut.write(name.getBytes("UTF-8"));
+      dataOut.write(getName().getBytes("UTF-8"));
    }
 
    private void writeDocumentType(DataOutputStream dataOut) throws IOException {
@@ -421,12 +458,21 @@ public class MRZInfo
    }
 
    /**
-    * Gets the passport holder's name.
+    * Gets the passport holder's last name.
     * 
-    * @return name (including &lt; signs)
+    * @return name
     */
-   public String getName() {
-      return name;
+   public String getPrimaryIdentifier() {
+      return primaryIdentifier;
+   }
+   
+   /**
+    * Gets the passport holder's first names.
+    * 
+    * @return first names
+    */
+   public String[] getSecondaryIdentifiers() {
+      return secondaryIdentifiers;
    }
 
    /**
@@ -487,12 +533,12 @@ public class MRZInfo
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
          out.append("\n");
-         out.append(name);
+         out.append(getName());
          out.append("\n");
       } else {
          out.append(documentType);
          out.append(issuingState);
-         out.append(name);
+         out.append(getName());
          out.append("\n");
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
@@ -575,6 +621,12 @@ public class MRZInfo
          FileInputStream fileIn = new FileInputStream(arg[0]);
          MRZInfo mrzInfo = new MRZInfo(fileIn);
          System.out.println(mrzInfo);
+         
+         System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
+         String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
+         for (int i = 0; i < secondaryIdentifiers.length; i++) {
+            System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
+         }
          
          ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
          MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
