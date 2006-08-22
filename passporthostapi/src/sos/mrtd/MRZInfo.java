@@ -177,11 +177,13 @@ public class MRZInfo
    }
    
    private void processNameIdentifiers(String mrzNameString) {
-      StringTokenizer st = new StringTokenizer(mrzNameString, "<");
+      StringTokenizer st = new StringTokenizer(mrzNameString, "<<");
       if (!st.hasMoreTokens()) {
          throw new IllegalArgumentException("Input does not contain primary identifier!");
       }
       primaryIdentifier = st.nextToken();
+      String rest = mrzNameString.substring(mrzNameString.indexOf("<<") + 2);
+      st = new StringTokenizer(rest, "<");
       Collection result = new ArrayList();
       while (st.hasMoreTokens()) {
          String identifier = st.nextToken();
