@@ -39,8 +39,10 @@ import java.util.StringTokenizer;
 
 /**
  * Data structure for storing the MRZ information
- * as found in DG1.
- * Based on ICAO Doc 9303 part 1.
+ * as found in DG1. Based on ICAO Doc 9303 part 1.
+ * 
+ * TODO: We need to also purchase ICAO Doc 9303 part 3
+ * to validate some of this.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
@@ -48,10 +50,19 @@ import java.util.StringTokenizer;
  */
 public class MRZInfo
 {
+   /** Unspecified document type (do not use, choose ID1 or ID3). */
+   public static final int DOC_TYPE_UNSPECIFIED = 0;
+   /** ID1 document type for credit card sized national identity cards. */
+   public static final int DOC_TYPE_ID1 = 1;
+   /** ID2 document type. */
+   public static final int DOC_TYPE_ID2 = 2;
+   /** ID3 document type for passport booklets. */
+   public static final int DOC_TYPE_ID3 = 3;                           
+	
    private static final SimpleDateFormat SDF =
       new SimpleDateFormat("yyMMdd");
    
-   private String documentType;
+   private int documentType;
    private String issuingState;
    private String primaryIdentifier;
    private String[] secondaryIdentifiers;
@@ -81,7 +92,7 @@ public class MRZInfo
     * @param dateOfExpiry date of expiry
     * @param personalNumber personal number
     */
-   public MRZInfo(String documentType, String issuingState,
+   public MRZInfo(int documentType, String issuingState,
          String primaryIdentifier, String[] secondaryIdentifiers,
          String documentNumber, String nationality, Date dateOfBirth,
          String gender, Date dateOfExpiry, String personalNumber) {
@@ -95,7 +106,7 @@ public class MRZInfo
       this.gender = gender;
       this.dateOfExpiry = dateOfExpiry;
       this.personalNumber = personalNumber;
-      if (documentType.startsWith("I")) {
+      if (documentType == DOC_TYPE_ID1) {
          this.unknownMRZField = "<<<<<<<<<<<";
       }
       this.documentNumberCheckDigit = checkDigit(documentNumber);
@@ -103,8 +114,8 @@ public class MRZInfo
       this.dateOfExpiryCheckDigit = checkDigit(SDF.format(dateOfExpiry));
       this.personalNumberCheckDigit = checkDigit(personalNumber);
       StringBuffer composite = new StringBuffer();
-      if (documentType.startsWith("I")) {
-         // TODO: just guessing...
+      if (documentType == DOC_TYPE_ID1) {
+         // TODO: just guessing... we need to get ICAO Doc 9303 part 3 for this...
          composite.append(documentNumber);
          composite.append(documentNumberCheckDigit);
          composite.append(personalNumber);
@@ -135,8 +146,8 @@ public class MRZInfo
       try {
          DataInputStream dataIn = new DataInputStream(in);
          this.documentType = readDocumentType(dataIn);
-         if (documentType.startsWith("I")) {
-            /* Assume it's an I< document */
+         if (documentType == DOC_TYPE_ID1) {
+            /* Assume it's an ID1 document */
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
@@ -155,7 +166,7 @@ public class MRZInfo
             String name = readName(dataIn, 30);
             processNameIdentifiers(name);
          } else {
-            /* Assume it's a P< document */
+            /* Assume it's a ID3 document */
             this.issuingState = readIssuingState(dataIn);
             String name = readName(dataIn, 39);
             processNameIdentifiers(name);
@@ -198,8 +209,8 @@ public class MRZInfo
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       DataOutputStream dataOut = new DataOutputStream(out);
       writeDocumentType(dataOut);
-      if (documentType.startsWith("I")) {
-         /* Assume it's an I< document */
+      if (documentType == DOC_TYPE_ID1) {
+         /* Assume it's an ID1 document */
          writeIssuingState(dataOut);
          writeDocumentNumber(dataOut);
          dataOut.write(documentNumberCheckDigit);
@@ -215,7 +226,7 @@ public class MRZInfo
          dataOut.write(compositeCheckDigit);
          writeName(dataOut);
       } else {
-         /* Assume it's a P< document */
+         /* Assume it's a ID3 document */
          writeIssuingState(dataOut);
          writeName(dataOut);
          writeDocumentNumber(dataOut);
@@ -250,7 +261,6 @@ public class MRZInfo
 
    private void writeGender(DataOutputStream dataOut) throws IOException {
       dataOut.write(gender.getBytes("UTF-8"));
-      
    }
 
    private void writeDateOfBirth(DataOutputStream dataOut) throws IOException {
@@ -266,7 +276,7 @@ public class MRZInfo
    }
    
    private String getName() {
-      int width = documentType.startsWith("I") ? 30 : 39;
+      int width = (documentType == DOC_TYPE_ID1) ? 30 : 39;
       StringBuffer name = new StringBuffer();
       name.append(primaryIdentifier);
       name.append("<");
@@ -285,20 +295,35 @@ public class MRZInfo
    }
 
    private void writeDocumentType(DataOutputStream dataOut) throws IOException {
-      dataOut.write(documentType.getBytes("UTF-8"));
+      dataOut.write(documentTypeToString().getBytes("UTF-8"));
    }
 
+   private String documentTypeToString() {
+	   switch (documentType) {
+	   case DOC_TYPE_ID1: return "I<";
+	   case DOC_TYPE_ID2: return "P<";
+	   case DOC_TYPE_ID3: return "P<";
+	   default: return "P<";
+	   }
+   }
+   
    /**
     * Reads the type of document.
-    * ICAO Doc 9303 gives "P<" as an example.
+    * ICAO Doc 9303 part 1 gives "P<" as an example.
     * 
     * @return a string of length 2 containing the document type
     * @throws IOException if something goes wrong
     */
-   private String readDocumentType(DataInputStream in) throws IOException {
-      byte[] result = new byte[2];
-      in.readFully(result);
-      return new String(result);
+   private int readDocumentType(DataInputStream in) throws IOException {
+      byte[] docTypeBytes = new byte[2];
+      in.readFully(docTypeBytes);
+      String docTypeStr = new String(docTypeBytes);
+      if (docTypeStr.startsWith("I")) {
+    	  return DOC_TYPE_ID1;
+      } else if (docTypeStr.startsWith("P")) {
+    	  return DOC_TYPE_ID3;
+      }
+      return DOC_TYPE_UNSPECIFIED;
    }
 
    /**
@@ -466,7 +491,7 @@ public class MRZInfo
     * 
     * @return document type
     */
-   public String getDocumentType() {
+   public int getDocumentType() {
       return documentType;
    }
 
@@ -536,7 +561,7 @@ public class MRZInfo
     */
    public String toString() {
       StringBuffer out = new StringBuffer();
-      if (documentType.startsWith("I")) {
+      if (documentType == DOC_TYPE_ID1) {
          /* 
           * FIXME: some composite check digit
           *        should go into this one as well...
@@ -591,7 +616,7 @@ public class MRZInfo
          return false;
       }
       MRZInfo other = (MRZInfo)obj;
-      if (!documentType.equals(other.documentType)) { return false; }
+      if (documentType != other.documentType) { return false; }
       if (!issuingState.equals(other.issuingState)) { return false; }
       if (!primaryIdentifier.equals(other.primaryIdentifier)) { return false; }
       if (!Arrays.equals(secondaryIdentifiers, other.secondaryIdentifiers)) { return false; }
