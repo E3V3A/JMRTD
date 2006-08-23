@@ -59,6 +59,14 @@ public class MRZInfo
    /** ID3 document type for passport booklets. */
    public static final int DOC_TYPE_ID3 = 3;                           
 	
+   /** Possible value for passport holder's gender. */
+   public static final int GENDER_UNSPECIFIED = 0x00,
+      GENDER_MALE = 0x01,
+      GENDER_FEMALE = 0x02,
+      GENDER_UNKNOWN = 0x03;
+
+   private static final String MRZ_CHARS = "<0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+   
    private static final SimpleDateFormat SDF =
       new SimpleDateFormat("yyMMdd");
    
@@ -70,7 +78,7 @@ public class MRZInfo
    private String documentNumber;
    private String personalNumber;
    private Date dateOfBirth;
-   private String gender;
+   private int gender;
    private Date dateOfExpiry;
    private char documentNumberCheckDigit;
    private char dateOfBirthCheckDigit;
@@ -95,7 +103,7 @@ public class MRZInfo
    public MRZInfo(int documentType, String issuingState,
          String primaryIdentifier, String[] secondaryIdentifiers,
          String documentNumber, String nationality, Date dateOfBirth,
-         String gender, Date dateOfExpiry, String personalNumber) {
+         int gender, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
       this.primaryIdentifier = primaryIdentifier;
@@ -205,6 +213,8 @@ public class MRZInfo
       secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
    }
    
+
+   
    public byte[] getEncoded() throws IOException {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       DataOutputStream dataOut = new DataOutputStream(out);
@@ -260,7 +270,7 @@ public class MRZInfo
    }
 
    private void writeGender(DataOutputStream dataOut) throws IOException {
-      dataOut.write(gender.getBytes("UTF-8"));
+      dataOut.write(genderToString().getBytes("UTF-8"));
    }
 
    private void writeDateOfBirth(DataOutputStream dataOut) throws IOException {
@@ -274,8 +284,33 @@ public class MRZInfo
    private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
       dataOut.write(documentNumber.getBytes("UTF-8"));
    }
+
+   private void writeName(DataOutputStream dataOut) throws IOException {
+      dataOut.write(nameToString().getBytes("UTF-8"));
+   }
+
+   private void writeDocumentType(DataOutputStream dataOut) throws IOException {
+      dataOut.write(documentTypeToString().getBytes("UTF-8"));
+   }
    
-   private String getName() {
+   private String documentTypeToString() {
+	   switch (documentType) {
+	   case DOC_TYPE_ID1: return "I<";
+	   case DOC_TYPE_ID2: return "P<";
+	   case DOC_TYPE_ID3: return "P<";
+	   default: return "P<";
+	   }
+   }
+   
+   private String genderToString() {
+      switch (gender) {
+      case GENDER_MALE: return "M";
+      case GENDER_FEMALE: return "F";
+      default: return "<";
+      }
+   }
+   
+   private String nameToString() {
       int width = (documentType == DOC_TYPE_ID1) ? 30 : 39;
       StringBuffer name = new StringBuffer();
       name.append(primaryIdentifier);
@@ -287,24 +322,7 @@ public class MRZInfo
       while (name.length() < width) {
          name.append("<");
       }
-      return name.toString().toUpperCase();
-   }
-   
-   private void writeName(DataOutputStream dataOut) throws IOException {
-      dataOut.write(getName().getBytes("UTF-8"));
-   }
-
-   private void writeDocumentType(DataOutputStream dataOut) throws IOException {
-      dataOut.write(documentTypeToString().getBytes("UTF-8"));
-   }
-
-   private String documentTypeToString() {
-	   switch (documentType) {
-	   case DOC_TYPE_ID1: return "I<";
-	   case DOC_TYPE_ID2: return "P<";
-	   case DOC_TYPE_ID3: return "P<";
-	   default: return "P<";
-	   }
+      return mrzFormat(name.toString());
    }
    
    /**
@@ -411,10 +429,17 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   private String readGender(DataInputStream in) throws IOException {
+   private int readGender(DataInputStream in) throws IOException {
       byte[] data = new byte[1];
       in.readFully(data);
-      return new String(data).trim();
+      String genderStr = new String(data).trim();
+      if (genderStr.equalsIgnoreCase("M")) {
+         return GENDER_MALE;
+      }
+      if (genderStr.equalsIgnoreCase("F")) {
+         return GENDER_FEMALE;
+      }
+      return GENDER_UNKNOWN;
    }
    
    /**
@@ -435,7 +460,7 @@ public class MRZInfo
 
    /**
     * Reads the date of expiry of this document.
-    * Base year = 2000.
+    * Base year is 2000.
     * 
     * @return the date of expiry
     * 
@@ -545,7 +570,7 @@ public class MRZInfo
     * 
     * @return gender
     */
-   public String getGender() {
+   public int getGender() {
       return gender;
    }
    
@@ -566,7 +591,7 @@ public class MRZInfo
           * FIXME: some composite check digit
           *        should go into this one as well...
           */
-         out.append(documentType);
+         out.append(documentTypeToString());
          out.append(issuingState);
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
@@ -575,26 +600,26 @@ public class MRZInfo
          out.append("\n");
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
-         out.append(gender);
+         out.append(genderToString());
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
          out.append(unknownMRZField);
          out.append(compositeCheckDigit);
          out.append("\n");
-         out.append(getName());
+         out.append(nameToString());
          out.append("\n");
       } else {
-         out.append(documentType);
+         out.append(documentTypeToString());
          out.append(issuingState);
-         out.append(getName());
+         out.append(nameToString());
          out.append("\n");
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
          out.append(nationality);
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
-         out.append(gender);
+         out.append(genderToString());
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(personalNumber);
@@ -624,9 +649,30 @@ public class MRZInfo
       if (!documentNumber.equals(other.documentNumber)) { return false; }
       if (!personalNumber.equals(other.personalNumber)) { return false; }
       if (!dateOfBirth.equals(other.dateOfBirth)) { return false; }
-      if (!gender.equals(other.gender)) { return false; }
+      if (gender != other.gender) { return false; }
       if (!dateOfExpiry.equals(other.dateOfExpiry)) { return false; }
       return true;
+   }
+   
+   /**
+    * Reformats the input string such that it
+    * only contains 'A'-'Z' and '<' characters.
+    * 
+    * @param str the input string
+    * @return the reformatted string
+    */
+   private static String mrzFormat(String str) {
+      str = str.toUpperCase().trim();
+      StringBuffer result = new StringBuffer();
+      for (int i = 0; i < str.length(); i++) {
+         char c = str.charAt(i);
+         if (MRZ_CHARS.indexOf(c) == -1) {
+            result.append('<');
+         } else {
+            result.append(c);
+         }  
+      }
+      return result.toString();
    }
    
    /**
