@@ -129,34 +129,32 @@ public class BERTLVObject {
      *             if something goes wrong.
      */
     public BERTLVObject(int tagBytes, Object value) throws IOException {
-        byte[] tag = { (byte) ((tagBytes >>> 24) & 0xff), 
-                       (byte) ((tagBytes >>> 16) & 0xFF),
-                       (byte) ((tagBytes >>> 8) & 0xff),
-                       (byte) (tagBytes & 0xff) };
-        readTag(new DataInputStream(new ByteArrayInputStream(tag)));
-        if (isPrimitive) {
-            this.value = value;
-        } else {
-            // arrays are interpreted (maybe remove this?)
-            if (value instanceof byte[]) {
-                byte[] valueBytes = (byte[]) value;
-                readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)),
-                          valueBytes.length);
-            }
-            // BERTLVObjects are added as a child
-            else if (value instanceof BERTLVObject) {
-                this.value = new BERTLVObject[1];
-                ((BERTLVObject[]) this.value)[0] = (BERTLVObject) value;
-            } else if (value instanceof Integer){
-                this.value = new BERTLVObject[1];
-                ((BERTLVObject[]) this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
-            } else {
-                throw new IllegalArgumentException("Cannot encode value of type: "
-                                                   + value.getClass());
-            }
-
-        }
-
+       byte[] tag = { (byte) ((tagBytes >>> 24) & 0xff), 
+             (byte) ((tagBytes >>> 16) & 0xFF),
+             (byte) ((tagBytes >>> 8) & 0xff),
+             (byte) (tagBytes & 0xff) };
+       readTag(new DataInputStream(new ByteArrayInputStream(tag)));
+       if (isPrimitive) {
+          this.value = value;
+       } else {
+          // arrays are interpreted (maybe remove this?)
+          if (value instanceof byte[]) {
+             byte[] valueBytes = (byte[]) value;
+             readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)),
+                   valueBytes.length);
+          }
+          // BERTLVObjects are added as a child
+          else if (value instanceof BERTLVObject) {
+             this.value = new BERTLVObject[1];
+             ((BERTLVObject[]) this.value)[0] = (BERTLVObject) value;
+          } else if (value instanceof Integer){
+             this.value = new BERTLVObject[1];
+             ((BERTLVObject[]) this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
+          } else {
+             throw new IllegalArgumentException("Cannot encode value of type: "
+                   + value.getClass());
+          }
+       }
     }
 
     /**
