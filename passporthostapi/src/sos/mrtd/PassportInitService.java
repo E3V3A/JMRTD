@@ -225,8 +225,8 @@ public class PassportInitService extends PassportApduService {
     }
 
     public Apdu createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
-        byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
-        byte p2 = (byte) (offset & 0x000000FF);
+        byte p1 = (byte) ((offset >>> 8) & 0xff);
+        byte p2 = (byte) (offset & 0xff);
         Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
                              ISO7816.INS_UPDATE_BINARY,
                              p1,

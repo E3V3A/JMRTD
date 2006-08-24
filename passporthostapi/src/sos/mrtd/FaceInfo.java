@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -340,30 +341,7 @@ public class FaceInfo
       facialRecordData = out.toByteArray();
       dataOut.close();
       
-      /* facial record header */
-      
-      out = new ByteArrayOutputStream();
-      dataOut = new DataOutputStream(out);
-      dataOut.writeChars("FAC");
-      dataOut.writeByte(0);
-      dataOut.writeChars("010");
-      dataOut.writeByte(0);
-      dataOut.flush();
-      byte[] headerData = out.toByteArray();
-      dataOut.close();
-      
-      int lengthOfRecord = headerData.length + 4 + 2 + facialRecordData.length;
-      short nrOfImages = 1;
-      out = new ByteArrayOutputStream();
-      dataOut = new DataOutputStream(out);
-      dataOut.write(headerData);
-      dataOut.writeInt(lengthOfRecord);
-      dataOut.writeShort(nrOfImages);
-      dataOut.write(facialRecordData);
-      dataOut.flush();
-      byte[] result = out.toByteArray();
-      
-      return result;
+      return facialRecordData;
    }
    
    private BufferedImage readImage(InputStream in, String mimeType)
@@ -864,12 +842,39 @@ public class FaceInfo
          byte[] zero101 = { 0x01, 0x01 };
          byte[] zero008 = { 0x00, 0x08 };
          
+         byte[] facialRecordData = info.getEncoded();
+         
+         /* facial record headert */
+         ByteArrayOutputStream out;
+         out = new ByteArrayOutputStream();
+         DataOutputStream dataOut;
+         dataOut = new DataOutputStream(out);
+         dataOut.writeBytes("FAC");
+         dataOut.writeByte(0);
+         dataOut.writeBytes("010");
+         dataOut.writeByte(0);
+         dataOut.flush();
+         byte[] headerData = out.toByteArray();
+         dataOut.close();
+         
+         int lengthOfRecord = headerData.length + 4 + 2 + facialRecordData.length;
+         short nrOfImages = 1;
+         out = new ByteArrayOutputStream();
+         dataOut = new DataOutputStream(out);
+         dataOut.write(headerData);
+         dataOut.writeInt(lengthOfRecord);
+         dataOut.writeShort(nrOfImages);
+         dataOut.write(facialRecordData);
+         dataOut.flush();
+         byte[] facialRecord = out.toByteArray();
+         
+       
          BERTLVObject objectA1 = new BERTLVObject(0xa1, new BERTLVObject(0x81, zero2));
          objectA1.addSubObject(new BERTLVObject(0x82, zero0));
          objectA1.addSubObject(new BERTLVObject(0x87, zero101));
          objectA1.addSubObject(new BERTLVObject(0x88, zero008));
          
-         BERTLVObject faceInfo = new BERTLVObject(0x5f2e, info.getEncoded());
+         BERTLVObject faceInfo = new BERTLVObject(0x5f2e, facialRecord);
          
          BERTLVObject object7f60 = new BERTLVObject(0x7f60, objectA1);
          object7f60.addSubObject(faceInfo);
@@ -881,10 +886,9 @@ public class FaceInfo
          
          System.out.println(dg2);
          
-//            new BERTLVObject(PassportASN1Service.EF_DG2_TAG, info.getEncoded());
-//         FileOutputStream out = new FileOutputStream(arg[1]);
-//         out.write(fileObj.getEncoded());
-//         out.close();
+         FileOutputStream fout = new FileOutputStream(arg[1]);
+         fout.write(dg2.getEncoded());
+         fout.close();
       } catch (Exception e) {
          e.printStackTrace();
       }
