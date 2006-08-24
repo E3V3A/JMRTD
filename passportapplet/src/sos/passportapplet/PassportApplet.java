@@ -121,7 +121,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        (new PassportApplet(PassportCrypto.CREF_MODE)).register();
+        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
     }
 
     /**
@@ -135,7 +135,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte cla = buffer[OFFSET_CLA];
         byte ins = buffer[OFFSET_INS];
         short sw1sw2 = SW_OK;
-        byte protectedApdu = (byte) (cla == CLA_PROTECTED_APDU ? 1 : 0);
+        boolean protectedApdu = cla == CLA_PROTECTED_APDU;
         short responseLength = 0;
         short le = 0;
 
@@ -150,15 +150,15 @@ public class PassportApplet extends Applet implements ISO7816 {
             return;
         }
 
-        if (protectedApdu == 1
+        if (protectedApdu
                 && PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
             try {
                 le = crypto.unwrapCommandAPDU(ssc, apdu);
             } catch (CardRuntimeException e) {
                 sw1sw2 = e.getReason();
-                // ISOException.throwIt((short) 0x6d66);
             }
-        } else if (protectedApdu == 1) {
+        } 
+        else if (protectedApdu) {
             ISOException.throwIt(ISO7816.SW_SECURE_MESSAGING_NOT_SUPPORTED);
         }
 
@@ -166,13 +166,13 @@ public class PassportApplet extends Applet implements ISO7816 {
             try {
                 switch (ins) {
                 case INS_GET_CHALLENGE:
-                    if (protectedApdu == 1) {
+                    if (protectedApdu) {
                         ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
                     }
                     responseLength = processGetChallenge(apdu);
                     break;
                 case INS_EXTERNAL_AUTHENTICATE:
-                    if (protectedApdu == 1) {
+                    if (protectedApdu) {
                         ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
                     }
                     responseLength = processMutualAuthenticate(apdu);
@@ -213,7 +213,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             }
         }
 
-        if (protectedApdu == 1
+        if (protectedApdu
                 && PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
             responseLength = crypto.wrapResponseAPDU(ssc,
                                                      apdu,
@@ -313,14 +313,14 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
     }
 
-    private short processInternalAuthenticate(APDU apdu, short protectedApdu) {
+    private short processInternalAuthenticate(APDU apdu, boolean protectedApdu) {
         if (!PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) {
             ISOException.throwIt(ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED);
         }
 
         short buffer_p = (short) (OFFSET_CDATA & 0xff);
         short hdr_offset = 0;
-        if (protectedApdu == 1) {
+        if (protectedApdu) {
             hdr_offset = crypto.getApduBufferOffset((short) 128);
         }
         short hdr_len = 1;
@@ -383,11 +383,6 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
 
         return ciphertext_len;
-
-        /***********************************************************************
-         * todo: - save passport as XML document - write routines to up XML
-         * document to passport - up private key MODULUS/EXPONENT using PUT_DATA
-         */
     }
 
     /**
@@ -395,7 +390,8 @@ public class PassportApplet extends Applet implements ISO7816 {
      * 
      * Generates random 8 bytes, sends back result and stores result in rnd.
      * 
-     * //ensures PassportUtil.hasBitMask(state, CHALLENGED); //ensures
+     * //ensures PassportUtil.hasBitMask(state, CHALLENGED); 
+     * //ensures
      * \old(PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED)) ==>
      * !PassportUtil.hasBitMask(state, MUTUAL_AUTHENTICATED))
      * 
@@ -452,10 +448,12 @@ public class PassportApplet extends Applet implements ISO7816 {
         short e_ifd_length = 32;
         short m_ifd_p = (short) (e_ifd_p + e_ifd_length);
 
-        short readCount = apdu.setIncomingAndReceive();
-        while (bytesLeft > 0) {
-            bytesLeft -= readCount;
-            readCount = apdu.receiveBytes(OFFSET_CDATA);
+        if(apdu.getCurrentState() == APDU.STATE_INITIAL) {
+            apdu.setIncomingAndReceive();
+        }
+        if(apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
+            // need all data in one APDU.
+            ISOException.throwIt((short)0x6d66);
         }
 
         // buffer[OFFSET_CDATA ... +40] consists of e_ifd || m_ifd
@@ -470,7 +468,8 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         // decrypt e_ifd into buffer[0] where buffer = rnd.ifd || rnd.icc ||
         // k.ifd
-        short plaintext_len = crypto.decrypt(buffer,
+        crypto.decryptInit();
+        short plaintext_len = crypto.decryptFinal(buffer,
                                              e_ifd_p,
                                              e_ifd_length,
                                              buffer,
@@ -519,8 +518,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         Util.arrayCopy(buffer, k_icc_p, buffer, (short) 16, SEED_LENGTH);
 
         // make buffer encrypted using k_enc
-        short ciphertext_len = crypto.encrypt(PassportCrypto.DONT_PAD_INPUT,
-                                              buffer,
+        crypto.encryptInit();
+        short ciphertext_len = crypto.encryptFinal(buffer,
                                               (short) 0,
                                               (short) 32,
                                               buffer,
@@ -555,6 +554,14 @@ public class PassportApplet extends Applet implements ISO7816 {
         if (lc != 2)
             ISOException.throwIt(SW_WRONG_LENGTH);
 
+        if(apdu.getCurrentState() == APDU.STATE_INITIAL) {
+            apdu.setIncomingAndReceive();
+        }
+        if(apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
+            // need all data in one APDU.
+            ISOException.throwIt((short)0x6d66);
+        }
+                
         short fid = Util.getShort(buffer, OFFSET_CDATA);
 
         if (fileSystem.getFile(fid) != null) {
@@ -579,7 +586,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      *            expected length by terminal
      * @return length of the return APDU
      */
-    private short processReadBinary(APDU apdu, short le, short protectedApdu) {
+    private short processReadBinary(APDU apdu, short le, boolean protectedApdu) {
         if (!PassportUtil.hasBitMask(state, FILE_SELECTED)) {
             ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED);
         }
@@ -599,7 +606,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         // FIXME: 37 magic
         len = PassportUtil.min(len, (short) buffer.length);
         short bufferOffset = 0;
-        if (protectedApdu == 1) {
+        if (protectedApdu) {
             bufferOffset = crypto.getApduBufferOffset(len);
         }
         Util.arrayCopy(file, offset, buffer, bufferOffset, len);
@@ -659,6 +666,14 @@ public class PassportApplet extends Applet implements ISO7816 {
     private void processCreateFile(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
         short lc = (short) (buffer[OFFSET_LC] & 0xff);
+
+        if(apdu.getCurrentState() == APDU.STATE_INITIAL) {
+            apdu.setIncomingAndReceive();
+        }
+        if(apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
+            // need all data in one APDU.
+            ISOException.throwIt((short)0x6d66);
+        }
 
         if (lc < (short) 6 || (buffer[OFFSET_CDATA + 1] & 0xff) < 4)
             ISOException.throwIt(SW_WRONG_LENGTH);

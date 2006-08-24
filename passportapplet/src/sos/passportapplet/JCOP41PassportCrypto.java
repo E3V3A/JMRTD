@@ -35,13 +35,13 @@ import javacardx.crypto.Cipher;
  * @author ceesb
  *
  */public class JCOP41PassportCrypto extends PassportCrypto {
-    private Cipher macCiphEBC;
+    private Cipher macCiphECB;
     private byte[] tempSpace_verifyMac;
 
     JCOP41PassportCrypto(KeyStore keyStore) {
         super(keyStore);
                 
-        macCiphEBC = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
+        macCiphECB = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
  
         tempSpace_verifyMac = JCSystem.makeTransientByteArray((short)8, JCSystem.CLEAR_ON_RESET);
     }
@@ -65,11 +65,11 @@ import javacardx.crypto.Cipher;
         updateMac(msg, msg_offset, msg_len);
         sig.sign(null, (short)0, (short)0, mac, mac_offset);
         
-        macCiphEBC.init(kB, Cipher.MODE_DECRYPT);
-        macCiphEBC.doFinal(mac, mac_offset, (short)8, mac, mac_offset);
+        macCiphECB.init(kB, Cipher.MODE_DECRYPT);
+        macCiphECB.doFinal(mac, mac_offset, (short)8, mac, mac_offset);
         
-        macCiphEBC.init(kA, Cipher.MODE_ENCRYPT);
-        macCiphEBC.doFinal(mac, mac_offset, (short)8, mac, mac_offset);
+        macCiphECB.init(kA, Cipher.MODE_ENCRYPT);
+        macCiphECB.doFinal(mac, mac_offset, (short)8, mac, mac_offset);
     }
 
     

@@ -25,7 +25,9 @@ package sos.passportapplet;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
+import javacard.security.CryptoException;
 import javacard.security.DESKey;
+import javacard.security.Key;
 import javacardx.crypto.Cipher;
 
 /**
@@ -50,6 +52,40 @@ public class CREFPassportCrypto extends JCOP41PassportCrypto implements ISO7816 
                                                                JCSystem.CLEAR_ON_RESET);
     }
 
+    class DESCipher extends Cipher {
+        private byte mode; 
+        
+        public short doFinal(byte[] inBuff, short inOffset, short inLength, byte[] outBuff, short outOffset) throws CryptoException {
+            
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        public void init(Key theKey, byte theMode, byte[] bArray, short bOff, short bLen) throws CryptoException {
+            if(theMode == MODE_ENCRYPT) {
+                ciph.init(theKey, theMode, bArray, bOff, bLen);
+            }
+            else {
+                // FIXME: niks?
+            }
+            mode = theMode;
+        }
+
+        public byte getAlgorithm() {
+            return ALG_DES_CBC_NOPAD;
+        }
+
+        public short update(byte[] inBuff, short inOffset, short inLength, byte[] outBuff, short outOffset) throws CryptoException {
+            // TODO Auto-generated method stub
+            return 0;
+        }
+
+        public void init(Key theKey, byte theMode) throws CryptoException {
+            // TODO Auto-generated method stub
+            
+        }
+    }
+    
     private short decryptDESusingDESCBCM2(DESKey key, byte[] in,
             short in_offset, byte[] out, short out_offset, short length) {
         if ((ciph.getAlgorithm() != Cipher.ALG_DES_CBC_ISO9797_M2)

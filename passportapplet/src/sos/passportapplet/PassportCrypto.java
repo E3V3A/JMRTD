@@ -25,14 +25,10 @@ package sos.passportapplet;
 import javacard.framework.APDU;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
-import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.CryptoException;
 import javacard.security.DESKey;
 import javacard.security.MessageDigest;
-import javacard.security.KeyBuilder;
-import javacard.security.RSAPrivateKey;
-import javacard.security.RSAPublicKey;
 import javacard.security.Signature;
 import javacardx.crypto.Cipher;
 
@@ -86,27 +82,45 @@ public class PassportCrypto {
         return sig.verify(msg, msg_offset, msg_len, mac, mac_offset, (short) 8);
     }
 
+    public void decryptInit() {
+        DESKey k = keyStore.getEncKey();
+        ciph.init(k, Cipher.MODE_DECRYPT);
+    }
+    
     public short decrypt(byte[] ctext, short ctext_offset, short ctext_len,
             byte[] ptext, short ptext_offset) {
-        DESKey k = keyStore.getEncKey();
-        
-        ciph.init(k, Cipher.MODE_DECRYPT);
+        return ciph.update(ctext, ctext_offset, ctext_len, ptext, ptext_offset);
+    }
+
+    public short decryptFinal(byte[] ctext, short ctext_offset, short ctext_len,
+            byte[] ptext, short ptext_offset) {
         return ciph.doFinal(ctext, ctext_offset, ctext_len, ptext, ptext_offset);
     }
 
-    public short encrypt(byte padding, byte[] ptext,  short ptext_offset, short ptext_len,
-            byte[] ctext, short ctext_offset) {
+    public short encryptInit() {
+        return encryptInit(DONT_PAD_INPUT, null, (short)0, (short)0);
+    }
+    
+    public short encryptInit(byte padding, byte[] ptext, short ptext_offset, short ptext_len) {
         DESKey k = keyStore.getEncKey();
-
+        short newlen=0;
         if(padding == PAD_INPUT) {
             // pad input
-            ptext_len = PassportUtil.pad(ptext, ptext_offset, ptext_len);
+            newlen = PassportUtil.pad(ptext, ptext_offset, ptext_len);
         }
  
         ciph.init(k, Cipher.MODE_ENCRYPT);
-        short len = ciph.doFinal(ptext, ptext_offset, ptext_len, ctext, ctext_offset);
-        
-        return len;
+        return newlen;
+    }
+    
+    public short encrypt(byte[] ptext,  short ptext_offset, short ptext_len,
+            byte[] ctext, short ctext_offset) {
+        return ciph.update(ptext, ptext_offset, ptext_len, ctext, ctext_offset);
+    }
+    
+    public short encryptFinal(byte[] ptext,  short ptext_offset, short ptext_len,
+            byte[] ctext, short ctext_offset) {
+        return ciph.doFinal(ptext, ptext_offset, ptext_len, ctext, ctext_offset);
     }
 
     public void updateMac(byte[] msg, short msg_offset, short msg_len) {
@@ -220,7 +234,8 @@ public class PassportCrypto {
         short plaintextLc = 0;
         if (do87DataLen != 0) {
             // decrypt data, and leave room for lc
-            plaintextLength = decrypt(apdu,
+            decryptInit();
+            plaintextLength = decryptFinal(apdu,
                                       do87Data_p,
                                       do87DataLen,
                                       apdu,
@@ -323,7 +338,8 @@ public class PassportCrypto {
         short plaintextLc = 0;
         if (do87DataLen != 0) {
             // decrypt data, and leave room for lc
-            plaintextLength = decrypt(apdu,
+            decryptInit();
+            plaintextLength = decryptFinal(apdu,
                                       do87Data_p,
                                       do87DataLen,
                                       apdu,
@@ -385,17 +401,20 @@ public class PassportCrypto {
         incrementSSC(ssc);
 
         short ciphertextLength=0;
+        short paddedPlaintextLength=0;
         if(hasDo87) {
             // put ciphertext in proper position.
-            ciphertextLength = encrypt(PassportCrypto.PAD_INPUT,
+            paddedPlaintextLength = encryptInit(PAD_INPUT, apdu, plaintextOffset, plaintextLen);
+            ciphertextLength = encryptFinal(
                     apdu,
                     plaintextOffset,
-                    plaintextLen,
+                    paddedPlaintextLength,
                     apdu,
                     do87HeaderBytes);
         }
         //sanity check
-        if (hasDo87 && (short) (do87DataLen - 1) != ciphertextLength)
+        if (hasDo87 && (((short) (do87DataLen - 1) != ciphertextLength) ||
+                        (paddedPlaintextLength != (short)(do87DataLen -1))))
             ISOException.throwIt((short) 0x6d66);
         
         if (hasDo87) {
