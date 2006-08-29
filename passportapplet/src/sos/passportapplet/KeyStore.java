@@ -51,9 +51,14 @@ public class KeyStore {
         ma_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
                                                KeyBuilder.LENGTH_DES3_2KEY,
                                                false);
-        
-        rsaPrivateKey = (RSAPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, KeyBuilder.LENGTH_RSA_1024,  false);
-        rsaPublicKey =  (RSAPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024,  false);
+
+        switch(mode) {
+        case PassportCrypto.JCOP41_MODE:
+        case PassportCrypto.PERFECTWORLD_MODE:
+            rsaPrivateKey = (RSAPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, KeyBuilder.LENGTH_RSA_1024,  false);
+            rsaPublicKey =  (RSAPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024,  false);
+            break;
+        }
 
         switch(mode) {
         case PassportCrypto.PERFECTWORLD_MODE: 
@@ -111,7 +116,7 @@ public class KeyStore {
         }      
     }
     
-    public DESKey getEncKey() {
+    public DESKey getCryptKey() {
         if(PassportUtil.hasBitMask(PassportApplet.state, PassportApplet.MUTUAL_AUTHENTICATED)) {
             return sm_kEnc;
         }

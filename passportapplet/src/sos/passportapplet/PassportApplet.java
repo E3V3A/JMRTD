@@ -31,6 +31,7 @@ import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.MessageDigest;
 import javacard.security.RandomData;
+import javacard.security.Signature;
 import javacardx.crypto.Cipher;
 
 /**
@@ -121,7 +122,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
+        (new PassportApplet(PassportCrypto.CREF_MODE)).register();
     }
 
     /**
@@ -458,7 +459,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         // buffer[OFFSET_CDATA ... +40] consists of e_ifd || m_ifd
         // verify checksum m_ifd of cryptogram e_ifd
-        crypto.initMac();
+        crypto.initMac(Signature.MODE_VERIFY);
         if (!crypto.verifyMacFinal(buffer,
                                    e_ifd_p,
                                    e_ifd_length,
@@ -526,7 +527,7 @@ public class PassportApplet extends Applet implements ISO7816 {
                                               (short) 0);
 
         // create m_icc which is a checksum of response
-        crypto.initMac();
+        crypto.initMac(Signature.MODE_SIGN);
         crypto.createMacFinal(buffer,
                               (short) 0,
                               ciphertext_len,

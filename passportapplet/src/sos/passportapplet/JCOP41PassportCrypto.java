@@ -41,20 +41,23 @@ import javacardx.crypto.Cipher;
     JCOP41PassportCrypto(KeyStore keyStore) {
         super(keyStore);
                 
-        macCiphECB = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
- 
         tempSpace_verifyMac = JCSystem.makeTransientByteArray((short)8, JCSystem.CLEAR_ON_RESET);
     }
     
-    protected void makeSignatureInstance() {
+    protected void init() {
+        ciph = Cipher.getInstance(Cipher.ALG_DES_CBC_NOPAD, false);
+        
         sig = Signature.getInstance(Signature.ALG_DES_MAC8_ISO9797_M2,
                                     false);
+        
+        macCiphECB = Cipher.getInstance(Cipher.ALG_DES_ECB_NOPAD, false);
+
     }
  
-    public void initMac() {
-        DESKey kA = keyStore.getMacKey(KeyStore.KEY_A);
+    public void initMac(byte mode) {
+        DESKey k = keyStore.getMacKey(KeyStore.KEY_A);
         
-        sig.init(kA, Signature.MODE_SIGN);    
+        sig.init(k, Signature.MODE_SIGN);    
     }
         
     public void createMacFinal(byte[] msg, short msg_offset, short msg_len,
