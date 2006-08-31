@@ -148,14 +148,14 @@ public class CREFPassportCrypto extends JCOP41PassportCrypto implements ISO7816 
         }
         return 0;
     }
-    
+        
     public void createMacFinal(byte[] msg, short msg_offset, short msg_len,
             byte[] mac, short mac_offset) {
         DESKey kA = keyStore.getMacKey(KeyStore.KEY_A);
         DESKey kB = keyStore.getMacKey(KeyStore.KEY_B);
 
-        updateMac(msg, msg_offset, msg_len);
-        sig.sign(null, (short)0, (short)0, mac, mac_offset);
+//        updateMac(msg, msg_offset, msg_len);
+        sig.sign(msg, msg_offset, msg_len, mac, mac_offset);
         
         decryptInit(kB);
         short tempmac_offset = 0;

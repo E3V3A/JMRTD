@@ -472,7 +472,7 @@ public class PassportCrypto {
             throws CryptoException {
         // only key_offset is a write pointer
         // sanity checks
-        if ((short)buffer.length < (short)(key_offset + 80)) {
+        if ((short)buffer.length < (short)(key_offset + 20)) {
             ISOException.throwIt((short)0x6d66);
         }
         if(keySeed_offset > key_offset) {
