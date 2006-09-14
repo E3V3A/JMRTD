@@ -1,11 +1,12 @@
-javafiles = sos/mrtd/*.java
-jars = lib/bcprov-jdk14-132.jar:lib/apduio.jar:lib/offcard.jar
+apifiles = src/sos/*/*.java 
+sample = src/sos/mrtd/sample/*.java
+jars = src/lib/bcprov-jdk14-132.jar:src/lib/apduio.jar:src/lib/offcard.jar:src/lib/jpcsc.jar
 main_memory_use =       -ms256M -mx256M
-build:	build.stamp	
-build.stamp: $(javafiles)
-	mkdir -p build
-	javac -classpath build:$(jars) -d build -source 1.4 sos/mrtd/*.java
-	touch build.stamp
+bin:	bin.stamp	
+bin.stamp: $(apifiles) $(sample)
+	mkdir -p bin
+	javac -classpath bin:$(jars) -d bin -source 1.4 $(apifiles) $(sample)
+	touch bin.stamp
 
 release:
 	rm -rf /tmp/passporthostapi;\
@@ -16,8 +17,8 @@ release:
 	   cd bin; jar -mcf ../MANIFEST.MF /tmp/passporthostapi/jmrtd.jar *; cd ..;\
 	   cd /tmp; zip -r passporthostapi.zip passporthostapi
 
-run: build
-	java $(main_memory_use) -classpath build:$(jars) sos.mrtd.PassportGUI
+run: bin
+	java $(main_memory_use) -classpath bin:$(jars) sos.mrtd.sample.PassportGUI demo
 
 doc:
 	mkdir -p apidocs
@@ -34,8 +35,8 @@ doc:
 # sos.util sos.gui sos.smartcards sos.mrtd sos.mrtd.sample
 
 clean: 
-	rm -rf build build.stamp apidocs
+	rm -rf bin bin.stamp apidocs
 
 crun:	clean run
-cbuild:	clean build
+cbin:	clean bin
 

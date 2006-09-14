@@ -64,6 +64,8 @@ public class PassportGUI extends JPanel
    private JButton openButton, closeButton;
    private JComboBox terminalsComboBox;
 
+   private boolean demo = false;
+
    /**
     * Constructs the GUI.
     *
@@ -72,7 +74,10 @@ public class PassportGUI extends JPanel
    public PassportGUI(String[] arg) {
       try {
           Security.insertProviderAt(PROVIDER, 4);
-          
+          if (arg != null && arg.length >0 &&
+                          (arg[0].equals("demo") || arg[0].equals("demo"))) {
+            demo = true;
+          }
           if(arg != null && arg.length > 0 && 
         		  (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
         	  if(arg[0].equals("apduio"))
@@ -91,9 +96,15 @@ public class PassportGUI extends JPanel
              // DEFAULT_DATE_OF_BIRTH = "711019";
              // DEFAULT_DATE_OF_EXPIRY = "111001";
              // Elize Ludwina Jantine Noordhofs passport
-              DEFAULT_DOC_NR = "XX0005050";
-              DEFAULT_DATE_OF_BIRTH = "820411";
-              DEFAULT_DATE_OF_EXPIRY = "110720";
+              if (demo) {
+                DEFAULT_DOC_NR = "";
+                DEFAULT_DATE_OF_BIRTH = "";
+                DEFAULT_DATE_OF_EXPIRY = "";
+              } else {
+                DEFAULT_DOC_NR = "XX0005050";
+                DEFAULT_DATE_OF_BIRTH = "820411";
+                DEFAULT_DATE_OF_EXPIRY = "110720";
+              }
          }
           
          setLayout(new BorderLayout());
@@ -152,6 +163,11 @@ public class PassportGUI extends JPanel
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);
          tabbedPane.addTab("Init", initPanel);
+         if (demo) {
+           tabbedPane.setEnabledAt(1,false); // APDU
+           tabbedPane.setEnabledAt(2,false); // LDS
+           tabbedPane.setEnabledAt(6,false); // Init
+         }
          add(tabbedPane, BorderLayout.CENTER);
          service.addAPDUListener(log);
       } catch (Exception e) {
