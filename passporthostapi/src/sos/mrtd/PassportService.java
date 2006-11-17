@@ -49,7 +49,7 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
 import sos.smartcards.CardService;
 
 /**
- * High level card passportASN1Service for using the passport.
+ * High level card passport service for using the passport.
  * Defines high-level commands to access the information on the passport.
  * Based on ICAO-TR-LDS.
  * 
@@ -106,11 +106,23 @@ public class PassportService extends PassportAuthService
       }
       return files;
    }
-
+   
+   /**
+    * Reads the MRZ found in DG1 on the passport.
+    * 
+    * @return the MRZ
+    * 
+    * @throws IOException if something goes wrong
+    */
+   public MRZInfo readMRZ() throws IOException {
+      int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+      return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));
+   }
+   
    /**
     * Reads the face of the passport holder.
     * 
-    * @return the first face found on the passport
+    * @return the faces found in DG2 on the passport
     * 
     * @throws IOException if something goes wrong
     */
@@ -137,19 +149,8 @@ public class PassportService extends PassportAuthService
    }
 
    /**
-    * Reads the MRZ.
-    * 
-    * @return the MRZ
-    * 
-    * @throws IOException if something goes wrong
-    */
-   public MRZInfo readMRZ() throws IOException {
-      int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
-      return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));
-   }
-
-   /**
-    * Reads the <i>Active Authentication</i> public key from the passport.
+    * Reads the <i>Active Authentication</i> public key found in
+    * DG15 on the passport.
     *
     * @return the public key to be used for AA
     */
@@ -189,8 +190,8 @@ public class PassportService extends PassportAuthService
    }
    
    /**
-    * Reads the security object containing the hashes
-    * of the data groups.
+    * Reads the security object (containing the hashes
+    * of the data groups) found in the SOd on the passport.
     * 
     * @return the security object
     * 
@@ -233,7 +234,7 @@ public class PassportService extends PassportAuthService
     * Reads the stored signature of the security object.
     * 
     * @return the signature
-    * @throws Exception when something goes wrong
+    * @throws IOException when something goes wrong
     */
    private byte[] readEncryptedDigest() throws IOException {
       SignerInfo signerInfo = readSignerInfo();
