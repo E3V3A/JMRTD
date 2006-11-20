@@ -55,6 +55,7 @@ public class FileSystem {
     static final short EF_DG15_FID = (short) 0x010F;
     static final short EF_SOD_FID = (short) 0x011D;
     static final short EF_COM_FID = (short) 0x011E;
+    static final short SOS_LOG_FID = (short) 0xdead;
 
     private static final short EF_DG1_INDEX = (short) 0;
     private static final short EF_DG2_INDEX = (short) 1;
@@ -73,11 +74,12 @@ public class FileSystem {
     private static final short EF_DG15_INDEX = (short) 14;
     private static final short EF_SOD_INDEX = (short) 15;
     private static final short EF_COM_INDEX = (short) 16;
+    private static final short SOS_LOG_INDEX = (short) 17;
 
     private Object[] files;
 
     public FileSystem() {
-        files = new Object[17];
+        files = new Object[18];
     }
 
     public void createFile(short fid, short size) {
@@ -140,6 +142,8 @@ public class FileSystem {
             return EF_SOD_INDEX;
         case EF_COM_FID:
             return EF_COM_INDEX;
+        case SOS_LOG_FID:
+            return SOS_LOG_INDEX;
         default:
             ISOException.throwIt(ISO7816.SW_FILE_INVALID); 
             return 0;

@@ -54,19 +54,19 @@ public class PassportApplet extends Applet implements ISO7816 {
     public static final byte LOCKED = 32;
 
     /* for authentication */
-    private static final byte INS_EXTERNAL_AUTHENTICATE = (byte) 0x82;
-    private static final byte INS_GET_CHALLENGE = (byte) 0x84;
-    private static final byte CLA_PROTECTED_APDU = 0x0c;
-    private static final byte INS_INTERNAL_AUTHENTICATE = (byte) 0x88;
+    static final byte INS_EXTERNAL_AUTHENTICATE = (byte) 0x82;
+    static final byte INS_GET_CHALLENGE = (byte) 0x84;
+    static final byte CLA_PROTECTED_APDU = 0x0c;
+    static final byte INS_INTERNAL_AUTHENTICATE = (byte) 0x88;
 
     /* for reading */
-    private static final byte INS_SELECT_FILE = (byte) 0xA4;
-    private static final byte INS_READ_BINARY = (byte) 0xB0;
+    static final byte INS_SELECT_FILE = (byte) 0xA4;
+    static final byte INS_READ_BINARY = (byte) 0xB0;
 
     /* for writing */
-    private static final byte INS_UPDATE_BINARY = (byte) 0xd6;
-    private static final byte INS_CREATE_FILE = (byte) 0xe0;
-    private static final byte INS_PUT_DATA = (byte) 0xda;
+    static final byte INS_UPDATE_BINARY = (byte) 0xd6;
+    static final byte INS_CREATE_FILE = (byte) 0xe0;
+    static final byte INS_PUT_DATA = (byte) 0xda;
 
     static final short KEY_LENGTH = 16;
     static final short SEED_LENGTH = 16;
@@ -86,6 +86,8 @@ public class PassportApplet extends Applet implements ISO7816 {
     private PassportCrypto crypto;
     private PassportInit init;
     KeyStore keyStore;
+    
+    private Log log;
 
     /**
      * Creates a new passport applet.
@@ -111,6 +113,8 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         rnd = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
         ssc = JCSystem.makeTransientByteArray((byte) 8, JCSystem.CLEAR_ON_RESET);
+        
+        log = new Log(fileSystem);
     }
 
     /**
@@ -122,7 +126,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        (new PassportApplet(PassportCrypto.CREF_MODE)).register();
+        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
     }
 
     /**
@@ -148,6 +152,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             if (PassportUtil.hasBitMask(state, CHALLENGED)) {
                 PassportUtil.minBitMask(state, CHALLENGED);
             }
+            log.newSession();
             return;
         }
 
@@ -165,6 +170,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         if (sw1sw2 == SW_OK) {
             try {
+                log.insByte(ins);
                 switch (ins) {
                 case INS_GET_CHALLENGE:
                     if (protectedApdu) {
@@ -203,8 +209,8 @@ public class PassportApplet extends Applet implements ISO7816 {
                             processPutData(apdu);
                             break;
                         }
-                        break;
                     }
+                    break;
                 default:
                     ISOException.throwIt(SW_INS_NOT_SUPPORTED);
                     break;
@@ -311,6 +317,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
             state = PassportUtil.plusBitMask(state,
                                              HAS_MUTUALAUTHENTICATION_KEYS);
+            log.enabled(true);
         }
     }
 
@@ -564,6 +571,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
                 
         short fid = Util.getShort(buffer, OFFSET_CDATA);
+        
+        log.selectFile(fid);
 
         if (fileSystem.getFile(fid) != null) {
             selectedFile = fid;

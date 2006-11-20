@@ -143,7 +143,6 @@ public class BERTLVObject {
             for (short i = 0; i < count; i++) {
                 in_p++;
                 b = (short) (in[in_p] & 0xff);
-                ;
                 valueLength <<= 8;
                 valueLength += b;
             }
