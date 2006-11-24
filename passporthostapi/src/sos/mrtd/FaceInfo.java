@@ -58,12 +58,35 @@ import sos.smartcards.BERTLVObject;
 public class FaceInfo
 {
    /** Gender code based on Section 5.5.3 of ISO 19794-5. */
-   public static final int GENDER_UNSPECIFIED = 0x00,
-                           GENDER_MALE = 0x01,
-                           GENDER_FEMALE = 0x02,
-                           GENDER_UNKNOWN = 0x03;
+//   public static final int GENDER_UNSPECIFIED = 0x00,
+//                           GENDER_MALE = 0x01,
+//                           GENDER_FEMALE = 0x02,
+//                           GENDER_UNKNOWN = 0x03;
+
+    /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
+   public enum EyeColor { 
+       UNSPECIFIED { int toInt() { return EYE_COLOR_UNSPECIFIED;} }, 
+       BLACK { int toInt() { return EYE_COLOR_BLACK; } }, 
+       BLUE { int toInt() { return EYE_COLOR_BLUE; } },
+       BROWN{ int toInt() { return EYE_COLOR_BROWN; } },
+       GRAY{ int toInt() { return EYE_COLOR_GRAY; } },
+       GREEN { int toInt() { return EYE_COLOR_GREEN; } },
+       MULTI_COLORED { int toInt() { return EYE_COLOR_MULTI_COLORED; } },
+       PINK { int toInt() { return EYE_COLOR_PINK; } },
+       UNKNOWN { int toInt() { return EYE_COLOR_UNKNOWN; } };
+       
+       abstract int toInt();
+       
+       static EyeColor toEyeColor(int i) {
+           for(EyeColor c: EyeColor.values()) {
+               if(c.toInt() == i) {
+                   return c;
+               }
+           }
+           return null;
+       }
+   };
    
-   /** Eye color code based on Section 5.5.4 of ISO 19794-5. */
    public static final int EYE_COLOR_UNSPECIFIED = 0x00,
                            EYE_COLOR_BLACK = 0x01,
                            EYE_COLOR_BLUE = 0x02,
@@ -75,6 +98,7 @@ public class FaceInfo
                            EYE_COLOR_UNKNOWN = 0x08;
 
    /** Hair color code based on Section 5.5.5 of ISO 19794-5. */
+   public enum HairColor { UNSPECIFIED, BALD, BLACK, BLONDE, BROWN, GRAY, WHITE, RED, GREEN, BLUE, UNKNOWN };
    public static final int HAIR_COLOR_UNSPECIFIED = 0x00,
                            HAIR_COLOR_BALD = 0x01,
                            HAIR_COLOR_BLACK = 0x02,
@@ -88,6 +112,8 @@ public class FaceInfo
                            HAIR_COLOR_UNKNOWN = 0xFF;
    
    /** Feature flags meaning based on Section 5.5.6 of ISO 19794-5. */
+   public enum Features { FEATURES_ARE_SPECIFIED, GLASSES, MOUSTACHE, BEARD, TEETH_VISIBLE, 
+       BLINK, MOUTH_OPEN, LEFT_EYE_PATCH, RIGHT_EYE_PATCH, DARK_GLASSES, DISTORTING_MEDICAL_CONDITION };
    private static final int FEATURE_FEATURES_ARE_SPECIFIED_FLAG = 0x00,
                             FEATURE_GLASSES_FLAG = 0x000002,
                             FEATURE_MOUSTACHE_FLAG = 0x000004,
@@ -101,6 +127,8 @@ public class FaceInfo
                             FEATURE_DISTORTING_MEDICAL_CONDITION = 0x000400;
 
    /** Expression code based on Section 5.5.7 of ISO 19794-5. */
+   public enum Expression { UNSPECIFIED, NEUTRAL, SMILE_CLOSED, SMILE_OPEN, RAISED_EYEBROWS, 
+       EYES_LOOKING_AWAY, SQUINTING, FROWNING }; 
    public static final short EXPRESSION_UNSPECIFIED = 0x0000,
                            EXPRESSION_NEUTRAL = 0x0001,
                            EXPRESSION_SMILE_CLOSED = 0x0002,
@@ -111,6 +139,7 @@ public class FaceInfo
                            EXPRESSION_FROWNING = 0x0007;
 
    /** Face image type code based on Section 5.7.1 of ISO 19794-5. */
+   public enum FaceImageType { UNSPECIFIED, BASIC, FULL_FRONTAL, TOKEN_FRONTAL, OTHER }; 
    public static final int FACE_IMAGE_TYPE_UNSPECIFIED = 0x00,
                            FACE_IMAGE_TYPE_BASIC = 0x01,
                            FACE_IMAGE_TYPE_FULL_FRONTAL = 0x02,
@@ -118,10 +147,12 @@ public class FaceInfo
                            FACE_IMAGE_TYPE_OTHER = 0x04;
    
    /** Image data type code based on Section 5.7.2 of ISO 19794-5. */
+   public enum ImageData { TYPE_JPEG, TYPE_JPEG2000 };
    private static final int IMAGE_DATA_TYPE_JPEG = 0x00,
                             IMAGE_DATA_TYPE_JPEG2000 = 0x01;
    
    /** Color space code based on Section 5.7.4 of ISO 19794-5. */
+   public enum ImageColorSpace { UNSPECIFIED, RGB24, YUV422, GRAY8, OTHER }; 
    public static final int IMAGE_COLOR_SPACE_UNSPECIFIED = 0x00,
                            IMAGE_COLOR_SPACE_RGB24 = 0x01,
                            IMAGE_COLOR_SPACE_YUV422 = 0x02,
@@ -129,6 +160,9 @@ public class FaceInfo
                            IMAGE_COLOR_SPACE_OTHER = 0x04;
    
    /** Source type based on Section 5.7.6 of ISO 19794-5. */
+   public enum SourceType { UNSPECIFIED, STATIC_PHOTO_UNKNOWN_SOURCE, STATIC_PHOTO_DIGITAL_CAM,
+       STATIC_PHOTO_SCANNER, VIDEO_FRAME_UNKNOWN_SOURCE, VIDEO_FRAME_ANALOG_CAM, VIDEO_FRAME_DIGITAL_CAM,
+       UNKNOWN };
    public static final int SOURCE_TYPE_UNSPECIFIED = 0x00,
                            SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE = 0x01,
                            SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM = 0x02,
@@ -142,8 +176,8 @@ public class FaceInfo
    private static final int YAW = 0, PITCH = 1, ROLL = 2;
    
    private long faceImageBlockLength;
-   private int gender;
-   private int eyeColor;
+   private MRZInfo.Gender gender;
+   private EyeColor eyeColor;
    private int hairColor;
    private long featureMask;
    private short expression;
@@ -170,7 +204,7 @@ public class FaceInfo
     * @param sourceType source type
     * @param image image
     */
-   public FaceInfo(int gender, int eyeColor, int hairColor, short expression,
+   public FaceInfo(MRZInfo.Gender gender, EyeColor eyeColor, int hairColor, short expression,
          int sourceType, BufferedImage image) {
       this.faceImageBlockLength = 0L;
       this.gender = gender;
@@ -200,8 +234,8 @@ public class FaceInfo
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
       int featurePointCount = dataIn.readUnsignedShort();
-      gender = dataIn.readUnsignedByte();
-      eyeColor = dataIn.readUnsignedByte();
+      gender = MRZInfo.Gender.toGender(dataIn.readUnsignedByte());
+      eyeColor = EyeColor.toEyeColor(dataIn.readUnsignedByte());
       hairColor = dataIn.readUnsignedByte();
       featureMask = dataIn.readUnsignedByte();
       featureMask = (featureMask << 16) | dataIn.readUnsignedShort();
@@ -276,8 +310,8 @@ public class FaceInfo
       /* Facial Information (20) */
       // dataOut.writeInt((int)faceImageBlockLength);
       dataOut.writeShort(featurePoints.length);
-      dataOut.writeByte(gender);
-      dataOut.writeByte(eyeColor);
+      dataOut.writeByte(gender.toInt());
+      dataOut.writeByte(eyeColor.toInt());
       dataOut.writeByte(hairColor);
       dataOut.writeByte((byte)((featureMask & 0xFF0000L) >> 16));
       dataOut.writeByte((byte)((featureMask & 0x00FF00L) >> 8));
@@ -415,8 +449,8 @@ public class FaceInfo
    public String toString() {
       StringBuffer out = new StringBuffer();
       out.append("Image size: "); out.append(width + " x " + height); out.append("\n");
-      out.append("Gender: "); out.append(genderToString()); out.append("\n");
-      out.append("Eye color: "); out.append(eyeColorToString()); out.append("\n");
+      out.append("Gender: "); out.append(gender); out.append("\n");
+      out.append("Eye color: "); out.append(eyeColor); out.append("\n");
       out.append("Hair color: "); out.append(hairColorToString()); out.append("\n");
       out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
       out.append("Expression: "); out.append(expressionToString()); out.append("\n");
@@ -436,28 +470,28 @@ public class FaceInfo
       return out.toString();
    }
    
-   private String genderToString() {
-      switch(gender) {
-      case GENDER_UNSPECIFIED: return "unspecified";
-      case GENDER_MALE: return "male";
-      case GENDER_FEMALE: return "female";
-      }
-      return "unknown";
-   }
+//   private String genderToString() {
+//      switch(gender) {
+//      case GENDER_UNSPECIFIED: return "unspecified";
+//      case GENDER_MALE: return "male";
+//      case GENDER_FEMALE: return "female";
+//      }
+//      return "unknown";
+//   }
    
-   private String eyeColorToString() {
-      switch(eyeColor) {
-      case EYE_COLOR_UNSPECIFIED: return "unspecified";
-      case EYE_COLOR_BLACK: return "black";
-      case EYE_COLOR_BLUE: return "blue";
-      case EYE_COLOR_BROWN: return "brown";
-      case EYE_COLOR_GRAY: return "gray";
-      case EYE_COLOR_GREEN: return "green";
-      case EYE_COLOR_MULTI_COLORED: return "multi-colored";
-      case EYE_COLOR_PINK: return "pink";
-      }
-      return "unknown";
-   }
+//   private String eyeColorToString() {
+//      switch(eyeColor) {
+//      case EYE_COLOR_UNSPECIFIED: return "unspecified";
+//      case EYE_COLOR_BLACK: return "black";
+//      case EYE_COLOR_BLUE: return "blue";
+//      case EYE_COLOR_BROWN: return "brown";
+//      case EYE_COLOR_GRAY: return "gray";
+//      case EYE_COLOR_GREEN: return "green";
+//      case EYE_COLOR_MULTI_COLORED: return "multi-colored";
+//      case EYE_COLOR_PINK: return "pink";
+//      }
+//      return "unknown";
+//   }
    
    private String hairColorToString() {
       switch(hairColor) {
@@ -624,7 +658,7 @@ public class FaceInfo
     * 
     * @return eye color
     */
-   public int getEyeColor() {
+   public EyeColor getEyeColor() {
       return eyeColor;
    }
 
@@ -634,7 +668,7 @@ public class FaceInfo
     * 
     * @return gender
     */
-   public int getGender() {
+   public MRZInfo.Gender getGender() {
       return gender;
    }
 
@@ -834,8 +868,8 @@ public class FaceInfo
    public static void main(String[] arg) {
       try {
          BufferedImage image = ImageIO.read(new File(arg[0]));
-         FaceInfo info = new FaceInfo(GENDER_MALE,
-               EYE_COLOR_BLUE,HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
+         FaceInfo info = new FaceInfo(MRZInfo.Gender.MALE,
+               EyeColor.BLUE, HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
                SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM, image);
          byte[] zero0 = { 0x00 };
          byte[] zero2 = { 0x02 };

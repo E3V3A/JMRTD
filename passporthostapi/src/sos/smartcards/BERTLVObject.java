@@ -416,6 +416,10 @@ public class BERTLVObject {
                     result[i] = (byte)((intValue & (0xFF << pos)) >> pos);
                 }
                 return result;
+            } else if(value instanceof Byte) {
+                byte[] result = new byte[1];
+                result[0] = ((Byte)value).byteValue();
+                return result;
             }
             throw new IllegalStateException("Cannot decode value of type: "
                     + value.getClass());

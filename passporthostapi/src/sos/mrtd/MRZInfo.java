@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -36,6 +37,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
+
+import sos.smartcards.BERTLVObject;
 
 /**
  * Data structure for storing the MRZ information
@@ -60,6 +63,24 @@ public class MRZInfo
    public static final int DOC_TYPE_ID3 = 3;                           
 	
    /** Possible value for passport holder's gender. */
+   public enum Gender {
+        MALE { int toInt() { return GENDER_MALE; } }, 
+        FEMALE {int toInt() { return GENDER_FEMALE; }}, 
+        UNKNOWN { int toInt() { return GENDER_UNKNOWN; } }, 
+        UNSPECIFIED {int toInt() { return GENDER_UNSPECIFIED; } };
+        
+        abstract int toInt();
+        
+        static Gender toGender(int b) {
+            for(Gender g : Gender.values()) {
+                if(g.toInt() == b) {
+                    return g;
+                }
+            }
+            return null;
+        }
+    }
+   
    public static final int GENDER_UNSPECIFIED = 0x00,
       GENDER_MALE = 0x01,
       GENDER_FEMALE = 0x02,
@@ -78,7 +99,7 @@ public class MRZInfo
    private String documentNumber;
    private String personalNumber;
    private Date dateOfBirth;
-   private int gender;
+   private Gender gender;
    private Date dateOfExpiry;
    private char documentNumberCheckDigit;
    private char dateOfBirthCheckDigit;
@@ -103,7 +124,7 @@ public class MRZInfo
    public MRZInfo(int documentType, String issuingState,
          String primaryIdentifier, String[] secondaryIdentifiers,
          String documentNumber, String nationality, Date dateOfBirth,
-         int gender, Date dateOfExpiry, String personalNumber) {
+         Gender gender, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
       this.primaryIdentifier = primaryIdentifier;
@@ -191,6 +212,7 @@ public class MRZInfo
             this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
          }
       } catch (IOException ioe) {
+          ioe.printStackTrace();
          throw new IllegalArgumentException("Invalid MRZ input source");
       }
    }
@@ -304,8 +326,8 @@ public class MRZInfo
    
    private String genderToString() {
       switch (gender) {
-      case GENDER_MALE: return "M";
-      case GENDER_FEMALE: return "F";
+      case MALE: return "M";
+      case FEMALE: return "F";
       default: return "<";
       }
    }
@@ -429,17 +451,17 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   private int readGender(DataInputStream in) throws IOException {
+   private Gender readGender(DataInputStream in) throws IOException {
       byte[] data = new byte[1];
       in.readFully(data);
       String genderStr = new String(data).trim();
       if (genderStr.equalsIgnoreCase("M")) {
-         return GENDER_MALE;
+         return Gender.MALE;
       }
       if (genderStr.equalsIgnoreCase("F")) {
-         return GENDER_FEMALE;
+         return Gender.FEMALE;
       }
-      return GENDER_UNKNOWN;
+      return Gender.UNKNOWN;
    }
    
    /**
@@ -473,7 +495,7 @@ public class MRZInfo
       return parseDate(2000, new String(data).trim());
    }
    
-   private Date parseDate(int baseYear, String dateString) throws NumberFormatException {
+   private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
       if (dateString.length() != 6) {
          throw new NumberFormatException("Wrong date format!");
       }
@@ -570,7 +592,7 @@ public class MRZInfo
     * 
     * @return gender
     */
-   public int getGender() {
+   public Gender getGender() {
       return gender;
    }
    
@@ -737,19 +759,41 @@ public class MRZInfo
    
    public static void main(String[] arg) {
       try {
-         FileInputStream fileIn = new FileInputStream(arg[0]);
-         MRZInfo mrzInfo = new MRZInfo(fileIn);
-         System.out.println(mrzInfo);
+         //FileInputStream fileIn = new FileInputStream(arg[0]);
+          String[] secundaries = { "JAN", "PETER" };
+
+//          int[] mrzpath = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+//
+//          BERTLVObject ef0101 = BERTLVObject.getInstance(new FileInputStream(arg[0]));
+//          System.out.println(ef0101.getSubObject(mrzpath, 0, mrzpath.length));
+//          
+//          MRZInfo bla = new MRZInfo(new ByteArrayInputStream(ef0101.getSubObject(mrzpath, 0, mrzpath.length).getValueAsBytes()));
+//          System.out.println(bla);
+          
+//          if(arg.length > 0)
+//              return;
+          
+         MRZInfo mrzInfo =
+          new MRZInfo(3, "NLD",
+                 "Balkenende", secundaries,
+                 "PPNUMMER0", "NLD", parseDate(1900, "560507"), MRZInfo.Gender.MALE, 
+                 parseDate(2000, "100101"),  "876543210<<<<<");
          
-         System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
-         String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
-         for (int i = 0; i < secondaryIdentifiers.length; i++) {
-            System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
-         }
+         BERTLVObject ef0101 = new BERTLVObject(PassportASN1Service.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
+         System.out.println(ef0101);
+         FileOutputStream out = new FileOutputStream(arg[0]);
+         out.write(ef0101.getEncoded());
+         out.close();
          
-         ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
-         MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
-         System.out.println(mrzInfo2);
+//         System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
+//         String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
+//         for (int i = 0; i < secondaryIdentifiers.length; i++) {
+//            System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
+//         }
+//         
+//         ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
+//         MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
+//         System.out.println(mrzInfo2);
       } catch (Exception e) {
          e.printStackTrace();
       }
