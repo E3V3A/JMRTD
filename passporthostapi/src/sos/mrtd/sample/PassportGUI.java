@@ -149,6 +149,7 @@ public class PassportGUI extends JPanel
          FacePanel facePanel = new FacePanel(service);
          PAPanel paPanel = new PAPanel(service);
          AAPanel aaPanel = new AAPanel(service);
+         EvilPanel evilPanel = new EvilPanel(service);
          InitPassportPanel initPanel = new InitPassportPanel(service);
          bacPanel.addAuthenticationListener(apduSenderPanel);
          bacPanel.addAuthenticationListener(ldsPanel);
@@ -163,10 +164,12 @@ public class PassportGUI extends JPanel
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);
          tabbedPane.addTab("Init", initPanel);
+         tabbedPane.addTab("Evil", evilPanel);
          if (demo) {
            tabbedPane.setEnabledAt(1,false); // APDU
            tabbedPane.setEnabledAt(2,false); // LDS
            tabbedPane.setEnabledAt(6,false); // Init
+           tabbedPane.setEnabledAt(7, false); // Evil
          }
          add(tabbedPane, BorderLayout.CENTER);
          service.addAPDUListener(log);
@@ -182,13 +185,18 @@ public class PassportGUI extends JPanel
     * @param arg command line arguments.
     */
    public static void main(String[] arg) {
-      PassportGUI gui = new PassportGUI(arg);
-      JFrame frame = new JFrame("PassportGUI");
-      Container cp = frame.getContentPane();
-      cp.add(gui);
-      frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-      frame.pack();
-      frame.setVisible(true);
+      try {
+         PassportGUI gui = new PassportGUI(arg);
+         JFrame frame = new JFrame("PassportGUI");
+         Container cp = frame.getContentPane();
+         cp.add(gui);
+         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         frame.pack();
+         frame.setVisible(true);
+      } catch (Exception e) {
+         e.printStackTrace();
+         System.exit(1);
+      }
    }
 }
 
