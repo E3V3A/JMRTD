@@ -170,51 +170,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
         if (sw1sw2 == SW_OK) {
             try {
-                log.insByte(ins);
-                switch (ins) {
-                case INS_GET_CHALLENGE:
-                    if (protectedApdu) {
-                        ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
-                    }
-                    responseLength = processGetChallenge(apdu);
-                    break;
-                case INS_EXTERNAL_AUTHENTICATE:
-                    if (protectedApdu) {
-                        ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
-                    }
-                    responseLength = processMutualAuthenticate(apdu);
-                    break;
-                case INS_INTERNAL_AUTHENTICATE:
-                    responseLength = processInternalAuthenticate(apdu,
-                                                                 protectedApdu);
-                    break;
-                case INS_SELECT_FILE:
-                    processSelectFile(apdu);
-                    break;
-                case INS_READ_BINARY:
-                    responseLength = processReadBinary(apdu, le, protectedApdu);
-                    break;
-                case INS_UPDATE_BINARY:
-                case INS_CREATE_FILE:
-                case INS_PUT_DATA:
-                    if (!PassportUtil.hasBitMask(state, LOCKED)) {
-                        switch (ins) {
-                        case INS_UPDATE_BINARY:
-                            processUpdateBinary(apdu);
-                            break;
-                        case INS_CREATE_FILE:
-                            processCreateFile(apdu);
-                            break;
-                        case INS_PUT_DATA:
-                            processPutData(apdu);
-                            break;
-                        }
-                    }
-                    break;
-                default:
-                    ISOException.throwIt(SW_INS_NOT_SUPPORTED);
-                    break;
-                }
+                responseLength = processAPDU(apdu, cla, ins, protectedApdu, le);
             } catch (CardRuntimeException e) {
                 sw1sw2 = e.getReason();
             }
@@ -241,6 +197,57 @@ public class PassportApplet extends Applet implements ISO7816 {
             ISOException.throwIt(sw1sw2);
         }
     }
+
+	public short processAPDU(APDU apdu, byte cla, byte ins, boolean protectedApdu, short le) {
+		short responseLength = 0;
+
+		log.insByte(ins);
+		switch (ins) {
+		case INS_GET_CHALLENGE:
+		    if (protectedApdu) {
+		        ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
+		    }
+		    responseLength = processGetChallenge(apdu);
+		    break;
+		case INS_EXTERNAL_AUTHENTICATE:
+		    if (protectedApdu) {
+		        ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
+		    }
+		    responseLength = processMutualAuthenticate(apdu);
+		    break;
+		case INS_INTERNAL_AUTHENTICATE:
+		    responseLength = processInternalAuthenticate(apdu,
+		                                                 protectedApdu);
+		    break;
+		case INS_SELECT_FILE:
+		    processSelectFile(apdu);
+		    break;
+		case INS_READ_BINARY:
+		    responseLength = processReadBinary(apdu, le, protectedApdu);
+		    break;
+		case INS_UPDATE_BINARY:
+		case INS_CREATE_FILE:
+		case INS_PUT_DATA:
+		    if (!PassportUtil.hasBitMask(state, LOCKED)) {
+		        switch (ins) {
+		        case INS_UPDATE_BINARY:
+		            processUpdateBinary(apdu);
+		            break;
+		        case INS_CREATE_FILE:
+		            processCreateFile(apdu);
+		            break;
+		        case INS_PUT_DATA:
+		            processPutData(apdu);
+		            break;
+		        }
+		    }
+		    break;
+		default:
+		    ISOException.throwIt(SW_INS_NOT_SUPPORTED);
+		    break;
+		}
+		return responseLength;
+	}
 
     private void processPutData(APDU apdu) {
         byte[] buffer = apdu.getBuffer();
@@ -612,7 +619,9 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
         
         short len;
-        len = PassportUtil.min((short)(buffer.length - 37), (short) (file.length - offset));
+        short fileSize = fileSystem.getFileSize(selectedFile);
+
+        len = PassportUtil.min((short)(buffer.length - 37), (short) (fileSize - offset));
         // FIXME: 37 magic
         len = PassportUtil.min(len, (short) buffer.length);
         short bufferOffset = 0;

@@ -77,33 +77,48 @@ public class FileSystem {
     private static final short SOS_LOG_INDEX = (short) 17;
 
     private Object[] files;
+    private short[] fileSizes;
 
     public FileSystem() {
         files = new Object[18];
+        fileSizes = new short[18];
     }
 
     public void createFile(short fid, short size) {
         short idx = getFileIndex(fid);
 
-        files[idx] = new byte[size];
+        // first create determines maximum file size
+        if (files[idx] == null)
+        	files[idx] = new byte[size];
+        
+        if (((byte[]) files[idx]).length < size)
+            ISOException.throwIt(ISO7816.SW_FILE_FULL);
+
+        fileSizes[idx] = size;
     }
 
     public void writeData(short fid, short file_offset, byte[] data,
             short data_offset, short length) {
         byte[] file = getFile(fid);
+        short fileSize = getFileSize(fid);
         
         if(file == null) {
             ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
         }
         
-        if ((short) file.length < (short) (file_offset + length))
+        if (fileSize < (short) (file_offset + length))
             ISOException.throwIt(ISO7816.SW_FILE_FULL);
 
         Util.arrayCopy(data, data_offset, getFile(fid), file_offset, length);
     }
 
+    // FIXME: inefficiency: getFileIndex is called twice (by getFile and getFileSize)
     public byte[] getFile(short fid) {
         return (byte[]) files[getFileIndex(fid)];
+    }
+
+    public short getFileSize(short fid) {
+        return fileSizes[getFileIndex(fid)];
     }
 
     private static short getFileIndex(short fid) throws ISOException {
