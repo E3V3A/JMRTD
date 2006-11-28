@@ -292,5 +292,6 @@ public class PassportUtil implements ISO7816 {
              ISOException.throwIt((short)0x6d66);
              return state;
          }
-     }             
+     }
+
 }  
