@@ -116,7 +116,6 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         updateBinaryButton.addActionListener(this);
         fidField = new HexField(2);
         lenField = new HexField(2);
-        lenField.setEditable(false);
         fileSendingPanel.add(selectLocalFileButton);
         fileSendingPanel.add(new JLabel("file: "));
         fileSendingPanel.add(fidField);
