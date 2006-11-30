@@ -40,6 +40,7 @@ import sos.mrtd.PassportApduService;
 import sos.smartcards.APDUIOService;
 import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.JPCSCService;
+import sos.smartcards.MustangCardService;
 
 /**
  * Simple graphical application for experimenting with the passport
@@ -90,7 +91,7 @@ public class PassportGUI extends JPanel
               DEFAULT_DATE_OF_EXPIRY = "940623";
          }
           else {
-              service = new PassportApduService(new JPCSCService());
+              service = new PassportApduService(new MustangCardService());
               // Loes' passport
              // DEFAULT_DOC_NR = "XX0001328";
              // DEFAULT_DATE_OF_BIRTH = "711019";

@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
 package sos.smartcards;
@@ -27,39 +27,71 @@ import javax.smartcardio.*;
 
 /**
  * Card service implementation for sending APDUs to a terminal
- * using the <code>javax.smartcardio.*</code> classes in Java
- * SDK 6.0 (aka "Mustang").
+ * using the <code>javax.smartcardio.*</code> classes in
+ * Java SDK 6.0 (aka "Mustang").
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: $
+ * @version $Revision$
  */
 public class MustangCardService extends AbstractCardService
 {
    private static final String PROTOCOL = "T=1";
-   private CardTerminal terminal;
+
    private Card card;
    private CardChannel channel;
 
+   /**
+    * Constructs a new card service.
+    */
    public MustangCardService() {
+   }
+
+   @Override
+   public String[] getTerminals() {
+      try {
+         TerminalFactory factory = TerminalFactory.getDefault();
+         List<CardTerminal> terminals = factory.terminals().list();
+         String[] result = new String[terminals.size()];
+         int i = 0;
+         for (CardTerminal terminal: terminals) {
+            result[i++] = terminal.toString();
+         }
+         return result;
+      } catch (CardException ce) {
+         ce.printStackTrace();
+         return new String[0];
+      }
    }
    
    @Override
-   public void close() {
+   public void open() {
       try {
-         card.disconnect(false);
-         notifyStoppedAPDUSession();
+         TerminalFactory factory = TerminalFactory.getDefault();
+         List<CardTerminal> terminals = factory.terminals().list();
+         CardTerminal terminal = terminals.get(0);
+         card = terminal.connect(PROTOCOL);
+         channel = card.getBasicChannel();
+         notifyStartedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
       }
    }
 
    @Override
-   public void open() {
+   public void open(String id) {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
-         terminal = terminals.get(0);
+         CardTerminal terminal = null;
+         for (CardTerminal t: terminals) {
+            if (t.toString().equals(id)) {
+               terminal = t;
+            }
+         }
+         if (terminal == null) {
+            terminal = terminals.get(0);
+         }
          card = terminal.connect(PROTOCOL);
          channel = card.getBasicChannel();
          notifyStartedAPDUSession();
@@ -73,15 +105,6 @@ public class MustangCardService extends AbstractCardService
       try {
          byte[] cbuf = apdu.getCommandApduBuffer();
          CommandAPDU capdu = new CommandAPDU(cbuf);
-         System.out.println("DEBUG: apdu.getCommandApduBuffer() == " + sos.util.Hex.bytesToHexString(apdu.getCommandApduBuffer()));
-         System.out.println("DEBUG: apdu.getLc()" + apdu.getLc());
-         System.out.println("DEBUG: apdu.getLe() == " + apdu.getLe());
-         System.out.println("DEBUG: capdu.getBytes() == " + sos.util.Hex.bytesToHexString(capdu.getBytes()));
-         System.out.println("DEBUG: capdu.getNc() == " + capdu.getNc());
-         System.out.println("DEBUG: capdu.getData() == " + sos.util.Hex.bytesToHexString(capdu.getData()));
-         System.out.println("DEBUG: capdu.getData().length == " + capdu.getData().length);
-         System.out.println("DEBUG: capdu.getNe() == " + capdu.getNe());
-         System.out.println("DEBUG: capdu.toString() == " + capdu.toString());
          ResponseAPDU rapdu = channel.transmit(capdu);
          apdu.setResponseApduBuffer(rapdu.getBytes()); 
          notifyExchangedAPDU(apdu);
@@ -92,41 +115,14 @@ public class MustangCardService extends AbstractCardService
       return null;
    }
 
-   public String[] getTerminals() {
+   @Override
+   public void close() {
       try {
-         TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals().list();
-         String[] result = new String[terminals.size()];
-         int i = 0;
-         for (CardTerminal terminal: terminals) {
-            result[i] = terminal.toString();
-         }
-         return result;
-      } catch (CardException ce) {
-         ce.printStackTrace();
-         return new String[0];
-      }
-   }
-
-   public void open(String id) {
-      try {
-         TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals().list();
-         terminal = null;
-         for (CardTerminal t: terminals) {
-            if (t.toString().equals(id)) {
-               this.terminal = t;
-            }
-
-         }
-         if (terminal == null) {
-            terminal = terminals.get(0);
-         }
-         card = terminal.connect(PROTOCOL);
-         channel = card.getBasicChannel();
-         notifyStartedAPDUSession();
+         card.disconnect(false);
+         notifyStoppedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
       }
    }
 }
+
