@@ -65,7 +65,7 @@ public class PassportGUI extends JPanel
    private JButton openButton, closeButton;
    private JComboBox terminalsComboBox;
 
-   private boolean demo = false;
+   private boolean isDemo;
 
    /**
     * Constructs the GUI.
@@ -73,48 +73,53 @@ public class PassportGUI extends JPanel
     * @param arg command line arguments, are ignored for now.
     */
    public PassportGUI(String[] arg) {
+      super(new BorderLayout());
       try {
-          Security.insertProviderAt(PROVIDER, 4);
-          if (arg != null && arg.length >0 &&
-                          (arg[0].equals("demo") || arg[0].equals("demo"))) {
-            demo = true;
-          }
-          if(arg != null && arg.length > 0 && 
-        		  (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
-        	  if(arg[0].equals("apduio"))
-                service = new PassportApduService(new APDUIOService());
-        	  else
-        		service = new PassportApduService(new JCOPEmulatorService());
-              // sample data from icao
-              DEFAULT_DOC_NR = "L898902C<";
-              DEFAULT_DATE_OF_BIRTH = "690806";
-              DEFAULT_DATE_OF_EXPIRY = "940623";
+         Security.insertProviderAt(PROVIDER, 4);
+         isDemo = (arg != null && arg.length > 0 && (arg[0].equals("demo")));
+         if (arg != null && arg.length > 0 && 
+               (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
+            if(arg[0].equals("apduio")) {
+               service = new PassportApduService(new APDUIOService());
+            } else {
+               service = new PassportApduService(new JCOPEmulatorService());
+            }
+            // sample data from icao
+            DEFAULT_DOC_NR = "L898902C<";
+            DEFAULT_DATE_OF_BIRTH = "690806";
+            DEFAULT_DATE_OF_EXPIRY = "940623";
+         } else {
+            try {
+               service = new PassportApduService(new MustangCardService());
+            } catch (NoClassDefFoundError ncdfe) {
+               try {
+                  service = new PassportApduService(new JPCSCService());
+               } catch (NoClassDefFoundError ncdfee) {
+                  throw new IllegalStateException("Could not connect to PC/SC layer");
+               }
+            }
+
+            // Loes' passport
+            // DEFAULT_DOC_NR = "XX0001328";
+            // DEFAULT_DATE_OF_BIRTH = "711019";
+            // DEFAULT_DATE_OF_EXPIRY = "111001";
+            // Elize Ludwina Jantine Noordhofs passport
+            if (isDemo) {
+               DEFAULT_DOC_NR = "";
+               DEFAULT_DATE_OF_BIRTH = "";
+               DEFAULT_DATE_OF_EXPIRY = "";
+            } else {
+               DEFAULT_DOC_NR = "XX0005050";
+               DEFAULT_DATE_OF_BIRTH = "820411";
+               DEFAULT_DATE_OF_EXPIRY = "110720";
+            }
          }
-          else {
-              service = new PassportApduService(new MustangCardService());
-              // Loes' passport
-             // DEFAULT_DOC_NR = "XX0001328";
-             // DEFAULT_DATE_OF_BIRTH = "711019";
-             // DEFAULT_DATE_OF_EXPIRY = "111001";
-             // Elize Ludwina Jantine Noordhofs passport
-              if (demo) {
-                DEFAULT_DOC_NR = "";
-                DEFAULT_DATE_OF_BIRTH = "";
-                DEFAULT_DATE_OF_EXPIRY = "";
-              } else {
-                DEFAULT_DOC_NR = "XX0005050";
-                DEFAULT_DATE_OF_BIRTH = "820411";
-                DEFAULT_DATE_OF_EXPIRY = "110720";
-              }
-         }
-          
-         setLayout(new BorderLayout());
 
          JPanel northPanel = new JPanel(new FlowLayout());
          terminalsComboBox = new JComboBox();
          String[] terminals = service.getTerminals();
-         for (int i = 0; i < terminals.length; i++) {
-            terminalsComboBox.addItem(terminals[i]);
+         for (String terminal: terminals) {
+            terminalsComboBox.addItem(terminal);
          }
          openButton = new JButton("Open");
          openButton.addActionListener(new ActionListener() {
@@ -166,11 +171,11 @@ public class PassportGUI extends JPanel
          tabbedPane.addTab("AA", aaPanel);
          tabbedPane.addTab("Init", initPanel);
          tabbedPane.addTab("Evil", evilPanel);
-         if (demo) {
-           tabbedPane.setEnabledAt(1,false); // APDU
-           tabbedPane.setEnabledAt(2,false); // LDS
-           tabbedPane.setEnabledAt(6,false); // Init
-           tabbedPane.setEnabledAt(7, false); // Evil
+         if (isDemo) {
+            tabbedPane.setEnabledAt(1, false); // APDU
+            tabbedPane.setEnabledAt(2, false); // LDS
+            tabbedPane.setEnabledAt(6, false); // Init
+            tabbedPane.setEnabledAt(7, false); // Evil
          }
          add(tabbedPane, BorderLayout.CENTER);
          service.addAPDUListener(log);
@@ -189,8 +194,7 @@ public class PassportGUI extends JPanel
       try {
          PassportGUI gui = new PassportGUI(arg);
          JFrame frame = new JFrame("PassportGUI");
-         Container cp = frame.getContentPane();
-         cp.add(gui);
+         frame.getContentPane().add(gui);
          frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          frame.pack();
          frame.setVisible(true);
