@@ -36,7 +36,7 @@ import javax.smartcardio.*;
  */
 public class MustangCardService extends AbstractCardService
 {
-   
+   private static final String PROTOCOL = "T=1";
    private CardTerminal terminal;
    private Card card;
    private CardChannel channel;
@@ -60,7 +60,7 @@ public class MustangCardService extends AbstractCardService
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          terminal = terminals.get(0);
-         card = terminal.connect("T=0");
+         card = terminal.connect(PROTOCOL);
          channel = card.getBasicChannel();
          notifyStartedAPDUSession();
       } catch (CardException ce) {
@@ -71,7 +71,17 @@ public class MustangCardService extends AbstractCardService
    @Override
    public byte[] sendAPDU(Apdu apdu) {
       try {
-         CommandAPDU capdu = new CommandAPDU(apdu.getCommandApduBuffer());
+         byte[] cbuf = apdu.getCommandApduBuffer();
+         CommandAPDU capdu = new CommandAPDU(cbuf);
+         System.out.println("DEBUG: apdu.getCommandApduBuffer() == " + sos.util.Hex.bytesToHexString(apdu.getCommandApduBuffer()));
+         System.out.println("DEBUG: apdu.getLc()" + apdu.getLc());
+         System.out.println("DEBUG: apdu.getLe() == " + apdu.getLe());
+         System.out.println("DEBUG: capdu.getBytes() == " + sos.util.Hex.bytesToHexString(capdu.getBytes()));
+         System.out.println("DEBUG: capdu.getNc() == " + capdu.getNc());
+         System.out.println("DEBUG: capdu.getData() == " + sos.util.Hex.bytesToHexString(capdu.getData()));
+         System.out.println("DEBUG: capdu.getData().length == " + capdu.getData().length);
+         System.out.println("DEBUG: capdu.getNe() == " + capdu.getNe());
+         System.out.println("DEBUG: capdu.toString() == " + capdu.toString());
          ResponseAPDU rapdu = channel.transmit(capdu);
          apdu.setResponseApduBuffer(rapdu.getBytes()); 
          notifyExchangedAPDU(apdu);
@@ -112,7 +122,7 @@ public class MustangCardService extends AbstractCardService
          if (terminal == null) {
             terminal = terminals.get(0);
          }
-         card = terminal.connect("T=0");
+         card = terminal.connect(PROTOCOL);
          channel = card.getBasicChannel();
          notifyStartedAPDUSession();
       } catch (CardException ce) {
