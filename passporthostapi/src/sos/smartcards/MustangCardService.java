@@ -41,10 +41,14 @@ public class MustangCardService extends AbstractCardService
    private Card card;
    private CardChannel channel;
 
+   public MustangCardService() {
+   }
+   
    @Override
    public void close() {
       try {
          card.disconnect(false);
+         notifyStoppedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
       }
@@ -58,6 +62,7 @@ public class MustangCardService extends AbstractCardService
          terminal = terminals.get(0);
          card = terminal.connect("T=0");
          channel = card.getBasicChannel();
+         notifyStartedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
       }
@@ -68,6 +73,8 @@ public class MustangCardService extends AbstractCardService
       try {
          CommandAPDU capdu = new CommandAPDU(apdu.getCommandApduBuffer());
          ResponseAPDU rapdu = channel.transmit(capdu);
+         apdu.setResponseApduBuffer(rapdu.getBytes()); 
+         notifyExchangedAPDU(apdu);
          return rapdu.getBytes();
       } catch (CardException ce) {
          ce.printStackTrace();
@@ -107,6 +114,7 @@ public class MustangCardService extends AbstractCardService
          }
          card = terminal.connect("T=0");
          channel = card.getBasicChannel();
+         notifyStartedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
       }
