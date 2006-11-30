@@ -22,8 +22,15 @@
 
 package sos.smartcards;
 
-import java.util.*;
-import javax.smartcardio.*;
+import java.util.List;
+
+import javax.smartcardio.Card;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+import javax.smartcardio.TerminalFactory;
 
 /**
  * Card service implementation for sending APDUs to a terminal
@@ -47,7 +54,12 @@ public class MustangCardService extends AbstractCardService
    public MustangCardService() {
    }
 
-   @Override
+   /**
+    * Gives a list of terminals (card accepting devices) accessible by
+    * this service.
+    *
+    * @return a list of terminal names
+    */
    public String[] getTerminals() {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
@@ -64,7 +76,9 @@ public class MustangCardService extends AbstractCardService
       }
    }
    
-   @Override
+   /**
+    * Opens a session with the card in the default terminal.
+    */
    public void open() {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
@@ -78,7 +92,11 @@ public class MustangCardService extends AbstractCardService
       }
    }
 
-   @Override
+   /**
+    * Opens a session with the card designated by <code>id</code>.
+    * 
+    * @param id some identifier (typically the name of a card terminal)
+    */
    public void open(String id) {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
@@ -100,7 +118,13 @@ public class MustangCardService extends AbstractCardService
       }
    }
 
-   @Override
+   /**
+    * Sends an apdu to the card.
+    *
+    * @param capdu the command apdu to send.
+    *
+    * @return the response from the card, including the status word.
+    */
    public byte[] sendAPDU(Apdu apdu) {
       try {
          byte[] cbuf = apdu.getCommandApduBuffer();
@@ -115,7 +139,9 @@ public class MustangCardService extends AbstractCardService
       return null;
    }
 
-   @Override
+   /**
+    * Closes the session with the card.
+    */
    public void close() {
       try {
          card.disconnect(false);
