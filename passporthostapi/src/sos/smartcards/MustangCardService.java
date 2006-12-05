@@ -63,7 +63,7 @@ public class MustangCardService extends AbstractCardService
    public String[] getTerminals() {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals();
+         List<CardTerminal> terminals = factory.terminals().list();
          String[] result = new String[terminals.size()];
          int i = 0;
          for (CardTerminal terminal: terminals) {
@@ -82,7 +82,7 @@ public class MustangCardService extends AbstractCardService
    public void open() {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals();
+         List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = terminals.get(0);
          card = terminal.connect(PROTOCOL);
          channel = card.getBasicChannel();
@@ -100,7 +100,7 @@ public class MustangCardService extends AbstractCardService
    public void open(String id) {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals();
+         List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = null;
          for (CardTerminal t: terminals) {
             if (t.toString().equals(id)) {
