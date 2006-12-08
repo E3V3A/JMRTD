@@ -234,48 +234,51 @@ public class MRZInfo
       }
       secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
    }
-   
 
-   
-   public byte[] getEncoded() throws IOException {
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
-      DataOutputStream dataOut = new DataOutputStream(out);
-      writeDocumentType(dataOut);
-      if (documentType == DOC_TYPE_ID1) {
-         /* Assume it's an ID1 document */
-         writeIssuingState(dataOut);
-         writeDocumentNumber(dataOut);
-         dataOut.write(documentNumberCheckDigit);
-         writePersonalNumber(dataOut);
-         dataOut.write(personalNumberCheckDigit);
-         writeDateOfBirth(dataOut);
-         dataOut.write(dateOfBirthCheckDigit);
-         writeGender(dataOut);
-         writeDateOfExpiry(dataOut);
-         dataOut.write(dateOfExpiryCheckDigit);
-         writeNationality(dataOut);
-         dataOut.write(unknownMRZField.getBytes("UTF-8")); // TODO: Understand this...
-         dataOut.write(compositeCheckDigit);
-         writeName(dataOut);
-      } else {
-         /* Assume it's a ID3 document */
-         writeIssuingState(dataOut);
-         writeName(dataOut);
-         writeDocumentNumber(dataOut);
-         dataOut.write(documentNumberCheckDigit);
-         writeNationality(dataOut);
-         writeDateOfBirth(dataOut);
-         dataOut.write(dateOfBirthCheckDigit);
-         writeGender(dataOut);
-         writeDateOfExpiry(dataOut);
-         dataOut.write(dateOfExpiryCheckDigit);
-         writePersonalNumber(dataOut);
-         dataOut.write(personalNumberCheckDigit);
-         dataOut.write(compositeCheckDigit);
+   public byte[] getEncoded() {
+      try {
+         ByteArrayOutputStream out = new ByteArrayOutputStream();
+         DataOutputStream dataOut = new DataOutputStream(out);
+         writeDocumentType(dataOut);
+         if (documentType == DOC_TYPE_ID1) {
+            /* Assume it's an ID1 document */
+            writeIssuingState(dataOut);
+            writeDocumentNumber(dataOut);
+            dataOut.write(documentNumberCheckDigit);
+            writePersonalNumber(dataOut);
+            dataOut.write(personalNumberCheckDigit);
+            writeDateOfBirth(dataOut);
+            dataOut.write(dateOfBirthCheckDigit);
+            writeGender(dataOut);
+            writeDateOfExpiry(dataOut);
+            dataOut.write(dateOfExpiryCheckDigit);
+            writeNationality(dataOut);
+            dataOut.write(unknownMRZField.getBytes("UTF-8")); // TODO: Understand this...
+            dataOut.write(compositeCheckDigit);
+            writeName(dataOut);
+         } else {
+            /* Assume it's a ID3 document */
+            writeIssuingState(dataOut);
+            writeName(dataOut);
+            writeDocumentNumber(dataOut);
+            dataOut.write(documentNumberCheckDigit);
+            writeNationality(dataOut);
+            writeDateOfBirth(dataOut);
+            dataOut.write(dateOfBirthCheckDigit);
+            writeGender(dataOut);
+            writeDateOfExpiry(dataOut);
+            dataOut.write(dateOfExpiryCheckDigit);
+            writePersonalNumber(dataOut);
+            dataOut.write(personalNumberCheckDigit);
+            dataOut.write(compositeCheckDigit);
+         }
+         byte[] result = out.toByteArray();
+         dataOut.close();
+         return result;
+      } catch (IOException ioe) {
+         ioe.printStackTrace();
+         return null;
       }
-      byte[] result = out.toByteArray();
-      dataOut.close();
-      return result;
    }
    
    private void writeIssuingState(DataOutputStream dataOut) throws IOException {
