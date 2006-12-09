@@ -25,6 +25,7 @@ package sos.mrtd;
 import java.io.IOException;
 
 import sos.smartcards.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.
@@ -38,37 +39,56 @@ import sos.smartcards.BERTLVObject;
  */
 public class COMFile extends PassportFile
 {
-   private int versionLDS;
-   private int updateLevelLDS;
-   private int majorVersionUnicode;
-   private int minorVersionUnicode;
-   private int releaseLevelUnicode;
-   private int[] tagList;
+   private String versionLDS;
+   private String updateLevelLDS;
+   private String majorVersionUnicode;
+   private String minorVersionUnicode;
+   private String releaseLevelUnicode;
+   private byte[] tagList;
 
    /**
     * Constructs a new file.
     * 
-    * @param versionLDS
-    * @param updateLevelLDS
-    * @param majorVersionUnicode
-    * @param minorVersionUnicode
-    * @param releaseLevelUnicode
-    * @param tagList
+    * @param versionLDS a numerical string of length 2
+    * @param updateLevelLDS a numerical string of length 2
+    * @param majorVersionUnicode a numerical string of length 2
+    * @param minorVersionUnicode a numerical string of length 2
+    * @param releaseLevelUnicode a numerical string of length 2
+    * @param tagList a list of ICAO datagroup tags
+    * 
+    * @throws IllegalArgumentException if the input is not well-formed
     */
-   public COMFile(int versionLDS, int updateLevelLDS,
-         int majorVersionUnicode, int minorVersionUnicode,
-         int releaseLevelUnicode, int[] tagList) {
+   public COMFile(String versionLDS, String updateLevelLDS,
+         String majorVersionUnicode, String minorVersionUnicode,
+         String releaseLevelUnicode, byte[] tagList) {
+      if (versionLDS == null || versionLDS.length() != 2
+            || updateLevelLDS == null || updateLevelLDS.length() != 2
+            || majorVersionUnicode == null || majorVersionUnicode.length() != 2
+            || minorVersionUnicode == null || minorVersionUnicode.length() != 2
+            || releaseLevelUnicode == null || releaseLevelUnicode.length() != 2
+            || tagList == null) {
+         throw new IllegalArgumentException();
+      }
       this.versionLDS = versionLDS;
       this.updateLevelLDS = updateLevelLDS;
       this.majorVersionUnicode = majorVersionUnicode;
       this.minorVersionUnicode = minorVersionUnicode;
       this.releaseLevelUnicode = releaseLevelUnicode;
+      this.tagList = new byte[tagList.length];
+      System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
    }
 
    public byte[] getEncoded() {
       try {
+         byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();
+         BERTLVObject versionLDSObject = new BERTLVObject(0x5F01, versionLDSBytes);
+         byte[] versionUnicodeBytes =
+            (majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
+         BERTLVObject versionUnicodeObject = new BERTLVObject(0x5F36, versionUnicodeBytes);
+         BERTLVObject tagListObject = new BERTLVObject(0x5C, tagList);
+         BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
          BERTLVObject ef011E =
-            new BERTLVObject(PassportASN1Service.EF_COM_TAG, null); // TODO
+            new BERTLVObject(PassportASN1Service.EF_COM_TAG, value);
          return ef011E.getEncoded();
       } catch (IOException e) {
          e.printStackTrace();

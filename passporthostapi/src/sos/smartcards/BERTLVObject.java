@@ -137,16 +137,17 @@ public class BERTLVObject {
        if (isPrimitive) {
           this.value = value;
        } else {
-          // arrays are interpreted (maybe remove this?)
+          // byte arrays are interpreted (maybe remove this?)
           if (value instanceof byte[]) {
              byte[] valueBytes = (byte[]) value;
              readValue(new DataInputStream(new ByteArrayInputStream(valueBytes)),
                    valueBytes.length);
-          }
-          // BERTLVObjects are added as a child
-          else if (value instanceof BERTLVObject) {
+          } else if (value instanceof BERTLVObject) {
+             // BERTLVObjects are added as a child
              this.value = new BERTLVObject[1];
              ((BERTLVObject[]) this.value)[0] = (BERTLVObject) value;
+          } else if (value instanceof BERTLVObject[]) {
+             this.value = value;
           } else if (value instanceof Integer){
              this.value = new BERTLVObject[1];
              ((BERTLVObject[]) this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
@@ -400,42 +401,46 @@ public class BERTLVObject {
      * @return the value of this object as a byte array
      */
     public byte[] getValueAsBytes() {
-        if (isPrimitive) {
-            if (value instanceof byte[]) {
-                return (byte[]) value;
-            } else if (value instanceof String) {
-                return ((String) value).getBytes();
-            } else if (value instanceof Date) {
-                return SDF.format((Date) value).getBytes();
-            } else if (value instanceof Integer) {
-                int intValue = ((Integer)value).intValue(); 
-                int byteCount = Integer.bitCount(intValue)/8 + 1;
-                byte[] result = new byte[byteCount];
-                for (int i = 0; i < byteCount; i++) {
-                    int pos = 8 * (byteCount - i - 1);
-                    result[i] = (byte)((intValue & (0xFF << pos)) >> pos);
-                }
-                return result;
-            } else if(value instanceof Byte) {
-                byte[] result = new byte[1];
-                result[0] = ((Byte)value).byteValue();
-                return result;
-            }
-            throw new IllegalStateException("Cannot decode value of type: "
-                    + value.getClass());
-        } else {
-            ByteArrayOutputStream result = new ByteArrayOutputStream();
-            BERTLVObject[] children = (BERTLVObject[]) getValue();
-            for (int i = 0; i < children.length; i++) {
-                try {
-                    result.write(children[i].getEncoded());
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-            return result.toByteArray();
-        }
+       if (value == null) {
+          System.out.println("DEBUG: object has no value: tag == " + Integer.toHexString(tag));
+       }
+       if (isPrimitive) {
+          if (value instanceof byte[]) {
+             return (byte[]) value;
+          } else if (value instanceof String) {
+             return ((String) value).getBytes();
+          } else if (value instanceof Date) {
+             return SDF.format((Date) value).getBytes();
+          } else if (value instanceof Integer) {
+             int intValue = ((Integer)value).intValue(); 
+             int byteCount = Integer.bitCount(intValue)/8 + 1;
+             byte[] result = new byte[byteCount];
+             for (int i = 0; i < byteCount; i++) {
+                int pos = 8 * (byteCount - i - 1);
+                result[i] = (byte)((intValue & (0xFF << pos)) >> pos);
+             }
+             return result;
+          } else if(value instanceof Byte) {
+             byte[] result = new byte[1];
+             result[0] = ((Byte)value).byteValue();
+             return result;
+          }
+       }
+       if (value instanceof BERTLVObject[]) {
+
+          ByteArrayOutputStream result = new ByteArrayOutputStream();
+          BERTLVObject[] children = (BERTLVObject[]) getValue();
+          for (int i = 0; i < children.length; i++) {
+             try {
+                result.write(children[i].getEncoded());
+             } catch (IOException e) {
+                e.printStackTrace();
+             }
+          }
+          return result.toByteArray();
+       }
+       throw new IllegalStateException("Cannot decode value of "
+             + value.getClass());
     }
 
     /**
@@ -444,7 +449,7 @@ public class BERTLVObject {
      * @return the tag class
      */
     public int getTagClass() {
-        return tagClass;
+       return tagClass;
     }
 
     /**
@@ -646,14 +651,12 @@ public class BERTLVObject {
         try {
             in = new FileInputStream(args[0]);
         } catch (FileNotFoundException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         BERTLVObject object=null;
         try {
             object = new BERTLVObject(new DataInputStream(in));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
         System.out.println(object);
