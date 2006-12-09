@@ -40,7 +40,7 @@ import javax.imageio.ImageIO;
 import sos.smartcards.BERTLVObject;
 
 /**
- * File structure for datagroup 2.
+ * File structure for the EF_DG2 file.
  * Datagroup 2 contains the facial features of
  * the document holder.
  * See A 13.3 in MRTD's LDS document.

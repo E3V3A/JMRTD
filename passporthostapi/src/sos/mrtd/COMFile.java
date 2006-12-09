@@ -23,50 +23,56 @@
 package sos.mrtd;
 
 import java.io.IOException;
-import java.security.PublicKey;
 
 import sos.smartcards.BERTLVObject;
 
 /**
- * File structure for the EF_DG15 file.
- * Datagroup 15 contains the public key used in AA.
+ * File structure for the EF_COM file.
+ * This file contains the common data (version and
+ * data group presence table) information.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
  * @version $Revision: $
  */
-public class DG15File extends PassportFile
+public class COMFile extends PassportFile
 {
-   private PublicKey publicKey;
+   private int versionLDS;
+   private int updateLevelLDS;
+   private int majorVersionUnicode;
+   private int minorVersionUnicode;
+   private int releaseLevelUnicode;
+   private int[] tagList;
 
    /**
     * Constructs a new file.
     * 
-    * @param publicKey the key to store in this file
+    * @param versionLDS
+    * @param updateLevelLDS
+    * @param majorVersionUnicode
+    * @param minorVersionUnicode
+    * @param releaseLevelUnicode
+    * @param tagList
     */
-   public DG15File(PublicKey publicKey) {
-      this.publicKey = publicKey;
+   public COMFile(int versionLDS, int updateLevelLDS,
+         int majorVersionUnicode, int minorVersionUnicode,
+         int releaseLevelUnicode, int[] tagList) {
+      this.versionLDS = versionLDS;
+      this.updateLevelLDS = updateLevelLDS;
+      this.majorVersionUnicode = majorVersionUnicode;
+      this.minorVersionUnicode = minorVersionUnicode;
+      this.releaseLevelUnicode = releaseLevelUnicode;
    }
 
    public byte[] getEncoded() {
       try {
-         BERTLVObject ef010F =
-            new BERTLVObject(PassportASN1Service.EF_DG15_TAG,
-                  publicKey.getEncoded());
-         return ef010F.getEncoded();
+         BERTLVObject ef011E =
+            new BERTLVObject(PassportASN1Service.EF_COM_TAG, null); // TODO
+         return ef011E.getEncoded();
       } catch (IOException e) {
          e.printStackTrace();
          return null;
       }
-   }
-
-   /**
-    * Gets the public key stored in this file.
-    * 
-    * @return the public key
-    */
-   public PublicKey getPublicKey() {
-      return publicKey;
    }
 }

@@ -27,8 +27,9 @@ import java.io.IOException;
 import sos.smartcards.BERTLVObject;
 
 /**
- * File structure for datagroup 1. Datagroup 1 contains the
- * the Machine Readable Zone information.
+ * File structure for the EF_DG1 file.
+ * Datagroup 1 contains the the Machine
+ * Readable Zone information.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
