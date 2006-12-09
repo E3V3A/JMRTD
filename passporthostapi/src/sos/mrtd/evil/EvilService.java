@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
-import sos.smartcards.Apdu;
-import sos.smartcards.CardService;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.smartcards.Apdu;
+import sos.smartcards.CardService;
 
 /**
  * Card service for using the filesystem on the passport.

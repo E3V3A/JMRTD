@@ -1,3 +1,25 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006  SoS group, ICIS, Radboud University
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id: $
+ */
+
 package sos.mrtd;
 
 import java.awt.Image;
@@ -18,7 +40,15 @@ import javax.imageio.ImageIO;
 import sos.smartcards.BERTLVObject;
 
 /**
+ * File structure for datagroup 2.
+ * Datagroup 2 contains the facial features of
+ * the document holder.
  * See A 13.3 in MRTD's LDS document.
+ * 
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
+ * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * 
+ * @version $Revision: $
  */
 public class DG2File extends PassportFile
 {
@@ -36,7 +66,12 @@ public class DG2File extends PassportFile
     private static byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
 
     private List<FaceInfo> faces;
-    
+
+    /**
+     * Constructs a new file.
+     * 
+     * @param fi face information for the first face
+     */
     public DG2File(FaceInfo fi) {
         faces = new ArrayList<FaceInfo>();
         addFaceInfo(fi);
@@ -107,6 +142,11 @@ public class DG2File extends PassportFile
        }
     }
 
+    /**
+     * Main method for testing.
+     * 
+     * @param s command line arguments
+     */
     public static void main(String[] s) {
         BufferedImage image = null;
         DG2File dg2 = null;
@@ -116,7 +156,6 @@ public class DG2File extends PassportFile
             try {
                 image = ImageIO.read(new File((String) iter.next()));
             } catch (IOException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
             FaceInfo info = new FaceInfo(MRZInfo.Gender.MALE,
@@ -135,9 +174,7 @@ public class DG2File extends PassportFile
         try {
             System.out.println(BERTLVObject.getInstance(new DataInputStream(new ByteArrayInputStream(dg2.getEncoded()))));
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+           e.printStackTrace();
         }
-
     }
 }
