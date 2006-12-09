@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import sos.smartcards.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.
@@ -88,6 +89,7 @@ public class COMFile extends PassportFile
     * @throws IOException if the input could not be decoded
     */
    COMFile(ByteArrayInputStream in) throws IOException {
+      try {
       BERTLVObject object = BERTLVObject.getInstance(in);
       if (object.getTag() != PassportASN1Service.EF_COM_TAG) {
          throw new IOException("Wrong tag!");
@@ -97,18 +99,21 @@ public class COMFile extends PassportFile
       BERTLVObject tagListObject = object.getSubObject(0x5C);
       byte[] versionLDSBytes = versionLDSObject.getValueAsBytes();
       if (versionLDSBytes.length != 4) {
-         throw new IOException("Wrong length of LDS version object");
+         throw new IllegalArgumentException("Wrong length of LDS version object");
       }
       versionLDS = new String(versionLDSBytes, 0, 2);
       updateLevelLDS = new String(versionLDSBytes, 2, 2);
       byte[] versionUnicodeBytes = versionUnicodeObject.getValueAsBytes();
-      if (versionLDSBytes.length != 6) {
-         throw new IOException("Wrong length of unicode version object");
+      if (versionUnicodeBytes.length != 6) {
+         throw new IllegalArgumentException("Wrong length of unicode version object");
       }
       majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
       minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
       releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
       tagList = tagListObject.getValueAsBytes();
+      } catch (IOException ioe) {
+         throw new IllegalArgumentException(ioe.toString());
+      }
    }
 
    /**
@@ -159,4 +164,20 @@ public class COMFile extends PassportFile
          return null;
       }
    }
+   
+   /*
+   // JUST TESTING!
+   public static void main(String[] arg) {
+      try {
+      byte[] tags = { 0x61, 0x75, 0x6F };
+      COMFile comFile = new COMFile("01", "07", "04", "00", "00", tags);
+      byte[] comFileBytes = comFile.getEncoded();
+      System.out.println(Hex.bytesToHexString(comFileBytes));
+      COMFile comFile2 = new COMFile(new ByteArrayInputStream(comFileBytes));
+      System.out.println(Hex.bytesToHexString(comFile2.getEncoded()));
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+   }
+   */
 }
