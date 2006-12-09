@@ -22,10 +22,10 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 import sos.smartcards.BERTLVObject;
-import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.
@@ -78,6 +78,70 @@ public class COMFile extends PassportFile
       System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
    }
 
+   /**
+    * Constructs a new EF_COM file based on the encoded
+    * value in <code>in</code>.
+    * 
+    * @param in should contain a TLV object with appropriate
+    *           tag and contents
+    * 
+    * @throws IOException if the input could not be decoded
+    */
+   COMFile(ByteArrayInputStream in) throws IOException {
+      BERTLVObject object = BERTLVObject.getInstance(in);
+      if (object.getTag() != PassportASN1Service.EF_COM_TAG) {
+         throw new IOException("Wrong tag!");
+      }
+      BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
+      BERTLVObject versionUnicodeObject = object.getSubObject(0x5F36);
+      BERTLVObject tagListObject = object.getSubObject(0x5C);
+      byte[] versionLDSBytes = versionLDSObject.getValueAsBytes();
+      if (versionLDSBytes.length != 4) {
+         throw new IOException("Wrong length of LDS version object");
+      }
+      versionLDS = new String(versionLDSBytes, 0, 2);
+      updateLevelLDS = new String(versionLDSBytes, 2, 2);
+      byte[] versionUnicodeBytes = versionUnicodeObject.getValueAsBytes();
+      if (versionLDSBytes.length != 6) {
+         throw new IOException("Wrong length of unicode version object");
+      }
+      majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
+      minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
+      releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
+      tagList = tagListObject.getValueAsBytes();
+   }
+
+   /**
+    * Gets the LDS version as a dot seperated string
+    * containing version and update level.
+    * 
+    * @return a string of the form "aa.bb"
+    */
+   public String getLDSVersion() {
+      return versionLDS + "." + updateLevelLDS;
+   }
+   
+   /**
+    * Gets the unicode version as a dot seperated string
+    * containing major version, minor version, and release level.
+    * 
+    * @return a string of the form "aa.bb.cc"
+    */
+   public String getUnicodeVersion() {
+      return majorVersionUnicode
+      + "." + minorVersionUnicode
+      + "." + releaseLevelUnicode;
+   }
+
+   /**
+    * Gets the ICAO datagroup tags as a list of bytes.
+    * 
+    * @return a list of bytes
+    */
+   public byte[] getTagList() {
+      return tagList;
+   }
+   
    public byte[] getEncoded() {
       try {
          byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();

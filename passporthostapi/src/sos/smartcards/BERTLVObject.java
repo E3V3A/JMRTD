@@ -322,6 +322,10 @@ public class BERTLVObject {
         return result;
     }
 
+    public int getTag() {
+       return tag;
+    }
+    
     /**
      * The tag bytes of this object.
      * 
