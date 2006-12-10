@@ -66,7 +66,7 @@ public class DG15File extends PassportFile
    public byte[] getEncoded() {
       try {
          BERTLVObject ef010F =
-            new BERTLVObject(PassportASN1Service.EF_DG15_TAG,
+            new BERTLVObject(PassportFile.EF_DG15_TAG,
                   publicKey.getEncoded());
          return ef010F.getEncoded();
       } catch (IOException e) {

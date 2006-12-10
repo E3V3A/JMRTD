@@ -118,9 +118,7 @@ public class DG2File extends PassportFile
          BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG,
                new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG,
                      (byte) faces.size()));
-         BERTLVObject dg2 = new BERTLVObject(PassportASN1Service.EF_DG2_TAG,
-               group);
-
+         BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
          for (FaceInfo info: faces) {
             BERTLVObject header = new BERTLVObject(BIOMETRIC_HEADER_BASE_TAG++,
                   new BERTLVObject(FORMAT_TYPE_TAG,

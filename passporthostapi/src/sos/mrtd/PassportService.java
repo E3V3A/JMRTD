@@ -98,11 +98,11 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public short[] readDataGroupList() throws IOException {
-      int[] tags = { PassportASN1Service.EF_COM_TAG, 0x5C };
+      int[] tags = { PassportFile.EF_COM_TAG, 0x5C };
       byte[] tagList = passportASN1Service.readObject(tags);
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
-         files[i] = PassportASN1Service.lookupFIDByTag(tagList[i]);
+         files[i] = PassportFile.lookupFIDByTag(tagList[i]);
       }
       return files;
    }
@@ -115,7 +115,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public MRZInfo readMRZ() throws IOException {
-      int[] tags = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+      int[] tags = { PassportFile.EF_DG1_TAG, 0x5F1F };
       return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));
    }
    
@@ -127,7 +127,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public FaceInfo[] readFace() throws IOException {
-      int[] tags = { PassportASN1Service.EF_DG2_TAG, 0x5F2E }; 
+      int[] tags = { PassportFile.EF_DG2_TAG, 0x5F2E }; 
       byte[] facialRecordData = passportASN1Service.readObject(tags);
       if (facialRecordData == null) {
          System.out.println("DEBUG: facialRecordData == null");
@@ -155,14 +155,14 @@ public class PassportService extends PassportAuthService
     * @return the public key to be used for AA
     */
    public PublicKey readAAPublicKey() throws IOException, GeneralSecurityException {
-      int[] tags = { PassportASN1Service.EF_DG15_TAG };
+      int[] tags = { PassportFile.EF_DG15_TAG };
       X509EncodedKeySpec pubKeySpec =
          new X509EncodedKeySpec(passportASN1Service.readObject(tags));
       return keyFactory.generatePublic(pubKeySpec);
    }
      
    private SignedData readSignedData() throws IOException {
-      int[] tags = { PassportASN1Service.EF_SOD_TAG };
+      int[] tags = { PassportFile.EF_SOD_TAG };
       byte[] sd = passportASN1Service.readObject(tags);
       ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
       DERSequence seq = (DERSequence)in.readObject();

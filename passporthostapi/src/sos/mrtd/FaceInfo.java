@@ -921,7 +921,7 @@ public class FaceInfo
          BERTLVObject object7f61 = new BERTLVObject(0x7f61, new Integer(1));
          object7f61.addSubObject(object7f60);
    
-         BERTLVObject dg2 = new BERTLVObject(PassportASN1Service.EF_DG2_TAG, object7f61);
+         BERTLVObject dg2 = new BERTLVObject(PassportFile.EF_DG2_TAG, object7f61);
          
          System.out.println(dg2);
          

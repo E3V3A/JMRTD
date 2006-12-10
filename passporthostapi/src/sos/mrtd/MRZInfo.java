@@ -790,7 +790,7 @@ public class MRZInfo
                  "PPNUMMER0", "NLD", parseDate(1900, "560507"), MRZInfo.Gender.MALE, 
                  parseDate(2000, "100101"),  "876543210<<<<<");
          
-         BERTLVObject ef0101 = new BERTLVObject(PassportASN1Service.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
+         BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
          System.out.println(ef0101);
          FileOutputStream out = new FileOutputStream(arg[0]);
          out.write(ef0101.getEncoded());

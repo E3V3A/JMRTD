@@ -90,7 +90,7 @@ public class COMFile extends PassportFile
    COMFile(InputStream in) throws IOException {
       try {
       BERTLVObject object = BERTLVObject.getInstance(in);
-      if (object.getTag() != PassportASN1Service.EF_COM_TAG) {
+      if (object.getTag() != EF_COM_TAG) {
          throw new IOException("Wrong tag!");
       }
       BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
@@ -156,7 +156,7 @@ public class COMFile extends PassportFile
          BERTLVObject tagListObject = new BERTLVObject(0x5C, tagList);
          BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
          BERTLVObject ef011E =
-            new BERTLVObject(PassportASN1Service.EF_COM_TAG, value);
+            new BERTLVObject(EF_COM_TAG, value);
          return ef011E.getEncoded();
       } catch (IOException e) {
          e.printStackTrace();
