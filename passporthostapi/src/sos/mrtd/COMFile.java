@@ -22,11 +22,10 @@
 
 package sos.mrtd;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import sos.smartcards.BERTLVObject;
-import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.
@@ -88,7 +87,7 @@ public class COMFile extends PassportFile
     * 
     * @throws IOException if the input could not be decoded
     */
-   COMFile(ByteArrayInputStream in) throws IOException {
+   COMFile(InputStream in) throws IOException {
       try {
       BERTLVObject object = BERTLVObject.getInstance(in);
       if (object.getTag() != PassportASN1Service.EF_COM_TAG) {

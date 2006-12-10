@@ -23,6 +23,7 @@
 package sos.mrtd;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 import sos.smartcards.BERTLVObject;
 
@@ -47,6 +48,15 @@ public class DG1File extends PassportFile
     */
    public DG1File(MRZInfo mrz) {
       this.mrz = mrz;
+   }
+   
+   DG1File(InputStream in) {
+      try {
+         BERTLVObject object = BERTLVObject.getInstance(in);
+         mrz = MRZInfo.getInstance(object.getSubObject(0x5F1F).getValueAsBytes());         
+      } catch (IOException ioe) {
+         throw new IllegalArgumentException(ioe.toString());
+      }
    }
 
    /**

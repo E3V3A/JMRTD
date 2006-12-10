@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -213,6 +214,15 @@ public class MRZInfo
           ioe.printStackTrace();
          throw new IllegalArgumentException("Invalid MRZ input source");
       }
+   }
+   
+   public static MRZInfo getInstance(Object in) {
+      if (in instanceof InputStream) {
+         return new MRZInfo((InputStream)in);
+      } else if (in instanceof byte[]) {
+         return new MRZInfo(new ByteArrayInputStream((byte[])in));
+      }
+      throw new IllegalArgumentException("Could not decode");
    }
    
    private void processNameIdentifiers(String mrzNameString) {

@@ -23,7 +23,10 @@
 package sos.mrtd;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.security.KeyFactory;
 import java.security.PublicKey;
+import java.security.spec.X509EncodedKeySpec;
 
 import sos.smartcards.BERTLVObject;
 
@@ -48,7 +51,18 @@ public class DG15File extends PassportFile
    public DG15File(PublicKey publicKey) {
       this.publicKey = publicKey;
    }
-
+   
+   DG15File(InputStream in) {
+      try {
+         BERTLVObject object = BERTLVObject.getInstance(in);
+         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(object.getValueAsBytes());
+         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+         publicKey = keyFactory.generatePublic(pubKeySpec);
+      } catch (Exception e) {
+         throw new IllegalArgumentException(e.toString());
+      }
+   }
+   
    public byte[] getEncoded() {
       try {
          BERTLVObject ef010F =
