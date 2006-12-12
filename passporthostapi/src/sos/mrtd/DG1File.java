@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -50,13 +51,16 @@ public class DG1File extends PassportFile
       this.mrz = mrz;
    }
    
-   DG1File(InputStream in) {
-      try {
-         BERTLVObject object = BERTLVObject.getInstance(in);
-         mrz = MRZInfo.getInstance(object.getSubObject(0x5F1F).getValueAsBytes());         
-      } catch (IOException ioe) {
-         throw new IllegalArgumentException(ioe.toString());
-      }
+   DG1File(BERTLVObject in) {
+      this(MRZInfo.getInstance(in.getSubObject(0x5F1F).getValueAsBytes()));
+   }
+   
+   DG1File(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+   
+   DG1File(byte[] in) throws IOException {
+      this(new ByteArrayInputStream(in));
    }
 
    /**
