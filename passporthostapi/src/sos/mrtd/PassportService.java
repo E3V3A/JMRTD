@@ -25,6 +25,7 @@ package sos.mrtd;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -33,6 +34,8 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
@@ -103,6 +106,25 @@ public class PassportService extends PassportAuthService
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
          files[i] = PassportFile.lookupFIDByTag(tagList[i]);
+      }
+      return files;
+   }
+   
+   public COMFile getCOMFile() throws IOException {
+      int[] tags = { PassportFile.EF_COM_TAG };
+      InputStream in = new ByteArrayInputStream(passportASN1Service.readObject(tags));
+      return new COMFile(in);
+   }
+   
+   public List<DataGroup> getDataGroups() throws IOException {
+      int[] tags = { PassportFile.EF_COM_TAG, 0x5C };
+      int[] path = new int[1];
+      List<DataGroup> files = new ArrayList<DataGroup>();
+      for (byte tag: passportASN1Service.readObject(tags)) {
+         path[0] = tag;
+         DataGroup file =
+            (DataGroup)PassportFile.getInstance(passportASN1Service.readObject(path));
+         files.add(file);
       }
       return files;
    }

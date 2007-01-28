@@ -77,7 +77,7 @@ public class COMFile extends PassportFile
       this.tagList = new byte[tagList.length];
       System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
    }
-
+   
    /**
     * Constructs a new EF_COM file based on the encoded
     * value in <code>in</code>.
@@ -88,28 +88,31 @@ public class COMFile extends PassportFile
     * @throws IOException if the input could not be decoded
     */
    COMFile(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+      
+   COMFile(BERTLVObject object) {
       try {
-      BERTLVObject object = BERTLVObject.getInstance(in);
-      if (object.getTag() != EF_COM_TAG) {
-         throw new IOException("Wrong tag!");
-      }
-      BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
-      BERTLVObject versionUnicodeObject = object.getSubObject(0x5F36);
-      BERTLVObject tagListObject = object.getSubObject(0x5C);
-      byte[] versionLDSBytes = versionLDSObject.getValueAsBytes();
-      if (versionLDSBytes.length != 4) {
-         throw new IllegalArgumentException("Wrong length of LDS version object");
-      }
-      versionLDS = new String(versionLDSBytes, 0, 2);
-      updateLevelLDS = new String(versionLDSBytes, 2, 2);
-      byte[] versionUnicodeBytes = versionUnicodeObject.getValueAsBytes();
-      if (versionUnicodeBytes.length != 6) {
-         throw new IllegalArgumentException("Wrong length of unicode version object");
-      }
-      majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
-      minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
-      releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
-      tagList = tagListObject.getValueAsBytes();
+         if (object.getTag() != EF_COM_TAG) {
+            throw new IOException("Wrong tag!");
+         }         
+         BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
+         BERTLVObject versionUnicodeObject = object.getSubObject(0x5F36);
+         BERTLVObject tagListObject = object.getSubObject(0x5C);
+         byte[] versionLDSBytes = versionLDSObject.getValueAsBytes();
+         if (versionLDSBytes.length != 4) {
+            throw new IllegalArgumentException("Wrong length of LDS version object");
+         }
+         versionLDS = new String(versionLDSBytes, 0, 2);
+         updateLevelLDS = new String(versionLDSBytes, 2, 2);
+         byte[] versionUnicodeBytes = versionUnicodeObject.getValueAsBytes();
+         if (versionUnicodeBytes.length != 6) {
+            throw new IllegalArgumentException("Wrong length of unicode version object");
+         }
+         majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
+         minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
+         releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
+         tagList = tagListObject.getValueAsBytes();
       } catch (IOException ioe) {
          throw new IllegalArgumentException(ioe.toString());
       }

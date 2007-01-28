@@ -22,6 +22,11 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import sos.smartcards.BERTLVObject;
+
 /**
  * Passport file structure.
  * 
@@ -69,8 +74,30 @@ public abstract class PassportFile
     * @throws IllegalArgumentException if the input object cannot be converted
     */
    public static PassportFile getInstance(Object obj) {
-      // FIXME
-      return null;
+      try {
+         BERTLVObject in = null;
+         if (obj instanceof BERTLVObject) {
+            in = (BERTLVObject)obj;
+         } else if (obj instanceof InputStream) {
+            in = BERTLVObject.getInstance((InputStream)obj);
+         } else if (obj instanceof byte[]) {
+            in = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])obj));
+         } else {
+            throw new IllegalArgumentException("Could not decode input source");
+         }
+         int tag = in.getTag();
+         switch(tag) {
+         case EF_COM_TAG: return new COMFile(in);
+         case EF_DG1_TAG: return new DG1File(in);
+         case EF_DG2_TAG: return new DG2File(in);
+         case EF_DG15_TAG: return new DG15File(in);
+         default: throw new IllegalArgumentException("Could not decode file "
+               + Integer.toHexString(tag));
+         }
+      } catch (Exception e) {
+         throw new IllegalArgumentException("Could not decode "
+               + e.toString());
+      }
    }
    
    /**

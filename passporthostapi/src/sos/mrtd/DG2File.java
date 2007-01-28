@@ -74,10 +74,13 @@ public class DG2File extends PassportFile
       faces = new ArrayList<FaceInfo>();
    }
 
-   // TODO: not tested...
-   DG2File(InputStream in) {
+   DG2File(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+
+   // TODO: not tested...   
+   DG2File(BERTLVObject object) {
       try {
-         BERTLVObject object = BERTLVObject.getInstance(in);
          byte[] facialRecordData = object.getSubObject(0x5F2E).getValueAsBytes();
          if (facialRecordData == null) {
             throw new IllegalArgumentException("Could not decode facial record");

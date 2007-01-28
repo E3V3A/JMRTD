@@ -52,9 +52,12 @@ public class DG15File extends PassportFile
       this.publicKey = publicKey;
    }
    
-   DG15File(InputStream in) {
+   DG15File(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+   
+   DG15File(BERTLVObject object) {   
       try {
-         BERTLVObject object = BERTLVObject.getInstance(in);
          X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(object.getValueAsBytes());
          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
          publicKey = keyFactory.generatePublic(pubKeySpec);

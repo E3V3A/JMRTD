@@ -81,6 +81,10 @@ public class PassportASN1Service extends PassportAuthService
     * @throws IOException when something goes wrong.
     */
    public byte[] readObject(int[] tagPath) throws IOException {
+      return readObjectAsObject(tagPath).getValueAsBytes();
+   }
+   
+   BERTLVObject readObjectAsObject(int[] tagPath) throws IOException {
       if (tagPath == null || tagPath.length < 1) {
          throw new IllegalArgumentException("Tag path too short");
       }
@@ -88,7 +92,7 @@ public class PassportASN1Service extends PassportAuthService
       BERTLVObject object =
          BERTLVObject.getInstance(new ByteArrayInputStream(file));
       object = object.getSubObject(tagPath, 0, tagPath.length);
-      return object.getValueAsBytes();
+      return object;
    }
 }
 
