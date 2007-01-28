@@ -65,37 +65,52 @@ public abstract class PassportFile
    }
    
    /**
-    * Gets the passportfile encoded in <code>obj</code>.
+    * Gets the passportfile encoded in <code>in</code>.
     * 
-    * @param obj the object we want converted
+    * @param in the object we want converted
     * 
     * @return a passport file structure
     * 
     * @throws IllegalArgumentException if the input object cannot be converted
     */
-   public static PassportFile getInstance(Object obj) {
+   public static PassportFile getInstance(Object in) {
       try {
-         BERTLVObject in = null;
-         if (obj instanceof BERTLVObject) {
-            in = (BERTLVObject)obj;
-         } else if (obj instanceof InputStream) {
-            in = BERTLVObject.getInstance((InputStream)obj);
-         } else if (obj instanceof byte[]) {
-            in = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])obj));
+         BERTLVObject obj = null;
+         if (in instanceof BERTLVObject) {
+            obj = (BERTLVObject)in;
+         } else if (in instanceof InputStream) {
+            obj = BERTLVObject.getInstance((InputStream)in);
+         } else if (in instanceof byte[]) {
+            obj = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])in));
          } else {
             throw new IllegalArgumentException("Could not decode input source");
          }
-         int tag = in.getTag();
+         int tag = obj.getTag();
          switch(tag) {
-         case EF_COM_TAG: return new COMFile(in);
-         case EF_DG1_TAG: return new DG1File(in);
-         case EF_DG2_TAG: return new DG2File(in);
-         case EF_DG15_TAG: return new DG15File(in);
+         case EF_COM_TAG: return new COMFile(obj);
+         case EF_DG1_TAG: return new DG1File(obj);
+         case EF_DG2_TAG: return new DG2File(obj);
+         case EF_DG3_TAG: break;
+         case EF_DG4_TAG: break;
+         case EF_DG5_TAG: break;
+         case EF_DG6_TAG: break;
+         case EF_DG7_TAG: break;
+         case EF_DG8_TAG: break;
+         case EF_DG9_TAG: break;
+         case EF_DG10_TAG: break;
+         case EF_DG11_TAG: break;
+         case EF_DG12_TAG: break;
+         case EF_DG13_TAG: break;
+         case EF_DG14_TAG: break;
+         case EF_DG15_TAG: return new DG15File(obj);
+         case EF_DG16_TAG: break;
          default: throw new IllegalArgumentException("Could not decode file "
                + Integer.toHexString(tag));
          }
+         throw new IllegalArgumentException("Could not decode file "
+               + Integer.toHexString(tag));
       } catch (Exception e) {
-         throw new IllegalArgumentException("Could not decode "
+         throw new IllegalArgumentException("Could not decode: "
                + e.toString());
       }
    }

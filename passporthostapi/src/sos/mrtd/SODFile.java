@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2007  SoS group, ICIS, Radboud University
+ * Copyright (C) 2006  SoS group, ICIS, Radboud University
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,8 +22,36 @@
 
 package sos.mrtd;
 
-public abstract class DataGroup extends PassportFile
-{   
+import java.io.IOException;
+import java.io.InputStream;
+
+import sos.smartcards.BERTLVObject;
+
+/**
+ * File structure for the EF_SOD file.
+ * This file contains the security object.
+ * 
+ * TODO: implement this...
+ * 
+ * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * 
+ * @version $Revision: $
+ */
+public class SODFile extends PassportFile
+{
+   public SODFile() {
+   }
+   
+   SODFile(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+      
+   SODFile(BERTLVObject object) {
+   }
+
    @Override
-   public abstract byte[] getEncoded();
+   public byte[] getEncoded() {
+      // TODO Auto-generated method stub
+      return null;
+   }
 }
