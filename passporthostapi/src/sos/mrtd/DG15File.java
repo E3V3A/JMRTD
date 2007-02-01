@@ -39,7 +39,7 @@ import sos.smartcards.BERTLVObject;
  * 
  * @version $Revision: $
  */
-public class DG15File extends PassportFile
+public class DG15File extends DataGroup
 {
    private PublicKey publicKey;
 

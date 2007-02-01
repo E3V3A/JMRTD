@@ -104,6 +104,7 @@ public abstract class PassportFile
          case EF_DG14_TAG: break;
          case EF_DG15_TAG: return new DG15File(obj);
          case EF_DG16_TAG: break;
+         case EF_SOD_TAG: return new SODFile(obj);
          default: throw new IllegalArgumentException("Could not decode file "
                + Integer.toHexString(tag));
          }

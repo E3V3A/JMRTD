@@ -32,7 +32,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -50,7 +49,7 @@ import sos.smartcards.BERTLVObject;
  * 
  * @version $Revision: $
  */
-public class DG2File extends PassportFile
+public class DG2File extends DataGroup
 {
    private static final short BIOMETRIC_INFO_GROUP_TAG = 0x7F61;
    private static final short BIOMETRIC_INFO_TAG = 0x7F60;
@@ -159,13 +158,9 @@ public class DG2File extends PassportFile
          return null;
       }
    }
-
-   public int getFaceCount() {
-      return faces.size();
-   }
    
-   public Iterator<FaceInfo> getFaces() {
-      return faces.listIterator();
+   public List<FaceInfo> getFaces() {
+      return faces;
    }
 
    /**

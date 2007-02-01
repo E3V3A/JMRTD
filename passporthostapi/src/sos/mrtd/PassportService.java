@@ -23,9 +23,7 @@
 package sos.mrtd;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
@@ -34,7 +32,6 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -93,6 +90,34 @@ public class PassportService extends PassportAuthService
       keyFactory = KeyFactory.getInstance("RSA");
    }
 
+      public COMFile getCOMFile() throws IOException {
+		   return (COMFile)getFile(PassportFile.EF_COM_TAG);
+    	  
+	   }
+	   
+       /*
+        * TODO: Temporary method. Probably nicer to have getDG1File(), getDG2File(),
+        * etc.
+        * 
+        * @param tag should be a valid ICAO file tag
+        * @return the data group file
+        * @throws IOException if file cannot be read
+        */
+	   public DataGroup getDataGroup(int tag) throws IOException {
+		   return (DataGroup)getFile(tag);
+	   }
+	   
+	   public SODFile getSODFile() throws IOException {
+		   return (SODFile)getFile(PassportFile.EF_SOD_TAG);
+	   }
+	   
+	   private PassportFile getFile(int tag) throws IOException {
+         int[] path = { tag };
+		 return
+		    PassportFile.getInstance(passportASN1Service.readObject(path));
+	   }
+
+	   
    /**
     * Lists the data groups present on this passport.
     * 
@@ -101,33 +126,21 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public short[] readDataGroupList() throws IOException {
+	   /*
       int[] tags = { PassportFile.EF_COM_TAG, 0x5C };
       byte[] tagList = passportASN1Service.readObject(tags);
+      */
+	  COMFile comfile = getCOMFile();
+	  byte[] tagList = comfile.getTagList();
       short[] files = new short[tagList.length];
       for (int i = 0; i < files.length; i++) {
          files[i] = PassportFile.lookupFIDByTag(tagList[i]);
       }
       return files;
+	   
    }
    
-   public COMFile getCOMFile() throws IOException {
-      int[] tags = { PassportFile.EF_COM_TAG };
-      InputStream in = new ByteArrayInputStream(passportASN1Service.readObject(tags));
-      return new COMFile(in);
-   }
-   
-   public List<DataGroup> getDataGroups() throws IOException {
-      int[] tags = { PassportFile.EF_COM_TAG, 0x5C };
-      int[] path = new int[1];
-      List<DataGroup> files = new ArrayList<DataGroup>();
-      for (byte tag: passportASN1Service.readObject(tags)) {
-         path[0] = tag;
-         DataGroup file =
-            (DataGroup)PassportFile.getInstance(passportASN1Service.readObject(path));
-         files.add(file);
-      }
-      return files;
-   }
+
    
    /**
     * Reads the MRZ found in DG1 on the passport.
@@ -137,8 +150,12 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public MRZInfo readMRZ() throws IOException {
+	   /*
       int[] tags = { PassportFile.EF_DG1_TAG, 0x5F1F };
       return new MRZInfo(new ByteArrayInputStream(passportASN1Service.readObject(tags)));
+      */
+	   DG1File dg1 = (DG1File)getDataGroup(PassportFile.EF_DG1_TAG);
+	   return dg1.getMRZInfo();
    }
    
    /**
@@ -149,6 +166,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if something goes wrong
     */
    public FaceInfo[] readFace() throws IOException {
+	   /*
       int[] tags = { PassportFile.EF_DG2_TAG, 0x5F2E }; 
       byte[] facialRecordData = passportASN1Service.readObject(tags);
       if (facialRecordData == null) {
@@ -156,8 +174,10 @@ public class PassportService extends PassportAuthService
       }
       DataInputStream in =
          new DataInputStream(new ByteArrayInputStream(facialRecordData));
+/*
 
       /* Facial Record Header (14) */
+	   /*
       in.skip(4); // 'F', 'A', 'C', 0
       in.skip(4); // version in ascii (e.g. "010")
       long length = in.readInt() & 0x000000FFFFFFFFL;
@@ -168,6 +188,12 @@ public class PassportService extends PassportAuthService
          result[i] = new FaceInfo(in);
       }
       return result;
+      */
+	   DG2File dg2 = (DG2File)getDataGroup(PassportFile.EF_DG2_TAG);
+	   List<FaceInfo> faces = dg2.getFaces();
+	   FaceInfo[] result = new FaceInfo[faces.size()];
+	   faces.toArray(result);
+	   return result;
    }
 
    /**

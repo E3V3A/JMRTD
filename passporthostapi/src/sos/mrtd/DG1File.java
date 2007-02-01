@@ -38,7 +38,7 @@ import sos.smartcards.BERTLVObject;
  * 
  * @version $Revision: $
  */
-public class DG1File extends PassportFile
+public class DG1File extends DataGroup
 {
    private MRZInfo mrz;
 
