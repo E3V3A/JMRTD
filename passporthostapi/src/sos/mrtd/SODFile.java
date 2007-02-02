@@ -32,6 +32,7 @@ import java.security.cert.X509Certificate;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -56,22 +57,18 @@ import sos.smartcards.BERTLVObject;
  */
 public class SODFile extends PassportFile
 {
+   private static final String SIGNED_DATA_OBJ_ID = "1.2.840.113549.1.7.2";
+   private static final String SHA1_HASH_ALG_OBJ_ID = "1.3.14.3.2.26";
+   private static final String SHA1_WITH_RSA_ENC_OBJ_ID = "1.2.840.113549.1.1.5";
+   
    private SignedData signedData;
-	
+
    public SODFile(SignedData signedData) {
       this.signedData = signedData;
    }
    
    SODFile(InputStream in) throws IOException {
-      ASN1InputStream asn1in = new ASN1InputStream(in);
-      DERSequence seq = (DERSequence)asn1in.readObject();
-      // DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
-      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-      signedData = new SignedData(s2);
-      Object nextObject = asn1in.readObject();
-      if (nextObject != null) {
-         System.out.println("DEBUG: WARNING: extra object found after SignedData...");
-      }
+      this(BERTLVObject.getInstance(in));
    }
    
    SODFile(byte[] in) throws IOException {
@@ -79,14 +76,61 @@ public class SODFile extends PassportFile
    }
       
    SODFile(BERTLVObject object) throws IOException {
-      this(object.getEncoded());
+      ASN1InputStream asn1in =
+         new ASN1InputStream(new ByteArrayInputStream(object.getValueAsBytes()));
+      DERSequence seq = (DERSequence)asn1in.readObject();
+      DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
+      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+      signedData = new SignedData(s2);
+
+      System.out.println("DEBUG: in SODFile<init>: seq = " + seq);
+      System.out.println("DEBUG: in SODFile<init>: s2 = " + s2);      
+      
+      /* If there's more in the inputstream, maybe throw exception? */
+      Object nextObject = asn1in.readObject();
+      if (nextObject != null) {
+         System.out.println("DEBUG: WARNING: extra object found after SignedData...");
+      }
+   }
+   
+   public SignedData getSignedData() {
+      return signedData;
    }
 
    @Override
    public byte[] getEncoded() {
-      // TODO Auto-generated method stub
       return null;
    }
+   
+   /*
+      try {
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      ASN1OutputStream asn1out = new ASN1OutputStream(out);
+      asn1out.writeObject(new DERObjectIdentifier(PKCS7_SIGNED_DATA_OBJ_ID));
+      
+      
+      DERSequence s2 = (DERSequence)DERSequence.getInstance(signedData);
+      
+      asn1out.writeObject(s2);
+      asn1out.close();
+      return out.toByteArray();
+      } catch (IOException ioe) {
+      
+         System.err.println("DEBUG: ");
+         ioe.printStackTrace();
+         throw new IllegalStateException(ioe.toString());
+      }
+      */
+   
+      
+/*
+      ASN1InputStream asn1in = new ASN1InputStream(in);
+      DERSequence seq = (DERSequence)asn1in.readObject();
+      DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
+      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+      signedData = new SignedData(s2);
+*/
+      // TODO Auto-generated method stub
    
    private SignerInfo getSignerInfo() throws IOException {
       ASN1Set signerInfos = signedData.getSignerInfos();

@@ -208,6 +208,7 @@ public class PassportService extends PassportAuthService
    }
      
    private SignedData readSignedData() throws IOException {
+      /*
       int[] tags = { PassportFile.EF_SOD_TAG };
       byte[] sd = passportASN1Service.readObject(tags);
       ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
@@ -220,6 +221,9 @@ public class PassportService extends PassportAuthService
          System.out.println("DEBUG: WARNING: extra object found after SignedData...");
       }
       return signedData;
+      */
+      SODFile file = getSODFile();
+      return file.getSignedData();
    }
    
    private SignerInfo readSignerInfo() throws IOException {
