@@ -63,20 +63,23 @@ public class SODFile extends PassportFile
    }
    
    SODFile(InputStream in) throws IOException {
-      this(BERTLVObject.getInstance(in));
-   }
-      
-   SODFile(BERTLVObject object) throws IOException {
-      byte[] sd = object.getEncoded();
-      ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(sd));
-      DERSequence seq = (DERSequence)in.readObject();
+      ASN1InputStream asn1in = new ASN1InputStream(in);
+      DERSequence seq = (DERSequence)asn1in.readObject();
       // DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       signedData = new SignedData(s2);
-      Object nextObject = in.readObject();
+      Object nextObject = asn1in.readObject();
       if (nextObject != null) {
          System.out.println("DEBUG: WARNING: extra object found after SignedData...");
       }
+   }
+   
+   SODFile(byte[] in) throws IOException {
+      this(new ByteArrayInputStream(in));
+   }
+      
+   SODFile(BERTLVObject object) throws IOException {
+      this(object.getEncoded());
    }
 
    @Override
