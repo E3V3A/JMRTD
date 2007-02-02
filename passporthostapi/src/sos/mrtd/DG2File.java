@@ -73,12 +73,12 @@ public class DG2File extends DataGroup
       faces = new ArrayList<FaceInfo>();
    }
 
-   DG2File(InputStream in) throws IOException {
-      this(BERTLVObject.getInstance(in));
-   }
-
    // TODO: not tested...   
    DG2File(BERTLVObject object) {
+      this();
+      if (object == null) {
+         throw new IllegalArgumentException("Cannot decode null");
+      }
       try {
          byte[] facialRecordData = object.getSubObject(0x5F2E).getValueAsBytes();
          if (facialRecordData == null) {
@@ -95,10 +95,15 @@ public class DG2File extends DataGroup
             addFaceInfo(new FaceInfo(dataIn));
          }
       } catch (Exception e) {
+         e.printStackTrace();
          throw new IllegalArgumentException("Could not decode: " + e.toString());
       }
    }
 
+   DG2File(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
+   }
+   
    public void addFaceInfo(FaceInfo fi) {
       faces.add(fi);
    }

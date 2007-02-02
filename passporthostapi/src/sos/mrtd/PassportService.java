@@ -112,9 +112,7 @@ public class PassportService extends PassportAuthService
 	   }
 	   
 	   private PassportFile getFile(int tag) throws IOException {
-         int[] path = { tag };
-		 return
-		    PassportFile.getInstance(passportASN1Service.readObject(path));
+		 return PassportFile.getInstance(passportASN1Service.readFile(tag));
 	   }
 
 	   

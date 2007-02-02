@@ -94,5 +94,13 @@ public class PassportASN1Service extends PassportAuthService
       object = object.getSubObject(tagPath, 0, tagPath.length);
       return object;
    }
+   
+   /**
+    * @deprecated use readObject() instead
+    */
+   byte[] readFile(int tag) throws IOException {
+      return fileService.readFile(PassportFile.lookupFIDByTag(tag));
+      
+   }
 }
 

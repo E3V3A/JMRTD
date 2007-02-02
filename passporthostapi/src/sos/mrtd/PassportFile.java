@@ -111,6 +111,7 @@ public abstract class PassportFile
          throw new IllegalArgumentException("Could not decode file "
                + Integer.toHexString(tag));
       } catch (Exception e) {
+         e.printStackTrace();
          throw new IllegalArgumentException("Could not decode: "
                + e.toString());
       }

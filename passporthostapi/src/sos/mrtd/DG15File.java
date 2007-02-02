@@ -51,11 +51,7 @@ public class DG15File extends DataGroup
    public DG15File(PublicKey publicKey) {
       this.publicKey = publicKey;
    }
-   
-   DG15File(InputStream in) throws IOException {
-      this(BERTLVObject.getInstance(in));
-   }
-   
+
    DG15File(BERTLVObject object) {   
       try {
          X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(object.getValueAsBytes());
@@ -64,6 +60,10 @@ public class DG15File extends DataGroup
       } catch (Exception e) {
          throw new IllegalArgumentException(e.toString());
       }
+   }
+   
+   DG15File(InputStream in) throws IOException {
+      this(BERTLVObject.getInstance(in));
    }
    
    public byte[] getEncoded() {
