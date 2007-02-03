@@ -27,6 +27,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -42,7 +43,9 @@ import sos.gui.ImagePanel;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
+import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
@@ -123,7 +126,8 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         info = s.readFace()[0];
+         DG2File dg2 = (DG2File)s.getDataGroup(PassportFile.EF_DG2_TAG);
+         info = dg2.getFaces().get(0);
          ipanel.setImage(info.getImage());
          infoArea.setText(info.toString());
       } catch (Exception e) {

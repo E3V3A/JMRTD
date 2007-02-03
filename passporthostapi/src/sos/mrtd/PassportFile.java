@@ -116,7 +116,7 @@ public abstract class PassportFile
                + e.toString());
       }
    }
-   
+
    /**
     * Gets the contents of this file as byte array,
     * includes the ICAO tag and length.
@@ -124,10 +124,7 @@ public abstract class PassportFile
     * @return a byte array containing the file
     */
    public abstract byte[] getEncoded();
-   
-   /* TODO: public abstract int getTag(); */
-   /* TODO: public abstract int getLength(); */
-   
+
    /**
     * Corresponds to Table A1 in ICAO-TR-LDS_1.7_2004-05-18.
     *

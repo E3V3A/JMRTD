@@ -407,21 +407,26 @@ public class FaceInfo
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
-      ImageOutputStream ios = ImageIO.createImageOutputStream(out);
       Iterator writers = ImageIO.getImageWritersByMIMEType(mimeType);
       if (!writers.hasNext()) {
          throw new IOException("No writers for \"" + mimeType + "\"");
       }
+      ImageOutputStream ios = ImageIO.createImageOutputStream(out);
       while (writers.hasNext()) {
          try {
+            ios.mark();
             ImageWriter writer = (ImageWriter)writers.next();
             writer.setOutput(ios);
             ImageWriteParam pm = writer.getDefaultWriteParam();
             pm.setSourceRegion(new Rectangle(0, 0, width, height));
             writer.write(image);
+            return;
          } catch (Exception e) {
             e.printStackTrace();
+            ios.reset();
             continue;
+         } finally {
+            ios.flush();
          }
       }
    }
@@ -867,7 +872,6 @@ public class FaceInfo
          return out.toString();
       }
    }
-   
    
    /* For testing... */
    public static void main(String[] arg) {

@@ -54,6 +54,8 @@ public class DG15File extends DataGroup
 
    DG15File(BERTLVObject object) {   
       try {
+         sourceObject = object;
+         isSourceConsistent = true;
          X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(object.getValueAsBytes());
          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
          publicKey = keyFactory.generatePublic(pubKeySpec);
@@ -67,15 +69,24 @@ public class DG15File extends DataGroup
    }
    
    public byte[] getEncoded() {
+      if (isSourceConsistent) {
+         return sourceObject.getEncoded();
+      }
       try {
          BERTLVObject ef010F =
             new BERTLVObject(PassportFile.EF_DG15_TAG,
                   publicKey.getEncoded());
+         sourceObject = ef010F;
+         isSourceConsistent = true;
          return ef010F.getEncoded();
       } catch (IOException e) {
          e.printStackTrace();
          return null;
       }
+   }
+
+   public int getTag() {
+      return EF_DG15_TAG;
    }
 
    /**

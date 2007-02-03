@@ -54,9 +54,12 @@ import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.COMFile;
+import sos.mrtd.DataGroup;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportService;
+import sos.mrtd.SODFile;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;
 
@@ -101,9 +104,9 @@ public class PAPanel extends JPanel implements AuthListener
       readObjectButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               sod = passportService.readSecurityObject();
+               SODFile sodFile = passportService.getSODFile();
                area.append("Read pubkey security object\n");
-               DataGroupHash[] hashes = sod.getDatagroupHash();
+               DataGroupHash[] hashes = sodFile.getDataGroupHashes();
                storedHashes = new Object[hashes.length];
                for (int i = 0; i < hashes.length; i++) {
                   storedHashes[i] = hashes[i].getDataGroupHashValue().getOctets();
@@ -132,12 +135,13 @@ public class PAPanel extends JPanel implements AuthListener
                         alg = "SHA1";
                      }
                      MessageDigest digest = MessageDigest.getInstance(alg);
-                     short[] dg = passportService.readDataGroupList();
-                     for (int i = 0; i < dg.length; i++) {
-                        byte[] file = fileService.readFile(dg[i]);
-                        byte[] computedHash = digest.digest(file);
+                     COMFile comFile = passportService.getCOMFile();
+                     byte[] tags = comFile.getTagList();
+                     for (int i = 0; i < tags.length; i++) {
+                        DataGroup file = passportService.getDataGroup(tags[i]);
+                        byte[] computedHash = digest.digest(file.getEncoded());
                         area.append("   computed hash of ");
-                        area.append("DG" + (dg[i] & 0xFF) + ": ");
+                        area.append("DG " + Integer.toHexString(tags[i] & 0xFF) + ": ");
                         area.append(Hex.bytesToHexString(computedHash));
                         if (storedHashes != null && storedHashes.length > i
                               && Arrays.equals((byte[])storedHashes[i], computedHash)) {
@@ -162,10 +166,12 @@ public class PAPanel extends JPanel implements AuthListener
       readDSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               docSigningCert = passportService.readDocSigningCertificate();
+               SODFile sodFile = passportService.getSODFile();
+               docSigningCert = sodFile.getDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
-               boolean succes = passportService.checkDocSignature(docSigningCert);
+               
+               boolean succes = sodFile.checkDocSignature(docSigningCert);
                area.append(" --> Signature check: " + succes + "\n");           
             } catch (Exception e) {
                e.printStackTrace();

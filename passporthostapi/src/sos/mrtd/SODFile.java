@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
@@ -57,9 +58,12 @@ import sos.smartcards.BERTLVObject;
  */
 public class SODFile extends PassportFile
 {
-   private static final String SIGNED_DATA_OBJ_ID = "1.2.840.113549.1.7.2";
-   private static final String SHA1_HASH_ALG_OBJ_ID = "1.3.14.3.2.26";
-   private static final String SHA1_WITH_RSA_ENC_OBJ_ID = "1.2.840.113549.1.1.5";
+   private static final String SIGNED_DATA_OID = "1.2.840.113549.1.7.2";
+   private static final String SHA1_HASH_ALG_OID = "1.3.14.3.2.26";
+   private static final String SHA1_WITH_RSA_ENC_OID = "1.2.840.113549.1.1.5";
+   private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";
+   private static final String ICAO_SOD_OID = "2.23.136.1.1.1";
+   private static final String E_CONTENT_TYPE_OID = "1.2.528.1.1006.1.20.1";
    
    private SignedData signedData;
 
@@ -80,6 +84,8 @@ public class SODFile extends PassportFile
          new ASN1InputStream(new ByteArrayInputStream(object.getValueAsBytes()));
       DERSequence seq = (DERSequence)asn1in.readObject();
       DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
+      System.out.println("DEBUG: in SODFile<init>: objectIdentifier = " + objectIdentifier);
+      
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       signedData = new SignedData(s2);
 
@@ -91,6 +97,10 @@ public class SODFile extends PassportFile
       if (nextObject != null) {
          System.out.println("DEBUG: WARNING: extra object found after SignedData...");
       }
+   }
+   
+   public int getTag() {
+      return EF_SOD_TAG;
    }
    
    public SignedData getSignedData() {
@@ -130,7 +140,6 @@ public class SODFile extends PassportFile
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       signedData = new SignedData(s2);
 */
-      // TODO Auto-generated method stub
    
    private SignerInfo getSignerInfo() throws IOException {
       ASN1Set signerInfos = signedData.getSignerInfos();
@@ -166,6 +175,10 @@ public class SODFile extends PassportFile
       return sod;
    }
    
+   public DataGroupHash[] getDataGroupHashes() throws Exception {
+      return getSecurityObject().getDatagroupHash();
+   }
+   
    /**
     * Reads the document signing certificate.
     *
@@ -183,16 +196,7 @@ public class SODFile extends PassportFile
       return cert;
    }
   
-   /**
-    * Reads the stored signature of the security object.
-    * 
-    * @return the signature
-    * @throws IOException when something goes wrong
-    */
-   private byte[] getEncryptedDigest() throws IOException {
-      SignerInfo signerInfo = getSignerInfo();
-      return signerInfo.getEncryptedDigest().getOctets();
-   }
+
    
    /**
     * Reads the contents of the security object over which the
@@ -210,13 +214,27 @@ public class SODFile extends PassportFile
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
       if (signedAttributes.size() == 0) {
          /* Signed attributes absent, digest the contents... */
+         System.out.println("DEBUG: optie 1");
          ContentInfo contentInfo = signedData.getEncapContentInfo();
          return ((DEROctetString)contentInfo.getContent()).getOctets();
       } else {
          /* Signed attributes present, digest the attributes... */
+         System.out.println("DEBUG: optie 2");
          return signedAttributes.getDEREncoded();
       }
    }
+
+   /**
+    * Reads the stored signature of the security object.
+    * 
+    * @return the signature
+    * @throws IOException when something goes wrong
+    */
+   private byte[] getEncryptedDigest() throws IOException {
+      SignerInfo signerInfo = getSignerInfo();
+      return signerInfo.getEncryptedDigest().getOctets();
+   }
+   
    /**
     * Verifies the signature over the contents of the security object.
     * 

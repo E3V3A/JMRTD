@@ -41,8 +41,10 @@ import javax.swing.border.EtchedBorder;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.DG15File;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;
@@ -84,7 +86,9 @@ implements AuthListener
       readPubKeyButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               pubkey = passportService.readAAPublicKey();
+               DG15File dg15 =
+                  (DG15File)passportService.getDataGroup(PassportFile.EF_DG15_TAG);
+               pubkey = dg15.getPublicKey();
                area.append("Read pubkey = " + pubkey + "\n");
             } catch (Exception e) {
                e.printStackTrace();

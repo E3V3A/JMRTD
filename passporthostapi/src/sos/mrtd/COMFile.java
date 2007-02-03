@@ -117,6 +117,10 @@ public class COMFile extends PassportFile
          throw new IllegalArgumentException(ioe.toString());
       }
    }
+   
+   public int getTag() {
+      return EF_COM_TAG;
+   }
 
    /**
     * Gets the LDS version as a dot seperated string

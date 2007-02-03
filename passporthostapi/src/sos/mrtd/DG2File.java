@@ -29,6 +29,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -53,16 +55,18 @@ public class DG2File extends DataGroup
 {
    private static final short BIOMETRIC_INFO_GROUP_TAG = 0x7F61;
    private static final short BIOMETRIC_INFO_TAG = 0x7F60;
-   private static byte BIOMETRIC_INFO_COUNT_TAG = 0x02;
-   private static byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
-   private static short BIOMETRIC_DATA_TAG = 0x5F2E;
+   
+   private static final byte BIOMETRIC_INFO_COUNT_TAG = 0x02;
+   private static final byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
+   private static final short BIOMETRIC_DATA_TAG = 0x5F2E;
 
-   private static byte FORMAT_OWNER_TAG = (byte) 0x87;
-   private static byte FORMAT_TYPE_TAG = (byte) 0x88;
+   private static final byte FORMAT_OWNER_TAG = (byte) 0x87;
+   private static final byte FORMAT_TYPE_TAG = (byte) 0x88;
 
    // Facial Record Header, Sect. 5.4, ISO SC37
-   private static byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
-   private static byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
+   private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
+   private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
+
 
    private List<FaceInfo> faces;
 
@@ -76,11 +80,12 @@ public class DG2File extends DataGroup
    // TODO: not tested...   
    DG2File(BERTLVObject object) {
       this();
+      sourceObject = object;
       if (object == null) {
          throw new IllegalArgumentException("Cannot decode null");
       }
       try {
-         byte[] facialRecordData = object.getSubObject(0x5F2E).getValueAsBytes();
+         byte[] facialRecordData = object.getSubObject(BIOMETRIC_DATA_TAG).getValueAsBytes();
          if (facialRecordData == null) {
             throw new IllegalArgumentException("Could not decode facial record");
          }
@@ -98,14 +103,20 @@ public class DG2File extends DataGroup
          e.printStackTrace();
          throw new IllegalArgumentException("Could not decode: " + e.toString());
       }
+      isSourceConsistent = true;
    }
 
    DG2File(InputStream in) throws IOException {
       this(BERTLVObject.getInstance(in));
    }
    
+   public int getTag() {
+      return EF_DG2_TAG;
+   }
+   
    public void addFaceInfo(FaceInfo fi) {
       faces.add(fi);
+      isSourceConsistent = false;
    }
 
    private byte[] formatOwner(Image i) {
@@ -121,29 +132,32 @@ public class DG2File extends DataGroup
    }
 
    public byte[] getEncoded() {
+      if (isSourceConsistent) {
+         return sourceObject.getEncoded();
+      }
       try {
          BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG,
                new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG,
                      (byte) faces.size()));
          BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
+         byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG;
          for (FaceInfo info: faces) {
-            BERTLVObject header = new BERTLVObject(BIOMETRIC_HEADER_BASE_TAG++,
+            BERTLVObject header = new BERTLVObject(bioHeaderTag++,
                   new BERTLVObject(FORMAT_TYPE_TAG,
                         formatType(info.getImage())));
             header.addSubObject(new BERTLVObject(FORMAT_OWNER_TAG,
                   formatOwner(info.getImage())));
 
             BERTLVObject face = new BERTLVObject(BIOMETRIC_INFO_TAG, header);
-            group.addSubObject(face);
+            
             // NOTE: multiple FaceInfos may be embedded in two ways:
             // 1) as multiple images in the same record (see Fig. 3 in ISO/IEC
             // 19794-5)
             // 2) as multiple records (see A 13.3 in LDS technical report).
             // We choose option 2, because otherwise we have to precalc the
             // total length of all FaceInfos, which sucks.
-            byte[] faceInfoBytes = info.getEncoded();
-            int lengthOfRecord = FORMAT_IDENTIFIER.length
-            + VERSION_NUMBER.length + 4 + 2;
+            int lengthOfRecord =
+               FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
             short nrOfImagesInRecord = 1;
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             DataOutputStream dataOut = new DataOutputStream(out);
@@ -151,13 +165,15 @@ public class DG2File extends DataGroup
             dataOut.write(VERSION_NUMBER);
             dataOut.writeInt(lengthOfRecord);
             dataOut.writeShort(nrOfImagesInRecord);
-            dataOut.write(faceInfoBytes);
+            dataOut.write(info.getEncoded());
             dataOut.flush();
             byte[] facialRecord = out.toByteArray();
 
             face.addSubObject(new BERTLVObject(BIOMETRIC_DATA_TAG, facialRecord));
+            group.addSubObject(face);
          }
-
+         sourceObject = dg2;
+         isSourceConsistent = true;
          return dg2.getEncoded();
       } catch (IOException ioe) {
          return null;
@@ -174,6 +190,18 @@ public class DG2File extends DataGroup
     * @param arg command line arguments
     */
    public static void main(String[] arg) {
+      try {
+         DG2File dg2 = new DG2File(new FileInputStream("/tmp/ef0102.bin"));
+         byte[] encoded = dg2.getEncoded();
+         FileOutputStream out = new FileOutputStream("/tmp/ef0102_c.bin");
+         out.write(encoded);
+         out.flush();
+         out.close();
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+      
+      /* TEST FILE VAN CEES
       try {
          BufferedImage image = null;
          DG2File dg2 = new DG2File();
@@ -196,6 +224,6 @@ public class DG2File extends DataGroup
          System.out.println(BERTLVObject.getInstance(new ByteArrayInputStream(dg2.getEncoded())));
       } catch (IOException e) {
          e.printStackTrace();
-      }
+      } */
    }
 }

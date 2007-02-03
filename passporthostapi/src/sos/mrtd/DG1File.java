@@ -53,6 +53,8 @@ public class DG1File extends DataGroup
    
    DG1File(BERTLVObject in) {
       this(MRZInfo.getInstance(in.getSubObject(0x5F1F).getValueAsBytes()));
+      sourceObject = in;
+      isSourceConsistent = true;
    }
    
    DG1File(InputStream in) throws IOException {
@@ -61,6 +63,10 @@ public class DG1File extends DataGroup
    
    DG1File(byte[] in) throws IOException {
       this(new ByteArrayInputStream(in));
+   }
+   
+   public int getTag() {
+      return EF_DG1_TAG;
    }
 
    /**
@@ -73,10 +79,15 @@ public class DG1File extends DataGroup
    }
 
    public byte[] getEncoded() {
+      if (isSourceConsistent) {
+         return sourceObject.getEncoded();
+      }
       try {
          BERTLVObject ef0101 =
             new BERTLVObject(EF_DG1_TAG,
-               new BERTLVObject(0x5f1f, mrz.getEncoded()));
+               new BERTLVObject(0x5F1F, mrz.getEncoded()));
+         sourceObject = ef0101;
+         isSourceConsistent = true;
          return ef0101.getEncoded();
       } catch (IOException e) {
          e.printStackTrace();
