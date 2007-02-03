@@ -84,7 +84,6 @@ public class PAPanel extends JPanel implements AuthListener
    
    private SecureMessagingWrapper wrapper;
    
-   private LDSSecurityObject sod;
    private Certificate docSigningCert;
    private Certificate countrySigningCert;
 

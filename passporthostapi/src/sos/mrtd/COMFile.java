@@ -54,7 +54,7 @@ public class COMFile extends PassportFile
     * @param majorVersionUnicode a numerical string of length 2
     * @param minorVersionUnicode a numerical string of length 2
     * @param releaseLevelUnicode a numerical string of length 2
-    * @param tagList a list of ICAO datagroup tags
+    * @param tagList a list of ICAO data group tags
     * 
     * @throws IllegalArgumentException if the input is not well-formed
     */
@@ -118,6 +118,11 @@ public class COMFile extends PassportFile
       }
    }
    
+   /**
+    * The tag byte of this file.
+    * 
+    * @return the tag
+    */
    public int getTag() {
       return EF_COM_TAG;
    }

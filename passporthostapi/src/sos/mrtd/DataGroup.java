@@ -51,4 +51,12 @@ public class DataGroup extends PassportFile
       }
       return null;
    }
+   
+   @Override
+   public String toString() {
+      if (isSourceConsistent) {
+         return sourceObject.toString();
+      }
+      return super.toString();
+   }
 }

@@ -86,8 +86,7 @@ implements AuthListener
       readPubKeyButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               DG15File dg15 =
-                  (DG15File)passportService.readDataGroup(PassportFile.EF_DG15_TAG);
+               DG15File dg15 = passportService.readDG15();
                pubkey = dg15.getPublicKey();
                area.append("Read pubkey = " + pubkey + "\n");
             } catch (Exception e) {

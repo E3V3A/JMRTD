@@ -36,7 +36,7 @@ import sos.smartcards.CardService;
  * Usage:
  *    <pre>
  *       &lt;&lt;create&gt;&gt; ==&gt; open() ==&gt;
- *       doBAC(...) ==&gt; readBlah() ==&gt; close()
+ *       doBAC(...) ==&gt; readBlahFile() ==&gt; close()
  *    </pre> 
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
@@ -48,9 +48,9 @@ public class PassportService extends PassportAuthService
    private PassportFileService passportFileService;
 
    /**
-    * Creates a new passport passportASN1Service for accessing the passport.
+    * Creates a new passport service for accessing the passport.
     * 
-    * @param service another passportASN1Service which will deal
+    * @param service another service which will deal
     *        with sending the apdus to the card.
     *
     * @throws GeneralSecurityException when the available JCE providers
@@ -68,6 +68,12 @@ public class PassportService extends PassportAuthService
       addAuthenticationListener(passportFileService);
    }
 
+   /**
+    * Gets the data group presence list.
+    * 
+    * @return the file containing the data group presence list
+    * @throws IOException if the file cannot be read
+    */
    public COMFile readCOMFile() throws IOException {
       return (COMFile)getFile(PassportFile.EF_COM_TAG);
    }
@@ -79,42 +85,42 @@ public class PassportService extends PassportAuthService
     * 
     * @return the data group file
     * 
-    * @throws IOException if file cannot be read
+    * @throws IOException if the file cannot be read
     */
    public DataGroup readDataGroup(int tag) throws IOException {
       return (DataGroup)getFile(tag);
    }
    
    /**
-    * Convenience method to get DG1.
+    * Gets DG1.
     * 
     * @return the data group file
     * 
-    * @throws IOException if file cannot be read
+    * @throws IOException if the file cannot be read
     */
-   public DG1File readDG1File() throws IOException {
+   public DG1File readDG1() throws IOException {
       return (DG1File)readDataGroup(PassportFile.EF_DG1_TAG);
    }
    
    /**
-    * Convenience method to get DG2.
+    * Gets DG2.
     * 
     * @return the data group file
     * 
-    * @throws IOException if file cannot be read
+    * @throws IOException if the file cannot be read
     */   
-   public DG2File readDG2File() throws IOException {
+   public DG2File readDG2() throws IOException {
       return (DG2File)readDataGroup(PassportFile.EF_DG2_TAG);
    }
    
    /**
-    * Convenience method to get DG15.
+    * Gets DG15.
     * 
     * @return the data group file
     * 
-    * @throws IOException if file cannot be read
+    * @throws IOException if the file cannot be read
     */
-   public DG15File readDG15File() throws IOException {
+   public DG15File readDG15() throws IOException {
       return (DG15File)readDataGroup(PassportFile.EF_DG15_TAG);
    }
    
@@ -123,12 +129,21 @@ public class PassportService extends PassportAuthService
     * 
     * @return the document security object
     * 
-    * @throws IOException if file cannot be read
+    * @throws IOException if the file cannot be read
     */
    public SODFile getSODFile() throws IOException {
       return (SODFile)getFile(PassportFile.EF_SOD_TAG);
    }
 
+   /**
+    * Gets the file indicated by tag.
+    * 
+    * @param tag ICAO file tag
+    * 
+    * @return the file
+    * 
+    * @throws IOException if the file cannot be read
+    */
    private PassportFile getFile(int tag) throws IOException {
       short fid = PassportFile.lookupFIDByTag(tag);
       return PassportFile.getInstance(passportFileService.readFile(fid));

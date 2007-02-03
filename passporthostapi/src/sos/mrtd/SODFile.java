@@ -50,7 +50,8 @@ import sos.smartcards.BERTLVObject;
  * File structure for the EF_SOD file.
  * This file contains the security object.
  * 
- * TODO: implement this...
+ * TODO: implement this without coupling the public interface of
+ * this class to the Bouncy Castle classes.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
@@ -80,6 +81,8 @@ public class SODFile extends PassportFile
    }
       
    SODFile(BERTLVObject object) throws IOException {
+      sourceObject = object;
+      isSourceConsistent = true;
       ASN1InputStream asn1in =
          new ASN1InputStream(new ByteArrayInputStream(object.getValueAsBytes()));
       DERSequence seq = (DERSequence)asn1in.readObject();
@@ -99,16 +102,20 @@ public class SODFile extends PassportFile
       }
    }
    
+   /**
+    * The tag of this file.
+    * 
+    * @return the tag
+    */
    public int getTag() {
       return EF_SOD_TAG;
-   }
-   
-   public SignedData getSignedData() {
-      return signedData;
    }
 
    @Override
    public byte[] getEncoded() {
+      if (isSourceConsistent) {
+         return sourceObject.getEncoded();
+      }
       return null;
    }
    
@@ -161,7 +168,7 @@ public class SODFile extends PassportFile
     * 
     * @throws IOException
     */
-   public LDSSecurityObject getSecurityObject() throws IOException, Exception {
+   private LDSSecurityObject getSecurityObject() throws IOException, Exception {
       ContentInfo contentInfo = signedData.getEncapContentInfo();
       byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
       ASN1InputStream in =
@@ -180,7 +187,14 @@ public class SODFile extends PassportFile
    }
    
    /**
-    * Reads the document signing certificate.
+    * Gets the document signing certificate.
+    * Use this certificate to verify that
+    * <i>eSignature</i> is a valid signature for
+    * <i>eContent</i>. This certificate itself is
+    * signed using the country signing certificate.
+    * 
+    * @see #getEContent()
+    * @see #getESignature()
     *
     * @return the document signing certificate
     */
@@ -188,6 +202,10 @@ public class SODFile extends PassportFile
    throws IOException, Exception {
       X509Certificate cert = null;
       ASN1Set certs = signedData.getCertificates();
+      if (certs.size() != 1) {
+         System.out.println("DEBUG: WARNING: found "
+               + certs.size() + " certificates");
+      }
       for (int i = 0; i < certs.size(); i++) {
          X509CertificateStructure e =
             new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
@@ -195,42 +213,45 @@ public class SODFile extends PassportFile
       }
       return cert;
    }
-  
 
-   
    /**
-    * Reads the contents of the security object over which the
-    * signature is to be computed.
+    * Gets the contents of the security object over which the
+    * signature is to be computed. 
     * 
     * See RFC 3369, Cryptographic Message Syntax, August 2002,
     * Section 5.4 for details.
+    *
+    * @see #getDocSigningCertificate()
+    * @see #getESignature()
     * 
     * @return the contents of the security object over which the
     *         signature is to be computed
     * @throws Exception when something is wrong
     */
-   private byte[] getSecurityObjectContent() throws IOException {
+   public byte[] getEContent() throws IOException {
       SignerInfo signerInfo = getSignerInfo();
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
       if (signedAttributes.size() == 0) {
          /* Signed attributes absent, digest the contents... */
-         System.out.println("DEBUG: optie 1");
          ContentInfo contentInfo = signedData.getEncapContentInfo();
          return ((DEROctetString)contentInfo.getContent()).getOctets();
       } else {
          /* Signed attributes present, digest the attributes... */
-         System.out.println("DEBUG: optie 2");
+         /* This option is taken by ICAO passports. */
          return signedAttributes.getDEREncoded();
       }
    }
 
    /**
-    * Reads the stored signature of the security object.
+    * Gets the stored signature of the security object.
+    * 
+    * @see #getDocSigningCertificate()
+    * @see #getEContent()
     * 
     * @return the signature
     * @throws IOException when something goes wrong
     */
-   private byte[] getEncryptedDigest() throws IOException {
+   public byte[] getESignature() throws IOException {
       SignerInfo signerInfo = getSignerInfo();
       return signerInfo.getEncryptedDigest().getOctets();
    }
@@ -248,6 +269,8 @@ public class SODFile extends PassportFile
     * 
     * @throws GeneralSecurityException if something goes wrong
     * @throws IOException if something goes wrong
+    * 
+    * @deprecated Leave this responsibility to client
     */
    public boolean checkDocSignature(Certificate docSigningCert)
    throws GeneralSecurityException, IOException {
@@ -259,7 +282,7 @@ public class SODFile extends PassportFile
       }
       Signature sig = Signature.getInstance(sigAlg);
       sig.initVerify(docSigningCert);
-      sig.update(getSecurityObjectContent());
-      return sig.verify(getEncryptedDigest());
+      sig.update(getEContent());
+      return sig.verify(getESignature());
    }
 }

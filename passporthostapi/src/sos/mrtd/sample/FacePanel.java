@@ -125,7 +125,7 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         DG2File dg2 = (DG2File)s.readDataGroup(PassportFile.EF_DG2_TAG);
+         DG2File dg2 = s.readDG2();
          info = dg2.getFaces().get(0);
          ipanel.setImage(info.getImage());
          infoArea.setText(info.toString());
