@@ -22,29 +22,9 @@
 
 package sos.mrtd;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.PublicKey;
-import java.security.Signature;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.List;
-
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.cms.SignedData;
-import org.bouncycastle.asn1.cms.SignerInfo;
-import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.CardService;
 
@@ -65,8 +45,7 @@ import sos.smartcards.CardService;
  */
 public class PassportService extends PassportAuthService
 {
-   private PassportASN1Service passportASN1Service;
-   private KeyFactory keyFactory;
+   private PassportFileService passportFileService;
 
    /**
     * Creates a new passport passportASN1Service for accessing the passport.
@@ -81,36 +60,77 @@ public class PassportService extends PassportAuthService
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(service);
       if (service instanceof PassportService) {
-         this.passportASN1Service =
-            ((PassportService)service).passportASN1Service;
+         this.passportFileService =
+            ((PassportService)service).passportFileService;
       } else {
-         this.passportASN1Service = new PassportASN1Service(service);
+         this.passportFileService = new PassportFileService(service);
       }
-      addAuthenticationListener(passportASN1Service);
-      keyFactory = KeyFactory.getInstance("RSA");
+      addAuthenticationListener(passportFileService);
    }
 
-   public COMFile getCOMFile() throws IOException {
+   public COMFile readCOMFile() throws IOException {
       return (COMFile)getFile(PassportFile.EF_COM_TAG);
    }
 
-   /*
-    * TODO: Temporary method. Probably nicer to have getDG1File(), getDG2File(),
-    * etc.
+   /**
+    * Gets the data group indicated by <code>tag</code>.
     * 
-    * @param tag should be a valid ICAO file tag
+    * @param tag should be a valid ICAO datagroup tag
+    * 
     * @return the data group file
+    * 
     * @throws IOException if file cannot be read
     */
-   public DataGroup getDataGroup(int tag) throws IOException {
+   public DataGroup readDataGroup(int tag) throws IOException {
       return (DataGroup)getFile(tag);
    }
-
+   
+   /**
+    * Convenience method to get DG1.
+    * 
+    * @return the data group file
+    * 
+    * @throws IOException if file cannot be read
+    */
+   public DG1File readDG1File() throws IOException {
+      return (DG1File)readDataGroup(PassportFile.EF_DG1_TAG);
+   }
+   
+   /**
+    * Convenience method to get DG2.
+    * 
+    * @return the data group file
+    * 
+    * @throws IOException if file cannot be read
+    */   
+   public DG2File readDG2File() throws IOException {
+      return (DG2File)readDataGroup(PassportFile.EF_DG2_TAG);
+   }
+   
+   /**
+    * Convenience method to get DG15.
+    * 
+    * @return the data group file
+    * 
+    * @throws IOException if file cannot be read
+    */
+   public DG15File readDG15File() throws IOException {
+      return (DG15File)readDataGroup(PassportFile.EF_DG15_TAG);
+   }
+   
+   /**
+    * Gets the document security object.
+    * 
+    * @return the document security object
+    * 
+    * @throws IOException if file cannot be read
+    */
    public SODFile getSODFile() throws IOException {
       return (SODFile)getFile(PassportFile.EF_SOD_TAG);
    }
 
    private PassportFile getFile(int tag) throws IOException {
-      return PassportFile.getInstance(passportASN1Service.readFile(tag));
+      short fid = PassportFile.lookupFIDByTag(tag);
+      return PassportFile.getInstance(passportFileService.readFile(fid));
    }
 }

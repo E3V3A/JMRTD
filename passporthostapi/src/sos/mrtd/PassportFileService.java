@@ -105,7 +105,6 @@ public class PassportFileService extends PassportAuthService
     * @return the contents of the file.
     */
    public byte[] readFile(short fid) throws IOException {
-      /* No? Read it from document... */
       SecureMessagingWrapper wrapper = getWrapper();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       service.sendSelectFile(wrapper, fid);

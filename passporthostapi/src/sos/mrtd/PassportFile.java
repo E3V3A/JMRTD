@@ -57,6 +57,16 @@ public abstract class PassportFile
                            EF_DG16_TAG = 0x70,
                            EF_SOD_TAG = 0x77;
    
+   /* 
+    * We're using a dual representation with a "dirty-bit": When the DG is
+    * read from a passport we need to store the binary information as-is
+    * since our constructed getEncoded() method might not result in exactly
+    * the same byte[] (messing up any cryptographic hash computations needed
+    * to validate the security object). -- MO
+    */
+   BERTLVObject sourceObject;
+   boolean isSourceConsistent;
+   
    /**
     * Constructor only visible to the other
     * classes in this package.
@@ -90,26 +100,24 @@ public abstract class PassportFile
          case EF_COM_TAG: return new COMFile(obj);
          case EF_DG1_TAG: return new DG1File(obj);
          case EF_DG2_TAG: return new DG2File(obj);
-         case EF_DG3_TAG: break;
-         case EF_DG4_TAG: break;
-         case EF_DG5_TAG: break;
-         case EF_DG6_TAG: break;
-         case EF_DG7_TAG: break;
-         case EF_DG8_TAG: break;
-         case EF_DG9_TAG: break;
-         case EF_DG10_TAG: break;
-         case EF_DG11_TAG: break;
-         case EF_DG12_TAG: break;
-         case EF_DG13_TAG: break;
-         case EF_DG14_TAG: break;
+         case EF_DG3_TAG: return new DataGroup(obj);
+         case EF_DG4_TAG: return new DataGroup(obj);
+         case EF_DG5_TAG: return new DataGroup(obj);
+         case EF_DG6_TAG: return new DataGroup(obj);
+         case EF_DG7_TAG: return new DataGroup(obj);
+         case EF_DG8_TAG: return new DataGroup(obj);
+         case EF_DG9_TAG: return new DataGroup(obj);
+         case EF_DG10_TAG: return new DataGroup(obj);
+         case EF_DG11_TAG: return new DataGroup(obj);
+         case EF_DG12_TAG: return new DataGroup(obj);
+         case EF_DG13_TAG: return new DataGroup(obj);
+         case EF_DG14_TAG: return new DataGroup(obj);
          case EF_DG15_TAG: return new DG15File(obj);
-         case EF_DG16_TAG: break;
+         case EF_DG16_TAG: return new DataGroup(obj);
          case EF_SOD_TAG: return new SODFile(obj);
-         default: throw new IllegalArgumentException("Could not decode file "
+         default: throw new IllegalArgumentException("Unknown file tag "
                + Integer.toHexString(tag));
          }
-         throw new IllegalArgumentException("Could not decode file "
-               + Integer.toHexString(tag));
       } catch (Exception e) {
          e.printStackTrace();
          throw new IllegalArgumentException("Could not decode: "
@@ -122,6 +130,9 @@ public abstract class PassportFile
     * includes the ICAO tag and length.
     * 
     * @return a byte array containing the file
+    */
+   /*@ ensures
+    *@    isSourceConsistent ==> \result.equals(sourceObject.getEncoded());
     */
    public abstract byte[] getEncoded();
 

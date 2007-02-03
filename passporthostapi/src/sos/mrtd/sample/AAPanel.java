@@ -87,7 +87,7 @@ implements AuthListener
          public void actionPerformed(ActionEvent ae) {
             try {
                DG15File dg15 =
-                  (DG15File)passportService.getDataGroup(PassportFile.EF_DG15_TAG);
+                  (DG15File)passportService.readDataGroup(PassportFile.EF_DG15_TAG);
                pubkey = dg15.getPublicKey();
                area.append("Read pubkey = " + pubkey + "\n");
             } catch (Exception e) {

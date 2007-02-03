@@ -27,7 +27,6 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.List;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -126,7 +125,7 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         DG2File dg2 = (DG2File)s.getDataGroup(PassportFile.EF_DG2_TAG);
+         DG2File dg2 = (DG2File)s.readDataGroup(PassportFile.EF_DG2_TAG);
          info = dg2.getFaces().get(0);
          ipanel.setImage(info.getImage());
          infoArea.setText(info.toString());

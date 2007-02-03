@@ -24,21 +24,31 @@ package sos.mrtd;
 
 import sos.smartcards.BERTLVObject;
 
-public abstract class DataGroup extends PassportFile
+public class DataGroup extends PassportFile
 {
-   /* 
-    * We're using a dual representation with a "dirty-bit": When the DG is
-    * read from a passport we need to store the binary information as-is
-    * since our constructed getEncoded() method might not result in exactly
-    * the same byte[] (messing up any cryptographic hash computations needed
-    * to validate the security object). -- MO
+   /**
+    * Constructor only visible to the other
+    * classes in this package.
     */
-   BERTLVObject sourceObject;
-   boolean isSourceConsistent;
+   DataGroup() {
+   }
+   
+   /**
+    * Constructor only visible to the other
+    * classes in this package.
+    * 
+    * @param object datagroup contents.
+    */
+   DataGroup(BERTLVObject object) {
+      sourceObject = object;
+      isSourceConsistent = true;
+   }
    
    @Override
-   /*@ ensures
-    *@    isSourceConsistent ==> \result.equals(sourceObject.getEncoded());
-    */
-   public abstract byte[] getEncoded();
+   public byte[] getEncoded() {
+      if (isSourceConsistent) {
+         return sourceObject.getEncoded();
+      }
+      return null;
+   }
 }

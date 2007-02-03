@@ -135,10 +135,10 @@ public class PAPanel extends JPanel implements AuthListener
                         alg = "SHA1";
                      }
                      MessageDigest digest = MessageDigest.getInstance(alg);
-                     COMFile comFile = passportService.getCOMFile();
+                     COMFile comFile = passportService.readCOMFile();
                      byte[] tags = comFile.getTagList();
                      for (int i = 0; i < tags.length; i++) {
-                        DataGroup file = passportService.getDataGroup(tags[i]);
+                        DataGroup file = passportService.readDataGroup(tags[i]);
                         byte[] computedHash = digest.digest(file.getEncoded());
                         area.append("   computed hash of ");
                         area.append("DG " + Integer.toHexString(tags[i] & 0xFF) + ": ");
