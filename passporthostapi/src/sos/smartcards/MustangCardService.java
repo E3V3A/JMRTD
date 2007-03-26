@@ -28,17 +28,13 @@ import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
 /**
- * Card service implementation for sending APDUs to a terminal
- * using the <code>javax.smartcardio.*</code> classes in
- * Java SDK 6.0 (aka "Mustang").
+ * Card service implementation for sending APDUs to a terminal using the
+ * <code>javax.smartcardio.*</code> classes in Java SDK 6.0 (aka "Mustang").
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
  * @version $Revision$
  */
 public class MustangCardService extends AbstractCardService
@@ -55,9 +51,9 @@ public class MustangCardService extends AbstractCardService
    }
 
    /**
-    * Gives a list of terminals (card accepting devices) accessible by
-    * this service.
-    *
+    * Gives a list of terminals (card accepting devices) accessible by this
+    * service.
+    * 
     * @return a list of terminal names
     */
    public String[] getTerminals() {
@@ -66,7 +62,7 @@ public class MustangCardService extends AbstractCardService
          List<CardTerminal> terminals = factory.terminals().list();
          String[] result = new String[terminals.size()];
          int i = 0;
-         for (CardTerminal terminal: terminals) {
+         for (CardTerminal terminal : terminals) {
             result[i++] = terminal.toString();
          }
          return result;
@@ -75,7 +71,7 @@ public class MustangCardService extends AbstractCardService
          return new String[0];
       }
    }
-   
+
    /**
     * Opens a session with the card in the default terminal.
     */
@@ -102,7 +98,7 @@ public class MustangCardService extends AbstractCardService
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = null;
-         for (CardTerminal t: terminals) {
+         for (CardTerminal t : terminals) {
             if (t.toString().equals(id)) {
                terminal = t;
             }
@@ -120,19 +116,21 @@ public class MustangCardService extends AbstractCardService
 
    /**
     * Sends an apdu to the card.
-    *
+    * 
     * @param capdu the command apdu to send.
-    *
     * @return the response from the card, including the status word.
     */
-   public byte[] sendAPDU(Apdu apdu) {
+   public sos.smartcards.ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
       try {
-         byte[] cbuf = apdu.getCommandApduBuffer();
-         CommandAPDU capdu = new CommandAPDU(cbuf);
-         ResponseAPDU rapdu = channel.transmit(capdu);
-         apdu.setResponseApduBuffer(rapdu.getBytes()); 
-         notifyExchangedAPDU(apdu);
-         return rapdu.getBytes();
+         byte[] cbuf = ourCommandAPDU.getCommandApduBuffer();
+         javax.smartcardio.CommandAPDU capdu = new javax.smartcardio.CommandAPDU(
+               cbuf);
+         javax.smartcardio.ResponseAPDU theirResponseAPDU = channel
+               .transmit(capdu);
+         ResponseAPDU ourResponseAPDU = new ResponseAPDU(theirResponseAPDU
+               .getData(), (short)theirResponseAPDU.getSW());
+         notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
+         return ourResponseAPDU;
       } catch (CardException ce) {
          ce.printStackTrace();
       }
@@ -151,4 +149,3 @@ public class MustangCardService extends AbstractCardService
       }
    }
 }
-

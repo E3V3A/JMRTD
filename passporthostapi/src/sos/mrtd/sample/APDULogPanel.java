@@ -32,8 +32,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
+import sos.smartcards.ResponseAPDU;
 import sos.util.Hex;
 
 /**
@@ -87,15 +88,13 @@ public class APDULogPanel extends JPanel implements APDUListener, ISO7816
     * @param capdu the command apdu including explicit lc and le
     * @param rapdu the response apdu including sw
     */
-   public void exchangedAPDU(Apdu capdu, byte[] rapdu) {
+   public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
       append(Integer.toString(count)); append(".");
       append(" C: "); append(capdu.toString());
       append("\n");
       append(whiteSpace(count)); append(" ");
-      append(" R: "); append(Hex.toHexString(rapdu));
-      short sw = (short)(((rapdu[rapdu.length - 2] & 0xFF) << 8)
-            | (rapdu[rapdu.length - 1] & 0xFF));
-      append(" ("); append(swToString(sw)); append(")");
+      append(" R: "); append(Hex.toHexString(rapdu.getBuffer()));
+      append(" ("); append(swToString((short)rapdu.getSW())); append(")");
       append("\n\n");
       count++;
    }

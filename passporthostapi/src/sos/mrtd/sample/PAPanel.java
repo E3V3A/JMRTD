@@ -49,7 +49,6 @@ import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
-import org.bouncycastle.asn1.icao.LDSSecurityObject;
 
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;

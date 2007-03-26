@@ -28,7 +28,7 @@ import java.security.GeneralSecurityException;
 
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
 
 /**
@@ -63,8 +63,8 @@ public class EvilService extends PassportAuthService
    }
 
 
-   private Apdu createEvilAPDU (byte evilInstruction, byte p1, byte p2, int le, byte [] data) {
-	  Apdu apdu = new Apdu(EvilInterface.CLA_EVIL,
+   private CommandAPDU createEvilAPDU (byte evilInstruction, byte p1, byte p2, int le, byte [] data) {
+	  CommandAPDU apdu = new CommandAPDU(EvilInterface.CLA_EVIL,
 	         evilInstruction, p1, p2, data, le);
       return apdu;	   
    }
@@ -110,11 +110,11 @@ public class EvilService extends PassportAuthService
     *         currently selected file
     */
    public byte[] sendEvilCommand(SecureMessagingWrapper wrapper, byte ins, byte p1, byte p2, int le, byte[] payload) throws IOException {
-      Apdu capdu = createEvilAPDU(ins, p1, p2, le, payload);
+      CommandAPDU capdu = createEvilAPDU(ins, p1, p2, le, payload);
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu);
+      byte[] rapdu = sendAPDU(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }

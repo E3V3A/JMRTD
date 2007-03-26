@@ -44,7 +44,6 @@ import sos.mrtd.BACEvent;
 import sos.mrtd.DG15File;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
-import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.util.Hex;

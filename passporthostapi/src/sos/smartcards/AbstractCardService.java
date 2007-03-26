@@ -27,118 +27,118 @@ import java.util.Collection;
 import java.util.Iterator;
 
 /**
- * Default abstract service.
- * Provides some functionality for observing apdu events.
+ * Default abstract service. Provides some functionality for observing apdu
+ * events.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- * 
  * @version $Revision$
  */
-public abstract class AbstractCardService implements CardService {
-    static protected final int SESSION_STOPPED_STATE = 0;
+public abstract class AbstractCardService implements CardService
+{
+   static protected final int SESSION_STOPPED_STATE = 0;
 
-    static protected final int SESSION_STARTED_STATE = 1;
+   static protected final int SESSION_STARTED_STATE = 1;
 
-    /** The apduListeners. */
-    private Collection apduListeners;
+   /** The apduListeners. */
+   private Collection apduListeners;
 
-    /*@ invariant state == SESSION_STOPPED_STATE || state == SESSION_STARTED_STATE;
-     */
-    protected int state;
+   /*
+    * @ invariant state == SESSION_STOPPED_STATE || state ==
+    * SESSION_STARTED_STATE;
+    */
+   protected int state;
 
-    /**
-     * Creates a new service.
-     */
-    public AbstractCardService() {
-        apduListeners = new ArrayList();
-        state = SESSION_STOPPED_STATE;
-    }
+   /**
+    * Creates a new service.
+    */
+   public AbstractCardService() {
+      apduListeners = new ArrayList();
+      state = SESSION_STOPPED_STATE;
+   }
 
-    /**
-     * Adds a listener.
-     * 
-     * @param l
-     *            the listener to add
-     */
-    public void addAPDUListener(APDUListener l) {
-        apduListeners.add(l);
-    }
+   /**
+    * Adds a listener.
+    * 
+    * @param l the listener to add
+    */
+   public void addAPDUListener(APDUListener l) {
+      apduListeners.add(l);
+   }
 
-    /**
-     * Removes the listener <code>l</code>, if present.
-     * 
-     * @param l
-     *            the listener to remove
-     */
-    public void removeAPDUListener(APDUListener l) {
-        apduListeners.remove(l);
-    }
+   /**
+    * Removes the listener <code>l</code>, if present.
+    * 
+    * @param l the listener to remove
+    */
+   public void removeAPDUListener(APDUListener l) {
+      apduListeners.remove(l);
+   }
 
-    /**
-     * Opens a session with the card. Selects a reader. Connects to the card.
-     * Notifies any interested apduListeners.
-     */
-    /*
-     *@ requires state == SESSION_STOPPED_STATE;
-     *@ ensures state == SESSION_STARTED_STATE;
-     */
-    public abstract void open();
+   /**
+    * Opens a session with the card. Selects a reader. Connects to the card.
+    * Notifies any interested apduListeners.
+    */
+   /*
+    * @ requires state == SESSION_STOPPED_STATE; @ ensures state ==
+    * SESSION_STARTED_STATE;
+    */
+   public abstract void open();
 
-    /**
-     * Sends and apdu to the card. Notifies any interested apduListeners.
-     * 
-     * @param apdu
-     *            the command apdu to send.
-     * 
-     * @return the response from the card, including the status word.
-     */
-    /*@ requires state == SESSION_STARTED_STATE;
-     *@ ensures state == SESSION_STARTED_STATE;
-     */
-    public abstract byte[] sendAPDU(Apdu apdu);
+   /**
+    * Sends and apdu to the card. Notifies any interested apduListeners.
+    * 
+    * @param apdu the command apdu to send.
+    * @return the response from the card, including the status word.
+    */
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STARTED_STATE;
+    */
+   public abstract ResponseAPDU sendAPDU(CommandAPDU apdu);
 
-    /**
-     * Closes the session with the card. Disconnects from the card and reader.
-     * Notifies any interested apduListeners.
-     */
-    /*@ requires state == SESSION_STARTED_STATE;
-     *@ ensures state == SESSION_STOPPED_STATE;
-     */
-    public abstract void close();
+   /**
+    * Closes the session with the card. Disconnects from the card and reader.
+    * Notifies any interested apduListeners.
+    */
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STOPPED_STATE;
+    */
+   public abstract void close();
 
-    /**
-     * Notifes listeners about initialization of APDU session.
-     */
-    protected void notifyStartedAPDUSession() {
-        Iterator it = apduListeners.iterator();
-        while (it.hasNext()) {
-            APDUListener listener = (APDUListener) it.next();
-            listener.startedAPDUSession();
-        }
-    }
+   /**
+    * Notifes listeners about initialization of APDU session.
+    */
+   protected void notifyStartedAPDUSession() {
+      Iterator it = apduListeners.iterator();
+      while (it.hasNext()) {
+         APDUListener listener = (APDUListener)it.next();
+         listener.startedAPDUSession();
+      }
+   }
 
-    /**
-     * Notifies listeners about APDU event.
-     * 
-     * @param apdu APDU event
-     */
-    protected void notifyExchangedAPDU(Apdu apdu) {
-        Iterator it = apduListeners.iterator();
-        while (it.hasNext()) {
-            APDUListener listener = (APDUListener) it.next();
-            listener.exchangedAPDU(apdu, apdu.getResponseApduBuffer());
-        }
-    }
+   /**
+    * Notifies listeners about APDU event.
+    * 
+    * @param capdu APDU event
+    */
+   protected void notifyExchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+      Iterator it = apduListeners.iterator();
+      while (it.hasNext()) {
+         APDUListener listener = (APDUListener)it.next();
+         listener.exchangedAPDU(capdu, rapdu);
+      }
+   }
 
-    /**
-     * Notifes listeners about termination of APDU session.
-     */
-    protected void notifyStoppedAPDUSession() {
-        Iterator it = apduListeners.iterator();
-        while (it.hasNext()) {
-            APDUListener listener = (APDUListener) it.next();
-            listener.stoppedAPDUSession();
-        }
-    }
+   /**
+    * Notifes listeners about termination of APDU session.
+    */
+   protected void notifyStoppedAPDUSession() {
+      Iterator it = apduListeners.iterator();
+      while (it.hasNext()) {
+         APDUListener listener = (APDUListener)it.next();
+         listener.stoppedAPDUSession();
+      }
+   }
 }

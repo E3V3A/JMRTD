@@ -31,9 +31,10 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
+import sos.smartcards.ResponseAPDU;
 
 /**
  * Low level card service for sending apdus to the passport.
@@ -114,7 +115,7 @@ public class PassportApduService implements CardService
       sendSelectApplet(APPLET_AID);
    }
    
-   public byte[] sendAPDU(Apdu capdu) {
+   public ResponseAPDU sendAPDU(CommandAPDU capdu) {
       return service.sendAPDU(capdu);
    }
 
@@ -130,43 +131,43 @@ public class PassportApduService implements CardService
       service.removeAPDUListener(l);
    }
 
-   Apdu createSelectAppletAPDU(byte[] aid) {
+   CommandAPDU createSelectAppletAPDU(byte[] aid) {
       byte[] data = aid;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
             (byte) 0x004, (byte) 0x00, data);
       return apdu;
    }
 
-   Apdu createSelectFileAPDU(short fid) {
+   CommandAPDU createSelectFileAPDU(short fid) {
       byte[] fiddle = { (byte) ((fid >> 8) & 0x000000FF),
             (byte) (fid & 0x000000FF) };
       return createSelectFileAPDU(fiddle);
    }
 
-   Apdu createSelectFileAPDU(byte[] fid) {
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+   CommandAPDU createSelectFileAPDU(byte[] fid) {
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
             (byte) 0x02, (byte) 0x0c, fid, 0);
       return apdu;
    }
 
-   Apdu createReadBinaryAPDU(short offset, int le) {
+   CommandAPDU createReadBinaryAPDU(short offset, int le) {
       byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
       byte p2 = (byte) (offset & 0x000000FF);
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, p1,
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, p1,
             p2, le);
       return apdu;
    }
 
-   Apdu createGetChallengeAPDU() {
+   CommandAPDU createGetChallengeAPDU() {
       byte p1 = (byte) 0x00;
       byte p2 = (byte) 0x00;
       int le = 8;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, p1,
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, p1,
             p2, le);
       return apdu;
    }
    
-   Apdu createInternalAuthenticateAPDU(byte[] rndIFD) {
+   CommandAPDU createInternalAuthenticateAPDU(byte[] rndIFD) {
       if (rndIFD == null || rndIFD.length != 8) {
          throw new IllegalArgumentException("rndIFD wrong length");
       }
@@ -174,7 +175,7 @@ public class PassportApduService implements CardService
       byte p2 = (byte)0x00;
       byte[] data = rndIFD;
       int le = 255; /* whatever... */
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816, ISO7816.INS_INTERNAL_AUTHENTICATE,
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_INTERNAL_AUTHENTICATE,
             p1, p2, data, le);
       return apdu;
    }
@@ -190,7 +191,7 @@ public class PassportApduService implements CardService
     *
     * @return the apdu to be sent to the card.
     */
-   Apdu createMutualAuthAPDU(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
+   CommandAPDU createMutualAuthAPDU(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
       if (rndIFD == null || rndIFD.length != 8) {
          throw new IllegalArgumentException("rndIFD wrong length");
@@ -241,7 +242,7 @@ public class PassportApduService implements CardService
       System.arraycopy(mactext, 0, data, 32, 8);
 
       int le = 40;
-      Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
+      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
             ISO7816.INS_EXTERNAL_AUTHENTICATE, p1, p2, data, le);
       return apdu;
    }
@@ -274,11 +275,11 @@ public class PassportApduService implements CardService
     */
    public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
          throws IOException {
-      Apdu capdu = createSelectFileAPDU(fid);
+      CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu);
+      byte[] rapdu = sendAPDU(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -286,11 +287,11 @@ public class PassportApduService implements CardService
 
    void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
          throws IOException {
-      Apdu capdu = createSelectFileAPDU(fid);
+      CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu);
+      byte[] rapdu = sendAPDU(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -325,11 +326,11 @@ public class PassportApduService implements CardService
     */
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws IOException {
-      Apdu capdu = createReadBinaryAPDU(offset, le);
+      CommandAPDU capdu = createReadBinaryAPDU(offset, le);
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu);
+      byte[] rapdu = sendAPDU(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -344,10 +345,8 @@ public class PassportApduService implements CardService
     * @return a byte array of length 8 containing the challenge
     */
    public byte[] sendGetChallenge() {
-      byte[] rapdu = sendAPDU(createGetChallengeAPDU());
-      byte[] result = new byte[rapdu.length - 2];
-      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-      return result;
+      ResponseAPDU rapdu = sendAPDU(createGetChallengeAPDU());
+      return rapdu.getData();
    }
 
    /**
@@ -370,11 +369,11 @@ public class PassportApduService implements CardService
     * @return the response from the passport (status word removed)
     */
    public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
-      Apdu capdu = createInternalAuthenticateAPDU(rndIFD);
+      CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu);
+      byte[] rapdu = sendAPDU(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -402,7 +401,7 @@ public class PassportApduService implements CardService
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
       byte[] rapdu = sendAPDU(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
-            kMac));
+            kMac)).getBuffer();
 
       if (rapdu.length != 42) {
          throw new IllegalStateException("Response wrong length: "

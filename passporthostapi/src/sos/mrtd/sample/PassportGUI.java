@@ -36,7 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import sos.mrtd.PassportApduService;
-import sos.smartcards.APDUIOService;
+import sos.smartcards.CREFService;
 import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.JPCSCService;
 import sos.smartcards.MustangCardService;
@@ -79,7 +79,7 @@ public class PassportGUI extends JPanel
          if (arg != null && arg.length > 0 && 
                (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
             if(arg[0].equals("apduio")) {
-               service = new PassportApduService(new APDUIOService());
+               service = new PassportApduService(new CREFService());
             } else {
                service = new PassportApduService(new JCOPEmulatorService());
             }

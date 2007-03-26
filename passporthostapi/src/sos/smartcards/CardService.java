@@ -24,31 +24,30 @@ package sos.smartcards;
 
 /**
  * Service type for communicating with a smart card.
- *
+ * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
  * @version $Revision$
  */
 public interface CardService
 {
    /**
-    * Gives a list of terminals (card accepting devices) accessible by
-    * this service.
-    *
+    * Gives a list of terminals (card accepting devices) accessible by this
+    * service.
+    * 
     * @return a list of terminal names
     */
    String[] getTerminals();
-   
+
    /**
     * Adds a listener.
-    *
+    * 
     * @param l the listener to add
     */
    void addAPDUListener(APDUListener l);
 
    /**
     * Removes the listener <code>l</code>, if present.
-    *
+    * 
     * @param l the listener to remove
     */
    void removeAPDUListener(APDUListener l);
@@ -64,19 +63,17 @@ public interface CardService
     * @param id some identifier (typically the name of a card terminal)
     */
    void open(String id);
-   
+
    /**
     * Sends an apdu to the card.
-    *
+    * 
     * @param capdu the command apdu to send.
-    *
     * @return the response from the card, including the status word.
     */
-   byte[] sendAPDU(Apdu capdu);
+   ResponseAPDU sendAPDU(CommandAPDU capdu);
 
    /**
     * Closes the session with the card.
     */
    void close();
 }
-

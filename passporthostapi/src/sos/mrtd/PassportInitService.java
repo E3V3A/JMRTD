@@ -36,7 +36,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
 
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
@@ -95,11 +95,11 @@ public class PassportInitService extends PassportApduService {
      * @param data bytes of APDU
      * @return a PUT_DATA apdu.
      */
-    public Apdu createPutDataApdu(byte p1, byte p2, byte[] data) {
+    public CommandAPDU createPutDataApdu(byte p1, byte p2, byte[] data) {
         byte cla = 0;
         byte ins = INS_PUT_DATA;
 
-        return new Apdu(cla, ins, p1, p2, data);
+        return new CommandAPDU(cla, ins, p1, p2, data);
     }
 
     /***
@@ -112,12 +112,12 @@ public class PassportInitService extends PassportApduService {
      */
     public byte[] putData(SecureMessagingWrapper wrapper, byte p1, byte p2,
             byte[] data) {
-        Apdu apdu = createPutDataApdu(p1, p2, data);
+        CommandAPDU apdu = createPutDataApdu(p1, p2, data);
 
         if (wrapper != null) {
             apdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(apdu);
+        byte[] rapdu = sendAPDU(apdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -184,14 +184,14 @@ public class PassportInitService extends PassportApduService {
      * @param length of the new file.
      * @return a CREATE_FILE APDU.
      */
-    public Apdu createCreateFileAPDU(short fid, short length) {
+    public CommandAPDU createCreateFileAPDU(short fid, short length) {
         byte p1 = (byte) 0x00;
         byte p2 = (byte) 0x00;
         int le = 0;
         byte[] data = { 0x63, 4, (byte) ((length >>> 8) & 0xff),
                 (byte) (length & 0xff), (byte) ((fid >>> 8) & 0xff),
                 (byte) (fid & 0xff) };
-        Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
+        CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
                              ISO7816.INS_CREATE_FILE,
                              p1,
                              p2,
@@ -211,11 +211,11 @@ public class PassportInitService extends PassportApduService {
      */
     public byte[] sendCreateFile(SecureMessagingWrapper wrapper, short fid,
             short length) {
-        Apdu capdu = createCreateFileAPDU(fid, length);
+        CommandAPDU capdu = createCreateFileAPDU(fid, length);
         if (wrapper != null) {
             capdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(capdu);
+        byte[] rapdu = sendAPDU(capdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -224,10 +224,10 @@ public class PassportInitService extends PassportApduService {
         return result;
     }
 
-    public Apdu createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
+    public CommandAPDU createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
         byte p1 = (byte) ((offset >>> 8) & 0xff);
         byte p2 = (byte) (offset & 0xff);
-        Apdu apdu = new Apdu(ISO7816.CLA_ISO7816,
+        CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
                              ISO7816.INS_UPDATE_BINARY,
                              p1,
                              p2,
@@ -239,11 +239,11 @@ public class PassportInitService extends PassportApduService {
 
     public byte[] sendUpdateBinary(SecureMessagingWrapper wrapper,
             short offset, int data_len, byte[] data) throws IOException {
-        Apdu capdu = createUpdateBinaryAPDU(offset, data_len, data);
+        CommandAPDU capdu = createUpdateBinaryAPDU(offset, data_len, data);
         if (wrapper != null) {
             capdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(capdu);
+        byte[] rapdu = sendAPDU(capdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -263,7 +263,7 @@ public class PassportInitService extends PassportApduService {
     private int getPlainDataMaxLength(SecureMessagingWrapper wrapper) {
         int maxWithoutSM = 0xff;
         byte[] dummyData = new byte[maxWithoutSM];
-        Apdu dummy = new Apdu((byte)0, (byte)0, (byte)0, (byte)0, dummyData);
+        CommandAPDU dummy = new CommandAPDU((byte)0, (byte)0, (byte)0, (byte)0, dummyData);
         byte[] wrappedApdu = wrapper.wrap(dummy.getCommandApduBuffer());
         int x = wrappedApdu.length - dummy.getCommandApduBuffer().length;
         int lowestMod8 = ((maxWithoutSM - x) / 8) * 8; 
@@ -290,7 +290,7 @@ public class PassportInitService extends PassportApduService {
         }
     }
 
-    public Apdu createMRZApdu(byte[] docNr, byte[] dob, byte[] doe) {
+    public CommandAPDU createMRZApdu(byte[] docNr, byte[] dob, byte[] doe) {
         byte cla = 0;
         byte ins = INS_SET_DOCNR_DOB_DOE;
         byte p1 = 0;
@@ -306,7 +306,7 @@ public class PassportInitService extends PassportApduService {
         data_p += dob.length;
         System.arraycopy(doe, (short) 0, data, data_p, doe.length);
 
-        return new Apdu(cla, ins, p1, p2, data);
+        return new CommandAPDU(cla, ins, p1, p2, data);
     }
 
     public void putMRZ(byte[] docNr, byte[] dob, byte[] doe) 
@@ -321,7 +321,7 @@ public class PassportInitService extends PassportApduService {
     }
     
     public void writeMRZ(byte[] docNr, byte[] dob, byte[] doe) {
-        Apdu capdu = createMRZApdu(docNr, dob, doe);
+        CommandAPDU capdu = createMRZApdu(docNr, dob, doe);
         sendAPDU(capdu);
     }
 

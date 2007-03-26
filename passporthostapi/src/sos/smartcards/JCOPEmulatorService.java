@@ -29,64 +29,66 @@ import com.ibm.jc.terminal.RemoteJCTerminal;
  * JCOPEmulatorService
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
- * 
  * @version $Revision$
  */
-public class JCOPEmulatorService extends AbstractCardService {
-   
-    private static final String TERMINAL_NAME = "JCOP emulator";
-    private static final String[] TERMINALS = { TERMINAL_NAME };
-	private RemoteJCTerminal terminal;
-	
-	public void open() {
-		try {
-			terminal = new RemoteJCTerminal();
-			terminal.init("localhost:8050");
-			terminal.open();
-			terminal.waitForCard(1000);
-		} catch(JCException jce){
-			throw new IllegalStateException("Couldn't establish connection to the emulator: "+terminal.getErrorMessage());
-		}
-		state = SESSION_STARTED_STATE;
-	    notifyStartedAPDUSession();
-	}
-    
-    public String[] getTerminals() {
-       return TERMINALS;
-    }
-    
-    public void open(String id) {
-       if (!id.equals(TERMINAL_NAME)) {
-          throw new IllegalArgumentException("Unknown terminal " + id);
-       }
-       open();
-    }
-    
-	public byte[] sendAPDU(Apdu apdu) {
-		if(terminal == null) {
-			throw new IllegalStateException("Terminal session seems not to be opened.");			
-		}
-		try {
-			byte[] buffer = apdu.getCommandApduBuffer();
-			buffer = terminal.send(0, buffer, 0, buffer.length);
-			apdu.setResponseApduBuffer(buffer);
-			notifyExchangedAPDU(apdu);
-			return buffer;
-		} catch(JCException jce){
-			throw new IllegalStateException("Send APDU failed: " + terminal.getErrorMessage());			
-		}
-	}
+public class JCOPEmulatorService extends AbstractCardService
+{
 
-	public void close() {
-		try {
-			terminal.close();
-			terminal = null;
-		} catch(JCException jce){
-			throw new IllegalStateException("Couldn't establish connection to the emulator: "
-                  + terminal.getErrorMessage());
-		}
-        state = SESSION_STOPPED_STATE;
-        notifyStoppedAPDUSession();	
-	}
+   private static final String TERMINAL_NAME = "JCOP emulator";
+   private static final String[] TERMINALS = { TERMINAL_NAME };
+   private RemoteJCTerminal terminal;
+
+   public void open() {
+      try {
+         terminal = new RemoteJCTerminal();
+         terminal.init("localhost:8050");
+         terminal.open();
+         terminal.waitForCard(1000);
+      } catch (JCException jce) {
+         throw new IllegalStateException(
+               "Couldn't establish connection to the emulator: "
+                     + terminal.getErrorMessage());
+      }
+      state = SESSION_STARTED_STATE;
+      notifyStartedAPDUSession();
+   }
+
+   public String[] getTerminals() {
+      return TERMINALS;
+   }
+
+   public void open(String id) {
+      if (!id.equals(TERMINAL_NAME)) { throw new IllegalArgumentException(
+            "Unknown terminal " + id); }
+      open();
+   }
+
+   public ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+      if (terminal == null) { throw new IllegalStateException(
+            "Terminal session seems not to be opened."); }
+      try {
+         byte[] capdu = ourCommandAPDU.getCommandApduBuffer();
+         byte[] rapdu = terminal.send(0, capdu, 0, capdu.length);
+         ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
+         notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
+         return ourResponseAPDU;
+      } catch (JCException jce) {
+         throw new IllegalStateException("Send APDU failed: "
+               + terminal.getErrorMessage());
+      }
+   }
+
+   public void close() {
+      try {
+         terminal.close();
+         terminal = null;
+      } catch (JCException jce) {
+         throw new IllegalStateException(
+               "Couldn't establish connection to the emulator: "
+                     + terminal.getErrorMessage());
+      }
+      state = SESSION_STOPPED_STATE;
+      notifyStoppedAPDUSession();
+   }
 
 }

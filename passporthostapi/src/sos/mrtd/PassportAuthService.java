@@ -35,8 +35,9 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
 import sos.smartcards.APDUListener;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
+import sos.smartcards.ResponseAPDU;
 
 /**
  * Card service for using the BAC and AA protocols on the passport.
@@ -241,7 +242,7 @@ public class PassportAuthService implements CardService, AuthListener
       }
   }
    
-   public byte[] sendAPDU(Apdu capdu) {
+   public ResponseAPDU sendAPDU(CommandAPDU capdu) {
       return service.sendAPDU(capdu);
    }
 

@@ -44,7 +44,6 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
-import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;

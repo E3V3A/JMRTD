@@ -40,7 +40,7 @@ import javax.swing.border.EtchedBorder;
 
 import sos.gui.HexArrayField;
 import sos.gui.HexField;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
 
 /**
@@ -120,14 +120,14 @@ public class CommandAPDUField extends JPanel {
     *
     * @return The <code>CommandAPDU</code> entered in this field.
     */
-   public Apdu getAPDU() {
-      Apdu apdu = new Apdu(claTF.getValue()[0],
+   public CommandAPDU getAPDU() {
+      CommandAPDU apdu = new CommandAPDU(claTF.getValue()[0],
             insTF.getValue()[0], p1TF.getValue()[0], p2TF.getValue()[0],
             cdataTF.getValue(), leTF.getValue()[0] & 0x000000FF);
       return apdu;
    }
 
-   public void setAPDU(Apdu apdu) {
+   public void setAPDU(CommandAPDU apdu) {
       byte[] buffer = apdu.getCommandApduBuffer();
       claTF.setValue(buffer[ISO7816.OFFSET_CLA]);
       insTF.setValue(buffer[ISO7816.OFFSET_INS]);

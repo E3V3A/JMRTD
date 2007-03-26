@@ -39,7 +39,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.Apdu;
+import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
 import sos.util.Hex;
 
@@ -124,10 +124,10 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
    public void run() {
       try {
          sendButton.setEnabled(false);
-         Apdu bApdu = bApduField.getAPDU();
+         CommandAPDU bApdu = bApduField.getAPDU();
          boolean isWrapped = smCheckBox.isSelected();
          if (enabledCheckBox.isSelected()) {
-            Apdu eApdu = eApduField.getAPDU();
+            CommandAPDU eApdu = eApduField.getAPDU();
             send(bApdu, eApdu, isWrapped);
          } else {
             send(bApdu, isWrapped);
@@ -137,11 +137,11 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       }
    }
 
-   private void send(Apdu apdu, boolean isWrapped) {
+   private void send(CommandAPDU apdu, boolean isWrapped) {
       if (isWrapped) {
          apdu.wrapWith(wrapper);
       }
-      byte[] rapdu = service.sendAPDU(apdu);
+      byte[] rapdu = service.sendAPDU(apdu).getBuffer();
       if (isWrapped) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
          System.out.println("PLAIN: C: "
@@ -151,7 +151,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       }
    }
    
-   private void send(Apdu bApdu, Apdu eApdu, boolean isWrapped) {
+   private void send(CommandAPDU bApdu, CommandAPDU eApdu, boolean isWrapped) {
       /* FIXME: Need to take care of le? */
       byte[] a = bApdu.getCommandApduBuffer();
       byte[] b = eApdu.getCommandApduBuffer();
@@ -168,7 +168,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
    private void sendAll(byte[] a, byte[] b, byte[] c, int offset,
          boolean isWrapped) {
       int n = a.length - offset;
-      Apdu apdu;
+      CommandAPDU apdu;
       if (n > 0) {
          int min = Math.min(a[offset] & 0x000000FF, b[offset] & 0x000000FF);
          int max = Math.max(a[offset] & 0x000000FF, b[offset] & 0x000000FF);
@@ -178,7 +178,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
             sendAll(a, b, c, offset + 1, isWrapped);
          }
       } else {
-         apdu = new Apdu(c);
+         apdu = new CommandAPDU(c);
          send(apdu, isWrapped);
       }
    }

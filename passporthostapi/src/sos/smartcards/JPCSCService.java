@@ -27,12 +27,11 @@ import com.linuxnet.jpcsc.Context;
 import com.linuxnet.jpcsc.PCSC;
 
 /**
- * Simple card service implementation for sending APDUs to a terminal.
- * This is somewhat similar to OCF's PassthruCardService (but using JPCSC).
- *
+ * Simple card service implementation for sending APDUs to a terminal. This is
+ * somewhat similar to OCF's PassthruCardService (but using JPCSC).
+ * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
  * @version $Revision$
  */
 public class JPCSCService extends AbstractCardService
@@ -48,17 +47,16 @@ public class JPCSCService extends AbstractCardService
       context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
       card = null;
    }
-   
+
    public String[] getTerminals() {
       context = new Context();
       context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
       card = null;
       return context.ListReaders();
    }
-   
+
    /**
-    * Opens a session with the card.
-    * Selects a reader. Connects to the card.
+    * Opens a session with the card. Selects a reader. Connects to the card.
     */
    public void open() {
       context = new Context();
@@ -83,9 +81,7 @@ public class JPCSCService extends AbstractCardService
             }
          }
       }
-      if (card == null) {
-         throw new IllegalStateException("No readers found!");
-      }
+      if (card == null) { throw new IllegalStateException("No readers found!"); }
       card.BeginTransaction();
       state = SESSION_STARTED_STATE;
       notifyStartedAPDUSession();
@@ -95,41 +91,39 @@ public class JPCSCService extends AbstractCardService
       context = new Context();
       context.EstablishContext(PCSC.SCOPE_GLOBAL, null, null);
       card = context.Connect(reader);
-      if (card == null) {
-         throw new IllegalStateException("Reader \"" + reader + "\" not found!");
-      }
+      if (card == null) { throw new IllegalStateException("Reader \"" + reader
+            + "\" not found!"); }
       card.BeginTransaction();
       state = SESSION_STARTED_STATE;
       notifyStartedAPDUSession();
    }
 
    /**
-    * Sends and apdu to the card.
-    * Notifies any interested listeners.
-    *
-    * @param apdu initially contains the command apdu to send,
-    *             afterwards contains the response apdu sent by the card.
-    *
+    * Sends and apdu to the card. Notifies any interested listeners.
+    * 
+    * @param ourCommandAPDU initially contains the command apdu to send,
+    *           afterwards contains the response apdu sent by the card.
     * @return the response from the card, including the status word.
     */
-   /*@ requires state == SESSION_STARTED_STATE;
-     @ ensures state == SESSION_STARTED_STATE;
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STARTED_STATE;
     */
-   public byte[] sendAPDU(Apdu apdu) {
-      byte[] capdu = apdu.getCommandApduBuffer();
+   public ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+      byte[] capdu = ourCommandAPDU.getCommandApduBuffer();
       byte[] rapdu = card.Transmit(capdu, 0, capdu.length);
-      apdu.setResponseApduBuffer(rapdu);   
-      notifyExchangedAPDU(apdu);
-      return rapdu;
+      ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
+      notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
+      return ourResponseAPDU;
    }
 
    /**
-    * Closes the session with the card.
-    * Disconnects from the card and reader.
+    * Closes the session with the card. Disconnects from the card and reader.
     * Notifies any interested listeners.
     */
-   /*@ requires state == SESSION_STARTED_STATE;
-     @ ensures state == SESSION_STOPPED_STATE;
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STOPPED_STATE;
     */
    public void close() {
       try {
@@ -144,4 +138,3 @@ public class JPCSCService extends AbstractCardService
       }
    }
 }
-

@@ -24,10 +24,9 @@ package sos.smartcards;
 
 /**
  * Constants interface for ISO 7816 (and friends).
- *
+ * 
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- *
  * @version $Revision$
  */
 public interface ISO7816
@@ -109,4 +108,3 @@ public interface ISO7816
    static final short SW_CARD_TERMINATED = (short)0x6FFF;
    static final short SW_NO_ERROR = (short)0x9000;
 }
-
