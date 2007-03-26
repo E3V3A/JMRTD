@@ -242,8 +242,8 @@ public class PassportAuthService implements CardService, AuthListener
       }
   }
    
-   public ResponseAPDU sendAPDU(CommandAPDU capdu) {
-      return service.sendAPDU(capdu);
+   public ResponseAPDU transmit(CommandAPDU capdu) {
+      return service.transmit(capdu);
    }
 
    public void close() {

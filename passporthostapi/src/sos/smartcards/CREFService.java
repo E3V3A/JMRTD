@@ -94,7 +94,7 @@ public class CREFService extends AbstractCardService
     * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
     * SESSION_STARTED_STATE;
     */
-   public ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
          com.sun.javacard.apduio.Apdu theirApdu = new com.sun.javacard.apduio.Apdu();
          setCommand(ourCommandAPDU, theirApdu);

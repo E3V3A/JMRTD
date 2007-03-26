@@ -115,8 +115,8 @@ public class PassportApduService implements CardService
       sendSelectApplet(APPLET_AID);
    }
    
-   public ResponseAPDU sendAPDU(CommandAPDU capdu) {
-      return service.sendAPDU(capdu);
+   public ResponseAPDU transmit(CommandAPDU capdu) {
+      return service.transmit(capdu);
    }
 
    public void close() {
@@ -253,7 +253,7 @@ public class PassportApduService implements CardService
     * @param aid the applet to select
     */
    void sendSelectApplet(byte[] aid) {
-      sendAPDU(createSelectAppletAPDU(aid));
+      transmit(createSelectAppletAPDU(aid));
    }
 
    /**
@@ -279,7 +279,7 @@ public class PassportApduService implements CardService
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu).getBuffer();
+      byte[] rapdu = transmit(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -291,7 +291,7 @@ public class PassportApduService implements CardService
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu).getBuffer();
+      byte[] rapdu = transmit(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -330,7 +330,7 @@ public class PassportApduService implements CardService
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu).getBuffer();
+      byte[] rapdu = transmit(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -345,7 +345,7 @@ public class PassportApduService implements CardService
     * @return a byte array of length 8 containing the challenge
     */
    public byte[] sendGetChallenge() {
-      ResponseAPDU rapdu = sendAPDU(createGetChallengeAPDU());
+      ResponseAPDU rapdu = transmit(createGetChallengeAPDU());
       return rapdu.getData();
    }
 
@@ -373,7 +373,7 @@ public class PassportApduService implements CardService
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu).getBuffer();
+      byte[] rapdu = transmit(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }
@@ -400,7 +400,7 @@ public class PassportApduService implements CardService
     */
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
-      byte[] rapdu = sendAPDU(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
+      byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
             kMac)).getBuffer();
 
       if (rapdu.length != 42) {

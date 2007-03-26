@@ -63,7 +63,7 @@ public class JCOPEmulatorService extends AbstractCardService
       open();
    }
 
-   public ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       if (terminal == null) { throw new IllegalStateException(
             "Terminal session seems not to be opened."); }
       try {

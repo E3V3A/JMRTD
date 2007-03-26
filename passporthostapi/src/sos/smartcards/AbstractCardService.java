@@ -41,7 +41,9 @@ public abstract class AbstractCardService implements CardService
    static protected final int SESSION_STARTED_STATE = 1;
 
    /** The apduListeners. */
-   private Collection apduListeners;
+   private Collection<APDUListener> apduListeners;
+   
+   private Collection<SessionListener> sessionListeners;
 
    /*
     * @ invariant state == SESSION_STOPPED_STATE || state ==
@@ -53,7 +55,8 @@ public abstract class AbstractCardService implements CardService
     * Creates a new service.
     */
    public AbstractCardService() {
-      apduListeners = new ArrayList();
+      apduListeners = new ArrayList<APDUListener>();
+      sessionListeners = new ArrayList<SessionListener>();
       state = SESSION_STOPPED_STATE;
    }
 
@@ -64,6 +67,10 @@ public abstract class AbstractCardService implements CardService
     */
    public void addAPDUListener(APDUListener l) {
       apduListeners.add(l);
+   }
+   
+   public void addSessionListener(SessionListener l) {
+      sessionListeners.add(l);
    }
 
    /**
@@ -95,7 +102,7 @@ public abstract class AbstractCardService implements CardService
     * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
     * SESSION_STARTED_STATE;
     */
-   public abstract ResponseAPDU sendAPDU(CommandAPDU apdu);
+   public abstract ResponseAPDU transmit(CommandAPDU apdu);
 
    /**
     * Closes the session with the card. Disconnects from the card and reader.
@@ -111,10 +118,8 @@ public abstract class AbstractCardService implements CardService
     * Notifes listeners about initialization of APDU session.
     */
    protected void notifyStartedAPDUSession() {
-      Iterator it = apduListeners.iterator();
-      while (it.hasNext()) {
-         APDUListener listener = (APDUListener)it.next();
-         listener.startedAPDUSession();
+      for (SessionListener listener: sessionListeners) {
+         listener.sessionStarted(this);
       }
    }
 
@@ -124,9 +129,7 @@ public abstract class AbstractCardService implements CardService
     * @param capdu APDU event
     */
    protected void notifyExchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-      Iterator it = apduListeners.iterator();
-      while (it.hasNext()) {
-         APDUListener listener = (APDUListener)it.next();
+      for (APDUListener listener: apduListeners) {
          listener.exchangedAPDU(capdu, rapdu);
       }
    }
@@ -135,10 +138,8 @@ public abstract class AbstractCardService implements CardService
     * Notifes listeners about termination of APDU session.
     */
    protected void notifyStoppedAPDUSession() {
-      Iterator it = apduListeners.iterator();
-      while (it.hasNext()) {
-         APDUListener listener = (APDUListener)it.next();
-         listener.stoppedAPDUSession();
+      for (SessionListener listener: sessionListeners) {
+         listener.sessionStopped(this);
       }
    }
 }

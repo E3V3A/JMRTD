@@ -32,9 +32,11 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import sos.smartcards.APDUListener;
+import sos.smartcards.CardService;
 import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
 import sos.smartcards.ResponseAPDU;
+import sos.smartcards.SessionListener;
 import sos.util.Hex;
 
 /**
@@ -44,7 +46,7 @@ import sos.util.Hex;
  *
  * @version $Revision$
  */
-public class APDULogPanel extends JPanel implements APDUListener, ISO7816
+public class APDULogPanel extends JPanel implements SessionListener, APDUListener, ISO7816
 {
    private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
@@ -66,7 +68,7 @@ public class APDULogPanel extends JPanel implements APDUListener, ISO7816
    /**
     * Called by the service to write a <i>started</i> entry to the log.
     */
-   public void startedAPDUSession() {
+   public void sessionStarted(CardService service) {
       append("Session started on ");
       append((new Date()).toString());
       append("\n\n");
@@ -75,7 +77,7 @@ public class APDULogPanel extends JPanel implements APDUListener, ISO7816
    /**
     * Called by the service to write a <i>stopped</i> entry to the log.
     */
-   public void stoppedAPDUSession() {
+   public void sessionStopped(CardService service) {
       append("Session stopped on ");
       append((new Date()).toString());
       append("\n\n");

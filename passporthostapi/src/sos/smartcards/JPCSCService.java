@@ -109,7 +109,7 @@ public class JPCSCService extends AbstractCardService
     * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
     * SESSION_STARTED_STATE;
     */
-   public ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       byte[] capdu = ourCommandAPDU.getCommandApduBuffer();
       byte[] rapdu = card.Transmit(capdu, 0, capdu.length);
       ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);

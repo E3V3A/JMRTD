@@ -120,15 +120,14 @@ public class MustangCardService extends AbstractCardService
     * @param capdu the command apdu to send.
     * @return the response from the card, including the status word.
     */
-   public sos.smartcards.ResponseAPDU sendAPDU(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
          byte[] cbuf = ourCommandAPDU.getCommandApduBuffer();
-         javax.smartcardio.CommandAPDU capdu = new javax.smartcardio.CommandAPDU(
-               cbuf);
-         javax.smartcardio.ResponseAPDU theirResponseAPDU = channel
-               .transmit(capdu);
-         ResponseAPDU ourResponseAPDU = new ResponseAPDU(theirResponseAPDU
-               .getData(), (short)theirResponseAPDU.getSW());
+         javax.smartcardio.CommandAPDU theirCommandAPDU =
+            new javax.smartcardio.CommandAPDU(cbuf);
+         javax.smartcardio.ResponseAPDU theirResponseAPDU = channel.transmit(theirCommandAPDU);
+         ResponseAPDU ourResponseAPDU =
+            new ResponseAPDU(theirResponseAPDU.getData(), (short)theirResponseAPDU.getSW());
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
          return ourResponseAPDU;
       } catch (CardException ce) {

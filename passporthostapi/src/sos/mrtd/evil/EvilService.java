@@ -114,7 +114,7 @@ public class EvilService extends PassportAuthService
       if (wrapper != null) {
          capdu.wrapWith(wrapper);
       }
-      byte[] rapdu = sendAPDU(capdu).getBuffer();
+      byte[] rapdu = transmit(capdu).getBuffer();
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
       }

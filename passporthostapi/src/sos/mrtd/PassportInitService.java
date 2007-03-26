@@ -117,7 +117,7 @@ public class PassportInitService extends PassportApduService {
         if (wrapper != null) {
             apdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(apdu).getBuffer();
+        byte[] rapdu = transmit(apdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -215,7 +215,7 @@ public class PassportInitService extends PassportApduService {
         if (wrapper != null) {
             capdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(capdu).getBuffer();
+        byte[] rapdu = transmit(capdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -243,7 +243,7 @@ public class PassportInitService extends PassportApduService {
         if (wrapper != null) {
             capdu.wrapWith(wrapper);
         }
-        byte[] rapdu = sendAPDU(capdu).getBuffer();
+        byte[] rapdu = transmit(capdu).getBuffer();
         if (wrapper != null) {
             rapdu = wrapper.unwrap(rapdu, rapdu.length);
         }
@@ -322,7 +322,7 @@ public class PassportInitService extends PassportApduService {
     
     public void writeMRZ(byte[] docNr, byte[] dob, byte[] doe) {
         CommandAPDU capdu = createMRZApdu(docNr, dob, doe);
-        sendAPDU(capdu);
+        transmit(capdu);
     }
 
     public InputStream createDG15(PublicKey key) throws IOException {

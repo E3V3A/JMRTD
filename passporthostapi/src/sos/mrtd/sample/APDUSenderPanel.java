@@ -141,7 +141,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       if (isWrapped) {
          apdu.wrapWith(wrapper);
       }
-      byte[] rapdu = service.sendAPDU(apdu).getBuffer();
+      byte[] rapdu = service.transmit(apdu).getBuffer();
       if (isWrapped) {
          rapdu = wrapper.unwrap(rapdu, rapdu.length);
          System.out.println("PLAIN: C: "

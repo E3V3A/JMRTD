@@ -34,20 +34,10 @@ import java.util.EventListener;
 public interface APDUListener extends EventListener
 {
    /**
-    * Is called after a session (re)starts.
-    */
-   void startedAPDUSession();
-
-   /**
     * Is called after an apdu was exchanged.
     * 
     * @param capdu a Command apdu
     * @param rapdu the Response apdu
     */
    void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu);
-
-   /**
-    * Is called after a session stops.
-    */
-   void stoppedAPDUSession();
 }
