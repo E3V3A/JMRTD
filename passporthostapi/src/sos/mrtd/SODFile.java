@@ -148,7 +148,7 @@ public class SODFile extends PassportFile
       signedData = new SignedData(s2);
 */
    
-   private SignerInfo getSignerInfo() throws IOException {
+   private SignerInfo getSignerInfo()  {
       ASN1Set signerInfos = signedData.getSignerInfos();
       if (signerInfos.size() > 1) {
          System.out.println("DEBUG: WARNING: found " + signerInfos.size() + " signerInfos");
@@ -194,7 +194,7 @@ public class SODFile extends PassportFile
     * signed using the country signing certificate.
     * 
     * @see #getEContent()
-    * @see #getESignature()
+    * @see #getSignature()
     *
     * @return the document signing certificate
     */
@@ -222,13 +222,12 @@ public class SODFile extends PassportFile
     * Section 5.4 for details.
     *
     * @see #getDocSigningCertificate()
-    * @see #getESignature()
+    * @see #getSignature()
     * 
     * @return the contents of the security object over which the
     *         signature is to be computed
-    * @throws Exception when something is wrong
     */
-   public byte[] getEContent() throws IOException {
+   private byte[] getEContent() {
       SignerInfo signerInfo = getSignerInfo();
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
       if (signedAttributes.size() == 0) {
@@ -241,17 +240,35 @@ public class SODFile extends PassportFile
          return signedAttributes.getDEREncoded();
       }
    }
+   
+   /**
+    * Gets the contents of the security object over which the
+    * signature is to be computed. 
+    * 
+    * See RFC 3369, Cryptographic Message Syntax, August 2002,
+    * Section 5.4 for details.
+    *
+    * @see #getDocSigningCertificate()
+    * @see #getSignature()
+    * 
+    * @return the contents of the security object over which the
+    *         signature is to be computed
+    */
+   public byte[] getSignedAttributes() {
+      SignerInfo signerInfo = getSignerInfo();
+      ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
+      return signedAttributes.getDEREncoded();
+   }
 
    /**
     * Gets the stored signature of the security object.
     * 
     * @see #getDocSigningCertificate()
-    * @see #getEContent()
     * 
     * @return the signature
     * @throws IOException when something goes wrong
     */
-   public byte[] getESignature() throws IOException {
+   public byte[] getSignature() throws IOException {
       SignerInfo signerInfo = getSignerInfo();
       return signerInfo.getEncryptedDigest().getOctets();
    }
@@ -283,6 +300,6 @@ public class SODFile extends PassportFile
       Signature sig = Signature.getInstance(sigAlg);
       sig.initVerify(docSigningCert);
       sig.update(getEContent());
-      return sig.verify(getESignature());
+      return sig.verify(getSignature());
    }
 }
