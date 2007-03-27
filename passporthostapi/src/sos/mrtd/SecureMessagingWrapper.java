@@ -35,6 +35,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import sos.smartcards.APDUWrapper;
 import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
 import sos.util.ASN1Utils;
@@ -49,7 +50,7 @@ import sos.util.Hex;
  *
  * @version $Revision$
  */
-public class SecureMessagingWrapper implements CommandAPDU.Wrapper
+public class SecureMessagingWrapper implements APDUWrapper
 {
    private static final IvParameterSpec ZERO_IV_PARAM_SPEC =
       new IvParameterSpec(new byte[8]);

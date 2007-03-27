@@ -34,7 +34,6 @@ import sos.util.Hex;
  */
 public class CommandAPDU implements ISO7816
 {
-
    private byte[] commandApduBuffer;
 
    /**
@@ -129,26 +128,7 @@ public class CommandAPDU implements ISO7816
       setCommandApduBuffer(buffer);
    }
 
-   /**
-    * Wrapper interface for command Apdu wrapping.
-    * 
-    * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
-    * @author Martijn Oostdijk (martijno@cs.ru.nl)
-    * @version $Revision$
-    */
-   public interface Wrapper
-   {
 
-      /**
-       * Wraps the command apdu buffer.
-       * 
-       * @param buffer should contain a header (length 4), an explicit lc (0 if
-       *           no cdata), the cdata (of length lc), and an explicit le (0 if
-       *           not specified).
-       * @return wrapped apdu buffer
-       */
-      public byte[] wrap(byte[] buffer);
-   }
 
    /**
     * Wraps this apdu using wrapper implementation <code>w</code>.
@@ -156,7 +136,7 @@ public class CommandAPDU implements ISO7816
     * @param w the wrapper to use
     * @return the wrapped apdu buffer
     */
-   public byte[] wrapWith(Wrapper w) {
+   public byte[] wrapWith(APDUWrapper w) {
       byte[] wrappedApdu = w.wrap(commandApduBuffer);
       setCommandApduBuffer(wrappedApdu);
       return wrappedApdu;
