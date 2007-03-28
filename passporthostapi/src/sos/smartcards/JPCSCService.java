@@ -110,7 +110,7 @@ public class JPCSCService extends AbstractCardService
     * SESSION_STARTED_STATE;
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
-      byte[] capdu = ourCommandAPDU.getCommandApduBuffer();
+      byte[] capdu = ourCommandAPDU.getBuffer();
       byte[] rapdu = card.Transmit(capdu, 0, capdu.length);
       ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
       notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);

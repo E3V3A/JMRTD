@@ -38,6 +38,7 @@ import javax.crypto.spec.IvParameterSpec;
 import sos.smartcards.APDUWrapper;
 import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
+import sos.smartcards.ResponseAPDU;
 import sos.util.ASN1Utils;
 import sos.util.Hex;
 
@@ -116,11 +117,12 @@ public class SecureMessagingWrapper implements APDUWrapper
     *
     * @return length of the command apdu after wrapping.
     */
-   public byte[] wrap(byte[] capdu) {
+   public CommandAPDU wrap(CommandAPDU commandAPDU) {
       try {
+         byte[] capdu = commandAPDU.getBuffer();
          byte[] wrappedApdu = wrapCommandAPDU(capdu, capdu.length);
          // System.arraycopy(wrappedApdu, 0, capdu, 0, wrappedApdu.length);
-         return wrappedApdu;
+         return new CommandAPDU(wrappedApdu);
       } catch (GeneralSecurityException gse) {
          gse.printStackTrace();
          throw new IllegalStateException(gse.toString());
@@ -138,9 +140,10 @@ public class SecureMessagingWrapper implements APDUWrapper
     *
     * @return a new byte array containing the unwrapped buffer.
     */
-   public byte[] unwrap(byte[] rapdu, int len) {
+   public ResponseAPDU unwrap(ResponseAPDU responseAPDU, int len) {
       try {
-         return unwrapResponseAPDU(rapdu, len);
+         byte[] rapdu = responseAPDU.getBuffer();
+         return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
       } catch (GeneralSecurityException gse) {
          gse.printStackTrace();
          throw new IllegalStateException(gse.toString());

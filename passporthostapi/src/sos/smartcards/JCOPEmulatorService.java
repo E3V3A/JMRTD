@@ -67,7 +67,7 @@ public class JCOPEmulatorService extends AbstractCardService
       if (terminal == null) { throw new IllegalStateException(
             "Terminal session seems not to be opened."); }
       try {
-         byte[] capdu = ourCommandAPDU.getCommandApduBuffer();
+         byte[] capdu = ourCommandAPDU.getBuffer();
          byte[] rapdu = terminal.send(0, capdu, 0, capdu.length);
          ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);

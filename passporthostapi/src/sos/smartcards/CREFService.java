@@ -133,7 +133,7 @@ public class CREFService extends AbstractCardService
 
    private void setCommand(CommandAPDU ourApdu,
          com.sun.javacard.apduio.Apdu theirApdu) {
-      byte[] buffer = ourApdu.getCommandApduBuffer();
+      byte[] buffer = ourApdu.getBuffer();
       int len = buffer.length;
 
       /* Set lc and le... */

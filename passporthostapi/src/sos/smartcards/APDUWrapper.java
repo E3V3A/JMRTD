@@ -18,7 +18,7 @@ public interface APDUWrapper
     *           not specified).
     * @return wrapped apdu buffer
     */
-   byte[] wrap(byte[] buffer);
+   CommandAPDU wrap(CommandAPDU capdu);
    
-   byte[] unwrap(byte[] buffer, int len);
+   ResponseAPDU unwrap(ResponseAPDU rapdu, int len);
 }

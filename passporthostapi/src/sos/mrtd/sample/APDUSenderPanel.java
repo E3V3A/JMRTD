@@ -41,6 +41,7 @@ import sos.mrtd.BACEvent;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
+import sos.smartcards.ResponseAPDU;
 import sos.util.Hex;
 
 /**
@@ -137,24 +138,24 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       }
    }
 
-   private void send(CommandAPDU apdu, boolean isWrapped) {
+   private void send(CommandAPDU capdu, boolean isWrapped) {
       if (isWrapped) {
-         apdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = service.transmit(apdu).getBuffer();
+      ResponseAPDU rapdu = service.transmit(capdu);
       if (isWrapped) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
          System.out.println("PLAIN: C: "
-               + Hex.bytesToHexString(apdu.getCommandApduBuffer())
+               + Hex.bytesToHexString(capdu.getBuffer())
                + ", R: "
-               + Hex.bytesToHexString(rapdu));
+               + Hex.bytesToHexString(rapdu.getBuffer()));
       }
    }
    
    private void send(CommandAPDU bApdu, CommandAPDU eApdu, boolean isWrapped) {
       /* FIXME: Need to take care of le? */
-      byte[] a = bApdu.getCommandApduBuffer();
-      byte[] b = eApdu.getCommandApduBuffer();
+      byte[] a = bApdu.getBuffer();
+      byte[] b = eApdu.getBuffer();
       if (a.length != b.length) {
          throw new IllegalArgumentException("APDUs should have same length");
       }

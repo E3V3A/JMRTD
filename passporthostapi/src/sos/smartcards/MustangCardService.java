@@ -122,7 +122,7 @@ public class MustangCardService extends AbstractCardService
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
-         byte[] cbuf = ourCommandAPDU.getCommandApduBuffer();
+         byte[] cbuf = ourCommandAPDU.getBuffer();
          javax.smartcardio.CommandAPDU theirCommandAPDU =
             new javax.smartcardio.CommandAPDU(cbuf);
          javax.smartcardio.ResponseAPDU theirResponseAPDU = channel.transmit(theirCommandAPDU);

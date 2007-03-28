@@ -40,6 +40,7 @@ import sos.smartcards.CommandAPDU;
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
+import sos.smartcards.ResponseAPDU;
 import sos.util.ASN1Utils;
 
 /**
@@ -112,18 +113,16 @@ public class PassportInitService extends PassportApduService {
      */
     public byte[] putData(SecureMessagingWrapper wrapper, byte p1, byte p2,
             byte[] data) {
-        CommandAPDU apdu = createPutDataApdu(p1, p2, data);
+        CommandAPDU capdu = createPutDataApdu(p1, p2, data);
 
         if (wrapper != null) {
-            apdu.wrapWith(wrapper);
+            capdu = wrapper.wrap(capdu);
         }
-        byte[] rapdu = transmit(apdu).getBuffer();
+        ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
         }
-        byte[] result = new byte[rapdu.length - 2];
-        System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-        return result;
+        return rapdu.getData();
     }
 
     /***
@@ -213,15 +212,13 @@ public class PassportInitService extends PassportApduService {
             short length) {
         CommandAPDU capdu = createCreateFileAPDU(fid, length);
         if (wrapper != null) {
-            capdu.wrapWith(wrapper);
+            capdu = wrapper.wrap(capdu);
         }
-        byte[] rapdu = transmit(capdu).getBuffer();
+        ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
         }
-        byte[] result = new byte[rapdu.length - 2];
-        System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-        return result;
+        return rapdu.getData();
     }
 
     public CommandAPDU createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
@@ -241,15 +238,13 @@ public class PassportInitService extends PassportApduService {
             short offset, int data_len, byte[] data) throws IOException {
         CommandAPDU capdu = createUpdateBinaryAPDU(offset, data_len, data);
         if (wrapper != null) {
-            capdu.wrapWith(wrapper);
+            capdu = wrapper.wrap(capdu);
         }
-        byte[] rapdu = transmit(capdu).getBuffer();
+        ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
         }
-        byte[] result = new byte[rapdu.length - 2];
-        System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-        return result;
+        return rapdu.getData();
 
     }
 
@@ -264,8 +259,8 @@ public class PassportInitService extends PassportApduService {
         int maxWithoutSM = 0xff;
         byte[] dummyData = new byte[maxWithoutSM];
         CommandAPDU dummy = new CommandAPDU((byte)0, (byte)0, (byte)0, (byte)0, dummyData);
-        byte[] wrappedApdu = wrapper.wrap(dummy.getCommandApduBuffer());
-        int x = wrappedApdu.length - dummy.getCommandApduBuffer().length;
+        byte[] wrappedApdu = wrapper.wrap(dummy).getBuffer();
+        int x = wrappedApdu.length - dummy.getBuffer().length;
         int lowestMod8 = ((maxWithoutSM - x) / 8) * 8; 
         return lowestMod8;
     }

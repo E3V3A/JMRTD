@@ -125,7 +125,7 @@ public class CommandAPDU implements ISO7816
     * @param buffer command APDU buffer
     */
    public CommandAPDU(byte[] buffer) {
-      setCommandApduBuffer(buffer);
+      setBuffer(buffer);
    }
 
 
@@ -136,22 +136,22 @@ public class CommandAPDU implements ISO7816
     * @param w the wrapper to use
     * @return the wrapped apdu buffer
     */
-   public byte[] wrapWith(APDUWrapper w) {
-      byte[] wrappedApdu = w.wrap(commandApduBuffer);
-      setCommandApduBuffer(wrappedApdu);
-      return wrappedApdu;
-   }
+//   public byte[] wrapWith(APDUWrapper w) {
+//      byte[] wrappedApdu = w.wrap(commandApduBuffer);
+//      setCommandApduBuffer(wrappedApdu);
+//      return wrappedApdu;
+//   }
 
    /**
     * Construct a byte array representation of this command apdu.
     * 
     * @return command apdu buffer of this apdu
     */
-   public byte[] getCommandApduBuffer() {
+   public byte[] getBuffer() {
       return commandApduBuffer;
    }
 
-   private void setCommandApduBuffer(byte[] buffer) {
+   private void setBuffer(byte[] buffer) {
       if (!(4 <= buffer.length && buffer.length <= 256)) { throw new IllegalArgumentException(
             "Wrong length!"); }
       commandApduBuffer = buffer;

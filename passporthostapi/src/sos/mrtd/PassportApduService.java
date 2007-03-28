@@ -277,11 +277,11 @@ public class PassportApduService implements CardService
          throws IOException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
-         capdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = transmit(capdu).getBuffer();
+      ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
       }
    }
 
@@ -289,11 +289,11 @@ public class PassportApduService implements CardService
          throws IOException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
-         capdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = transmit(capdu).getBuffer();
+      ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
       }
    }
 
@@ -328,15 +328,13 @@ public class PassportApduService implements CardService
          int le) throws IOException {
       CommandAPDU capdu = createReadBinaryAPDU(offset, le);
       if (wrapper != null) {
-         capdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = transmit(capdu).getBuffer();
+      ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
       }
-      byte[] result = new byte[rapdu.length - 2];
-      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-      return result;
+      return rapdu.getData();
    }
 
    /**
@@ -371,15 +369,13 @@ public class PassportApduService implements CardService
    public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
       CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
       if (wrapper != null) {
-         capdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = transmit(capdu).getBuffer();
+      ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
       }
-      byte[] result = new byte[rapdu.length - 2];
-      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-      return result;
+      return rapdu.getData();
    }
    
    /**

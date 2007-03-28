@@ -128,7 +128,7 @@ public class CommandAPDUField extends JPanel {
    }
 
    public void setAPDU(CommandAPDU apdu) {
-      byte[] buffer = apdu.getCommandApduBuffer();
+      byte[] buffer = apdu.getBuffer();
       claTF.setValue(buffer[ISO7816.OFFSET_CLA]);
       insTF.setValue(buffer[ISO7816.OFFSET_INS]);
       p1TF.setValue(buffer[ISO7816.OFFSET_P1]);

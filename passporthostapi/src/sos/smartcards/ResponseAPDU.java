@@ -78,8 +78,13 @@ public class ResponseAPDU implements ISO7816
     * @param buffer a response apdu buffer which includes status word
     */
    public void setBuffer(byte[] buffer) {
-      if (!(2 <= buffer.length && buffer.length <= 256)) { throw new IllegalArgumentException(
-            "Wrong length! (length == " + buffer.length + ")"); }
+      if (!(2 <= buffer.length && buffer.length <= 256)) {
+         throw new IllegalArgumentException(
+            "Wrong length! (length == " + buffer.length + ")");
+      }
+      if (this.data == null || this.data.length != (buffer.length - 2)) {
+         this.data = new byte[buffer.length - 2];
+      }
       System.arraycopy(buffer, 0, this.data, 0, buffer.length - 2);
       this.sw = (short)(((buffer[buffer.length - 2] & 0xFF) << 8) | (buffer[buffer.length - 1] & 0xFF));
    }

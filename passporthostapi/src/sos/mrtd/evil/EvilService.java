@@ -30,6 +30,7 @@ import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
+import sos.smartcards.ResponseAPDU;
 
 /**
  * Card service for using the filesystem on the passport.
@@ -112,14 +113,12 @@ public class EvilService extends PassportAuthService
    public byte[] sendEvilCommand(SecureMessagingWrapper wrapper, byte ins, byte p1, byte p2, int le, byte[] payload) throws IOException {
       CommandAPDU capdu = createEvilAPDU(ins, p1, p2, le, payload);
       if (wrapper != null) {
-         capdu.wrapWith(wrapper);
+         capdu = wrapper.wrap(capdu);
       }
-      byte[] rapdu = transmit(capdu).getBuffer();
+      ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
       }
-      byte[] result = new byte[rapdu.length - 2];
-      System.arraycopy(rapdu, 0, result, 0, rapdu.length - 2);
-      return result;
+      return rapdu.getData();
    }
 }
