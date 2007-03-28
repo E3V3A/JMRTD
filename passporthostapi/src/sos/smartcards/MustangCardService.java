@@ -28,6 +28,8 @@ import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
 /**
@@ -122,12 +124,7 @@ public class MustangCardService extends AbstractCardService
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
-         byte[] cbuf = ourCommandAPDU.getBuffer();
-         javax.smartcardio.CommandAPDU theirCommandAPDU =
-            new javax.smartcardio.CommandAPDU(cbuf);
-         javax.smartcardio.ResponseAPDU theirResponseAPDU = channel.transmit(theirCommandAPDU);
-         ResponseAPDU ourResponseAPDU =
-            new ResponseAPDU(theirResponseAPDU.getData(), (short)theirResponseAPDU.getSW());
+         ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
          return ourResponseAPDU;
       } catch (CardException ce) {

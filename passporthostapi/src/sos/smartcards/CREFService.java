@@ -27,6 +27,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 import com.sun.javacard.apduio.CadClientInterface;
 import com.sun.javacard.apduio.CadDevice;
 import com.sun.javacard.apduio.CadTransportException;
@@ -133,7 +136,7 @@ public class CREFService extends AbstractCardService
 
    private void setCommand(CommandAPDU ourApdu,
          com.sun.javacard.apduio.Apdu theirApdu) {
-      byte[] buffer = ourApdu.getBuffer();
+      byte[] buffer = ourApdu.getBytes();
       int len = buffer.length;
 
       /* Set lc and le... */

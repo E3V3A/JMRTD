@@ -36,11 +36,12 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
 
-import sos.smartcards.CommandAPDU;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
-import sos.smartcards.ResponseAPDU;
 import sos.util.ASN1Utils;
 
 /**
@@ -120,7 +121,7 @@ public class PassportInitService extends PassportApduService {
         }
         ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
         }
         return rapdu.getData();
     }
@@ -216,21 +217,23 @@ public class PassportInitService extends PassportApduService {
         }
         ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
         }
         return rapdu.getData();
     }
 
+    // FIXME: MO added the arraycopy here...
     public CommandAPDU createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
         byte p1 = (byte) ((offset >>> 8) & 0xff);
         byte p2 = (byte) (offset & 0xff);
-        CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+        byte[] chunk = new byte[data_len];
+        System.arraycopy(data, offset, chunk, 0, data_len);
+        CommandAPDU apdu = 
+           new CommandAPDU(ISO7816.CLA_ISO7816,
                              ISO7816.INS_UPDATE_BINARY,
                              p1,
                              p2,
-                             data_len,
-                             data,
-                             -1);
+                             chunk);
         return apdu;
     }
 
@@ -242,7 +245,7 @@ public class PassportInitService extends PassportApduService {
         }
         ResponseAPDU rapdu = transmit(capdu);
         if (wrapper != null) {
-            rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
         }
         return rapdu.getData();
 
@@ -259,8 +262,8 @@ public class PassportInitService extends PassportApduService {
         int maxWithoutSM = 0xff;
         byte[] dummyData = new byte[maxWithoutSM];
         CommandAPDU dummy = new CommandAPDU((byte)0, (byte)0, (byte)0, (byte)0, dummyData);
-        byte[] wrappedApdu = wrapper.wrap(dummy).getBuffer();
-        int x = wrappedApdu.length - dummy.getBuffer().length;
+        byte[] wrappedApdu = wrapper.wrap(dummy).getBytes();
+        int x = wrappedApdu.length - dummy.getBytes().length;
         int lowestMod8 = ((maxWithoutSM - x) / 8) * 8; 
         return lowestMod8;
     }

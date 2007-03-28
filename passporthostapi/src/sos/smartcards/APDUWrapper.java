@@ -1,6 +1,9 @@
 /* $Id: $ */
 package sos.smartcards;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 /**
  * Wrapper interface for command Apdu wrapping.
  * 

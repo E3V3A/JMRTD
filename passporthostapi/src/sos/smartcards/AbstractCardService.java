@@ -24,7 +24,9 @@ package sos.smartcards;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
+
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 
 /**
  * Default abstract service. Provides some functionality for observing apdu

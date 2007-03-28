@@ -29,12 +29,12 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUListener;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
 import sos.smartcards.ISO7816;
-import sos.smartcards.ResponseAPDU;
 
 /**
  * Low level card service for sending apdus to the passport.
@@ -146,7 +146,7 @@ public class PassportApduService implements CardService
 
    CommandAPDU createSelectFileAPDU(byte[] fid) {
       CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
-            (byte) 0x02, (byte) 0x0c, fid, 0);
+            (byte) 0x02, (byte) 0x0c, fid, 256);
       return apdu;
    }
 
@@ -281,7 +281,7 @@ public class PassportApduService implements CardService
       }
       ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
    }
 
@@ -293,7 +293,7 @@ public class PassportApduService implements CardService
       }
       ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
    }
 
@@ -332,7 +332,7 @@ public class PassportApduService implements CardService
       }
       ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
       return rapdu.getData();
    }
@@ -373,7 +373,7 @@ public class PassportApduService implements CardService
       }
       ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
       return rapdu.getData();
    }
@@ -397,7 +397,7 @@ public class PassportApduService implements CardService
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
       byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
-            kMac)).getBuffer();
+            kMac)).getBytes();
 
       if (rapdu.length != 42) {
          throw new IllegalStateException("Response wrong length: "

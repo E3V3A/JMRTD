@@ -27,6 +27,8 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -39,9 +41,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
-import sos.smartcards.ResponseAPDU;
 import sos.util.Hex;
 
 /**
@@ -144,18 +144,18 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       }
       ResponseAPDU rapdu = service.transmit(capdu);
       if (isWrapped) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
          System.out.println("PLAIN: C: "
-               + Hex.bytesToHexString(capdu.getBuffer())
+               + Hex.bytesToHexString(capdu.getBytes())
                + ", R: "
-               + Hex.bytesToHexString(rapdu.getBuffer()));
+               + Hex.bytesToHexString(rapdu.getBytes()));
       }
    }
    
    private void send(CommandAPDU bApdu, CommandAPDU eApdu, boolean isWrapped) {
       /* FIXME: Need to take care of le? */
-      byte[] a = bApdu.getBuffer();
-      byte[] b = eApdu.getBuffer();
+      byte[] a = bApdu.getBytes();
+      byte[] b = eApdu.getBytes();
       if (a.length != b.length) {
          throw new IllegalArgumentException("APDUs should have same length");
       }

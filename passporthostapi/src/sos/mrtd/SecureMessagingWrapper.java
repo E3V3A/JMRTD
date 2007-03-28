@@ -34,11 +34,11 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUWrapper;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
-import sos.smartcards.ResponseAPDU;
 import sos.util.ASN1Utils;
 import sos.util.Hex;
 
@@ -119,7 +119,7 @@ public class SecureMessagingWrapper implements APDUWrapper
     */
    public CommandAPDU wrap(CommandAPDU commandAPDU) {
       try {
-         byte[] capdu = commandAPDU.getBuffer();
+         byte[] capdu = commandAPDU.getBytes();
          byte[] wrappedApdu = wrapCommandAPDU(capdu, capdu.length);
          // System.arraycopy(wrappedApdu, 0, capdu, 0, wrappedApdu.length);
          return new CommandAPDU(wrappedApdu);
@@ -142,7 +142,7 @@ public class SecureMessagingWrapper implements APDUWrapper
     */
    public ResponseAPDU unwrap(ResponseAPDU responseAPDU, int len) {
       try {
-         byte[] rapdu = responseAPDU.getBuffer();
+         byte[] rapdu = responseAPDU.getBytes();
          return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
       } catch (GeneralSecurityException gse) {
          gse.printStackTrace();

@@ -38,7 +38,6 @@ import javax.swing.JTabbedPane;
 import sos.mrtd.PassportApduService;
 import sos.smartcards.CREFService;
 import sos.smartcards.JCOPEmulatorService;
-import sos.smartcards.JPCSCService;
 import sos.smartcards.MustangCardService;
 
 /**
@@ -91,11 +90,7 @@ public class PassportGUI extends JPanel
             try {
                service = new PassportApduService(new MustangCardService());
             } catch (NoClassDefFoundError ncdfe) {
-               try {
-                  service = new PassportApduService(new JPCSCService());
-               } catch (NoClassDefFoundError ncdfee) {
                   throw new IllegalStateException("Could not connect to PC/SC layer");
-               }
             }
 
             // Loes' passport

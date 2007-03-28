@@ -27,15 +27,15 @@ import java.awt.Font;
 import java.util.Arrays;
 import java.util.Date;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.CardService;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
-import sos.smartcards.ResponseAPDU;
 import sos.smartcards.SessionListener;
 import sos.util.Hex;
 
@@ -95,7 +95,7 @@ public class APDULogPanel extends JPanel implements SessionListener, APDUListene
       append(" C: "); append(capdu.toString());
       append("\n");
       append(whiteSpace(count)); append(" ");
-      append(" R: "); append(Hex.toHexString(rapdu.getBuffer()));
+      append(" R: "); append(Hex.toHexString(rapdu.getBytes()));
       append(" ("); append(swToString((short)rapdu.getSW())); append(")");
       append("\n\n");
       count++;

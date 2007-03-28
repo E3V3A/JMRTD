@@ -26,11 +26,12 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
-import sos.smartcards.ResponseAPDU;
 
 /**
  * Card service for using the filesystem on the passport.
@@ -117,7 +118,7 @@ public class EvilService extends PassportAuthService
       }
       ResponseAPDU rapdu = transmit(capdu);
       if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBuffer().length);
+         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
       return rapdu.getData();
    }

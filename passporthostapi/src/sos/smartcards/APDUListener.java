@@ -24,6 +24,9 @@ package sos.smartcards;
 
 import java.util.EventListener;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 /**
  * Specifies an event handler type to react to apdu events.
  * 

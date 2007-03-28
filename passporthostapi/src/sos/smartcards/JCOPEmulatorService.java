@@ -22,6 +22,9 @@
 
 package sos.smartcards;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 import com.ibm.jc.JCException;
 import com.ibm.jc.terminal.RemoteJCTerminal;
 
@@ -67,7 +70,7 @@ public class JCOPEmulatorService extends AbstractCardService
       if (terminal == null) { throw new IllegalStateException(
             "Terminal session seems not to be opened."); }
       try {
-         byte[] capdu = ourCommandAPDU.getBuffer();
+         byte[] capdu = ourCommandAPDU.getBytes();
          byte[] rapdu = terminal.send(0, capdu, 0, capdu.length);
          ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);

@@ -22,6 +22,9 @@
 
 package sos.smartcards;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+
 /**
  * Service type for communicating with a smart card.
  * 

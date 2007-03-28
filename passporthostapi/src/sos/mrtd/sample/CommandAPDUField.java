@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
+import javax.smartcardio.CommandAPDU;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
@@ -40,7 +41,6 @@ import javax.swing.border.EtchedBorder;
 
 import sos.gui.HexArrayField;
 import sos.gui.HexField;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.ISO7816;
 
 /**
@@ -128,16 +128,16 @@ public class CommandAPDUField extends JPanel {
    }
 
    public void setAPDU(CommandAPDU apdu) {
-      byte[] buffer = apdu.getBuffer();
+      byte[] buffer = apdu.getBytes();
       claTF.setValue(buffer[ISO7816.OFFSET_CLA]);
       insTF.setValue(buffer[ISO7816.OFFSET_INS]);
       p1TF.setValue(buffer[ISO7816.OFFSET_P1]);
       p2TF.setValue(buffer[ISO7816.OFFSET_P2]);
-      int lc = apdu.getLc();
+      int lc = apdu.getNc();
       byte[] data = new byte[lc];
       System.arraycopy(buffer, ISO7816.OFFSET_CDATA, data, 0, lc);
       cdataTF.setValue(data);
-      int le = apdu.getLe();
+      int le = apdu.getNe();
       if (le > 0) {
          leTF.setValue(le);
          leCheckBox.setSelected(true);

@@ -33,11 +33,11 @@ import java.util.Iterator;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUListener;
-import sos.smartcards.CommandAPDU;
 import sos.smartcards.CardService;
-import sos.smartcards.ResponseAPDU;
 
 /**
  * Card service for using the BAC and AA protocols on the passport.
