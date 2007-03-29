@@ -38,7 +38,7 @@ import javax.swing.JTabbedPane;
 import sos.mrtd.PassportApduService;
 import sos.smartcards.CREFService;
 import sos.smartcards.JCOPEmulatorService;
-import sos.smartcards.MustangCardService;
+import sos.smartcards.PCSCCardService;
 
 /**
  * Simple graphical application for experimenting with the passport
@@ -88,7 +88,7 @@ public class PassportGUI extends JPanel
             DEFAULT_DATE_OF_EXPIRY = "940623";
          } else {
             try {
-               service = new PassportApduService(new MustangCardService());
+               service = new PassportApduService(new PCSCCardService());
             } catch (NoClassDefFoundError ncdfe) {
                   throw new IllegalStateException("Could not connect to PC/SC layer");
             }

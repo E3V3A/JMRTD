@@ -34,7 +34,7 @@ import javax.smartcardio.TerminalFactory;
 
 /**
  * Card service implementation for sending APDUs to a terminal using the
- * <code>javax.smartcardio.*</code> classes in Java SDK 6.0 (aka "Mustang").
+ * <code>javax.smartcardio.*</code> classes in Java SDK 6.0.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision$
