@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: MustangCardService.java 214 2007-03-28 20:53:43Z martijno $
  */
 
 package sos.smartcards;
@@ -37,7 +37,7 @@ import javax.smartcardio.TerminalFactory;
  * <code>javax.smartcardio.*</code> classes in Java SDK 6.0 (aka "Mustang").
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- * @version $Revision$
+ * @version $Revision: 214 $
  */
 public class MustangCardService extends AbstractCardService
 {
