@@ -299,11 +299,9 @@ public class SODFile extends PassportFile
     */
    public boolean checkDocSignature(Certificate docSigningCert)
    throws GeneralSecurityException, IOException {
-      String sigAlg = null;
+      String sigAlg = "SHA256";
       if (docSigningCert instanceof X509Certificate) {
          sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
-      } else {
-         sigAlg = "SHA256";
       }
       Signature sig = Signature.getInstance(sigAlg);
       sig.initVerify(docSigningCert);
