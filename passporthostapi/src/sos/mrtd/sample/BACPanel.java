@@ -63,6 +63,8 @@ public class BACPanel extends JPanel
    private byte[] kICC, kIFD, rndICC, rndIFD;
    private long ssc;
    
+   private BACDatabase bacDB = new BACDatabase();
+   
    private PassportApduService apduService;
    private PassportAuthService authService;
    
@@ -121,9 +123,9 @@ public class BACPanel extends JPanel
          docNrTF = new JTextField(9);
          dateOfBirthTF = new JTextField(6);
          dateOfExpiryTF = new JTextField(6);
-         docNrTF.setText(PassportGUI.DEFAULT_DOC_NR);
-         dateOfBirthTF.setText(PassportGUI.DEFAULT_DATE_OF_BIRTH);
-         dateOfExpiryTF.setText(PassportGUI.DEFAULT_DATE_OF_EXPIRY);
+         docNrTF.setText(bacDB.getDocumentNumber());
+         dateOfBirthTF.setText(bacDB.getDateOfBirth());
+         dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
          kEncTF = new HexField(24);
          kEncTF.setEditable(false);
          kMacTF = new HexField(24);
@@ -156,6 +158,7 @@ public class BACPanel extends JPanel
             kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
             kEncTF.setValue(kEnc.getEncoded());
             kMacTF.setValue(kMac.getEncoded());
+            bacDB.addEntry(docNrTF.getText(), dateOfBirthTF.getText(), dateOfExpiryTF.getText());
          } catch (Exception e) {
             kEnc = null;
             kMac = null;
@@ -243,5 +246,5 @@ public class BACPanel extends JPanel
             e.printStackTrace();
          }
       }
-   } 
+   }
 }

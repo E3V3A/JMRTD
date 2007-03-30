@@ -22,6 +22,8 @@
 
 package sos.mrtd;
 
+import java.security.cert.*;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -200,7 +202,7 @@ public class SODFile extends PassportFile
     */
    public Certificate getDocSigningCertificate()
    throws IOException, Exception {
-      X509Certificate cert = null;
+      byte[] certSpec = null;
       ASN1Set certs = signedData.getCertificates();
       if (certs.size() != 1) {
          System.out.println("DEBUG: WARNING: found "
@@ -209,8 +211,14 @@ public class SODFile extends PassportFile
       for (int i = 0; i < certs.size(); i++) {
          X509CertificateStructure e =
             new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
-          cert = new X509CertificateObject(e);
+          certSpec = new X509CertificateObject(e).getEncoded();
       }
+      
+      /* NOTE: we could have just returned that X509CertificateObject here,
+       * but by reconstructing it we hide the fact that we're using BC here.
+       */
+      CertificateFactory factory = CertificateFactory.getInstance("X.509");
+      Certificate cert = factory.generateCertificate(new ByteArrayInputStream(certSpec));
       return cert;
    }
 

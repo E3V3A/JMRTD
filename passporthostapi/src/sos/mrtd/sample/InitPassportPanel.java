@@ -130,9 +130,6 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         docNrField = new JTextField(9);
         dobField = new JTextField(6);
         doeField = new JTextField(6);
-        docNrField.setText(PassportGUI.DEFAULT_DOC_NR);
-        dobField.setText(PassportGUI.DEFAULT_DATE_OF_BIRTH);
-        doeField.setText(PassportGUI.DEFAULT_DATE_OF_EXPIRY);
         lockButton = new JButton("Lock");
         lockButton.addActionListener(this);
 

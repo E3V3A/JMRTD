@@ -26,6 +26,8 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.security.Provider;
 import java.security.Security;
 
@@ -50,11 +52,6 @@ import sos.smartcards.PCSCCardService;
  */
 public class PassportGUI extends JPanel
 {
-   /* Default passport... */
-   public static String DEFAULT_DOC_NR;
-   public static String DEFAULT_DATE_OF_BIRTH;
-   public static String DEFAULT_DATE_OF_EXPIRY;
-
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
@@ -82,30 +79,11 @@ public class PassportGUI extends JPanel
             } else {
                service = new PassportApduService(new JCOPEmulatorService());
             }
-            // sample data from icao
-            DEFAULT_DOC_NR = "L898902C<";
-            DEFAULT_DATE_OF_BIRTH = "690806";
-            DEFAULT_DATE_OF_EXPIRY = "940623";
          } else {
             try {
                service = new PassportApduService(new PCSCCardService());
             } catch (NoClassDefFoundError ncdfe) {
                   throw new IllegalStateException("Could not connect to PC/SC layer");
-            }
-
-            // Loes' passport
-            // DEFAULT_DOC_NR = "XX0001328";
-            // DEFAULT_DATE_OF_BIRTH = "711019";
-            // DEFAULT_DATE_OF_EXPIRY = "111001";
-            // Elize Ludwina Jantine Noordhofs passport
-            if (isDemo) {
-               DEFAULT_DOC_NR = "";
-               DEFAULT_DATE_OF_BIRTH = "";
-               DEFAULT_DATE_OF_EXPIRY = "";
-            } else {
-               DEFAULT_DOC_NR = "XX0005050";
-               DEFAULT_DATE_OF_BIRTH = "820411";
-               DEFAULT_DATE_OF_EXPIRY = "110720";
             }
          }
 
@@ -198,4 +176,3 @@ public class PassportGUI extends JPanel
       }
    }
 }
-

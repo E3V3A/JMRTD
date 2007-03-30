@@ -27,14 +27,21 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -190,24 +197,33 @@ public class PAPanel extends JPanel implements AuthListener
                   System.out.println("DEBUG: select file canceled...");
                   return;
                }
+               
+               /* DEBUG... */
+               System.out.println("WRITING...");
+               FileOutputStream out = new FileOutputStream("docsigning_cert.der");
+               out.write(docSigningCert.getEncoded());
+               out.flush();
+               out.close();
+               
+               System.out.println("DEBUG: docSigningCert.getClass() == " + docSigningCert.getClass());
+             
+               System.out.println(((X509Certificate)docSigningCert).getType());
+               
                File file = chooser.getSelectedFile();
-               FileInputStream fileIn = new FileInputStream(file);
                CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-               Collection coll = certFactory.generateCertificates(fileIn);
-               for (Iterator it = coll.iterator(); it.hasNext();) {
-                  countrySigningCert = (Certificate)it.next();
-                  area.append("Contents of: ");
-                  area.append("\"" + file.toString() + "\"\n");
-                  area.append(countrySigningCert.toString() + "\n");
-                  PublicKey pubkey = countrySigningCert.getPublicKey();
+               Certificate countrySigningCert = certFactory.generateCertificate(new FileInputStream(file));
+               area.append("Contents of: ");
+               area.append("\"" + file.toString() + "\"\n");
+               area.append(countrySigningCert.toString() + "\n");
+               try {
                   area.append(" --> Signature check: ");
-                  try {
-                     docSigningCert.verify(pubkey);
-                     area.append("DS cert was signed with CS key!\n");
-                  } catch (Exception se) {
-                     area.append("failed \n" + se.toString() + "\n");
-                     se.printStackTrace();
-                  }
+                  docSigningCert.verify(countrySigningCert.getPublicKey());
+                  area.append("check: true");
+               } catch (Exception e) {
+                  area.append("check: false - " + e.toString());
+                  e.printStackTrace();
+               } finally {
+                  area.append("\n");
                }
             } catch (Exception e) {
                e.printStackTrace();
