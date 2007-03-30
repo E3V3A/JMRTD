@@ -44,7 +44,6 @@ import com.sun.javacard.apduio.CadTransportException;
  */
 public class CREFService extends AbstractCardService
 {
-
    private static final String TERMINAL_NAME = "CREF simulator";
    private static final String[] TERMINALS = { TERMINAL_NAME };
 
