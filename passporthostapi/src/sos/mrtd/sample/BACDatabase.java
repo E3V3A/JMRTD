@@ -64,17 +64,7 @@ public class BACDatabase {
    
    private void read() {
       try {
-         read(new FileReader(BACDB_FILE));
-      } catch (FileNotFoundException fnfe) {
-         /* NOTE: no problem... */
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
-   }
-
-   private void read(Reader in) {
-      try {
-         BufferedReader d = new BufferedReader(in);
+         BufferedReader d = new BufferedReader(new FileReader(BACDB_FILE));
          while (true) {
             String line = d.readLine();
             if (line == null) { break; }
@@ -82,7 +72,6 @@ public class BACDatabase {
          }
       } catch (FileNotFoundException fnfe) {
          /* NOTE: no problem... */
-         return;
       } catch (Exception e) {
          e.printStackTrace();
       }
@@ -96,17 +85,8 @@ public class BACDatabase {
             }
             BACDB_FILE.createNewFile();
          }
-         write(new FileWriter(BACDB_FILE));
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
-   }
-   
-   private void write(Writer out) {
-      try {
-         PrintWriter d = new PrintWriter(out);
+         PrintWriter d = new PrintWriter(new FileWriter(BACDB_FILE));
          for (String entry: entries) {
-            System.out.println("DEBUG: writing " + entry);
             d.println(entry);
          }
          d.flush();
