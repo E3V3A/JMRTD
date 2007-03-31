@@ -64,10 +64,7 @@ public class PassportGUI extends JPanel implements CardTerminalListener
 
    private PassportApduService service;
    private APDULogPanel log;
-   private JButton openButton, closeButton;
    private JComboBox terminalsComboBox;
-
-   private boolean isDemo;
 
    /**
     * Constructs the GUI.
@@ -78,21 +75,7 @@ public class PassportGUI extends JPanel implements CardTerminalListener
       super(new BorderLayout());
       try {
          Security.insertProviderAt(PROVIDER, 4);
-         isDemo = (arg != null && arg.length > 0 && (arg[0].equals("demo")));
-         if (arg != null && arg.length > 0 && 
-               (arg[0].equals("apduio") || arg[0].equals("jcop"))) {
-            if(arg[0].equals("apduio")) {
-               service = new PassportApduService(new CREFService());
-            } else {
-               service = new PassportApduService(new JCOPEmulatorService());
-            }
-         } else {
-            try {
-               service = new PassportApduService(new PCSCCardService());
-            } catch (NoClassDefFoundError ncdfe) {
-                  throw new IllegalStateException("Could not connect to PC/SC layer");
-            }
-         }
+         service = new PassportApduService(new PCSCCardService());
 
          JPanel northPanel = new JPanel(new FlowLayout());
          terminalsComboBox = new JComboBox();
@@ -100,28 +83,8 @@ public class PassportGUI extends JPanel implements CardTerminalListener
          for (String terminal: terminals) {
             terminalsComboBox.addItem(terminal);
          }
-         openButton = new JButton("Open");
-         openButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-               String[] terminals = service.getTerminals();
-               String terminal = terminals[terminalsComboBox.getSelectedIndex()];
-               service.open(terminal);
-               openButton.setEnabled(false);
-               closeButton.setEnabled(true);
-            }
-         });
+ 
          northPanel.add(terminalsComboBox);
-         northPanel.add(openButton);
-         closeButton = new JButton("Close");
-         closeButton.setEnabled(false);
-         closeButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-               service.close();
-               closeButton.setEnabled(false);
-               openButton.setEnabled(true);
-            }
-         });
-         northPanel.add(closeButton);
          add(northPanel, BorderLayout.NORTH);
 
          log = new APDULogPanel();
@@ -129,36 +92,21 @@ public class PassportGUI extends JPanel implements CardTerminalListener
 
          JTabbedPane tabbedPane = new JTabbedPane();
          BACPanel bacPanel = new BACPanel(service);
-         APDUSenderPanel apduSenderPanel = new APDUSenderPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
          FacePanel facePanel = new FacePanel(service);
          PAPanel paPanel = new PAPanel(service);
          AAPanel aaPanel = new AAPanel(service);
-         EvilPanel evilPanel = new EvilPanel(service);
-         InitPassportPanel initPanel = new InitPassportPanel(service);
-         bacPanel.addAuthenticationListener(apduSenderPanel);
          bacPanel.addAuthenticationListener(ldsPanel);
          bacPanel.addAuthenticationListener(facePanel);
          bacPanel.addAuthenticationListener(paPanel);
          bacPanel.addAuthenticationListener(aaPanel);
-         bacPanel.addAuthenticationListener(initPanel);
          tabbedPane.addTab("BAC", bacPanel);
-         tabbedPane.addTab("APDU", apduSenderPanel);
          tabbedPane.addTab("LDS", ldsPanel);
          tabbedPane.addTab("Face", facePanel);
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);
-         tabbedPane.addTab("Init", initPanel);
-         tabbedPane.addTab("Evil", evilPanel);
-         if (isDemo) {
-            tabbedPane.setEnabledAt(1, false); // APDU
-            tabbedPane.setEnabledAt(2, false); // LDS
-            tabbedPane.setEnabledAt(6, false); // Init
-            tabbedPane.setEnabledAt(7, false); // Evil
-         }
          add(tabbedPane, BorderLayout.CENTER);
          service.addAPDUListener(log);
-         
          CardTerminalManager.addCardTerminalListener(this);
       } catch (Exception e) {
          e.printStackTrace();
@@ -190,16 +138,14 @@ public class PassportGUI extends JPanel implements CardTerminalListener
          String[] terminals = service.getTerminals();
          String terminal = terminals[terminalsComboBox.getSelectedIndex()];
          service.open(terminal);
-         openButton.setEnabled(false);
-         closeButton.setEnabled(true);
+         setEnabled(true);
       }
    }
 
    public void cardRemoved(CardTerminalEvent ce) {
       if (service != null) {
          service.close();
-         closeButton.setEnabled(false);
-         openButton.setEnabled(true);
+         setEnabled(false);
       }
    }
 }

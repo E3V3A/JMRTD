@@ -88,13 +88,9 @@ public class SODFile extends PassportFile
          new ASN1InputStream(new ByteArrayInputStream(object.getValueAsBytes()));
       DERSequence seq = (DERSequence)asn1in.readObject();
       DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
-      System.out.println("DEBUG: in SODFile<init>: objectIdentifier = " + objectIdentifier);
       
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       signedData = new SignedData(s2);
-
-      System.out.println("DEBUG: in SODFile<init>: seq = " + seq);
-      System.out.println("DEBUG: in SODFile<init>: s2 = " + s2);      
       
       /* If there's more in the inputstream, maybe throw exception? */
       Object nextObject = asn1in.readObject();
