@@ -14,8 +14,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 
 public class BACDatabase {
-
-        
+     
    private static final File BACDB_FILE =
       new File(PassportGUI.JMRTD_USER_DIR, "bacdb.txt");
 

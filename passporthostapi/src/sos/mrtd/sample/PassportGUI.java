@@ -24,26 +24,19 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.PrintWriter;
 import java.security.Provider;
 import java.security.Security;
 
-import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import sos.mrtd.PassportApduService;
-import sos.smartcards.CREFService;
 import sos.smartcards.CardTerminalEvent;
 import sos.smartcards.CardTerminalListener;
 import sos.smartcards.CardTerminalManager;
-import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.PCSCCardService;
 
 /**

@@ -34,7 +34,6 @@ import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -58,13 +57,11 @@ public class BACPanel extends JPanel
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-   private SecretKey kEnc, kMac;
+   private BACKeyPanel bacKeyPanel;
    private SecretKey ksEnc, ksMac;
    private byte[] kICC, kIFD, rndICC, rndIFD;
    private long ssc;
-   
-   private BACDatabase bacDB = new BACDatabase();
-   
+ 
    private PassportApduService apduService;
    private PassportAuthService authService;
    
@@ -73,7 +70,8 @@ public class BACPanel extends JPanel
       this.apduService = service;
       this.authService = new PassportAuthService(service);
       add(new ChallengePanel());
-      add(new MRZPanel());
+      bacKeyPanel = new BACKeyPanel();
+      add(bacKeyPanel);
       add(new MutualAuthPanel());
    }
    
@@ -110,64 +108,7 @@ public class BACPanel extends JPanel
          return rndICC;
       }
    }
-   
-   private class MRZPanel extends JPanel implements ActionListener {
 
-      private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
-      private HexField kEncTF, kMacTF;
-
-      public MRZPanel() {
-         super(new BorderLayout());
-         setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
-         JPanel top = new JPanel(new FlowLayout());
-         docNrTF = new JTextField(9);
-         dateOfBirthTF = new JTextField(6);
-         dateOfExpiryTF = new JTextField(6);
-         docNrTF.setText(bacDB.getDocumentNumber());
-         dateOfBirthTF.setText(bacDB.getDateOfBirth());
-         dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
-         kEncTF = new HexField(24);
-         kEncTF.setEditable(false);
-         kMacTF = new HexField(24);
-         kMacTF.setEditable(false);
-         top.add(new JLabel("Document number: "));
-         top.add(docNrTF);
-         top.add(new JLabel("Date of birth: "));
-         top.add(dateOfBirthTF);
-         top.add(new JLabel("Date of expiry: "));
-         top.add(dateOfExpiryTF);
-         JButton updateButton = new JButton("Derive Keys");
-         top.add(updateButton);
-         updateButton.addActionListener(this);
-         JPanel center = new JPanel(new FlowLayout());
-         JPanel bottom = new JPanel(new GridLayout(2, 2));
-         bottom.add(new JLabel("K.ENC: ", JLabel.RIGHT));
-         bottom.add(kEncTF);
-         bottom.add(new JLabel("K.MAC: ", JLabel.RIGHT));
-         bottom.add(kMacTF);
-         add(top, BorderLayout.NORTH);
-         add(center, BorderLayout.CENTER);
-         add(bottom, BorderLayout.SOUTH);
-      }
-
-      public void actionPerformed(ActionEvent ae) {
-         try {
-            byte[] keySeed = Util.computeKeySeed(docNrTF.getText(), dateOfBirthTF
-                  .getText(), dateOfExpiryTF.getText());
-            kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-            kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-            kEncTF.setValue(kEnc.getEncoded());
-            kMacTF.setValue(kMac.getEncoded());
-            bacDB.addEntry(docNrTF.getText(), dateOfBirthTF.getText(), dateOfExpiryTF.getText());
-         } catch (Exception e) {
-            kEnc = null;
-            kMac = null;
-            kEncTF.clearText();
-            kMacTF.clearText();
-         }
-      }
-   }
-   
    private class MutualAuthPanel extends JPanel implements ActionListener
    {
       private HexField challengeField, keyField;
@@ -180,10 +121,7 @@ public class BACPanel extends JPanel
                "Mutual Authenticate"));
          JPanel top = new JPanel(new FlowLayout());
          challengeField = new HexField(8);
-         // challengeField.setValue(Hex.hexStringToBytes("781723860C06C226"));
          keyField = new HexField(16);
-         //  keyField.setValue(Hex
-         //        .hexStringToBytes("0B795240CB7049B01C19B33E32804F0B"));
          JButton authButton = new JButton("Mutual Authenticate");
          authButton.addActionListener(this);
          top.add(new JLabel("RND.IFD: "));
@@ -224,7 +162,8 @@ public class BACPanel extends JPanel
             rndIFD = challengeField.getValue();
             kIFD = keyField.getValue();
             byte[] plaintext =
-               apduService.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
+               apduService.sendMutualAuth(rndIFD, rndICC, kIFD,
+                     bacKeyPanel.getKEnc(), bacKeyPanel.getKMac());
             plaintextField.setValue(plaintext);
             if (kICC == null || kICC.length < 16) {
                kICC = new byte[16];
