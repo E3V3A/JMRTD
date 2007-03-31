@@ -120,7 +120,9 @@ public class PassportApduService implements CardService
    }
 
    public void close() {
-      service.close();
+      if (service != null) {
+         service.close();
+      }
    }
 
    public void addAPDUListener(APDUListener l) {

@@ -138,7 +138,9 @@ public class PCSCCardService extends AbstractCardService
     */
    public void close() {
       try {
-         card.disconnect(false);
+         if (card != null) {
+            card.disconnect(false);
+         }
          notifyStoppedAPDUSession();
       } catch (CardException ce) {
          ce.printStackTrace();
