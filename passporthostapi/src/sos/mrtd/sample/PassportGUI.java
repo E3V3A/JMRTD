@@ -44,12 +44,12 @@ import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.PCSCCardService;
 
 /**
- * Simple graphical application for experimenting with the passport
- * apdu service.
+ * Simple graphical application to demonstrate the
+ * JMRTD passport host API.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision$
+ * @version $Revision: $
  */
 public class PassportGUI extends JPanel
 {
