@@ -33,6 +33,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 
 import sos.util.Hex;
@@ -189,9 +190,9 @@ public class BERTLVObject
             }
             tag <<= 8;
             tag |= (b & 0x0000007F); /*
-                                        * Byte with MSB set is last byte of
-                                        * tag...
-                                        */
+                                      * Byte with MSB set is last byte of
+                                      * tag...
+                                      */
             break;
          default:
             tag = b;
@@ -275,14 +276,19 @@ public class BERTLVObject
     * @param object to add as a subobject.
     */
    public void addSubObject(BERTLVObject object) {
-      ArrayList subObjects;
+      Collection subObjects = new ArrayList();
 
       if (!isPrimitive) {
-         if (value != null) {
-            subObjects = new ArrayList(Arrays.asList((BERTLVObject[])value));
-         } else {
-            subObjects = new ArrayList();
+         if (value == null) {
             value = new BERTLVObject[1];
+         } else if (value instanceof BERTLVObject[]){
+            subObjects.addAll(Arrays.asList((BERTLVObject[])value));
+         } else if (value instanceof BERTLVObject){
+            /* NOTE: Should never happen if indeed !isPrimitive... */
+            subObjects.add(value);
+            value = new BERTLVObject[2];
+         } else {
+            throw new IllegalStateException("Error: Unexpected value in BERTLVObject");
          }
          subObjects.add(object);
          value = subObjects.toArray((BERTLVObject[])value);
