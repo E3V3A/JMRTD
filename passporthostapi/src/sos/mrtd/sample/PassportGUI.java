@@ -58,6 +58,7 @@ public class PassportGUI extends JPanel implements CardTerminalListener
    private PassportApduService service;
    private APDULogPanel log;
    private JComboBox terminalsComboBox;
+   private JTabbedPane tabbedPane;
 
    /**
     * Constructs the GUI.
@@ -83,7 +84,7 @@ public class PassportGUI extends JPanel implements CardTerminalListener
          log = new APDULogPanel();
          add(log, BorderLayout.SOUTH);
 
-         JTabbedPane tabbedPane = new JTabbedPane();
+         tabbedPane = new JTabbedPane();
          BACPanel bacPanel = new BACPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
          FacePanel facePanel = new FacePanel(service);
@@ -107,6 +108,28 @@ public class PassportGUI extends JPanel implements CardTerminalListener
       }
    }
 
+   public void cardInserted(CardTerminalEvent ce) {
+      if (service != null) {
+         String[] terminals = service.getTerminals();
+         String terminal = terminals[terminalsComboBox.getSelectedIndex()];
+         service.open(terminal);
+         setEnabled(true);
+      }
+   }
+
+   public void cardRemoved(CardTerminalEvent ce) {
+      if (service != null) {
+         service.close();
+         setEnabled(false);
+      }
+   }
+   
+   public void setEnabled(boolean enabled) {
+      super.setEnabled(enabled);
+      tabbedPane.setEnabled(enabled);
+      terminalsComboBox.setEnabled(!enabled);
+   }
+   
    /**
     * Main method creates a GUI instance and puts it in a frame.
     *
@@ -123,22 +146,6 @@ public class PassportGUI extends JPanel implements CardTerminalListener
       } catch (Exception e) {
          e.printStackTrace();
          System.exit(1);
-      }
-   }
-
-   public void cardInserted(CardTerminalEvent ce) {
-      if (service != null) {
-         String[] terminals = service.getTerminals();
-         String terminal = terminals[terminalsComboBox.getSelectedIndex()];
-         service.open(terminal);
-         setEnabled(true);
-      }
-   }
-
-   public void cardRemoved(CardTerminalEvent ce) {
-      if (service != null) {
-         service.close();
-         setEnabled(false);
       }
    }
 }

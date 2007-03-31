@@ -21,10 +21,10 @@ import sos.mrtd.Util;
 public class BACKeyPanel extends JPanel implements ActionListener
 {
    private SecretKey kEnc, kMac;
-   
+
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-   
+
    private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
    private HexField kEncTF, kMacTF;
 
@@ -32,7 +32,7 @@ public class BACKeyPanel extends JPanel implements ActionListener
 
    public BACKeyPanel() {
       super(new BorderLayout());
-      setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
+      setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "BAC Keys"));
       JPanel top = new JPanel(new FlowLayout());
       docNrTF = new JTextField(9);
       dateOfBirthTF = new JTextField(6);
@@ -66,13 +66,15 @@ public class BACKeyPanel extends JPanel implements ActionListener
 
    public void actionPerformed(ActionEvent ae) {
       try {
-         byte[] keySeed = Util.computeKeySeed(docNrTF.getText(), dateOfBirthTF
-               .getText(), dateOfExpiryTF.getText());
+         String docNr = docNrTF.getText(),
+         dateOfBirth = dateOfBirthTF.getText(),
+         dateOfExpiry = dateOfExpiryTF.getText();
+         byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
          kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
          kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
          kEncTF.setValue(kEnc.getEncoded());
          kMacTF.setValue(kMac.getEncoded());
-         bacDB.addEntry(docNrTF.getText(), dateOfBirthTF.getText(), dateOfExpiryTF.getText());
+         bacDB.addEntry(docNr, dateOfBirth, dateOfExpiry);
       } catch (Exception e) {
          kEnc = null;
          kMac = null;
@@ -80,13 +82,12 @@ public class BACKeyPanel extends JPanel implements ActionListener
          kMacTF.clearText();
       }
    }
-   
+
    public SecretKey getKEnc() {
       return kEnc;
    }
-   
+
    public SecretKey getKMac() {
       return kMac;
    }
-
 }
