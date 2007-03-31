@@ -1,8 +1,10 @@
 package sos.smartcards;
 
+import java.util.EventObject;
+
 import javax.smartcardio.CardTerminal;
 
-public class CardTerminalEvent
+public class CardTerminalEvent extends EventObject
 {
    public static final int REMOVED = 0, INSERTED = 1;
 
@@ -10,8 +12,13 @@ public class CardTerminalEvent
    private CardTerminal terminal;
 
    public CardTerminalEvent(int type, CardTerminal terminal) {
+      super(terminal);
       this.type = type;
       this.terminal = terminal;
+   }
+   
+   public int getType() {
+      return type;
    }
 
    public CardTerminal getTerminal() {
@@ -23,6 +30,6 @@ public class CardTerminalEvent
          case REMOVED: return "Card removed from " + terminal.getName();
          case INSERTED: return "Card inserted in " + terminal.getName();
       }
-      return "CardEvent " + terminal.getName();
+      return "CardTerminalEvent " + terminal.getName();
    }
 }

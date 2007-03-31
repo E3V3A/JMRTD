@@ -1,6 +1,8 @@
 package sos.smartcards;
 
-public interface CardTerminalListener
+import java.util.EventListener;
+
+public interface CardTerminalListener extends EventListener
 {
    void cardInserted(CardTerminalEvent ce);
    
