@@ -97,6 +97,7 @@ public class PCSCCardService extends AbstractCardService
     */
    public void open(String id) {
       try {
+         System.out.println("DEBUG: OPENING " + id);
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = null;
@@ -124,6 +125,10 @@ public class PCSCCardService extends AbstractCardService
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
+         if (channel == null) {
+            System.err.println("DEBUG: channel == null");
+            return null;
+         }
          ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
          return ourResponseAPDU;
