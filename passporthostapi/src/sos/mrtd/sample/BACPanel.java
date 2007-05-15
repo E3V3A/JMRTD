@@ -70,7 +70,7 @@ public class BACPanel extends JPanel
       this.apduService = service;
       this.authService = new PassportAuthService(service);
       add(new ChallengePanel());
-      bacKeyPanel = new BACKeyPanel();
+      bacKeyPanel = new BACKeyPanel(BACKeyPanel.SHOW_DERIVED_KEYS);
       add(bacKeyPanel);
       add(new MutualAuthPanel());
    }
