@@ -18,10 +18,13 @@ import javax.swing.border.EtchedBorder;
 import sos.gui.HexField;
 import sos.mrtd.Util;
 
+
 public class BACKeyPanel extends JPanel implements ActionListener
 {
    private SecretKey kEnc, kMac;
 
+   final static boolean DONT_SHOW_DERIVED_KEYS = false, SHOW_DERIVED_KEYS = true;
+ 
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
@@ -30,7 +33,7 @@ public class BACKeyPanel extends JPanel implements ActionListener
 
    private BACDatabase bacDB = new BACDatabase();
 
-   public BACKeyPanel() {
+   public BACKeyPanel(boolean showDerivedKeys) {
       super(new BorderLayout());
       setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "BAC Keys"));
       JPanel top = new JPanel(new FlowLayout());
@@ -40,10 +43,6 @@ public class BACKeyPanel extends JPanel implements ActionListener
       docNrTF.setText(bacDB.getDocumentNumber());
       dateOfBirthTF.setText(bacDB.getDateOfBirth());
       dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
-      kEncTF = new HexField(24);
-      kEncTF.setEditable(false);
-      kMacTF = new HexField(24);
-      kMacTF.setEditable(false);
       top.add(new JLabel("Document number: "));
       top.add(docNrTF);
       top.add(new JLabel("Date of birth: "));
@@ -54,14 +53,20 @@ public class BACKeyPanel extends JPanel implements ActionListener
       top.add(updateButton);
       updateButton.addActionListener(this);
       JPanel center = new JPanel(new FlowLayout());
-      JPanel bottom = new JPanel(new GridLayout(2, 2));
-      bottom.add(new JLabel("K.ENC: ", JLabel.RIGHT));
-      bottom.add(kEncTF);
-      bottom.add(new JLabel("K.MAC: ", JLabel.RIGHT));
-      bottom.add(kMacTF);
       add(top, BorderLayout.NORTH);
       add(center, BorderLayout.CENTER);
-      add(bottom, BorderLayout.SOUTH);
+      if (showDerivedKeys) {
+         kEncTF = new HexField(24);
+         kEncTF.setEditable(false);
+         kMacTF = new HexField(24);
+         kMacTF.setEditable(false);
+         JPanel bottom = new JPanel(new GridLayout(2, 2));
+         bottom.add(new JLabel("K.ENC: ", JLabel.RIGHT));
+         bottom.add(kEncTF);
+         bottom.add(new JLabel("K.MAC: ", JLabel.RIGHT));
+         bottom.add(kMacTF);
+         add(bottom, BorderLayout.SOUTH);
+      }
    }
 
    public void actionPerformed(ActionEvent ae) {
