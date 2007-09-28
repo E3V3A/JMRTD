@@ -5,7 +5,7 @@ main_memory_use =       -ms256M -mx256M
 bin:	bin.stamp	
 bin.stamp: $(apifiles) $(sample)
 	mkdir -p bin
-	javac -classpath bin:$(jars) -d bin -source 1.5 $(apifiles) $(sample)
+	javac -classpath src:$(jars) -d bin -source 1.5 $(apifiles) $(sample)
 	touch bin.stamp
 
 release:
