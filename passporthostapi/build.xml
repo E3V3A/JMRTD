@@ -29,7 +29,7 @@
 
       <!-- Copy Bouncy Castle jar -->
       <copy todir="${dist}/lib">
-	     <fileset dir="h:\java\jars" includes="bcprov*.jar"/>
+	     <fileset dir="${java.home}/lib/ext" includes="bcprov*.jar"/>
       </copy>
   	
       <!-- Create jar file -->
