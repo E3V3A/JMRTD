@@ -24,10 +24,7 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.Image;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.security.Provider;
 import java.security.Security;
 
@@ -36,10 +33,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import sos.gui.ImagePanel;
-import sos.mrtd.DG2File;
-import sos.mrtd.DataGroup;
-import sos.mrtd.FaceInfo;
 import sos.mrtd.PassportApduService;
 import sos.smartcards.CardTerminalEvent;
 import sos.smartcards.CardTerminalListener;
