@@ -17,22 +17,20 @@
 	</target>
 
 	<target name="compile" depends="init" description="compile the source ">
-
 		<!-- Compile the java code from ${src} into ${build} -->
 		<javac srcdir="${src}" destdir="${build}"/>
 	</target>
 
 	<target name="dist" depends="compile" description="generate the distribution" >
-
 		<!-- Create the distribution directory -->
 		<mkdir dir="${dist}/lib"/>
 
-		<!-- Copy Bouncy Castle jar -->
+		<!-- Copy bouncy castle jar -->
 		<copy todir="${dist}/lib">
 			<fileset dir="${java.home}/lib/ext" includes="bcprov*.jar"/>
 		</copy>
 
-		<!-- Create jar file -->
+		<!-- Create the jmrtd jar file -->
 		<jar jarfile="${dist}/lib/jmrtd-${DSTAMP}.jar">
 			<manifest>
 				<attribute name="Main-class" value="sos.mrtd.sample.PassportGUI"/>
@@ -41,7 +39,6 @@
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class"/>
 		</jar>
-
 	</target>
 
 	<target name="clean" description="clean up" >
