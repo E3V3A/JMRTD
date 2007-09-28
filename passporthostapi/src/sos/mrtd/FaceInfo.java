@@ -520,10 +520,8 @@ public class FaceInfo
    }
    
    private String featureMaskToString() {
-      if ((featureMask & FEATURE_FEATURES_ARE_SPECIFIED_FLAG) == 0) {
-         return "";
-      }
-      Collection features = new ArrayList();
+      if ((featureMask & FEATURE_FEATURES_ARE_SPECIFIED_FLAG) == 0) { return ""; }
+      Collection<String> features = new ArrayList<String>();
       if ((featureMask & FEATURE_GLASSES_FLAG) != 0) {
          features.add("glasses");
       }
@@ -552,10 +550,11 @@ public class FaceInfo
          features.add("dark glasses");
       }
       if ((featureMask & FEATURE_DISTORTING_MEDICAL_CONDITION) != 0) {
-         features.add("distorting medical condition (which could impact feature point detection)");
+         features
+               .add("distorting medical condition (which could impact feature point detection)");
       }
       StringBuffer out = new StringBuffer();
-      for (Iterator it = features.iterator(); it.hasNext(); ) {
+      for (Iterator it = features.iterator(); it.hasNext();) {
          out.append(it.next().toString());
          if (it.hasNext()) {
             out.append(", ");
@@ -638,6 +637,7 @@ public class FaceInfo
       return "unknown";
    }
    
+/*
    private String imageColorSpaceToString() {
       switch(imageColorSpace) {
       case IMAGE_COLOR_SPACE_UNSPECIFIED: return "unspecified";
@@ -651,6 +651,7 @@ public class FaceInfo
       }
       return "unknown";
    }
+*/
    
    /**
     * Gets the expression

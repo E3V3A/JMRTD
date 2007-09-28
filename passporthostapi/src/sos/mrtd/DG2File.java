@@ -34,6 +34,10 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFrame;
+import javax.swing.JPanel;
+
+import sos.gui.ImagePanel;
 import sos.smartcards.BERTLVObject;
 
 /**
@@ -193,6 +197,16 @@ public class DG2File extends DataGroup
          out.write(encoded);
          out.flush();
          out.close();
+         
+         FaceInfo faceInfo = dg2.getFaces().get(0);
+         Image img = faceInfo.getImage();
+         ImagePanel imgPanel = new ImagePanel();
+         imgPanel.setImage(img);
+         JFrame frame = new JFrame();
+         frame.getContentPane().add(imgPanel);
+         frame.pack();
+         frame.setVisible(true);
+         
       } catch (Exception e) {
          e.printStackTrace();
       }

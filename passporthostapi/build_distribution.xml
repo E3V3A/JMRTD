@@ -8,7 +8,7 @@
 	<property name="build" location="build" />
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
-
+    <property name="arch" value="${os.arch}" />
 	<property name="bcprov" value="bcprov-*.jar" />
 	<property name="jai_imageio" value="jai_imageio.jar" />
 	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
@@ -32,7 +32,7 @@
 
 	<target name="extensions" description="copy extensions into distribution">
 		<mkdir dir="${distlib}/ext" />
-		<mkdir dir="${distlib}/${os.arch}" />
+		<mkdir dir="${distlib}/${arch}" />
 
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}/ext">
@@ -44,8 +44,8 @@
 			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio}" />
 			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio}" />
 		</copy>
-		<copy todir="${distlib}/${os.arch}">
-			<fileset dir="${java.home}/lib/${os.arch}" includes="${libclib_jiio}" />
+		<copy todir="${distlib}/${arch}">
+			<fileset dir="${java.home}/lib/${arch}" includes="${libclib_jiio}" />
 		</copy>
 	</target>
 
@@ -55,7 +55,7 @@
 			<manifest>
 				<attribute name="Main-class" value="sos.mrtd.sample.PassportGUI" />
 				<attribute name="VMOptions" value="-Xms256M -Xmx256M" />
-				<attribute name="Class-path" value="ext/${bcprov}:ext/${jai_imageio}" />
+				<attribute name="Class-path" value="ext/bcprov-jdk16-137.jar ext/jai_imageio.jar" />
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
 		</jar>
