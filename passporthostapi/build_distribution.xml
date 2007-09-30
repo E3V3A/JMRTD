@@ -9,10 +9,6 @@
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
     <property name="arch" value="${os.arch}" />
-	<property name="bcprov" value="bcprov-*.jar" />
-	<property name="jai_imageio" value="jai_imageio.jar" />
-	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
-	<property name="libclib_jiio" value="libclib_jiio.*" />
 
 	<target name="init">
 		<!-- Create the time stamp -->
@@ -35,11 +31,15 @@
 		<mkdir dir="${distlib}/${arch}" />
 
 		<!-- Copy bouncy castle -->
+		<property name="bcprov" value="bcprov-*.jar" />
 		<copy todir="${distlib}/ext">
 			<fileset dir="${java.home}/lib/ext" includes="${bcprov}" />
 		</copy>
 
 		<!-- Copy jai imageio -->
+		<property name="jai_imageio" value="jai_imageio.jar" />
+		<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
+		<property name="libclib_jiio" value="libclib_jiio.*" />
 		<copy todir="${distlib}/ext">
 			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio}" />
 			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio}" />
