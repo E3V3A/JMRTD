@@ -139,7 +139,7 @@ public class PassportApduService implements CardService
    CommandAPDU createSelectAppletAPDU(byte[] aid) {
       byte[] data = aid;
       CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
-            (byte) 0x004, (byte) 0x00, data);
+            (byte) 0x004, (byte) 0x00, data, (byte)0x01);
       return apdu;
    }
 
