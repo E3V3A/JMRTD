@@ -93,6 +93,7 @@ public class APDULogPanel extends JPanel implements SessionListener, APDUListene
    public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
       append(Integer.toString(count)); append(".");
       append(" C: "); append(capdu.toString());
+      // append(" Bytes: "); append(Hex.toHexString(capdu.getBytes()));
       append("\n");
       append(whiteSpace(count)); append(" ");
       append(" R: "); append(Hex.toHexString(rapdu.getBytes()));
