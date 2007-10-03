@@ -1,11 +1,8 @@
 JMRTD passport service and gui application
 
-   JMRTD is a free implementation of the Machine Readable Travel Document
-   (MRTD) standards as specified by the International Civil Aviation
-   Organization (ICAO). Both a card side application (the "passport applet")
-   and a host side API for accessing ICAO standards compliant MRTDs are
-   developed. The passport applet is written in Java Card. The host side API
-   is written in Java.
+   JMRTD is a free implementation of the Machine Readable Travel
+   Document (MRTD) standards as specified by the International Civil
+   Aviation Organization (ICAO). The host side API is written in Java.
 
 Authors
 
@@ -21,28 +18,22 @@ Coffee & cold drinks
 
 License
 
-   See the LICENSE file.
+   GNU Lesser General Public License
 
 Files
 
    README - this file
    LICENSE - copy of the LGPL license
-   src/ - source files
    jmrtd.jar - class files (use "java -jar jmrtd.jar" to run)
+   src/ - sources (optional)
 
+Dependencies (might be included in distribution)
 
-Tested with j2sdk1.5.
-
-Dependencies
-
-   * JPCSC for communication with the card:
-        Tested with version 0.8.
-        Needs to be installed in jre/lib, uses native code.
-        URL: http://www.linuxnet.com/
+   * Requires jdk1.6.
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath
-        Tested with bcprov-jdk14-132.jar.
+        Tested with bcprov-jdk16-137.jar.
         URL: http://www.bouncycastle.org/
 
    * JAI ImageIO for interpreting JPEG 2000 data:
@@ -50,13 +41,13 @@ Dependencies
         jai_imageio.jar in jre/lib/ext, some libs in jre/lib/i386.
         URL: https://jai-imageio.dev.java.net/
 
-   * ApduIO, Java Card simulator
+   * ApduIO, Java Card simulator (optional)
         apduio.jar part of Java Card Kit
         Tested with version 2.2.2
         When making from source, expects a copy or link to this jar
         (or stub) in lib directory.
 
-   * JCOP toolset
+   * JCOP toolset (optional)
         offcard.jar part of JCOP plugin for Eclipse
         Tested with version 3.1.1
         When making from source, expects a copy or link to this jar

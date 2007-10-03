@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+
+<!-- 
+    IZPACK installation file
+-->
+
+<installation version="1.0">
+
+    <!-- The info section.  -->
+    <info>
+        <appname>JMRTD</appname>
+        <appversion>0.0.2</appversion>
+        <authors>
+            <author name="SoS group, Radboud University"
+                    email="martijno@cs.ru.nl" />
+        </authors>
+        <url>http://jmrtd.sourceforge.net/</url>
+        <javaversion>1.6</javaversion>
+    </info>
+    
+    <!-- The gui preferences indication.  -->
+    <guiprefs width="640" height="480" resizable="no" />
+
+    <!-- The locale section.  -->
+    <locale>
+        <langpack iso3="eng" />
+    </locale>
+
+    <!-- The resources section.  -->
+    <resources>
+        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
+        <res id="InfoPanel.info" src="README" />
+        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
+    </resources>
+    
+    <!-- The panels section.  -->
+    <panels>
+        <panel classname="HelloPanel" />
+        <panel classname="InfoPanel" />
+        <panel classname="TargetPanel" /> 
+        <panel classname="PacksPanel" />
+        <panel classname="InstallPanel" />
+        <panel classname="FinishPanel" />
+    </panels>
+    
+    <!-- The packs section.  -->
+    <packs>
+        <pack name="Passport API" required="yes">
+            <description>The Passport API and host application</description>
+            <file src="dist/lib/jmrtd.jar" targetdir="$INSTALL_PATH" />
+            <file src="dist/lib/amd64" targetdir="$INSTALL_PATH" />
+            <file src="dist/lib/ext" targetdir="$INSTALL_PATH" />
+            <file src="README" targetdir="$INSTALL_PATH" />
+            <file src="LICENSE" targetdir="$INSTALL_PATH" />
+            <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
+            <parsable targetfile="$INSTALL_PATH/jmrtd.sh" type="shell" />
+            <executable targetfile="$INSTALL_PATH/jmrtd.sh" stage="never" />
+            <file src="jmrtd.bat" targetdir="$INSTALL_PATH" />
+            <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
+            <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
+        </pack>
+        <pack name="Sources" required="no">
+            <description>The Java sources</description>
+            <file src="src" targetdir="$INSTALL_PATH" />
+        </pack>
+    </packs>
+    
+</installation>
+

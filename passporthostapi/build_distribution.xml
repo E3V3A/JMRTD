@@ -50,6 +50,11 @@
 	</target>
 
 	<target name="dist" depends="extensions, compile" description="generate the distribution">
+		<!-- Copy license, etc. -->
+		<copy todir="${dist}">
+			<fileset dir="." includes="LICENSE, README" />
+		</copy>
+		
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
