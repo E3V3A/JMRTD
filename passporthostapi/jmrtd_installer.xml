@@ -19,7 +19,9 @@
     </info>
     
     <!-- The gui preferences indication.  -->
-    <guiprefs width="640" height="480" resizable="no" />
+    <guiprefs width="640" height="480" resizable="no">
+       <modifier key="useHeadingPanel" value="yes" />
+    </guiprefs>
 
     <!-- The locale section.  -->
     <locale>
@@ -31,6 +33,7 @@
         <!-- res id="LicencePanel.licence" src="LICENSE" / -->
         <res id="InfoPanel.info" src="README" />
         <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
+        <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
     </resources>
     
     <!-- The panels section.  -->
@@ -47,17 +50,21 @@
     <packs>
         <pack name="Passport API" required="yes">
             <description>The Passport API and host application</description>
-            <file src="dist/lib/jmrtd.jar" targetdir="$INSTALL_PATH" />
-            <file src="dist/lib/amd64" targetdir="$INSTALL_PATH" />
-            <file src="dist/lib/ext" targetdir="$INSTALL_PATH" />
+
+            <!-- Text files -->
             <file src="README" targetdir="$INSTALL_PATH" />
             <file src="LICENSE" targetdir="$INSTALL_PATH" />
+
+            <!-- Scripts -->
             <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
             <parsable targetfile="$INSTALL_PATH/jmrtd.sh" type="shell" />
             <executable targetfile="$INSTALL_PATH/jmrtd.sh" stage="never" />
             <file src="jmrtd.bat" targetdir="$INSTALL_PATH" />
             <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
             <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
+
+            <!-- jmrtd.jar, ext, i386 -->
+            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
         </pack>
         <pack name="Sources" required="no">
             <description>The Java sources</description>
