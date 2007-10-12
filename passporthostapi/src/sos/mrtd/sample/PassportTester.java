@@ -134,7 +134,7 @@ public class PassportTester extends JPanel
          PAPanel paPanel = new PAPanel(service);
          AAPanel aaPanel = new AAPanel(service);
          EvilPanel evilPanel = new EvilPanel(service);
-         InitPassportPanel initPanel = new InitPassportPanel(service);
+         PersoPanel initPanel = new PersoPanel(service);
          bacPanel.addAuthenticationListener(apduSenderPanel);
          bacPanel.addAuthenticationListener(ldsPanel);
          bacPanel.addAuthenticationListener(facePanel);

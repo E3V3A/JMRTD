@@ -48,7 +48,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportFileService;
-import sos.mrtd.PassportInitService;
+import sos.mrtd.PassportPersoService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
 
@@ -61,7 +61,7 @@ import sos.smartcards.CardService;
  * 
  * @version $Revision$
  */
-public class InitPassportPanel extends JPanel implements ActionListener,
+public class PersoPanel extends JPanel implements ActionListener,
         AuthListener {
     private JButton createFileButton;
     private JButton selectFileButton;
@@ -70,7 +70,7 @@ public class InitPassportPanel extends JPanel implements ActionListener,
     private HexField lenField;
     private HexField fidField;
     private File fileToUpload;
-    private PassportInitService service;
+    private PassportPersoService service;
     private SecureMessagingWrapper wrapper;
     private JButton personalisationButton;
     private JTextField docNrField;
@@ -85,7 +85,7 @@ public class InitPassportPanel extends JPanel implements ActionListener,
 
     private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-    public InitPassportPanel(CardService service)
+    public PersoPanel(CardService service)
             throws GeneralSecurityException, UnsupportedEncodingException {
         super(new GridLayout(3, 1));
 
@@ -103,7 +103,7 @@ public class InitPassportPanel extends JPanel implements ActionListener,
         add(fileSendingPanel);
         add(initAAPanel);
 
-        this.service = new PassportInitService(service);
+        this.service = new PassportPersoService(service);
         this.wrapper = null;
 
         selectLocalFileButton = new JButton("Select local file ... ");
@@ -248,7 +248,7 @@ public class InitPassportPanel extends JPanel implements ActionListener,
     }
 
     private void pressedGenerateKeyPairButton() throws GeneralSecurityException, IOException {
-        keyPair = PassportInitService.generateAAKeyPair();                
+        keyPair = PassportPersoService.generateAAKeyPair();                
     }
 
     private void pressedPersonalisationButton() {

@@ -47,13 +47,12 @@ import sos.util.ASN1Utils;
 /**
  * Service for initializing blank passport reference applets.
  * 
- * Following MO's design, this class must be split in two: - PassportInitService -
- * PassportInitApduService
+ * Following MO's design, this class must be split in two.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 
  */
-public class PassportInitService extends PassportApduService {
+public class PassportPersoService extends PassportApduService {
     public static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
     public static final short AAPRIVKEY_FID = 0x0001;
     private static final byte INS_PUT_DATA = (byte) 0xda;;
@@ -62,7 +61,7 @@ public class PassportInitService extends PassportApduService {
     private static final byte PRIVEXPONENT_TAG = 0x61;
     private static final byte MRZ_TAG = 0x62;
 
-    public PassportInitService(CardService service)
+    public PassportPersoService(CardService service)
             throws GeneralSecurityException {
         super(service);
     }
