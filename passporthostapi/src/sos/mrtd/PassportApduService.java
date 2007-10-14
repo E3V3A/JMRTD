@@ -36,6 +36,7 @@ import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
 
 /**
@@ -80,7 +81,6 @@ public class PassportApduService implements CardService
    /** ISO9797Alg3Mac. */
    private Mac mac;
 
-   
    /**
     * Creates a new passport apdu sending service.
     *
@@ -105,15 +105,19 @@ public class PassportApduService implements CardService
     * Opens a session by connecting to the card and
     * selecting the passport applet.
     */
-   public void open() {
+   public void open() throws CardServiceException {
       service.open();
-      sendSelectApplet(APPLET_AID);
+      int sw = sendSelectApplet(APPLET_AID);
+      if (sw != 0x00009000) {
+         throw new CardServiceException("Could not select passport");
+      }
    }
+   
    public String[] getTerminals() {
       return service.getTerminals();
    }
 
-   public void open(String id) {
+   public void open(String id) throws CardServiceException {
       service.open(id);
       sendSelectApplet(APPLET_AID);
    }
@@ -139,7 +143,7 @@ public class PassportApduService implements CardService
    CommandAPDU createSelectAppletAPDU(byte[] aid) {
       byte[] data = aid;
       CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
-            (byte) 0x004, (byte) 0x00, data, (byte)0x01);
+            (byte) 0x04, (byte) 0x00, data, (byte)0x01);
       return apdu;
    }
 
@@ -256,9 +260,11 @@ public class PassportApduService implements CardService
     * Sends a <code>SELECT APPLET</code> command to the card.
     *
     * @param aid the applet to select
+    * 
+    * @return status word
     */
-   void sendSelectApplet(byte[] aid) {
-      transmit(createSelectAppletAPDU(aid));
+   public int sendSelectApplet(byte[] aid) {
+      return transmit(createSelectAppletAPDU(aid)).getSW();
    }
 
    /**

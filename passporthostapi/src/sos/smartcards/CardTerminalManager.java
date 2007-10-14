@@ -15,12 +15,14 @@ public class CardTerminalManager
    private static CardTerminalManager terminalManager = new CardTerminalManager();
    private Collection<CardTerminalListener> listeners;
    private Map<CardTerminal, Boolean> wasCardPresent;
+   private Map<CardTerminal, CardService> terminalServices;
    private Collection<CardTerminal> terminals;
 
    private CardTerminalManager() {
       listeners = new ArrayList<CardTerminalListener>();
       terminals = new HashSet<CardTerminal>();
       wasCardPresent = new Hashtable<CardTerminal, Boolean>();
+      terminalServices = new Hashtable<CardTerminal, CardService>();
       (new Thread(new Runnable() {
          public void run() {
             try {
@@ -45,14 +47,20 @@ public class CardTerminalManager
          for (CardTerminal terminal: terminals) {
             if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
                   wasCardPresent.get(terminal) && !terminal.isCardPresent())) {
+               CardService service = terminalServices.get(terminal);
                for (CardTerminalListener l: listeners) {
-                  l.cardRemoved(new CardTerminalEvent(CardTerminalEvent.REMOVED, terminal));
+                  l.cardRemoved(new CardTerminalEvent(CardTerminalEvent.REMOVED, service));
                }
                wasCardPresent.put(terminal, false);
+               service.close();
+               terminalServices.remove(terminal);
             } else if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
                   !wasCardPresent.get(terminal) && terminal.isCardPresent())) {
+               PCSCCardService service = new PCSCCardService();
+               service.open(terminal);
+               terminalServices.put(terminal, service);
                for (CardTerminalListener l: listeners) {
-                  l.cardInserted(new CardTerminalEvent(CardTerminalEvent.INSERTED, terminal));
+                  l.cardInserted(new CardTerminalEvent(CardTerminalEvent.INSERTED, service));
                }
                wasCardPresent.put(terminal, true);
             }

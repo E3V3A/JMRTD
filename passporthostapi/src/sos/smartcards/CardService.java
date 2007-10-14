@@ -58,14 +58,14 @@ public interface CardService
    /**
     * Opens a session with the card in the default terminal.
     */
-   void open();
+   void open() throws CardServiceException;
 
    /**
     * Opens a session with the card designated by <code>id</code>.
     * 
     * @param id some identifier (typically the name of a card terminal)
     */
-   void open(String id);
+   void open(String id) throws CardServiceException;
 
    /**
     * Sends an apdu to the card.

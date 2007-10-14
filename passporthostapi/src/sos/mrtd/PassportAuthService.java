@@ -38,6 +38,7 @@ import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUListener;
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 
 /**
  * Card service for using the BAC and AA protocols on the passport.
@@ -119,7 +120,7 @@ public class PassportAuthService implements CardService, AuthListener
     * Opens a session. This is done by connecting to the card, selecting the
     * passport applet.
     */
-   public void open() {
+   public void open() throws CardServiceException {
       if (state == SESSION_STARTED_STATE) {
          return;
       }
@@ -131,7 +132,7 @@ public class PassportAuthService implements CardService, AuthListener
       return service.getTerminals();
    }
 
-   public void open(String id) {
+   public void open(String id) throws CardServiceException {
       if (state == SESSION_STARTED_STATE) {
          return;
       }

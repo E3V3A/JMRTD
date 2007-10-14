@@ -38,6 +38,7 @@ import javax.swing.JTabbedPane;
 
 import sos.mrtd.PassportApduService;
 import sos.smartcards.CREFService;
+import sos.smartcards.CardServiceException;
 import sos.smartcards.JCOPEmulatorService;
 import sos.smartcards.PCSCCardService;
 
@@ -102,11 +103,15 @@ public class PassportTester extends JPanel
          openButton = new JButton("Open");
          openButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+               try {
                String[] terminals = service.getTerminals();
                String terminal = terminals[terminalsComboBox.getSelectedIndex()];
                service.open(terminal);
                openButton.setEnabled(false);
                closeButton.setEnabled(true);
+               } catch (CardServiceException cse) {
+                  cse.printStackTrace();
+               }
             }
          });
          northPanel.add(terminalsComboBox);

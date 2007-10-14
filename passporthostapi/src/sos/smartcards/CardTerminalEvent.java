@@ -9,27 +9,27 @@ public class CardTerminalEvent extends EventObject
    public static final int REMOVED = 0, INSERTED = 1;
 
    private int type;
-   private CardTerminal terminal;
-
-   public CardTerminalEvent(int type, CardTerminal terminal) {
-      super(terminal);
+   private CardService service;
+   
+   public CardTerminalEvent(int type, CardService service) {
+      super(service);
       this.type = type;
-      this.terminal = terminal;
+      this.service = service;
    }
    
    public int getType() {
       return type;
    }
 
-   public CardTerminal getTerminal() {
-      return terminal;
+   public CardService getService() {
+      return service;
    }
 
    public String toString() {
       switch (type) {
-         case REMOVED: return "Card removed from " + terminal.getName();
-         case INSERTED: return "Card inserted in " + terminal.getName();
+         case REMOVED: return "Card removed from " + service;
+         case INSERTED: return "Card inserted in " + service;
       }
-      return "CardTerminalEvent " + terminal.getName();
+      return "CardTerminalEvent " + service;
    }
 }

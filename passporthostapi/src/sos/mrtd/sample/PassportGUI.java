@@ -34,6 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import sos.mrtd.PassportApduService;
+import sos.smartcards.CardServiceException;
 import sos.smartcards.CardTerminalEvent;
 import sos.smartcards.CardTerminalListener;
 import sos.smartcards.CardTerminalManager;
@@ -112,8 +113,13 @@ public class PassportGUI extends JPanel implements CardTerminalListener
       if (service != null) {
          String[] terminals = service.getTerminals();
          String terminal = terminals[terminalsComboBox.getSelectedIndex()];
-         service.open(terminal);
-         setEnabled(true);
+         try {
+            service.open(terminal);
+            setEnabled(true);
+         } catch (CardServiceException cse) {
+            cse.printStackTrace();
+            setEnabled(true);
+         }
       }
    }
 

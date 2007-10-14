@@ -82,9 +82,7 @@ public class PCSCCardService extends AbstractCardService
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = terminals.get(0);
-         card = terminal.connect(PROTOCOL);
-         channel = card.getBasicChannel();
-         notifyStartedAPDUSession();
+         open(terminal);
       } catch (CardException ce) {
          ce.printStackTrace();
       }
@@ -109,12 +107,16 @@ public class PCSCCardService extends AbstractCardService
          if (terminal == null) {
             terminal = terminals.get(0);
          }
-         card = terminal.connect(PROTOCOL);
-         channel = card.getBasicChannel();
-         notifyStartedAPDUSession();
+         open(terminal);
       } catch (CardException ce) {
          ce.printStackTrace();
       }
+   }
+   
+   void open(CardTerminal terminal) throws CardException {
+      card = terminal.connect(PROTOCOL);
+      channel = card.getBasicChannel();
+      notifyStartedAPDUSession();
    }
 
    /**
