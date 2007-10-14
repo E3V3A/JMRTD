@@ -48,12 +48,14 @@ public class CardTerminalManager
             if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
                   wasCardPresent.get(terminal) && !terminal.isCardPresent())) {
                CardService service = terminalServices.get(terminal);
-               for (CardTerminalListener l: listeners) {
-                  l.cardRemoved(new CardTerminalEvent(CardTerminalEvent.REMOVED, service));
+               if (service != null) {
+                  for (CardTerminalListener l: listeners) {
+                     l.cardRemoved(new CardTerminalEvent(CardTerminalEvent.REMOVED, service));
+                  }
+                  service.close();
+                  terminalServices.remove(terminal);
                }
                wasCardPresent.put(terminal, false);
-               service.close();
-               terminalServices.remove(terminal);
             } else if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
                   !wasCardPresent.get(terminal) && terminal.isCardPresent())) {
                PCSCCardService service = new PCSCCardService();
