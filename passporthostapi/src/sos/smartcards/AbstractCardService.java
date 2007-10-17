@@ -36,7 +36,7 @@ import javax.smartcardio.ResponseAPDU;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision$
  */
-public abstract class AbstractCardService implements CardService
+abstract class AbstractCardService implements CardService
 {
    static protected final int SESSION_STOPPED_STATE = 0;
 

@@ -8,9 +8,9 @@ import java.util.Map;
 
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.CardTerminalEvent;
+import sos.smartcards.CardEvent;
 import sos.smartcards.CardTerminalListener;
-import sos.smartcards.CardTerminalManager;
+import sos.smartcards.CardManager;
 
 public class PassportManager
 {
@@ -24,9 +24,9 @@ public class PassportManager
    private PassportManager() {
       cardTypes = new Hashtable<CardService, CardType>();
       listeners = new ArrayList<PassportListener>();
-      CardTerminalManager.addCardTerminalListener(new CardTerminalListener() {
+      CardManager.addCardTerminalListener(new CardTerminalListener() {
 
-         public void cardInserted(CardTerminalEvent ce) {
+         public void cardInserted(CardEvent ce) {
             CardService service = ce.getService();
             if (isPassportInserted(service)) {
                cardTypes.put(service, CardType.PASSPORT);
@@ -36,7 +36,7 @@ public class PassportManager
             }
          }
 
-         public void cardRemoved(CardTerminalEvent ce) {
+         public void cardRemoved(CardEvent ce) {
             CardService service = ce.getService();
             CardType cardType = cardTypes.remove(service);
             if (cardType != null

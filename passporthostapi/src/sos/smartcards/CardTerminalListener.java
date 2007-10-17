@@ -4,7 +4,7 @@ import java.util.EventListener;
 
 public interface CardTerminalListener extends EventListener
 {
-   void cardInserted(CardTerminalEvent ce);
+   void cardInserted(CardEvent ce);
    
-   void cardRemoved(CardTerminalEvent ce);
+   void cardRemoved(CardEvent ce);
 }

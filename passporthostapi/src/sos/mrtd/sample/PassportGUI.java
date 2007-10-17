@@ -37,9 +37,9 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.CardTerminalEvent;
+import sos.smartcards.CardEvent;
 import sos.smartcards.CardTerminalListener;
-import sos.smartcards.CardTerminalManager;
+import sos.smartcards.CardManager;
 import sos.smartcards.PCSCCardService;
 
 /**
@@ -111,7 +111,7 @@ public class PassportGUI extends JPanel implements PassportListener
       }
    }
 
-   public void passportInserted(CardTerminalEvent ce) {
+   public void passportInserted(CardEvent ce) {
       try {
          service = new PassportApduService(ce.getService());
          service.open();
@@ -121,7 +121,7 @@ public class PassportGUI extends JPanel implements PassportListener
       setEnabled(true);
    }
 
-   public void passportRemoved(CardTerminalEvent ce) {
+   public void passportRemoved(CardEvent ce) {
       if (service != null) {
          service.close();
       }

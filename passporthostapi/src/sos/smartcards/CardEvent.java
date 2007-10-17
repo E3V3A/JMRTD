@@ -4,14 +4,14 @@ import java.util.EventObject;
 
 import javax.smartcardio.CardTerminal;
 
-public class CardTerminalEvent extends EventObject
+public class CardEvent extends EventObject
 {
    public static final int REMOVED = 0, INSERTED = 1;
 
    private int type;
    private CardService service;
    
-   public CardTerminalEvent(int type, CardService service) {
+   public CardEvent(int type, CardService service) {
       super(service);
       this.type = type;
       this.service = service;

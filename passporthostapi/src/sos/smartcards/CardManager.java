@@ -10,15 +10,23 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
-public class CardTerminalManager
+/**
+ * Manages card terminals.
+ * Source of card insertion and removal events.
+ * 
+ * @author martijno (martijno@cs.ru.nl)
+ * 
+ * @version $Revision$
+ */
+public class CardManager
 {
-   private static CardTerminalManager terminalManager = new CardTerminalManager();
+   private static CardManager terminalManager = new CardManager();
    private Collection<CardTerminalListener> listeners;
    private Map<CardTerminal, Boolean> wasCardPresent;
    private Map<CardTerminal, CardService> terminalServices;
    private Collection<CardTerminal> terminals;
 
-   private CardTerminalManager() {
+   private CardManager() {
       listeners = new ArrayList<CardTerminalListener>();
       terminals = new HashSet<CardTerminal>();
       wasCardPresent = new Hashtable<CardTerminal, Boolean>();
@@ -50,7 +58,7 @@ public class CardTerminalManager
                CardService service = terminalServices.get(terminal);
                if (service != null) {
                   for (CardTerminalListener l: listeners) {
-                     l.cardRemoved(new CardTerminalEvent(CardTerminalEvent.REMOVED, service));
+                     l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
                   }
                   service.close();
                   terminalServices.remove(terminal);
@@ -62,7 +70,7 @@ public class CardTerminalManager
                service.open(terminal);
                terminalServices.put(terminal, service);
                for (CardTerminalListener l: listeners) {
-                  l.cardInserted(new CardTerminalEvent(CardTerminalEvent.INSERTED, service));
+                  l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
                }
                wasCardPresent.put(terminal, true);
             }
