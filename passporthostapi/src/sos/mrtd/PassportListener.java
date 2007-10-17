@@ -6,9 +6,7 @@ import sos.smartcards.CardTerminalEvent;
 
 public interface PassportListener extends EventListener
 {
-   void unknownPassportInserted(CardTerminalEvent ce);
-
-   void knownPassportInserted(CardTerminalEvent ce);
+   void passportInserted(CardTerminalEvent ce);
 
    void passportRemoved(CardTerminalEvent ce);
 }

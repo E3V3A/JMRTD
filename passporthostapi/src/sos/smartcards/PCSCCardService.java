@@ -22,6 +22,7 @@
 
 package sos.smartcards;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.smartcardio.Card;
@@ -41,7 +42,7 @@ import javax.smartcardio.TerminalFactory;
  */
 public class PCSCCardService extends AbstractCardService
 {
-   private static final String PROTOCOL = "T=1";
+   private ArrayList<String> protocols;
 
    private Card card;
    private CardChannel channel;
@@ -50,6 +51,9 @@ public class PCSCCardService extends AbstractCardService
     * Constructs a new card service.
     */
    public PCSCCardService() {
+      protocols = new ArrayList<String>();
+      protocols.add("T=1");
+      protocols.add("T=0");
    }
 
    /**
@@ -114,9 +118,22 @@ public class PCSCCardService extends AbstractCardService
    }
    
    void open(CardTerminal terminal) throws CardException {
-      card = terminal.connect(PROTOCOL);
+      for (String protocol: protocols) {
+         try {
+            System.out.println("Trying " + protocol);
+            card = terminal.connect(protocol);
+            if (protocols.indexOf(protocol) != 0) {
+               protocols.remove(protocols.indexOf(protocol));
+               protocols.add(0, protocol);
+            }
+            break;
+         } catch (Exception e) {
+            continue;
+         }
+      }
       channel = card.getBasicChannel();
       notifyStartedAPDUSession();
+      return;
    }
 
    /**
