@@ -42,7 +42,7 @@ import javax.smartcardio.TerminalFactory;
  */
 public class PCSCCardService extends AbstractCardService
 {
-   private ArrayList<String> protocols;
+   private static ArrayList<String> protocols;
 
    private Card card;
    private CardChannel channel;
@@ -51,9 +51,13 @@ public class PCSCCardService extends AbstractCardService
     * Constructs a new card service.
     */
    public PCSCCardService() {
-      protocols = new ArrayList<String>();
-      protocols.add("T=1");
-      protocols.add("T=0");
+      if (protocols == null) {
+         protocols = new ArrayList<String>();
+      }
+      if (protocols.size() < 2) {
+         protocols.add("T=1");
+         protocols.add("T=0");
+      }
    }
 
    /**
@@ -118,9 +122,9 @@ public class PCSCCardService extends AbstractCardService
    }
    
    void open(CardTerminal terminal) throws CardException {
+      if (isOpen()) { return; }
       for (String protocol: protocols) {
          try {
-            System.out.println("Trying " + protocol);
             card = terminal.connect(protocol);
             if (protocols.indexOf(protocol) != 0) {
                protocols.remove(protocols.indexOf(protocol));
@@ -133,7 +137,11 @@ public class PCSCCardService extends AbstractCardService
       }
       channel = card.getBasicChannel();
       notifyStartedAPDUSession();
-      return;
+      state = SESSION_STARTED_STATE;
+   }
+   
+   public boolean isOpen() {
+      return (state != SESSION_STOPPED_STATE);
    }
 
    /**
@@ -166,6 +174,7 @@ public class PCSCCardService extends AbstractCardService
             card.disconnect(false);
          }
          notifyStoppedAPDUSession();
+         state = SESSION_STOPPED_STATE;
       } catch (CardException ce) {
          ce.printStackTrace();
       }

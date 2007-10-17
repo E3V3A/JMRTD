@@ -121,11 +121,15 @@ public class PassportAuthService implements CardService, AuthListener
     * passport applet.
     */
    public void open() throws CardServiceException {
-      if (state == SESSION_STARTED_STATE) {
+      if (isOpen()) {
          return;
       }
       service.open();
       state = SESSION_STARTED_STATE;
+   }
+   
+   public boolean isOpen() {
+      return (state != SESSION_STOPPED_STATE);
    }
    
    public String[] getTerminals() {

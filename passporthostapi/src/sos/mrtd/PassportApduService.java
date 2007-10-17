@@ -96,7 +96,11 @@ public class PassportApduService implements CardService
     */
    public PassportApduService(CardService service)
          throws GeneralSecurityException {
-      this.service = service;
+      if (service instanceof PassportApduService) {
+         this.service = ((PassportApduService)service).service;
+      } else {
+         this.service = service;
+      }
       cipher = Cipher.getInstance("DESede/CBC/NoPadding");
       mac = Mac.getInstance("ISO9797Alg3Mac");
    }
@@ -107,21 +111,29 @@ public class PassportApduService implements CardService
     */
    public void open() throws CardServiceException {
       service.open();
-      int sw = sendSelectApplet(APPLET_AID);
-      if (sw != 0x00009000) {
-         throw new CardServiceException("Could not select passport");
-      }
+      sendSelectApplet();
+   }
+   
+   public void open(String id) throws CardServiceException {
+      service.open(id);
+      sendSelectApplet();
+   }
+   
+   public boolean isOpen() {
+      return service.isOpen();
    }
    
    public String[] getTerminals() {
       return service.getTerminals();
    }
-
-   public void open(String id) throws CardServiceException {
-      service.open(id);
-      sendSelectApplet(APPLET_AID);
-   }
    
+   private void sendSelectApplet() throws CardServiceException {
+      int sw = sendSelectApplet(APPLET_AID);
+      if (sw != 0x00009000) {
+         throw new CardServiceException("Could not select passport");
+      }
+   }
+
    public ResponseAPDU transmit(CommandAPDU capdu) {
       return service.transmit(capdu);
    }
@@ -433,4 +445,3 @@ public class PassportApduService implements CardService
       return result;
    }
 }
-

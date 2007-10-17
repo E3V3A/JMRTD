@@ -34,6 +34,8 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import sos.mrtd.PassportApduService;
+import sos.mrtd.PassportListener;
+import sos.mrtd.PassportManager;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.CardTerminalEvent;
 import sos.smartcards.CardTerminalListener;
@@ -48,7 +50,7 @@ import sos.smartcards.PCSCCardService;
  *
  * @version $Revision: $
  */
-public class PassportGUI extends JPanel implements CardTerminalListener
+public class PassportGUI extends JPanel implements PassportListener
 {
    public static final File JMRTD_USER_DIR =
       new File(new File(System.getProperty("user.home")), ".jmrtd"); 
@@ -102,32 +104,28 @@ public class PassportGUI extends JPanel implements CardTerminalListener
          tabbedPane.addTab("AA", aaPanel);
          add(tabbedPane, BorderLayout.CENTER);
          service.addAPDUListener(log);
-         CardTerminalManager.addCardTerminalListener(this);
+         PassportManager.addPassportListener(this);
       } catch (Exception e) {
          e.printStackTrace();
          System.exit(1);
       }
    }
 
-   public void cardInserted(CardTerminalEvent ce) {
-      if (service != null) {
-         String[] terminals = service.getTerminals();
-         String terminal = terminals[terminalsComboBox.getSelectedIndex()];
-         try {
-            service.open(terminal);
-            setEnabled(true);
-         } catch (CardServiceException cse) {
-            cse.printStackTrace();
-            setEnabled(true);
-         }
+   public void passportInserted(CardTerminalEvent ce) {
+      try {
+         service = new PassportApduService(ce.getService());
+         service.open();
+      } catch (Exception ex) {
+         ex.printStackTrace();
       }
+      setEnabled(true);
    }
 
-   public void cardRemoved(CardTerminalEvent ce) {
+   public void passportRemoved(CardTerminalEvent ce) {
       if (service != null) {
          service.close();
-         setEnabled(false);
       }
+      setEnabled(true);
    }
    
    public void setEnabled(boolean enabled) {

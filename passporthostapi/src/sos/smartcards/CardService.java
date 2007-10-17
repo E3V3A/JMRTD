@@ -60,6 +60,8 @@ public interface CardService
     */
    void open() throws CardServiceException;
 
+   boolean isOpen();
+   
    /**
     * Opens a session with the card designated by <code>id</code>.
     * 

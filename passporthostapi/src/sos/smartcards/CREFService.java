@@ -85,6 +85,10 @@ public class CREFService extends AbstractCardService
             "Unknown terminal " + id); }
       open();
    }
+   
+   public boolean isOpen() {
+      return (state != SESSION_STOPPED_STATE);
+   }
 
    /**
     * Sends and apdu to the card. Notifies any interested listeners.

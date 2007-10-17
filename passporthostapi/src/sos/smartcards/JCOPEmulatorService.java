@@ -65,6 +65,10 @@ public class JCOPEmulatorService extends AbstractCardService
             "Unknown terminal " + id); }
       open();
    }
+   
+   public boolean isOpen() {
+      return (state != SESSION_STOPPED_STATE);
+   }
 
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       if (terminal == null) { throw new IllegalStateException(

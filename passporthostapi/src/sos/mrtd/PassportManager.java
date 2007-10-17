@@ -73,11 +73,11 @@ public class PassportManager
       listeners.remove(l);
    }
 
-   public static void addCardTerminalListener(PassportListener l) {
+   public static void addPassportListener(PassportListener l) {
       passportManager.addListener(l);
    }
 
-   public static void removeCardTerminalListener(PassportListener l) {
+   public static void removePassportListener(PassportListener l) {
       passportManager.removeListener(l);
    }
 }

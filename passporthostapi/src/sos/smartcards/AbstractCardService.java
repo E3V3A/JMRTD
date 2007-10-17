@@ -89,11 +89,16 @@ public abstract class AbstractCardService implements CardService
     * Notifies any interested apduListeners.
     */
    /*
-    * @ requires state == SESSION_STOPPED_STATE; @ ensures state ==
-    * SESSION_STARTED_STATE;
+    * @ requires state == SESSION_STOPPED_STATE;
+    * @ ensures state == SESSION_STARTED_STATE;
     */
    public abstract void open();
 
+   /*
+    * @ ensures \result == (state == SESSION_STARTED_STATE);
+    */
+   public abstract boolean isOpen();
+   
    /**
     * Sends and apdu to the card. Notifies any interested apduListeners.
     * 

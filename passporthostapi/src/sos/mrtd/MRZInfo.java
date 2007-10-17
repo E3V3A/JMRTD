@@ -664,15 +664,9 @@ public class MRZInfo
    }
    
    public boolean equals(Object obj) {
-      if (obj == this) {
-         return true;
-      }
-      if (obj == null) {
-         return false;
-      }
-      if (!(obj.getClass().equals(this.getClass()))) {
-         return false;
-      }
+      if (obj == this) { return true; }
+      if (obj == null) { return false; }
+      if (!(obj.getClass().equals(this.getClass()))) { return false; }
       MRZInfo other = (MRZInfo)obj;
       if (documentType != other.documentType) { return false; }
       if (!issuingState.equals(other.issuingState)) { return false; }
