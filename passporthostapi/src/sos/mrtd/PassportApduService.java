@@ -349,14 +349,27 @@ public class PassportApduService implements CardService
     */
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws IOException {
-      CommandAPDU capdu = createReadBinaryAPDU(offset, le);
-      if (wrapper != null) {
-         capdu = wrapper.wrap(capdu);
-      }
-      ResponseAPDU rapdu = transmit(capdu);
-      if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-      }
+      boolean repeatOnEOF = false;
+      ResponseAPDU rapdu = null;
+      do {
+        repeatOnEOF = false;
+        // In case the data ended right on the block boundary
+        if(le == 0) {
+           return new byte[0];
+        }
+        CommandAPDU capdu = createReadBinaryAPDU(offset, le);
+        if (wrapper != null) {
+          capdu = wrapper.wrap(capdu);
+        }
+        rapdu = transmit(capdu);
+        if (wrapper != null) {
+           rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+        }
+        if(rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
+            le--;
+            repeatOnEOF = true;
+        }
+      }while(repeatOnEOF);
       return rapdu.getData();
    }
 

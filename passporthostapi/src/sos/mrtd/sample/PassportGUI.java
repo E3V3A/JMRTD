@@ -24,22 +24,26 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 
 import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JTextField;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 
 import sos.mrtd.PassportApduService;
+import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
-import sos.smartcards.CardServiceException;
 import sos.smartcards.CardEvent;
-import sos.smartcards.CardTerminalListener;
-import sos.smartcards.CardManager;
 import sos.smartcards.PCSCCardService;
 
 /**
@@ -48,7 +52,7 @@ import sos.smartcards.PCSCCardService;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: $
+ * @version $Revision$
  */
 public class PassportGUI extends JPanel implements PassportListener
 {
@@ -61,6 +65,8 @@ public class PassportGUI extends JPanel implements PassportListener
    private PassportApduService service;
    private APDULogPanel log;
    private JComboBox terminalsComboBox;
+   private JLabel blockSizeLabel;
+   private JTextField blockSizeText;
    private JTabbedPane tabbedPane;
 
    /**
@@ -81,9 +87,24 @@ public class PassportGUI extends JPanel implements PassportListener
             terminalsComboBox.addItem(terminal);
          }
  
+         blockSizeLabel = new JLabel("   Max. read file block:");
+         blockSizeText = new JTextField("255");
+         blockSizeText.setEditable(true);
+         blockSizeText.setEnabled(true);
+         blockSizeText.addCaretListener(new CaretListener(){
+            public void caretUpdate(CaretEvent e) {
+                JTextField f = (JTextField)e.getSource();
+                try {
+                  int n = Integer.parseInt(f.getText());
+                  PassportFileService.maxFileSize = n;
+                }catch(NumberFormatException nfe) {
+                }
+            }             
+         });
          northPanel.add(terminalsComboBox);
+         northPanel.add(blockSizeLabel);
+         northPanel.add(blockSizeText);
          add(northPanel, BorderLayout.NORTH);
-
          log = new APDULogPanel();
          add(log, BorderLayout.SOUTH);
 

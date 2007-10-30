@@ -83,6 +83,9 @@ public class PassportFileService extends PassportAuthService
    /** File indicating which data groups are present. */
    public static final short EF_COM = 0x011E;
 
+   /** The file read block size, some passports cannot handle large values */
+   public static int maxFileSize = 255;
+   
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -109,14 +112,18 @@ public class PassportFileService extends PassportAuthService
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       service.sendSelectFile(wrapper, fid);
       int offset = 0;
+      int len = maxFileSize;
       while (true) {
-         byte[] data = service.sendReadBinary(wrapper, (short)offset, 255);
+         byte[] data = service.sendReadBinary(wrapper, (short)offset, len);
          if (data.length == 0) {
-            // TODO: also break out of loop if SW indicates EOF
             break;
          }
          out.write(data, 0, data.length);
          offset += data.length;
+         if(data.length < len) {
+             break;
+         }
+            
       }
       byte[] file = out.toByteArray();
       return file;
