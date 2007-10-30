@@ -124,7 +124,6 @@ public class PassportGUI extends JPanel implements PassportListener
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);
          add(tabbedPane, BorderLayout.CENTER);
-         service.addAPDUListener(log);
          PassportManager.addPassportListener(this);
       } catch (Exception e) {
          e.printStackTrace();
@@ -134,8 +133,9 @@ public class PassportGUI extends JPanel implements PassportListener
 
    public void passportInserted(CardEvent ce) {
       try {
-         service = new PassportApduService(ce.getService());
-         service.open();
+         service.setService(ce.getService());
+         service.addAPDUListener(log);
+         service.open((String)terminalsComboBox.getSelectedItem());
       } catch (Exception ex) {
          ex.printStackTrace();
       }

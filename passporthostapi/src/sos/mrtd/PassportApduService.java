@@ -65,8 +65,8 @@ import sos.smartcards.ISO7816;
 public class PassportApduService implements CardService
 {
    /** The applet we select when we start a session. */
-   private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02,
-         0x47, 0x10, 0x01 };
+   private static final byte[] APPLET_AID = { 
+       (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
    /** Initialization vector used by the cipher below. */
    private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
@@ -110,13 +110,17 @@ public class PassportApduService implements CardService
     * selecting the passport applet.
     */
    public void open() throws CardServiceException {
-      service.open();
-      sendSelectApplet();
+      if(!service.isOpen()) {
+        service.open();
+        sendSelectApplet();
+      }
    }
    
    public void open(String id) throws CardServiceException {
-      service.open(id);
-      sendSelectApplet();
+       if(!service.isOpen()) {
+         service.open(id);
+         sendSelectApplet();
+       }
    }
    
    public boolean isOpen() {
@@ -130,7 +134,7 @@ public class PassportApduService implements CardService
    private void sendSelectApplet() throws CardServiceException {
       int sw = sendSelectApplet(APPLET_AID);
       if (sw != 0x00009000) {
-         throw new CardServiceException("Could not select passport");
+        throw new CardServiceException("Could not select passport");
       }
    }
 
@@ -144,6 +148,10 @@ public class PassportApduService implements CardService
       }
    }
 
+   public void setService(CardService service) {
+       this.service = service;
+   }
+   
    public void addAPDUListener(APDUListener l) {
       service.addAPDUListener(l);
    }
@@ -154,8 +162,9 @@ public class PassportApduService implements CardService
 
    CommandAPDU createSelectAppletAPDU(byte[] aid) {
       byte[] data = aid;
-      CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
-            (byte) 0x04, (byte) 0x00, data, (byte)0x01);
+      CommandAPDU apdu = new CommandAPDU(
+        ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+           (byte) 0x04, (byte) 0x00, data, (byte)0x01);
       return apdu;
    }
 
@@ -355,7 +364,7 @@ public class PassportApduService implements CardService
         repeatOnEOF = false;
         // In case the data ended right on the block boundary
         if(le == 0) {
-           return new byte[0];
+           return null;
         }
         CommandAPDU capdu = createReadBinaryAPDU(offset, le);
         if (wrapper != null) {

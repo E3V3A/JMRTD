@@ -115,15 +115,11 @@ public class PassportFileService extends PassportAuthService
       int len = maxFileSize;
       while (true) {
          byte[] data = service.sendReadBinary(wrapper, (short)offset, len);
-         if (data.length == 0) {
+         if (data == null || data.length == 0) {
             break;
          }
          out.write(data, 0, data.length);
          offset += data.length;
-         if(data.length < len) {
-             break;
-         }
-            
       }
       byte[] file = out.toByteArray();
       return file;

@@ -30,7 +30,7 @@ public class PassportManager
             CardService service = ce.getService();
             if (isPassportInserted(service)) {
                cardTypes.put(service, CardType.PASSPORT);
-               for (PassportListener l : listeners) { l.passportRemoved(ce); };
+               for (PassportListener l : listeners) { l.passportInserted(ce); };
             } else {
                cardTypes.put(service, CardType.OTHER_CARD);
             }
