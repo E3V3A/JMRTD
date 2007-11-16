@@ -86,7 +86,8 @@ public class PassportGUI extends JPanel implements PassportListener
          for (String terminal: terminals) {
             terminalsComboBox.addItem(terminal);
          }
- 
+         // This is not used at the moment
+         terminalsComboBox.setEnabled(false);
          blockSizeLabel = new JLabel("   Max. read file block:");
          blockSizeText = new JTextField("255");
          blockSizeText.setEditable(true);
@@ -152,7 +153,7 @@ public class PassportGUI extends JPanel implements PassportListener
    public void setEnabled(boolean enabled) {
       super.setEnabled(enabled);
       tabbedPane.setEnabled(enabled);
-      terminalsComboBox.setEnabled(!enabled);
+      //terminalsComboBox.setEnabled(!enabled);
    }
    
    /**
