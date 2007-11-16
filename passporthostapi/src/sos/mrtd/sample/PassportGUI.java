@@ -135,7 +135,7 @@ public class PassportGUI extends JPanel implements PassportListener
       try {
          service.setService(ce.getService());
          service.addAPDUListener(log);
-         service.open((String)terminalsComboBox.getSelectedItem());
+         service.open();
       } catch (Exception ex) {
          ex.printStackTrace();
       }
@@ -146,7 +146,7 @@ public class PassportGUI extends JPanel implements PassportListener
       if (service != null) {
          service.close();
       }
-      setEnabled(true);
+      setEnabled(false);
    }
    
    public void setEnabled(boolean enabled) {

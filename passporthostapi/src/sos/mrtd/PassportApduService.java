@@ -110,17 +110,17 @@ public class PassportApduService implements CardService
     * selecting the passport applet.
     */
    public void open() throws CardServiceException {
-      if(!service.isOpen()) {
-        service.open();
+        if(!service.isOpen()) {
+          service.open();
+        }
         sendSelectApplet();
-      }
    }
    
    public void open(String id) throws CardServiceException {
        if(!service.isOpen()) {
          service.open(id);
-         sendSelectApplet();
        }
+       sendSelectApplet();
    }
    
    public boolean isOpen() {

@@ -30,6 +30,7 @@ public class PassportManager
             CardService service = ce.getService();
             if (isPassportInserted(service)) {
                cardTypes.put(service, CardType.PASSPORT);
+               
                for (PassportListener l : listeners) { l.passportInserted(ce); };
             } else {
                cardTypes.put(service, CardType.OTHER_CARD);
@@ -39,9 +40,9 @@ public class PassportManager
          public void cardRemoved(CardEvent ce) {
             CardService service = ce.getService();
             CardType cardType = cardTypes.remove(service);
-            if (cardType != null
-                  && cardTypes.get(service) == CardType.PASSPORT) {
-               for (PassportListener l : listeners) { l.passportRemoved(ce); };
+            if (cardType != null && cardType == CardType.PASSPORT) {
+               for (PassportListener l : listeners) { 
+                   l.passportRemoved(ce); };
             }
          }
       });
@@ -56,7 +57,7 @@ public class PassportManager
          } catch (CardServiceException cse) {
             return false;
          } finally {
-            apduService.close();
+            //apduService.close();
          }
       } catch (GeneralSecurityException gse) {
          gse.printStackTrace();
