@@ -10,10 +10,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusAdapter;
 import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.ArrayList;
-import java.util.Collection;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -23,8 +22,8 @@ import javax.swing.JTextField;
 import sos.util.Hex;
 
 /**
- * GUI text field component that only accepts hexadecimal representations of
- * byte array of given length.
+ * GUI text field component that only accepts hexadecimal representations
+ * of byte array of given length.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision: 70 $
@@ -34,8 +33,7 @@ public class HexField extends Box
    private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
    private int length;
-   private Collection<ActionListener> listeners;
-   private JTextField textfield;
+   private JTextField textField;
 
    /**
     * Constructs a new hex field of length 1.
@@ -54,22 +52,21 @@ public class HexField extends Box
       JLabel xLabel = new JLabel("0x");
       xLabel.setFont(FONT);
       add(xLabel);
-      textfield = new JTextField(2 * newLength + 1);
-      textfield.setFont(FONT);
+      textField = new JTextField(2 * newLength + 1);
+      textField.setFont(FONT);
       this.length = newLength;
-      this.listeners = new ArrayList<ActionListener>();
-      textfield.addActionListener(new ActionListener() {
+      textField.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             format();
          }
       });
-      textfield.addFocusListener(new FocusAdapter() {
+      textField.addFocusListener(new FocusAdapter() {
          public void focusLost(FocusEvent e) {
             format();
          }
       });
-      add(textfield);
-      textfield.addKeyListener(new KeyAdapter() {
+      add(textField);
+      textField.addKeyListener(new KeyAdapter() {
          public void keyTyped(KeyEvent e) {
             scrubKeyTyped(e);
          }
@@ -95,7 +92,7 @@ public class HexField extends Box
       if (length >= 0) {
          this.length = length;
          clearText();
-         textfield.setColumns(2 * length + 1);
+         textField.setColumns(2 * length + 1);
       }
    }
 
@@ -105,28 +102,28 @@ public class HexField extends Box
     * @param editable indicates whether to enable or disable editability.
     */
    public void setEditable(boolean editable) {
-      textfield.setEditable(editable);
+      textField.setEditable(editable);
    }
 
    /**
     * Clears this hex field.
     */
    public void clearText() {
-      textfield.setText("");
+      textField.setText("");
    }
 
    /**
     * Formats the text.
     */
    void format() {
-      textfield.setText(format(textfield.getText()));
+      textField.setText(format(textField.getText()));
    }
 
    private void scrubKeyTyped(KeyEvent e) {
       String validhex = "0123456789abcdefABCDEF";
       char c = e.getKeyChar();
-      int len = textfield.getText().length();
-      if ((len < 2 * length || textfield.getSelectedText() != null)
+      int len = textField.getText().length();
+      if ((len < 2 * length || textField.getSelectedText() != null)
             && validhex.indexOf(c) >= 0) {
          e.setKeyChar(Character.toUpperCase(c));
          return;
@@ -162,7 +159,7 @@ public class HexField extends Box
     */
    public byte[] getValue() {
       format();
-      return Hex.hexStringToBytes(textfield.getText());
+      return Hex.hexStringToBytes(textField.getText());
    }
 
    public void setValue(long value) {
@@ -185,7 +182,7 @@ public class HexField extends Box
       for (byte element : value) {
          result += Hex.byteToHexString(element);
       }
-      textfield.setText(result);
+      textField.setText(result);
    }
 
    /**
@@ -194,7 +191,11 @@ public class HexField extends Box
     * @param l the <code>ActionListener</code> to add.
     */
    public void addActionListener(ActionListener l) {
-      listeners.add(l);
+      textField.addActionListener(l);
+   }
+   
+   public void addFocusListener(FocusListener l) {
+      textField.addFocusListener(l);
    }
 
    /**
@@ -202,10 +203,9 @@ public class HexField extends Box
     * 
     * @return the preferred size of this component.
     */
-   @Override
    public Dimension getPreferredSize() {
       int width = (int)super.getPreferredSize().getWidth();
-      int height = (int)textfield.getPreferredSize().getHeight();
+      int height = (int)textField.getPreferredSize().getHeight();
       return new Dimension(width, height);
    }
 }
