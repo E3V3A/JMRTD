@@ -145,4 +145,3 @@ public class HexViewPanel extends JPanel
       }
    }
 }
-
