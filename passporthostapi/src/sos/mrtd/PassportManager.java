@@ -6,11 +6,11 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 
+import sos.smartcards.CardEvent;
+import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.CardEvent;
 import sos.smartcards.CardTerminalListener;
-import sos.smartcards.CardManager;
 
 public class PassportManager
 {
@@ -67,7 +67,6 @@ public class PassportManager
 
    private synchronized void addListener(PassportListener l) {
       listeners.add(l);
-      notifyAll();
    }
 
    private synchronized void removeListener(PassportListener l) {
