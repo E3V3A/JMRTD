@@ -14,7 +14,7 @@ import javax.smartcardio.TerminalFactory;
  * Manages card terminals.
  * Source of card insertion and removal events.
  * 
- * @author martijno (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
  * @version $Revision$
  */
@@ -22,14 +22,14 @@ public class CardManager
 {
    private static CardManager terminalManager = new CardManager();
    private Collection<CardTerminalListener> listeners;
-   private Map<CardTerminal, Boolean> wasCardPresent;
+   private Map<CardTerminal, Boolean> cardPresentList;
    private Map<CardTerminal, CardService> terminalServices;
    private Collection<CardTerminal> terminals;
 
    private CardManager() {
       listeners = new ArrayList<CardTerminalListener>();
       terminals = new HashSet<CardTerminal>();
-      wasCardPresent = new Hashtable<CardTerminal, Boolean>();
+      cardPresentList = new Hashtable<CardTerminal, Boolean>();
       terminalServices = new Hashtable<CardTerminal, CardService>();
       (new Thread(new Runnable() {
          public void run() {
@@ -53,8 +53,15 @@ public class CardManager
          TerminalFactory terminalFactory = TerminalFactory.getDefault();
          terminals.addAll(terminalFactory.terminals().list());
          for (CardTerminal terminal: terminals) {
-            if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
-                  wasCardPresent.get(terminal) && !terminal.isCardPresent())) {
+            boolean wasCardPresent = terminal != null && cardPresentList.containsKey(terminal) && cardPresentList.get(terminal);
+            boolean isCardPresent = false;
+            try {
+               isCardPresent = terminal != null && terminal.isCardPresent();
+            } catch (CardException ce) {
+               /* On error, card no longer present... */
+            }
+            
+            if (wasCardPresent && !isCardPresent) {
                CardService service = terminalServices.get(terminal);
                if (service != null) {
                   for (CardTerminalListener l: listeners) {
@@ -63,16 +70,15 @@ public class CardManager
                   service.close();
                   terminalServices.remove(terminal);
                }
-               wasCardPresent.put(terminal, false);
-            } else if (terminal != null && (!wasCardPresent.containsKey(terminal) ||
-                  !wasCardPresent.get(terminal) && terminal.isCardPresent())) {
+               cardPresentList.put(terminal, false);
+            } else if (!wasCardPresent && isCardPresent) {
                PCSCCardService service = new PCSCCardService();
                service.open(terminal);
                terminalServices.put(terminal, service);
                for (CardTerminalListener l: listeners) {
                   l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
                }
-               wasCardPresent.put(terminal, true);
+               cardPresentList.put(terminal, true);
             }
          }
       } catch (CardException ce) {

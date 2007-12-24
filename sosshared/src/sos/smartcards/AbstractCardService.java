@@ -36,7 +36,7 @@ import javax.smartcardio.ResponseAPDU;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision: 259 $
  */
-abstract class AbstractCardService implements CardService
+public abstract class AbstractCardService implements CardService
 {
    static protected final int SESSION_STOPPED_STATE = 0;
 
@@ -92,7 +92,7 @@ abstract class AbstractCardService implements CardService
     * @ requires state == SESSION_STOPPED_STATE;
     * @ ensures state == SESSION_STARTED_STATE;
     */
-   public abstract void open();
+   public abstract void open() throws CardServiceException;
 
    /*
     * @ ensures \result == (state == SESSION_STARTED_STATE);
