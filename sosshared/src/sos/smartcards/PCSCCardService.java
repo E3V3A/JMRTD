@@ -40,7 +40,7 @@ import javax.smartcardio.TerminalFactory;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision$
  */
-class PCSCCardService extends AbstractCardService
+public class PCSCCardService extends AbstractCardService
 {
    private static ArrayList<String> protocols;
 
