@@ -36,34 +36,30 @@ import com.ibm.jc.terminal.RemoteJCTerminal;
  */
 public class JCOPEmulatorService extends AbstractCardService
 {
-
-   private static final String TERMINAL_NAME = "JCOP emulator";
-   private static final String[] TERMINALS = { TERMINAL_NAME };
    private RemoteJCTerminal terminal;
 
-   public void open() {
+   private final String[] terminals = new String[1];
+   
+   public void open() throws CardServiceException {
+      open("localhost:8050");
+    }
+
+   public void open(String id) throws CardServiceException {
       try {
          terminal = new RemoteJCTerminal();
-         terminal.init("localhost:8050");
+         terminal.init(id);
          terminal.open();
          terminal.waitForCard(1000);
+         terminals[0] = "JCOP emulator at " + id;
+         state = SESSION_STARTED_STATE;
+         notifyStartedAPDUSession();
       } catch (JCException jce) {
-         throw new IllegalStateException(
-               "Couldn't establish connection to the emulator: "
-                     + terminal.getErrorMessage());
+         throw new CardServiceException(jce.toString());
       }
-      state = SESSION_STARTED_STATE;
-      notifyStartedAPDUSession();
    }
 
    public String[] getTerminals() {
-      return TERMINALS;
-   }
-
-   public void open(String id) {
-      if (!id.equals(TERMINAL_NAME)) { throw new IllegalArgumentException(
-            "Unknown terminal " + id); }
-      open();
+      return terminals;
    }
    
    public boolean isOpen() {
@@ -97,5 +93,4 @@ public class JCOPEmulatorService extends AbstractCardService
       state = SESSION_STOPPED_STATE;
       notifyStoppedAPDUSession();
    }
-
 }

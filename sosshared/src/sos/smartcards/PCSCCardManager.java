@@ -22,7 +22,7 @@ import javax.smartcardio.TerminalFactory;
  */
 class PCSCCardManager
 {
-   private static PCSCCardManager terminalManager = new PCSCCardManager();
+   private static PCSCCardManager manager = new PCSCCardManager();
    private Collection<CardTerminalListener> listeners;
    private Map<CardTerminal, Boolean> cardPresentList;
    private Map<CardTerminal, CardService> terminalServices;
@@ -98,10 +98,10 @@ class PCSCCardManager
    }
 
    public static void addCardTerminalListener(CardTerminalListener l) {
-      terminalManager.addListener(l);
+      manager.addListener(l);
    }  
    
    public static void removeCardTerminalListener(CardTerminalListener l) {
-      terminalManager.removeListener(l);
+      manager.removeListener(l);
    }
 }
