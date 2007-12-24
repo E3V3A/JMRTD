@@ -11,22 +11,24 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 
 /**
- * Manages card terminals.
- * Source of card insertion and removal events.
+ * Manages the cards in PCSC card terminals.
+ * This is the source of card insertion and removal events.
+ * Ideally this should be the only place where PCSCCardService
+ * instances are created.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
  * @version $Revision$
  */
-public class CardManager
+class PCSCCardManager
 {
-   private static CardManager terminalManager = new CardManager();
+   private static PCSCCardManager terminalManager = new PCSCCardManager();
    private Collection<CardTerminalListener> listeners;
    private Map<CardTerminal, Boolean> cardPresentList;
    private Map<CardTerminal, CardService> terminalServices;
    private Collection<CardTerminal> terminals;
 
-   private CardManager() {
+   private PCSCCardManager() {
       listeners = new ArrayList<CardTerminalListener>();
       terminals = new HashSet<CardTerminal>();
       cardPresentList = new Hashtable<CardTerminal, Boolean>();

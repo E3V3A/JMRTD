@@ -61,7 +61,7 @@ public class CREFService extends AbstractCardService
     * @ requires state == SESSION_STOPPED_STATE; @ ensures state ==
     * SESSION_STARTED_STATE;
     */
-   public void open() {
+   public void open() throws CardServiceException {
       Socket sock;
 
       try {
@@ -72,15 +72,15 @@ public class CREFService extends AbstractCardService
          cad = CadDevice.getCadClientInstance(CadDevice.PROTOCOL_T1, is, os);
          cad.powerUp();
       } catch (IOException e) {
-         System.out.println(e);
+         throw new CardServiceException(e.toString());
       } catch (CadTransportException e) {
-         System.out.println(e);
+         throw new CardServiceException(e.toString());
       }
       state = SESSION_STARTED_STATE;
       notifyStartedAPDUSession();
    }
 
-   public void open(String id) {
+   public void open(String id) throws CardServiceException {
       if (!id.equals(TERMINAL_NAME)) { throw new IllegalArgumentException(
             "Unknown terminal " + id); }
       open();
