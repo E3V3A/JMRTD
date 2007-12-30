@@ -42,52 +42,52 @@ import com.sun.javacard.apduio.CadTransportException;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision: 258 $
  */
-public class CREFService extends AbstractCardService
+public class CREFEmulatorService extends AbstractCardService
 {
-   private static final String TERMINAL_NAME = "CREF simulator";
-   private static final String[] TERMINALS = { TERMINAL_NAME };
-
    private CadClientInterface cad;
+   private Socket sock;
+   private String host;
+   private int port;
 
-   public String[] getTerminals() {
-      return TERMINALS;
+   public CREFEmulatorService(String host, int port) throws CardServiceException {
+      try {
+         this.host = host;
+         this.port = port;
+         this.sock = new Socket(host, port);
+      } catch (IOException ioe) {
+         throw new CardServiceException(ioe.toString());
+      }
    }
 
-   /**
-    * Opens a session with the card. Selects a reader. Connects to the card.
-    * Notifies any interested listeners.
-    */
-   /*
-    * @ requires state == SESSION_STOPPED_STATE; @ ensures state ==
-    * SESSION_STARTED_STATE;
-    */
-   public void open() throws CardServiceException {
-      Socket sock;
-
-      try {
-         sock = new Socket("localhost", 9025);
-         InputStream is = sock.getInputStream();
-         OutputStream os = sock.getOutputStream();
-
-         cad = CadDevice.getCadClientInstance(CadDevice.PROTOCOL_T1, is, os);
-         cad.powerUp();
-      } catch (IOException e) {
-         throw new CardServiceException(e.toString());
-      } catch (CadTransportException e) {
-         throw new CardServiceException(e.toString());
-      }
-      state = SESSION_STARTED_STATE;
-      notifyStartedAPDUSession();
+   public String[] getTerminals() {
+      String[] terminals = { "CREF emulator at " + host + ":" + port };
+      return terminals;
    }
 
    public void open(String id) throws CardServiceException {
-      if (!id.equals(TERMINAL_NAME)) { throw new IllegalArgumentException(
-            "Unknown terminal " + id); }
       open();
    }
-   
+
+   public void open() throws CardServiceException {
+      if (isOpen()) { return; }
+      try {
+         InputStream is = sock.getInputStream();
+         OutputStream os = sock.getOutputStream();
+         cad = CadDevice.getCadClientInstance(CadDevice.PROTOCOL_T1, is, os);
+         cad.powerUp();
+         state = SESSION_STARTED_STATE;
+         notifyStartedAPDUSession();
+      } catch (IOException ioe) {
+         if (sock != null) { try { sock.close(); } catch (IOException ioex) {} }
+         throw new CardServiceException(ioe.toString());
+      } catch (CadTransportException e) {
+         if (sock != null) { try { sock.close(); } catch (IOException ioex) {} }
+         throw new CardServiceException(e.toString());
+      }
+   }
+
    public boolean isOpen() {
-      return (state != SESSION_STOPPED_STATE);
+      return (state != SESSION_STOPPED_STATE);            
    }
 
    /**
@@ -95,10 +95,6 @@ public class CREFService extends AbstractCardService
     * 
     * @param ourCommandAPDU the command apdu to send.
     * @return the response from the card, including the status word.
-    */
-   /*
-    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
-    * SESSION_STARTED_STATE;
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
       try {
@@ -121,16 +117,16 @@ public class CREFService extends AbstractCardService
     * Closes the session with the card. Disconnects from the card and reader.
     * Notifies any interested listeners.
     */
-   /*
-    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
-    * SESSION_STOPPED_STATE;
-    */
    public void close() {
       try {
-         cad.powerDown(false);
-         // powers down, but doesn't kill the socket.
+         if (cad != null) {
+            cad.powerDown();
+            sock.close();
+
+            // cad.powerDown(false);
+            // powers down, but doesn't kill the socket.
+         }
       } catch (Exception e) {
-         e.printStackTrace();
       } finally {
          state = SESSION_STOPPED_STATE;
          notifyStoppedAPDUSession();

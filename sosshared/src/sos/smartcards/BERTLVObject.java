@@ -257,6 +257,13 @@ public class BERTLVObject
                   } catch (ParseException pe) {
                   }
                default:
+            } else {
+               /* EMV */
+               switch (tag) {
+                  case 0x50:
+                     value = new String((byte[])value);
+                     break;
+               }
             }
       } else {
          /*

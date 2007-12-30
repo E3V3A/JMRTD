@@ -85,14 +85,14 @@ public class PCSCCardService extends AbstractCardService
    /**
     * Opens a session with the card in the default terminal.
     */
-   public void open() {
+   public void open() throws CardServiceException {
       try {
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = terminals.get(0);
          open(terminal);
       } catch (CardException ce) {
-         ce.printStackTrace();
+         throw new CardServiceException(ce.toString());
       }
    }
 
@@ -101,7 +101,7 @@ public class PCSCCardService extends AbstractCardService
     * 
     * @param id some identifier (typically the name of a card terminal)
     */
-   public void open(String id) {
+   public void open(String id) throws CardServiceException {
       try {
          System.out.println("DEBUG: OPENING " + id);
          TerminalFactory factory = TerminalFactory.getDefault();
@@ -117,7 +117,7 @@ public class PCSCCardService extends AbstractCardService
          }
          open(terminal);
       } catch (CardException ce) {
-         ce.printStackTrace();
+         throw new CardServiceException(ce.toString());
       }
    }
    
@@ -136,6 +136,7 @@ public class PCSCCardService extends AbstractCardService
          }
       }
       channel = card.getBasicChannel();
+      if (channel == null) { System.out.println("DEBUG: channel == null!"); }
       notifyStartedAPDUSession();
       state = SESSION_STARTED_STATE;
    }

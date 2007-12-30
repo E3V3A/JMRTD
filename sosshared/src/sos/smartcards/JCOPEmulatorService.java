@@ -41,16 +41,17 @@ public class JCOPEmulatorService extends AbstractCardService
    private final String[] terminals = new String[1];
    
    public void open() throws CardServiceException {
-      open("localhost:8050");
-    }
-
+      open("");
+   }
+   
    public void open(String id) throws CardServiceException {
       try {
+         String name = "JCOP emulator " + id;
          terminal = new RemoteJCTerminal();
-         terminal.init(id);
+         terminal.init(name);
          terminal.open();
          terminal.waitForCard(1000);
-         terminals[0] = "JCOP emulator at " + id;
+         terminals[0] = name;
          state = SESSION_STARTED_STATE;
          notifyStartedAPDUSession();
       } catch (JCException jce) {
@@ -93,4 +94,5 @@ public class JCOPEmulatorService extends AbstractCardService
       state = SESSION_STOPPED_STATE;
       notifyStoppedAPDUSession();
    }
+
 }
