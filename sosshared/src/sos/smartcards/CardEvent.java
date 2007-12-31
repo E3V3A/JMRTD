@@ -2,8 +2,6 @@ package sos.smartcards;
 
 import java.util.EventObject;
 
-import javax.smartcardio.CardTerminal;
-
 public class CardEvent extends EventObject
 {
    public static final int REMOVED = 0, INSERTED = 1;
