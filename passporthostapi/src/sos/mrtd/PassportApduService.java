@@ -24,8 +24,6 @@ package sos.mrtd;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.security.Provider;
-import java.security.Security;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;

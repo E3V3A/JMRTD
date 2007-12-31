@@ -24,18 +24,16 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
-import javax.swing.JTextField;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
