@@ -9,6 +9,7 @@
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
     <property name="arch" value="${os.arch}" />
+	<property name="sos-shared-build" location="${basedir}/../sosshared/build"/>
 
 	<target name="init">
 		<!-- Create the time stamp -->
@@ -29,11 +30,6 @@
 	<target name="extensions" description="copy extensions into distribution">
 		<mkdir dir="${distlib}/ext" />
 		<mkdir dir="${distlib}/${arch}" />
-		
-		<!-- Copy sosshared -->
-		<copy todir="${distlib}/ext">
-			<fileset dir="../sosshared/dist/lib" includes="sosshared.jar" />
-		</copy>
 
 		<!-- Copy bouncy castle -->
 		<property name="bcprov" value="bcprov-*.jar" />
@@ -68,6 +64,7 @@
 				<attribute name="Class-path" value="ext/bcprov-jdk16-137.jar ext/jai_imageio.jar" />
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
+			<fileset dir="${sos-shared-build}" includes="**/*.class"/>
 		</jar>
 	</target>
 
