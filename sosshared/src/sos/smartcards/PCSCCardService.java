@@ -103,7 +103,6 @@ public class PCSCCardService extends AbstractCardService
     */
    public void open(String id) throws CardServiceException {
       try {
-         System.out.println("DEBUG: OPENING " + id);
          TerminalFactory factory = TerminalFactory.getDefault();
          List<CardTerminal> terminals = factory.terminals().list();
          CardTerminal terminal = null;
