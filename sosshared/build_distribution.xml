@@ -1,0 +1,46 @@
+<project name="sosshared" default="dist" basedir=".">
+	<description>
+      SoS smart card framework
+   </description>
+
+	<!-- Global properties for this build -->
+	<property name="src" location="src" />
+	<property name="build" location="build" />
+	<property name="dist" location="dist" />
+	<property name="distlib" location="${dist}/lib" />
+    <property name="arch" value="${os.arch}" />
+
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp />
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+
+		<!-- Create the distribution directory structure -->
+		<mkdir dir="${distlib}" />
+	</target>
+
+	<target name="compile" depends="init" description="compile the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac srcdir="${src}" destdir="${build}" />
+	</target>
+
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Copy license, etc. -->
+		<copy todir="${dist}">
+			<fileset dir="." includes="LICENSE, README" />
+		</copy>
+		
+		<!-- Create the distribution jar file -->
+		<jar jarfile="${distlib}/sosshared.jar">
+			<fileset dir="${build}/" includes="**/*.class" />
+		</jar>
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+</project>
