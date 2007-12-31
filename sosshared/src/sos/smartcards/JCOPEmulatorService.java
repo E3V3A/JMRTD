@@ -53,7 +53,6 @@ public class JCOPEmulatorService extends AbstractCardService
          terminal.waitForCard(1000);
          terminals[0] = name;
          state = SESSION_STARTED_STATE;
-         notifyStartedAPDUSession();
       } catch (JCException jce) {
          throw new CardServiceException(jce.toString());
       }
@@ -92,7 +91,6 @@ public class JCOPEmulatorService extends AbstractCardService
                      + terminal.getErrorMessage());
       }
       state = SESSION_STOPPED_STATE;
-      notifyStoppedAPDUSession();
    }
 
 }

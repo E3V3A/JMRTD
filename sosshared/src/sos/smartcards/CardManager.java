@@ -51,8 +51,6 @@ public class CardManager
       })).start();
    }
 
-
-
    private synchronized void poll() throws InterruptedException {
       while (hasNoListeners()) {
          wait();
@@ -111,6 +109,54 @@ public class CardManager
       return result.iterator();
    }
 
+   private synchronized void addListener(CardTerminalListener l) {
+      listeners.add(l);
+      notifyAll();
+   }
+
+   private synchronized void removeListener(CardTerminalListener l) {
+      listeners.remove(l);
+   }
+
+   private synchronized void notifyCardInserted(CardService service) {
+      for (CardTerminalListener l: listeners) {
+         l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
+      }
+   }
+
+   private synchronized void notifyCardRemoved(CardService service) {
+      for (CardTerminalListener l: listeners) {
+         l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
+      }
+   }
+
+   private synchronized boolean hasNoListeners() {
+      return listeners.isEmpty();
+   }
+
+   public static void addCardTerminalListener(CardTerminalListener l) {
+      INSTANCE.addListener(l);
+   }
+
+   public static void removeCardTerminalListener(CardTerminalListener l) {
+      INSTANCE.removeListener(l);
+   }   
+   
+   private synchronized void addEmulator(String host, int port) {
+      terminals.add(new CREFEmulator(host, port));
+   }
+   
+   /**
+    * Starts monitoring host:port for presence of CREF emulator in
+    * the specified host and port.
+    * 
+    * @param host
+    * @param port
+    */
+   public static void connectToCREFEmulator(String host, int port) {
+      INSTANCE.addEmulator(host, port);
+   }
+
    private class CREFEmulator extends CardTerminal
    {
       private String host;
@@ -160,52 +206,5 @@ public class CardManager
       public boolean waitForCardPresent(long arg0) throws CardException {
          return false; // TODO
       }
-   }
-
-   private synchronized void addListener(CardTerminalListener l) {
-      listeners.add(l);
-      notifyAll();
-   }
-
-   private synchronized void removeListener(CardTerminalListener l) {
-      listeners.remove(l);
-   }
-
-   private void notifyCardInserted(CardService service) {
-      for (CardTerminalListener l: listeners) {
-         l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
-      }
-   }
-
-   private void notifyCardRemoved(CardService service) {
-      for (CardTerminalListener l: listeners) {
-         l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
-      }
-   }
-
-   private boolean hasNoListeners() {
-      return listeners.isEmpty();
-   }
-
-   public static void addCardTerminalListener(CardTerminalListener l) {
-      INSTANCE.addListener(l);
-   }
-
-   public static void removeCardTerminalListener(CardTerminalListener l) {
-      INSTANCE.removeListener(l);
-   }
-   
-   /**
-    * Starts monitoring host:port for presence of CREF emulator.
-    * 
-    * @param host
-    * @param port
-    */
-   private synchronized void addEmulator(String host, int port) {
-      terminals.add(new CREFEmulator(host, port));
-   }
-   
-   public static void addCREFEmulator(String host, int port) {
-      INSTANCE.addEmulator(host, port);
    }
 }

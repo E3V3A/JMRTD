@@ -137,7 +137,6 @@ public class PCSCCardService extends AbstractCardService
       }
       channel = card.getBasicChannel();
       if (channel == null) { System.out.println("DEBUG: channel == null!"); }
-      notifyStartedAPDUSession();
       state = SESSION_STARTED_STATE;
    }
    
@@ -148,7 +147,7 @@ public class PCSCCardService extends AbstractCardService
    /**
     * Sends an apdu to the card.
     * 
-    * @param capdu the command apdu to send.
+    * @param ourCommandAPDU the command apdu to send.
     * @return the response from the card, including the status word.
     */
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
@@ -174,7 +173,6 @@ public class PCSCCardService extends AbstractCardService
          if (card != null) {
             card.disconnect(false);
          }
-         notifyStoppedAPDUSession();
          state = SESSION_STOPPED_STATE;
       } catch (CardException ce) {
          ce.printStackTrace();

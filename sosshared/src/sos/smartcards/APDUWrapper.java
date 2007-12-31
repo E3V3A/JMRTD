@@ -16,7 +16,7 @@ public interface APDUWrapper
    /**
     * Wraps the command apdu buffer.
     * 
-    * @param buffer should contain a header (length 4), an explicit lc (0 if
+    * @param capdu should contain a header (length 4), an explicit lc (0 if
     *           no cdata), the cdata (of length lc), and an explicit le (0 if
     *           not specified).
     * @return wrapped apdu buffer

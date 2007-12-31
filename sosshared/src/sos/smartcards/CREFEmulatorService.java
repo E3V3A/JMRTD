@@ -76,7 +76,6 @@ public class CREFEmulatorService extends AbstractCardService
          cad = CadDevice.getCadClientInstance(CadDevice.PROTOCOL_T1, is, os);
          cad.powerUp();
          state = SESSION_STARTED_STATE;
-         notifyStartedAPDUSession();
       } catch (IOException ioe) {
          if (sock != null) { try { sock.close(); } catch (IOException ioex) {} }
          throw new CardServiceException(ioe.toString());
@@ -129,7 +128,6 @@ public class CREFEmulatorService extends AbstractCardService
       } catch (Exception e) {
       } finally {
          state = SESSION_STOPPED_STATE;
-         notifyStoppedAPDUSession();
       }
    }
 
