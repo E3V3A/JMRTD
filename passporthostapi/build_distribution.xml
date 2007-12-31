@@ -29,6 +29,11 @@
 	<target name="extensions" description="copy extensions into distribution">
 		<mkdir dir="${distlib}/ext" />
 		<mkdir dir="${distlib}/${arch}" />
+		
+		<!-- Copy sosshared -->
+		<copy todir="${distlib}/ext">
+			<fileset dir="../sosshared/dist/lib" includes="sosshared.jar" />
+		</copy>
 
 		<!-- Copy bouncy castle -->
 		<property name="bcprov" value="bcprov-*.jar" />
