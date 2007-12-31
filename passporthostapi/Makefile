@@ -1,11 +1,11 @@
 apifiles = src/sos/*/*.java 
 sample = src/sos/mrtd/sample/*.java
-jars = src/lib/bcprov-jdk14-132.jar:src/lib/apduio.jar:src/lib/offcard.jar:src/lib/jpcsc.jar
+jars = dist/lib/ext/bcprov-jdk16-137.jar:/usr/java/jdk1.6/jre/lib/ext/apduio.jar:/usr/java/jdk1.6/jre/lib/ext/offcard.jar
 main_memory_use =       -ms256M -mx256M
 bin:	bin.stamp	
 bin.stamp: $(apifiles) $(sample)
 	mkdir -p bin
-	javac -classpath src:$(jars) -d bin -source 1.5 $(apifiles) $(sample)
+	javac -classpath src:$(jars) -d bin -source 1.6 $(apifiles) $(sample)
 	touch bin.stamp
 
 release:
@@ -23,14 +23,14 @@ run: bin
 doc:
 	mkdir -p apidocs
 	javadoc -d apidocs -author -version\
-	   -sourcepath src\
+	   -sourcepath src:../sosshared/src\
 	   -classpath .:$(HOME)/java/java_card_kit-2_2_2/lib/apduio.jar:/usr/local/eclipse/plugins/com.ibm.bluez.jcop.eclipse_3.1.1.b/lib/offcard.jar\
 	   -windowtitle "JMRTD API"\
 	   -doctitle "JMRTD API"\
-	   -link http://java.sun.com/j2se/1.5/docs/api\
-	   -link http://www.bouncycastle.org/docs/docs1.5\
+	   -link http://java.sun.com/javase/6/docs/api/\
+	   -link http://www.bouncycastle.org/docs/docs1.6\
 	   -link http://java.sun.com/products/javacard/htmldoc\
-	   sos.smartcards sos.mrtd
+	   sos.mrtd
 
 # sos.util sos.gui sos.smartcards sos.mrtd sos.mrtd.sample
 

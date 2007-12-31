@@ -113,7 +113,7 @@ public class SecureMessagingWrapper implements APDUWrapper
     * As a side effect, this method increments the internal send
     * sequence counter maintained by this wrapper.
     *
-    * @param capdu buffer containing the command apdu.
+    * @param commandAPDU buffer containing the command apdu.
     *
     * @return length of the command apdu after wrapping.
     */
@@ -135,7 +135,7 @@ public class SecureMessagingWrapper implements APDUWrapper
    /**
     * Unwraps the apdu buffer <code>rapdu</code> of a response apdu.
     *
-    * @param rapdu buffer containing the response apdu.
+    * @param responseAPDU buffer containing the response apdu.
     * @param len length of the actual response apdu.
     *
     * @return a new byte array containing the unwrapped buffer.

@@ -112,7 +112,8 @@ public class MRZInfo
     * 
     * @param documentType document type
     * @param issuingState issuing state 3 letter abreviation
-    * @param name card holder name
+    * @param primaryIdentifier card holder name
+    * @param secondaryIdentifiers card holder name
     * @param documentNumber document number
     * @param nationality nationality 3 letter abreviation
     * @param dateOfBirth date of birth
