@@ -92,14 +92,18 @@ public class PassportApduService implements CardService
     *         </ul>
     */
    public PassportApduService(CardService service)
-   throws GeneralSecurityException {
+   throws CardServiceException {
       if (service instanceof PassportApduService) {
          this.service = ((PassportApduService)service).service;
       } else {
          this.service = service;
       }
-      cipher = Cipher.getInstance("DESede/CBC/NoPadding");
-      mac = Mac.getInstance("ISO9797Alg3Mac");
+      try {
+         cipher = Cipher.getInstance("DESede/CBC/NoPadding");
+         mac = Mac.getInstance("ISO9797Alg3Mac");
+      } catch (GeneralSecurityException gse) {
+         throw new CardServiceException(gse.toString());
+      }
    }
 
    /**

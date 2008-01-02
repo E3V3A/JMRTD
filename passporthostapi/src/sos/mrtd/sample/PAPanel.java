@@ -30,8 +30,6 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
@@ -58,6 +56,7 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.smartcards.CardServiceException;
 import sos.util.Hex;
 
 /**
@@ -86,7 +85,7 @@ public class PAPanel extends JPanel implements AuthListener
    private Object[] storedHashes;
 
    public PAPanel(PassportApduService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   throws CardServiceException {
       super(new BorderLayout());
       this.apduService = service;
       this.passportService = new PassportService(apduService);

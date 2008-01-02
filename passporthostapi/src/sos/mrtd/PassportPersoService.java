@@ -63,7 +63,7 @@ public class PassportPersoService extends PassportApduService {
    private static final byte MRZ_TAG = 0x62;
 
    public PassportPersoService(CardService service)
-   throws GeneralSecurityException {
+   throws CardServiceException {
       super(service);
    }
 

@@ -26,8 +26,6 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 
 import javax.swing.BorderFactory;
@@ -46,6 +44,7 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.smartcards.CardServiceException;
 import sos.util.Hex;
 
 /**
@@ -73,7 +72,7 @@ implements AuthListener
    private PublicKey pubkey;
 
    public AAPanel(PassportApduService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   throws CardServiceException {
       super(new BorderLayout());
       this.apduService = service;
       this.authService = new PassportAuthService(apduService);

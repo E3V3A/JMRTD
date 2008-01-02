@@ -83,12 +83,12 @@ public class PassportService extends PassportAuthService
    public static final short EF_SOD = 0x011D;
    /** File indicating which data groups are present. */
    public static final short EF_COM = 0x011E;
-   
+
    /** The file read block size, some passports cannot handle large values */
    public static int maxFileSize = 255;
-   
+
    private PassportAuthService passportAuthService;
-   
+
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -98,8 +98,7 @@ public class PassportService extends PassportAuthService
     * @throws GeneralSecurityException when the available JCE providers
     *         cannot provide the necessary cryptographic primitives.
     */
-   public PassportService(CardService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   public PassportService(CardService service) throws CardServiceException {
       super(service);
       if (service instanceof PassportService) {
          this.passportAuthService =
@@ -108,6 +107,7 @@ public class PassportService extends PassportAuthService
          this.passportAuthService = new PassportAuthService(service);
       }
       addAuthenticationListener(passportAuthService);
+
    }
 
    /**
@@ -132,7 +132,7 @@ public class PassportService extends PassportAuthService
    public DataGroup readDataGroup(int tag) throws CardServiceException {
       return (DataGroup)getFile(tag);
    }
-   
+
    /**
     * Gets DG1.
     * 
@@ -143,7 +143,7 @@ public class PassportService extends PassportAuthService
    public DG1File readDG1() throws CardServiceException {
       return (DG1File)readDataGroup(PassportFile.EF_DG1_TAG);
    }
-   
+
    /**
     * Gets DG2.
     * 
@@ -154,7 +154,7 @@ public class PassportService extends PassportAuthService
    public DG2File readDG2() throws CardServiceException {
       return (DG2File)readDataGroup(PassportFile.EF_DG2_TAG);
    }
-   
+
    /**
     * Gets DG15.
     * 
@@ -165,7 +165,7 @@ public class PassportService extends PassportAuthService
    public DG15File readDG15() throws CardServiceException {
       return (DG15File)readDataGroup(PassportFile.EF_DG15_TAG);
    }
-   
+
    /**
     * Gets the document security object.
     * 
@@ -190,7 +190,7 @@ public class PassportService extends PassportAuthService
       short fid = PassportFile.lookupFIDByTag(tag);
       return PassportFile.getInstance(readFile(fid));
    }
-   
+
    /**
     * Reads the file with id <code>fid</code>.
     *

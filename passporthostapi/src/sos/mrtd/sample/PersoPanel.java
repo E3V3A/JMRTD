@@ -87,7 +87,7 @@ AuthListener {
    private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
    public PersoPanel(CardService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   throws CardServiceException {
       super(new GridLayout(3, 1));
 
       JPanel personalisationPanel = new JPanel(new FlowLayout());

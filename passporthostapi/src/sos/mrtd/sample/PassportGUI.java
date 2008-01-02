@@ -96,7 +96,7 @@ public class PassportGUI extends JPanel implements PassportListener
                 try {
                   int n = Integer.parseInt(f.getText());
                   PassportService.maxFileSize = n;
-                }catch(NumberFormatException nfe) {
+                } catch(NumberFormatException nfe) {
                 }
             }             
          });
@@ -110,15 +110,18 @@ public class PassportGUI extends JPanel implements PassportListener
          tabbedPane = new JTabbedPane();
          BACPanel bacPanel = new BACPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
+         MRZPanel mrzPanel = new MRZPanel(service);
          FacePanel facePanel = new FacePanel(service);
          PAPanel paPanel = new PAPanel(service);
          AAPanel aaPanel = new AAPanel(service);
          bacPanel.addAuthenticationListener(ldsPanel);
+         bacPanel.addAuthenticationListener(mrzPanel);
          bacPanel.addAuthenticationListener(facePanel);
          bacPanel.addAuthenticationListener(paPanel);
          bacPanel.addAuthenticationListener(aaPanel);
          tabbedPane.addTab("BAC", bacPanel);
          tabbedPane.addTab("LDS", ldsPanel);
+         tabbedPane.addTab("MRZ", mrzPanel);
          tabbedPane.addTab("Face", facePanel);
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);

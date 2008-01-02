@@ -27,7 +27,6 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.security.GeneralSecurityException;
 
 import javax.crypto.SecretKey;
 import javax.swing.BorderFactory;
@@ -66,7 +65,7 @@ public class BACPanel extends JPanel
    private PassportApduService apduService;
    private PassportAuthService authService;
 
-   public BACPanel(PassportApduService service) throws GeneralSecurityException {
+   public BACPanel(PassportApduService service) throws CardServiceException {
       super(new GridLayout(3,1));
       this.apduService = service;
       this.authService = new PassportAuthService(service);

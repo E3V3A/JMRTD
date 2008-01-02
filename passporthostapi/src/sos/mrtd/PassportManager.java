@@ -30,7 +30,7 @@ public class PassportManager
             CardService service = ce.getService();
             if (isPassportInserted(service)) {
                cardTypes.put(service, CardType.PASSPORT);
-               
+
                for (PassportListener l : listeners) { l.passportInserted(ce); };
             } else {
                cardTypes.put(service, CardType.OTHER_CARD);
@@ -42,7 +42,7 @@ public class PassportManager
             CardType cardType = cardTypes.remove(service);
             if (cardType != null && cardType == CardType.PASSPORT) {
                for (PassportListener l : listeners) { 
-                   l.passportRemoved(ce); };
+                  l.passportRemoved(ce); };
             }
          }
       });
@@ -51,17 +51,12 @@ public class PassportManager
    private boolean isPassportInserted(CardService service) {
       try {
          PassportApduService apduService = new PassportApduService(service);
-         try {
-            apduService.open(); /* Selects applet... */
-            return true;
-         } catch (CardServiceException cse) {
-            return false;
-         } finally {
-            //apduService.close();
-         }
-      } catch (GeneralSecurityException gse) {
-         gse.printStackTrace();
+         apduService.open(); /* Selects applet... */
+         return true;
+      } catch (CardServiceException cse) {
          return false;
+      } finally {
+         //apduService.close();
       }
    }
 

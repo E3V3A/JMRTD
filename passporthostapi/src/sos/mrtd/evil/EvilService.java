@@ -60,8 +60,7 @@ public class EvilService extends PassportAuthService
     * @throws GeneralSecurityException when the available JCE providers
     *         cannot provide the necessary cryptographic primitives.
     */
-   public EvilService(CardService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   public EvilService(CardService service) throws CardServiceException {
       super(service);
    }
 

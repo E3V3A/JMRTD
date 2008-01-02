@@ -67,14 +67,18 @@ public class PassportAuthService implements CardService, AuthListener
    protected PassportApduService service;
    protected SecureMessagingWrapper wrapper;
    private Signature aaSignature;
-   private MessageDigest aaDigest = MessageDigest.getInstance("SHA1");
-   private Cipher aaCipher = Cipher.getInstance("RSA");
+   private MessageDigest aaDigest;
+   private Cipher aaCipher;
 
-   private PassportAuthService() throws GeneralSecurityException {
-      aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
-      aaDigest = MessageDigest.getInstance("SHA1");
-      aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
-      authListeners = new ArrayList<AuthListener>();
+   private PassportAuthService() throws CardServiceException {
+      try {
+         aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
+         aaDigest = MessageDigest.getInstance("SHA1");
+         aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
+         authListeners = new ArrayList<AuthListener>();
+      } catch (GeneralSecurityException gse) {
+         throw new CardServiceException(gse.toString());
+      }
    }
 
    /**
@@ -87,7 +91,7 @@ public class PassportAuthService implements CardService, AuthListener
     *         cannot provide the necessary cryptographic primitives.
     */
    public PassportAuthService(CardService service)
-   throws GeneralSecurityException {
+   throws CardServiceException {
       this();
       if (service instanceof PassportAuthService) {
          this.service = ((PassportAuthService)service).service;
@@ -107,7 +111,7 @@ public class PassportAuthService implements CardService, AuthListener
     * @param wrapper encapsulates secure messaging state
     */
    public PassportAuthService(CardService service, SecureMessagingWrapper wrapper)
-   throws GeneralSecurityException {
+   throws CardServiceException {
       this(service);
       this.wrapper = wrapper;
       if (state < BAC_AUTHENTICATED_STATE) {

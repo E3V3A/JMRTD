@@ -26,8 +26,6 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
 
 import javax.swing.JButton;
 import javax.swing.JPanel;
@@ -36,6 +34,7 @@ import javax.swing.JTextArea;
 
 import sos.mrtd.PassportApduService;
 import sos.mrtd.evil.EvilService;
+import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for doing AA.
@@ -53,7 +52,7 @@ public class EvilPanel extends JPanel
    private EvilService evilService;
    
    public EvilPanel(PassportApduService service)
-   throws GeneralSecurityException, UnsupportedEncodingException {
+   throws CardServiceException {
       super(new BorderLayout());
       this.apduService = service;
       this.evilService = new EvilService(apduService);
