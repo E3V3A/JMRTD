@@ -24,8 +24,10 @@ package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -55,8 +57,12 @@ import sos.smartcards.CardServiceException;
 public class MRZPanel extends JPanel
 implements Runnable, ActionListener, AuthListener
 {
+
+   private static final Font FONT = new Font("Monospaced", Font.PLAIN, 14);
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+   private static final SimpleDateFormat SDF = new SimpleDateFormat(
+   "MMMM dd, yyyy");
 
    private MRZInfo info;
    private JTextArea infoArea;
@@ -74,6 +80,7 @@ implements Runnable, ActionListener, AuthListener
       buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
       infoArea = new JTextArea(20, 10);
       infoArea.setEditable(false);
+      infoArea.setFont(FONT);
       add(buttonPanel, BorderLayout.NORTH);
       add(new JScrollPane(infoArea), BorderLayout.CENTER);
    }
@@ -101,8 +108,8 @@ implements Runnable, ActionListener, AuthListener
          for (int i = 0; i < firstNames.length; i++) {
             infoArea.append("SecondaryIdentifier " + (i + 1) + ": \"" + firstNames[i] + "\"\n");
          }
-         infoArea.append("DateOfBirth: \"" + info.getDateOfBirth() + "\"\n");
-         infoArea.append("DateOfExpiry: \"" + info.getDateOfExpiry() + "\"\n");
+         infoArea.append("DateOfBirth: \"" + SDF.format(info.getDateOfBirth()) + "\"\n");
+         infoArea.append("DateOfExpiry: \"" + SDF.format(info.getDateOfExpiry()) + "\"\n");
          infoArea.append("Gender: \"" + info.getGender() + "\"\n");
       } catch (Exception e) {
          e.printStackTrace();
