@@ -234,7 +234,7 @@ public class MRZInfo
       primaryIdentifier = st.nextToken();
       String rest = mrzNameString.substring(mrzNameString.indexOf("<<") + 2);
       st = new StringTokenizer(rest, "<");
-      Collection result = new ArrayList();
+      Collection<String> result = new ArrayList<String>();
       while (st.hasMoreTokens()) {
          String identifier = st.nextToken();
          if (identifier != null && identifier.length() > 0) {

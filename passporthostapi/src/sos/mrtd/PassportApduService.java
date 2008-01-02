@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 
 import javax.crypto.Cipher;
@@ -64,7 +63,7 @@ public class PassportApduService implements CardService
 {
    /** The applet we select when we start a session. */
    private static final byte[] APPLET_AID = { 
-       (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
+      (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
    /** Initialization vector used by the cipher below. */
    private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
@@ -93,7 +92,7 @@ public class PassportApduService implements CardService
     *         </ul>
     */
    public PassportApduService(CardService service)
-         throws GeneralSecurityException {
+   throws GeneralSecurityException {
       if (service instanceof PassportApduService) {
          this.service = ((PassportApduService)service).service;
       } else {
@@ -108,35 +107,35 @@ public class PassportApduService implements CardService
     * selecting the passport applet.
     */
    public void open() throws CardServiceException {
-        if(!service.isOpen()) {
-          service.open();
-        }
-        sendSelectApplet();
+      if(!service.isOpen()) {
+         service.open();
+      }
+      sendSelectApplet();
    }
-   
+
    public void open(String id) throws CardServiceException {
-       if(!service.isOpen()) {
+      if(!service.isOpen()) {
          service.open(id);
-       }
-       sendSelectApplet();
+      }
+      sendSelectApplet();
    }
-   
+
    public boolean isOpen() {
       return service.isOpen();
    }
-   
+
    public String[] getTerminals() {
       return service.getTerminals();
    }
-   
+
    private void sendSelectApplet() throws CardServiceException {
       int sw = sendSelectApplet(APPLET_AID);
       if (sw != 0x00009000) {
-        throw new CardServiceException("Could not select passport");
+         throw new CardServiceException("Could not select passport");
       }
    }
 
-   public ResponseAPDU transmit(CommandAPDU capdu) {
+   public ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException {
       return service.transmit(capdu);
    }
 
@@ -147,9 +146,9 @@ public class PassportApduService implements CardService
    }
 
    public void setService(CardService service) {
-       this.service = service;
+      this.service = service;
    }
-   
+
    public void addAPDUListener(APDUListener l) {
       service.addAPDUListener(l);
    }
@@ -161,8 +160,8 @@ public class PassportApduService implements CardService
    CommandAPDU createSelectAppletAPDU(byte[] aid) {
       byte[] data = aid;
       CommandAPDU apdu = new CommandAPDU(
-        ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
-           (byte) 0x04, (byte) 0x00, data, (byte)0x01);
+            ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
+            (byte) 0x04, (byte) 0x00, data, (byte)0x01);
       return apdu;
    }
 
@@ -194,7 +193,7 @@ public class PassportApduService implements CardService
             p2, le);
       return apdu;
    }
-   
+
    CommandAPDU createInternalAuthenticateAPDU(byte[] rndIFD) {
       if (rndIFD == null || rndIFD.length != 8) {
          throw new IllegalArgumentException("rndIFD wrong length");
@@ -282,7 +281,7 @@ public class PassportApduService implements CardService
     * 
     * @return status word
     */
-   public int sendSelectApplet(byte[] aid) {
+   public int sendSelectApplet(byte[] aid) throws CardServiceException {
       return transmit(createSelectAppletAPDU(aid)).getSW();
    }
 
@@ -291,10 +290,10 @@ public class PassportApduService implements CardService
     *
     * @param fid the file to select
     */
-   public void sendSelectFile(short fid) throws IOException {
+   public void sendSelectFile(short fid) throws CardServiceException {
       sendSelectFile(null, fid);
    }
-   
+
    /**
     * Sends a <code>SELECT FILE</code> command to the passport.
     * Secure messaging will be applied to the command and response
@@ -304,7 +303,7 @@ public class PassportApduService implements CardService
     * @param fid the file to select
     */
    public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
-         throws IOException {
+   throws CardServiceException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);
@@ -316,7 +315,7 @@ public class PassportApduService implements CardService
    }
 
    void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
-         throws IOException {
+   throws CardServiceException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);
@@ -337,10 +336,10 @@ public class PassportApduService implements CardService
     *         (the specified part of) the contents of the
     *         currently selected file
     */
-   public byte[] sendReadBinary(short offset, int le) throws IOException {
+   public byte[] sendReadBinary(short offset, int le) throws CardServiceException {
       return sendReadBinary(null, offset, le);
    }
-   
+
    /**
     * Sends a <code>READ BINARY</code> command to the passport.
     * Secure messaging will be applied to the command and response
@@ -355,27 +354,27 @@ public class PassportApduService implements CardService
     *         currently selected file
     */
    public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
-         int le) throws IOException {
+         int le) throws CardServiceException {
       boolean repeatOnEOF = false;
       ResponseAPDU rapdu = null;
       do {
-        repeatOnEOF = false;
-        // In case the data ended right on the block boundary
-        if(le == 0) {
-           return null;
-        }
-        CommandAPDU capdu = createReadBinaryAPDU(offset, le);
-        if (wrapper != null) {
-          capdu = wrapper.wrap(capdu);
-        }
-        rapdu = transmit(capdu);
-        if (wrapper != null) {
-           rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-        }
-        if(rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
+         repeatOnEOF = false;
+         // In case the data ended right on the block boundary
+         if(le == 0) {
+            return null;
+         }
+         CommandAPDU capdu = createReadBinaryAPDU(offset, le);
+         if (wrapper != null) {
+            capdu = wrapper.wrap(capdu);
+         }
+         rapdu = transmit(capdu);
+         if (wrapper != null) {
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+         }
+         if(rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
             le--;
             repeatOnEOF = true;
-        }
+         }
       }while(repeatOnEOF);
       return rapdu.getData();
    }
@@ -385,7 +384,7 @@ public class PassportApduService implements CardService
     *
     * @return a byte array of length 8 containing the challenge
     */
-   public byte[] sendGetChallenge() {
+   public byte[] sendGetChallenge() throws CardServiceException {
       ResponseAPDU rapdu = transmit(createGetChallengeAPDU());
       return rapdu.getData();
    }
@@ -397,10 +396,10 @@ public class PassportApduService implements CardService
     * 
     * @return the response from the passport (status word removed)
     */
-   public byte[] sendInternalAuthenticate(byte[] rndIFD) {
+   public byte[] sendInternalAuthenticate(byte[] rndIFD) throws CardServiceException {
       return sendInternalAuthenticate(null, rndIFD);
    }
-   
+
    /**
     * Sends an <code>INTERNAL AUTHENTICATE</code> command to the passport.
     * 
@@ -409,7 +408,8 @@ public class PassportApduService implements CardService
     * 
     * @return the response from the passport (status word removed)
     */
-   public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) {
+   public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD)
+   throws CardServiceException {
       CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);
@@ -420,7 +420,7 @@ public class PassportApduService implements CardService
       }
       return rapdu.getData();
    }
-   
+
    /**
     * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport.
     * The resulting byte array has length 32 and contains <code>rndICC</code> 
@@ -438,30 +438,34 @@ public class PassportApduService implements CardService
     *         and verified (using <code>kMac</code>)
     */
    public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
-         SecretKey kEnc, SecretKey kMac) throws GeneralSecurityException {
-      byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
-            kMac)).getBytes();
+         SecretKey kEnc, SecretKey kMac) throws CardServiceException {
+      try {
+         byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
+               kMac)).getBytes();
 
-      if (rapdu.length != 42) {
-         throw new IllegalStateException("Response wrong length: "
-               + rapdu.length + "!=" + 42);
-      }
+         if (rapdu.length != 42) {
+            throw new IllegalStateException("Response wrong length: "
+                  + rapdu.length + "!=" + 42);
+         }
 
-      /*
+         /*
        byte[] eICC = new byte[32];
        System.arraycopy(rapdu, 0, eICC, 0, 32);
 
        byte[] mICC = new byte[8];
        System.arraycopy(rapdu, 32, mICC, 0, 8);
-       */
+          */
 
-      /* Decrypt the response. */
-      cipher.init(Cipher.DECRYPT_MODE, kEnc, ZERO_IV_PARAM_SPEC);
-      byte[] result = cipher.doFinal(rapdu, 0, rapdu.length - 8 - 2);
-      if (result.length != 32) {
-         throw new IllegalStateException("Cryptogram wrong length "
-               + result.length);
+         /* Decrypt the response. */
+         cipher.init(Cipher.DECRYPT_MODE, kEnc, ZERO_IV_PARAM_SPEC);
+         byte[] result = cipher.doFinal(rapdu, 0, rapdu.length - 8 - 2);
+         if (result.length != 32) {
+            throw new IllegalStateException("Cryptogram wrong length "
+                  + result.length);
+         }
+         return result;
+      } catch (GeneralSecurityException gse) {
+         throw new CardServiceException(gse.toString());
       }
-      return result;
    }
 }

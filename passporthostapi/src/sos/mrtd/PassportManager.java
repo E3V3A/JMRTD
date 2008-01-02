@@ -16,7 +16,7 @@ public class PassportManager
 {
    private enum CardType { OTHER_CARD, PASSPORT };
 
-   private static PassportManager passportManager = new PassportManager();
+   private static final PassportManager INSTANCE = new PassportManager();
 
    private Map<CardService, CardType> cardTypes;
    private Collection<PassportListener> listeners;
@@ -74,10 +74,10 @@ public class PassportManager
    }
 
    public static void addPassportListener(PassportListener l) {
-      passportManager.addListener(l);
+      INSTANCE.addListener(l);
    }
 
    public static void removePassportListener(PassportListener l) {
-      passportManager.removeListener(l);
+      INSTANCE.removeListener(l);
    }
 }

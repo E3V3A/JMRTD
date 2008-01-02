@@ -32,6 +32,7 @@ import javax.smartcardio.ResponseAPDU;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 
 /**
  * Card service for using the filesystem on the passport.
@@ -76,7 +77,7 @@ public class EvilService extends PassportAuthService
     *
     * @return interface version number of the evil applet.
     */
-   public short openBackDoor() throws IOException {
+   public short openBackDoor() throws CardServiceException {
       SecureMessagingWrapper wrapper = getWrapper();
       short version;
       byte[] result;
@@ -91,7 +92,7 @@ public class EvilService extends PassportAuthService
    /**
     * Closes the backdoor to an evil applet.
     */
-   public void closeBackDoor() throws IOException {
+   public void closeBackDoor() throws CardServiceException {
       SecureMessagingWrapper wrapper = getWrapper();
 
       sendEvilCommand(wrapper, EvilInterface.INS_CLOSE_BACKDOOR, (byte) 0, (byte) 0, 0,
@@ -111,7 +112,8 @@ public class EvilService extends PassportAuthService
     *         (the specified part of) the contents of the
     *         currently selected file
     */
-   public byte[] sendEvilCommand(SecureMessagingWrapper wrapper, byte ins, byte p1, byte p2, int le, byte[] payload) throws IOException {
+   public byte[] sendEvilCommand(SecureMessagingWrapper wrapper, byte ins, byte p1, byte p2, int le, byte[] payload)
+   throws CardServiceException {
       CommandAPDU capdu = createEvilAPDU(ins, p1, p2, le, payload);
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);

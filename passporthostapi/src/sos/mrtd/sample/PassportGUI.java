@@ -38,9 +38,9 @@ import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
+import sos.mrtd.PassportService;
 import sos.smartcards.CardEvent;
 import sos.smartcards.PCSCCardService;
 
@@ -95,7 +95,7 @@ public class PassportGUI extends JPanel implements PassportListener
                 JTextField f = (JTextField)e.getSource();
                 try {
                   int n = Integer.parseInt(f.getText());
-                  PassportFileService.maxFileSize = n;
+                  PassportService.maxFileSize = n;
                 }catch(NumberFormatException nfe) {
                 }
             }             

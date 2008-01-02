@@ -22,11 +22,13 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 
 /**
  * High level card passport service for using the passport.
@@ -45,8 +47,48 @@ import sos.smartcards.CardService;
  */
 public class PassportService extends PassportAuthService
 {
-   private PassportFileService passportFileService;
-
+   /** Data group 1 contains the MRZ. */
+   public static final short EF_DG1 = 0x0101;
+   /** Data group 2 contains face image data. */
+   public static final short EF_DG2 = 0x0102;
+   /** Data group 3 contains finger print data. */
+   public static final short EF_DG3 = 0x0103;
+   /** Data group 4 contains iris data. */
+   public static final short EF_DG4 = 0x0104;
+   /** Data group 5 contains displayed portrait. */
+   public static final short EF_DG5 = 0x0105;
+   /** Data group 6 is RFU. */
+   public static final short EF_DG6 = 0x0106;
+   /** Data group 7 contains displayed signature. */
+   public static final short EF_DG7 = 0x0107;
+   /** Data group 8 contains data features. */
+   public static final short EF_DG8 = 0x0108;
+   /** Data group 9 contains structure features. */
+   public static final short EF_DG9 = 0x0109;
+   /** Data group 10 contains substance features. */
+   public static final short EF_DG10 = 0x010A;
+   /** Data group 11 contains additional personal details. */
+   public static final short EF_DG11 = 0x010B;
+   /** Data group 12 contains additional document details. */
+   public static final short EF_DG12 = 0x010C;
+   /** Data group 13 contains optional details. */
+   public static final short EF_DG13 = 0x010D;
+   /** Data group 14 is RFU. */
+   public static final short EF_DG14 = 0x010E;
+   /** Data group 15 contains the public key used for Active Authentication. */
+   public static final short EF_DG15 = 0x010F;
+   /** Data group 16 contains person(s) to notify. */
+   public static final short EF_DG16 = 0x0110;
+   /** The security document. */
+   public static final short EF_SOD = 0x011D;
+   /** File indicating which data groups are present. */
+   public static final short EF_COM = 0x011E;
+   
+   /** The file read block size, some passports cannot handle large values */
+   public static int maxFileSize = 255;
+   
+   private PassportAuthService passportAuthService;
+   
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -60,12 +102,12 @@ public class PassportService extends PassportAuthService
    throws GeneralSecurityException, UnsupportedEncodingException {
       super(service);
       if (service instanceof PassportService) {
-         this.passportFileService =
-            ((PassportService)service).passportFileService;
+         this.passportAuthService =
+            ((PassportService)service).passportAuthService;
       } else {
-         this.passportFileService = new PassportFileService(service);
+         this.passportAuthService = new PassportAuthService(service);
       }
-      addAuthenticationListener(passportFileService);
+      addAuthenticationListener(passportAuthService);
    }
 
    /**
@@ -74,7 +116,7 @@ public class PassportService extends PassportAuthService
     * @return the file containing the data group presence list
     * @throws IOException if the file cannot be read
     */
-   public COMFile readCOMFile() throws IOException {
+   public COMFile readCOMFile() throws CardServiceException {
       return (COMFile)getFile(PassportFile.EF_COM_TAG);
    }
 
@@ -87,7 +129,7 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */
-   public DataGroup readDataGroup(int tag) throws IOException {
+   public DataGroup readDataGroup(int tag) throws CardServiceException {
       return (DataGroup)getFile(tag);
    }
    
@@ -98,7 +140,7 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */
-   public DG1File readDG1() throws IOException {
+   public DG1File readDG1() throws CardServiceException {
       return (DG1File)readDataGroup(PassportFile.EF_DG1_TAG);
    }
    
@@ -109,7 +151,7 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */   
-   public DG2File readDG2() throws IOException {
+   public DG2File readDG2() throws CardServiceException {
       return (DG2File)readDataGroup(PassportFile.EF_DG2_TAG);
    }
    
@@ -120,7 +162,7 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */
-   public DG15File readDG15() throws IOException {
+   public DG15File readDG15() throws CardServiceException {
       return (DG15File)readDataGroup(PassportFile.EF_DG15_TAG);
    }
    
@@ -131,7 +173,7 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */
-   public SODFile getSODFile() throws IOException {
+   public SODFile getSODFile() throws CardServiceException {
       return (SODFile)getFile(PassportFile.EF_SOD_TAG);
    }
 
@@ -144,8 +186,35 @@ public class PassportService extends PassportAuthService
     * 
     * @throws IOException if the file cannot be read
     */
-   private PassportFile getFile(int tag) throws IOException {
+   private PassportFile getFile(int tag) throws CardServiceException {
       short fid = PassportFile.lookupFIDByTag(tag);
-      return PassportFile.getInstance(passportFileService.readFile(fid));
+      return PassportFile.getInstance(readFile(fid));
+   }
+   
+   /**
+    * Reads the file with id <code>fid</code>.
+    *
+    * @param fid the file to read.
+    *
+    * @return the contents of the file.
+    * 
+    * @deprecated Shall be made private!
+    */
+   public byte[] readFile(short fid) throws CardServiceException {
+      SecureMessagingWrapper wrapper = getWrapper();
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
+      service.sendSelectFile(wrapper, fid);
+      int offset = 0;
+      int len = maxFileSize;
+      while (true) {
+         byte[] data = service.sendReadBinary(wrapper, (short)offset, len);
+         if (data == null || data.length == 0) {
+            break;
+         }
+         out.write(data, 0, data.length);
+         offset += data.length;
+      }
+      byte[] file = out.toByteArray();
+      return file;
    }
 }

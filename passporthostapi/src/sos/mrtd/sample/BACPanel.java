@@ -43,6 +43,7 @@ import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.Util;
+import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for step-by-step execution of the
@@ -61,10 +62,10 @@ public class BACPanel extends JPanel
    private SecretKey ksEnc, ksMac;
    private byte[] kICC, kIFD, rndICC, rndIFD;
    private long ssc;
- 
+
    private PassportApduService apduService;
    private PassportAuthService authService;
-   
+
    public BACPanel(PassportApduService service) throws GeneralSecurityException {
       super(new GridLayout(3,1));
       this.apduService = service;
@@ -74,11 +75,11 @@ public class BACPanel extends JPanel
       add(bacKeyPanel);
       add(new MutualAuthPanel());
    }
-   
+
    public void addAuthenticationListener(AuthListener l) {
       authService.addAuthenticationListener(l);
    }
-   
+
    private class ChallengePanel extends JPanel implements ActionListener
    {
       private HexField challengeField;
@@ -96,14 +97,18 @@ public class BACPanel extends JPanel
       }
 
       public void actionPerformed(ActionEvent ae) {
-         byte[] tmpRndICC = new byte[8];
-         tmpRndICC = apduService.sendGetChallenge();
-         if (tmpRndICC != null && tmpRndICC.length == 8) {
-            rndICC = tmpRndICC;
-            challengeField.setValue(rndICC);
+         try {
+            byte[] tmpRndICC = new byte[8];
+            tmpRndICC = apduService.sendGetChallenge();
+            if (tmpRndICC != null && tmpRndICC.length == 8) {
+               rndICC = tmpRndICC;
+               challengeField.setValue(rndICC);
+            }
+         } catch (CardServiceException cse) {
+            cse.printStackTrace();
          }
       }
-      
+
       public byte[] getChallenge() {
          return rndICC;
       }
@@ -114,7 +119,7 @@ public class BACPanel extends JPanel
       private HexField challengeField, keyField;
       private HexField plaintextField;
       private HexField ksEncTF, ksMacTF, sscTF;
-      
+
       public MutualAuthPanel() {
          super(new BorderLayout());
          setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,

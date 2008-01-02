@@ -42,6 +42,7 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 import sos.util.Hex;
 
 /**
@@ -54,7 +55,7 @@ import sos.util.Hex;
 public class APDUSenderPanel extends JPanel implements ActionListener, Runnable, AuthListener {
 
    private static final Border PANEL_BORDER = BorderFactory
-         .createEtchedBorder(EtchedBorder.RAISED);
+   .createEtchedBorder(EtchedBorder.RAISED);
 
    private CommandAPDUField bApduField, eApduField;
 
@@ -79,11 +80,11 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
 
       JPanel endPanel = new JPanel(new FlowLayout());
       endPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-            "End APDU"));
+      "End APDU"));
       eApduField = new CommandAPDUField();
 
       endPanel.add(eApduField);
- 
+
       JPanel controlPanel = new JPanel(new FlowLayout());
       enabledCheckBox = new JCheckBox();
       enabledCheckBox.setSelected(true);
@@ -142,16 +143,20 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       if (isWrapped) {
          capdu = wrapper.wrap(capdu);
       }
-      ResponseAPDU rapdu = service.transmit(capdu);
-      if (isWrapped) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-         System.out.println("PLAIN: C: "
-               + Hex.bytesToHexString(capdu.getBytes())
-               + ", R: "
-               + Hex.bytesToHexString(rapdu.getBytes()));
+      try {
+         ResponseAPDU rapdu = service.transmit(capdu);
+         if (isWrapped) {
+            rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+            System.out.println("PLAIN: C: "
+                  + Hex.bytesToHexString(capdu.getBytes())
+                  + ", R: "
+                  + Hex.bytesToHexString(rapdu.getBytes()));
+         }
+      } catch (CardServiceException cse) {
+         System.out.println("failed to send!");
       }
    }
-   
+
    private void send(CommandAPDU bApdu, CommandAPDU eApdu, boolean isWrapped) {
       /* FIXME: Need to take care of le? */
       byte[] a = bApdu.getBytes();

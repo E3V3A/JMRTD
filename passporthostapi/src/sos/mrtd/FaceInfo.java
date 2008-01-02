@@ -386,7 +386,7 @@ public class FaceInfo
    private BufferedImage readImage(InputStream in, String mimeType)
    throws IOException {
       ImageInputStream iis = ImageIO.createImageInputStream(in);
-      Iterator readers = ImageIO.getImageReadersByMIMEType(mimeType);
+      Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
       while (readers.hasNext()) {
          try {
             ImageReader reader = (ImageReader)readers.next();
@@ -407,7 +407,7 @@ public class FaceInfo
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
-      Iterator writers = ImageIO.getImageWritersByMIMEType(mimeType);
+      Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
       if (!writers.hasNext()) {
          throw new IOException("No writers for \"" + mimeType + "\"");
       }
@@ -554,7 +554,7 @@ public class FaceInfo
                .add("distorting medical condition (which could impact feature point detection)");
       }
       StringBuffer out = new StringBuffer();
-      for (Iterator it = features.iterator(); it.hasNext();) {
+      for (Iterator<String> it = features.iterator(); it.hasNext();) {
          out.append(it.next().toString());
          if (it.hasNext()) {
             out.append(", ");

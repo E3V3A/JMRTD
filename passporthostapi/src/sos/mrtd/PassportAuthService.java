@@ -29,7 +29,6 @@ import java.security.PublicKey;
 import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -62,8 +61,8 @@ public class PassportAuthService implements CardService, AuthListener
    private static final int BAC_AUTHENTICATED_STATE = 2;
    private static final int AA_AUTHENTICATED_STATE = 3;
    private int state;
-   
-   private Collection authListeners;
+
+   private Collection<AuthListener> authListeners;
 
    protected PassportApduService service;
    protected SecureMessagingWrapper wrapper;
@@ -75,9 +74,9 @@ public class PassportAuthService implements CardService, AuthListener
       aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
       aaDigest = MessageDigest.getInstance("SHA1");
       aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
-      authListeners = new ArrayList();
+      authListeners = new ArrayList<AuthListener>();
    }
-   
+
    /**
     * Creates a new passport service for accessing the passport.
     * 
@@ -99,7 +98,7 @@ public class PassportAuthService implements CardService, AuthListener
       }   
       state = SESSION_STOPPED_STATE;
    }
-   
+
    /**
     * Hack to construct a passport service from a service that is already open.
     * This should be removed some day.
@@ -127,11 +126,11 @@ public class PassportAuthService implements CardService, AuthListener
       service.open();
       state = SESSION_STARTED_STATE;
    }
-   
+
    public boolean isOpen() {
       return (state != SESSION_STOPPED_STATE);
    }
-   
+
    public String[] getTerminals() {
       return service.getTerminals();
    }
@@ -143,7 +142,7 @@ public class PassportAuthService implements CardService, AuthListener
       service.open(id);
       state = SESSION_STARTED_STATE;
    }
-   
+
    /**
     * Performs the <i>Basic Access Control</i> protocol.
     *
@@ -152,29 +151,35 @@ public class PassportAuthService implements CardService, AuthListener
     * @param dateOfExpiry document's expiry date
     */
    public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
-         throws GeneralSecurityException, UnsupportedEncodingException {
-      byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
-      SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-      SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-      byte[] rndICC = service.sendGetChallenge();
-      byte[] rndIFD = new byte[8]; /* TODO: random */
-      byte[] kIFD = new byte[16]; /* TODO: random */
-      byte[] response = service.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
-      byte[] kICC = new byte[16];
-      System.arraycopy(response, 16, kICC, 0, 16);
-      keySeed = new byte[16];
-      for (int i = 0; i < 16; i++) {
-         keySeed[i] = (byte) ((kIFD[i] & 0x000000FF) ^ (kICC[i] & 0x000000FF));
+   throws CardServiceException {
+      try {
+         byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
+         SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
+         SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
+         byte[] rndICC = service.sendGetChallenge();
+         byte[] rndIFD = new byte[8]; /* TODO: random */
+         byte[] kIFD = new byte[16]; /* TODO: random */
+         byte[] response = service.sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
+         byte[] kICC = new byte[16];
+         System.arraycopy(response, 16, kICC, 0, 16);
+         keySeed = new byte[16];
+         for (int i = 0; i < 16; i++) {
+            keySeed[i] = (byte) ((kIFD[i] & 0x000000FF) ^ (kICC[i] & 0x000000FF));
+         }
+         SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
+         SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
+         long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
+         wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+         BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, true);
+         notifyBACPerformed(event);
+         state = BAC_AUTHENTICATED_STATE;
+      } catch (GeneralSecurityException gse) {
+         throw new CardServiceException(gse.toString());
+      } catch (UnsupportedEncodingException uee) {
+         throw new CardServiceException(uee.toString());
       }
-      SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-      SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-      long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-      wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-      BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, true);
-      notifyBACPerformed(event);
-      state = BAC_AUTHENTICATED_STATE;
    }
-   
+
    /**
     * Adds an authentication event listener.
     * 
@@ -183,7 +188,7 @@ public class PassportAuthService implements CardService, AuthListener
    public void addAuthenticationListener(AuthListener l) {
       authListeners.add(l);
    }
-   
+
    /**
     * Removes an authentication event listener.
     * 
@@ -192,19 +197,17 @@ public class PassportAuthService implements CardService, AuthListener
    public void removeAuthenticationListener(AuthListener l) {
       authListeners.remove(l);
    }
-   
+
    /**
     * Notifies listeners about BAC events.
     * 
     * @param event BAC event
     */
    protected void notifyBACPerformed(BACEvent event) {
-      Iterator it = authListeners.iterator();
-      while (it.hasNext()) {
-          AuthListener listener = (AuthListener)it.next();
-          listener.performedBAC(event);
+      for (AuthListener l : authListeners) {
+         l.performedBAC(event);
       }
-  }
+   }
 
    /**
     * Performs the <i>Active Authentication</i> protocol.
@@ -215,39 +218,41 @@ public class PassportAuthService implements CardService, AuthListener
     * 
     * @throws GeneralSecurityException if something goes wrong
     */
-   public boolean doAA(PublicKey pubkey) throws GeneralSecurityException {
-      aaCipher.init(Cipher.DECRYPT_MODE, pubkey);
-      aaSignature.initVerify(pubkey);
-      byte[] m2 = new byte[8]; /* TODO: random rndIFD */
-      byte[] response = service.sendInternalAuthenticate(wrapper, m2);
-      int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
-      byte[] plaintext = aaCipher.doFinal(response);
-      byte[] m1 = Util.recoverMessage(digestLength, plaintext);
-      aaSignature.update(m1);
-      aaSignature.update(m2);
-      boolean success = aaSignature.verify(response);
-      AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
-      notifyAAPerformed(event);
-      if (success) {
-         state = AA_AUTHENTICATED_STATE;
+   public boolean doAA(PublicKey pubkey) throws CardServiceException {
+      try {
+         aaCipher.init(Cipher.DECRYPT_MODE, pubkey);
+         aaSignature.initVerify(pubkey);
+         byte[] m2 = new byte[8]; /* TODO: random rndIFD */
+         byte[] response = service.sendInternalAuthenticate(wrapper, m2);
+         int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
+         byte[] plaintext = aaCipher.doFinal(response);
+         byte[] m1 = Util.recoverMessage(digestLength, plaintext);
+         aaSignature.update(m1);
+         aaSignature.update(m2);
+         boolean success = aaSignature.verify(response);
+         AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
+         notifyAAPerformed(event);
+         if (success) {
+            state = AA_AUTHENTICATED_STATE;
+         }
+         return success;
+      } catch (GeneralSecurityException gse) {
+         throw new CardServiceException(gse.toString());
       }
-      return success;
    }
-   
+
    /**
     * Notifies listeners about AA event.
     * 
     * @param event AA event.
     */
    protected void notifyAAPerformed(AAEvent event) {
-      Iterator it = authListeners.iterator();
-      while (it.hasNext()) {
-          AuthListener listener = (AuthListener)it.next();
-          listener.performedAA(event);
+      for (AuthListener l: authListeners) {
+         l.performedAA(event);
       }
-  }
-   
-   public ResponseAPDU transmit(CommandAPDU capdu) {
+   }
+
+   public ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException {
       return service.transmit(capdu);
    }
 
@@ -267,7 +272,7 @@ public class PassportAuthService implements CardService, AuthListener
    public void removeAPDUListener(APDUListener l) {
       service.removeAPDUListener(l);
    }
-   
+
    /**
     * Gets the wrapper. Returns <code>null</code> until a
     * BAC has been performed.
@@ -277,7 +282,7 @@ public class PassportAuthService implements CardService, AuthListener
    public SecureMessagingWrapper getWrapper() {
       return wrapper;
    }
-   
+
    /**
     * @deprecated hack
     * @param wrapper wrapper

@@ -47,10 +47,11 @@ import sos.gui.HexField;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
-import sos.mrtd.PassportFileService;
 import sos.mrtd.PassportPersoService;
+import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for sending initialization commands to the passport.
@@ -62,287 +63,295 @@ import sos.smartcards.CardService;
  * @version $Revision$
  */
 public class PersoPanel extends JPanel implements ActionListener,
-        AuthListener {
-    private JButton createFileButton;
-    private JButton selectFileButton;
-    private JButton selectLocalFileButton;
-    private JButton updateBinaryButton;
-    private HexField lenField;
-    private HexField fidField;
-    private File fileToUpload;
-    private PassportPersoService service;
-    private SecureMessagingWrapper wrapper;
-    private JButton personalisationButton;
-    private JTextField docNrField;
-    private JTextField dobField;
-    private JTextField doeField;
-    private JButton generateKeyPairButton;
-    private JButton uploadPrivateKey;
-    private JButton uploadPublicKey;
-    private JButton lockButton;
-    
-    private KeyPair keyPair;
+AuthListener {
+   private JButton createFileButton;
+   private JButton selectFileButton;
+   private JButton selectLocalFileButton;
+   private JButton updateBinaryButton;
+   private HexField lenField;
+   private HexField fidField;
+   private File fileToUpload;
+   private PassportPersoService service;
+   private SecureMessagingWrapper wrapper;
+   private JButton personalisationButton;
+   private JTextField docNrField;
+   private JTextField dobField;
+   private JTextField doeField;
+   private JButton generateKeyPairButton;
+   private JButton uploadPrivateKey;
+   private JButton uploadPublicKey;
+   private JButton lockButton;
 
-    private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+   private KeyPair keyPair;
 
-    public PersoPanel(CardService service)
-            throws GeneralSecurityException, UnsupportedEncodingException {
-        super(new GridLayout(3, 1));
+   private static final Border PANEL_BORDER = BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-        JPanel personalisationPanel = new JPanel(new FlowLayout());
-        personalisationPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-                                                                        "Set MRZ details"));
-        JPanel fileSendingPanel = new JPanel(new FlowLayout());
-        fileSendingPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-                                                                    "Upload raw passport data"));
-        JPanel initAAPanel = new JPanel(new FlowLayout());
-        initAAPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
-                                                               "Generate Active Authentication keypair"));
+   public PersoPanel(CardService service)
+   throws GeneralSecurityException, UnsupportedEncodingException {
+      super(new GridLayout(3, 1));
 
-        add(personalisationPanel);
-        add(fileSendingPanel);
-        add(initAAPanel);
+      JPanel personalisationPanel = new JPanel(new FlowLayout());
+      personalisationPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
+      "Set MRZ details"));
+      JPanel fileSendingPanel = new JPanel(new FlowLayout());
+      fileSendingPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
+      "Upload raw passport data"));
+      JPanel initAAPanel = new JPanel(new FlowLayout());
+      initAAPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
+      "Generate Active Authentication keypair"));
 
-        this.service = new PassportPersoService(service);
-        this.wrapper = null;
+      add(personalisationPanel);
+      add(fileSendingPanel);
+      add(initAAPanel);
 
-        selectLocalFileButton = new JButton("Select local file ... ");
-        createFileButton = new JButton("Create file");
-        selectFileButton = new JButton("Select file");
-        updateBinaryButton = new JButton("Update binary");
-        selectLocalFileButton.addActionListener(this);
-        createFileButton.addActionListener(this);
-        selectFileButton.addActionListener(this);
-        updateBinaryButton.addActionListener(this);
-        fidField = new HexField(2);
-        lenField = new HexField(2);
-        fileSendingPanel.add(selectLocalFileButton);
-        fileSendingPanel.add(new JLabel("file: "));
-        fileSendingPanel.add(fidField);
-        fileSendingPanel.add(new JLabel("length:"));
-        fileSendingPanel.add(lenField);
-        fileSendingPanel.add(createFileButton);
-        fileSendingPanel.add(selectFileButton);
-        fileSendingPanel.add(updateBinaryButton);
+      this.service = new PassportPersoService(service);
+      this.wrapper = null;
 
-        personalisationButton = new JButton("Personalize");
-        personalisationButton.addActionListener(this);
-        docNrField = new JTextField(9);
-        dobField = new JTextField(6);
-        doeField = new JTextField(6);
-        lockButton = new JButton("Lock");
-        lockButton.addActionListener(this);
+      selectLocalFileButton = new JButton("Select local file ... ");
+      createFileButton = new JButton("Create file");
+      selectFileButton = new JButton("Select file");
+      updateBinaryButton = new JButton("Update binary");
+      selectLocalFileButton.addActionListener(this);
+      createFileButton.addActionListener(this);
+      selectFileButton.addActionListener(this);
+      updateBinaryButton.addActionListener(this);
+      fidField = new HexField(2);
+      lenField = new HexField(2);
+      fileSendingPanel.add(selectLocalFileButton);
+      fileSendingPanel.add(new JLabel("file: "));
+      fileSendingPanel.add(fidField);
+      fileSendingPanel.add(new JLabel("length:"));
+      fileSendingPanel.add(lenField);
+      fileSendingPanel.add(createFileButton);
+      fileSendingPanel.add(selectFileButton);
+      fileSendingPanel.add(updateBinaryButton);
 
-        personalisationPanel.add(new JLabel("Document number:"));
-        personalisationPanel.add(docNrField);
-        personalisationPanel.add(new JLabel("Date of birth:"));
-        personalisationPanel.add(dobField);
-        personalisationPanel.add(new JLabel("Date of expiry:"));
-        personalisationPanel.add(doeField);
-        personalisationPanel.add(personalisationButton);
-        personalisationPanel.add(lockButton);
-        
-        generateKeyPairButton = new JButton("Generate keypair");
-        generateKeyPairButton.addActionListener(this);
-        uploadPrivateKey = new JButton("Upload private key");
-        uploadPrivateKey.addActionListener(this);
-        uploadPublicKey = new JButton("Upload public key (DG15)");
-        uploadPublicKey.addActionListener(this);
-        initAAPanel.add(generateKeyPairButton);
-        initAAPanel.add(uploadPrivateKey);
-        initAAPanel.add(uploadPublicKey);
-    }
+      personalisationButton = new JButton("Personalize");
+      personalisationButton.addActionListener(this);
+      docNrField = new JTextField(9);
+      dobField = new JTextField(6);
+      doeField = new JTextField(6);
+      lockButton = new JButton("Lock");
+      lockButton.addActionListener(this);
 
-    public void actionPerformed(ActionEvent ae) {
-        JButton butt = (JButton) ae.getSource();
+      personalisationPanel.add(new JLabel("Document number:"));
+      personalisationPanel.add(docNrField);
+      personalisationPanel.add(new JLabel("Date of birth:"));
+      personalisationPanel.add(dobField);
+      personalisationPanel.add(new JLabel("Date of expiry:"));
+      personalisationPanel.add(doeField);
+      personalisationPanel.add(personalisationButton);
+      personalisationPanel.add(lockButton);
 
-        try {
-            if (butt == selectLocalFileButton) {
-                pressedSelectLocalFileButton();
-            } else if (butt == createFileButton) {
-                pressedCreateFileButton();
-            } else if (butt == selectFileButton) {
-                pressedSelectFileButton();
-            } else if (butt == updateBinaryButton) {
-                pressedUpdateBinaryButton();
-            } else if (butt == personalisationButton) {
-                pressedPersonalisationButton();
-            } else if (butt == generateKeyPairButton) {
-                pressedGenerateKeyPairButton();
-            } else if (butt == uploadPrivateKey) {
-                pressedUploadPrivateKey();
-            } else if (butt == uploadPublicKey) {
-                pressedUploadPublicKey();
-            } else if (butt == lockButton) {
-                pressedLockButton();
-            }
+      generateKeyPairButton = new JButton("Generate keypair");
+      generateKeyPairButton.addActionListener(this);
+      uploadPrivateKey = new JButton("Upload private key");
+      uploadPrivateKey.addActionListener(this);
+      uploadPublicKey = new JButton("Upload public key (DG15)");
+      uploadPublicKey.addActionListener(this);
+      initAAPanel.add(generateKeyPairButton);
+      initAAPanel.add(uploadPrivateKey);
+      initAAPanel.add(uploadPublicKey);
+   }
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+   public void actionPerformed(ActionEvent ae) {
+      JButton butt = (JButton) ae.getSource();
 
-    private void pressedLockButton() {
-//        new Thread(new Runnable() {
-//            public void run() {
-                service.lockApplet(wrapper);
-//            }
-//        });
-    }
+      try {
+         if (butt == selectLocalFileButton) {
+            pressedSelectLocalFileButton();
+         } else if (butt == createFileButton) {
+            pressedCreateFileButton();
+         } else if (butt == selectFileButton) {
+            pressedSelectFileButton();
+         } else if (butt == updateBinaryButton) {
+            pressedUpdateBinaryButton();
+         } else if (butt == personalisationButton) {
+            pressedPersonalisationButton();
+         } else if (butt == generateKeyPairButton) {
+            pressedGenerateKeyPairButton();
+         } else if (butt == uploadPrivateKey) {
+            pressedUploadPrivateKey();
+         } else if (butt == uploadPublicKey) {
+            pressedUploadPublicKey();
+         } else if (butt == lockButton) {
+            pressedLockButton();
+         }
 
-    private void pressedUploadPublicKey() throws IOException {
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
+   }
 
-        final InputStream DG15 = service.createDG15(keyPair.getPublic());
-
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    service.createFile(wrapper,
-                                       PassportFileService.EF_DG15,
-                                       (short) DG15.available());
-                    service.selectFile(wrapper, PassportFileService.EF_DG15);
-                    service.writeFile(wrapper,
-                                      PassportFileService.EF_DG15,
-                                      DG15);
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
-            }
-        }).start();
-    }
-    
-//    private void saveKey(Key k, File file) 
-//    throws IOException {
-//        
-//        if (file.exists()) {
-//            if (!file.canWrite()) {
-//                System.out.println("DEBUG: file " + file
-//                        + " exists, cannot write.");
-//                return;
-//            }
-//        } else {
-//            if (!file.createNewFile()) {
-//                System.out.println("DEBUG: cannot create " + file + ".");
-//                return;
-//            }
-//        }
-//
-//        FileOutputStream fileStream = new FileOutputStream(file);
-//        fileStream.write(k.getEncoded());
-//        fileStream.close();
+   private void pressedLockButton() {
+//    new Thread(new Runnable() {
+//    public void run() {
+      try {
+         service.lockApplet(wrapper);
+      } catch (CardServiceException cse) {
+         cse.printStackTrace();
+      }
 //    }
+//    });
+   }
 
-    private void pressedUploadPrivateKey() throws IOException {
+   private void pressedUploadPublicKey() throws IOException {
 
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    service.putPrivateKey(wrapper, keyPair.getPrivate());
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+      final InputStream DG15 = service.createDG15(keyPair.getPublic());
+
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+               service.createFile(wrapper,
+                     PassportService.EF_DG15,
+                     (short) DG15.available());
+               service.selectFile(wrapper, PassportService.EF_DG15);
+               service.writeFile(wrapper,
+                     PassportService.EF_DG15,
+                     DG15);
+            } catch (Exception e) {
+               e.printStackTrace();
             }
-        }).start();
-    }
+         }
+      }).start();
+   }
 
-    private void pressedGenerateKeyPairButton() throws GeneralSecurityException, IOException {
-        keyPair = PassportPersoService.generateAAKeyPair();                
-    }
+// private void saveKey(Key k, File file) 
+// throws IOException {
 
-    private void pressedPersonalisationButton() {
-        try {
-            final byte[] docNr = docNrField.getText().getBytes("ASCII");
-            final byte[] dob = dobField.getText().getBytes("ASCII");
-            final byte[] doe = doeField.getText().getBytes("ASCII");
+// if (file.exists()) {
+// if (!file.canWrite()) {
+// System.out.println("DEBUG: file " + file
+// + " exists, cannot write.");
+// return;
+// }
+// } else {
+// if (!file.createNewFile()) {
+// System.out.println("DEBUG: cannot create " + file + ".");
+// return;
+// }
+// }
 
-            new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        service.putMRZ(docNr, dob, doe);
-                    } catch(IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }).start();
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-    }
+// FileOutputStream fileStream = new FileOutputStream(file);
+// fileStream.write(k.getEncoded());
+// fileStream.close();
+// }
 
-    private void pressedUpdateBinaryButton() {
-        final byte[] fid = fidField.getValue();
+   private void pressedUploadPrivateKey() throws IOException {
 
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    FileInputStream in = new FileInputStream(fileToUpload);
-                    service.writeFile(wrapper,
-                                      (short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)),
-                                      in);
-                    in.close();
-                } catch (IOException ioe) {
-                    ioe.printStackTrace();
-                }
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+               service.putPrivateKey(wrapper, keyPair.getPrivate());
+            } catch (CardServiceException e) {
+               e.printStackTrace();
             }
-        }).start();
-    }
+         }
+      }).start();
+   }
 
-    private void pressedSelectFileButton() {
-        final byte[] fid = fidField.getValue();
+   private void pressedGenerateKeyPairButton() throws GeneralSecurityException, IOException {
+      keyPair = PassportPersoService.generateAAKeyPair();                
+   }
 
-        new Thread(new Runnable() {
+   private void pressedPersonalisationButton() {
+      try {
+         final byte[] docNr = docNrField.getText().getBytes("ASCII");
+         final byte[] dob = dobField.getText().getBytes("ASCII");
+         final byte[] doe = doeField.getText().getBytes("ASCII");
+
+         new Thread(new Runnable() {
             public void run() {
-                try {
-                    service.selectFile(wrapper, fid);
-                } catch (IOException e) {
-                    // TODO Auto-generated catch block
-                    e.printStackTrace();
-                }
+               try {
+                  service.putMRZ(docNr, dob, doe);
+               } catch(CardServiceException e) {
+                  e.printStackTrace();
+               }
             }
-        }).start();
-    }
+         }).start();
+      } catch (UnsupportedEncodingException e) {
+         e.printStackTrace();
+      }
+   }
 
-    private void pressedCreateFileButton() {
-        final short fid = bytesToShort(fidField.getValue());
-        final short len = bytesToShort(lenField.getValue());
+   private void pressedUpdateBinaryButton() {
+      final byte[] fid = fidField.getValue();
 
-        new Thread(new Runnable() {
-            public void run() {
-                service.createFile(wrapper, fid, len);
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+               FileInputStream in = new FileInputStream(fileToUpload);
+               service.writeFile(wrapper,
+                     (short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)),
+                     in);
+               in.close();
+            } catch (CardServiceException cse) {
+               cse.printStackTrace();
+
+            } catch (IOException ioe) {
+               ioe.printStackTrace();
             }
-        }).start();
-    }
+         }
+      }).start();
+   }
 
-    private short bytesToShort(byte[] value) {
-        short total = 0;
-        for (int i = 0; i < value.length; i++) {
-            total = (short) (total << 8);
-            total += (value[i] & 0xff);
-        }
-        return total;
-    }
+   private void pressedSelectFileButton() {
+      final byte[] fid = fidField.getValue();
 
-    private void pressedSelectLocalFileButton() throws Exception {
-        final JFileChooser chooser = new JFileChooser();
-        chooser.setDialogTitle("Select file");
-        // chooser.setCurrentDirectory(currentDir);
-        chooser.setFileHidingEnabled(false);
-        int n = chooser.showOpenDialog(this);
-        if (n != JFileChooser.APPROVE_OPTION) {
-            System.out.println("DEBUG: select file canceled...");
-            return;
-        }
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+               service.selectFile(wrapper, fid);
+            } catch (CardServiceException e) {
+               e.printStackTrace();
+            }
+         }
+      }).start();
+   }
 
-        fileToUpload = chooser.getSelectedFile();
-        lenField.setValue(fileToUpload.length());
-    }
+   private void pressedCreateFileButton() {
+      final short fid = bytesToShort(fidField.getValue());
+      final short len = bytesToShort(lenField.getValue());
 
-    public void performedBAC(BACEvent be) {
-        this.wrapper = be.getWrapper();
-    }
+      new Thread(new Runnable() {
+         public void run() {
+            try {
+               service.createFile(wrapper, fid, len);
+            } catch (CardServiceException cse) {
+               cse.printStackTrace();
+            }
+         }
+      }).start();
+   }
 
-    public void performedAA(AAEvent ae) {
-    }
+   private short bytesToShort(byte[] value) {
+      short total = 0;
+      for (int i = 0; i < value.length; i++) {
+         total = (short) (total << 8);
+         total += (value[i] & 0xff);
+      }
+      return total;
+   }
+
+   private void pressedSelectLocalFileButton() throws Exception {
+      final JFileChooser chooser = new JFileChooser();
+      chooser.setDialogTitle("Select file");
+      // chooser.setCurrentDirectory(currentDir);
+      chooser.setFileHidingEnabled(false);
+      int n = chooser.showOpenDialog(this);
+      if (n != JFileChooser.APPROVE_OPTION) {
+         System.out.println("DEBUG: select file canceled...");
+         return;
+      }
+
+      fileToUpload = chooser.getSelectedFile();
+      lenField.setValue(fileToUpload.length());
+   }
+
+   public void performedBAC(BACEvent be) {
+      this.wrapper = be.getWrapper();
+   }
+
+   public void performedAA(AAEvent ae) {
+   }
 }

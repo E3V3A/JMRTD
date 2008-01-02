@@ -28,7 +28,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 
 import javax.smartcardio.CommandAPDU;
 import javax.swing.BorderFactory;
@@ -106,7 +105,7 @@ public class CommandAPDUField extends JPanel {
       cdataTF.reset();
       validate();
    }
-   
+
    public void setEnabled(boolean b) {
       reset();
       for (int i = 0; i < getComponentCount(); i++) {
@@ -151,13 +150,13 @@ public class CommandAPDUField extends JPanel {
     */
    private class ComponentToggler implements ActionListener {
 
-      private Collection components;
+      private Collection<JComponent> components;
 
       /**
        * Creates a new toggler.
        */
       public ComponentToggler() {
-         components = new ArrayList();
+         components = new ArrayList<JComponent>();
       }
 
       /**
@@ -182,13 +181,10 @@ public class CommandAPDUField extends JPanel {
        *    happened.
        */
       public void actionPerformed(ActionEvent e) {
-         Iterator componentsIt = components.iterator();
-         while (componentsIt.hasNext()) {
-            JComponent component = (JComponent)componentsIt.next();
+         for (JComponent component: components) {
             if (component.isEnabled()) {
                component.setEnabled(false);
-            }
-            else {
+            } else {
                component.setEnabled(true);
             }
          }

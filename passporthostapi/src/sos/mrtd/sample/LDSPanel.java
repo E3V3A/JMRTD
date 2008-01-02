@@ -41,7 +41,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportFileService;
+import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 
 /**
@@ -131,7 +131,7 @@ implements ActionListener, AuthListener
       new Thread(new Runnable() {
          public void run() {
             try {
-               PassportFileService s = new PassportFileService(service);
+               PassportService s = new PassportService(service);
                s.setWrapper(wrapper);
                byte[] data =
                   s.readFile((short) (((fid[0] & 0x000000FF) << 8)

@@ -145,24 +145,24 @@ public abstract class PassportFile
     */
    static short lookupFIDByTag(int tag) {
       switch(tag) {
-         case EF_COM_TAG: return PassportFileService.EF_COM;
-         case EF_DG1_TAG: return PassportFileService.EF_DG1;
-         case EF_DG2_TAG: return PassportFileService.EF_DG2;
-         case EF_DG3_TAG: return PassportFileService.EF_DG3;
-         case EF_DG4_TAG: return PassportFileService.EF_DG4;
-         case EF_DG5_TAG: return PassportFileService.EF_DG5;
-         case EF_DG6_TAG: return PassportFileService.EF_DG6;
-         case EF_DG7_TAG: return PassportFileService.EF_DG7;
-         case EF_DG8_TAG: return PassportFileService.EF_DG8;
-         case EF_DG9_TAG: return PassportFileService.EF_DG9;
-         case EF_DG10_TAG: return PassportFileService.EF_DG10;
-         case EF_DG11_TAG: return PassportFileService.EF_DG11;
-         case EF_DG12_TAG: return PassportFileService.EF_DG12;
-         case EF_DG13_TAG: return PassportFileService.EF_DG13;
-         case EF_DG14_TAG: return PassportFileService.EF_DG14;
-         case EF_DG15_TAG: return PassportFileService.EF_DG15;
-         case EF_DG16_TAG: return PassportFileService.EF_DG16;
-         case EF_SOD_TAG: return PassportFileService.EF_SOD;
+         case EF_COM_TAG: return PassportService.EF_COM;
+         case EF_DG1_TAG: return PassportService.EF_DG1;
+         case EF_DG2_TAG: return PassportService.EF_DG2;
+         case EF_DG3_TAG: return PassportService.EF_DG3;
+         case EF_DG4_TAG: return PassportService.EF_DG4;
+         case EF_DG5_TAG: return PassportService.EF_DG5;
+         case EF_DG6_TAG: return PassportService.EF_DG6;
+         case EF_DG7_TAG: return PassportService.EF_DG7;
+         case EF_DG8_TAG: return PassportService.EF_DG8;
+         case EF_DG9_TAG: return PassportService.EF_DG9;
+         case EF_DG10_TAG: return PassportService.EF_DG10;
+         case EF_DG11_TAG: return PassportService.EF_DG11;
+         case EF_DG12_TAG: return PassportService.EF_DG12;
+         case EF_DG13_TAG: return PassportService.EF_DG13;
+         case EF_DG14_TAG: return PassportService.EF_DG14;
+         case EF_DG15_TAG: return PassportService.EF_DG15;
+         case EF_DG16_TAG: return PassportService.EF_DG16;
+         case EF_SOD_TAG: return PassportService.EF_SOD;
          default:
             throw new NumberFormatException("Unknown tag "
                                             + Integer.toHexString(tag));
