@@ -63,7 +63,7 @@ public class PassportApduService implements CardService
 {
    /** The applet we select when we start a session. */
    private static final byte[] APPLET_AID = { 
-      (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
+      (byte)0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
    /** Initialization vector used by the cipher below. */
    private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
