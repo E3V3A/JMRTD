@@ -49,7 +49,7 @@ public class ImagePanel extends JPanel
    private static final int MAX_RADIUS = 40;
    private BufferedImage image;;
 
-   Map highlights;
+   Map<String, Point> highlights;
    Color highlightColor;
    int radius;
 
@@ -60,7 +60,7 @@ public class ImagePanel extends JPanel
       super(null);
       highlightColor = new Color(1, (float)0.1, (float)0.1, (float)0.7);
       radius = MAX_RADIUS;
-      highlights = new HashMap();
+      highlights = new HashMap<String, Point>();
       image = null;
       
       /*
@@ -126,7 +126,7 @@ public class ImagePanel extends JPanel
          return;
       }
       g2.drawImage(image, 0, 0, this);
-      Iterator it = highlights.keySet().iterator();
+      Iterator<String> it = highlights.keySet().iterator();
       while (it != null && it.hasNext()) {
          String key = (String)it.next();
          Point p = (Point)highlights.get(key);

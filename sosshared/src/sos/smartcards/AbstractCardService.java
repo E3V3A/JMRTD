@@ -97,12 +97,13 @@ public abstract class AbstractCardService implements CardService
     * 
     * @param apdu the command apdu to send.
     * @return the response from the card, including the status word.
+    * @throws CardServiceException 
     */
    /*
     * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
     * SESSION_STARTED_STATE;
     */
-   public abstract ResponseAPDU transmit(CommandAPDU apdu);
+   public abstract ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException;
 
    /**
     * Closes the session with the card. Disconnects from the card and reader.

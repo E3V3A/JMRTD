@@ -283,7 +283,7 @@ public class BERTLVObject
     * @param object to add as a subobject.
     */
    public void addSubObject(BERTLVObject object) {
-      Collection subObjects = new ArrayList();
+      Collection<BERTLVObject> subObjects = new ArrayList<BERTLVObject>();
 
       if (!isPrimitive) {
          if (value == null) {
@@ -292,7 +292,7 @@ public class BERTLVObject
             subObjects.addAll(Arrays.asList((BERTLVObject[])value));
          } else if (value instanceof BERTLVObject){
             /* NOTE: Should never happen if indeed !isPrimitive... */
-            subObjects.add(value);
+            subObjects.add((BERTLVObject)value);
             value = new BERTLVObject[2];
          } else {
             throw new IllegalStateException("Error: Unexpected value in BERTLVObject");
@@ -304,7 +304,7 @@ public class BERTLVObject
 
    private static BERTLVObject[] readSubObjects(DataInputStream in)
          throws IOException {
-      ArrayList subObjects = new ArrayList();
+      ArrayList<BERTLVObject> subObjects = new ArrayList<BERTLVObject>();
       while (in.available() > 0) {
          subObjects.add(new BERTLVObject(in));
       }

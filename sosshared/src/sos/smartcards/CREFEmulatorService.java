@@ -95,7 +95,7 @@ public class CREFEmulatorService extends AbstractCardService
     * @param ourCommandAPDU the command apdu to send.
     * @return the response from the card, including the status word.
     */
-   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) throws CardServiceException {
       try {
          com.sun.javacard.apduio.Apdu theirApdu = new com.sun.javacard.apduio.Apdu();
          setCommand(ourCommandAPDU, theirApdu);
@@ -104,11 +104,11 @@ public class CREFEmulatorService extends AbstractCardService
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
          return ourResponseAPDU;
       } catch (IOException e) {
-         System.out.println(e);
-         return null; // TODO: throw CardException here...
+         throw new CardServiceException(e.toString());
       } catch (CadTransportException e) {
-         System.out.println(e);
-         return null; // TODO: throw CardException here...
+         throw new CardServiceException(e.toString());
+      } catch (Exception e) {
+         throw new CardServiceException(e.toString());
       }
    }
 

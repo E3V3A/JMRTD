@@ -74,8 +74,9 @@ public interface CardService
     * 
     * @param capdu the command apdu to send.
     * @return the response from the card, including the status word.
+    * @throws CardServiceException 
     */
-   ResponseAPDU transmit(CommandAPDU capdu);
+   ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException;
 
    /**
     * Closes the session with the card.
