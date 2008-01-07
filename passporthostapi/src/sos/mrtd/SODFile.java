@@ -30,6 +30,7 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.text.ParseException;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
@@ -73,11 +74,11 @@ public class SODFile extends PassportFile
       this.signedData = signedData;
    }
    
-   SODFile(InputStream in) throws IOException {
+   SODFile(InputStream in) throws Exception {
       this(BERTLVObject.getInstance(in));
    }
    
-   SODFile(byte[] in) throws IOException {
+   SODFile(byte[] in) throws Exception {
       this(new ByteArrayInputStream(in));
    }
       

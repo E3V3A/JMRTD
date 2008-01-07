@@ -24,6 +24,7 @@ package sos.mrtd;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
@@ -117,7 +118,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if the file cannot be read
     */
    public COMFile readCOMFile() throws CardServiceException {
-      return (COMFile)getFile(PassportFile.EF_COM_TAG);
+      return (COMFile)getFileByTag(PassportFile.EF_COM_TAG);
    }
 
    /**
@@ -130,7 +131,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if the file cannot be read
     */
    public DataGroup readDataGroup(int tag) throws CardServiceException {
-      return (DataGroup)getFile(tag);
+      return (DataGroup)getFileByTag(tag);
    }
 
    /**
@@ -174,7 +175,7 @@ public class PassportService extends PassportAuthService
     * @throws IOException if the file cannot be read
     */
    public SODFile getSODFile() throws CardServiceException {
-      return (SODFile)getFile(PassportFile.EF_SOD_TAG);
+      return (SODFile)getFileByTag(PassportFile.EF_SOD_TAG);
    }
 
    /**
@@ -185,36 +186,76 @@ public class PassportService extends PassportAuthService
     * @return the file
     * 
     * @throws IOException if the file cannot be read
+    * 
+    *
+    * @deprecated Shall be made private!
+    *
     */
-   private PassportFile getFile(int tag) throws CardServiceException {
+   public PassportFile getFileByTag(int tag) throws CardServiceException {
       short fid = PassportFile.lookupFIDByTag(tag);
-      return PassportFile.getInstance(readFile(fid));
+      return getFileByFID(fid);
    }
 
    /**
-    * Reads the file with id <code>fid</code>.
-    *
-    * @param fid the file to read.
-    *
-    * @return the contents of the file.
-    * 
     * @deprecated Shall be made private!
     */
-   public byte[] readFile(short fid) throws CardServiceException {
+   public PassportFile getFileByFID(short fid) throws CardServiceException {
+      return PassportFile.getInstance(readFile(fid));
+   }
+
+   private synchronized byte[] readFile(short fid) throws CardServiceException {
+      return readFile(fid, 0, -1);
+   }
+   
+   /**
+    * Reads the file with id <code>fid</code>.
+    *
+    * @param fid the file to read
+    * @param offset starting offset in file
+    * @param length the number of bytes to read, or -1 to read until EOF
+    *
+    * @return the contents of the file.
+    */
+   private synchronized byte[] readFile(short fid, int offset, int length) throws CardServiceException {
       SecureMessagingWrapper wrapper = getWrapper();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       service.sendSelectFile(wrapper, fid);
-      int offset = 0;
-      int len = maxFileSize;
+      int blockSize = maxFileSize;
       while (true) {
+         int len = length < 0 ? blockSize : Math.min(blockSize, length - offset);
          byte[] data = service.sendReadBinary(wrapper, (short)offset, len);
-         if (data == null || data.length == 0) {
-            break;
-         }
+         if (data == null || data.length == 0) { break; }
          out.write(data, 0, data.length);
          offset += data.length;
+         if (length < 0) { continue; }
+         if (offset >= length) { break; }
       }
       byte[] file = out.toByteArray();
       return file;
+   }
+   
+   private class PassportFileInputStream extends InputStream
+   {
+      private byte[] buffer;
+      private int offsetBufferInFile;
+      private int indexInBuffer;
+  
+      public PassportFileInputStream(PassportService service, short fid) {
+         buffer = new byte[maxFileSize];
+         offsetBufferInFile = 0;
+         indexInBuffer = 0;
+         /* TODO: read T and L and determine length of V. */
+      }
+      
+      public int read() throws IOException {
+         int result = -1;
+         if (indexInBuffer < buffer.length) {
+            result = buffer[indexInBuffer];
+            indexInBuffer++;
+         } else {
+            
+         }
+         return result;
+      }
    }
 }

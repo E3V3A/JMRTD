@@ -35,6 +35,7 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
+import java.text.ParseException;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -129,7 +130,7 @@ public class PassportPersoService extends PassportApduService {
    /***
     * Sends a PUT_DATA command to the card to set the private keys used for Active Authentication.
     * 
-    * @param wrapper for secure mesaging.
+    * @param wrapper for secure messaging.
     * @param key holding the private key data.
     * @throws IOException on error.
     */
@@ -149,6 +150,8 @@ public class PassportPersoService extends PassportApduService {
          putPrivateKey(wrapper, privModulus, privExponent);
       } catch (IOException ioe) {
          throw new CardServiceException(ioe.toString());
+      } catch (Exception pe) {
+         throw new CardServiceException(pe.toString());
       }
    }
 
@@ -168,7 +171,7 @@ public class PassportPersoService extends PassportApduService {
                         privExponent));
 
          putData(wrapper, (byte) 0, PRIVEXPONENT_TAG, privExponentObject.getEncoded());
-      } catch (IOException ioe) {
+      } catch (Exception ioe) {
          throw new CardServiceException(ioe.toString());
       }
    }
@@ -329,7 +332,7 @@ public class PassportPersoService extends PassportApduService {
          mrzObject.addSubObject(new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, doe));
 
          putData(null, (byte)0, MRZ_TAG, mrzObject.getEncoded());  
-      } catch (IOException ioe) {
+      } catch (Exception ioe) {
          throw new CardServiceException(ioe.toString());
       }
    }

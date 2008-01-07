@@ -60,36 +60,36 @@ public class MRZInfo
    public static final int DOC_TYPE_ID2 = 2;
    /** ID3 document type for passport booklets. */
    public static final int DOC_TYPE_ID3 = 3;                           
-	
+
    /** Possible value for passport holder's gender. */
    public enum Gender {
-        MALE { int toInt() { return GENDER_MALE; } }, 
-        FEMALE {int toInt() { return GENDER_FEMALE; }}, 
-        UNKNOWN { int toInt() { return GENDER_UNKNOWN; } }, 
-        UNSPECIFIED {int toInt() { return GENDER_UNSPECIFIED; } };
-        
-        abstract int toInt();
-        
-        static Gender toGender(int b) {
-            for(Gender g : Gender.values()) {
-                if(g.toInt() == b) {
-                    return g;
-                }
+      MALE { int toInt() { return GENDER_MALE; } }, 
+      FEMALE {int toInt() { return GENDER_FEMALE; }}, 
+      UNKNOWN { int toInt() { return GENDER_UNKNOWN; } }, 
+      UNSPECIFIED {int toInt() { return GENDER_UNSPECIFIED; } };
+
+      abstract int toInt();
+
+      static Gender toGender(int b) {
+         for(Gender g : Gender.values()) {
+            if(g.toInt() == b) {
+               return g;
             }
-            return null;
-        }
-    }
-   
+         }
+         return null;
+      }
+   }
+
    public static final int GENDER_UNSPECIFIED = 0x00,
-      GENDER_MALE = 0x01,
-      GENDER_FEMALE = 0x02,
-      GENDER_UNKNOWN = 0x03;
+   GENDER_MALE = 0x01,
+   GENDER_FEMALE = 0x02,
+   GENDER_UNKNOWN = 0x03;
 
    private static final String MRZ_CHARS = "<0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-   
+
    private static final SimpleDateFormat SDF =
       new SimpleDateFormat("yyMMdd");
-   
+
    private int documentType;
    private String issuingState;
    private String primaryIdentifier;
@@ -106,7 +106,7 @@ public class MRZInfo
    private char personalNumberCheckDigit;
    private char compositeCheckDigit;
    private String unknownMRZField; // FIXME: Last field on line 2 of ID3 MRZ.
-   
+
    /**
     * Constructs a new MRZ.
     * 
@@ -165,7 +165,7 @@ public class MRZInfo
       }
       this.compositeCheckDigit = checkDigit(composite.toString());
    }
-   
+
    /**
     * Constructs a new MRZ.
     * 
@@ -212,11 +212,11 @@ public class MRZInfo
             this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
          }
       } catch (IOException ioe) {
-          ioe.printStackTrace();
+         ioe.printStackTrace();
          throw new IllegalArgumentException("Invalid MRZ input source");
       }
    }
-   
+
    public static MRZInfo getInstance(Object in) {
       if (in instanceof InputStream) {
          return new MRZInfo((InputStream)in);
@@ -225,7 +225,7 @@ public class MRZInfo
       }
       throw new IllegalArgumentException("Could not decode");
    }
-   
+
    private void processNameIdentifiers(String mrzNameString) {
       StringTokenizer st = new StringTokenizer(mrzNameString, "<<");
       if (!st.hasMoreTokens()) {
@@ -289,10 +289,10 @@ public class MRZInfo
          return null;
       }
    }
-   
+
    private void writeIssuingState(DataOutputStream dataOut) throws IOException {
       dataOut.write(issuingState.getBytes("UTF-8"));
-      
+
    }
 
    private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
@@ -326,24 +326,24 @@ public class MRZInfo
    private void writeDocumentType(DataOutputStream dataOut) throws IOException {
       dataOut.write(documentTypeToString().getBytes("UTF-8"));
    }
-   
+
    private String documentTypeToString() {
-	   switch (documentType) {
-	   case DOC_TYPE_ID1: return "I<";
-	   case DOC_TYPE_ID2: return "P<";
-	   case DOC_TYPE_ID3: return "P<";
-	   default: return "P<";
-	   }
-   }
-   
-   private String genderToString() {
-      switch (gender) {
-      case MALE: return "M";
-      case FEMALE: return "F";
-      default: return "<";
+      switch (documentType) {
+         case DOC_TYPE_ID1: return "I<";
+         case DOC_TYPE_ID2: return "P<";
+         case DOC_TYPE_ID3: return "P<";
+         default: return "P<";
       }
    }
-   
+
+   private String genderToString() {
+      switch (gender) {
+         case MALE: return "M";
+         case FEMALE: return "F";
+         default: return "<";
+      }
+   }
+
    private String nameToString() {
       int width = (documentType == DOC_TYPE_ID1) ? 30 : 39;
       StringBuffer name = new StringBuffer();
@@ -358,7 +358,7 @@ public class MRZInfo
       }
       return mrzFormat(name.toString());
    }
-   
+
    /**
     * Reads the type of document.
     * ICAO Doc 9303 part 1 gives "P<" as an example.
@@ -371,9 +371,9 @@ public class MRZInfo
       in.readFully(docTypeBytes);
       String docTypeStr = new String(docTypeBytes);
       if (docTypeStr.startsWith("I")) {
-    	  return DOC_TYPE_ID1;
+         return DOC_TYPE_ID1;
       } else if (docTypeStr.startsWith("P")) {
-    	  return DOC_TYPE_ID3;
+         return DOC_TYPE_ID3;
       }
       return DOC_TYPE_UNSPECIFIED;
    }
@@ -424,7 +424,7 @@ public class MRZInfo
       in.readFully(data);
       return new String(data).trim();
    }
-   
+
    /**
     * Reads the personal number of the passport holder (or other optional data).
     * 
@@ -440,7 +440,7 @@ public class MRZInfo
       in.readFully(data);
       return new String(data).trim();
    }
-   
+
    /**
     * Reads the nationality of the passport holder.
     * 
@@ -475,7 +475,7 @@ public class MRZInfo
       }
       return Gender.UNKNOWN;
    }
-   
+
    /**
     * Reads the date of birth of the passport holder.
     * Base year is 1900.
@@ -506,7 +506,7 @@ public class MRZInfo
       in.readFully(data);
       return parseDate(2000, new String(data).trim());
    }
-   
+
    private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
       if (dateString.length() != 6) {
          throw new NumberFormatException("Wrong date format!");
@@ -571,7 +571,7 @@ public class MRZInfo
    public String getPrimaryIdentifier() {
       return primaryIdentifier;
    }
-   
+
    /**
     * Gets the passport holder's first names.
     * 
@@ -607,7 +607,7 @@ public class MRZInfo
    public Gender getGender() {
       return gender;
    }
-   
+
    /**
     * Creates a textual representation of this MRZ.
     * This is the 2 or 3 line representation
@@ -663,7 +663,7 @@ public class MRZInfo
       }
       return out.toString();
    }
-   
+
    public boolean equals(Object obj) {
       if (obj == this) { return true; }
       if (obj == null) { return false; }
@@ -681,7 +681,7 @@ public class MRZInfo
       if (!dateOfExpiry.equals(other.dateOfExpiry)) { return false; }
       return true;
    }
-   
+
    /**
     * Reformats the input string such that it
     * only contains 'A'-'Z' and '<' characters.
@@ -702,7 +702,7 @@ public class MRZInfo
       }
       return result.toString();
    }
-   
+
    /**
     * Computes the 7-3-1 check digit for part of the MRZ.
     *
@@ -759,47 +759,47 @@ public class MRZInfo
          case 'y': case 'Y': return 34; case 'z': case 'Z': return 35;
          default:
             throw new NumberFormatException("Could not decode MRZ character "
-                                            + ch);
+                  + ch);
       }
    }
-   
+
    public static void main(String[] arg) {
       try {
          //FileInputStream fileIn = new FileInputStream(arg[0]);
-          String[] secundaries = { "JAN", "PETER" };
+         String[] secundaries = { "JAN", "PETER" };
 
-//          int[] mrzpath = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
-//
-//          BERTLVObject ef0101 = BERTLVObject.getInstance(new FileInputStream(arg[0]));
-//          System.out.println(ef0101.getSubObject(mrzpath, 0, mrzpath.length));
-//          
-//          MRZInfo bla = new MRZInfo(new ByteArrayInputStream(ef0101.getSubObject(mrzpath, 0, mrzpath.length).getValueAsBytes()));
-//          System.out.println(bla);
-          
-//          if(arg.length > 0)
-//              return;
-          
+//       int[] mrzpath = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+
+//       BERTLVObject ef0101 = BERTLVObject.getInstance(new FileInputStream(arg[0]));
+//       System.out.println(ef0101.getSubObject(mrzpath, 0, mrzpath.length));
+
+//       MRZInfo bla = new MRZInfo(new ByteArrayInputStream(ef0101.getSubObject(mrzpath, 0, mrzpath.length).getValueAsBytes()));
+//       System.out.println(bla);
+
+//       if(arg.length > 0)
+//       return;
+
          MRZInfo mrzInfo =
-          new MRZInfo(3, "NLD",
-                 "Balkenende", secundaries,
-                 "PPNUMMER0", "NLD", parseDate(1900, "560507"), MRZInfo.Gender.MALE, 
-                 parseDate(2000, "100101"),  "876543210<<<<<");
-         
+            new MRZInfo(3, "NLD",
+                  "Balkenende", secundaries,
+                  "PPNUMMER0", "NLD", parseDate(1900, "560507"), MRZInfo.Gender.MALE, 
+                  parseDate(2000, "100101"),  "876543210<<<<<");
+
          BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
          System.out.println(ef0101);
          FileOutputStream out = new FileOutputStream(arg[0]);
          out.write(ef0101.getEncoded());
          out.close();
-         
-//         System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
-//         String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
-//         for (int i = 0; i < secondaryIdentifiers.length; i++) {
-//            System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
-//         }
-//         
-//         ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
-//         MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
-//         System.out.println(mrzInfo2);
+
+//       System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
+//       String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
+//       for (int i = 0; i < secondaryIdentifiers.length; i++) {
+//       System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
+//       }
+
+//       ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
+//       MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
+//       System.out.println(mrzInfo2);
       } catch (Exception e) {
          e.printStackTrace();
       }

@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.text.ParseException;
 
 import sos.smartcards.BERTLVObject;
 
@@ -64,7 +65,7 @@ public class DG15File extends DataGroup
       }
    }
    
-   DG15File(InputStream in) throws IOException {
+   DG15File(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
    
@@ -79,7 +80,7 @@ public class DG15File extends DataGroup
          sourceObject = ef010F;
          isSourceConsistent = true;
          return ef010F.getEncoded();
-      } catch (IOException e) {
+      } catch (Exception e) {
          e.printStackTrace();
          return null;
       }

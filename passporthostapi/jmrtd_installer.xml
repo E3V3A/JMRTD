@@ -9,7 +9,7 @@
     <!-- The info section.  -->
     <info>
         <appname>JMRTD</appname>
-        <appversion>0.0.2</appversion>
+        <appversion>0.0.3</appversion>
         <authors>
             <author name="SoS group, Radboud University"
                     email="martijno@cs.ru.nl" />

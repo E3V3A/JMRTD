@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import sos.smartcards.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * Passport file structure.
@@ -120,8 +121,7 @@ public abstract class PassportFile
          }
       } catch (Exception e) {
          e.printStackTrace();
-         throw new IllegalArgumentException("Could not decode: "
-               + e.toString());
+         return null;
       }
    }
 

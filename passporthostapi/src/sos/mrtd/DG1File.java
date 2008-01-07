@@ -25,8 +25,10 @@ package sos.mrtd;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 
 import sos.smartcards.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_DG1 file.
@@ -57,11 +59,11 @@ public class DG1File extends DataGroup
       isSourceConsistent = true;
    }
    
-   DG1File(InputStream in) throws IOException {
+   DG1File(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
    
-   DG1File(byte[] in) throws IOException {
+   DG1File(byte[] in) throws IOException, ParseException {
       this(new ByteArrayInputStream(in));
    }
    
@@ -89,7 +91,7 @@ public class DG1File extends DataGroup
          sourceObject = ef0101;
          isSourceConsistent = true;
          return ef0101.getEncoded();
-      } catch (IOException e) {
+      } catch (Exception e) {
          e.printStackTrace();
          return null;
       }

@@ -31,6 +31,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -105,7 +106,7 @@ public class DG2File extends DataGroup
       isSourceConsistent = true;
    }
 
-   DG2File(InputStream in) throws IOException {
+   DG2File(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
    
@@ -174,7 +175,7 @@ public class DG2File extends DataGroup
          sourceObject = dg2;
          isSourceConsistent = true;
          return dg2.getEncoded();
-      } catch (IOException ioe) {
+      } catch (Exception ioe) {
          return null;
       }
    }

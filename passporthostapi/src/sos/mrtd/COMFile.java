@@ -24,6 +24,7 @@ package sos.mrtd;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.text.ParseException;
 
 import sos.smartcards.BERTLVObject;
 
@@ -87,7 +88,7 @@ public class COMFile extends PassportFile
     * 
     * @throws IOException if the input could not be decoded
     */
-   COMFile(InputStream in) throws IOException {
+   COMFile(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
       
@@ -170,7 +171,7 @@ public class COMFile extends PassportFile
          BERTLVObject ef011E =
             new BERTLVObject(EF_COM_TAG, value);
          return ef011E.getEncoded();
-      } catch (IOException e) {
+      } catch (Exception e) {
          e.printStackTrace();
          return null;
       }

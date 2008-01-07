@@ -41,6 +41,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
+import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 
@@ -134,8 +135,8 @@ implements ActionListener, AuthListener
                PassportService s = new PassportService(service);
                s.setWrapper(wrapper);
                byte[] data =
-                  s.readFile((short) (((fid[0] & 0x000000FF) << 8)
-                                      | (fid[1] & 0x000000FF)));
+                  s.getFileByFID((short) (((fid[0] & 0x000000FF) << 8)
+                                      | (fid[1] & 0x000000FF))).getEncoded();
                OutputStream out = new FileOutputStream(file);
                out.write(data, 0, data.length);
                out.close();
