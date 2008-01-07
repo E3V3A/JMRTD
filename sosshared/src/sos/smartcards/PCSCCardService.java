@@ -120,7 +120,7 @@ public class PCSCCardService extends AbstractCardService
       }
    }
    
-   void open(CardTerminal terminal) throws CardException {
+   void open(CardTerminal terminal) throws CardServiceException {
       if (isOpen()) { return; }
       for (String protocol: protocols) {
          try {
@@ -135,7 +135,7 @@ public class PCSCCardService extends AbstractCardService
          }
       }
       channel = card.getBasicChannel();
-      if (channel == null) { System.out.println("DEBUG: channel == null!"); }
+      if (channel == null) { throw new CardServiceException("channel == null"); }
       state = SESSION_STARTED_STATE;
    }
    
@@ -149,11 +149,11 @@ public class PCSCCardService extends AbstractCardService
     * @param ourCommandAPDU the command apdu to send.
     * @return the response from the card, including the status word.
     */
-   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) {
+   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) throws CardServiceException {
       try {
          if (channel == null) {
             System.err.println("DEBUG: channel == null");
-            return null;
+            throw new CardServiceException("channel == null");
          }
          ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);

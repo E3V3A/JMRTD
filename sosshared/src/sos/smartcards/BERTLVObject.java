@@ -24,9 +24,7 @@ package sos.smartcards;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
@@ -54,7 +52,7 @@ import sos.util.Hex;
 public class BERTLVObject
 {
    private static final SimpleDateFormat SDF = new SimpleDateFormat(
-         "yyMMddhhmmss'Z'");
+   "yyMMddhhmmss'Z'");
 
    /** Universal tag class. */
    public static final int UNIVERSAL_CLASS = 0;
@@ -67,212 +65,166 @@ public class BERTLVObject
 
    /** Universal tag type. */
    public static final int BOOLEAN_TYPE_TAG = 0x01, INTEGER_TYPE_TAG = 0x02,
-         BIT_STRING_TYPE_TAG = 0x03, OCTET_STRING_TYPE_TAG = 0x04,
-         NULL_TYPE_TAG = 0x05, OBJECT_IDENTIFIER_TYPE_TAG = 0x06,
-         OBJECT_DESCRIPTOR_TYPE_TAG = 0x07, EXTERNAL_TYPE_TAG = 0x08,
-         REAL_TYPE_TAG = 0x09, ENUMERATED_TYPE_TAG = 0x0A,
-         EMBEDDED_PDV_TYPE_TAG = 0x0B, UTF8_STRING_TYPE_TAG = 0x0C,
-         SEQUENCE_TYPE_TAG = 0x10, SET_TYPE_TAG = 0x11,
-         NUMERIC_STRING_TYPE_TAG = 0x12, PRINTABLE_STRING_TYPE_TAG = 0x13,
-         T61_STRING_TYPE_TAG = 0x14, IA5_STRING_TYPE_TAG = 0x16,
-         UTC_TIME_TYPE_TAG = 0x17, GENERALIZED_TIME_TYPE_TAG = 0x18,
-         GRAPHIC_STRING_TYPE_TAG = 0x19, VISIBLE_STRING_TYPE_TAG = 0x1A,
-         GENERAL_STRING_TYPE_TAG = 0x1B, UNIVERSAL_STRING_TYPE_TAG = 0x1C,
-         BMP_STRING_TYPE_TAG = 0x1E;
-
-   private int tagClass;
-   private boolean isPrimitive;
+   BIT_STRING_TYPE_TAG = 0x03, OCTET_STRING_TYPE_TAG = 0x04,
+   NULL_TYPE_TAG = 0x05, OBJECT_IDENTIFIER_TYPE_TAG = 0x06,
+   OBJECT_DESCRIPTOR_TYPE_TAG = 0x07, EXTERNAL_TYPE_TAG = 0x08,
+   REAL_TYPE_TAG = 0x09, ENUMERATED_TYPE_TAG = 0x0A,
+   EMBEDDED_PDV_TYPE_TAG = 0x0B, UTF8_STRING_TYPE_TAG = 0x0C,
+   SEQUENCE_TYPE_TAG = 0x10, SET_TYPE_TAG = 0x11,
+   NUMERIC_STRING_TYPE_TAG = 0x12, PRINTABLE_STRING_TYPE_TAG = 0x13,
+   T61_STRING_TYPE_TAG = 0x14, IA5_STRING_TYPE_TAG = 0x16,
+   UTC_TIME_TYPE_TAG = 0x17, GENERALIZED_TIME_TYPE_TAG = 0x18,
+   GRAPHIC_STRING_TYPE_TAG = 0x19, VISIBLE_STRING_TYPE_TAG = 0x1A,
+   GENERAL_STRING_TYPE_TAG = 0x1B, UNIVERSAL_STRING_TYPE_TAG = 0x1C,
+   BMP_STRING_TYPE_TAG = 0x1E;
 
    /** Tag. */
    private int tag;
+
+   /** Length. */
+   private int length;
 
    /** Value, is usually just a byte[]. */
    private Object value;
 
    /**
-    * Creates a new TLV object by parsing <code>in</code>.
-    * 
-    * @param in a binary representation of the TLV object
-    * @return a TLV object
-    * @throws IOException if something goes wrong
-    */
-   public static BERTLVObject getInstance(InputStream in) throws IOException {
-      return new BERTLVObject(new DataInputStream(in));
-   }
-
-   /**
     * Constructs a new TLV object with tag <code>tag</code> containing data
     * <code>value</code>.
     * 
-    * @param tagBytes tag of TLV object
+    * @param tag tag of TLV object
     * @param value data of TLV object
     * @throws IOException if something goes wrong.
     */
-   public BERTLVObject(int tagBytes, Object value) throws IOException {
-      byte[] tag = { (byte)((tagBytes >>> 24) & 0xff),
-            (byte)((tagBytes >>> 16) & 0xFF), (byte)((tagBytes >>> 8) & 0xff),
-            (byte)(tagBytes & 0xff) };
-      readTag(new DataInputStream(new ByteArrayInputStream(tag)));
-      if (isPrimitive) {
+   public BERTLVObject(int tag, Object value) {
+      try {
+         this.tag = tag;
          this.value = value;
-      } else {
-         // byte arrays are interpreted (maybe remove this?)
          if (value instanceof byte[]) {
-            byte[] valueBytes = (byte[])value;
-            readValue(
-                  new DataInputStream(new ByteArrayInputStream(valueBytes)),
-                  valueBytes.length);
+            this.length = ((byte[])value).length;
          } else if (value instanceof BERTLVObject) {
-            // BERTLVObjects are added as a child
             this.value = new BERTLVObject[1];
             ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
          } else if (value instanceof BERTLVObject[]) {
             this.value = value;
          } else if (value instanceof Integer) {
             this.value = new BERTLVObject[1];
-            ((BERTLVObject[])this.value)[0] = new BERTLVObject(
-                  INTEGER_TYPE_TAG, value);
+            ((BERTLVObject[])this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
          } else {
-            throw new IllegalArgumentException("Cannot encode value of type: "
-                  + value.getClass());
+            throw new IllegalArgumentException("Cannot encode value of type: " + value.getClass());
          }
-      }
-   }
-
-   /**
-    * Constructs a new TLV object by parsing input <code>in</code>.
-    * 
-    * @param in a TLV object
-    * @throws IOException if something goes wrong
-    */
-   private BERTLVObject(DataInputStream in) throws IOException {
-      readTag(in);
-      int length = readLength(in);
-      readValue(in, length);
-   }
-
-   private void readTag(DataInputStream in) throws IOException {
-      int b = in.readUnsignedByte();
-      while (b == 0x00000000 || b == 0x000000FF) {
-         // throw new IllegalArgumentException("00 or FF tag not allowed");
-         b = in.readUnsignedByte(); /* skip 00 and FF */
-      }
-      switch (b & 0x000000C0) {
-         case 0x00000000:
-            tagClass = UNIVERSAL_CLASS;
-            break;
-         case 0x00000040:
-            tagClass = APPLICATION_CLASS;
-            break;
-         case 0x00000080:
-            tagClass = CONTEXT_SPECIFIC_CLASS;
-            break;
-         case 0x000000C0:
-            tagClass = PRIVATE_CLASS;
-            break;
-      }
-      switch (b & 0x00000020) {
-         case 0x00000000:
-            isPrimitive = true;
-            break;
-         case 0x00000020:
-            isPrimitive = false;
-            break;
-      }
-      switch (b & 0x0000001F) {
-         case 0x0000001F:
-            tag = b; /* We store the first byte including LHS nibble */
-            b = in.readUnsignedByte();
-            while ((b & 0x00000080) == 0x00000080) {
-               tag <<= 8;
-               tag |= (b & 0x0000007F);
-               b = in.readUnsignedByte();
-            }
-            tag <<= 8;
-            tag |= (b & 0x0000007F); /*
-                                      * Byte with MSB set is last byte of
-                                      * tag...
-                                      */
-            break;
-         default:
-            tag = b;
-            break;
-      }
-   }
-
-   private int readLength(DataInputStream in) throws IOException {
-      int length = 0;
-      int b = in.readUnsignedByte();
-      if ((b & 0x00000080) == 0x00000000) {
-         /* short form */
-         length = b;
-      } else {
-         /* long form */
-         int count = b & 0x0000007F;
-         length = 0;
-         for (int i = 0; i < count; i++) {
-            b = in.readUnsignedByte();
-            length <<= 8;
-            length += b;
+         if (value instanceof byte[]) {
+            this.value = interpretValue(tag, (byte[])value);
          }
+         // reconstructLength();
+      } catch (Exception e) {
+         e.printStackTrace();
       }
-      return length;
    }
 
-   private void readValue(DataInputStream in, int length) throws IOException {
-      value = new byte[length];
-      in.readFully((byte[])value);
-      if (isPrimitive) {
-         /*
-          * Primitive, the value consists of 0 or more Simple-TLV objects, or
-          * just (application-dependent) bytes. If tag is not known (or
-          * universal) we assume the value is just bytes.
-          */
-         if (tagClass == UNIVERSAL_CLASS)
-            switch (tag) {
-               case INTEGER_TYPE_TAG:
-                  break;
-               case BIT_STRING_TYPE_TAG:
-                  break;
-               case OCTET_STRING_TYPE_TAG:
-                  break;
-               case NULL_TYPE_TAG:
-                  break;
-               case OBJECT_IDENTIFIER_TYPE_TAG:
-                  break;
-               case UTF8_STRING_TYPE_TAG:
-               case PRINTABLE_STRING_TYPE_TAG:
-               case T61_STRING_TYPE_TAG:
-               case IA5_STRING_TYPE_TAG:
-               case VISIBLE_STRING_TYPE_TAG:
-               case GENERAL_STRING_TYPE_TAG:
-               case UNIVERSAL_STRING_TYPE_TAG:
-               case BMP_STRING_TYPE_TAG:
-                  value = new String((byte[])value);
-                  break;
-               case UTC_TIME_TYPE_TAG:
-                  try {
-                     value = SDF.parse(new String((byte[])value));
-                     break;
-                  } catch (ParseException pe) {
-                  }
-               default:
-            } else {
-               /* EMV */
-               switch (tag) {
-                  case 0x50:
-                     value = new String((byte[])value);
-                     break;
-               }
-            }
+   private static Object interpretValue(int tag, byte[] valueBytes) {
+      if (isPrimitive(tag)) {
+         return interpretPrimitiveValue(tag, valueBytes);
       } else {
          /*
           * Not primitive, the value itself consists of 0 or more BER-TLV
           * objects.
           */
-         in = new DataInputStream(new ByteArrayInputStream((byte[])value));
-         value = readSubObjects(in);
+         try {
+            return interpretCompoundValue(tag, valueBytes);
+         } catch (IOException ioe) {
+            return new BERTLVObject[0];
+         }
       }
+   }
+
+   /*
+    * Primitive, the value consists of 0 or more Simple-TLV objects, or
+    * just (application-dependent) bytes. If tag is not known (or
+    * universal) we assume the value is just bytes.
+    */
+   private static Object interpretPrimitiveValue(int tag, byte[] valueBytes) {
+      if (getTagClass(tag) == UNIVERSAL_CLASS)
+         switch (tag) {
+            case INTEGER_TYPE_TAG:
+            case BIT_STRING_TYPE_TAG:
+            case OCTET_STRING_TYPE_TAG:
+            case NULL_TYPE_TAG:
+            case OBJECT_IDENTIFIER_TYPE_TAG:
+               return valueBytes;
+            case UTF8_STRING_TYPE_TAG:
+            case PRINTABLE_STRING_TYPE_TAG:
+            case T61_STRING_TYPE_TAG:
+            case IA5_STRING_TYPE_TAG:
+            case VISIBLE_STRING_TYPE_TAG:
+            case GENERAL_STRING_TYPE_TAG:
+            case UNIVERSAL_STRING_TYPE_TAG:
+            case BMP_STRING_TYPE_TAG:
+               return new String(valueBytes);
+            case UTC_TIME_TYPE_TAG:
+               try {
+                  return SDF.parse(new String(valueBytes));
+               } catch (ParseException pe) {
+                  return valueBytes;
+               }
+            default:
+               return valueBytes;
+         } else {
+            /* EMV */
+            switch (tag) {
+               case 0x50:
+               case 0x5F20:
+                  return new String(valueBytes);
+               case 0x57:
+                  /* Track 2 data. */
+                  return valueBytes;
+               default:
+                  return valueBytes;
+            }
+         }
+   }
+
+   private static BERTLVObject[] interpretCompoundValue(int tag, byte[] valueBytes)
+   throws IOException {
+      Collection<BERTLVObject> subObjects = new ArrayList<BERTLVObject>();
+      BERTLVInputStream in = new BERTLVInputStream(new ByteArrayInputStream(valueBytes));
+      int length = valueBytes.length;
+      try {
+         while (length > 0) {
+            BERTLVObject subObject = BERTLVObject.getInstance(in);
+            length -= subObject.getLength();
+            subObjects.add(subObject);
+         }
+      } catch (EOFException eofe) { }
+      BERTLVObject[] result = new BERTLVObject[subObjects.size()];
+      subObjects.toArray(result);
+      return result;
+   }
+
+   private static int getTagClass(int tag) {
+      int i = 3;
+      for (; i >= 0; i--) {
+         int mask = (0xFF << (8 * i));
+         if ((tag & mask) != 0x00) { break; }
+      }
+      int msByte = (((tag & (0xFF << (8 * i))) >> (8 * i)) & 0xFF);
+      switch (msByte & 0xC0) {
+         case 0x00: return UNIVERSAL_CLASS;
+         case 0x40: return APPLICATION_CLASS;
+         case 0x80: return CONTEXT_SPECIFIC_CLASS;
+         case 0xC0:
+         default: return PRIVATE_CLASS;
+      }
+   }
+
+   private static boolean isPrimitive(int tag) {
+      int i = 3;
+      for (; i >= 0; i--) {
+         int mask = (0xFF << (8 * i));
+         if ((tag & mask) != 0x00) { break; }
+      }
+      int msByte = (((tag & (0xFF << (8 * i))) >> (8 * i)) & 0xFF);
+      boolean result = ((msByte & 0x20) == 0x00);
+      return result;
    }
 
    /****************************************************************************
@@ -285,32 +237,20 @@ public class BERTLVObject
    public void addSubObject(BERTLVObject object) {
       Collection<BERTLVObject> subObjects = new ArrayList<BERTLVObject>();
 
-      if (!isPrimitive) {
-         if (value == null) {
-            value = new BERTLVObject[1];
-         } else if (value instanceof BERTLVObject[]){
-            subObjects.addAll(Arrays.asList((BERTLVObject[])value));
-         } else if (value instanceof BERTLVObject){
-            /* NOTE: Should never happen if indeed !isPrimitive... */
-            subObjects.add((BERTLVObject)value);
-            value = new BERTLVObject[2];
-         } else {
-            throw new IllegalStateException("Error: Unexpected value in BERTLVObject");
-         }
-         subObjects.add(object);
-         value = subObjects.toArray((BERTLVObject[])value);
+      if (value == null) {
+         value = new BERTLVObject[1];
+      } else if (value instanceof BERTLVObject[]){
+         subObjects.addAll(Arrays.asList((BERTLVObject[])value));
+      } else if (value instanceof BERTLVObject){
+         /* NOTE: Should never happen if indeed !isPrimitive... */
+         subObjects.add((BERTLVObject)value);
+         value = new BERTLVObject[2];
+      } else {
+         throw new IllegalStateException("Error: Unexpected value in BERTLVObject");
       }
-   }
-
-   private static BERTLVObject[] readSubObjects(DataInputStream in)
-         throws IOException {
-      ArrayList<BERTLVObject> subObjects = new ArrayList<BERTLVObject>();
-      while (in.available() > 0) {
-         subObjects.add(new BERTLVObject(in));
-      }
-      BERTLVObject[] result = new BERTLVObject[subObjects.size()];
-      subObjects.toArray(result);
-      return result;
+      subObjects.add(object);
+      value = subObjects.toArray((BERTLVObject[])value);
+      reconstructLength();
    }
 
    public int getTag() {
@@ -330,7 +270,7 @@ public class BERTLVObject
          out.write((tag & (0xFF << pos)) >> pos);
       }
       byte[] tagBytes = out.toByteArray();
-      switch (tagClass) {
+      switch (getTagClass(tag)) {
          case APPLICATION_CLASS:
             tagBytes[0] |= 0x40;
             break;
@@ -341,7 +281,7 @@ public class BERTLVObject
             tagBytes[0] |= 0xC0;
             break;
       }
-      if (!isPrimitive) {
+      if (!isPrimitive(tag)) {
          tagBytes[0] |= 0x20;
       }
       return tagBytes;
@@ -352,9 +292,13 @@ public class BERTLVObject
     * 
     * @return the length of the encoded value
     */
-   public int getLength() { // TODO: Why not simply 'return this.length'? --
-                              // MO
-      return getValueAsBytes().length;
+   public void reconstructLength() {
+      /* NOTE: needed after sub-objects have been added. */
+      length = getValueAsBytes().length;
+   }
+
+   public int getLength() {
+      return length;
    }
 
    /**
@@ -364,9 +308,8 @@ public class BERTLVObject
     */
    public byte[] getLengthAsBytes() {
       int length = getLength();
-
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      if (length < 0x00000080) {
+      if (length < 0x80) {
          /* short form */
          out.write(length);
       } else {
@@ -400,7 +343,7 @@ public class BERTLVObject
          System.out.println("DEBUG: object has no value: tag == "
                + Integer.toHexString(tag));
       }
-      if (isPrimitive) {
+      if (isPrimitive(tag)) {
          if (value instanceof byte[]) {
             return (byte[])value;
          } else if (value instanceof String) {
@@ -423,7 +366,6 @@ public class BERTLVObject
          }
       }
       if (value instanceof BERTLVObject[]) {
-
          ByteArrayOutputStream result = new ByteArrayOutputStream();
          BERTLVObject[] children = (BERTLVObject[])getValue();
          for (int i = 0; i < children.length; i++) {
@@ -435,26 +377,15 @@ public class BERTLVObject
          }
          return result.toByteArray();
       }
+
+      /* NOTE: Not primitive, and also not instance of BERTLVObject[]... */
+      if (value instanceof byte[]) {
+         System.err.println("DEBUG: WARNING: BERTLVobject with non-primitive tag "
+               + Hex.intToHexString(tag) + " has byte[] value");
+         return (byte[])value;
+      }
       throw new IllegalStateException("Cannot decode value of "
-            + value.getClass());
-   }
-
-   /**
-    * The tag class.
-    * 
-    * @return the tag class
-    */
-   public int getTagClass() {
-      return tagClass;
-   }
-
-   /**
-    * Indicates whether this tag is primitive.
-    * 
-    * @return whether this tag is primitive
-    */
-   public boolean isPrimitive() {
-      return isPrimitive;
+            + value.getClass() + " (tag = " + Hex.intToHexString(tag) + ")");
    }
 
    /**
@@ -482,6 +413,10 @@ public class BERTLVObject
     * @return the first
     */
    public BERTLVObject getSubObject(int tag) {
+//      if (this.value instanceof byte[]) {
+//         byte[] valueBytes = (byte[])value;
+//         this.value = interpretValue(tag, valueBytes);
+//      }
       if (this.tag == tag) {
          return this;
       } else if (value instanceof BERTLVObject[]) {
@@ -559,7 +494,7 @@ public class BERTLVObject
             result.append(Hex.bytesToHexString(valueData));
          } else {
             result
-                  .append(Hex.bytesToHexString(valueData, 0, (50 - indent) / 2));
+            .append(Hex.bytesToHexString(valueData, 0, (50 - indent) / 2));
             result.append("...");
          }
          result.append("'\n");
@@ -580,8 +515,8 @@ public class BERTLVObject
    }
 
    private String tagToString() {
-      if (getTagClass() == UNIVERSAL_CLASS) {
-         if (isPrimitive()) {
+      if (getTagClass(tag) == UNIVERSAL_CLASS) {
+         if (isPrimitive(tag)) {
             switch (tag & 0x1F) {
                case BOOLEAN_TYPE_TAG:
                   return "BOOLEAN";
@@ -632,21 +567,13 @@ public class BERTLVObject
       return "'0x" + Hex.intToHexString(tag) + "'";
    }
 
-   /* For testing */
-   public static void main(String[] args) {
-      FileInputStream in = null;
-      try {
-         in = new FileInputStream(args[0]);
-      } catch (FileNotFoundException e) {
-         e.printStackTrace();
-      }
-      BERTLVObject object = null;
-      try {
-         object = new BERTLVObject(new DataInputStream(in));
-      } catch (IOException e) {
-         e.printStackTrace();
-      }
-      System.out.println(object);
+   public static BERTLVObject getInstance(
+         InputStream in) throws IOException {
+      BERTLVInputStream tlvIn = (in instanceof BERTLVInputStream) ? (BERTLVInputStream)in : new BERTLVInputStream(in);
+      int tag = tlvIn.readTag();
+      tlvIn.readLength();
+      byte[] valueBytes = tlvIn.readValue();
+      BERTLVObject result = new BERTLVObject(tag, valueBytes);
+      return result;
    }
-
 }
