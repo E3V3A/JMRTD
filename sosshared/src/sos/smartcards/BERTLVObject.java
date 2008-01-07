@@ -413,10 +413,6 @@ public class BERTLVObject
     * @return the first
     */
    public BERTLVObject getSubObject(int tag) {
-//      if (this.value instanceof byte[]) {
-//         byte[] valueBytes = (byte[])value;
-//         this.value = interpretValue(tag, valueBytes);
-//      }
       if (this.tag == tag) {
          return this;
       } else if (value instanceof BERTLVObject[]) {

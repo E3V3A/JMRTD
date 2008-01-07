@@ -8,8 +8,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sos.util.Hex;
-
 public class BERTLVInputStream extends InputStream
 {
    /** Tag. */
@@ -168,5 +166,16 @@ public class BERTLVInputStream extends InputStream
 
    public void close() throws IOException {
       in.close();
+   }
+
+   private static boolean isPrimitive(int tag) {
+      int i = 3;
+      for (; i >= 0; i--) {
+         int mask = (0xFF << (8 * i));
+         if ((tag & mask) != 0x00) { break; }
+      }
+      int msByte = (((tag & (0xFF << (8 * i))) >> (8 * i)) & 0xFF);
+      boolean result = ((msByte & 0x20) == 0x00);
+      return result;
    }
 }
