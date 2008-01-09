@@ -30,7 +30,6 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
@@ -46,7 +45,7 @@ import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_SOD file.
@@ -86,7 +85,7 @@ public class SODFile extends PassportFile
       sourceObject = object;
       isSourceConsistent = true;
       ASN1InputStream asn1in =
-         new ASN1InputStream(new ByteArrayInputStream(object.getValueAsBytes()));
+         new ASN1InputStream(new ByteArrayInputStream((byte[])object.getValue()));
       DERSequence seq = (DERSequence)asn1in.readObject();
       DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
       
@@ -109,7 +108,6 @@ public class SODFile extends PassportFile
       return EF_SOD_TAG;
    }
 
-   @Override
    public byte[] getEncoded() {
       if (isSourceConsistent) {
          return sourceObject.getEncoded();

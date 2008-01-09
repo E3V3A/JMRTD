@@ -27,8 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 
-import sos.smartcards.BERTLVObject;
-import sos.util.Hex;
+import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG1 file.
@@ -42,6 +41,7 @@ import sos.util.Hex;
  */
 public class DG1File extends DataGroup
 {
+   private static final int MRZ_INFO_TAG = 0x5F1F;
    private MRZInfo mrz;
 
    /**
@@ -54,7 +54,7 @@ public class DG1File extends DataGroup
    }
    
    DG1File(BERTLVObject in) {
-      this(MRZInfo.getInstance(in.getSubObject(0x5F1F).getValueAsBytes()));
+      this(MRZInfo.getInstance((byte[])in.getSubObject(MRZ_INFO_TAG).getValue()));
       sourceObject = in;
       isSourceConsistent = true;
    }

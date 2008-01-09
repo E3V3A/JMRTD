@@ -22,7 +22,7 @@
 
 package sos.mrtd;
 
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 public class DataGroup extends PassportFile
 {

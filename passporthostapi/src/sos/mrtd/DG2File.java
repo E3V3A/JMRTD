@@ -27,18 +27,13 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JFrame;
-
-import sos.gui.ImagePanel;
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG2 file.
@@ -67,7 +62,6 @@ public class DG2File extends DataGroup
    private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
    private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
 
-
    private List<FaceInfo> faces;
 
    /**
@@ -77,7 +71,6 @@ public class DG2File extends DataGroup
       faces = new ArrayList<FaceInfo>();
    }
 
-   // TODO: not tested...   
    DG2File(BERTLVObject object) {
       this();
       sourceObject = object;
@@ -85,7 +78,7 @@ public class DG2File extends DataGroup
          throw new IllegalArgumentException("Cannot decode null");
       }
       try {
-         byte[] facialRecordData = object.getSubObject(BIOMETRIC_DATA_TAG).getValueAsBytes();
+         byte[] facialRecordData = (byte[])object.getSubObject(BIOMETRIC_DATA_TAG).getValue();
          if (facialRecordData == null) {
             throw new IllegalArgumentException("Could not decode facial record");
          }

@@ -29,7 +29,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG15 file.
@@ -57,7 +57,7 @@ public class DG15File extends DataGroup
       try {
          sourceObject = object;
          isSourceConsistent = true;
-         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(object.getValueAsBytes());
+         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec((byte[])object.getValue());
          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
          publicKey = keyFactory.generatePublic(pubKeySpec);
       } catch (Exception e) {

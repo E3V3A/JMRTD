@@ -25,8 +25,7 @@ package sos.mrtd;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import sos.smartcards.BERTLVObject;
-import sos.util.Hex;
+import sos.tlv.BERTLVObject;
 
 /**
  * Passport file structure.

@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_COM file.
@@ -100,20 +100,20 @@ public class COMFile extends PassportFile
          BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
          BERTLVObject versionUnicodeObject = object.getSubObject(0x5F36);
          BERTLVObject tagListObject = object.getSubObject(0x5C);
-         byte[] versionLDSBytes = versionLDSObject.getValueAsBytes();
+         byte[] versionLDSBytes = (byte[])versionLDSObject.getValue();
          if (versionLDSBytes.length != 4) {
             throw new IllegalArgumentException("Wrong length of LDS version object");
          }
          versionLDS = new String(versionLDSBytes, 0, 2);
          updateLevelLDS = new String(versionLDSBytes, 2, 2);
-         byte[] versionUnicodeBytes = versionUnicodeObject.getValueAsBytes();
+         byte[] versionUnicodeBytes = (byte[])versionUnicodeObject.getValue();
          if (versionUnicodeBytes.length != 6) {
             throw new IllegalArgumentException("Wrong length of unicode version object");
          }
          majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
          minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
          releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
-         tagList = tagListObject.getValueAsBytes();
+         tagList = (byte[])tagListObject.getValue();
       } catch (IOException ioe) {
          throw new IllegalArgumentException(ioe.toString());
       }

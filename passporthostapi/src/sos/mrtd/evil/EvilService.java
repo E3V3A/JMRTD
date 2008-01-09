@@ -22,8 +22,6 @@
 
 package sos.mrtd.evil;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 
 import javax.smartcardio.CommandAPDU;

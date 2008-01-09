@@ -45,7 +45,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
-import sos.smartcards.BERTLVObject;
+import sos.tlv.BERTLVObject;
 
 /**
  * Data structure for storing face information as found in DG2.

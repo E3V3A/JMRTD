@@ -41,7 +41,6 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 

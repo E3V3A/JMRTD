@@ -35,15 +35,14 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
-import java.text.ParseException;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import sos.smartcards.BERTLVObject;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
+import sos.tlv.BERTLVObject;
 import sos.util.ASN1Utils;
 
 /**
