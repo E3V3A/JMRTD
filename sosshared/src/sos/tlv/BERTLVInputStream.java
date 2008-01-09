@@ -190,7 +190,7 @@ public class BERTLVInputStream extends InputStream
          if (tag == this.tag) {
             return;
          }
-         if (isPrimitive(tag)) {
+         if (isPrimitive(this.tag)) {
             skipValue();
          }
       }
