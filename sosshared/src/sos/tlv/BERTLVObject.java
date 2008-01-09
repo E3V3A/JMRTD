@@ -20,7 +20,7 @@
  * $Id: BERTLVObject.java 227 2007-03-31 11:09:47Z martijno $
  */
 
-package sos.smartcards;
+package sos.tlv;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -161,26 +161,9 @@ public class BERTLVObject
             case BMP_STRING_TYPE_TAG:
                return new String(valueBytes);
             case UTC_TIME_TYPE_TAG:
-               try {
-                  return SDF.parse(new String(valueBytes));
-               } catch (ParseException pe) {
-                  return valueBytes;
-               }
-            default:
-               return valueBytes;
-         } else {
-            /* EMV */
-            switch (tag) {
-               case 0x50:
-               case 0x5F20:
-                  return new String(valueBytes);
-               case 0x57:
-                  /* Track 2 data. */
-                  return valueBytes;
-               default:
-                  return valueBytes;
-            }
+               try { return SDF.parse(new String(valueBytes)); } catch (ParseException pe) { }
          }
+      return valueBytes;
    }
 
    private static BERTLVObject[] interpretCompoundValue(int tag, byte[] valueBytes)
@@ -262,7 +245,7 @@ public class BERTLVObject
     * 
     * @return the tag bytes of this object.
     */
-   public byte[] getTagAsBytes() {
+   private byte[] getTagAsBytes() {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       int byteCount = (int)(Math.log(tag) / Math.log(256)) + 1;
       for (int i = 0; i < byteCount; i++) {
@@ -292,7 +275,7 @@ public class BERTLVObject
     * 
     * @return the length of the encoded value
     */
-   public void reconstructLength() {
+   private void reconstructLength() {
       /* NOTE: needed after sub-objects have been added. */
       length = getValueAsBytes().length;
    }
@@ -306,7 +289,7 @@ public class BERTLVObject
     * 
     * @return length of encoded value as bytes
     */
-   public byte[] getLengthAsBytes() {
+   private byte[] getLengthAsBytes() {
       int length = getLength();
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       if (length < 0x80) {
@@ -338,7 +321,7 @@ public class BERTLVObject
     * 
     * @return the value of this object as a byte array
     */
-   public byte[] getValueAsBytes() {
+   private byte[] getValueAsBytes() {
       if (value == null) {
          System.out.println("DEBUG: object has no value: tag == "
                + Integer.toHexString(tag));

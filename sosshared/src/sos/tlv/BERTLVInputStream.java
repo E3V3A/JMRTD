@@ -2,7 +2,7 @@
  * $Id: $
  */
 
-package sos.smartcards;
+package sos.tlv;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -177,5 +177,22 @@ public class BERTLVInputStream extends InputStream
       int msByte = (((tag & (0xFF << (8 * i))) >> (8 * i)) & 0xFF);
       boolean result = ((msByte & 0x20) == 0x00);
       return result;
+   }
+
+   private void searchValue(int tag) throws IOException {
+      while (true) {
+         switch (state) {
+            case STATE_INIT: readTag();
+            case STATE_TAG_READ: readLength();
+            case STATE_LENGTH_READ: break;
+            default: throw new IllegalStateException("Cannot search value from undetermined state");
+         }
+         if (tag == this.tag) {
+            return;
+         }
+         if (isPrimitive(tag)) {
+            skipValue();
+         }
+      }
    }
 }
