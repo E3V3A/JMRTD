@@ -132,7 +132,7 @@ public class PassportTester extends JPanel
          add(log, BorderLayout.SOUTH);
 
          JTabbedPane tabbedPane = new JTabbedPane();
-         BACPanel bacPanel = new BACPanel(service);
+         ManualBACPanel bacPanel = new ManualBACPanel(service);
          APDUSenderPanel apduSenderPanel = new APDUSenderPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
          FacePanel facePanel = new FacePanel(service);

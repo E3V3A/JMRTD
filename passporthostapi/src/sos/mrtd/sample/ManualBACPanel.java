@@ -52,7 +52,7 @@ import sos.smartcards.CardServiceException;
  *
  * @version $Revision$
  */
-public class BACPanel extends JPanel
+public class ManualBACPanel extends JPanel
 {
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
@@ -65,7 +65,7 @@ public class BACPanel extends JPanel
    private PassportApduService apduService;
    private PassportAuthService authService;
 
-   public BACPanel(PassportApduService service) throws CardServiceException {
+   public ManualBACPanel(PassportApduService service) throws CardServiceException {
       super(new GridLayout(3,1));
       this.apduService = service;
       this.authService = new PassportAuthService(service);

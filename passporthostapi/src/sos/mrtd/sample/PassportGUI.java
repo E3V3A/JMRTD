@@ -100,7 +100,7 @@ public class PassportGUI extends JPanel implements PassportListener
          add(log, BorderLayout.SOUTH);
 
          tabbedPane = new JTabbedPane();
-         BACPanel bacPanel = new BACPanel(service);
+         ManualBACPanel bacPanel = new ManualBACPanel(service);
          LDSPanel ldsPanel = new LDSPanel(service);
          MRZPanel mrzPanel = new MRZPanel(service);
          FacePanel facePanel = new FacePanel(service);
