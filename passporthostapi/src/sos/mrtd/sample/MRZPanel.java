@@ -23,14 +23,17 @@
 package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.SimpleDateFormat;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -66,6 +69,7 @@ implements Runnable, ActionListener, AuthListener
 
    private MRZInfo info;
    private JTextArea infoArea;
+   private JPanel infoPanel;
    private JButton readButton;
    private PassportService service;
    private SecureMessagingWrapper wrapper;
@@ -81,7 +85,9 @@ implements Runnable, ActionListener, AuthListener
       infoArea = new JTextArea(20, 10);
       infoArea.setEditable(false);
       infoArea.setFont(FONT);
+      infoPanel = new JPanel(new GridLayout(9, 2));
       add(buttonPanel, BorderLayout.NORTH);
+      // add(infoPanel, BorderLayout.CENTER);
       add(new JScrollPane(infoArea), BorderLayout.CENTER);
    }
 
@@ -112,6 +118,26 @@ implements Runnable, ActionListener, AuthListener
          infoArea.append("DateOfBirth: \"" + SDF.format(info.getDateOfBirth()) + "\"\n");
          infoArea.append("DateOfExpiry: \"" + SDF.format(info.getDateOfExpiry()) + "\"\n");
          infoArea.append("Gender: \"" + info.getGender() + "\"\n");
+         
+//         infoPanel.removeAll();
+//         infoPanel.add(new JLabel("DocumentType: "));
+//         infoPanel.add(new JLabel(Integer.toString(info.getDocumentType())));
+//         infoPanel.add(new JLabel("DocumentNumber: "));
+//         infoPanel.add(new JLabel(info.getDocumentNumber()));
+//         infoPanel.add(new JLabel("Nationality: "));
+//         infoPanel.add(new JLabel(info.getNationality()));
+//         infoPanel.add(new JLabel("IssuingState: "));
+//         infoPanel.add(new JLabel(info.getIssuingState()));
+//         infoPanel.add(new JLabel("PersonalNumber: "));
+//         infoPanel.add(new JLabel(info.getPersonalNumber()));
+//         infoPanel.add(new JLabel("PrimaryIdentifier: "));
+//         infoPanel.add(new JLabel(info.getPrimaryIdentifier()));
+//         infoPanel.add(new JLabel("DateOfBirth: "));
+//         infoPanel.add(new JLabel(SDF.format(info.getDateOfBirth())));
+//         infoPanel.add(new JLabel("DateOfExpiry: "));
+//         infoPanel.add(new JLabel(SDF.format(info.getDateOfExpiry())));
+//         infoPanel.add(new JLabel("Gender: "));
+//         infoPanel.add(new JLabel(info.getGender().toString()));
       } catch (Exception e) {
          e.printStackTrace();
       } finally {
@@ -124,5 +150,5 @@ implements Runnable, ActionListener, AuthListener
    }
 
    public void performedAA(AAEvent ae) {
-   }     
+   }
 }

@@ -157,7 +157,7 @@ public class PassportService extends PassportAuthService
       public CardFileInputStream(short fid) throws CardServiceException {
          this.fid = fid;
          sendSelectFile(wrapper, fid);
-         buffer = readFromFile(fid, 0, 6); /* Tag at most 2, length at most 4. */
+         buffer = readFromFile(fid, 0, 8); /* Tag at most 2, length at most 5? */
          try {
             ByteArrayInputStream baIn = new ByteArrayInputStream(buffer);
             BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
