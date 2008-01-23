@@ -35,6 +35,7 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
+import sos.util.Hex;
 
 /**
  * Low level card service for sending apdus to the passport.
@@ -51,8 +52,6 @@ import sos.smartcards.ISO7816;
  *    <li><code>SELECT FILE</code> (using secure messaging)</li>
  *    <li><code>READ BINARY</code> (using secure messaging)</li>
  * </ul>
- *
- * @see PassportApduService
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
@@ -78,6 +77,8 @@ public class PassportApduService implements CardService
    /** ISO9797Alg3Mac. */
    private Mac mac;
 
+   protected int selectedFID;
+
    /**
     * Creates a new passport apdu sending service.
     *
@@ -93,12 +94,9 @@ public class PassportApduService implements CardService
     */
    public PassportApduService(CardService service)
    throws CardServiceException {
-      if (service instanceof PassportApduService) {
-         this.service = ((PassportApduService)service).service;
-      } else {
-         this.service = service;
-      }
+      this.service = service;
       try {
+         selectedFID = -1;
          cipher = Cipher.getInstance("DESede/CBC/NoPadding");
          mac = Mac.getInstance("ISO9797Alg3Mac");
       } catch (GeneralSecurityException gse) {
@@ -316,6 +314,7 @@ public class PassportApduService implements CardService
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
+      selectedFID = (fid & 0xFFFF);
    }
 
    void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
@@ -471,5 +470,12 @@ public class PassportApduService implements CardService
       } catch (GeneralSecurityException gse) {
          throw new CardServiceException(gse.toString());
       }
+   }
+
+   public boolean isSelectedFID(short fid) {
+      if (selectedFID < 0) {
+         return false;
+      }
+      return (fid & 0xFFFF) == selectedFID;
    }
 }

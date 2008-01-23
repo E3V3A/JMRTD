@@ -26,6 +26,7 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
@@ -126,16 +127,18 @@ implements ActionListener, AuthListener
          System.out.println("DEBUG: select file canceled...");
          return;
       }
-      final byte[] fid = fidTF.getValue();
+      byte[] fidBytes = fidTF.getValue();
+      final short fid = (short) (((fidBytes[0] & 0x000000FF) << 8)
+                                      | (fidBytes[1] & 0x000000FF));
       final File file = chooser.getSelectedFile();
       new Thread(new Runnable() {
          public void run() {
             try {
                PassportService s = new PassportService(service);
                s.setWrapper(wrapper);
-               byte[] data =
-                  s.getFileByFID((short) (((fid[0] & 0x000000FF) << 8)
-                                      | (fid[1] & 0x000000FF))).getEncoded();
+               DataInputStream fileIn = new DataInputStream(s.readFile(fid));
+               byte[] data = new byte[fileIn.available()];
+               fileIn.readFully(data);
                OutputStream out = new FileOutputStream(file);
                out.write(data, 0, data.length);
                out.close();

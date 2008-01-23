@@ -19,12 +19,12 @@ import sos.gui.HexField;
 import sos.mrtd.Util;
 
 
-public class BACKeyPanel extends JPanel implements ActionListener
+public class BACKeyPanel extends JPanel
 {
    private SecretKey kEnc, kMac;
 
    final static boolean DONT_SHOW_DERIVED_KEYS = false, SHOW_DERIVED_KEYS = true;
- 
+
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
@@ -51,7 +51,11 @@ public class BACKeyPanel extends JPanel implements ActionListener
       top.add(dateOfExpiryTF);
       JButton updateButton = new JButton("Derive Keys");
       top.add(updateButton);
-      updateButton.addActionListener(this);
+      KeyConstructor keyConstructor = new KeyConstructor();
+      updateButton.addActionListener(keyConstructor);
+      docNrTF.addActionListener(keyConstructor);
+      dateOfBirthTF.addActionListener(keyConstructor);
+      dateOfExpiryTF.addActionListener(keyConstructor);
       JPanel center = new JPanel(new FlowLayout());
       add(top, BorderLayout.NORTH);
       add(center, BorderLayout.CENTER);
@@ -69,22 +73,25 @@ public class BACKeyPanel extends JPanel implements ActionListener
       }
    }
 
-   public void actionPerformed(ActionEvent ae) {
-      try {
-         String docNr = docNrTF.getText(),
-         dateOfBirth = dateOfBirthTF.getText(),
-         dateOfExpiry = dateOfExpiryTF.getText();
-         byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
-         kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-         kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-         kEncTF.setValue(kEnc.getEncoded());
-         kMacTF.setValue(kMac.getEncoded());
-         bacDB.addEntry(docNr, dateOfBirth, dateOfExpiry);
-      } catch (Exception e) {
-         kEnc = null;
-         kMac = null;
-         kEncTF.clearText();
-         kMacTF.clearText();
+   private class KeyConstructor implements ActionListener
+   {
+      public void actionPerformed(ActionEvent ae) {
+         try {
+            String docNr = docNrTF.getText(),
+            dateOfBirth = dateOfBirthTF.getText(),
+            dateOfExpiry = dateOfExpiryTF.getText();
+            byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
+            kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
+            kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
+            kEncTF.setValue(kEnc.getEncoded());
+            kMacTF.setValue(kMac.getEncoded());
+            bacDB.addEntry(docNr, dateOfBirth, dateOfExpiry);
+         } catch (Exception e) {
+            kEnc = null;
+            kMac = null;
+            kEncTF.clearText();
+            kMacTF.clearText();
+         }
       }
    }
 

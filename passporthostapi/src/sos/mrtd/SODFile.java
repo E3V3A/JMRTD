@@ -45,7 +45,7 @@ import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
-import sos.tlv.BERTLVObject;
+import sos.tlv.BERTLVInputStream;
 
 /**
  * File structure for the EF_SOD file.
@@ -68,37 +68,28 @@ public class SODFile extends PassportFile
    private static final String E_CONTENT_TYPE_OID = "1.2.528.1.1006.1.20.1";
    
    private SignedData signedData;
-
+   
    public SODFile(SignedData signedData) {
       this.signedData = signedData;
    }
    
-   SODFile(InputStream in) throws Exception {
-      this(BERTLVObject.getInstance(in));
+   public SODFile(InputStream in) throws Exception {
+      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+      tlvIn.readTag();
+      tlvIn.readLength();
+      ASN1InputStream asn1in =
+         new ASN1InputStream(in);
+      DERSequence seq = (DERSequence)asn1in.readObject();
+      DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
+      
+      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+      this.signedData = new SignedData(s2);
    }
    
    SODFile(byte[] in) throws Exception {
       this(new ByteArrayInputStream(in));
    }
-      
-   SODFile(BERTLVObject object) throws IOException {
-      sourceObject = object;
-      isSourceConsistent = true;
-      ASN1InputStream asn1in =
-         new ASN1InputStream(new ByteArrayInputStream((byte[])object.getValue()));
-      DERSequence seq = (DERSequence)asn1in.readObject();
-      DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
-      
-      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-      signedData = new SignedData(s2);
-      
-      /* If there's more in the inputstream, maybe throw exception? */
-      Object nextObject = asn1in.readObject();
-      if (nextObject != null) {
-         System.out.println("DEBUG: WARNING: extra object found after SignedData...");
-      }
-   }
-   
+
    /**
     * The tag of this file.
     * 
@@ -108,6 +99,9 @@ public class SODFile extends PassportFile
       return EF_SOD_TAG;
    }
 
+   /**
+    * FIXME: needed for output.
+    */
    public byte[] getEncoded() {
       if (isSourceConsistent) {
          return sourceObject.getEncoded();

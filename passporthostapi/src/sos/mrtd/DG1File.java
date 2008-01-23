@@ -31,7 +31,7 @@ import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG1 file.
- * Datagroup 1 contains the the Machine
+ * Datagroup 1 contains the Machine
  * Readable Zone information.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
@@ -54,12 +54,12 @@ public class DG1File extends DataGroup
    }
    
    DG1File(BERTLVObject in) {
-      this(MRZInfo.getInstance((byte[])in.getSubObject(MRZ_INFO_TAG).getValue()));
+      this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
       sourceObject = in;
       isSourceConsistent = true;
    }
    
-   DG1File(InputStream in) throws IOException, ParseException {
+   public DG1File(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
    

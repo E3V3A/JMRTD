@@ -44,7 +44,6 @@ public class DataGroup extends PassportFile
       isSourceConsistent = true;
    }
    
-   @Override
    public byte[] getEncoded() {
       if (isSourceConsistent) {
          return sourceObject.getEncoded();
@@ -52,7 +51,6 @@ public class DataGroup extends PassportFile
       return null;
    }
    
-   @Override
    public String toString() {
       if (isSourceConsistent) {
          return sourceObject.toString();

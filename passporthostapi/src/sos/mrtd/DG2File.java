@@ -99,7 +99,7 @@ public class DG2File extends DataGroup
       isSourceConsistent = true;
    }
 
-   DG2File(InputStream in) throws IOException, ParseException {
+   public DG2File(InputStream in) throws IOException, ParseException {
       this(BERTLVObject.getInstance(in));
    }
    

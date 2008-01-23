@@ -28,7 +28,6 @@ import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -53,16 +52,17 @@ import sos.smartcards.PCSCCardService;
  * @version $Revision$
  */
 public class PassportGUI extends JPanel implements PassportListener
-{
+{  
    public static final File JMRTD_USER_DIR =
-      new File(new File(System.getProperty("user.home")), ".jmrtd"); 
+      new File(new File(System.getProperty("user.home")), ".jmrtd");
+   
+   private static final String APPLICATION_NAME = "JMRTD (jmrtd.sourceforge.net)";
    
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
    private PassportApduService service;
    private APDULogPanel log;
-   private JComboBox terminalsComboBox;
    private JLabel blockSizeLabel;
    private JTextField blockSizeText;
    private JTabbedPane tabbedPane;
@@ -79,13 +79,6 @@ public class PassportGUI extends JPanel implements PassportListener
          service = new PassportApduService(new PCSCCardService());
 
          JPanel northPanel = new JPanel(new FlowLayout());
-         terminalsComboBox = new JComboBox();
-         String[] terminals = service.getTerminals();
-         for (String terminal: terminals) {
-            terminalsComboBox.addItem(terminal);
-         }
-         // This is not used at the moment
-         terminalsComboBox.setEnabled(false);
          blockSizeLabel = new JLabel("   Max. read file block:");
          blockSizeText = new JTextField("255");
          blockSizeText.setEditable(true);
@@ -95,12 +88,11 @@ public class PassportGUI extends JPanel implements PassportListener
                 JTextField f = (JTextField)e.getSource();
                 try {
                   int n = Integer.parseInt(f.getText());
-                  PassportService.maxFileSize = n;
+                  PassportService.maxBlockSize = n;
                 } catch(NumberFormatException nfe) {
                 }
             }             
          });
-         northPanel.add(terminalsComboBox);
          northPanel.add(blockSizeLabel);
          northPanel.add(blockSizeText);
          add(northPanel, BorderLayout.NORTH);
@@ -154,7 +146,6 @@ public class PassportGUI extends JPanel implements PassportListener
    public void setEnabled(boolean enabled) {
       super.setEnabled(enabled);
       tabbedPane.setEnabled(enabled);
-      //terminalsComboBox.setEnabled(!enabled);
    }
    
    /**
@@ -165,7 +156,7 @@ public class PassportGUI extends JPanel implements PassportListener
    public static void main(String[] arg) {
       try {
          PassportGUI gui = new PassportGUI(arg);
-         JFrame frame = new JFrame("PassportGUI");
+         JFrame frame = new JFrame(APPLICATION_NAME);
          frame.getContentPane().add(gui);
          frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
          frame.pack();

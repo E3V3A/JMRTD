@@ -22,9 +22,6 @@
 
 package sos.mrtd;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-
 import sos.tlv.BERTLVObject;
 
 /**
@@ -83,46 +80,47 @@ public abstract class PassportFile
     * 
     * @throws IllegalArgumentException if the input object cannot be converted
     */
-   public static PassportFile getInstance(Object in) {
-      try {
-         BERTLVObject obj = null;
-         if (in instanceof BERTLVObject) {
-            obj = (BERTLVObject)in;
-         } else if (in instanceof InputStream) {
-            obj = BERTLVObject.getInstance((InputStream)in);
-         } else if (in instanceof byte[]) {
-            obj = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])in));
-         } else {
-            throw new IllegalArgumentException("Could not decode input source");
-         }
-         int tag = obj.getTag();
-         switch(tag) {
-         case EF_COM_TAG: return new COMFile(obj);
-         case EF_DG1_TAG: return new DG1File(obj);
-         case EF_DG2_TAG: return new DG2File(obj);
-         case EF_DG3_TAG: return new DataGroup(obj);
-         case EF_DG4_TAG: return new DataGroup(obj);
-         case EF_DG5_TAG: return new DataGroup(obj);
-         case EF_DG6_TAG: return new DataGroup(obj);
-         case EF_DG7_TAG: return new DataGroup(obj);
-         case EF_DG8_TAG: return new DataGroup(obj);
-         case EF_DG9_TAG: return new DataGroup(obj);
-         case EF_DG10_TAG: return new DataGroup(obj);
-         case EF_DG11_TAG: return new DataGroup(obj);
-         case EF_DG12_TAG: return new DataGroup(obj);
-         case EF_DG13_TAG: return new DataGroup(obj);
-         case EF_DG14_TAG: return new DataGroup(obj);
-         case EF_DG15_TAG: return new DG15File(obj);
-         case EF_DG16_TAG: return new DataGroup(obj);
-         case EF_SOD_TAG: return new SODFile(obj);
-         default: throw new IllegalArgumentException("Unknown file tag "
-               + Integer.toHexString(tag));
-         }
-      } catch (Exception e) {
-         e.printStackTrace();
-         return null;
-      }
-   }
+//    public static PassportFile getInstance(Object in) {
+//      try {
+//         BERTLVObject obj = null;
+//         if (in instanceof BERTLVObject) {
+//            obj = (BERTLVObject)in;
+//         } else if (in instanceof InputStream) {
+//            obj = BERTLVObject.getInstance((InputStream)in);
+//         } else if (in instanceof byte[]) {
+//            obj = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])in));
+//         } else {
+//            throw new IllegalArgumentException("Could not decode input source");
+//         }
+//         int tag = obj.getTag();
+//         switch(tag) {
+//         case EF_COM_TAG: return new COMFile(obj);
+//         case EF_DG1_TAG: return new DG1File(obj);
+//         case EF_DG2_TAG: return new DG2File(obj);
+//         case EF_DG3_TAG: return new DataGroup(obj);
+//         case EF_DG4_TAG: return new DataGroup(obj);
+//         case EF_DG5_TAG: return new DataGroup(obj);
+//         case EF_DG6_TAG: return new DataGroup(obj);
+//         case EF_DG7_TAG: return new DataGroup(obj);
+//         case EF_DG8_TAG: return new DataGroup(obj);
+//         case EF_DG9_TAG: return new DataGroup(obj);
+//         case EF_DG10_TAG: return new DataGroup(obj);
+//         case EF_DG11_TAG: return new DataGroup(obj);
+//         case EF_DG12_TAG: return new DataGroup(obj);
+//         case EF_DG13_TAG: return new DataGroup(obj);
+//         case EF_DG14_TAG: return new DataGroup(obj);
+//         case EF_DG15_TAG: System.out.println("DEBUG: hier");
+//            return new DG15File(new ByteArrayInputStream(obj.getEncoded()));
+//         case EF_DG16_TAG: return new DataGroup(obj);
+//         case EF_SOD_TAG: return new SODFile(obj);
+//         default: throw new IllegalArgumentException("Unknown file tag "
+//               + Integer.toHexString(tag));
+//         }
+//      } catch (Exception e) {
+//         e.printStackTrace();
+//         return null;
+//      }
+//   }
 
    /**
     * Gets the contents of this file as byte array,
@@ -142,7 +140,7 @@ public abstract class PassportFile
     *
     * @return the file identifier.
     */
-   static short lookupFIDByTag(int tag) {
+   public static short lookupFIDByTag(int tag) {
       switch(tag) {
          case EF_COM_TAG: return PassportService.EF_COM;
          case EF_DG1_TAG: return PassportService.EF_DG1;
@@ -163,8 +161,30 @@ public abstract class PassportFile
          case EF_DG16_TAG: return PassportService.EF_DG16;
          case EF_SOD_TAG: return PassportService.EF_SOD;
          default:
-            throw new NumberFormatException("Unknown tag "
-                                            + Integer.toHexString(tag));
+            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));
+      }
+   }
+   
+   public static int lookupDataGroupNumberByTag(int tag) {
+      switch (tag) {
+         case EF_DG1_TAG: return 1;
+         case EF_DG2_TAG: return 2;
+         case EF_DG3_TAG: return 3;
+         case EF_DG4_TAG: return 4;
+         case EF_DG5_TAG: return 5;
+         case EF_DG6_TAG: return 6;
+         case EF_DG7_TAG: return 7;
+         case EF_DG8_TAG: return 8;
+         case EF_DG9_TAG: return 9;
+         case EF_DG10_TAG: return 10;
+         case EF_DG11_TAG: return 11;
+         case EF_DG12_TAG: return 12;
+         case EF_DG13_TAG: return 13;
+         case EF_DG14_TAG: return 14;
+         case EF_DG15_TAG: return 15;
+         case EF_DG16_TAG: return 16;
+         default:
+            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
       }
    }
 }

@@ -24,8 +24,8 @@ package sos.mrtd;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -40,6 +40,10 @@ import sos.tlv.BERTLVObject;
  */
 public class COMFile extends PassportFile
 {
+   private static final int TAG_LIST_TAG = 0x5C;
+   private static final int VERSION_UNICODE_TAG = 0x5F36;
+   private static final int VERSION_LDS_TAG = 0x5F01;
+
    private String versionLDS;
    private String updateLevelLDS;
    private String majorVersionUnicode;
@@ -78,7 +82,7 @@ public class COMFile extends PassportFile
       this.tagList = new byte[tagList.length];
       System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
    }
-   
+
    /**
     * Constructs a new EF_COM file based on the encoded
     * value in <code>in</code>.
@@ -88,18 +92,25 @@ public class COMFile extends PassportFile
     * 
     * @throws IOException if the input could not be decoded
     */
-   COMFile(InputStream in) throws IOException, ParseException {
-      this(BERTLVObject.getInstance(in));
+   public COMFile(InputStream in) throws IOException {
+      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+      int tag = tlvIn.readTag();
+      if (tag != EF_COM_TAG) {
+         throw new IOException("Wrong tag!");
+      }
+      tlvIn.readLength();
+      byte[] valueBytes = tlvIn.readValue();
+      setValue(new BERTLVObject(tag, valueBytes));
    }
-      
-   COMFile(BERTLVObject object) {
+
+   void setValue(BERTLVObject object) {
       try {
          if (object.getTag() != EF_COM_TAG) {
             throw new IOException("Wrong tag!");
          }         
-         BERTLVObject versionLDSObject = object.getSubObject(0x5F01);
-         BERTLVObject versionUnicodeObject = object.getSubObject(0x5F36);
-         BERTLVObject tagListObject = object.getSubObject(0x5C);
+         BERTLVObject versionLDSObject = object.getSubObject(VERSION_LDS_TAG);
+         BERTLVObject versionUnicodeObject = object.getSubObject(VERSION_UNICODE_TAG);
+         BERTLVObject tagListObject = object.getSubObject(TAG_LIST_TAG);
          byte[] versionLDSBytes = (byte[])versionLDSObject.getValue();
          if (versionLDSBytes.length != 4) {
             throw new IllegalArgumentException("Wrong length of LDS version object");
@@ -118,7 +129,7 @@ public class COMFile extends PassportFile
          throw new IllegalArgumentException(ioe.toString());
       }
    }
-   
+
    /**
     * The tag byte of this file.
     * 
@@ -137,7 +148,7 @@ public class COMFile extends PassportFile
    public String getLDSVersion() {
       return versionLDS + "." + updateLevelLDS;
    }
-   
+
    /**
     * Gets the unicode version as a dot seperated string
     * containing major version, minor version, and release level.
@@ -158,15 +169,15 @@ public class COMFile extends PassportFile
    public byte[] getTagList() {
       return tagList;
    }
-   
+
    public byte[] getEncoded() {
       try {
          byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();
-         BERTLVObject versionLDSObject = new BERTLVObject(0x5F01, versionLDSBytes);
+         BERTLVObject versionLDSObject = new BERTLVObject(VERSION_LDS_TAG, versionLDSBytes);
          byte[] versionUnicodeBytes =
             (majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
-         BERTLVObject versionUnicodeObject = new BERTLVObject(0x5F36, versionUnicodeBytes);
-         BERTLVObject tagListObject = new BERTLVObject(0x5C, tagList);
+         BERTLVObject versionUnicodeObject = new BERTLVObject(VERSION_UNICODE_TAG, versionUnicodeBytes);
+         BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagList);
          BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
          BERTLVObject ef011E =
             new BERTLVObject(EF_COM_TAG, value);
@@ -176,7 +187,7 @@ public class COMFile extends PassportFile
          return null;
       }
    }
-   
+
    /*
    // JUST TESTING!
    public static void main(String[] arg) {
@@ -191,5 +202,5 @@ public class COMFile extends PassportFile
          e.printStackTrace();
       }
    }
-   */
+    */
 }

@@ -29,6 +29,7 @@ import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.text.ParseException;
 
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -53,22 +54,20 @@ public class DG15File extends DataGroup
       this.publicKey = publicKey;
    }
 
-   DG15File(BERTLVObject object) {   
+   public DG15File(InputStream in) throws IOException, ParseException {
+      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+      tlvIn.readTag();
+      tlvIn.readLength();
+      byte[] value = tlvIn.readValue();
       try {
-         sourceObject = object;
-         isSourceConsistent = true;
-         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec((byte[])object.getValue());
+         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
          KeyFactory keyFactory = KeyFactory.getInstance("RSA");
          publicKey = keyFactory.generatePublic(pubKeySpec);
       } catch (Exception e) {
          throw new IllegalArgumentException(e.toString());
       }
    }
-   
-   DG15File(InputStream in) throws IOException, ParseException {
-      this(BERTLVObject.getInstance(in));
-   }
-   
+
    public byte[] getEncoded() {
       if (isSourceConsistent) {
          return sourceObject.getEncoded();

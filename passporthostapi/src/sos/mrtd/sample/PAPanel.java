@@ -51,12 +51,14 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.COMFile;
-import sos.mrtd.DataGroup;
 import sos.mrtd.PassportApduService;
+import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardServiceException;
+import sos.tlv.BERTLVInputStream;
+import sos.tlv.BERTLVObject;
 import sos.util.Hex;
 
 /**
@@ -97,7 +99,8 @@ public class PAPanel extends JPanel implements AuthListener
       readObjectButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               SODFile sodFile = passportService.getSODFile();
+               SODFile sodFile =
+                  new SODFile(passportService.readFile(PassportService.EF_SOD));
                area.append("Read pubkey security object\n");
                DataGroupHash[] hashes = sodFile.getDataGroupHashes();
                storedHashes = new Object[hashes.length];
@@ -128,13 +131,17 @@ public class PAPanel extends JPanel implements AuthListener
                         alg = "SHA1";
                      }
                      MessageDigest digest = MessageDigest.getInstance(alg);
-                     COMFile comFile = passportService.readCOMFile();
+                     COMFile comFile = new COMFile(passportService.readFile(PassportService.EF_COM));
                      byte[] tags = comFile.getTagList();
                      for (int i = 0; i < tags.length; i++) {
-                        DataGroup file = passportService.readDataGroup(tags[i]);
-                        byte[] computedHash = digest.digest(file.getEncoded());
+                        BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(tags[i]));
+                        int tag = tlvIn.readTag();
+                        tlvIn.readLength();
+                        byte[] valueBytes = tlvIn.readValue();
+                        byte[] file = (new BERTLVObject(tag, valueBytes)).getEncoded();
+                        byte[] computedHash = digest.digest(file);
                         area.append("   computed hash of ");
-                        area.append("DG " + Integer.toHexString(tags[i] & 0xFF) + ": ");
+                        area.append("DG" + PassportFile.lookupDataGroupNumberByTag(tags[i]) + ": ");
                         area.append(Hex.bytesToHexString(computedHash));
                         if (storedHashes != null && storedHashes.length > i
                               && Arrays.equals((byte[])storedHashes[i], computedHash)) {
@@ -159,7 +166,8 @@ public class PAPanel extends JPanel implements AuthListener
       readDSCertButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               SODFile sodFile = passportService.getSODFile();
+               SODFile sodFile =
+                  new SODFile(passportService.readFile(PassportService.EF_SOD));
                docSigningCert = sodFile.getDocSigningCertificate();
                area.append("docSigningCert = \n" + docSigningCert);
                area.append("\n");
@@ -235,5 +243,5 @@ public class PAPanel extends JPanel implements AuthListener
    }
 
    public void performedAA(AAEvent ae) {
-   }  
+   }
 }

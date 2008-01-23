@@ -94,7 +94,8 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         DG1File dg1 = s.readDG1();
+         DG1File dg1 =
+            new DG1File(s.readFile(PassportService.EF_DG1));
          info = dg1.getMRZInfo();
          infoArea.setText(info.toString());
          infoArea.append("\n");

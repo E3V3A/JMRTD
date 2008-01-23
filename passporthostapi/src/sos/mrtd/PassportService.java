@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,6 +30,7 @@ import java.security.GeneralSecurityException;
 
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.tlv.BERTLVInputStream;
 
 /**
  * High level card passport service for using the passport.
@@ -85,9 +87,7 @@ public class PassportService extends PassportAuthService
    public static final short EF_COM = 0x011E;
 
    /** The file read block size, some passports cannot handle large values */
-   public static int maxFileSize = 255;
-
-   private PassportAuthService passportAuthService;
+   public static int maxBlockSize = 255;
 
    /**
     * Creates a new passport service for accessing the passport.
@@ -100,81 +100,6 @@ public class PassportService extends PassportAuthService
     */
    public PassportService(CardService service) throws CardServiceException {
       super(service);
-      if (service instanceof PassportService) {
-         this.passportAuthService =
-            ((PassportService)service).passportAuthService;
-      } else {
-         this.passportAuthService = new PassportAuthService(service);
-      }
-      addAuthenticationListener(passportAuthService);
-
-   }
-
-   /**
-    * Gets the data group presence list.
-    * 
-    * @return the file containing the data group presence list
-    * @throws IOException if the file cannot be read
-    */
-   public COMFile readCOMFile() throws CardServiceException {
-      return (COMFile)getFileByTag(PassportFile.EF_COM_TAG);
-   }
-
-   /**
-    * Gets the data group indicated by <code>tag</code>.
-    * 
-    * @param tag should be a valid ICAO datagroup tag
-    * 
-    * @return the data group file
-    * 
-    * @throws IOException if the file cannot be read
-    */
-   public DataGroup readDataGroup(int tag) throws CardServiceException {
-      return (DataGroup)getFileByTag(tag);
-   }
-
-   /**
-    * Gets DG1.
-    * 
-    * @return the data group file
-    * 
-    * @throws IOException if the file cannot be read
-    */
-   public DG1File readDG1() throws CardServiceException {
-      return (DG1File)readDataGroup(PassportFile.EF_DG1_TAG);
-   }
-
-   /**
-    * Gets DG2.
-    * 
-    * @return the data group file
-    * 
-    * @throws IOException if the file cannot be read
-    */   
-   public DG2File readDG2() throws CardServiceException {
-      return (DG2File)readDataGroup(PassportFile.EF_DG2_TAG);
-   }
-
-   /**
-    * Gets DG15.
-    * 
-    * @return the data group file
-    * 
-    * @throws IOException if the file cannot be read
-    */
-   public DG15File readDG15() throws CardServiceException {
-      return (DG15File)readDataGroup(PassportFile.EF_DG15_TAG);
-   }
-
-   /**
-    * Gets the document security object.
-    * 
-    * @return the document security object
-    * 
-    * @throws IOException if the file cannot be read
-    */
-   public SODFile getSODFile() throws CardServiceException {
-      return (SODFile)getFileByTag(PassportFile.EF_SOD_TAG);
    }
 
    /**
@@ -185,27 +110,16 @@ public class PassportService extends PassportAuthService
     * @return the file
     * 
     * @throws IOException if the file cannot be read
-    * 
-    *
-    * @deprecated Shall be made private!
-    *
     */
-   public PassportFile getFileByTag(int tag) throws CardServiceException {
-      short fid = PassportFile.lookupFIDByTag(tag);
-      return getFileByFID(fid);
-   }
-
-   /**
-    * @deprecated Shall be made private!
-    */
-   public PassportFile getFileByFID(short fid) throws CardServiceException {
-      return PassportFile.getInstance(readFile(fid));
-   }
-
-   private synchronized byte[] readFile(short fid) throws CardServiceException {
-      return readFile(fid, 0, -1);
+   public InputStream readFile(short fid) throws CardServiceException {
+      return new CardFileInputStream(fid);
    }
    
+   public InputStream readDataGroup(int tag) throws CardServiceException {
+      short fid = PassportFile.lookupFIDByTag(tag);
+      return readFile(fid);
+   }
+
    /**
     * Reads the file with id <code>fid</code>.
     *
@@ -215,46 +129,70 @@ public class PassportService extends PassportAuthService
     *
     * @return the contents of the file.
     */
-   private synchronized byte[] readFile(short fid, int offset, int length) throws CardServiceException {
-      SecureMessagingWrapper wrapper = getWrapper();
+   private synchronized byte[] readFromFile(short fid, int offset, int length) throws CardServiceException {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      service.sendSelectFile(wrapper, fid);
-      int blockSize = maxFileSize;
+      if (!isSelectedFID(fid)) { sendSelectFile(wrapper, fid); }
+      int blockSize = maxBlockSize;
       while (true) {
-         int len = length < 0 ? blockSize : Math.min(blockSize, length - offset);
-         byte[] data = service.sendReadBinary(wrapper, (short)offset, len);
-         if (data == null || data.length == 0) { break; }
+         int len = length < 0 ? blockSize : Math.min(blockSize, length);
+         byte[] data = sendReadBinary(wrapper, (short)offset, len);
+         if (data == null || data.length == 0) { break; } /* Reached EOF */
          out.write(data, 0, data.length);
          offset += data.length;
          if (length < 0) { continue; }
-         if (offset >= length) { break; }
+         if (offset >= length) { break; } /* (More than) length bytes read. */
       }
       byte[] file = out.toByteArray();
       return file;
    }
-   
-   private class PassportFileInputStream extends InputStream
+
+   private class CardFileInputStream extends InputStream
    {
+      private short fid;
       private byte[] buffer;
       private int offsetBufferInFile;
-      private int indexInBuffer;
-  
-      public PassportFileInputStream(PassportService service, short fid) {
-         buffer = new byte[maxFileSize];
-         offsetBufferInFile = 0;
-         indexInBuffer = 0;
-         /* TODO: read T and L and determine length of V. */
+      private int offsetInBuffer;
+      private int fileLength;
+
+      public CardFileInputStream(short fid) throws CardServiceException {
+         this.fid = fid;
+         buffer = readFromFile(fid, 0, maxBlockSize);
+         try {
+            ByteArrayInputStream baIn = new ByteArrayInputStream(buffer);
+            BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
+            tlvIn.readTag();
+            fileLength = tlvIn.readLength();
+            offsetBufferInFile = 0;
+            offsetInBuffer = 0;
+            fileLength += offsetInBuffer;
+         } catch (IOException ioe) {
+            throw new CardServiceException(ioe.toString());
+         }
       }
-      
+
       public int read() throws IOException {
          int result = -1;
-         if (indexInBuffer < buffer.length) {
-            result = buffer[indexInBuffer];
-            indexInBuffer++;
+         if (offsetInBuffer < buffer.length) {
+            result = buffer[offsetInBuffer] & 0xFF;
+            offsetInBuffer++;
          } else {
-            
+            int blockSize = Math.min(maxBlockSize, fileLength - offsetBufferInFile);
+            try {
+               int bytesRead = offsetInBuffer;
+               offsetBufferInFile += bytesRead;
+               offsetInBuffer = 0;
+               buffer = readFromFile(fid, offsetBufferInFile, blockSize);
+               result = buffer[offsetInBuffer] & 0xFF;
+               offsetInBuffer++;
+            } catch (CardServiceException cse) {
+               throw new IOException(cse.toString());
+            }
          }
          return result;
+      }
+      
+      public int available() {
+         return fileLength - (offsetBufferInFile + offsetInBuffer);
       }
    }
 }
