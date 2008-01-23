@@ -23,6 +23,7 @@
 package sos.mrtd.sample;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.io.File;
 import java.security.Provider;
@@ -36,12 +37,11 @@ import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
-import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardEvent;
-import sos.smartcards.PCSCCardService;
+import sos.smartcards.CardService;
 
 /**
  * Simple graphical application to demonstrate the
@@ -58,10 +58,11 @@ public class PassportGUI extends JPanel implements PassportListener
    
    private static final String APPLICATION_NAME = "JMRTD (jmrtd.sourceforge.net)";
    
+   private static final Dimension PREFERRED_SIZE = new Dimension(800, 600);
+   
    private static final Provider PROVIDER =
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-   private PassportApduService service;
    private APDULogPanel log;
    private JLabel blockSizeLabel;
    private JTextField blockSizeText;
@@ -76,7 +77,7 @@ public class PassportGUI extends JPanel implements PassportListener
       super(new BorderLayout());
       try {
          Security.insertProviderAt(PROVIDER, 4);
-         service = new PassportApduService(new PCSCCardService());
+         // service = new PassportApduService(new PCSCCardService());
 
          JPanel northPanel = new JPanel(new FlowLayout());
          blockSizeLabel = new JLabel("   Max. read file block:");
@@ -100,24 +101,6 @@ public class PassportGUI extends JPanel implements PassportListener
          add(log, BorderLayout.SOUTH);
 
          tabbedPane = new JTabbedPane();
-         ManualBACPanel bacPanel = new ManualBACPanel(service);
-         LDSPanel ldsPanel = new LDSPanel(service);
-         MRZPanel mrzPanel = new MRZPanel(service);
-         FacePanel facePanel = new FacePanel(service);
-         PAPanel paPanel = new PAPanel(service);
-         AAPanel aaPanel = new AAPanel(service);
-         bacPanel.addAuthenticationListener(ldsPanel);
-         bacPanel.addAuthenticationListener(mrzPanel);
-         bacPanel.addAuthenticationListener(facePanel);
-         bacPanel.addAuthenticationListener(paPanel);
-         bacPanel.addAuthenticationListener(aaPanel);
-         tabbedPane.addTab("BAC", bacPanel);
-         tabbedPane.addTab("LDS", ldsPanel);
-         tabbedPane.addTab("MRZ", mrzPanel);
-         tabbedPane.addTab("Face", facePanel);
-         tabbedPane.addTab("PA", paPanel);
-         tabbedPane.addTab("AA", aaPanel);
-         add(tabbedPane, BorderLayout.CENTER);
          PassportManager.addPassportListener(this);
       } catch (Exception e) {
          e.printStackTrace();
@@ -127,9 +110,27 @@ public class PassportGUI extends JPanel implements PassportListener
 
    public void passportInserted(CardEvent ce) {
       try {
-         service.setService(ce.getService());
+         PassportService service = new PassportService(ce.getService());
          service.addAPDUListener(log);
          service.open();
+         
+         BACPanel bacPanel = new BACPanel(service);
+         MRZPanel mrzPanel = new MRZPanel(service);
+         FacePanel facePanel = new FacePanel(service);
+         PAPanel paPanel = new PAPanel(service);
+         AAPanel aaPanel = new AAPanel(service);
+         bacPanel.addAuthenticationListener(mrzPanel);
+         bacPanel.addAuthenticationListener(facePanel);
+         bacPanel.addAuthenticationListener(paPanel);
+         bacPanel.addAuthenticationListener(aaPanel);
+         tabbedPane.setPreferredSize(new Dimension(600, 400));
+         tabbedPane.addTab("BAC", bacPanel);
+         tabbedPane.addTab("MRZ", mrzPanel);
+         tabbedPane.addTab("Face", facePanel);
+         tabbedPane.addTab("PA", paPanel);
+         tabbedPane.addTab("AA", aaPanel);
+         add(tabbedPane, BorderLayout.CENTER);
+
       } catch (Exception ex) {
          ex.printStackTrace();
       }
@@ -137,15 +138,21 @@ public class PassportGUI extends JPanel implements PassportListener
    }
 
    public void passportRemoved(CardEvent ce) {
+      CardService service = ce.getService();
       if (service != null) {
          service.close();
       }
+      tabbedPane.removeAll();
       setEnabled(false);
    }
    
    public void setEnabled(boolean enabled) {
       super.setEnabled(enabled);
       tabbedPane.setEnabled(enabled);
+   }
+
+   public Dimension getPreferredSize() {
+      return PREFERRED_SIZE;
    }
    
    /**

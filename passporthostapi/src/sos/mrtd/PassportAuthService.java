@@ -250,7 +250,7 @@ public class PassportAuthService extends PassportApduService
    }
 
    /**
-    * Gets the wrapper. Returns <code>null</code> until a
+    * Gets the wrapper. Returns <code>null</code> until
     * BAC has been performed.
     * 
     * @return the wrapper

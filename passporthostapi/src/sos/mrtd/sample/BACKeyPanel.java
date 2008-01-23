@@ -18,7 +18,6 @@ import javax.swing.border.EtchedBorder;
 import sos.gui.HexField;
 import sos.mrtd.Util;
 
-
 public class BACKeyPanel extends JPanel
 {
    private SecretKey kEnc, kMac;
@@ -28,6 +27,7 @@ public class BACKeyPanel extends JPanel
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
+   private JButton deriveKeyButton;
    private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
    private HexField kEncTF, kMacTF;
 
@@ -49,10 +49,10 @@ public class BACKeyPanel extends JPanel
       top.add(dateOfBirthTF);
       top.add(new JLabel("Date of expiry: "));
       top.add(dateOfExpiryTF);
-      JButton updateButton = new JButton("Derive Keys");
-      top.add(updateButton);
+      deriveKeyButton = new JButton("Derive Keys");
+      top.add(deriveKeyButton);
       KeyConstructor keyConstructor = new KeyConstructor();
-      updateButton.addActionListener(keyConstructor);
+      deriveKeyButton.addActionListener(keyConstructor);
       docNrTF.addActionListener(keyConstructor);
       dateOfBirthTF.addActionListener(keyConstructor);
       dateOfExpiryTF.addActionListener(keyConstructor);
@@ -72,6 +72,10 @@ public class BACKeyPanel extends JPanel
          add(bottom, BorderLayout.SOUTH);
       }
    }
+   
+   public void addActionListener(ActionListener l) {
+      deriveKeyButton.addActionListener(l);
+   }
 
    private class KeyConstructor implements ActionListener
    {
@@ -89,10 +93,24 @@ public class BACKeyPanel extends JPanel
          } catch (Exception e) {
             kEnc = null;
             kMac = null;
-            kEncTF.clearText();
-            kMacTF.clearText();
+            if (kEncTF != null) { kEncTF.clearText(); }
+            if (kMacTF != null) { kMacTF.clearText(); }
          }
       }
+   }
+   
+   /* Accessors. */
+   
+   public String getDateOfBirth() {
+      return dateOfBirthTF.getText();
+   }
+   
+   public String getDateOfExpirty() {
+      return dateOfExpiryTF.getText();
+   }
+   
+   public String getDocumentNumber() {
+      return docNrTF.getText();
    }
 
    public SecretKey getKEnc() {
