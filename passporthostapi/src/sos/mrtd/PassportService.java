@@ -156,15 +156,16 @@ public class PassportService extends PassportAuthService
 
       public CardFileInputStream(short fid) throws CardServiceException {
          this.fid = fid;
-         buffer = readFromFile(fid, 0, maxBlockSize);
+         sendSelectFile(wrapper, fid);
+         buffer = readFromFile(fid, 0, 6); /* Tag at most 2, length at most 4. */
          try {
             ByteArrayInputStream baIn = new ByteArrayInputStream(buffer);
             BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
             tlvIn.readTag();
             fileLength = tlvIn.readLength();
+            fileLength += (buffer.length - tlvIn.available());
             offsetBufferInFile = 0;
             offsetInBuffer = 0;
-            fileLength += offsetInBuffer;
          } catch (IOException ioe) {
             throw new CardServiceException(ioe.toString());
          }
@@ -172,23 +173,34 @@ public class PassportService extends PassportAuthService
 
       public int read() throws IOException {
          int result = -1;
-         if (offsetInBuffer < buffer.length) {
-            result = buffer[offsetInBuffer] & 0xFF;
-            offsetInBuffer++;
-         } else {
-            int blockSize = Math.min(maxBlockSize, fileLength - offsetBufferInFile);
+         if (offsetInBuffer >= buffer.length) {
+            int blockSize = Math.min(maxBlockSize, available());
             try {
-               int bytesRead = offsetInBuffer;
-               offsetBufferInFile += bytesRead;
+               offsetBufferInFile += offsetInBuffer;
                offsetInBuffer = 0;
                buffer = readFromFile(fid, offsetBufferInFile, blockSize);
-               result = buffer[offsetInBuffer] & 0xFF;
-               offsetInBuffer++;
             } catch (CardServiceException cse) {
                throw new IOException(cse.toString());
             }
          }
+         if (offsetInBuffer < buffer.length) {
+            result = buffer[offsetInBuffer] & 0xFF;
+            offsetInBuffer++;
+         }
          return result;
+      }
+      
+      public long skip(long n) {
+         int available = available();
+         if (n > available) { n = available; }
+         if (n < (buffer.length - offsetInBuffer)) {
+            offsetInBuffer += n;
+         } else {
+            int absoluteOffset = offsetBufferInFile + offsetInBuffer;
+            offsetBufferInFile = (int)(absoluteOffset + n);
+            offsetInBuffer = 0;
+         }
+         return n;
       }
       
       public int available() {

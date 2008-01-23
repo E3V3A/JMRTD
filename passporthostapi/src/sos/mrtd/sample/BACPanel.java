@@ -22,27 +22,17 @@
 
 package sos.mrtd.sample;
 
-import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
-import javax.crypto.SecretKey;
 import javax.swing.BorderFactory;
-import javax.swing.JButton;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
-import sos.gui.HexField;
 import sos.mrtd.AuthListener;
-import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportAuthService;
 import sos.mrtd.PassportService;
-import sos.mrtd.SecureMessagingWrapper;
-import sos.mrtd.Util;
 import sos.smartcards.CardServiceException;
 
 /**

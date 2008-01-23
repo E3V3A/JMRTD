@@ -23,16 +23,14 @@
 package sos.mrtd;
 
 import java.awt.Image;
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -71,19 +69,13 @@ public class DG2File extends DataGroup
       faces = new ArrayList<FaceInfo>();
    }
 
-   DG2File(BERTLVObject object) {
+   public DG2File(InputStream in) {
       this();
-      sourceObject = object;
-      if (object == null) {
-         throw new IllegalArgumentException("Cannot decode null");
-      }
       try {
-         byte[] facialRecordData = (byte[])object.getSubObject(BIOMETRIC_DATA_TAG).getValue();
-         if (facialRecordData == null) {
-            throw new IllegalArgumentException("Could not decode facial record");
-         }
+         BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+         int tlvLength = tlvIn.skipToTag(BIOMETRIC_DATA_TAG);
          DataInputStream dataIn =
-            new DataInputStream(new ByteArrayInputStream(facialRecordData));
+            new DataInputStream(tlvIn);
          /* Facial Record Header (14) */
          dataIn.skip(4); // 'F', 'A', 'C', 0
          dataIn.skip(4); // version in ascii (e.g. "010")
@@ -97,10 +89,6 @@ public class DG2File extends DataGroup
          throw new IllegalArgumentException("Could not decode: " + e.toString());
       }
       isSourceConsistent = true;
-   }
-
-   public DG2File(InputStream in) throws IOException, ParseException {
-      this(BERTLVObject.getInstance(in));
    }
    
    public int getTag() {
