@@ -33,7 +33,7 @@ import java.util.EventObject;
  */
 public class BACEvent extends EventObject
 {	
-   private SecureMessagingWrapper wrapper;
+   private PassportAuthService service;
    private boolean success;
    private byte[] rndICC, rndIFD, kICC, kIFD;
    
@@ -48,11 +48,11 @@ public class BACEvent extends EventObject
     * @param kIFD key material provided by IFD
     * @param success status of protocol
     */
-   public BACEvent(Object src, SecureMessagingWrapper wrapper,
+   public BACEvent(PassportAuthService service,
 		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
 		   boolean success) {
-	   super(src);
-	   this.wrapper = wrapper;
+	   super(service);
+	   this.service = service;
 	   this.rndICC = rndICC;
 	   this.rndIFD = rndIFD;
 	   this.kICC = kICC;
@@ -66,7 +66,7 @@ public class BACEvent extends EventObject
     * @return the resulting wrapper
     */
    public SecureMessagingWrapper getWrapper() {
-      return wrapper;
+      return service.getWrapper();
    }
 	
 	/**
@@ -114,5 +114,9 @@ public class BACEvent extends EventObject
     */
    public byte[] getRndIFD() {
       return rndIFD;
+   }
+
+   public PassportAuthService getService() {
+      return service;
    }
 }

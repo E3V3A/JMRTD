@@ -32,6 +32,7 @@ import java.security.Security;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
@@ -64,8 +65,6 @@ public class PassportGUI extends JPanel implements PassportListener
       new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
    private APDULogPanel log;
-   private JLabel blockSizeLabel;
-   private JTextField blockSizeText;
    private JTabbedPane tabbedPane;
 
    /**
@@ -78,10 +77,9 @@ public class PassportGUI extends JPanel implements PassportListener
       try {
          Security.insertProviderAt(PROVIDER, 4);
          // service = new PassportApduService(new PCSCCardService());
-
          JPanel northPanel = new JPanel(new FlowLayout());
-         blockSizeLabel = new JLabel("   Max. read file block:");
-         blockSizeText = new JTextField("255");
+         JLabel blockSizeLabel = new JLabel("   Max. read file block:");
+         JTextField blockSizeText = new JTextField("255");
          blockSizeText.setEditable(true);
          blockSizeText.setEnabled(true);
          blockSizeText.addCaretListener(new CaretListener(){
@@ -113,7 +111,7 @@ public class PassportGUI extends JPanel implements PassportListener
          PassportService service = new PassportService(ce.getService());
          service.addAPDUListener(log);
          service.open();
-         
+
          BACPanel bacPanel = new BACPanel(service);
          MRZPanel mrzPanel = new MRZPanel(service);
          FacePanel facePanel = new FacePanel(service);

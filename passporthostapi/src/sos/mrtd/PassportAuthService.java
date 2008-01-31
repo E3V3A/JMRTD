@@ -158,7 +158,7 @@ public class PassportAuthService extends PassportApduService
          SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
          long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
          wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-         BACEvent event = new BACEvent(this, wrapper, rndICC, rndIFD, kICC, kIFD, true);
+         BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
          notifyBACPerformed(event);
          state = BAC_AUTHENTICATED_STATE;
       } catch (GeneralSecurityException gse) {
@@ -265,7 +265,7 @@ public class PassportAuthService extends PassportApduService
     */
    public void setWrapper(SecureMessagingWrapper wrapper) {
       this.wrapper = wrapper;
-      BACEvent event = new BACEvent(this, wrapper, null, null, null, null, true);
+      BACEvent event = new BACEvent(this, null, null, null, null, true);
       notifyBACPerformed(event);
    }
 }

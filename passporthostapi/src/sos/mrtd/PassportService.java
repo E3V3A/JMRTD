@@ -152,6 +152,7 @@ public class PassportService extends PassportAuthService
       private byte[] buffer;
       private int offsetBufferInFile;
       private int offsetInBuffer;
+      private int markedOffset;
       private int fileLength;
 
       public CardFileInputStream(short fid) throws CardServiceException {
@@ -166,6 +167,7 @@ public class PassportService extends PassportAuthService
             fileLength += (buffer.length - tlvIn.available());
             offsetBufferInFile = 0;
             offsetInBuffer = 0;
+            markedOffset = 0;
          } catch (IOException ioe) {
             throw new CardServiceException(ioe.toString());
          }
@@ -203,8 +205,21 @@ public class PassportService extends PassportAuthService
          return n;
       }
       
-      public int available() {
+      public synchronized int available() {
          return fileLength - (offsetBufferInFile + offsetInBuffer);
+      }
+      
+      public void mark(int readLimit) {
+         markedOffset = offsetBufferInFile + offsetInBuffer;
+      }
+      
+      public void reset() {
+         offsetBufferInFile = markedOffset;
+         offsetInBuffer = 0;
+      }
+      
+      public boolean markSupported() {
+         return true;
       }
    }
 }

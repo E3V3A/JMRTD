@@ -27,6 +27,7 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.InputStream;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -35,6 +36,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -49,7 +51,7 @@ import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
 
 /**
- * Convenient GUI component for accessing the face image on the passport.
+ * GUI component for accessing the face image on the passport.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
@@ -60,7 +62,7 @@ implements Runnable, ActionListener, AuthListener
 {
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-   
+
    private FaceInfo info;
    private ImagePanel ipanel;
    private JButton readButton;
@@ -84,14 +86,14 @@ implements Runnable, ActionListener, AuthListener
                for (int i = 0; i < featurePoints.length; i++) {
                   FaceInfo.FeaturePoint p = featurePoints[i];
                   String key = Integer.toString(p.getMajorCode())
-                     + "."+ Integer.toString(p.getMinorCode());
+                  + "."+ Integer.toString(p.getMinorCode());
                   ipanel.highlightPoint(key, p.getX(), p.getY());
                }
             } else {
                for (int i = 0; i < featurePoints.length; i++) {
                   FaceInfo.FeaturePoint p = featurePoints[i];
                   String key = Integer.toString(p.getMajorCode())
-                     + "." + Integer.toString(p.getMinorCode());
+                  + "." + Integer.toString(p.getMinorCode());
                   ipanel.deHighlightPoint(key);
                } 
             }
@@ -117,6 +119,7 @@ implements Runnable, ActionListener, AuthListener
    public void actionPerformed(ActionEvent ae) {
       ipanel.clearImage();
       (new Thread(this)).start();
+
    }
 
    public void run() {
@@ -124,7 +127,24 @@ implements Runnable, ActionListener, AuthListener
          readButton.setEnabled(false);
          PassportService s = new PassportService(service);
          s.setWrapper(wrapper);
-         DG2File dg2 = new DG2File(s.readFile(PassportService.EF_DG2));
+         final InputStream in = s.readFile(PassportService.EF_DG2);
+         (new Thread(new Runnable() {
+            public void run() {
+               try {
+                  int fileLength = in.available();
+                  ProgressMonitor m = new ProgressMonitor(ipanel, "Reading DG2", "[" + 0 + "/" + fileLength + "]", 0, in.available());
+                  while (in.available() >  0) {
+                     Thread.sleep(200);
+                     int bytesRead = fileLength - in.available();
+                     m.setProgress(bytesRead);
+                     m.setNote("[" + bytesRead + "/" + fileLength + "]");
+                  }
+               } catch (InterruptedException ie) {
+               } catch (Exception e) {
+               }
+            }
+         })).start();
+         DG2File dg2 = new DG2File(in);
          info = dg2.getFaces().get(0);
          ipanel.setImage(info.getImage());
          infoArea.setText(info.toString());

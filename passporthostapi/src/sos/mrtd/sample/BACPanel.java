@@ -27,13 +27,18 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
 import sos.mrtd.AuthListener;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardServiceException;
+import sos.smartcards.PCSCCardService;
 
 /**
  * Convenient GUI component for step-by-step execution of the
@@ -48,29 +53,58 @@ public class BACPanel extends JPanel
    private static final Border PANEL_BORDER =
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
-   private BACKeyPanel bacKeyPanel;
+   private JButton doBACButton;
+   private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
+   private BACDatabase bacDB = new BACDatabase();
+
    private PassportService service;
 
    public BACPanel(PassportService passportService) throws CardServiceException {
       super(new FlowLayout());
       this.service = passportService;
-      bacKeyPanel = new BACKeyPanel(BACKeyPanel.DONT_SHOW_DERIVED_KEYS);
-      add(bacKeyPanel);
-      bacKeyPanel.addActionListener(new ActionListener() {
+      JPanel top = new JPanel(new FlowLayout());
+      docNrTF = new JTextField(9);
+      dateOfBirthTF = new JTextField(6);
+      dateOfExpiryTF = new JTextField(6);
+      docNrTF.setText(bacDB.getDocumentNumber());
+      dateOfBirthTF.setText(bacDB.getDateOfBirth());
+      dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
+      top.add(new JLabel("Document number: "));
+      top.add(docNrTF);
+      top.add(new JLabel("Date of birth: "));
+      top.add(dateOfBirthTF);
+      top.add(new JLabel("Date of expiry: "));
+      top.add(dateOfExpiryTF);
+      doBACButton = new JButton("Authenticate");
+      top.add(doBACButton);
+      doBACButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             try {
-               String docNr = bacKeyPanel.getDocumentNumber();
-               String dateOfBirth = bacKeyPanel.getDateOfBirth();
-               String dateOfExpiry = bacKeyPanel.getDateOfExpirty();
+               String docNr = docNrTF.getText();;
+               String dateOfBirth = dateOfBirthTF.getText();
+               String dateOfExpiry = dateOfExpiryTF.getText();
                service.doBAC(docNr, dateOfBirth, dateOfExpiry);
             } catch (CardServiceException cse) {
                System.out.println("DEBUG: BAC failed!");
             }
          }         
       });
+      add(top);
    }
-
+   
    public void addAuthenticationListener(AuthListener l) {
       service.addAuthenticationListener(l);
+   }
+
+   public static void main(String[] arg) {
+      try {
+         JFrame frame = new JFrame();
+         frame.getContentPane().add(new BACPanel(new PassportService(new PCSCCardService())));
+         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+         frame.pack();
+         frame.setVisible(true);
+      } catch (Exception e) {
+         e.printStackTrace();
+      }
    }
 }

@@ -136,7 +136,7 @@ public class PassportApduService implements CardService
       }
    }
 
-   public ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException {
+   public synchronized ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException {
       return service.transmit(capdu);
    }
 
