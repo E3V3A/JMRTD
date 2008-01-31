@@ -8,6 +8,8 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import sos.util.Hex;
+
 public class BERTLVInputStream extends InputStream
 {
    /** Tag. */
@@ -179,7 +181,15 @@ public class BERTLVInputStream extends InputStream
       return result;
    }
 
-   private void searchValue(int tag) throws IOException {
+   /**
+    * Skips in this stream until a given tag is found (depth first).
+    * Will also read the length of the TLV structure (which is returned).
+    * 
+    * @param tag the tag to search for
+    * @return length of the TLV object
+    * @throws IOException
+    */
+   public int skipToTag(short tag) throws IOException {
       while (true) {
          switch (state) {
             case STATE_INIT: readTag();
@@ -187,11 +197,13 @@ public class BERTLVInputStream extends InputStream
             case STATE_LENGTH_READ: break;
             default: throw new IllegalStateException("Cannot search value from undetermined state");
          }
-         if (tag == this.tag) {
-            return;
+         if (this.tag == tag) {
+            return this.length; /* Now at value corresponding to search-tag. */
          }
          if (isPrimitive(this.tag)) {
-            skipValue();
+            skipValue(); /* Now at next tag. */
+         } else {
+            state = STATE_INIT; /* Now at tag of embedded TLV struct. */
          }
       }
    }

@@ -36,7 +36,7 @@ public class CardManager
       listeners = new ArrayList<CardTerminalListener>();
       terminals = new HashSet<CardTerminal>();
       terminalServices = new Hashtable<CardTerminal, CardService>();
-      addEmulator("localhost", 9025);
+      // addEmulator("localhost", 9025);
       (new Thread(new Runnable() {
          public void run() {
             try {

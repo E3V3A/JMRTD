@@ -28,7 +28,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Point;
-import java.awt.image.BufferedImage;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -47,7 +46,7 @@ import javax.swing.JPanel;
 public class ImagePanel extends JPanel
 {  
    private static final int MAX_RADIUS = 40;
-   private BufferedImage image;;
+   private Image image;;
 
    Map<String, Point> highlights;
    Color highlightColor;
@@ -62,7 +61,7 @@ public class ImagePanel extends JPanel
       radius = MAX_RADIUS;
       highlights = new HashMap<String, Point>();
       image = null;
-      
+
       /*
       (new Thread(new Runnable() {
          public void run() {
@@ -77,7 +76,7 @@ public class ImagePanel extends JPanel
             }
          }
       })).start();
-      */
+       */
    }
 
    /**
@@ -87,7 +86,7 @@ public class ImagePanel extends JPanel
     */
    public void setImage(Image image) {
       setVisible(false);
-      this.image = (BufferedImage)image; // FIXME: what if image param is not a BufferedImage?
+      this.image = image; // FIXME: what if image param is not a BufferedImage?
       setVisible(true);
    }
 
@@ -104,21 +103,21 @@ public class ImagePanel extends JPanel
       highlights.put(key, new Point(x, y));
       setVisible(true);
    }
-   
+
    public void deHighlightPoint(String key) {
       setVisible(false);
       highlights.remove(key);
       setVisible(true);
    }
-   
+
    public Dimension getPreferredSize() {
       if (image == null) {
          return super.getPreferredSize();
       } else {
-         return new Dimension(image.getWidth(), image.getHeight());
+         return new Dimension(image.getWidth(this), image.getHeight(this));
       }
    }
-   
+
    public void paint(Graphics g) {
       super.paint(g);
       Graphics2D g2 = (Graphics2D)g;
@@ -134,23 +133,23 @@ public class ImagePanel extends JPanel
          int y = (int)p.getY();
          // Graphics g = image.getGraphics();
          g2.setColor(highlightColor);
-         
+
          /* kruisje
          g2.drawLine(x, y - 5, x, y + 5);
          g2.drawLine(x - 5, y, x + 5, y);
-         */
-         
+          */
+
          /* lijnen */
-         g2.drawLine(x, y, image.getWidth(), y);
-         g2.drawLine(x, y, x, image.getHeight());
-         
+         g2.drawLine(x, y, image.getWidth(this), y);
+         g2.drawLine(x, y, x, image.getHeight(this));
+
          /* bewegende cirkels
          int r0 = radius;
          int r2 = (radius + 2 * (MAX_RADIUS / 4)) % MAX_RADIUS;
          g2.drawOval(x - r0/2, y - r0/2, r0, r0);
          g2.drawOval(x - r2/2, y - r2/2, r2, r2);    
-         */
-         
+          */
+
          /* Draw key label... */
          g2.setColor(Color.black);
          g2.drawString(key, x + 4, y + 14);
@@ -162,4 +161,3 @@ public class ImagePanel extends JPanel
       }
    }
 }
-
