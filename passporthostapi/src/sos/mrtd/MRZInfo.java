@@ -140,13 +140,13 @@ public class MRZInfo
       this.documentNumberCheckDigit = checkDigit(documentNumber);
       this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
       this.dateOfExpiryCheckDigit = checkDigit(SDF.format(dateOfExpiry));
-      this.personalNumberCheckDigit = checkDigit(personalNumber);
+      this.personalNumberCheckDigit = checkDigit(mrzFormat(personalNumber, 14));
       StringBuffer composite = new StringBuffer();
       if (documentType == DOC_TYPE_ID1) {
          // TODO: just guessing... we need to get ICAO Doc 9303 part 3 for this...
          composite.append(documentNumber);
          composite.append(documentNumberCheckDigit);
-         composite.append(personalNumber);
+         composite.append(mrzFormat(personalNumber, 14));
          composite.append(personalNumberCheckDigit);
          composite.append(SDF.format(dateOfBirth));
          composite.append(dateOfBirthCheckDigit);
@@ -159,7 +159,7 @@ public class MRZInfo
          composite.append(dateOfBirthCheckDigit);
          composite.append(SDF.format(dateOfExpiry));
          composite.append(dateOfExpiryCheckDigit);
-         composite.append(personalNumber);
+         composite.append(mrzFormat(personalNumber, 14));
          composite.append(personalNumberCheckDigit);
       }
       this.compositeCheckDigit = checkDigit(composite.toString());
@@ -179,7 +179,7 @@ public class MRZInfo
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-            this.personalNumber = readPersonalNumber(dataIn, 14);
+            this.personalNumber = trimLessThanSigns(readPersonalNumber(dataIn, 14));
             this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.dateOfBirth = readDateOfBirth(dataIn);
             this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
@@ -206,7 +206,7 @@ public class MRZInfo
             this.gender = readGender(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
             this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
-            this.personalNumber = readPersonalNumber(dataIn, 14);
+            this.personalNumber = trimLessThanSigns(readPersonalNumber(dataIn, 14));
             this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
          }
@@ -232,6 +232,14 @@ public class MRZInfo
          }
       }
       secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
+   }
+   
+   private String trimLessThanSigns(String str) {
+      byte[] chars = str.getBytes();
+      for (int i = 0; i < chars.length; i++) {
+         if (chars[i] == '<') { chars[i] = ' '; }
+      }
+      return (new String(chars)).trim();
    }
 
    public byte[] getEncoded() {
@@ -282,11 +290,10 @@ public class MRZInfo
 
    private void writeIssuingState(DataOutputStream dataOut) throws IOException {
       dataOut.write(issuingState.getBytes("UTF-8"));
-
    }
 
    private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
-      dataOut.write(personalNumber.getBytes("UTF-8"));
+      dataOut.write(mrzFormat(personalNumber, 14).getBytes("UTF-8"));
    }
 
    private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
@@ -343,11 +350,9 @@ public class MRZInfo
          name.append("<");
          name.append(secondaryIdentifiers[i]);
       }
-      while (name.length() < width) {
-         name.append("<");
-      }
-      return mrzFormat(name.toString());
+      return mrzFormat(name.toString(), width);
    }
+   
 
    /**
     * Reads the type of document.
@@ -392,12 +397,11 @@ public class MRZInfo
    private String readName(DataInputStream in, int le) throws IOException {
       byte[] data = new byte[le];
       in.readFully(data);
-      for (int i = 0; i < data.length; i++) {
-         /*
-         if (data[i] == '<') {
-            data[i] = ' ';
-         } */
-      }
+//      for (int i = 0; i < data.length; i++) {
+//         if (data[i] == '<') {
+//            data[i] = ' ';
+//         }
+//      }
       String name = new String(data).trim();
       return name;
    }
@@ -428,7 +432,7 @@ public class MRZInfo
    private String readPersonalNumber(DataInputStream in, int le) throws IOException {
       byte[] data = new byte[le];
       in.readFully(data);
-      return new String(data).trim();
+      return trimLessThanSigns(new String(data));
    }
 
    /**
@@ -602,7 +606,8 @@ public class MRZInfo
     * Creates a textual representation of this MRZ.
     * This is the 2 or 3 line representation
     * (depending on the document type) as it
-    * appears in the document. // check digit
+    * appears in the document. All lines end in
+    * a newline char.
     * 
     * @return the MRZ as text
     * 
@@ -619,7 +624,7 @@ public class MRZInfo
          out.append(issuingState);
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
-         out.append(personalNumber);
+         out.append(mrzFormat(personalNumber, 14));
          out.append(personalNumberCheckDigit);
          out.append("\n");
          out.append(SDF.format(dateOfBirth));
@@ -646,7 +651,7 @@ public class MRZInfo
          out.append(genderToString());
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
-         out.append(personalNumber);
+         out.append(mrzFormat(personalNumber, 14));
          out.append(personalNumberCheckDigit);
          out.append(compositeCheckDigit);
          out.append("\n");
@@ -677,9 +682,10 @@ public class MRZInfo
     * only contains 'A'-'Z' and '<' characters.
     * 
     * @param str the input string
+    * @param width the (minimal) width of the result
     * @return the reformatted string
     */
-   private static String mrzFormat(String str) {
+   private static String mrzFormat(String str, int width) {
       str = str.toUpperCase().trim();
       StringBuffer result = new StringBuffer();
       for (int i = 0; i < str.length(); i++) {
@@ -689,6 +695,9 @@ public class MRZInfo
          } else {
             result.append(c);
          }  
+      }
+      while (result.length() < width) {
+         result.append("<");
       }
       return result.toString();
    }
