@@ -158,8 +158,6 @@ public class MRZInfo
          // composite.append(dateOfExpiryCheckDigit);
          composite.append(nationality);
          composite.append(unknownMRZField);
-         
-         System.out.println("DEBUG: " + composite.toString());
       } else {
          composite.append(documentNumber);
          composite.append(documentNumberCheckDigit);
