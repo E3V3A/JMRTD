@@ -144,14 +144,22 @@ public class MRZInfo
       StringBuffer composite = new StringBuffer();
       if (documentType == DOC_TYPE_ID1) {
          // TODO: just guessing... we need to get ICAO Doc 9303 part 3 for this...
+         // TODO: upper + middle line, excluding check digits, including doc.type, filler?
+         // composite.append(documentTypeToString());
+         composite.append(issuingState);
          composite.append(documentNumber);
-         composite.append(documentNumberCheckDigit);
-         composite.append(mrzFormat(personalNumber, 14));
-         composite.append(personalNumberCheckDigit);
+         // composite.append(documentNumberCheckDigit);
+         composite.append(mrzFormat(personalNumber, 15));
+         // composite.append(personalNumberCheckDigit);
          composite.append(SDF.format(dateOfBirth));
-         composite.append(dateOfBirthCheckDigit);
+         // composite.append(dateOfBirthCheckDigit);
+         composite.append(genderToString());
          composite.append(SDF.format(dateOfExpiry));
-         composite.append(dateOfExpiryCheckDigit);
+         // composite.append(dateOfExpiryCheckDigit);
+         composite.append(nationality);
+         composite.append(unknownMRZField);
+         
+         System.out.println("DEBUG: " + composite.toString());
       } else {
          composite.append(documentNumber);
          composite.append(documentNumberCheckDigit);
@@ -179,7 +187,7 @@ public class MRZInfo
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-            this.personalNumber = trimLessThanSigns(readPersonalNumber(dataIn, 14));
+            this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14));
             this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.dateOfBirth = readDateOfBirth(dataIn);
             this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
@@ -206,7 +214,7 @@ public class MRZInfo
             this.gender = readGender(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
             this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
-            this.personalNumber = trimLessThanSigns(readPersonalNumber(dataIn, 14));
+            this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14));
             this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
             this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
          }
@@ -234,7 +242,7 @@ public class MRZInfo
       secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
    }
    
-   private String trimLessThanSigns(String str) {
+   private String trimFillerChars(String str) {
       byte[] chars = str.getBytes();
       for (int i = 0; i < chars.length; i++) {
          if (chars[i] == '<') { chars[i] = ' '; }
@@ -432,7 +440,7 @@ public class MRZInfo
    private String readPersonalNumber(DataInputStream in, int le) throws IOException {
       byte[] data = new byte[le];
       in.readFully(data);
-      return trimLessThanSigns(new String(data));
+      return trimFillerChars(new String(data));
    }
 
    /**
@@ -624,8 +632,8 @@ public class MRZInfo
          out.append(issuingState);
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
-         out.append(mrzFormat(personalNumber, 14));
-         out.append(personalNumberCheckDigit);
+         out.append(mrzFormat(personalNumber, 15));
+         // out.append(personalNumberCheckDigit);
          out.append("\n");
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
@@ -634,7 +642,7 @@ public class MRZInfo
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
          out.append(unknownMRZField);
-         out.append(compositeCheckDigit);
+         out.append(compositeCheckDigit); // should be: upper + middle line?
          out.append("\n");
          out.append(nameToString());
          out.append("\n");
