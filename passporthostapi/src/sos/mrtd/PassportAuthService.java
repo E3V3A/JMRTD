@@ -134,14 +134,16 @@ public class PassportAuthService extends PassportApduService
    /**
     * Performs the <i>Basic Access Control</i> protocol.
     *
-    * @param docNr the document number
+    * @param documentNumber the document number
     * @param dateOfBirth card holder's birth date
     * @param dateOfExpiry document's expiry date
+    * 
+    * @throws CardServiceException if authentication failed
     */
-   public void doBAC(String docNr, String dateOfBirth, String dateOfExpiry)
+   public void doBAC(String documentNumber, String dateOfBirth, String dateOfExpiry)
    throws CardServiceException {
       try {
-         byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
+         byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
          SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
          SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
          byte[] rndICC = sendGetChallenge();

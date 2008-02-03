@@ -446,7 +446,7 @@ public class PassportApduService implements CardService
                kMac)).getBytes();
 
          if (rapdu.length != 42) {
-            throw new IllegalStateException("Response wrong length: "
+            throw new CardServiceException("Response wrong length: "
                   + rapdu.length + "!=" + 42);
          }
 
