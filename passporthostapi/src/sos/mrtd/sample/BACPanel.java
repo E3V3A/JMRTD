@@ -41,7 +41,7 @@ import sos.smartcards.CardServiceException;
 import sos.smartcards.PCSCCardService;
 
 /**
- * Convenient GUI component for step-by-step execution of the
+ * GUI component for step-by-step execution of the
  * BAC protocol.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
