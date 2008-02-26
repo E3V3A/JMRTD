@@ -45,6 +45,7 @@ import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
+import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 
 /**
@@ -66,26 +67,30 @@ public class SODFile extends PassportFile
    private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";
    private static final String ICAO_SOD_OID = "2.23.136.1.1.1";
    private static final String E_CONTENT_TYPE_OID = "1.2.528.1.1006.1.20.1";
-   
+
    private SignedData signedData;
-   
+
    public SODFile(SignedData signedData) {
       this.signedData = signedData;
    }
-   
-   public SODFile(InputStream in) throws Exception {
-      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-      tlvIn.readTag();
-      tlvIn.readLength();
-      ASN1InputStream asn1in =
-         new ASN1InputStream(in);
-      DERSequence seq = (DERSequence)asn1in.readObject();
-      DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
-      
-      DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-      this.signedData = new SignedData(s2);
+
+   public SODFile(InputStream in) throws CardServiceException {
+      try {
+         BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+         tlvIn.readTag();
+         tlvIn.readLength();
+         ASN1InputStream asn1in =
+            new ASN1InputStream(in);
+         DERSequence seq = (DERSequence)asn1in.readObject();
+         DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
+
+         DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+         this.signedData = new SignedData(s2);
+      } catch (IOException e) {
+         throw new CardServiceException(e.toString());
+      }
    }
-   
+
    SODFile(byte[] in) throws Exception {
       this(new ByteArrayInputStream(in));
    }
@@ -108,36 +113,36 @@ public class SODFile extends PassportFile
       }
       return null;
    }
-   
+
    /*
       try {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
       ASN1OutputStream asn1out = new ASN1OutputStream(out);
       asn1out.writeObject(new DERObjectIdentifier(PKCS7_SIGNED_DATA_OBJ_ID));
-      
-      
+
+
       DERSequence s2 = (DERSequence)DERSequence.getInstance(signedData);
-      
+
       asn1out.writeObject(s2);
       asn1out.close();
       return out.toByteArray();
       } catch (IOException ioe) {
-      
+
          System.err.println("DEBUG: ");
          ioe.printStackTrace();
          throw new IllegalStateException(ioe.toString());
       }
-      */
-   
-      
-/*
+    */
+
+
+   /*
       ASN1InputStream asn1in = new ASN1InputStream(in);
       DERSequence seq = (DERSequence)asn1in.readObject();
       DERObjectIdentifier objId = (DERObjectIdentifier)seq.getObjectAt(0);
       DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
       signedData = new SignedData(s2);
-*/
-   
+    */
+
    private SignerInfo getSignerInfo()  {
       ASN1Set signerInfos = signedData.getSignerInfos();
       if (signerInfos.size() > 1) {
@@ -149,7 +154,7 @@ public class SODFile extends PassportFile
       }
       return null;
    }
-   
+
    /**
     * Reads the security object (containing the hashes
     * of the data groups) found in the SOd on the passport.
@@ -171,11 +176,11 @@ public class SODFile extends PassportFile
       }
       return sod;
    }
-   
+
    public DataGroupHash[] getDataGroupHashes() throws Exception {
       return getSecurityObject().getDatagroupHash();
    }
-   
+
    /**
     * Gets the document signing certificate.
     * Use this certificate to verify that
@@ -199,9 +204,9 @@ public class SODFile extends PassportFile
       for (int i = 0; i < certs.size(); i++) {
          X509CertificateStructure e =
             new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
-          certSpec = new X509CertificateObject(e).getEncoded();
+         certSpec = new X509CertificateObject(e).getEncoded();
       }
-      
+
       /* NOTE: we could have just returned that X509CertificateObject here,
        * but by reconstructing it we hide the fact that we're using BC here.
        */
@@ -236,7 +241,7 @@ public class SODFile extends PassportFile
          return signedAttributes.getDEREncoded();
       }
    }
-   
+
    /**
     * Gets the contents of the security object over which the
     * signature is to be computed. 
@@ -268,7 +273,7 @@ public class SODFile extends PassportFile
       SignerInfo signerInfo = getSignerInfo();
       return signerInfo.getEncryptedDigest().getOctets();
    }
-   
+
    /**
     * Verifies the signature over the contents of the security object.
     * 

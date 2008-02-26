@@ -22,6 +22,11 @@
 
 package sos.mrtd;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**

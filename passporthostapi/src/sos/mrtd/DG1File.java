@@ -59,11 +59,11 @@ public class DG1File extends DataGroup
       isSourceConsistent = true;
    }
    
-   public DG1File(InputStream in) throws IOException, ParseException {
+   public DG1File(InputStream in) throws IOException {
       this(BERTLVObject.getInstance(in));
    }
    
-   DG1File(byte[] in) throws IOException, ParseException {
+   DG1File(byte[] in) throws IOException {
       this(new ByteArrayInputStream(in));
    }
    

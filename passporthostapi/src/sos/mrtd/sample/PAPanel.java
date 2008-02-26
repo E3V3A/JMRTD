@@ -132,7 +132,7 @@ public class PAPanel extends JPanel implements AuthListener
                      }
                      MessageDigest digest = MessageDigest.getInstance(alg);
                      COMFile comFile = new COMFile(passportService.readFile(PassportService.EF_COM));
-                     byte[] tags = comFile.getTagList();
+                     int[] tags = comFile.getTagList();
                      for (int i = 0; i < tags.length; i++) {
                         BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(tags[i]));
                         int tag = tlvIn.readTag();

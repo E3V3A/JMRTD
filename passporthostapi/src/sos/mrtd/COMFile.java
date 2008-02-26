@@ -25,6 +25,7 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
+import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
@@ -49,7 +50,7 @@ public class COMFile extends PassportFile
    private String majorVersionUnicode;
    private String minorVersionUnicode;
    private String releaseLevelUnicode;
-   private byte[] tagList;
+   private int[] tagList;
 
    /**
     * Constructs a new file.
@@ -65,7 +66,7 @@ public class COMFile extends PassportFile
     */
    public COMFile(String versionLDS, String updateLevelLDS,
          String majorVersionUnicode, String minorVersionUnicode,
-         String releaseLevelUnicode, byte[] tagList) {
+         String releaseLevelUnicode, int[] tagList) {
       if (versionLDS == null || versionLDS.length() != 2
             || updateLevelLDS == null || updateLevelLDS.length() != 2
             || majorVersionUnicode == null || majorVersionUnicode.length() != 2
@@ -79,7 +80,7 @@ public class COMFile extends PassportFile
       this.majorVersionUnicode = majorVersionUnicode;
       this.minorVersionUnicode = minorVersionUnicode;
       this.releaseLevelUnicode = releaseLevelUnicode;
-      this.tagList = new byte[tagList.length];
+      this.tagList = new int[tagList.length];
       System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
    }
 
@@ -92,15 +93,19 @@ public class COMFile extends PassportFile
     * 
     * @throws IOException if the input could not be decoded
     */
-   public COMFile(InputStream in) throws IOException {
-      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-      int tag = tlvIn.readTag();
-      if (tag != EF_COM_TAG) {
-         throw new IOException("Wrong tag!");
+   public COMFile(InputStream in) throws CardServiceException {
+      try {
+         BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+         int tag = tlvIn.readTag();
+         if (tag != EF_COM_TAG) {
+            throw new IOException("Wrong tag!");
+         }
+         tlvIn.readLength();
+         byte[] valueBytes = tlvIn.readValue();
+         setValue(new BERTLVObject(tag, valueBytes));
+      } catch (IOException ioe) {
+         throw new CardServiceException(ioe.toString());
       }
-      tlvIn.readLength();
-      byte[] valueBytes = tlvIn.readValue();
-      setValue(new BERTLVObject(tag, valueBytes));
    }
 
    void setValue(BERTLVObject object) {
@@ -124,7 +129,9 @@ public class COMFile extends PassportFile
          majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
          minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
          releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
-         tagList = (byte[])tagListObject.getValue();
+         byte[] tagBytes = (byte[])tagListObject.getValue();
+         tagList = new int[tagBytes.length];
+         for (int i = 0; i < tagBytes.length; i++) { tagList[i] = (tagBytes[i] & 0xFF); }
       } catch (IOException ioe) {
          throw new IllegalArgumentException(ioe.toString());
       }
@@ -166,7 +173,7 @@ public class COMFile extends PassportFile
     * 
     * @return a list of bytes
     */
-   public byte[] getTagList() {
+   public int[] getTagList() {
       return tagList;
    }
 

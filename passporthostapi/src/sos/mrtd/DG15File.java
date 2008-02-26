@@ -54,7 +54,7 @@ public class DG15File extends DataGroup
       this.publicKey = publicKey;
    }
 
-   public DG15File(InputStream in) throws IOException, ParseException {
+   public DG15File(InputStream in) throws IOException {
       BERTLVInputStream tlvIn = new BERTLVInputStream(in);
       tlvIn.readTag();
       tlvIn.readLength();
