@@ -80,10 +80,11 @@ public class BACPanel extends JPanel
       doBACButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             try {
-               String docNr = docNrTF.getText();;
+               String documentNumber = docNrTF.getText();
                String dateOfBirth = dateOfBirthTF.getText();
                String dateOfExpiry = dateOfExpiryTF.getText();
-               service.doBAC(docNr, dateOfBirth, dateOfExpiry);
+               service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+               bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
             } catch (CardServiceException cse) {
                System.out.println("DEBUG: BAC failed!");
             }
@@ -94,17 +95,5 @@ public class BACPanel extends JPanel
    
    public void addAuthenticationListener(AuthListener l) {
       service.addAuthenticationListener(l);
-   }
-
-   public static void main(String[] arg) {
-      try {
-         JFrame frame = new JFrame();
-         frame.getContentPane().add(new BACPanel(new PassportService(new PCSCCardService())));
-         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-         frame.pack();
-         frame.setVisible(true);
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
    }
 }

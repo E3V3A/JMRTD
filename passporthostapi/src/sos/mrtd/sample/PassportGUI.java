@@ -153,33 +153,21 @@ public class PassportGUI extends JPanel implements PassportListener
    }
    
    private static File getApplicationDataDir() {
-	   File userHomeDir = new File(System.getProperty("user.home"));
-	   String appDataDirName = System.getenv("APPDATA");
-	   if (appDataDirName == null) { appDataDirName = "Application Data"; }
-	   File winAppDataDir = new File(userHomeDir, appDataDirName);
-	   File unixJMRTDDir = new File(userHomeDir, ".jmrtd");
-	   File winJMRTDDir = new File(winAppDataDir, "JMRTD");
-	   if (unixJMRTDDir.exists()) {
-		   return unixJMRTDDir;
+	   String osName = System.getProperty("os.name").toLowerCase();
+	   String userHomeName = System.getProperty("user.home");
+	   if (osName.indexOf("windows") > -1) {
+		   String appDataDirName = System.getenv("APPDATA");   
+		   File appDataDir = appDataDirName != null ? new File(appDataDirName) : new File (userHomeName, "Application Data");
+		   File jmrtdDir = new File(appDataDir, "JMRTD");
+		   if (!jmrtdDir.isDirectory()) { jmrtdDir.mkdirs(); }
+		   return jmrtdDir;
+	   } else {
+		   File jmrtdDir = new File(userHomeName, ".jmrtd");
+		   if (!jmrtdDir.isDirectory()) {
+			   jmrtdDir.mkdirs();
+		   }
+		   return jmrtdDir;
 	   }
-	   if (winAppDataDir.exists()) {
-		   return winJMRTDDir;
-	   }
-	   try {
-		   unixJMRTDDir.mkdirs();
-	   } catch (Exception e) {
-	   }
-	   if (unixJMRTDDir.exists()) {
-		   return unixJMRTDDir;
-	   }
-	   try {
-		   winJMRTDDir.mkdirs();
-	   } catch (Exception e) {
-	   }
-	   if (winJMRTDDir.exists()) {
-		   return winJMRTDDir;
-	   }
-	   return new File(userHomeDir, "JMRTD");
    }
    
    /**

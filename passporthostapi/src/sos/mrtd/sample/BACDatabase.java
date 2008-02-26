@@ -61,7 +61,7 @@ public class BACDatabase {
       int tokenCount = st.countTokens();
       String[] result = new String[tokenCount];
       for (int i = 0; i < tokenCount; i++) {
-         result[i] = st.nextToken();
+         result[i] = st.nextToken().trim();
       }
       return result;
    }
@@ -72,7 +72,7 @@ public class BACDatabase {
          while (true) {
             String line = d.readLine();
             if (line == null) { break; }
-            entries.add(line);
+            entries.add(line.trim());
          }
       } catch (FileNotFoundException fnfe) {
          /* NOTE: no problem... */
@@ -84,15 +84,7 @@ public class BACDatabase {
    private void write() {
       try {
          if (!BACDB_FILE.exists()) {
-            if (!PassportGUI.JMRTD_USER_DIR.isDirectory()) {
-            	System.out.println("DEBUG: creating " + PassportGUI.JMRTD_USER_DIR);
-               PassportGUI.JMRTD_USER_DIR.mkdirs();
-            } else {
-            	System.out.println("B");
-            }
             BACDB_FILE.createNewFile();
-         } else {
-        	 System.out.println("C");
          }
          PrintWriter d = new PrintWriter(new FileWriter(BACDB_FILE));
          for (String entry: entries) {

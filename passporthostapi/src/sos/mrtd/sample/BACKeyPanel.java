@@ -81,6 +81,7 @@ public class BACKeyPanel extends JPanel
    {
       public void actionPerformed(ActionEvent ae) {
          try {
+        	 System.out.println("DEBUG: ACTION");
             String docNr = docNrTF.getText(),
             dateOfBirth = dateOfBirthTF.getText(),
             dateOfExpiry = dateOfExpiryTF.getText();
