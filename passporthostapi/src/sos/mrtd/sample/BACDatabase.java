@@ -26,7 +26,6 @@ public class BACDatabase {
    }
    
    public void addEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-	   System.out.println("DEBUG: addEntry");
       String entry = documentNumber.trim() + ","
          + dateOfBirth.trim() + ","
          + dateOfExpiry.trim();

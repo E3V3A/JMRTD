@@ -80,11 +80,12 @@ public class BACPanel extends JPanel
       doBACButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent e) {
             try {
-               String documentNumber = docNrTF.getText();
+               String documentNumber = docNrTF.getText().toUpperCase();
                String dateOfBirth = dateOfBirthTF.getText();
                String dateOfExpiry = dateOfExpiryTF.getText();
                service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
                bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
+               docNrTF.setText(documentNumber);
             } catch (CardServiceException cse) {
                System.out.println("DEBUG: BAC failed!");
             }

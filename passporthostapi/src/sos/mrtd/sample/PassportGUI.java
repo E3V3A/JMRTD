@@ -132,6 +132,7 @@ public class PassportGUI extends JPanel implements PassportListener
          ex.printStackTrace();
       }
       setEnabled(true);
+      revalidate();
    }
 
    public void passportRemoved(CardEvent ce) {
@@ -141,6 +142,7 @@ public class PassportGUI extends JPanel implements PassportListener
       }
       tabbedPane.removeAll();
       setEnabled(false);
+      revalidate();
    }
    
    public void setEnabled(boolean enabled) {
