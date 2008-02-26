@@ -81,16 +81,15 @@ public class BACKeyPanel extends JPanel
    {
       public void actionPerformed(ActionEvent ae) {
          try {
-        	 System.out.println("DEBUG: ACTION");
-            String docNr = docNrTF.getText(),
+            String documentNumber = docNrTF.getText(),
             dateOfBirth = dateOfBirthTF.getText(),
             dateOfExpiry = dateOfExpiryTF.getText();
-            byte[] keySeed = Util.computeKeySeed(docNr, dateOfBirth, dateOfExpiry);
+            byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
             kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
             kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
             kEncTF.setValue(kEnc.getEncoded());
             kMacTF.setValue(kMac.getEncoded());
-            bacDB.addEntry(docNr, dateOfBirth, dateOfExpiry);
+            bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
          } catch (Exception e) {
             kEnc = null;
             kMac = null;
