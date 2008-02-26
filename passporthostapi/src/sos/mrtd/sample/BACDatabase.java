@@ -26,6 +26,7 @@ public class BACDatabase {
    }
    
    public void addEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
+	   System.out.println("DEBUG: addEntry");
       String entry = documentNumber.trim() + ","
          + dateOfBirth.trim() + ","
          + dateOfExpiry.trim();
@@ -84,9 +85,14 @@ public class BACDatabase {
       try {
          if (!BACDB_FILE.exists()) {
             if (!PassportGUI.JMRTD_USER_DIR.isDirectory()) {
+            	System.out.println("DEBUG: creating " + PassportGUI.JMRTD_USER_DIR);
                PassportGUI.JMRTD_USER_DIR.mkdirs();
+            } else {
+            	System.out.println("B");
             }
             BACDB_FILE.createNewFile();
+         } else {
+        	 System.out.println("C");
          }
          PrintWriter d = new PrintWriter(new FileWriter(BACDB_FILE));
          for (String entry: entries) {

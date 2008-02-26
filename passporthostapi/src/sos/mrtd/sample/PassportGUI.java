@@ -54,8 +54,7 @@ import sos.smartcards.CardService;
  */
 public class PassportGUI extends JPanel implements PassportListener
 {  
-   public static final File JMRTD_USER_DIR =
-      new File(new File(System.getProperty("user.home")), ".jmrtd");
+   public static final File JMRTD_USER_DIR = getApplicationDataDir();
    
    private static final String APPLICATION_NAME = "JMRTD (jmrtd.sourceforge.net)";
    
@@ -151,6 +150,36 @@ public class PassportGUI extends JPanel implements PassportListener
 
    public Dimension getPreferredSize() {
       return PREFERRED_SIZE;
+   }
+   
+   private static File getApplicationDataDir() {
+	   File userHomeDir = new File(System.getProperty("user.home"));
+	   String appDataDirName = System.getenv("APPDATA");
+	   if (appDataDirName == null) { appDataDirName = "Application Data"; }
+	   File winAppDataDir = new File(userHomeDir, appDataDirName);
+	   File unixJMRTDDir = new File(userHomeDir, ".jmrtd");
+	   File winJMRTDDir = new File(winAppDataDir, "JMRTD");
+	   if (unixJMRTDDir.exists()) {
+		   return unixJMRTDDir;
+	   }
+	   if (winAppDataDir.exists()) {
+		   return winJMRTDDir;
+	   }
+	   try {
+		   unixJMRTDDir.mkdirs();
+	   } catch (Exception e) {
+	   }
+	   if (unixJMRTDDir.exists()) {
+		   return unixJMRTDDir;
+	   }
+	   try {
+		   winJMRTDDir.mkdirs();
+	   } catch (Exception e) {
+	   }
+	   if (winJMRTDDir.exists()) {
+		   return winJMRTDDir;
+	   }
+	   return new File(userHomeDir, "JMRTD");
    }
    
    /**
