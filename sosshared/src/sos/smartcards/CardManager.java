@@ -75,7 +75,9 @@ public class CardManager
                      service = new CREFEmulatorService(host, port);
                   } else {
                      service = new PCSCCardService();
-                     ((PCSCCardService)service).open(terminal);                        
+                     if (terminal.isCardPresent()) {
+                        ((PCSCCardService)service).open(terminal);
+                     }
                   }
                } catch (Exception e) {
                   if (service != null) { service.close(); }
