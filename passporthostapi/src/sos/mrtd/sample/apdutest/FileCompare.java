@@ -41,7 +41,7 @@ public class FileCompare {
 			for(int i=0; i < fileArray.length; i++){
 				if(status == false){
 					compareFile = fileArray[i];
-                    System.out.println("Compare file: "+compareFile);
+                    //System.out.println("Compare file: "+compareFile);
 					comparison(compareFile, fullFile2);
 				}else{
 					getChoice(compareFile);
@@ -69,7 +69,7 @@ public class FileCompare {
     }
     
 	public void comparison(File compareFile, String fullFile2){
-        System.out.println("Comparing files.");
+        //System.out.println("Comparing files.");
 		try{
 			BufferedReader br1 = new BufferedReader(new FileReader(compareFile));
 			String fullFile1 = "";
@@ -78,14 +78,14 @@ public class FileCompare {
 				fullFile1 += input1;
 			}
 			if(fullFile1.equals(fullFile2)){
-				System.out.println("-=EQUAL=-");
+				//System.out.println("-=EQUAL=-");
 				status = true;
 			}		
 		}catch(Exception e){}	
 	}
 	
 	public void getChoice(File compareFile){
-		System.out.println("File "+saveFile.getName()+" is equal to: "+compareFile.getName());
+		//System.out.println("File "+saveFile.getName()+" is equal to: "+compareFile.getName());
 		if((compareFile.getName()).equals("swedish.txt"))
 			{setNat("Swedish");}
 		else if((compareFile.getName()).equals("dutch trial passport.txt"))

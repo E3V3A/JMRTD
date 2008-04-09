@@ -240,7 +240,6 @@ public class APDUTestPanel extends JPanel implements ISO7816,ActionListener{
 			}catch(IOException e){}
 		}
 
-		System.out.println("Status: "+status+"\n");
 		switchCase(status);
 	}
 	
@@ -277,7 +276,6 @@ public class APDUTestPanel extends JPanel implements ISO7816,ActionListener{
 	
 	//case6
 	private void sendAPDU(CommandAPDU bApdu, CommandAPDU eApdu) throws CardServiceException {
-		System.out.println("sendAPDU");
 		byte[] a = bApdu.getBytes();
 	    byte[] b = eApdu.getBytes();
 //	    if (a.length != b.length) {
@@ -418,15 +416,12 @@ public class APDUTestPanel extends JPanel implements ISO7816,ActionListener{
 	}
 	
 	public void cmpEspGer() throws CardServiceException {
-        System.out.println("cmpEspGer");
 		int lc = 40,ins = 130,p1=0,p2=0;
 		byte[] data = new byte[lc];
 		for(int i=0;i<data.length;i++){
             data[i] = (byte)0x01;
 		}
 		sendTestAPDU(CLA, (byte)ins, (short)p1,(short) p2, data);
-        System.out.println("RAPDU save: "+rapdusave);
-        System.out.println("Response: "+swToString((short)rapdusave));
 		if((swToString((short)rapdusave)).equals("CONDITIONS NOT SATISFIED")){
 			field.setText("Spanish");
 			paintarea.update(FileCompare.getPath()+"spain.png");
