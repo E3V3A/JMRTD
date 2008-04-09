@@ -125,6 +125,10 @@ public class PassportApduService implements CardService
       return service.isOpen();
    }
 
+   public void setListenersState(boolean state) {
+       service.setListenersState(state);
+   }
+   
    public String[] getTerminals() {
       return service.getTerminals();
    }
