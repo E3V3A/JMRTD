@@ -54,6 +54,8 @@ public interface CardService
     * @param l the listener to remove
     */
    void removeAPDUListener(APDUListener l);
+   
+   void setListenersState(boolean state);
 
    /**
     * Opens a session with the card in the default terminal.

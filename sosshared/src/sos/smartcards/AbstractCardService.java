@@ -51,6 +51,8 @@ public abstract class AbstractCardService implements CardService
     */
    protected int state;
 
+   protected boolean listeners = true;
+   
    /**
     * Creates a new service.
     */
@@ -122,8 +124,16 @@ public abstract class AbstractCardService implements CardService
     * @param capdu APDU event
     */
    protected void notifyExchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-      for (APDUListener listener: apduListeners) {
-         listener.exchangedAPDU(capdu, rapdu);
-      }
+       if(listeners) {
+         for (APDUListener listener: apduListeners) {
+           listener.exchangedAPDU(capdu, rapdu);
+         }
+       }
    }
+   
+   public void setListenersState(boolean state) {
+       listeners = state;       
+   }
+
+
 }
