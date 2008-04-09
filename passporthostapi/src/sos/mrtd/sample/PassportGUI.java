@@ -41,6 +41,7 @@ import javax.swing.event.CaretListener;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
+import sos.mrtd.sample.apdutest.APDUTestPanel;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardService;
 
@@ -116,6 +117,7 @@ public class PassportGUI extends JPanel implements PassportListener
          FacePanel facePanel = new FacePanel(service);
          PAPanel paPanel = new PAPanel(service);
          AAPanel aaPanel = new AAPanel(service);
+         APDUTestPanel apduPanel = new APDUTestPanel(service);
          bacPanel.addAuthenticationListener(mrzPanel);
          bacPanel.addAuthenticationListener(facePanel);
          bacPanel.addAuthenticationListener(paPanel);
@@ -126,6 +128,7 @@ public class PassportGUI extends JPanel implements PassportListener
          tabbedPane.addTab("Face", facePanel);
          tabbedPane.addTab("PA", paPanel);
          tabbedPane.addTab("AA", aaPanel);
+         tabbedPane.addTab("APDU test", apduPanel);
          add(tabbedPane, BorderLayout.CENTER);
 
       } catch (Exception ex) {
@@ -171,7 +174,7 @@ public class PassportGUI extends JPanel implements PassportListener
 		   return jmrtdDir;
 	   }
    }
-   
+
    /**
     * Main method creates a GUI instance and puts it in a frame.
     *
