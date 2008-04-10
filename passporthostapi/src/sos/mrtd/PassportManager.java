@@ -18,20 +18,26 @@ public class PassportManager
    private static final PassportManager INSTANCE = new PassportManager();
 
    private Map<CardService, CardType> cardTypes;
+   private Map<CardService, PassportService> passportServices;
    private Collection<PassportListener> listeners;
 
    private PassportManager() {
       cardTypes = new Hashtable<CardService, CardType>();
+      passportServices = new Hashtable<CardService, PassportService>();
       listeners = new ArrayList<PassportListener>();
       CardManager.addCardTerminalListener(new CardTerminalListener() {
 
          public void cardInserted(CardEvent ce) {
             CardService service = ce.getService();
-            if (isPassportInserted(service)) {
+            
+            try {
+               PassportService passportService = new PassportService(service);
+               passportService.open(); /* Selects applet... */
                cardTypes.put(service, CardType.PASSPORT);
-
-               for (PassportListener l : listeners) { l.passportInserted(ce); };
-            } else {
+               passportServices.put(service, passportService);
+               PassportEvent pe = new PassportEvent(PassportEvent.INSERTED, passportService);
+               for (PassportListener l : listeners) { l.passportInserted(pe); };
+            } catch (CardServiceException cse) {
                cardTypes.put(service, CardType.OTHER_CARD);
             }
          }
@@ -40,23 +46,12 @@ public class PassportManager
             CardService service = ce.getService();
             CardType cardType = cardTypes.remove(service);
             if (cardType != null && cardType == CardType.PASSPORT) {
-               for (PassportListener l : listeners) { 
-                  l.passportRemoved(ce); };
+               PassportService passportService = passportServices.get(service);
+               PassportEvent pe = new PassportEvent(PassportEvent.REMOVED, passportService);
+               for (PassportListener l : listeners) {  l.passportRemoved(pe); };
             }
          }
       });
-   }
-
-   private boolean isPassportInserted(CardService service) {
-      try {
-         PassportApduService apduService = new PassportApduService(service);
-         apduService.open(); /* Selects applet... */
-         return true;
-      } catch (CardServiceException cse) {
-         return false;
-      } finally {
-         //apduService.close();
-      }
    }
 
    private synchronized void addListener(PassportListener l) {

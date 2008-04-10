@@ -32,17 +32,16 @@ import java.security.Security;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
+import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
-import sos.smartcards.CardEvent;
 import sos.smartcards.CardService;
 
 /**
@@ -106,9 +105,9 @@ public class PassportGUI extends JPanel implements PassportListener
       }
    }
 
-   public void passportInserted(CardEvent ce) {
+   public void passportInserted(PassportEvent ce) {
       try {
-         PassportService service = new PassportService(ce.getService());
+         PassportService service = ce.getService();
          service.addAPDUListener(log);
          service.open();
 
@@ -138,7 +137,7 @@ public class PassportGUI extends JPanel implements PassportListener
       revalidate();
    }
 
-   public void passportRemoved(CardEvent ce) {
+   public void passportRemoved(PassportEvent ce) {
       CardService service = ce.getService();
       if (service != null) {
          service.close();

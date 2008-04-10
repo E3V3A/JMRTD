@@ -6,7 +6,7 @@ import sos.smartcards.CardEvent;
 
 public interface PassportListener extends EventListener
 {
-   void passportInserted(CardEvent ce);
+   void passportInserted(PassportEvent ce);
 
-   void passportRemoved(CardEvent ce);
+   void passportRemoved(PassportEvent ce);
 }
