@@ -104,7 +104,7 @@ public class MRZInfo
    private char dateOfExpiryCheckDigit;
    private char personalNumberCheckDigit;
    private char compositeCheckDigit;
-   private String unknownMRZField; // FIXME: Last field on line 2 of ID3 MRZ.
+   private String optionalData2; // FIXME: Last field on line 2 of ID3 MRZ.
 
    /**
     * Constructs a new MRZ.
@@ -135,7 +135,7 @@ public class MRZInfo
       this.dateOfExpiry = dateOfExpiry;
       this.personalNumber = personalNumber;
       if (documentType == DOC_TYPE_ID1) {
-         this.unknownMRZField = "<<<<<<<<<<<";
+         this.optionalData2 = "<<<<<<<<<<<";
       }
       this.documentNumberCheckDigit = checkDigit(documentNumber);
       this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
@@ -143,21 +143,17 @@ public class MRZInfo
       this.personalNumberCheckDigit = checkDigit(mrzFormat(personalNumber, 14));
       StringBuffer composite = new StringBuffer();
       if (documentType == DOC_TYPE_ID1) {
-         // TODO: just guessing... we need to get ICAO Doc 9303 part 3 for this...
-         // TODO: upper + middle line, excluding check digits, including doc.type, filler?
+         // TODO: Include: 6-30 (upper line), 1-7,9-15,19-29 (middle line)
          // composite.append(documentTypeToString());
-         composite.append(issuingState);
+         // composite.append(issuingState);
          composite.append(documentNumber);
-         // composite.append(documentNumberCheckDigit);
+         composite.append(documentNumberCheckDigit);
          composite.append(mrzFormat(personalNumber, 15));
-         // composite.append(personalNumberCheckDigit);
          composite.append(SDF.format(dateOfBirth));
-         // composite.append(dateOfBirthCheckDigit);
-         composite.append(genderToString());
+         composite.append(dateOfBirthCheckDigit);
          composite.append(SDF.format(dateOfExpiry));
-         // composite.append(dateOfExpiryCheckDigit);
-         composite.append(nationality);
-         composite.append(unknownMRZField);
+         composite.append(dateOfExpiryCheckDigit);
+         composite.append(optionalData2);
       } else {
          composite.append(documentNumber);
          composite.append(documentNumberCheckDigit);
@@ -181,21 +177,20 @@ public class MRZInfo
          DataInputStream dataIn = new DataInputStream(in);
          this.documentType = readDocumentType(dataIn);
          if (documentType == DOC_TYPE_ID1) {
-            /* Assume it's an ID1 document */
             this.issuingState = readIssuingState(dataIn);
             this.documentNumber = readDocumentNumber(dataIn, 9);
             this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-            this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14));
-            this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
+            this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 15));
+            this.personalNumberCheckDigit = checkDigit(this.personalNumber);
             this.dateOfBirth = readDateOfBirth(dataIn);
             this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
             this.gender = readGender(dataIn);
             this.dateOfExpiry = readDateOfExpiry(dataIn);
             this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
             this.nationality = readNationality(dataIn);
-            byte[] unknownMRZFieldBytes = new byte[11];
-            dataIn.readFully(unknownMRZFieldBytes);
-            this.unknownMRZField = new String(unknownMRZFieldBytes);
+            byte[] optionalData2Bytes = new byte[11];
+            dataIn.readFully(optionalData2Bytes);
+            this.optionalData2 = new String(optionalData2Bytes);
             this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
             String name = readName(dataIn, 30);
             processNameIdentifiers(name);
@@ -266,7 +261,7 @@ public class MRZInfo
             writeDateOfExpiry(dataOut);
             dataOut.write(dateOfExpiryCheckDigit);
             writeNationality(dataOut);
-            dataOut.write(unknownMRZField.getBytes("UTF-8")); // TODO: Understand this...
+            dataOut.write(optionalData2.getBytes("UTF-8")); // TODO: Understand this...
             dataOut.write(compositeCheckDigit);
             writeName(dataOut);
          } else {
@@ -371,7 +366,7 @@ public class MRZInfo
       byte[] docTypeBytes = new byte[2];
       in.readFully(docTypeBytes);
       String docTypeStr = new String(docTypeBytes);
-      if (docTypeStr.startsWith("I")) {
+      if (docTypeStr.startsWith("A") || docTypeStr.startsWith("C") || docTypeStr.startsWith("I")) {
          return DOC_TYPE_ID1;
       } else if (docTypeStr.startsWith("P")) {
          return DOC_TYPE_ID3;
@@ -639,7 +634,7 @@ public class MRZInfo
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
          out.append(nationality);
-         out.append(unknownMRZField);
+         out.append(optionalData2);
          out.append(compositeCheckDigit); // should be: upper + middle line?
          out.append("\n");
          out.append(nameToString());

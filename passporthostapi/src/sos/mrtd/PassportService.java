@@ -131,7 +131,8 @@ public class PassportService extends PassportAuthService
     */
    private synchronized byte[] readFromFile(short fid, int offset, int length) throws CardServiceException {
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      if (!isSelectedFID(fid)) { sendSelectFile(wrapper, fid); }
+      // if (!isSelectedFID(fid)) { sendSelectFile(wrapper, fid); }
+      sendSelectFile(wrapper, fid);
       int blockSize = maxBlockSize;
       while (true) {
          int len = length < 0 ? blockSize : Math.min(blockSize, length);
@@ -169,6 +170,7 @@ public class PassportService extends PassportAuthService
             offsetInBuffer = 0;
             markedOffset = 0;
          } catch (IOException ioe) {
+            ioe.printStackTrace();
             throw new CardServiceException(ioe.toString());
          }
       }

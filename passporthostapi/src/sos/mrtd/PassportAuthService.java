@@ -140,7 +140,7 @@ public class PassportAuthService extends PassportApduService
     * 
     * @throws CardServiceException if authentication failed
     */
-   public void doBAC(String documentNumber, String dateOfBirth, String dateOfExpiry)
+   public synchronized void doBAC(String documentNumber, String dateOfBirth, String dateOfExpiry)
    throws CardServiceException {
       try {
          byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);

@@ -121,7 +121,7 @@ public class PassportApduService implements CardService
       sendSelectApplet();
    }
 
-   public boolean isOpen() {
+   public synchronized boolean isOpen() {
       return service.isOpen();
    }
 
@@ -286,7 +286,7 @@ public class PassportApduService implements CardService
     * 
     * @return status word
     */
-   public int sendSelectApplet(byte[] aid) throws CardServiceException {
+   public synchronized int sendSelectApplet(byte[] aid) throws CardServiceException {
       return transmit(createSelectAppletAPDU(aid)).getSW();
    }
 
@@ -295,7 +295,7 @@ public class PassportApduService implements CardService
     *
     * @param fid the file to select
     */
-   public void sendSelectFile(short fid) throws CardServiceException {
+   public synchronized void sendSelectFile(short fid) throws CardServiceException {
       sendSelectFile(null, fid);
    }
 
@@ -307,20 +307,22 @@ public class PassportApduService implements CardService
     * @param wrapper the secure messaging wrapper to use
     * @param fid the file to select
     */
-   public void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
+   public synchronized  void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
    throws CardServiceException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);
       }
+
       ResponseAPDU rapdu = transmit(capdu);
+
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
       selectedFID = (fid & 0xFFFF);
    }
 
-   void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
+   synchronized void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
    throws CardServiceException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
@@ -342,7 +344,7 @@ public class PassportApduService implements CardService
     *         (the specified part of) the contents of the
     *         currently selected file
     */
-   public byte[] sendReadBinary(short offset, int le) throws CardServiceException {
+   public synchronized byte[] sendReadBinary(short offset, int le) throws CardServiceException {
       return sendReadBinary(null, offset, le);
    }
 
@@ -359,14 +361,14 @@ public class PassportApduService implements CardService
     *         (the specified part of) the contents of the
     *         currently selected file
     */
-   public byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
+   public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, short offset,
          int le) throws CardServiceException {
       boolean repeatOnEOF = false;
       ResponseAPDU rapdu = null;
       do {
          repeatOnEOF = false;
          // In case the data ended right on the block boundary
-         if(le == 0) {
+         if (le == 0) {
             return null;
          }
          CommandAPDU capdu = createReadBinaryAPDU(offset, le);
@@ -381,7 +383,7 @@ public class PassportApduService implements CardService
             le--;
             repeatOnEOF = true;
          }
-      }while(repeatOnEOF);
+      } while (repeatOnEOF);
       return rapdu.getData();
    }
 
@@ -390,7 +392,7 @@ public class PassportApduService implements CardService
     *
     * @return a byte array of length 8 containing the challenge
     */
-   public byte[] sendGetChallenge() throws CardServiceException {
+   public synchronized byte[] sendGetChallenge() throws CardServiceException {
       ResponseAPDU rapdu = transmit(createGetChallengeAPDU());
       return rapdu.getData();
    }
@@ -402,7 +404,7 @@ public class PassportApduService implements CardService
     * 
     * @return the response from the passport (status word removed)
     */
-   public byte[] sendInternalAuthenticate(byte[] rndIFD) throws CardServiceException {
+   public synchronized byte[] sendInternalAuthenticate(byte[] rndIFD) throws CardServiceException {
       return sendInternalAuthenticate(null, rndIFD);
    }
 
@@ -414,7 +416,7 @@ public class PassportApduService implements CardService
     * 
     * @return the response from the passport (status word removed)
     */
-   public byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD)
+   public synchronized byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD)
    throws CardServiceException {
       CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
       if (wrapper != null) {
@@ -443,7 +445,7 @@ public class PassportApduService implements CardService
     *         sent by the passport, decrypted (using <code>kEnc</code>)
     *         and verified (using <code>kMac</code>)
     */
-   public byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
+   public synchronized byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws CardServiceException {
       try {
          byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
@@ -475,7 +477,7 @@ public class PassportApduService implements CardService
       }
    }
 
-   public boolean isSelectedFID(short fid) {
+   public synchronized boolean isSelectedFID(short fid) {
       if (selectedFID < 0) {
          return false;
       }
