@@ -8,8 +8,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sos.util.Hex;
-
 public class BERTLVInputStream extends InputStream
 {
    /** Tag. */

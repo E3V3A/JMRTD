@@ -28,6 +28,14 @@ public class CardEvent extends EventObject
          case REMOVED: return "Card removed from " + service;
          case INSERTED: return "Card inserted in " + service;
       }
-      return "CardTerminalEvent " + service;
+      return "CardEvent " + service;
+   }
+   
+   public boolean equals(Object other) {
+      if (other == null) { return false; }
+      if (other == this) { return true; }
+      if (other.getClass() != CardEvent.class) { return false; }
+      CardEvent otherCardEvent = (CardEvent)other;
+      return type == otherCardEvent.type && service.equals(otherCardEvent.service);
    }
 }
