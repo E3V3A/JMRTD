@@ -159,9 +159,9 @@ public class PCSCCardService extends AbstractCardService
          notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
          return ourResponseAPDU;
       } catch (CardException ce) {
-         ce.printStackTrace();
+    	  ce.printStackTrace();
+         throw new CardServiceException(ce.toString());
       }
-      return null;
    }
 
    /**

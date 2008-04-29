@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import javax.smartcardio.Card;
@@ -32,11 +33,17 @@ public class CardManager
    private Collection<CardTerminal> terminals;
    private Collection<CardTerminalListener> listeners;
 
-   private CardManager() {
-      listeners = new ArrayList<CardTerminalListener>();
-      terminals = new HashSet<CardTerminal>();
-      terminalServices = new Hashtable<CardTerminal, CardService>();
-      // addEmulator("localhost", 9025);
+   private CardManager() {	   
+	  try {
+         listeners = new ArrayList<CardTerminalListener>();
+         terminals = new HashSet<CardTerminal>();
+         terminalServices = new Hashtable<CardTerminal, CardService>();
+         // addEmulator("localhost", 9025);
+         // terminals.add(new ACR120UCardTerminal(ACR120UCardTerminal.ACR120_USB1));
+      } catch (Exception ex) {
+    	  System.err.println("WARNING: exception while collecting terminals");
+    	  ex.printStackTrace();
+      }
       (new Thread(new Runnable() {
          public void run() {
             try {
@@ -58,7 +65,12 @@ public class CardManager
       try {
          TerminalFactory terminalFactory = TerminalFactory.getDefault();
          /* TODO: check terminals are disconnected. */
-         terminals.addAll(terminalFactory.terminals().list());
+         try {
+        	 List<CardTerminal> defaultTerminals = terminalFactory.terminals().list();
+        	 terminals.addAll(defaultTerminals);
+         } catch (CardException cde) {
+        	 /* Listing PCSC readers failed. */
+         }
          for (CardTerminal terminal: terminals) {
             boolean wasCardPresent = false;
             boolean isCardPresent = false;
@@ -100,6 +112,7 @@ public class CardManager
          }
       } catch (CardException ce) {
          // NOTE: remain in same state?!?
+    	  ce.printStackTrace();
       }
    }
 
