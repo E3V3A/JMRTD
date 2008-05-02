@@ -1,6 +1,9 @@
 package sos.smartcards;
 
 import java.net.Socket;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.Security;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -26,200 +29,210 @@ import javax.smartcardio.TerminalFactory;
  */
 public class CardManager
 {
-   private static final CardManager INSTANCE = new CardManager();
-   private static final int POLL_INTERVAL = 200;
+	private static final CardManager INSTANCE = new CardManager();
+	private static final int POLL_INTERVAL = 200;
 
-   private Map<CardTerminal, CardService> terminalServices;
-   private Collection<CardTerminal> terminals;
-   private Collection<CardTerminalListener> listeners;
+	private Map<CardTerminal, CardService> terminalServices;
+	private Collection<CardTerminal> terminals;
+	private Collection<CardTerminalListener> listeners;
 
-   private CardManager() {	   
-	  try {
-         listeners = new ArrayList<CardTerminalListener>();
-         terminals = new HashSet<CardTerminal>();
-         terminalServices = new Hashtable<CardTerminal, CardService>();
-         // addEmulator("localhost", 9025);
-         // terminals.add(new ACR120UCardTerminal(ACR120UCardTerminal.ACR120_USB1));
-      } catch (Exception ex) {
-    	  System.err.println("WARNING: exception while collecting terminals");
-    	  ex.printStackTrace();
-      }
-      (new Thread(new Runnable() {
-         public void run() {
-            try {
-               while (true) {
-                  poll();
-                  Thread.sleep(POLL_INTERVAL);
-               }
-            } catch (InterruptedException ie) {
-               // NOTE: interrupted during blocked state, so quit running
-            }
-         }
-      })).start();
-   }
+	private CardManager() {	   
+		try {
+			listeners = new ArrayList<CardTerminalListener>();
+			terminals = new HashSet<CardTerminal>();
+			terminalServices = new Hashtable<CardTerminal, CardService>();
+			// addEmulator("localhost", 9025);
+			// terminals.add(new ACR120UCardTerminal(ACR120UCardTerminal.ACR120_USB1));
+		} catch (Exception ex) {
+			System.err.println("WARNING: exception while adding terminals");
+			ex.printStackTrace();
+		}
+		(new Thread(new Runnable() {
+			public void run() {
+				try {
+					try {
+						// TerminalFactory terminalFactory = TerminalFactory.getDefault();
+						Security.insertProviderAt(new sos.smartcards.CardTerminalProvider(), 5);
+						TerminalFactory terminalFactory = TerminalFactory.getInstance("ACS", null);
+						/* TODO: check terminals are disconnected. */
 
-   private synchronized void poll() throws InterruptedException {
-      while (hasNoListeners()) {
-         wait();
-      }
-      try {
-         TerminalFactory terminalFactory = TerminalFactory.getDefault();
-         /* TODO: check terminals are disconnected. */
-         try {
-        	 List<CardTerminal> defaultTerminals = terminalFactory.terminals().list();
-        	 terminals.addAll(defaultTerminals);
-         } catch (CardException cde) {
-        	 /* Listing PCSC readers failed. */
-         }
-         for (CardTerminal terminal: terminals) {
-            boolean wasCardPresent = false;
-            boolean isCardPresent = false;
-            CardService service = null;
-            if (terminalServices.containsKey(terminal)) {
-               service = terminalServices.get(terminal);
-               wasCardPresent = true;
-            }
-            if (service == null) {
-               try {
-                  if (terminal instanceof CREFEmulator) {
-                     String host = ((CREFEmulator)terminal).getHost();
-                     int port = ((CREFEmulator)terminal).getPort();
-                     service = new CREFEmulatorService(host, port);
-                  } else {
-                     service = new PCSCCardService();
-                     if (terminal.isCardPresent()) {
-                        ((PCSCCardService)service).open(terminal);
-                     }
-                  }
-               } catch (Exception e) {
-                  if (service != null) { service.close(); }
-               }
-            }
-            isCardPresent = terminal.isCardPresent();
+						List<CardTerminal> defaultTerminals = terminalFactory.terminals().list();
+						terminals.addAll(defaultTerminals);
+					} catch (CardException cde) {
+						/* Listing PCSC readers failed. */
+					} catch (NoSuchAlgorithmException nsae) {
+						/* Listing other readers failed. */
+						nsae.printStackTrace();
+//					} catch (NoSuchProviderException nspe) {
+//						/* Listing other readers failed. */
+//						nspe.printStackTrace();
+					}
+					while (true) {
+						poll();
+						Thread.sleep(POLL_INTERVAL);
+					}
+				} catch (InterruptedException ie) {
+					// NOTE: interrupted during blocked state, so quit running
+				}
+			}
+		})).start();
+	}
 
-            if (wasCardPresent && !isCardPresent) {
-               if (service != null) {
-                  notifyCardRemoved(service);
-                  service.close();
-               }
-               terminalServices.remove(terminal);
-            } else if (!wasCardPresent && isCardPresent) {
-               if (service != null) {
-                  terminalServices.put(terminal, service);
-                  notifyCardInserted(service);
-               }
-            }
-         }
-      } catch (CardException ce) {
-         // NOTE: remain in same state?!?
-    	  ce.printStackTrace();
-      }
-   }
+	private synchronized void poll() throws InterruptedException {
+		while (hasNoListeners()) {
+			wait();
+		}
+		try {
 
-   public Iterator<String> getTerminals() {
-      Collection<String> result = new ArrayList<String>();
-      for (CardTerminal terminal: terminals) {
-         result.add(terminal.getName());
-      }
-      return result.iterator();
-   }
+			for (CardTerminal terminal: terminals) {
+				boolean wasCardPresent = false;
+				boolean isCardPresent = false;
+				CardService service = null;
+				if (terminalServices.containsKey(terminal)) {
+					service = terminalServices.get(terminal);
+					wasCardPresent = true;
+				}
+				if (service == null) {
+					try {
+						if (terminal instanceof CREFEmulator) {
+							String host = ((CREFEmulator)terminal).getHost();
+							int port = ((CREFEmulator)terminal).getPort();
+							service = new CREFEmulatorService(host, port);
+						} else {
+							service = new PCSCCardService();
+							if (terminal.isCardPresent()) {
+								((PCSCCardService)service).open(terminal);
+							}
+						}
+					} catch (Exception e) {
+						if (service != null) { service.close(); }
+					}
+				}
+				isCardPresent = terminal.isCardPresent();
 
-   private synchronized void addListener(CardTerminalListener l) {
-      listeners.add(l);
-      notifyAll();
-   }
+				if (wasCardPresent && !isCardPresent) {
+					if (service != null) {
+						notifyCardRemoved(service);
+						service.close();
+					}
+					terminalServices.remove(terminal);
+				} else if (!wasCardPresent && isCardPresent) {
+					if (service != null) {
+						terminalServices.put(terminal, service);
+						notifyCardInserted(service);
+					}
+				}
+			}
+		} catch (CardException ce) {
+			// NOTE: remain in same state?!?
+			ce.printStackTrace();
+		}
+	}
 
-   private synchronized void removeListener(CardTerminalListener l) {
-      listeners.remove(l);
-   }
+	public Iterator<String> getTerminals() {
+		Collection<String> result = new ArrayList<String>();
+		for (CardTerminal terminal: terminals) {
+			result.add(terminal.getName());
+		}
+		return result.iterator();
+	}
 
-   private synchronized void notifyCardInserted(CardService service) {
-      for (CardTerminalListener l: listeners) {
-         l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
-      }
-   }
+	private synchronized void addListener(CardTerminalListener l) {
+		listeners.add(l);
+		notifyAll();
+	}
 
-   private synchronized void notifyCardRemoved(CardService service) {
-      for (CardTerminalListener l: listeners) {
-         l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
-      }
-   }
+	private synchronized void removeListener(CardTerminalListener l) {
+		listeners.remove(l);
+	}
 
-   private synchronized boolean hasNoListeners() {
-      return listeners.isEmpty();
-   }
+	private synchronized void notifyCardInserted(CardService service) {
+		for (CardTerminalListener l: listeners) {
+			l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
+		}
+	}
 
-   public static void addCardTerminalListener(CardTerminalListener l) {
-      INSTANCE.addListener(l);
-   }
+	private synchronized void notifyCardRemoved(CardService service) {
+		for (CardTerminalListener l: listeners) {
+			l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
+		}
+	}
 
-   public static void removeCardTerminalListener(CardTerminalListener l) {
-      INSTANCE.removeListener(l);
-   }   
-   
-   private synchronized void addEmulator(String host, int port) {
-      terminals.add(new CREFEmulator(host, port));
-   }
-   
-   /**
-    * Starts monitoring host:port for presence of CREF emulator in
-    * the specified host and port.
-    * 
-    * @param host
-    * @param port
-    */
-   public static void connectToCREFEmulator(String host, int port) {
-      INSTANCE.addEmulator(host, port);
-   }
+	private synchronized boolean hasNoListeners() {
+		return listeners.isEmpty();
+	}
 
-   private class CREFEmulator extends CardTerminal
-   {
-      private String host;
-      private int port;
+	public static void addCardTerminalListener(CardTerminalListener l) {
+		INSTANCE.addListener(l);
+	}
 
-      public CREFEmulator(String host, int port) {
-         this.host = host;
-         this.port = port;
-      }
+	public static void removeCardTerminalListener(CardTerminalListener l) {
+		INSTANCE.removeListener(l);
+	}   
 
-      public Card connect(String arg0) throws CardException {
-         return null; // TODO
-      }
+	private synchronized void addEmulator(String host, int port) {
+		terminals.add(new CREFEmulator(host, port));
+	}
 
-      public String getName() {
-         return "CREF emulator at " + host + ":" + port;
-      }
+	/**
+	 * Starts monitoring host:port for presence of CREF emulator in
+	 * the specified host and port.
+	 * 
+	 * @param host
+	 * @param port
+	 */
+	public static void connectToCREFEmulator(String host, int port) {
+		INSTANCE.addEmulator(host, port);
+	}
 
-      public String getHost() {
-         return host;
-      }
+	private class CREFEmulator extends CardTerminal
+	{
+		private String host;
+		private int port;
 
-      public int getPort() {
-         return port;
-      }
+		public CREFEmulator(String host, int port) {
+			this.host = host;
+			this.port = port;
+		}
 
-      /**
-       * Checks whether CREF is present by connecting to host:port.
-       * 
-       * NOTE: Only works if service already running!
-       * Otherwise CREF gets confused.
-       */
-      public boolean isCardPresent() throws CardException {
-         try {
-            Socket sock = new Socket(host, port);
-            sock.close();
-         } catch (Exception e) {
-            return false;
-         }
-         return true;            
-      }
+		public Card connect(String arg0) throws CardException {
+			return null; // TODO
+		}
 
-      public boolean waitForCardAbsent(long arg0) throws CardException {
-         return false; // TODO
-      }
+		public String getName() {
+			return "CREF emulator at " + host + ":" + port;
+		}
 
-      public boolean waitForCardPresent(long arg0) throws CardException {
-         return false; // TODO
-      }
-   }
+		public String getHost() {
+			return host;
+		}
+
+		public int getPort() {
+			return port;
+		}
+
+		/**
+		 * Checks whether CREF is present by connecting to host:port.
+		 * 
+		 * NOTE: Only works if service already running!
+		 * Otherwise CREF gets confused.
+		 */
+		public boolean isCardPresent() throws CardException {
+			try {
+				Socket sock = new Socket(host, port);
+				sock.close();
+			} catch (Exception e) {
+				return false;
+			}
+			return true;            
+		}
+
+		public boolean waitForCardAbsent(long arg0) throws CardException {
+			return false; // TODO
+		}
+
+		public boolean waitForCardPresent(long arg0) throws CardException {
+			return false; // TODO
+		}
+	}
 }
