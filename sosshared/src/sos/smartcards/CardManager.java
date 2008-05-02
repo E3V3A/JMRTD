@@ -42,7 +42,6 @@ public class CardManager
 			terminals = new HashSet<CardTerminal>();
 			terminalServices = new Hashtable<CardTerminal, CardService>();
 			// addEmulator("localhost", 9025);
-			// terminals.add(new ACR120UCardTerminal(ACR120UCardTerminal.ACR120_USB1));
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
 			ex.printStackTrace();
@@ -51,19 +50,19 @@ public class CardManager
 			public void run() {
 				try {
 					try {
-						// TerminalFactory terminalFactory = TerminalFactory.getDefault();
-						Security.insertProviderAt(new sos.smartcards.CardTerminalProvider(), 5);
-						TerminalFactory terminalFactory = TerminalFactory.getInstance("ACS", null);
+						TerminalFactory terminalFactory = TerminalFactory.getDefault();
+//						Security.insertProviderAt(new sos.smartcards.CardTerminalProvider(), 5);
+//						TerminalFactory terminalFactory = TerminalFactory.getInstance("ACS", null);
 						/* TODO: check terminals are disconnected. */
 
 						List<CardTerminal> defaultTerminals = terminalFactory.terminals().list();
 						terminals.addAll(defaultTerminals);
 					} catch (CardException cde) {
 						/* Listing PCSC readers failed. */
-					} catch (NoSuchAlgorithmException nsae) {
-						/* Listing other readers failed. */
-						nsae.printStackTrace();
-//					} catch (NoSuchProviderException nspe) {
+//					} catch (NoSuchAlgorithmException nsae) {
+//						/* Listing other readers failed. */
+//						nsae.printStackTrace();
+//						} catch (NoSuchProviderException nspe) {
 //						/* Listing other readers failed. */
 //						nspe.printStackTrace();
 					}
