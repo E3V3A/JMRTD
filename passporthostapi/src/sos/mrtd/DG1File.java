@@ -25,7 +25,6 @@ package sos.mrtd;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 
 import sos.tlv.BERTLVObject;
 
@@ -53,7 +52,7 @@ public class DG1File extends DataGroup
       this.mrz = mrz;
    }
    
-   DG1File(BERTLVObject in) {
+   private DG1File(BERTLVObject in) {
       this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
       sourceObject = in;
       isSourceConsistent = true;
@@ -61,10 +60,6 @@ public class DG1File extends DataGroup
    
    public DG1File(InputStream in) throws IOException {
       this(BERTLVObject.getInstance(in));
-   }
-   
-   DG1File(byte[] in) throws IOException {
-      this(new ByteArrayInputStream(in));
    }
    
    public int getTag() {

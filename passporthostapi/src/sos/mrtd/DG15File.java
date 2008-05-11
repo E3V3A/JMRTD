@@ -27,7 +27,6 @@ import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.text.ParseException;
 
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;

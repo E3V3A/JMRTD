@@ -28,7 +28,6 @@ import java.awt.event.ActionListener;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -38,7 +37,6 @@ import javax.swing.border.EtchedBorder;
 import sos.mrtd.AuthListener;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.PCSCCardService;
 
 /**
  * GUI component for step-by-step execution of the

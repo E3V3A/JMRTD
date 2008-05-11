@@ -5,8 +5,13 @@
     * Jarkko Leponiemi 2003
     */
    
-   import java.awt.*;
-   import javax.swing.*;
+   import java.awt.Dimension;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.Insets;
+import java.awt.Toolkit;
+
+import javax.swing.JPanel;
   
   public class DrawImage extends JPanel {
      

@@ -17,10 +17,10 @@ import java.io.PrintWriter;
 import java.io.StringReader;
 import java.security.GeneralSecurityException;
 
-import javax.smartcardio.*;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JFileChooser;
