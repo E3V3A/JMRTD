@@ -106,7 +106,7 @@ public class CardManager
 
 			/* Our own factories for 'special' terminals. */
 			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
-			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
+			// addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
 		} catch (NoSuchAlgorithmException nsae) {
 			/* Listing other readers failed. */
 			nsae.printStackTrace();

@@ -32,6 +32,7 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
 import com.ibm.jc.JCException;
+import com.ibm.jc.JCTerminal;
 import com.ibm.jc.terminal.RemoteJCTerminal;
 
 /**
@@ -59,7 +60,6 @@ public class JCOPEmulatorTerminal extends CardTerminal
 
 	private RemoteJCTerminal jcTerminal;
 
-
 	/**
 	 * Listens for instances of the emulator on the specified host and port.
 	 * 
@@ -81,7 +81,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	 */
 	public synchronized Card connect(String protocol) throws CardException {
 		synchronized (terminal) {
-			if (card == null && !isCardPresent()) {
+			if (!isCardPresent()) {
 				throw new CardException("No card present");
 			}
 			if (card == null) {
@@ -104,6 +104,8 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		return getName();
 	}
 
+	
+	
 	/**
 	 * Determines whether a card is present.
 	 * 
@@ -111,20 +113,27 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	 */
 	public boolean isCardPresent() {
 		synchronized (terminal) {
+			if (jcTerminal == null) { return false; }
 			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
-
 			try {
 				heartBeat = System.currentTimeMillis();
 				jcTerminal.init(hostName.trim() + ":" + port);
-				card = new EmulatedCard();
-				wasCardPresent = true;
-			} catch (Exception e) {
-				wasCardPresent = true;
+				jcTerminal.open();	
+				switch(jcTerminal.getState()) {
+				   case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
+				   case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
+				   case JCTerminal.ERROR: wasCardPresent = false; break;
+				   default: wasCardPresent = false; break;
+				}
+			} catch (Exception e1) {
+				e1.printStackTrace();
+				wasCardPresent = false;
+				try { jcTerminal.close(); } catch (Exception e2) { }
 			}
-			return wasCardPresent;
 		}
+		return wasCardPresent;
 	}
-
+	
 	/**
 	 * Waits for a card to be present.
 	 * 
@@ -183,7 +192,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	{
 		private EmulatedCardChannel basicChannel;
 
-		public EmulatedCard() throws CardException {
+		public EmulatedCard() {
 			basicChannel = new EmulatedCardChannel(this);
 		}
 
@@ -228,8 +237,8 @@ public class JCOPEmulatorTerminal extends CardTerminal
 
 		private Card card;
 
-		public EmulatedCardChannel(Card card) throws CardException {
-			synchronized (jcTerminal) {
+		public EmulatedCardChannel(Card card) {
+			synchronized (terminal) {
 				this.card = card;
 				jcTerminal.open();
 				byte[] atrBytes = jcTerminal.waitForCard(1000);
@@ -244,7 +253,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		}
 
 		public void close() throws CardException {
-			synchronized (jcTerminal) {
+			synchronized (terminal) {
 				try {
 					jcTerminal.close();
 					jcTerminal = null;
@@ -272,7 +281,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		 * @return the response from the card.
 		 */
 		public int transmit(ByteBuffer command, ByteBuffer response) throws CardException {
-			synchronized (jcTerminal) {
+			synchronized (terminal) {
 				ResponseAPDU rapdu = transmit(new CommandAPDU(command));
 				byte[] rapduBytes = rapdu.getBytes();
 				response.put(rapduBytes);
@@ -288,7 +297,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		 * @return the response from the card.
 		 */
 		public ResponseAPDU transmit(CommandAPDU command) throws CardException {
-			synchronized (jcTerminal) {
+			synchronized (terminal) {
 				try {
 					byte[] capdu = command.getBytes();
 					byte[] rapdu = jcTerminal.send(0, capdu, 0, capdu.length);

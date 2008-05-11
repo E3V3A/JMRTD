@@ -76,12 +76,8 @@ public class PCSCCardService extends AbstractCardService
             continue;
          }
       }
-      if (card == null) {
-    	  System.out.println("DEBUG: card == null");
-      }
       channel = card.getBasicChannel();
       if (channel == null) { throw new CardServiceException("channel == null"); }
-      if (channel != null) { System.out.println("DEBUG: channel == " + channel); }
       state = SESSION_STARTED_STATE;
    }
    
@@ -98,7 +94,6 @@ public class PCSCCardService extends AbstractCardService
    public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) throws CardServiceException {
       try {
          if (channel == null) {
-            System.err.println("DEBUG: channel == null");
             throw new CardServiceException("channel == null");
          }
          ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
