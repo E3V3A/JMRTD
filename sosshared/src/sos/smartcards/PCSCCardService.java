@@ -23,7 +23,6 @@
 package sos.smartcards;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
@@ -31,7 +30,6 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
-import javax.smartcardio.TerminalFactory;
 
 /**
  * Card service implementation for sending APDUs to a terminal using the
@@ -44,83 +42,27 @@ public class PCSCCardService extends AbstractCardService
 {
    private static ArrayList<String> protocols;
 
+   private CardTerminal terminal;
    private Card card;
    private CardChannel channel;
 
    /**
     * Constructs a new card service.
+    * @param terminal 
     */
-   public PCSCCardService() {
+   public PCSCCardService(CardTerminal terminal) {
+	   this.terminal = terminal;
       if (protocols == null) {
          protocols = new ArrayList<String>();
       }
       if (protocols.size() < 2) {
+    	  protocols.add("T=CL");
          protocols.add("T=1");
          protocols.add("T=0");
       }
    }
-
-   /**
-    * Gives a list of terminals (card accepting devices) accessible by this
-    * service.
-    * 
-    * @return a list of terminal names
-    */
-   public String[] getTerminals() {
-      try {
-         TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals().list();
-         String[] result = new String[terminals.size()];
-         int i = 0;
-         for (CardTerminal terminal : terminals) {
-            result[i++] = terminal.toString();
-         }
-         return result;
-      } catch (Exception ce) {
-         ce.printStackTrace();
-         return new String[0];
-      }
-   }
-
-   /**
-    * Opens a session with the card in the default terminal.
-    */
-   public void open() throws CardServiceException {
-      try {
-         TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals().list();
-         CardTerminal terminal = terminals.get(0);
-         open(terminal);
-      } catch (CardException ce) {
-         throw new CardServiceException(ce.toString());
-      }
-   }
-
-   /**
-    * Opens a session with the card designated by <code>id</code>.
-    * 
-    * @param id some identifier (typically the name of a card terminal)
-    */
-   public void open(String id) throws CardServiceException {
-      try {
-         TerminalFactory factory = TerminalFactory.getDefault();
-         List<CardTerminal> terminals = factory.terminals().list();
-         CardTerminal terminal = null;
-         for (CardTerminal t : terminals) {
-            if (t.toString().equals(id)) {
-               terminal = t;
-            }
-         }
-         if (terminal == null) {
-            terminal = terminals.get(0);
-         }
-         open(terminal);
-      } catch (CardException ce) {
-         throw new CardServiceException(ce.toString());
-      }
-   }
    
-   void open(CardTerminal terminal) throws CardServiceException {
+   public void open() throws CardServiceException {
       if (isOpen()) { return; }
       for (String protocol: protocols) {
          try {
@@ -134,8 +76,12 @@ public class PCSCCardService extends AbstractCardService
             continue;
          }
       }
+      if (card == null) {
+    	  System.out.println("DEBUG: card == null");
+      }
       channel = card.getBasicChannel();
       if (channel == null) { throw new CardServiceException("channel == null"); }
+      if (channel != null) { System.out.println("DEBUG: channel == " + channel); }
       state = SESSION_STARTED_STATE;
    }
    

@@ -34,14 +34,6 @@ import javax.smartcardio.ResponseAPDU;
 public interface CardService
 {
    /**
-    * Gives a list of terminals (card accepting devices) accessible by this
-    * service.
-    * 
-    * @return a list of terminal names
-    */
-   String[] getTerminals();
-
-   /**
     * Adds a listener.
     * 
     * @param l the listener to add
@@ -64,13 +56,6 @@ public interface CardService
 
    boolean isOpen();
    
-   /**
-    * Opens a session with the card designated by <code>id</code>.
-    * 
-    * @param id some identifier (typically the name of a card terminal)
-    */
-   void open(String id) throws CardServiceException;
-
    /**
     * Sends an apdu to the card.
     * 
