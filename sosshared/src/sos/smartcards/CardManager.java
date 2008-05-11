@@ -102,12 +102,11 @@ public class CardManager
 	private void addTerminals() {
 		try {
 			/* Default factory will contain connected PCSC terminals. */
-			TerminalFactory defaultTerminalFactory = TerminalFactory.getDefault();
-			addTerminals(defaultTerminalFactory);
+			addTerminals(TerminalFactory.getDefault());
 
-			/* Our own factory for special terminals. */
-			TerminalFactory crefTerminalFactory = TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider());
-			addTerminals(crefTerminalFactory);
+			/* Our own factories for 'special' terminals. */
+			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
+			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
 		} catch (NoSuchAlgorithmException nsae) {
 			/* Listing other readers failed. */
 			nsae.printStackTrace();

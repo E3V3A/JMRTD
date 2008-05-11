@@ -7,5 +7,6 @@ public class CardTerminalProvider extends Provider {
 	protected CardTerminalProvider() {
 		super("CardTerminalProvider", 0.1d, "SoS Card Terminal Provider");
 		put("TerminalFactory.CREF", "sos.smartcards.CREFEmulatorTerminalFactorySpi");
+		put("TerminalFactory.JCOP", "sos.smartcards.JCOPEmulatorTerminalFactorySpi");
 	}
 }
