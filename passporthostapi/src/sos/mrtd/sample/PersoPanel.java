@@ -63,7 +63,8 @@ import sos.smartcards.CardServiceException;
  * @version $Revision$
  */
 public class PersoPanel extends JPanel implements ActionListener,
-AuthListener {
+AuthListener
+{
    private JButton createFileButton;
    private JButton selectFileButton;
    private JButton selectLocalFileButton;
@@ -104,7 +105,7 @@ AuthListener {
       add(fileSendingPanel);
       add(initAAPanel);
 
-      this.service = new PassportPersoService(service);
+      setService(service);
       this.wrapper = null;
 
       selectLocalFileButton = new JButton("Select local file ... ");
@@ -152,6 +153,10 @@ AuthListener {
       initAAPanel.add(generateKeyPairButton);
       initAAPanel.add(uploadPrivateKey);
       initAAPanel.add(uploadPublicKey);
+   }
+
+   public void setService(CardService service) throws CardServiceException {
+	   this.service = new PassportPersoService(service);
    }
 
    public void actionPerformed(ActionEvent ae) {

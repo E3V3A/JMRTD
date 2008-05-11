@@ -74,8 +74,7 @@ implements AuthListener
    public AAPanel(PassportApduService service)
    throws CardServiceException {
       super(new BorderLayout());
-      this.apduService = service;
-      this.authService = new PassportAuthService(apduService);
+      setService(service);
       this.passportService = new PassportService(authService);
       this.wrapper = null;
       JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -114,7 +113,12 @@ implements AuthListener
       add(new JScrollPane(area), BorderLayout.CENTER);
    }
    
-   public void performedBAC(BACEvent be) {
+   public void setService(PassportApduService service) throws CardServiceException {
+	   this.apduService = service;
+	   this.authService = new PassportAuthService(apduService);	
+   }
+
+public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper();
       authService.setWrapper(wrapper);
       passportService.setWrapper(wrapper);

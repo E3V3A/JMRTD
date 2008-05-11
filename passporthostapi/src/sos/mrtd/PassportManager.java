@@ -25,7 +25,8 @@ public class PassportManager
       cardTypes = new Hashtable<CardService, CardType>();
       passportServices = new Hashtable<CardService, PassportService>();
       listeners = new ArrayList<PassportListener>();
-      CardManager.addCardTerminalListener(new CardTerminalListener() {
+      CardManager cm = CardManager.getInstance();
+      cm.addCardTerminalListener(new CardTerminalListener() {
 
          public void cardInserted(CardEvent ce) {
             CardService service = ce.getService();
@@ -54,19 +55,15 @@ public class PassportManager
       });
    }
 
-   private synchronized void addListener(PassportListener l) {
+   public synchronized void addPassportListener(PassportListener l) {
       listeners.add(l);
    }
 
-   private synchronized void removeListener(PassportListener l) {
+   public synchronized void removePassportListener(PassportListener l) {
       listeners.remove(l);
    }
-
-   public static void addPassportListener(PassportListener l) {
-      INSTANCE.addListener(l);
-   }
-
-   public static void removePassportListener(PassportListener l) {
-      INSTANCE.removeListener(l);
+   
+   public static PassportManager getInstance() {
+	   return INSTANCE;
    }
 }

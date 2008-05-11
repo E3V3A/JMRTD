@@ -89,8 +89,7 @@ public class PAPanel extends JPanel implements AuthListener
    public PAPanel(PassportApduService service)
    throws CardServiceException {
       super(new BorderLayout());
-      this.apduService = service;
-      this.passportService = new PassportService(apduService);
+      setService(service);
       this.wrapper = null;
 
       final JPanel hashesPanel = new JPanel(new FlowLayout());
@@ -237,7 +236,12 @@ public class PAPanel extends JPanel implements AuthListener
       add(new JScrollPane(area), BorderLayout.CENTER);
    }
 
-   public void performedBAC(BACEvent be) {
+   public void setService(PassportApduService service) throws CardServiceException {
+	   this.apduService = service;
+	   this.passportService = new PassportService(apduService);
+   }
+
+public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper();
       passportService.setWrapper(wrapper);
    }

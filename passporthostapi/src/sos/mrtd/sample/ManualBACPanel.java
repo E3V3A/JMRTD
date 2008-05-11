@@ -27,6 +27,8 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.crypto.SecretKey;
 import javax.swing.BorderFactory;
@@ -38,6 +40,7 @@ import javax.swing.border.EtchedBorder;
 
 import sos.gui.HexField;
 import sos.mrtd.AuthListener;
+import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportAuthService;
 import sos.mrtd.SecureMessagingWrapper;
@@ -58,6 +61,7 @@ public class ManualBACPanel extends JPanel
       BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
 
    private BACKeyPanel bacKeyPanel;
+   private MutualAuthPanel mutualAuthPanel;
    private SecretKey ksEnc, ksMac;
    private byte[] kICC, kIFD, rndICC, rndIFD;
    private long ssc;
@@ -67,16 +71,21 @@ public class ManualBACPanel extends JPanel
 
    public ManualBACPanel(PassportApduService service) throws CardServiceException {
       super(new GridLayout(3,1));
-      this.apduService = service;
-      this.authService = new PassportAuthService(service);
+      setService(service);
       add(new ChallengePanel());
       bacKeyPanel = new BACKeyPanel(BACKeyPanel.SHOW_DERIVED_KEYS);
       add(bacKeyPanel);
-      add(new MutualAuthPanel());
+      mutualAuthPanel = new MutualAuthPanel();
+      add(mutualAuthPanel);
+   }
+   
+   public void setService(PassportApduService service) throws CardServiceException {
+	      this.apduService = service;
+	      this.authService = new PassportAuthService(service);
    }
 
    public void addAuthenticationListener(AuthListener l) {
-      authService.addAuthenticationListener(l);
+      mutualAuthPanel.addAuthenticationListener(l);
    }
 
    private class ChallengePanel extends JPanel implements ActionListener
@@ -118,9 +127,11 @@ public class ManualBACPanel extends JPanel
       private HexField challengeField, keyField;
       private HexField plaintextField;
       private HexField ksEncTF, ksMacTF, sscTF;
+      private Collection<AuthListener> listeners;
 
       public MutualAuthPanel() {
          super(new BorderLayout());
+         listeners = new ArrayList<AuthListener>();
          setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
                "Mutual Authenticate"));
          JPanel top = new JPanel(new FlowLayout());
@@ -155,6 +166,10 @@ public class ManualBACPanel extends JPanel
          add(center, BorderLayout.CENTER);
          add(bottom, BorderLayout.SOUTH);
       }
+      
+      public void addAuthenticationListener(AuthListener l) {
+    	  listeners.add(l);
+      }
 
       /**
        * FIXME:
@@ -185,8 +200,21 @@ public class ManualBACPanel extends JPanel
             sscTF.setValue(ssc);
             SecureMessagingWrapper wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
             authService.setWrapper(wrapper);
+            BACEvent event = new BACEvent(authService, rndICC, rndIFD, kICC, kIFD, true);
+            notifyBACPerformed(event);
          } catch (Exception e) {
             e.printStackTrace();
+         }
+      }
+      
+      /**
+       * Notifies listeners about BAC events.
+       * 
+       * @param event BAC event
+       */
+      protected void notifyBACPerformed(BACEvent event) {
+         for (AuthListener l : listeners) {
+            l.performedBAC(event);
          }
       }
    }

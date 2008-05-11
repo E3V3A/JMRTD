@@ -44,6 +44,7 @@ import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
+import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for accessing the LDS.
@@ -53,135 +54,139 @@ import sos.mrtd.SecureMessagingWrapper;
  * @version $Revision$
  */
 public class LDSPanel extends JPanel
-implements ActionListener, AuthListener
+implements AuthListener
 {
-   private static final byte[] ZERO_DATA = new byte[256];
-   private HexField fidTF, offsetTF, leTF;
-   private HexViewPanel hexviewer;
-   private JButton selectButton, readBinaryButton, readNextButton, saveButton;
+	private static final byte[] ZERO_DATA = new byte[256];
+	private HexField fidTF, offsetTF, leTF;
+	private HexViewPanel hexviewer;
+	private JButton selectButton, readBinaryButton, readNextButton, saveButton;
 
-   short offset;
-   int bytesRead;
+	short offset;
+	int bytesRead;
 
-   private PassportApduService service;
-   private SecureMessagingWrapper wrapper;
+	private PassportApduService service;
+	private SecureMessagingWrapper wrapper;
 
-   public LDSPanel(PassportApduService service) {
-      super(new BorderLayout());
-      this.service = service;
-      this.wrapper = null;
-      hexviewer = new HexViewPanel(ZERO_DATA);
-      JPanel north = new JPanel(new FlowLayout());
-      fidTF = new HexField(2);
-      selectButton = new JButton("Select File");
-      selectButton.addActionListener(this);
-      saveButton = new JButton("Save File");
-      saveButton.addActionListener(this);
-      north.add(new JLabel("File: "));
-      north.add(fidTF);
-      north.add(selectButton);
-      north.add(saveButton);
-      JPanel south = new JPanel(new FlowLayout());
-      leTF = new HexField(1);
-      leTF.setValue(0xFF);
-      offsetTF = new HexField(2);
-      readBinaryButton = new JButton("Read Binary");
-      readBinaryButton.addActionListener(this);
-      readNextButton = new JButton("Read Next");
-      readNextButton.addActionListener(this);
-      south.add(new JLabel("Offset: "));
-      south.add(offsetTF);
-      south.add(new JLabel("Length: "));
-      south.add(leTF);
-      south.add(readBinaryButton);
-      south.add(readNextButton);
-      add(north, BorderLayout.NORTH);
-      add(hexviewer, BorderLayout.CENTER);
-      add(south, BorderLayout.SOUTH);
-   }
-   
-   public void actionPerformed(ActionEvent ae) {
-      try {
-         JButton but = (JButton) ae.getSource();
-         if (but == selectButton) {
-            pressedSelectButton();
-         } else if (but == readBinaryButton) {
-            pressedReadBinaryButton();
-         } else if (but == readNextButton) {
-            pressedReadNextButton();
-         } else if (but == saveButton) {
-            pressedSaveButton();
-         }
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
-   }
+	public LDSPanel(PassportApduService service) {
+		super(new BorderLayout());
+		setService(service);
+		this.wrapper = null;
+		hexviewer = new HexViewPanel(ZERO_DATA);
+		JPanel north = new JPanel(new FlowLayout());
+		fidTF = new HexField(2);
+		selectButton = new JButton("Select File");
+		selectButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try { pressedSelectButton(); } catch (CardServiceException cse) { cse.printStackTrace(); }
+			}			
+		});
+		saveButton = new JButton("Save File");
+		saveButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				pressedSaveButton();
+			}			
+		});
+		north.add(new JLabel("File: "));
+		north.add(fidTF);
+		north.add(selectButton);
+		north.add(saveButton);
+		JPanel south = new JPanel(new FlowLayout());
+		leTF = new HexField(1);
+		leTF.setValue(0xFF);
+		offsetTF = new HexField(2);
+		readBinaryButton = new JButton("Read Binary");
+		readBinaryButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			   try { pressedReadBinaryButton(); } catch (CardServiceException cse) { cse.printStackTrace(); }	
+			}
+		});
+		readNextButton = new JButton("Read Next");
+		readNextButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try { pressedReadNextButton(); } catch (CardServiceException cse) { cse.printStackTrace(); }
+			}
+		});
+		south.add(new JLabel("Offset: "));
+		south.add(offsetTF);
+		south.add(new JLabel("Length: "));
+		south.add(leTF);
+		south.add(readBinaryButton);
+		south.add(readNextButton);
+		add(north, BorderLayout.NORTH);
+		add(hexviewer, BorderLayout.CENTER);
+		add(south, BorderLayout.SOUTH);
+	}
 
-   private void pressedSaveButton() throws Exception {
-      JFileChooser chooser = new JFileChooser();
-      chooser.setDialogTitle("Save file");
-      // chooser.setCurrentDirectory(currentDir);
-      chooser.setFileHidingEnabled(false);
-      int n = chooser.showOpenDialog(this);
-      if (n != JFileChooser.APPROVE_OPTION) {
-         System.out.println("DEBUG: select file canceled...");
-         return;
-      }
-      byte[] fidBytes = fidTF.getValue();
-      final short fid = (short) (((fidBytes[0] & 0x000000FF) << 8)
-                                      | (fidBytes[1] & 0x000000FF));
-      final File file = chooser.getSelectedFile();
-      new Thread(new Runnable() {
-         public void run() {
-            try {
-               PassportService s = new PassportService(service);
-               s.setWrapper(wrapper);
-               DataInputStream fileIn = new DataInputStream(s.readFile(fid));
-               byte[] data = new byte[fileIn.available()];
-               fileIn.readFully(data);
-               OutputStream out = new FileOutputStream(file);
-               out.write(data, 0, data.length);
-               out.close();
-            } catch (Exception e) {
-               e.printStackTrace();
-            }
-         }
-      }).start();
-   }
+	public void setService(PassportApduService service) {
+		this.service = service;
+	}
 
-   private void pressedSelectButton() throws Exception {
-      byte[] fid = fidTF.getValue();
-      service.sendSelectFile(wrapper,
-            (short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
-   }
+	private void pressedSaveButton() {
+		JFileChooser chooser = new JFileChooser();
+		chooser.setDialogTitle("Save file");
+		// chooser.setCurrentDirectory(currentDir);
+		chooser.setFileHidingEnabled(false);
+		int n = chooser.showOpenDialog(this);
+		if (n != JFileChooser.APPROVE_OPTION) {
+			System.out.println("DEBUG: select file canceled...");
+			return;
+		}
+		byte[] fidBytes = fidTF.getValue();
+		final short fid = (short) (((fidBytes[0] & 0x000000FF) << 8)
+				| (fidBytes[1] & 0x000000FF));
+		final File file = chooser.getSelectedFile();
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					PassportService s = new PassportService(service);
+					s.setWrapper(wrapper);
+					DataInputStream fileIn = new DataInputStream(s.readFile(fid));
+					byte[] data = new byte[fileIn.available()];
+					fileIn.readFully(data);
+					OutputStream out = new FileOutputStream(file);
+					out.write(data, 0, data.length);
+					out.close();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		}).start();
+	}
 
-   private void pressedReadBinaryButton() throws Exception {
-      bytesRead = 0;
-      int le = leTF.getValue()[0] & 0x000000FF;
-      byte[] offsetBytes = offsetTF.getValue();
-      offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
-                 | (offsetBytes[1] & 0x000000FF));
-      byte[] data = service.sendReadBinary(wrapper, offset, le);
-      remove(hexviewer);
-      hexviewer = new HexViewPanel(data, offset);
-      add(hexviewer, BorderLayout.CENTER);
-      bytesRead = data.length;
-      setVisible(false);
-      setVisible(true);
-      // repaint();
-   }
+	private void pressedSelectButton() throws CardServiceException {
+		byte[] fid = fidTF.getValue();
+		service.sendSelectFile(wrapper,
+				(short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)));
+	}
 
-   private void pressedReadNextButton() throws Exception {
-      offset += bytesRead;
-      offsetTF.setValue(offset & 0x000000000000FFFFL);
-      pressedReadBinaryButton();
-   }
-   
-   public void performedBAC(BACEvent be) {
-      this.wrapper = be.getWrapper();
-   }
-   
-   public void performedAA(AAEvent ae) {
-   }
+	private void pressedReadBinaryButton() throws CardServiceException {
+		bytesRead = 0;
+		int le = leTF.getValue()[0] & 0x000000FF;
+		byte[] offsetBytes = offsetTF.getValue();
+		offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
+				| (offsetBytes[1] & 0x000000FF));
+		byte[] data = service.sendReadBinary(wrapper, offset, le);
+		remove(hexviewer);
+		hexviewer = new HexViewPanel(data, offset);
+		add(hexviewer, BorderLayout.CENTER);
+		bytesRead = data.length;
+		setVisible(false);
+		setVisible(true);
+		// repaint();
+	}
+
+	private void pressedReadNextButton() throws CardServiceException {
+		offset += bytesRead;
+		offsetTF.setValue(offset & 0x000000000000FFFFL);
+		pressedReadBinaryButton();
+	}
+
+	public void performedBAC(BACEvent be) {
+		System.out.println("DEBUG: performedBAC " + be);
+		this.wrapper = be.getWrapper();
+	}
+
+	public void performedAA(AAEvent ae) {
+	}
 }
 

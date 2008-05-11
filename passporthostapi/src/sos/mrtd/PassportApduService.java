@@ -114,23 +114,12 @@ public class PassportApduService implements CardService
       sendSelectApplet();
    }
 
-   public void open(String id) throws CardServiceException {
-      if(!service.isOpen()) {
-         service.open(id);
-      }
-      sendSelectApplet();
-   }
-
    public synchronized boolean isOpen() {
       return service.isOpen();
    }
 
    public void setListenersState(boolean state) {
        service.setListenersState(state);
-   }
-   
-   public String[] getTerminals() {
-      return service.getTerminals();
    }
 
    private void sendSelectApplet() throws CardServiceException {

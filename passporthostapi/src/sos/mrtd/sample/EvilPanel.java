@@ -54,8 +54,7 @@ public class EvilPanel extends JPanel
    public EvilPanel(PassportApduService service)
    throws CardServiceException {
       super(new BorderLayout());
-      this.apduService = service;
-      this.evilService = new EvilService(apduService);
+      setService(service);
 
       JPanel northPanel = new JPanel(new FlowLayout());
       openBackDoorButton = new JButton("Open Back Door");
@@ -92,5 +91,9 @@ public class EvilPanel extends JPanel
       area = new JTextArea(20, 30);
       add(new JScrollPane(area), BorderLayout.CENTER);
    }
-}
 
+   public void setService(PassportApduService service) throws CardServiceException {
+      this.apduService = service;
+      this.evilService = new EvilService(apduService);
+   }
+}

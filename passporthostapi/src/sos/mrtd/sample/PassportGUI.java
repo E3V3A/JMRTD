@@ -42,7 +42,10 @@ import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
+import sos.smartcards.CardEvent;
+import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
+import sos.smartcards.CardTerminalListener;
 
 /**
  * Simple graphical application to demonstrate the
@@ -54,142 +57,158 @@ import sos.smartcards.CardService;
  */
 public class PassportGUI extends JPanel implements PassportListener
 {  
-   public static final File JMRTD_USER_DIR = getApplicationDataDir();
-   
-   private static final String APPLICATION_NAME = "JMRTD (jmrtd.sourceforge.net)";
-   
-   private static final Dimension PREFERRED_SIZE = new Dimension(800, 600);
-   
-   private static final Provider PROVIDER =
-      new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	public static final File JMRTD_USER_DIR = getApplicationDataDir();
 
-   private APDULogPanel log;
-   private JTabbedPane tabbedPane;
+	private static final String APPLICATION_NAME = "JMRTD (jmrtd.sourceforge.net)";
 
-   /**
-    * Constructs the GUI.
-    *
-    * @param arg command line arguments, are ignored for now.
-    */
-   public PassportGUI(String[] arg) {
-      super(new BorderLayout());
-      try {
-         Security.insertProviderAt(PROVIDER, 4);
-         // service = new PassportApduService(new PCSCCardService());
-         JPanel northPanel = new JPanel(new FlowLayout());
-         JLabel blockSizeLabel = new JLabel("   Max. read file block:");
-         JTextField blockSizeText = new JTextField("255");
-         blockSizeText.setEditable(true);
-         blockSizeText.setEnabled(true);
-         blockSizeText.addCaretListener(new CaretListener(){
-            public void caretUpdate(CaretEvent e) {
-                JTextField f = (JTextField)e.getSource();
-                try {
-                  int n = Integer.parseInt(f.getText());
-                  PassportService.maxBlockSize = n;
-                } catch(NumberFormatException nfe) {
-                }
-            }             
-         });
-         northPanel.add(blockSizeLabel);
-         northPanel.add(blockSizeText);
-         add(northPanel, BorderLayout.NORTH);
-         log = new APDULogPanel();
-         add(log, BorderLayout.SOUTH);
+	private static final Dimension PREFERRED_SIZE = new Dimension(800, 600);
 
-         tabbedPane = new JTabbedPane();
-         PassportManager.addPassportListener(this);
-      } catch (Exception e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
-   }
+	private static final Provider PROVIDER =
+		new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-   public void passportInserted(PassportEvent ce) {
-      try {
-         PassportService service = ce.getService();
-         service.addAPDUListener(log);
-         service.open();
+	private APDULogPanel log;
+	private JTabbedPane tabbedPane;
 
-         BACPanel bacPanel = new BACPanel(service);
-         MRZPanel mrzPanel = new MRZPanel(service);
-         FacePanel facePanel = new FacePanel(service);
-         PAPanel paPanel = new PAPanel(service);
-         AAPanel aaPanel = new AAPanel(service);
-         APDUTestPanel apduPanel = new APDUTestPanel(service);
-         bacPanel.addAuthenticationListener(mrzPanel);
-         bacPanel.addAuthenticationListener(facePanel);
-         bacPanel.addAuthenticationListener(paPanel);
-         bacPanel.addAuthenticationListener(aaPanel);
-         tabbedPane.setPreferredSize(new Dimension(600, 400));
-         tabbedPane.addTab("BAC", bacPanel);
-         tabbedPane.addTab("MRZ", mrzPanel);
-         tabbedPane.addTab("Face", facePanel);
-         tabbedPane.addTab("PA", paPanel);
-         tabbedPane.addTab("AA", aaPanel);
-         tabbedPane.addTab("APDU test", apduPanel);
-         add(tabbedPane, BorderLayout.CENTER);
+	/**
+	 * Constructs the GUI.
+	 *
+	 * @param arg command line arguments, are ignored for now.
+	 */
+	public PassportGUI(String[] arg) {
+		super(new BorderLayout());
+		try {
+			Security.insertProviderAt(PROVIDER, 4);
+			// service = new PassportApduService(new PCSCCardService());
+			JPanel northPanel = new JPanel(new FlowLayout());
+			JLabel blockSizeLabel = new JLabel("   Max. read file block:");
+			JTextField blockSizeText = new JTextField("255");
+			blockSizeText.setEditable(true);
+			blockSizeText.setEnabled(true);
+			blockSizeText.addCaretListener(new CaretListener(){
+				public void caretUpdate(CaretEvent e) {
+					JTextField f = (JTextField)e.getSource();
+					try {
+						int n = Integer.parseInt(f.getText());
+						PassportService.maxBlockSize = n;
+					} catch(NumberFormatException nfe) {
+					}
+				}             
+			});
+			northPanel.add(blockSizeLabel);
+			northPanel.add(blockSizeText);
+			add(northPanel, BorderLayout.NORTH);
+			log = new APDULogPanel();
+			add(log, BorderLayout.SOUTH);
 
-      } catch (Exception ex) {
-         ex.printStackTrace();
-      }
-      setEnabled(true);
-      revalidate();
-   }
+			tabbedPane = new JTabbedPane();
+			PassportManager pm = PassportManager.getInstance();
+			pm.addPassportListener(this);
+			
+			/* DEBUG: For debugging! */
+			CardManager cm = CardManager.getInstance();
+			cm.addCardTerminalListener(new CardTerminalListener() {
 
-   public void passportRemoved(PassportEvent ce) {
-      CardService service = ce.getService();
-      if (service != null) {
-         service.close();
-      }
-      tabbedPane.removeAll();
-      setEnabled(false);
-      revalidate();
-   }
-   
-   public void setEnabled(boolean enabled) {
-      super.setEnabled(enabled);
-      tabbedPane.setEnabled(enabled);
-   }
+				public void cardInserted(CardEvent ce) {
+					System.out.println("DEBUG: " + ce);	
+				}
 
-   public Dimension getPreferredSize() {
-      return PREFERRED_SIZE;
-   }
-   
-   private static File getApplicationDataDir() {
-	   String osName = System.getProperty("os.name").toLowerCase();
-	   String userHomeName = System.getProperty("user.home");
-	   if (osName.indexOf("windows") > -1) {
-		   String appDataDirName = System.getenv("APPDATA");   
-		   File appDataDir = appDataDirName != null ? new File(appDataDirName) : new File (userHomeName, "Application Data");
-		   File jmrtdDir = new File(appDataDir, "JMRTD");
-		   if (!jmrtdDir.isDirectory()) { jmrtdDir.mkdirs(); }
-		   return jmrtdDir;
-	   } else {
-		   File jmrtdDir = new File(userHomeName, ".jmrtd");
-		   if (!jmrtdDir.isDirectory()) {
-			   jmrtdDir.mkdirs();
-		   }
-		   return jmrtdDir;
-	   }
-   }
+				public void cardRemoved(CardEvent ce) {
+					System.out.println("DEBUG: " + ce);
+				}
 
-   /**
-    * Main method creates a GUI instance and puts it in a frame.
-    *
-    * @param arg command line arguments.
-    */
-   public static void main(String[] arg) {
-      try {
-         PassportGUI gui = new PassportGUI(arg);
-         JFrame frame = new JFrame(APPLICATION_NAME);
-         frame.getContentPane().add(gui);
-         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-         frame.pack();
-         frame.setVisible(true);
-      } catch (Exception e) {
-         e.printStackTrace();
-         System.exit(1);
-      }
-   }
+			});
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
+
+	public void passportInserted(PassportEvent ce) {
+		try {
+			PassportService service = ce.getService();
+			service.addAPDUListener(log);
+			service.open();
+
+			BACPanel bacPanel = new BACPanel(service);
+			MRZPanel mrzPanel = new MRZPanel(service);
+			FacePanel facePanel = new FacePanel(service);
+			PAPanel paPanel = new PAPanel(service);
+			AAPanel aaPanel = new AAPanel(service);
+			APDUTestPanel apduPanel = new APDUTestPanel(service);
+			bacPanel.addAuthenticationListener(mrzPanel);
+			bacPanel.addAuthenticationListener(facePanel);
+			bacPanel.addAuthenticationListener(paPanel);
+			bacPanel.addAuthenticationListener(aaPanel);
+			tabbedPane.setPreferredSize(new Dimension(600, 400));
+			tabbedPane.addTab("BAC", bacPanel);
+			tabbedPane.addTab("MRZ", mrzPanel);
+			tabbedPane.addTab("Face", facePanel);
+			tabbedPane.addTab("PA", paPanel);
+			tabbedPane.addTab("AA", aaPanel);
+			tabbedPane.addTab("APDU test", apduPanel);
+			add(tabbedPane, BorderLayout.CENTER);
+
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		setEnabled(true);
+		revalidate();
+	}
+
+	public void passportRemoved(PassportEvent ce) {
+		CardService service = ce.getService();
+		if (service != null) {
+			service.close();
+		}
+		tabbedPane.removeAll();
+		setEnabled(false);
+		revalidate();
+	}
+
+	public void setEnabled(boolean enabled) {
+		super.setEnabled(enabled);
+		tabbedPane.setEnabled(enabled);
+	}
+
+	public Dimension getPreferredSize() {
+		return PREFERRED_SIZE;
+	}
+
+	private static File getApplicationDataDir() {
+		String osName = System.getProperty("os.name").toLowerCase();
+		String userHomeName = System.getProperty("user.home");
+		if (osName.indexOf("windows") > -1) {
+			String appDataDirName = System.getenv("APPDATA");   
+			File appDataDir = appDataDirName != null ? new File(appDataDirName) : new File (userHomeName, "Application Data");
+			File jmrtdDir = new File(appDataDir, "JMRTD");
+			if (!jmrtdDir.isDirectory()) { jmrtdDir.mkdirs(); }
+			return jmrtdDir;
+		} else {
+			File jmrtdDir = new File(userHomeName, ".jmrtd");
+			if (!jmrtdDir.isDirectory()) {
+				jmrtdDir.mkdirs();
+			}
+			return jmrtdDir;
+		}
+	}
+
+	/**
+	 * Main method creates a GUI instance and puts it in a frame.
+	 *
+	 * @param arg command line arguments.
+	 */
+	public static void main(String[] arg) {
+		try {
+			PassportGUI gui = new PassportGUI(arg);
+			JFrame frame = new JFrame(APPLICATION_NAME);
+			frame.getContentPane().add(gui);
+			frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			frame.pack();
+			frame.setVisible(true);
+		} catch (Exception e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
+	}
 }

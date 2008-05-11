@@ -46,9 +46,10 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
+import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardService;
+import sos.smartcards.CardServiceException;
 
 /**
  * GUI component for accessing the face image on the passport.
@@ -67,12 +68,13 @@ implements Runnable, ActionListener, AuthListener
    private ImagePanel ipanel;
    private JButton readButton;
    private JTextArea infoArea;
-   private CardService service;
+   private PassportApduService apduService;
+   private PassportService passportService;
    private SecureMessagingWrapper wrapper;
 
-   public FacePanel(CardService service) {
+   public FacePanel(PassportApduService service) throws CardServiceException {
       super(new BorderLayout());
-      this.service = service;
+      setService(service);
       this.wrapper = null;
       JPanel buttonPanel = new JPanel(new FlowLayout());
       readButton = new JButton("Read from DG2");
@@ -115,6 +117,11 @@ implements Runnable, ActionListener, AuthListener
       add(westPanel, BorderLayout.WEST);
       add(new JScrollPane(ipanel), BorderLayout.CENTER);
    }
+   
+   public void setService(PassportApduService service) throws CardServiceException {
+	   this.apduService = service;
+	   this.passportService = new PassportService(service);
+   }
 
    public void actionPerformed(ActionEvent ae) {
       ipanel.clearImage();
@@ -125,9 +132,8 @@ implements Runnable, ActionListener, AuthListener
    public void run() {
       try {
          readButton.setEnabled(false);
-         PassportService s = new PassportService(service);
-         s.setWrapper(wrapper);
-         final InputStream in = s.readFile(PassportService.EF_DG2);
+         passportService.setWrapper(wrapper);
+         final InputStream in = passportService.readFile(PassportService.EF_DG2);
          (new Thread(new Runnable() {
             public void run() {
                try {

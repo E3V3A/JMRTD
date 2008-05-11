@@ -122,15 +122,6 @@ public class PassportAuthService extends PassportApduService
       return (state != SESSION_STOPPED_STATE);
    }
 
-
-   public void open(String id) throws CardServiceException {
-      if (state == SESSION_STARTED_STATE) {
-         return;
-      }
-      super.open(id);
-      state = SESSION_STARTED_STATE;
-   }
-
    /**
     * Performs the <i>Basic Access Control</i> protocol.
     *

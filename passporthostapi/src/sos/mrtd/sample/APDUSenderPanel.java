@@ -70,7 +70,7 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
 
    public APDUSenderPanel(CardService service) {
       super(new GridLayout(3, 1));
-      this.service = service;
+      setService(service);
       this.wrapper =  null;
       JPanel beginPanel = new JPanel(new FlowLayout());
       beginPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER,
@@ -111,6 +111,10 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
       add(beginPanel);
       add(endPanel);
       add(controlPanel);
+   }
+   
+   public void setService(CardService service) {
+	      this.service = service;
    }
 
    public void actionPerformed(ActionEvent ae) {
