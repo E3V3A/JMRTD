@@ -60,37 +60,41 @@ public class CardManager
 		while (hasNoListeners()) {
 			wait();
 		}
-		try {
-			for (CardTerminal terminal: terminals) {
-				boolean wasCardPresent = false;
-				boolean isCardPresent = false;
-				CardService service = null;
-				if (terminalServices.containsKey(terminal)) {
-					service = terminalServices.get(terminal);
-					wasCardPresent = true;
-				}
-				if (service == null) {
-					try {
-						if (terminal.isCardPresent()) {
-							service = new PCSCCardService(terminal);
-						}
-					} catch (Exception e) {
-						if (service != null) { service.close(); }
-					}
-				}
-				isCardPresent = terminal.isCardPresent();
+		for (CardTerminal terminal: terminals) {
+			poll(terminal);
+		}
+	}
 
-				if (wasCardPresent && !isCardPresent) {
-					if (service != null) {
-						notifyCardRemoved(service);
-						service.close();
+	private void poll(CardTerminal terminal) {
+		try {
+			boolean wasCardPresent = false;
+			boolean isCardPresent = false;
+			CardService service = null;
+			if (terminalServices.containsKey(terminal)) {
+				service = terminalServices.get(terminal);
+				wasCardPresent = true;
+			}
+			if (service == null) {
+				try {
+					if (terminal.isCardPresent()) {
+						service = new PCSCCardService(terminal);
 					}
-					terminalServices.remove(terminal);
-				} else if (!wasCardPresent && isCardPresent) {
-					if (service != null) {
-						terminalServices.put(terminal, service);
-						notifyCardInserted(service);
-					}
+				} catch (Exception e) {
+					if (service != null) { service.close(); }
+				}
+			}
+			isCardPresent = terminal.isCardPresent();
+
+			if (wasCardPresent && !isCardPresent) {
+				if (service != null) {
+					notifyCardRemoved(service);
+					service.close();
+				}
+				terminalServices.remove(terminal);
+			} else if (!wasCardPresent && isCardPresent) {
+				if (service != null) {
+					terminalServices.put(terminal, service);
+					notifyCardInserted(service);
 				}
 			}
 		} catch (CardException ce) {
