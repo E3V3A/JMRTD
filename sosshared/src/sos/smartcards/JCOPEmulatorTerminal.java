@@ -71,6 +71,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		this.hostName = hostName;
 		this.port = port;
 		jcTerminal = new RemoteJCTerminal();
+		jcTerminal.init(hostName.trim() + ":" + port);
 		heartBeat = System.currentTimeMillis();
 	}
 
@@ -104,8 +105,6 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		return getName();
 	}
 
-	
-	
 	/**
 	 * Determines whether a card is present.
 	 * 
@@ -116,24 +115,26 @@ public class JCOPEmulatorTerminal extends CardTerminal
 			if (jcTerminal == null) { return false; }
 			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
 			try {
-				heartBeat = System.currentTimeMillis();
-				jcTerminal.init(hostName.trim() + ":" + port);
+				System.out.println("DEBUG: enter JCOP isCardPresent");
 				jcTerminal.open();	
 				switch(jcTerminal.getState()) {
-				   case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
-				   case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
-				   case JCTerminal.ERROR: wasCardPresent = false; break;
-				   default: wasCardPresent = false; break;
+				case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
+				case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
+				case JCTerminal.ERROR: wasCardPresent = false; break;
+				default: wasCardPresent = false; break;
 				}
-			} catch (Exception e1) {
-				e1.printStackTrace();
+				heartBeat = System.currentTimeMillis();
+				System.out.println("DEBUG: HIER 1");
+			} catch (Throwable e1) {
+				System.out.println("DEBUG: HIER 2");
 				wasCardPresent = false;
-				try { jcTerminal.close(); } catch (Exception e2) { }
+//				try { jcTerminal.close(); } catch (Exception e2) { }
 			}
 		}
+		System.out.println("DEBUG: exit JCOP isCardPresent");
 		return wasCardPresent;
 	}
-	
+
 	/**
 	 * Waits for a card to be present.
 	 * 
@@ -256,7 +257,6 @@ public class JCOPEmulatorTerminal extends CardTerminal
 			synchronized (terminal) {
 				try {
 					jcTerminal.close();
-					jcTerminal = null;
 				} catch (JCException jce) {
 					throw new CardException(
 							"Couldn't establish connection to the emulator: "
@@ -302,6 +302,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 					byte[] capdu = command.getBytes();
 					byte[] rapdu = jcTerminal.send(0, capdu, 0, capdu.length);
 					ResponseAPDU ourResponseAPDU = new ResponseAPDU(rapdu);
+					heartBeat = System.currentTimeMillis();
 					return ourResponseAPDU;
 				} catch (Exception e) {
 					throw (e instanceof CardException) ? (CardException)e : new CardException(e.toString());
