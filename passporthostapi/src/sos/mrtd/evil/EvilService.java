@@ -27,7 +27,7 @@ import java.security.GeneralSecurityException;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
@@ -47,7 +47,7 @@ import sos.smartcards.CardServiceException;
  *
  * @version $Revision: 118 $
  */
-public class EvilService extends PassportAuthService
+public class EvilService extends PassportService
 {
    /**
     * Creates a new passport service for accessing the passport.

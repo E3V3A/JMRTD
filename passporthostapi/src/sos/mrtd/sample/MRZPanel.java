@@ -58,95 +58,98 @@ import sos.smartcards.CardServiceException;
 public class MRZPanel extends JPanel
 implements Runnable, ActionListener, AuthListener
 {
+	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 14);
+	private static final Border PANEL_BORDER =
+		BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+	private static final SimpleDateFormat SDF = new SimpleDateFormat(
+			"MMMM dd, yyyy");
 
-   private static final Font FONT = new Font("Monospaced", Font.PLAIN, 14);
-   private static final Border PANEL_BORDER =
-      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
-   private static final SimpleDateFormat SDF = new SimpleDateFormat(
-   "MMMM dd, yyyy");
+	private MRZInfo info;
+	private JTextArea infoArea;
+	private JPanel infoPanel;
+	private JButton readButton;
+	private PassportService service;
+	private SecureMessagingWrapper wrapper;
 
-   private MRZInfo info;
-   private JTextArea infoArea;
-   private JPanel infoPanel;
-   private JButton readButton;
-   private PassportService service;
-   private SecureMessagingWrapper wrapper;
+	public MRZPanel(PassportService service) throws CardServiceException {
+		super(new BorderLayout());
+		setService(service);
+		JPanel buttonPanel = new JPanel(new FlowLayout());
+		readButton = new JButton("Read from DG1");
+		readButton.addActionListener(this);
+		buttonPanel.add(readButton);
+		buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
+		infoArea = new JTextArea(20, 10);
+		infoArea.setEditable(false);
+		infoArea.setFont(FONT);
+		infoPanel = new JPanel(new GridLayout(9, 2));
+		add(buttonPanel, BorderLayout.NORTH);
+		// add(infoPanel, BorderLayout.CENTER);
+		add(new JScrollPane(infoArea), BorderLayout.CENTER);
+	}
 
-   public MRZPanel(CardService service) throws CardServiceException {
-      super(new BorderLayout());
-      this.service = new PassportService(service);
-      JPanel buttonPanel = new JPanel(new FlowLayout());
-      readButton = new JButton("Read from DG1");
-      readButton.addActionListener(this);
-      buttonPanel.add(readButton);
-      buttonPanel.setBorder(BorderFactory.createTitledBorder(PANEL_BORDER, "MRZ"));
-      infoArea = new JTextArea(20, 10);
-      infoArea.setEditable(false);
-      infoArea.setFont(FONT);
-      infoPanel = new JPanel(new GridLayout(9, 2));
-      add(buttonPanel, BorderLayout.NORTH);
-      // add(infoPanel, BorderLayout.CENTER);
-      add(new JScrollPane(infoArea), BorderLayout.CENTER);
-   }
+	public void setService(PassportService service) {
+		this.service = service;
+	}
 
-   public void actionPerformed(ActionEvent ae) {
-      (new Thread(this)).start();
-   }
+	public void actionPerformed(ActionEvent ae) {
+		(new Thread(this)).start();
+	}
 
-   public void run() {
-      try {
-         readButton.setEnabled(false);
-         PassportService s = new PassportService(service);
-         s.setWrapper(wrapper);
-         DG1File dg1 =
-            new DG1File(s.readFile(PassportService.EF_DG1));
-         info = dg1.getMRZInfo();
-         infoArea.setText(info.toString());
-         infoArea.append("\n");
-         infoArea.append("DocumentType: \"" + info.getDocumentType() + "\"\n");
-         infoArea.append("DocumentNumber: \"" + info.getDocumentNumber() + "\"\n");
-         infoArea.append("Nationality: \"" + info.getNationality() + "\"\n");
-         infoArea.append("IssuingState: \"" + info.getIssuingState() + "\"\n");
-         infoArea.append("PersonalNumber: \"" + info.getPersonalNumber() + "\"\n");
-         infoArea.append("PrimaryIdentifier: \"" + info.getPrimaryIdentifier() + "\"\n");
-         String[] firstNames = info.getSecondaryIdentifiers();
-         for (int i = 0; i < firstNames.length; i++) {
-            infoArea.append("SecondaryIdentifier " + (i + 1) + ": \"" + firstNames[i] + "\"\n");
-         }
-         infoArea.append("DateOfBirth: \"" + SDF.format(info.getDateOfBirth()) + "\"\n");
-         infoArea.append("DateOfExpiry: \"" + SDF.format(info.getDateOfExpiry()) + "\"\n");
-         infoArea.append("Gender: \"" + info.getGender() + "\"\n");
-         
-//         infoPanel.removeAll();
-//         infoPanel.add(new JLabel("DocumentType: "));
-//         infoPanel.add(new JLabel(Integer.toString(info.getDocumentType())));
-//         infoPanel.add(new JLabel("DocumentNumber: "));
-//         infoPanel.add(new JLabel(info.getDocumentNumber()));
-//         infoPanel.add(new JLabel("Nationality: "));
-//         infoPanel.add(new JLabel(info.getNationality()));
-//         infoPanel.add(new JLabel("IssuingState: "));
-//         infoPanel.add(new JLabel(info.getIssuingState()));
-//         infoPanel.add(new JLabel("PersonalNumber: "));
-//         infoPanel.add(new JLabel(info.getPersonalNumber()));
-//         infoPanel.add(new JLabel("PrimaryIdentifier: "));
-//         infoPanel.add(new JLabel(info.getPrimaryIdentifier()));
-//         infoPanel.add(new JLabel("DateOfBirth: "));
-//         infoPanel.add(new JLabel(SDF.format(info.getDateOfBirth())));
-//         infoPanel.add(new JLabel("DateOfExpiry: "));
-//         infoPanel.add(new JLabel(SDF.format(info.getDateOfExpiry())));
-//         infoPanel.add(new JLabel("Gender: "));
-//         infoPanel.add(new JLabel(info.getGender().toString()));
-      } catch (Exception e) {
-         e.printStackTrace();
-      } finally {
-         readButton.setEnabled(true);
-      }
-   }
+	public void run() {
+		try {
+			readButton.setEnabled(false);
+			PassportService s = new PassportService(service);
+			s.setWrapper(wrapper);
+			DG1File dg1 =
+				new DG1File(s.readFile(PassportService.EF_DG1));
+			info = dg1.getMRZInfo();
+			infoArea.setText(info.toString());
+			infoArea.append("\n");
+			infoArea.append("DocumentType: \"" + info.getDocumentType() + "\"\n");
+			infoArea.append("DocumentNumber: \"" + info.getDocumentNumber() + "\"\n");
+			infoArea.append("Nationality: \"" + info.getNationality() + "\"\n");
+			infoArea.append("IssuingState: \"" + info.getIssuingState() + "\"\n");
+			infoArea.append("PersonalNumber: \"" + info.getPersonalNumber() + "\"\n");
+			infoArea.append("PrimaryIdentifier: \"" + info.getPrimaryIdentifier() + "\"\n");
+			String[] firstNames = info.getSecondaryIdentifiers();
+			for (int i = 0; i < firstNames.length; i++) {
+				infoArea.append("SecondaryIdentifier " + (i + 1) + ": \"" + firstNames[i] + "\"\n");
+			}
+			infoArea.append("DateOfBirth: \"" + SDF.format(info.getDateOfBirth()) + "\"\n");
+			infoArea.append("DateOfExpiry: \"" + SDF.format(info.getDateOfExpiry()) + "\"\n");
+			infoArea.append("Gender: \"" + info.getGender() + "\"\n");
 
-   public void performedBAC(BACEvent be) {
-      this.wrapper = be.getWrapper();
-   }
+//			infoPanel.removeAll();
+//			infoPanel.add(new JLabel("DocumentType: "));
+//			infoPanel.add(new JLabel(Integer.toString(info.getDocumentType())));
+//			infoPanel.add(new JLabel("DocumentNumber: "));
+//			infoPanel.add(new JLabel(info.getDocumentNumber()));
+//			infoPanel.add(new JLabel("Nationality: "));
+//			infoPanel.add(new JLabel(info.getNationality()));
+//			infoPanel.add(new JLabel("IssuingState: "));
+//			infoPanel.add(new JLabel(info.getIssuingState()));
+//			infoPanel.add(new JLabel("PersonalNumber: "));
+//			infoPanel.add(new JLabel(info.getPersonalNumber()));
+//			infoPanel.add(new JLabel("PrimaryIdentifier: "));
+//			infoPanel.add(new JLabel(info.getPrimaryIdentifier()));
+//			infoPanel.add(new JLabel("DateOfBirth: "));
+//			infoPanel.add(new JLabel(SDF.format(info.getDateOfBirth())));
+//			infoPanel.add(new JLabel("DateOfExpiry: "));
+//			infoPanel.add(new JLabel(SDF.format(info.getDateOfExpiry())));
+//			infoPanel.add(new JLabel("Gender: "));
+//			infoPanel.add(new JLabel(info.getGender().toString()));
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			readButton.setEnabled(true);
+		}
+	}
 
-   public void performedAA(AAEvent ae) {
-   }
+	public void performedBAC(BACEvent be) {
+		this.wrapper = be.getWrapper();
+	}
+
+	public void performedAA(AAEvent ae) {
+	}
 }

@@ -42,7 +42,7 @@ import sos.gui.HexField;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportAuthService;
+import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.Util;
 import sos.smartcards.CardServiceException;
@@ -67,7 +67,7 @@ public class ManualBACPanel extends JPanel
    private long ssc;
 
    private PassportApduService apduService;
-   private PassportAuthService authService;
+   private PassportService authService;
 
    public ManualBACPanel(PassportApduService service) throws CardServiceException {
       super(new GridLayout(3,1));
@@ -81,7 +81,7 @@ public class ManualBACPanel extends JPanel
    
    public void setService(PassportApduService service) throws CardServiceException {
 	      this.apduService = service;
-	      this.authService = new PassportAuthService(service);
+	      this.authService = new PassportService(service);
    }
 
    public void addAuthenticationListener(AuthListener l) {

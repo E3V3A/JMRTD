@@ -41,7 +41,6 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG15File;
 import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportAuthService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardServiceException;
@@ -64,7 +63,6 @@ implements AuthListener
    private JButton readPubKeyButton, aaButton;
 
    private PassportApduService apduService;
-   private PassportAuthService authService;
    private PassportService passportService;
    
    private SecureMessagingWrapper wrapper;
@@ -75,7 +73,6 @@ implements AuthListener
    throws CardServiceException {
       super(new BorderLayout());
       setService(service);
-      this.passportService = new PassportService(authService);
       this.wrapper = null;
       JPanel buttonPanel = new JPanel(new FlowLayout());
       readPubKeyButton = new JButton("Read Public Key");
@@ -97,7 +94,7 @@ implements AuthListener
       aaButton.addActionListener(new ActionListener() {
          public void actionPerformed(ActionEvent ae) {
             try {
-               if (authService.doAA(pubkey)) {
+               if (passportService.doAA(pubkey)) {
                   area.append(" --> AA succeeded!\n");
                   return;
                }
@@ -115,12 +112,11 @@ implements AuthListener
    
    public void setService(PassportApduService service) throws CardServiceException {
 	   this.apduService = service;
-	   this.authService = new PassportAuthService(apduService);	
+	   this.passportService = new PassportService(apduService);	
    }
 
 public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper();
-      authService.setWrapper(wrapper);
       passportService.setWrapper(wrapper);
    }
    

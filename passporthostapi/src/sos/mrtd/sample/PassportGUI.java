@@ -105,18 +105,16 @@ public class PassportGUI extends JPanel implements PassportListener
 			pm.addPassportListener(this);
 			
 			/* DEBUG: For debugging! */
-			CardManager cm = CardManager.getInstance();
-			cm.addCardTerminalListener(new CardTerminalListener() {
-
-				public void cardInserted(CardEvent ce) {
-					System.out.println("DEBUG: " + ce);	
-				}
-
-				public void cardRemoved(CardEvent ce) {
-					System.out.println("DEBUG: " + ce);
-				}
-
-			});
+//			CardManager cm = CardManager.getInstance();
+//			cm.addCardTerminalListener(new CardTerminalListener() {
+//				public void cardInserted(CardEvent ce) {
+//					System.out.println("DEBUG: " + ce);	
+//				}
+//
+//				public void cardRemoved(CardEvent ce) {
+//					System.out.println("DEBUG: " + ce);
+//				}
+//			});
 			
 		} catch (Exception e) {
 			e.printStackTrace();

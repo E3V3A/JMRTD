@@ -33,7 +33,7 @@ import java.util.EventObject;
  */
 public class BACEvent extends EventObject
 {	
-   private PassportAuthService service;
+   private PassportService service;
    private boolean success;
    private byte[] rndICC, rndIFD, kICC, kIFD;
    
@@ -48,7 +48,7 @@ public class BACEvent extends EventObject
     * @param kIFD key material provided by IFD
     * @param success status of protocol
     */
-   public BACEvent(PassportAuthService service,
+   public BACEvent(PassportService service,
 		   byte[] rndICC, byte[] rndIFD, byte[] kICC, byte[] kIFD,
 		   boolean success) {
 	   super(service);
@@ -116,7 +116,7 @@ public class BACEvent extends EventObject
       return rndIFD;
    }
 
-   public PassportAuthService getService() {
+   public PassportService getService() {
       return service;
    }
 }
