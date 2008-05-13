@@ -1,5 +1,6 @@
 /*
  * CREF driver for javax.smartcardio framework.
+
  * Copyright (C) 2008  Martijn Oostdijk
  *
  * This program is free software: you can redistribute it and/or modify
@@ -312,9 +313,9 @@ public class CREFEmulatorTerminal extends CardTerminal
 		public ResponseAPDU transmit(CommandAPDU command) throws CardException {
 			synchronized (terminal) {
 				try {
-					com.sun.javacard.apduio.Apdu theirApdu = setCommand(command);
+					com.sun.javacard.apduio.Apdu theirApdu = translateCommand(command);
 					cad.exchangeApdu(theirApdu);
-					ResponseAPDU ourResponseAPDU = getResponse(theirApdu);
+					ResponseAPDU ourResponseAPDU = translateResponse(theirApdu);
 					return ourResponseAPDU;
 				} catch (IOException ioe) {
 					throw new CardException(ioe.toString());
@@ -326,7 +327,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 			}
 		}
 
-		private com.sun.javacard.apduio.Apdu setCommand(CommandAPDU ourApdu) {
+		private com.sun.javacard.apduio.Apdu translateCommand(CommandAPDU ourApdu) {
 			com.sun.javacard.apduio.Apdu theirApdu = new com.sun.javacard.apduio.Apdu();
 			byte[] buffer = ourApdu.getBytes();
 			int len = buffer.length;
@@ -361,7 +362,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 			return theirApdu;
 		}
 
-		private ResponseAPDU getResponse(com.sun.javacard.apduio.Apdu theirApdu) {
+		private ResponseAPDU translateResponse(com.sun.javacard.apduio.Apdu theirApdu) {
 			int len = theirApdu.getDataOut().length;
 			byte[] rapdu = new byte[len + 2];
 			System.arraycopy(theirApdu.getDataOut(), 0, rapdu, 0, len);

@@ -115,7 +115,6 @@ public class JCOPEmulatorTerminal extends CardTerminal
 			if (jcTerminal == null) { return false; }
 			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
 			try {
-				System.out.println("DEBUG: enter JCOP isCardPresent");
 				jcTerminal.open();	
 				switch(jcTerminal.getState()) {
 				case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
@@ -124,14 +123,11 @@ public class JCOPEmulatorTerminal extends CardTerminal
 				default: wasCardPresent = false; break;
 				}
 				heartBeat = System.currentTimeMillis();
-				System.out.println("DEBUG: HIER 1");
 			} catch (Throwable e1) {
-				System.out.println("DEBUG: HIER 2");
 				wasCardPresent = false;
 //				try { jcTerminal.close(); } catch (Exception e2) { }
 			}
 		}
-		System.out.println("DEBUG: exit JCOP isCardPresent");
 		return wasCardPresent;
 	}
 

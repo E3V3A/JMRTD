@@ -1,5 +1,6 @@
 /*
  * ACR 120 USB driver for javax.smartcardio framework.
+
  * Copyright (C) 2008  Martijn Oostdijk
  *
  * This program is free software: you can redistribute it and/or modify

@@ -1,12 +1,31 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2008  Martijn Oostdijk
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ * $Id: $
+ */
+
 package sos.smartcards;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -19,7 +38,7 @@ import javax.smartcardio.TerminalFactory;
  * Ideally this should be the only place where low level CardService
  * instances are created.
  * 
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
@@ -28,7 +47,6 @@ public class CardManager
 	private static final CardManager INSTANCE = new CardManager();
 	private static final int POLL_INTERVAL = 200;
 
-	private Map<CardTerminal, CardService> terminalServices;
 	private Collection<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
 
@@ -36,70 +54,15 @@ public class CardManager
 		try {
 			listeners = new ArrayList<CardTerminalListener>();
 			terminals = new HashSet<CardTerminal>();
-			terminalServices = new Hashtable<CardTerminal, CardService>();
 			addTerminals();
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
 			ex.printStackTrace();
 		}
-		(new Thread(new Runnable() {
-			public void run() {
-				try {
-					while (true) {
-						poll();
-						Thread.sleep(POLL_INTERVAL);
-					}
-				} catch (InterruptedException ie) {
-					// NOTE: interrupted during blocked state, so quit running
-				}
-			}
-		})).start();
-	}
 
-	private synchronized void poll() throws InterruptedException {
-		while (hasNoListeners()) {
-			wait();
-		}
+		/* For each terminal start a polling thread. */
 		for (CardTerminal terminal: terminals) {
-			poll(terminal);
-		}
-	}
-
-	private void poll(CardTerminal terminal) {
-		try {
-			boolean wasCardPresent = false;
-			boolean isCardPresent = false;
-			CardService service = null;
-			if (terminalServices.containsKey(terminal)) {
-				service = terminalServices.get(terminal);
-				wasCardPresent = true;
-			}
-			if (service == null) {
-				try {
-					if (terminal.isCardPresent()) {
-						service = new PCSCCardService(terminal);
-					}
-				} catch (Exception e) {
-					if (service != null) { service.close(); }
-				}
-			}
-			isCardPresent = terminal.isCardPresent();
-
-			if (wasCardPresent && !isCardPresent) {
-				if (service != null) {
-					notifyCardRemoved(service);
-					service.close();
-				}
-				terminalServices.remove(terminal);
-			} else if (!wasCardPresent && isCardPresent) {
-				if (service != null) {
-					terminalServices.put(terminal, service);
-					notifyCardInserted(service);
-				}
-			}
-		} catch (CardException ce) {
-			// NOTE: remain in same state?!?
-			ce.printStackTrace();
+			(new Thread(new TerminalPoller(terminal))).start();
 		}
 	}
 
@@ -110,7 +73,7 @@ public class CardManager
 
 			/* Our own factories for 'special' terminals. */
 			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
-//			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
+			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
 		} catch (NoSuchAlgorithmException nsae) {
 			/* Listing other readers failed. */
 			nsae.printStackTrace();
@@ -158,5 +121,66 @@ public class CardManager
 
 	public static CardManager getInstance() {
 		return INSTANCE;
+	}
+
+	private class TerminalPoller implements Runnable
+	{
+		private CardTerminal terminal;
+		private CardService service;
+
+		public TerminalPoller(CardTerminal terminal) {
+			this.terminal = terminal;
+			this.service = null;
+		}
+
+		public void run() {
+			try {
+				while (true) {
+					if (hasNoListeners()) {
+						synchronized(INSTANCE) {
+							while (hasNoListeners()) {
+								INSTANCE.wait();
+							}
+						}
+					}
+					try {
+						boolean wasCardPresent = false;
+						boolean isCardPresent = false;
+						if (service != null) {
+							wasCardPresent = true;
+						} else {
+							try {
+								if (terminal.isCardPresent()) {
+									service = new PCSCCardService(terminal);
+								}
+							} catch (Exception e) {
+								if (service != null) { service.close(); }
+							}
+						}
+						isCardPresent = terminal.isCardPresent();
+
+						if (wasCardPresent && !isCardPresent) {
+							if (service != null) {
+								notifyCardRemoved(service);
+								service.close();
+							}
+							service = null;
+						} else if (!wasCardPresent && isCardPresent) {
+							if (service != null) {
+								notifyCardInserted(service);
+							}
+						}
+					} catch (CardException ce) {
+						// NOTE: remain in same state?!?
+						ce.printStackTrace();
+					} finally {
+						Thread.sleep(POLL_INTERVAL);
+					}
+				}
+			} catch (InterruptedException ie) {
+				/* NOTE: This ends thread when interrupted. */
+			}
+
+		}
 	}
 }
