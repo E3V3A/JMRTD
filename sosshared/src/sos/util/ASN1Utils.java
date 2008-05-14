@@ -24,6 +24,9 @@ package sos.util;
 
 import java.io.ByteArrayOutputStream;
 
+/**
+ * FIXME: Do we really need this?
+ */
 public class ASN1Utils {
     public static byte[] lengthId(int dataLength) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
