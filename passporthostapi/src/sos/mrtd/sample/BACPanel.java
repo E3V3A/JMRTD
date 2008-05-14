@@ -53,7 +53,7 @@ public class BACPanel extends JPanel
 
    private JButton doBACButton;
    private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
-   private BACDatabase bacDB = new BACDatabase();
+   private BACStore bacDB = new BACStore();
 
    private PassportService service;
 

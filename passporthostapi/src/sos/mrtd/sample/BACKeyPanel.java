@@ -31,7 +31,7 @@ public class BACKeyPanel extends JPanel
    private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
    private HexField kEncTF, kMacTF;
 
-   private BACDatabase bacDB = new BACDatabase();
+   private BACStore bacDB = new BACStore();
 
    public BACKeyPanel(boolean showDerivedKeys) {
       super(new BorderLayout());

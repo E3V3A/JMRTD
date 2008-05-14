@@ -346,8 +346,8 @@ public class PassportPersoService extends PassportApduService {
 
       byte[] keyBytes = key.getEncoded();
 
-      out.write(0x6f);
-      out.write(ASN1Utils.lengthId(keyBytes.length));
+      out.write(0x6F);
+      out.write(ASN1Utils.lengthId(keyBytes.length)); // FIXME: use BERTLVOutputStream
       out.write(keyBytes);
 
       return new ByteArrayInputStream(out.toByteArray());

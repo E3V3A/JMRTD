@@ -182,7 +182,6 @@ implements AuthListener
 	}
 
 	public void performedBAC(BACEvent be) {
-		System.out.println("DEBUG: performedBAC " + be);
 		this.wrapper = be.getWrapper();
 	}
 
