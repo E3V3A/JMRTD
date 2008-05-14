@@ -190,8 +190,8 @@ public class BERTLVInputStream extends InputStream
    public int skipToTag(short tag) throws IOException {
       while (true) {
          switch (state) {
-            case STATE_INIT: readTag();
-            case STATE_TAG_READ: readLength();
+            case STATE_INIT: readTag(); /* NOTE: no break! */
+            case STATE_TAG_READ: readLength(); /* NOTE: no break! */
             case STATE_LENGTH_READ: break;
             default: throw new IllegalStateException("Cannot search value from undetermined state");
          }
