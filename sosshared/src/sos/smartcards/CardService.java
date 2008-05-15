@@ -17,56 +17,123 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: CardService.java 258 2007-10-17 13:16:23Z martijno $
+ * $Id: AbstractCardService.java 259 2007-10-17 14:31:14Z martijno $
  */
 
 package sos.smartcards;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
 /**
- * Service type for communicating with a smart card.
+ * Default abstract service. Provides some functionality for observing apdu
+ * events.
  * 
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
- * @version $Revision: 258 $
+ * @version $Revision: 259 $
  */
-public interface CardService
+public abstract class CardService
 {
+   static protected final int SESSION_STOPPED_STATE = 0;
+
+   static protected final int SESSION_STARTED_STATE = 1;
+
+   /** The apduListeners. */
+   private Collection<APDUListener> apduListeners;
+   
+   /*
+    * @ invariant state == SESSION_STOPPED_STATE || state ==
+    * SESSION_STARTED_STATE;
+    */
+   protected int state;
+
+   protected boolean listeners = true;
+   
+   /**
+    * Creates a new service.
+    */
+   public CardService() {
+      apduListeners = new ArrayList<APDUListener>();
+      state = SESSION_STOPPED_STATE;
+   }
+
    /**
     * Adds a listener.
     * 
     * @param l the listener to add
     */
-   void addAPDUListener(APDUListener l);
+   public void addAPDUListener(APDUListener l) {
+      apduListeners.add(l);
+   }
 
    /**
     * Removes the listener <code>l</code>, if present.
     * 
     * @param l the listener to remove
     */
-   void removeAPDUListener(APDUListener l);
-   
-   void setListenersState(boolean state);
+   public void removeAPDUListener(APDUListener l) {
+      apduListeners.remove(l);
+   }
 
    /**
-    * Opens a session with the card in the default terminal.
+    * Opens a session with the card. Selects a reader. Connects to the card.
+    * Notifies any interested apduListeners.
     */
-   void open() throws CardServiceException;
+   /*
+    * @ requires state == SESSION_STOPPED_STATE;
+    * @ ensures state == SESSION_STARTED_STATE;
+    */
+   public abstract void open() throws CardServiceException;
 
-   boolean isOpen();
+   /*
+    * @ ensures \result == (state == SESSION_STARTED_STATE);
+    */
+   public abstract boolean isOpen();
    
    /**
-    * Sends an apdu to the card.
+    * Sends and apdu to the card. Notifies any interested apduListeners.
     * 
-    * @param capdu the command apdu to send.
+    * @param apdu the command apdu to send.
     * @return the response from the card, including the status word.
     * @throws CardServiceException 
     */
-   ResponseAPDU transmit(CommandAPDU capdu) throws CardServiceException;
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STARTED_STATE;
+    */
+   public abstract ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException;
 
    /**
-    * Closes the session with the card.
+    * Closes the session with the card. Disconnects from the card and reader.
+    * Notifies any interested apduListeners.
     */
-   void close();
+   /*
+    * @ requires state == SESSION_STARTED_STATE; @ ensures state ==
+    * SESSION_STOPPED_STATE;
+    */
+   public abstract void close();
+
+
+   /**
+    * Notifies listeners about APDU event.
+    * 
+    * @param capdu APDU event
+    */
+   protected void notifyExchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+       if(listeners) {
+         for (APDUListener listener: apduListeners) {
+           listener.exchangedAPDU(capdu, rapdu);
+         }
+       }
+   }
+   
+   public void setListenersState(boolean state) {
+       listeners = state;       
+   }
+
+
 }

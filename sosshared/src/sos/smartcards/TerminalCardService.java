@@ -38,7 +38,7 @@ import javax.smartcardio.ResponseAPDU;
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision$
  */
-public class PCSCCardService extends AbstractCardService
+public class TerminalCardService extends CardService
 {
    private static ArrayList<String> protocols;
 
@@ -50,7 +50,7 @@ public class PCSCCardService extends AbstractCardService
     * Constructs a new card service.
     * @param terminal 
     */
-   public PCSCCardService(CardTerminal terminal) {
+   public TerminalCardService(CardTerminal terminal) {
 	   this.terminal = terminal;
       if (protocols == null) {
          protocols = new ArrayList<String>();

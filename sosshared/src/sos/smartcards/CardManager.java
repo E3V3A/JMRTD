@@ -151,7 +151,7 @@ public class CardManager
 						} else {
 							try {
 								if (terminal.isCardPresent()) {
-									service = new PCSCCardService(terminal);
+									service = new TerminalCardService(terminal);
 								}
 							} catch (Exception e) {
 								if (service != null) { service.close(); }
