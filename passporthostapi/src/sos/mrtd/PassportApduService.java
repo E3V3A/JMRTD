@@ -57,7 +57,7 @@ import sos.smartcards.ISO7816;
  *
  * @version $Revision$
  */
-public class PassportApduService implements CardService
+public class PassportApduService extends CardService
 {
    /** The applet we select when we start a session. */
    private static final byte[] APPLET_AID = { 

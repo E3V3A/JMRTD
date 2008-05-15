@@ -41,7 +41,7 @@ import javax.swing.JTabbedPane;
 import sos.mrtd.PassportApduService;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.PCSCCardService;
+import sos.smartcards.TerminalCardService;
 
 /**
  * The original simple graphical application for experimenting
@@ -102,7 +102,7 @@ public class PassportTester extends JPanel
 				public void actionPerformed(ActionEvent e) {
 					try {
 						CardTerminal terminal = (CardTerminal)terminalsComboBox.getSelectedItem();
-						service = new PassportApduService(new PCSCCardService(terminal));
+						service = new PassportApduService(new TerminalCardService(terminal));
 						service.addAPDUListener(log);
 						service.open();
 

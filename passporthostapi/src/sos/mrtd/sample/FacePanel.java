@@ -68,7 +68,6 @@ implements Runnable, ActionListener, AuthListener
    private ImagePanel ipanel;
    private JButton readButton;
    private JTextArea infoArea;
-   private PassportApduService apduService;
    private PassportService passportService;
    private SecureMessagingWrapper wrapper;
 
@@ -119,7 +118,6 @@ implements Runnable, ActionListener, AuthListener
    }
    
    public void setService(PassportApduService service) throws CardServiceException {
-	   this.apduService = service;
 	   this.passportService = new PassportService(service);
    }
 
