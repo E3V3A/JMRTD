@@ -184,7 +184,9 @@ public class COMFile extends PassportFile
          byte[] versionUnicodeBytes =
             (majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
          BERTLVObject versionUnicodeObject = new BERTLVObject(VERSION_UNICODE_TAG, versionUnicodeBytes);
-         BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagList);
+         byte[] tagListAsBytes = new byte[tagList.length];
+         for (int i = 0; i < tagList.length; i++) { tagListAsBytes[i] = (byte)tagList[i]; }
+         BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagListAsBytes);
          BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
          BERTLVObject ef011E =
             new BERTLVObject(EF_COM_TAG, value);

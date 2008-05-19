@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: PassportAuthService.java 338 2008-05-11 10:58:11Z martijno $
  */
 
 package sos.mrtd;
@@ -36,6 +36,7 @@ import java.util.Collection;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
+import javax.smartcardio.CardException;
 
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
@@ -56,7 +57,7 @@ import sos.tlv.BERTLVInputStream;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision$
+ * @version $Revision: 338 $
  */
 public class PassportService extends PassportApduService
 {
@@ -377,7 +378,7 @@ public class PassportService extends PassportApduService
 				fileLength += (buffer.length - tlvIn.available());
 				offsetBufferInFile = 0;
 				offsetInBuffer = 0;
-				markedOffset = 0;
+				markedOffset = -1;
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				throw new CardServiceException(ioe.toString());
@@ -424,9 +425,15 @@ public class PassportService extends PassportApduService
 			markedOffset = offsetBufferInFile + offsetInBuffer;
 		}
 
-		public void reset() {
+		public void reset() throws IOException {
+			if (markedOffset < 0) { throw new IOException("Mark not set"); }
 			offsetBufferInFile = markedOffset;
 			offsetInBuffer = 0;
+			try {
+				buffer = readFromFile(fid, offsetBufferInFile, 8);
+			} catch (CardServiceException ce) {
+				buffer = new byte[0]; /* NOTE: forces a readFromFile() on next read() */
+			}
 		}
 
 		public boolean markSupported() {

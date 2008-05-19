@@ -441,8 +441,8 @@ public class PassportApduService extends CardService
                kMac)).getBytes();
 
          if (rapdu.length != 42) {
-            throw new CardServiceException("Response wrong length: "
-                  + rapdu.length + "!=" + 42);
+            throw new CardServiceException("Failed: expected length: 42, actual length: "
+                  + rapdu.length);
          }
 
          /*
