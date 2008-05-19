@@ -165,7 +165,7 @@ public class PassportApduService extends CardService
       return createSelectFileAPDU(fiddle);
    }
 
-   CommandAPDU createSelectFileAPDU(byte[] fid) {
+   private CommandAPDU createSelectFileAPDU(byte[] fid) {
       CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE,
             (byte) 0x02, (byte) 0x0c, fid, 256);
       return apdu;
@@ -302,9 +302,7 @@ public class PassportApduService extends CardService
       if (wrapper != null) {
          capdu = wrapper.wrap(capdu);
       }
-
       ResponseAPDU rapdu = transmit(capdu);
-
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
@@ -313,14 +311,7 @@ public class PassportApduService extends CardService
 
    synchronized void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
    throws CardServiceException {
-      CommandAPDU capdu = createSelectFileAPDU(fid);
-      if (wrapper != null) {
-         capdu = wrapper.wrap(capdu);
-      }
-      ResponseAPDU rapdu = transmit(capdu);
-      if (wrapper != null) {
-         rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-      }
+      sendSelectFile(wrapper, (short)(((fid[0] & 0xFF) << 8) | (fid[1] & 0xFF)));
    }
 
    /**
