@@ -57,7 +57,6 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
                 TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
             CardTerminal[] terminals = null;
             List<CardTerminal> l = tf.terminals().list();
-            System.out.println(l);
             terminals = new CardTerminal[l.size()];
             int i = 0;
             for(CardTerminal t : l) {
