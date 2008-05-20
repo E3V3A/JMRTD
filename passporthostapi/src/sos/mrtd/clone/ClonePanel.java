@@ -8,6 +8,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.InputStream;
 import java.util.Date;
+import java.util.List;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -52,12 +53,19 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             this.service = service;
             this.gui = gui;
             
-            TerminalFactory tf = TerminalFactory.getDefault();
             try {
-            CardTerminal[] terminals = (CardTerminal[])tf.terminals().list().toArray();
+                TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
+            CardTerminal[] terminals = null;
+            List<CardTerminal> l = tf.terminals().list();
+            System.out.println(l);
+            terminals = new CardTerminal[l.size()];
+            int i = 0;
+            for(CardTerminal t : l) {
+                terminals[i++] = t;
+            }
             readers = new JComboBox(terminals);
-            }catch(CardException ce) {
-                
+            }catch(Exception ce) {
+              ce.printStackTrace();    
             }
             GridBagConstraints c = new GridBagConstraints();
             c.insets = new Insets(5, 5, 5, 5);
@@ -81,7 +89,7 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             DG1File dg1File = new DG1File(dg1Stream);
             InputStream dg2Stream = s.readFile(PassportService.EF_DG2);
             DG2File dg2File = new DG2File(dg2Stream);
-            String reader = (String)readers.getSelectedItem();
+            String reader = ((CardTerminal)readers.getSelectedItem()).getName();
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
 
             PassportManager.getInstance().removePassportListener(gui);
