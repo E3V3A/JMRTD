@@ -9,6 +9,9 @@ import java.awt.event.ActionListener;
 import java.io.InputStream;
 import java.util.Date;
 
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.TerminalFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
@@ -28,8 +31,9 @@ import sos.mrtd.SecureMessagingWrapper;
 // import sos.smartcards.ISO7816;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.sample.PassportGUI;
+import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.PCSCCardService;
+import sos.smartcards.TerminalCardService;
 
 public class ClonePanel extends JPanel implements ActionListener, AuthListener {
 
@@ -43,13 +47,18 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
     private PassportGUI gui = null;
     
     
-    public ClonePanel(PassportApduService service, PassportGUI gui) throws CardServiceException {
+    public ClonePanel(PassportService service, PassportGUI gui) throws CardServiceException {
             super(new GridBagLayout());
-            this.service = new PassportService(service);
+            this.service = service;
             this.gui = gui;
-            newPassport = new PassportPersoService(new PCSCCardService());
-            String[] terminals = newPassport.getTerminals();
+            
+            TerminalFactory tf = TerminalFactory.getDefault();
+            try {
+            CardTerminal[] terminals = (CardTerminal[])tf.terminals().list().toArray();
             readers = new JComboBox(terminals);
+            }catch(CardException ce) {
+                
+            }
             GridBagConstraints c = new GridBagConstraints();
             c.insets = new Insets(5, 5, 5, 5);
             add(new JLabel("Card writing terminal: "),c);
@@ -60,6 +69,7 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             add(clone,c);
     }
     
+
     private void actionClone() {
         System.out.println("Clone pressed!");
         try {        
@@ -74,13 +84,14 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             String reader = (String)readers.getSelectedItem();
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
 
-            PassportManager.removePassportListener(gui);
+            PassportManager.getInstance().removePassportListener(gui);
             
             String num = dg1File.getMRZInfo().getDocumentNumber();
             String dob = getDateString(dg1File.getMRZInfo().getDateOfBirth());
             String doe = getDateString(dg1File.getMRZInfo().getDateOfExpiry());
 
-            newPassport.open(reader);
+            newPassport = new PassportPersoService(new TerminalCardService((CardTerminal)readers.getSelectedItem()));
+            newPassport.open();
             newPassport.putMRZ(num.getBytes("ASCII"), dob.getBytes("ASCII"), doe.getBytes("ASCII"));
 
             newPassport.createFile(null, PassportService.EF_SOD, (short)sodFile.getEncoded().length);
@@ -97,7 +108,7 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             
             newPassport.lockApplet(null);
             System.out.println("Success.");
-            PassportManager.addPassportListener(gui);
+            PassportManager.getInstance().addPassportListener(gui);
             
         }catch(Exception e) {
             e.printStackTrace();
