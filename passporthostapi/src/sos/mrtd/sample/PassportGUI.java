@@ -41,6 +41,7 @@ import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
+import sos.mrtd.clone.ClonePanel;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardManager;
@@ -145,6 +146,9 @@ public class PassportGUI extends JPanel implements PassportListener
 			tabbedPane.addTab("PA", paPanel);
 			tabbedPane.addTab("AA", aaPanel);
 			tabbedPane.addTab("APDU test", apduPanel);
+            ClonePanel clonePanel = new ClonePanel(service, this);
+            bacPanel.addAuthenticationListener(clonePanel);
+            tabbedPane.addTab("Clone Passport", clonePanel);            
 			add(tabbedPane, BorderLayout.CENTER);
 
 		} catch (Exception ex) {
