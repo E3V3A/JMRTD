@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportAuthService.java 338 2008-05-11 10:58:11Z martijno $
+ * $Id:PassportService.java 352 2008-05-19 06:55:21Z martijno $
  */
 
 package sos.mrtd;
@@ -57,7 +57,7 @@ import sos.tlv.BERTLVInputStream;
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
- * @version $Revision: 338 $
+ * @version $Revision:352 $
  */
 public class PassportService extends PassportApduService
 {
@@ -340,7 +340,7 @@ public class PassportService extends PassportApduService
 	 * @return the contents of the file.
 	 */
 	private synchronized byte[] readFromFile(short fid, int offset, int length) throws CardServiceException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
 		// if (!isSelectedFID(fid)) { sendSelectFile(wrapper, fid); }
 		sendSelectFile(wrapper, fid);
 		int blockSize = maxBlockSize;
