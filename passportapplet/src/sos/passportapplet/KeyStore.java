@@ -89,7 +89,7 @@ public class KeyStore {
     
 
     public DESKey getMacKey() {
-        if(PassportUtil.hasBitMask(PassportApplet.state, PassportApplet.MUTUAL_AUTHENTICATED)) {
+        if(PassportApplet.hasMutuallyAuthenticated()) {
             return sm_kMac;
         }
         else {
@@ -98,7 +98,7 @@ public class KeyStore {
     }
     
     public DESKey getMacKey(byte aOrb) {
-        if(PassportUtil.hasBitMask(PassportApplet.state, PassportApplet.MUTUAL_AUTHENTICATED)) {
+        if(PassportApplet.hasMutuallyAuthenticated()) {
             if(aOrb == KEY_A) {
                 return sm_kMac_a;
             }
@@ -117,7 +117,7 @@ public class KeyStore {
     }
     
     public DESKey getCryptKey() {
-        if(PassportUtil.hasBitMask(PassportApplet.state, PassportApplet.MUTUAL_AUTHENTICATED)) {
+        if(PassportApplet.hasMutuallyAuthenticated()) {
             return sm_kEnc;
         }
         else {

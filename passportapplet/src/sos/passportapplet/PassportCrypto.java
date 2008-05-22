@@ -482,11 +482,11 @@ public class PassportCrypto {
         c[(short)(c.length-1)] = mode;
 
         // copy seed || c to key_offset
-        Util.arrayCopy(buffer, keySeed_offset, buffer, key_offset, PassportApplet.SEED_LENGTH);
-        Util.arrayCopy(c, (short) 0, buffer, (short)(key_offset + PassportApplet.SEED_LENGTH), (short)c.length);
+        Util.arrayCopy(buffer, keySeed_offset, buffer, key_offset, PassportApplet.KEYMATERIAL_LENGTH);
+        Util.arrayCopy(c, (short) 0, buffer, (short)(key_offset + PassportApplet.KEYMATERIAL_LENGTH), (short)c.length);
 
         // compute hash on key_offset (+seed len +c len)
-        shaDigest.doFinal(buffer, key_offset, (short)(PassportApplet.SEED_LENGTH + c.length), buffer, key_offset);
+        shaDigest.doFinal(buffer, key_offset, (short)(PassportApplet.KEYMATERIAL_LENGTH + c.length), buffer, key_offset);
         shaDigest.reset();
 
         // parity bits

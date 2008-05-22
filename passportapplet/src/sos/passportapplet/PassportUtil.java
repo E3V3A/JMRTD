@@ -65,39 +65,23 @@ public class PassportUtil implements ISO7816 {
     }
 
     /**
-     * Calculates the xor of byte arrays in1[in1_offset..+length] and 
-     * in2[in2_offset..+length] in out[out_offset..length]. 
+     * Calculates the xor of byte arrays in1 and in2 into out. 
      * 
      * Arrays may be the same, but regions may not overlap.
      * 
      * 
      * @param in1 input array
-     * @param in1_offset offset of input array
+     * @param in1_o offset of input array
      * @param in2 input array
-     * @param in2_offset offset of inputarray
+     * @param in2_o offset of inputarray
      * @param out output array
-     * @param out_offset offset of output array
+     * @param out_o offset of output array
      * @param len length of xor
      */
-    public static void xor(byte[] in1, short in1_offset, byte[] in2, short in2_offset, byte[] out, short out_offset, short len) {
-        if(in1.length < (short)(in1_offset + len) ||  // sanity checks
-           in2.length < (short)(in2_offset + len) ||
-           out.length < (short)(out_offset + len)) {        
-           ISOException.throwIt((short)0x6d66);
-        }
-        // untested
-        if(in1 == out && ((out_offset >= in1_offset && out_offset < (short)(in1_offset + len)) ||
-                          (in1_offset >= out_offset && in1_offset < (short)(out_offset + len)))) {
-            ISOException.throwIt((short)0x6d66);
-        }
-        // untested
-        if(in2 == out && ((out_offset >= in2_offset && out_offset < (short)(in2_offset + len)) ||
-                          (in2_offset >= out_offset && in2_offset < (short)(out_offset + len)))) {
-            ISOException.throwIt((short)0x6d66);
-        }
-        
+    public static void xor(byte[] in1, short in1_o, byte[] in2, 
+    			short in2_o, byte[] out, short out_o, short len) {
         for(short s=0; s < len; s++) {
-            out[(short)(out_offset + s)] = (byte)(in1[(short)(in1_offset + s)] ^ in2[(short)(in2_offset + s)]);
+            out[(short)(out_o + s)] = (byte)(in1[(short)(in1_o + s)] ^ in2[(short)(in2_o + s)]);
         }
     }
 
@@ -110,14 +94,7 @@ public class PassportUtil implements ISO7816 {
      * @param offset2 offset to the second byte array
      * @param len length of the segments
      */
-    public static void swap(byte[] buffer, short offset1, short offset2, short len) {
-        if(buffer.length < (short)(offset1 + len) ||  // sanity checks
-           buffer.length < (short)(offset2 + len) ||
-           (offset1 <= offset2 && offset2 < (short)(offset1 + len)) || // no overlap
-           (offset2 <= offset1 && offset1 < (short)(offset2 + len))) {
-                ISOException.throwIt((short)0x6d66);
-        }
-        
+    public static void swap(byte[] buffer, short offset1, short offset2, short len) {    
         byte byte1, byte2;
         for(short i=0; i<len; i++) {
             byte1 = buffer[(short)(offset1 + i)];
@@ -264,34 +241,4 @@ public class PassportUtil implements ISO7816 {
         
         return 0;
     }
-
-    /***
-     * Does return (state & bitmask) == bitmask.
-     * 
-     * @param state
-     * @param bitmask
-     * @return (state & bitmask) == bitmask
-     */
-    public static boolean hasBitMask(byte state, byte bitmask) {
-        return (state & bitmask) == bitmask;
-    }
-
-    /***
-     * 
-     */
-    public static byte plusBitMask(byte state, byte mask) {
-        return (byte)(state | mask);
-    }
-    
-    
-     public static byte minBitMask(byte state, byte mask) {
-         if(hasBitMask(state, mask)) {
-             return (byte)(state - mask);
-         }
-         else {
-             ISOException.throwIt((short)0x6d66);
-             return state;
-         }
-     }
-
 }  
