@@ -1,6 +1,5 @@
 package sos.mrtd.clone;
 
-import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
@@ -12,7 +11,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 
-import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.TerminalFactory;
 import javax.swing.JButton;
@@ -27,15 +25,12 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
-import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.mrtd.SecureMessagingWrapper;
-// import sos.smartcards.ISO7816;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.sample.PassportGUI;
-import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 
