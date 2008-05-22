@@ -324,7 +324,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
             state = PassportUtil.plusBitMask(state,
                                              HAS_MUTUALAUTHENTICATION_KEYS);
-            log.enabled(true);
+            log.enabled(false); // TODO: Log is broken, cyclicty is not correct
         }
     }
 
