@@ -45,9 +45,9 @@ public class BACKeyPanel extends JPanel
       dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
       top.add(new JLabel("Document number: "));
       top.add(docNrTF);
-      top.add(new JLabel("Date of birth: "));
+      top.add(new JLabel("Date of birth (YYMMDD): "));
       top.add(dateOfBirthTF);
-      top.add(new JLabel("Date of expiry: "));
+      top.add(new JLabel("Date of expiry (YYMMDD): "));
       top.add(dateOfExpiryTF);
       deriveKeyButton = new JButton("Derive Keys");
       top.add(deriveKeyButton);

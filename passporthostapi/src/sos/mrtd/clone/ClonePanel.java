@@ -6,9 +6,11 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
+import java.util.Vector;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -77,21 +79,46 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
     }
     
 
+    private byte[] getByteArray(InputStream in) {
+        try {
+        Vector<Integer> vec = new Vector<Integer>();
+        int c = 0;
+        while((c = in.read())!= -1) {
+            vec.add(new Integer(c));            
+        }
+        byte[] result = new byte[vec.size()];
+        int index = 0;
+        for(Integer i : vec) {
+            result[index++] = i.byteValue(); 
+        }
+        return result;
+        }catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+       
+    }
+    
     private void actionClone() {
-        System.out.println("Clone pressed!");
         try {        
             PassportService s = new PassportService(service);
             s.setWrapper(wrapper);
             InputStream sodStream = s.readFile(PassportService.EF_SOD);
+            byte[] sodContents = getByteArray(sodStream);
+            sodStream = new ByteArrayInputStream(sodContents);
             SODFile sodFile = new SODFile(sodStream);
+            
             InputStream dg1Stream = s.readFile(PassportService.EF_DG1);
-            DG1File dg1File = new DG1File(dg1Stream);
+            byte[] dg1Contents = getByteArray(dg1Stream);
+            DG1File dg1File = new DG1File(new ByteArrayInputStream(dg1Contents));
+            System.out.println("dg1Len: "+dg1Contents.length);
             InputStream dg2Stream = s.readFile(PassportService.EF_DG2);
-            DG2File dg2File = new DG2File(dg2Stream);
+            byte[] dg2Contents = getByteArray(dg2Stream);
+            System.out.println("dg2Len: "+dg2Contents.length);
             String reader = ((CardTerminal)readers.getSelectedItem()).getName();
+            PassportManager.getInstance().removePassportListener(gui);
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
 
-            PassportManager.getInstance().removePassportListener(gui);
             
             String num = dg1File.getMRZInfo().getDocumentNumber();
             String dob = getDateString(dg1File.getMRZInfo().getDateOfBirth());
@@ -101,17 +128,17 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             newPassport.open();
             newPassport.putMRZ(num.getBytes("ASCII"), dob.getBytes("ASCII"), doe.getBytes("ASCII"));
 
-            newPassport.createFile(null, PassportService.EF_SOD, (short)sodFile.getEncoded().length);
+            newPassport.createFile(null, PassportService.EF_SOD, (short)sodContents.length);
             newPassport.selectFile(null, PassportService.EF_SOD);
-            newPassport.writeFile(null, PassportService.EF_SOD, sodStream);
+            newPassport.writeFile(null, PassportService.EF_SOD, new ByteArrayInputStream(sodContents));
 
-            newPassport.createFile(null, PassportService.EF_DG1, (short)dg1File.getEncoded().length);
+            newPassport.createFile(null, PassportService.EF_DG1, (short)dg1Contents.length);
             newPassport.selectFile(null, PassportService.EF_DG1);
-            newPassport.writeFile(null, PassportService.EF_DG1, dg1Stream);
+            newPassport.writeFile(null, PassportService.EF_DG1, new ByteArrayInputStream(dg1Contents));
 
-            newPassport.createFile(null, PassportService.EF_DG2, (short)dg1File.getEncoded().length);
+            newPassport.createFile(null, PassportService.EF_DG2, (short)dg2Contents.length);
             newPassport.selectFile(null, PassportService.EF_DG2);
-            newPassport.writeFile(null, PassportService.EF_DG2, dg1Stream);
+            newPassport.writeFile(null, PassportService.EF_DG2, new ByteArrayInputStream(dg2Contents));
             
             newPassport.lockApplet(null);
             System.out.println("Success.");

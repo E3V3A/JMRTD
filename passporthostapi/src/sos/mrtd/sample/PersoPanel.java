@@ -137,9 +137,9 @@ AuthListener
 
 		personalisationPanel.add(new JLabel("Document number:"));
 		personalisationPanel.add(docNrField);
-		personalisationPanel.add(new JLabel("Date of birth:"));
+		personalisationPanel.add(new JLabel("Date of birth (YYMMDD):"));
 		personalisationPanel.add(dobField);
-		personalisationPanel.add(new JLabel("Date of expiry:"));
+		personalisationPanel.add(new JLabel("Date of expiry (YYMMDD):"));
 		personalisationPanel.add(doeField);
 		personalisationPanel.add(personalisationButton);
 		personalisationPanel.add(lockButton);
