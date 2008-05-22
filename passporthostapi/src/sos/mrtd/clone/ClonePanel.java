@@ -39,7 +39,7 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 
-public class ClonePanel extends JPanel implements ActionListener, AuthListener {
+public class ClonePanel extends JPanel implements Runnable, ActionListener, AuthListener {
 
     private static final String CLONE = "cloneButton";
     
@@ -100,24 +100,26 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
        
     }
     
-    private void actionClone() {
+    public void run() {
         try {        
+            clone.setEnabled(false);
+            readers.setEnabled(false);
             PassportService s = new PassportService(service);
             s.setWrapper(wrapper);
             InputStream sodStream = s.readFile(PassportService.EF_SOD);
 
-            new ProgressThread(this, sodStream, "Reading SOD").start();
+            //new ProgressThread(this, sodStream, "Reading SOD").start();
 
             byte[] sodContents = getByteArray(sodStream);
             sodStream = new ByteArrayInputStream(sodContents);
             SODFile sodFile = new SODFile(sodStream);
             
             InputStream dg1Stream = s.readFile(PassportService.EF_DG1);
-            new ProgressThread(this, sodStream, "Reading DG1").start();
+            //new ProgressThread(this, dg1Stream, "Reading DG1").start();
             byte[] dg1Contents = getByteArray(dg1Stream);
             DG1File dg1File = new DG1File(new ByteArrayInputStream(dg1Contents));
             InputStream dg2Stream = s.readFile(PassportService.EF_DG2);
-            new ProgressThread(this, sodStream, "Reading DG2").start();
+            new ProgressThread(this, dg2Stream, "Reading DG2").start();
             byte[] dg2Contents = getByteArray(dg2Stream);
             String reader = ((CardTerminal)readers.getSelectedItem()).getName();
 
@@ -125,11 +127,6 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             String dob = getDateString(dg1File.getMRZInfo().getDateOfBirth());
             String doe = getDateString(dg1File.getMRZInfo().getDateOfExpiry());
 
-            System.out.println("dg1Len: "+dg1Contents.length);
-            System.out.println("dg2Len: "+dg2Contents.length);
-            System.out.println("Num: "+ num);
-            System.out.println("dob: "+ dob);
-            System.out.println("doe: "+ doe);
 
             PassportManager.getInstance().removePassportListener(gui);
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
@@ -141,13 +138,13 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
 
             InputStream in = new ByteArrayInputStream(sodContents);
             
-            new ProgressThread(this, in, "Writing SOD").start();
+            //new ProgressThread(this, in, "Writing SOD").start();
             newPassport.createFile(null, PassportService.EF_SOD, (short)sodContents.length);
             newPassport.selectFile(null, PassportService.EF_SOD);
             newPassport.writeFile(null, PassportService.EF_SOD, in);
                         
             in = new ByteArrayInputStream(dg1Contents);
-            new ProgressThread(this, in, "Writing DG1").start();
+            //new ProgressThread(this, in, "Writing DG1").start();
             newPassport.createFile(null, PassportService.EF_DG1, (short)dg1Contents.length);
             newPassport.selectFile(null, PassportService.EF_DG1);
             newPassport.writeFile(null, PassportService.EF_DG1, in);
@@ -163,9 +160,13 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
             JOptionPane.showMessageDialog(this, "Finished. Remove the card.");
 
             PassportManager.getInstance().addPassportListener(gui);
+            clone.setEnabled(true);
+            readers.setEnabled(true);
             
         }catch(Exception e) {
             e.printStackTrace();
+            clone.setEnabled(true);
+            readers.setEnabled(true);
         }
     }
     
@@ -192,7 +193,7 @@ public class ClonePanel extends JPanel implements ActionListener, AuthListener {
     
     public void actionPerformed(ActionEvent e) {
         if(e.getActionCommand().equals(CLONE)) {
-            actionClone();
+            new Thread(this).start();
         }        
     }
 
