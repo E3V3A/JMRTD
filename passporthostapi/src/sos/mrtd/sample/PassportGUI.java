@@ -43,10 +43,7 @@ import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
 import sos.mrtd.sample.clone.ClonePanel;
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
-import sos.smartcards.CardTerminalListener;
 
 /**
  * Simple graphical application to demonstrate the

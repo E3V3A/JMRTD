@@ -23,7 +23,6 @@
 package sos.mrtd;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -36,10 +35,11 @@ import java.util.Collection;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
-import javax.smartcardio.CardException;
 
+import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.smartcards.FileSystemStructured;
 import sos.tlv.BERTLVInputStream;
 
 /**
@@ -61,7 +61,6 @@ import sos.tlv.BERTLVInputStream;
  */
 public class PassportService extends PassportApduService
 {
-
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
 	/** Data group 2 contains face image data. */
@@ -116,6 +115,8 @@ public class PassportService extends PassportApduService
 	private MessageDigest aaDigest;
 	private Cipher aaCipher;
 
+	private PassportFileSystem fs;
+
 	/**
 	 * Creates a new passport service for accessing the passport.
 	 * 
@@ -133,6 +134,7 @@ public class PassportService extends PassportApduService
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			authListeners = new ArrayList<AuthListener>();
+			fs = new PassportFileSystem();
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}
@@ -311,7 +313,6 @@ public class PassportService extends PassportApduService
 		notifyBACPerformed(event);
 	}
 
-
 	/**
 	 * Gets the file indicated by a file identifier.
 	 * 
@@ -322,7 +323,7 @@ public class PassportService extends PassportApduService
 	 * @throws IOException if the file cannot be read
 	 */
 	public InputStream readFile(short fid) throws CardServiceException {
-		return new CardFileInputStream(fid);
+		return new CardFileInputStream(fid, maxBlockSize, fs);
 	}
 
 	public InputStream readDataGroup(int tag) throws CardServiceException {
@@ -330,114 +331,37 @@ public class PassportService extends PassportApduService
 		return readFile(fid);
 	}
 
-	/**
-	 * Reads the file with id <code>fid</code>.
-	 *
-	 * @param fid the file to read
-	 * @param offset starting offset in file
-	 * @param length the number of bytes to read, or -1 to read until EOF
-	 *
-	 * @return the contents of the file.
-	 */
-	private synchronized byte[] readFromFile(short fid, int offset, int length) throws CardServiceException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-		// if (!isSelectedFID(fid)) { sendSelectFile(wrapper, fid); }
-		sendSelectFile(wrapper, fid);
-		int blockSize = maxBlockSize;
-		while (true) {
-			int len = length < 0 ? blockSize : Math.min(blockSize, length);
-			byte[] data = sendReadBinary(wrapper, (short)offset, len);
-			if (data == null || data.length == 0) { break; } /* Reached EOF */
-			out.write(data, 0, data.length);
-			offset += data.length;
-			if (length < 0) { continue; }
-			if (offset >= length) { break; } /* (More than) length bytes read. */
-		}
-		byte[] file = out.toByteArray();
-		return file;
-	}
-
-	private class CardFileInputStream extends InputStream
+	private class PassportFileSystem implements FileSystemStructured
 	{
-		private short fid;
-		private byte[] buffer;
-		private int offsetBufferInFile;
-		private int offsetInBuffer;
-		private int markedOffset;
-		private int fileLength;
+		private short selectedFID;
 
-		public CardFileInputStream(short fid) throws CardServiceException {
-			this.fid = fid;
+		public synchronized short getSelectedFID() {
+			return selectedFID;
+		}
+
+		public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
+			return sendReadBinary(wrapper, (short)offset, length);
+		}
+
+		public synchronized void selectFile(short fid) throws CardServiceException {
 			sendSelectFile(wrapper, fid);
-			buffer = readFromFile(fid, 0, 8); /* Tag at most 2, length at most 5? */
+			selectedFID = fid;
+		}
+
+		public synchronized int getFileLength() throws CardServiceException {
 			try {
-				ByteArrayInputStream baIn = new ByteArrayInputStream(buffer);
+				/* Each passport file is contained in a TLV structure. */
+				byte[] prefix = readBinary(0, 8);
+				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
 				BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
 				tlvIn.readTag();
-				fileLength = tlvIn.readLength();
-				fileLength += (buffer.length - tlvIn.available());
-				offsetBufferInFile = 0;
-				offsetInBuffer = 0;
-				markedOffset = -1;
+				int vLength = tlvIn.readLength();
+				int tlLength = prefix.length - baIn.available();
+				return tlLength + vLength;
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				throw new CardServiceException(ioe.toString());
 			}
-		}
-
-		public int read() throws IOException {
-			int result = -1;
-			if (offsetInBuffer >= buffer.length) {
-				int blockSize = Math.min(maxBlockSize, available());
-				try {
-					offsetBufferInFile += offsetInBuffer;
-					offsetInBuffer = 0;
-					buffer = readFromFile(fid, offsetBufferInFile, blockSize);
-				} catch (CardServiceException cse) {
-					throw new IOException(cse.toString());
-				}
-			}
-			if (offsetInBuffer < buffer.length) {
-				result = buffer[offsetInBuffer] & 0xFF;
-				offsetInBuffer++;
-			}
-			return result;
-		}
-
-		public long skip(long n) {
-			int available = available();
-			if (n > available) { n = available; }
-			if (n < (buffer.length - offsetInBuffer)) {
-				offsetInBuffer += n;
-			} else {
-				int absoluteOffset = offsetBufferInFile + offsetInBuffer;
-				offsetBufferInFile = (int)(absoluteOffset + n);
-				offsetInBuffer = 0;
-			}
-			return n;
-		}
-
-		public synchronized int available() {
-			return fileLength - (offsetBufferInFile + offsetInBuffer);
-		}
-
-		public void mark(int readLimit) {
-			markedOffset = offsetBufferInFile + offsetInBuffer;
-		}
-
-		public void reset() throws IOException {
-			if (markedOffset < 0) { throw new IOException("Mark not set"); }
-			offsetBufferInFile = markedOffset;
-			offsetInBuffer = 0;
-			try {
-				buffer = readFromFile(fid, offsetBufferInFile, 8);
-			} catch (CardServiceException ce) {
-				buffer = new byte[0]; /* NOTE: forces a readFromFile() on next read() */
-			}
-		}
-
-		public boolean markSupported() {
-			return true;
 		}
 	}
 }

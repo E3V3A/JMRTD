@@ -45,7 +45,6 @@ import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 
 /**

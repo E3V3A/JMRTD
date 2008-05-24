@@ -76,8 +76,6 @@ public class PassportApduService extends CardService
    /** ISO9797Alg3Mac. */
    private Mac mac;
 
-   protected int selectedFID;
-
    /**
     * Creates a new passport apdu sending service.
     *
@@ -95,7 +93,6 @@ public class PassportApduService extends CardService
    throws CardServiceException {
       this.service = service;
       try {
-         selectedFID = -1;
          cipher = Cipher.getInstance("DESede/CBC/NoPadding");
          mac = Mac.getInstance("ISO9797Alg3Mac");
       } catch (GeneralSecurityException gse) {
@@ -306,7 +303,6 @@ public class PassportApduService extends CardService
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
-      selectedFID = (fid & 0xFFFF);
    }
 
    synchronized void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
@@ -455,12 +451,5 @@ public class PassportApduService extends CardService
       } catch (GeneralSecurityException gse) {
          throw new CardServiceException(gse.toString());
       }
-   }
-
-   public synchronized boolean isSelectedFID(short fid) {
-      if (selectedFID < 0) {
-         return false;
-      }
-      return (fid & 0xFFFF) == selectedFID;
    }
 }

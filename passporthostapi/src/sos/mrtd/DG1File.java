@@ -40,55 +40,55 @@ import sos.tlv.BERTLVObject;
  */
 public class DG1File extends DataGroup
 {
-   private static final int MRZ_INFO_TAG = 0x5F1F;
-   private MRZInfo mrz;
+	private static final int MRZ_INFO_TAG = 0x5F1F;
+	private MRZInfo mrz;
 
-   /**
-    * Constructs a new file.
-    * 
-    * @param mrz the MRZ information to store in this file
-    */
-   public DG1File(MRZInfo mrz) {
-      this.mrz = mrz;
-   }
-   
-   private DG1File(BERTLVObject in) {
-      this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
-      sourceObject = in;
-      isSourceConsistent = true;
-   }
-   
-   public DG1File(InputStream in) throws IOException {
-      this(BERTLVObject.getInstance(in));
-   }
-   
-   public int getTag() {
-      return EF_DG1_TAG;
-   }
+	/**
+	 * Constructs a new file.
+	 * 
+	 * @param mrz the MRZ information to store in this file
+	 */
+	public DG1File(MRZInfo mrz) {
+		this.mrz = mrz;
+	}
 
-   /**
-    * Gets the MRZ information stored in this file.
-    * 
-    * @return the MRZ information
-    */
-   public MRZInfo getMRZInfo() {
-      return mrz;
-   }
+	private DG1File(BERTLVObject in) {
+		this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
+		sourceObject = in;
+		isSourceConsistent = true;
+	}
 
-   public byte[] getEncoded() {
-      if (isSourceConsistent) {
-         return sourceObject.getEncoded();
-      }
-      try {
-         BERTLVObject ef0101 =
-            new BERTLVObject(EF_DG1_TAG,
-               new BERTLVObject(0x5F1F, mrz.getEncoded()));
-         sourceObject = ef0101;
-         isSourceConsistent = true;
-         return ef0101.getEncoded();
-      } catch (Exception e) {
-         e.printStackTrace();
-         return null;
-      }
-   }
+	public DG1File(InputStream in) throws IOException {
+		 this(BERTLVObject.getInstance(in));
+	}
+
+	public int getTag() {
+		return EF_DG1_TAG;
+	}
+
+	/**
+	 * Gets the MRZ information stored in this file.
+	 * 
+	 * @return the MRZ information
+	 */
+	public MRZInfo getMRZInfo() {
+		return mrz;
+	}
+
+	public byte[] getEncoded() {
+		if (isSourceConsistent) {
+			return sourceObject.getEncoded();
+		}
+		try {
+			BERTLVObject ef0101 =
+				new BERTLVObject(EF_DG1_TAG,
+						new BERTLVObject(0x5F1F, mrz.getEncoded()));
+			sourceObject = ef0101;
+			isSourceConsistent = true;
+			return ef0101.getEncoded();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
