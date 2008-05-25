@@ -22,10 +22,10 @@
 
 package sos.mrtd;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -40,7 +40,7 @@ import sos.tlv.BERTLVObject;
  */
 public class DG1File extends DataGroup
 {
-	private static final int MRZ_INFO_TAG = 0x5F1F;
+	private static final short MRZ_INFO_TAG = 0x5F1F;
 	private MRZInfo mrz;
 
 	/**
@@ -52,14 +52,20 @@ public class DG1File extends DataGroup
 		this.mrz = mrz;
 	}
 
-	private DG1File(BERTLVObject in) {
-		this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
-		sourceObject = in;
-		isSourceConsistent = true;
-	}
+//	private DG1File(BERTLVObject in) {
+//		this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
+//		sourceObject = in;
+//		isSourceConsistent = true;
+//	}
 
 	public DG1File(InputStream in) throws IOException {
-		 this(BERTLVObject.getInstance(in));
+		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+		int tag = tlvIn.readTag();
+		if (tag != PassportFile.EF_DG1_TAG) { throw new IllegalArgumentException("Expected EF_DG1_TAG"); }
+		int length = tlvIn.readLength();
+		tlvIn.skipToTag(MRZ_INFO_TAG);
+		isSourceConsistent = false;
+		this.mrz = new MRZInfo(tlvIn);
 	}
 
 	public int getTag() {
