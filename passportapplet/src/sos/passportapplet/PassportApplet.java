@@ -84,7 +84,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
 	/* status words */
 	private static final short SW_OK = (short) 0x9000;
-	private static final short SW_INTERNAL_ERROR = (short) 0x6d66;
+	static final short SW_INTERNAL_ERROR = (short) 0x6d66;
 
 	private byte[] rnd;
 	private byte[] ssc;
@@ -158,8 +158,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 			return;
 		}
 
-		if (protectedApdu
-				&& (volatileState[0] & MUTUAL_AUTHENTICATED) == MUTUAL_AUTHENTICATED) {
+		if (protectedApdu & hasMutuallyAuthenticated()) {
 			try {
 				le = crypto.unwrapCommandAPDU(ssc, apdu);
 			} catch (CardRuntimeException e) {
@@ -177,8 +176,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 			}
 		}
 
-		if (protectedApdu
-				&& (volatileState[0] & MUTUAL_AUTHENTICATED) == MUTUAL_AUTHENTICATED) {
+		if (protectedApdu && hasMutuallyAuthenticated()) {
 			responseLength = crypto.wrapResponseAPDU(ssc, apdu, crypto
 					.getApduBufferOffset(responseLength), responseLength,
 					sw1sw2);
@@ -537,7 +535,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 		}
 		if (apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
 			// need all data in one APDU.
-			ISOException.throwIt((short) 0x6d66);
+			ISOException.throwIt(SW_INTERNAL_ERROR);
 		}
 
 		short fid = Util.getShort(buffer, OFFSET_CDATA);
@@ -547,6 +545,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 			volatileState[0] |= FILE_SELECTED;
 			return;
 		}
+		setNoFileSelected();
 		ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 	}
 
@@ -572,7 +571,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 		short offset = Util.makeShort(p1, p2);
 
 		byte[] file = fileSystem.getFile(selectedFile);
-		if (file == null) {
+		if (file == null) {			
 			ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
 		}
 
@@ -678,6 +677,12 @@ public class PassportApplet extends Applet implements ISO7816 {
 		return (persistentState & HAS_MUTUALAUTHENTICATION_KEYS) == HAS_MUTUALAUTHENTICATION_KEYS;
 	}
 
+	public static void setNoFileSelected() {
+		if(hasFileSelected()) {
+			volatileState[0] ^= FILE_SELECTED;
+		}
+	}
+	
 	public static boolean hasFileSelected() {
 		return (volatileState[0] & FILE_SELECTED) == FILE_SELECTED;
 	}

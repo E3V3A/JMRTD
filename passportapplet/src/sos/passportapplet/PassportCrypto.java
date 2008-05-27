@@ -253,47 +253,41 @@ public class PassportCrypto {
 //        return le;
 //    }
 
-    public short unwrapCommandAPDU(byte[] ssc, APDU aapdu) {
-        byte[] apdu = aapdu.getBuffer();
+    public short unwrapCommandAPDU(byte[] ssc, APDU apdu) {
+        byte[] buf = apdu.getBuffer();
         short apdu_p = (short) (ISO7816.OFFSET_CDATA & 0xff);
         short start_p = apdu_p;
-        short lc = (short) (apdu[ISO7816.OFFSET_LC] & 0xff);
+        short lc = (short) (buf[ISO7816.OFFSET_LC] & 0xff);
         short le = 0;
         short do87DataLen = 0;
         short do87Data_p = 0;
         short do87LenBytes = 0;
         short hdrLen = 4;
         short hdrPadLen = (short) (8 - hdrLen);
-//        short apduLength = (short) (hdrLen + 1 + lc);
 
-        aapdu.setIncomingAndReceive();
-
-        // sanity check
-//        if (apdu.length < (short) (apduLength + hdrPadLen + ssc.length)) {
-//            ISOException.throwIt((short)0x6d66);
-//        }
+        apdu.setIncomingAndReceive();
 
         incrementSSC(ssc);
 
-        if (apdu[apdu_p] == (byte) 0x87) {
+        if (buf[apdu_p] == (byte) 0x87) {
             apdu_p++;
             // do87
-            if ((apdu[apdu_p] & 0xff) > 0x80) {
-                do87LenBytes = (short) (apdu[apdu_p] & 0x7f);
+            if ((buf[apdu_p] & 0xff) > 0x80) {
+                do87LenBytes = (short) (buf[apdu_p] & 0x7f);
                 apdu_p++;
             } else {
                 do87LenBytes = 1;
             }
             if (do87LenBytes > 2) { // sanity check
-                ISOException.throwIt((short) 0x6d66);
+                ISOException.throwIt(PassportApplet.SW_INTERNAL_ERROR);
             }
             for (short i = 0; i < do87LenBytes; i++) {
-                do87DataLen += (short) ((apdu[(short)(apdu_p + i)] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
+                do87DataLen += (short) ((buf[(short)(apdu_p + i)] & 0xff) << (short) ((do87LenBytes - 1 - i) * 8));
             }
             apdu_p += do87LenBytes;
 
-            if (apdu[apdu_p] != 1) {
-                ISOException.throwIt((short) (0x6d66));
+            if (buf[apdu_p] != 1) {
+                ISOException.throwIt(PassportApplet.SW_INTERNAL_ERROR);
             }
             // store pointer to data and defer decrypt to after mac check (do8e)
             do87Data_p = (short) (apdu_p + 1);
@@ -301,31 +295,31 @@ public class PassportCrypto {
             do87DataLen--; // compensate for 0x01 marker
         }
 
-        if (apdu[apdu_p] == (byte) 0x97) {
+        if (buf[apdu_p] == (byte) 0x97) {
             // do97
-            if (apdu[++apdu_p] != 1)
-                ISOException.throwIt((short) (0x6d66));
-            le = (short) (apdu[++apdu_p] & 0xff);
+            if (buf[++apdu_p] != 1)
+                ISOException.throwIt(PassportApplet.SW_INTERNAL_ERROR);
+            le = (short) (buf[++apdu_p] & 0xff);
             apdu_p++;
         }
 
         // do8e
-        if (apdu[apdu_p] != (byte) 0x8e) {
-            ISOException.throwIt((short) (0x6d66));
+        if (buf[apdu_p] != (byte) 0x8e) {
+            ISOException.throwIt(PassportApplet.SW_INTERNAL_ERROR);
         }
-        if (apdu[++apdu_p] != 8) {
+        if (buf[++apdu_p] != 8) {
             ISOException.throwIt(ISO7816.SW_DATA_INVALID);
         }
 
         // verify mac
         initMac(Signature.MODE_VERIFY);
         updateMac(ssc, (short)0, (short)ssc.length);
-        updateMac(apdu, (short)0, hdrLen);
+        updateMac(buf, (short)0, hdrLen);
         updateMac(PAD_DATA, (short)0, hdrPadLen);
-        if (!verifyMacFinal(apdu,
+        if (!verifyMacFinal(buf,
                        start_p,
                        (short) (apdu_p - 1 - start_p),
-                       apdu,
+                       buf,
                        (short)(apdu_p + 1))) {
             ISOException.throwIt(ISO7816.SW_CONDITIONS_NOT_SATISFIED);
         }
@@ -335,24 +329,17 @@ public class PassportCrypto {
         if (do87DataLen != 0) {
             // decrypt data, and leave room for lc
             decryptInit();
-            plaintextLength = decryptFinal(apdu,
+            plaintextLength = decryptFinal(buf,
                                       do87Data_p,
                                       do87DataLen,
-                                      apdu,
+                                      buf,
                                       (short) (hdrLen + 1));
 
-            plaintextLc = PassportUtil.calcLcFromPaddedData(apdu,
+            plaintextLc = PassportUtil.calcLcFromPaddedData(buf,
                                                             (short) (hdrLen + 1),
                                                             do87DataLen);
-            apdu[hdrLen] = (byte) (plaintextLc & 0xff);
+            buf[hdrLen] = (byte) (plaintextLc & 0xff);
         }
-
-//        apduLength = (short) (hdrLen + 1 + plaintextLength);
-
-        // empty out the rest
-//        for (short i = apduLength; i < apdu.length; i++) {
-//            apdu[i] = 0;
-//        }
 
         return le;
     }
@@ -377,7 +364,7 @@ public class PassportCrypto {
             do87Bytes += 2;
         }
         else {
-            do87Bytes += (short)(PassportUtil.byteCount(plaintextLength));
+            do87Bytes += (short)(plaintextLength > 0xff ? 2 : 1);
         }
         return do87Bytes;
     }
@@ -386,10 +373,11 @@ public class PassportCrypto {
             short sw1sw2) {
         byte[] apdu = aapdu.getBuffer();
         short apdu_p = 0;
-        // smallest multiple of 8 strictly larger than plaintextLen + 1
-        // byte is probably the length of the ciphertext (including do87 0x01)
-        short do87DataLen = (short) ((((short) (plaintextLen + 8) / 8) * 8) + 1);
-        short do87DataLenBytes = PassportUtil.byteCount(do87DataLen); 
+        // smallest multiple of 8 strictly larger than plaintextLen
+        short do87DataLen = PassportUtil.lengthWithPadding(plaintextLen);
+        // for 0x01 marker (indicating padding is used)
+        do87DataLen++;
+        short do87DataLenBytes = (short)(do87DataLen > 0xff? 2 : 1);
         short do87HeaderBytes = getApduBufferOffset(plaintextLen);
         short do87Bytes = (short)(do87HeaderBytes + do87DataLen - 1); // 0x01 is counted twice 
         boolean hasDo87 = plaintextLen > 0;

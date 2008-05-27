@@ -112,13 +112,20 @@ public class FileSystem {
         Util.arrayCopy(data, data_offset, getFile(fid), file_offset, length);
     }
 
-    // FIXME: inefficiency: getFileIndex is called twice (by getFile and getFileSize)
     public byte[] getFile(short fid) {
-        return (byte[]) files[getFileIndex(fid)];
+    	short idx = getFileIndex(fid);
+    	if(idx == -1) {
+    		return null;
+    	}
+        return (byte[]) files[idx];
     }
 
     public short getFileSize(short fid) {
-        return fileSizes[getFileIndex(fid)];
+    	short idx = getFileIndex(fid);
+    	if(idx == -1) {
+    		return -1;
+    	}
+        return fileSizes[idx];
     }
 
     private static short getFileIndex(short fid) throws ISOException {
@@ -160,8 +167,7 @@ public class FileSystem {
         case SOS_LOG_FID:
             return SOS_LOG_INDEX;
         default:
-            ISOException.throwIt(ISO7816.SW_FILE_INVALID); 
-            return 0;
+            return -1;
         }
     }
 }

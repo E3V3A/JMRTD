@@ -34,20 +34,6 @@ import javacard.framework.ISOException;
  *
  */
 public class PassportUtil implements ISO7816 {
-    
-//    public static void throwArrayIndex(byte[] capdu, short s) {
-//        ISOException.throwIt((short)(0x6d00 | (capdu[s] & 0xff)));
-//    }
-
-    public static short byteCount(short s) {
-        if(((s >>> 8) & 0xff) == 0) {
-            return 1;
-        }
-        else {
-            return 2;
-        }
-    }
-    
     /**
      * Counts the number of set bits in a byte
      * 
@@ -141,8 +127,10 @@ public class PassportUtil implements ISO7816 {
 //    }
 
     /***
-     * Pads an input buffer with max 8 bytes padding (0x80 followed by optional zeros) 
-     * relative to the offset and length given.
+     * Pads an input buffer with max 8 and min 1 byte padding (0x80 followed by optional zeros) 
+     * relative to the offset and length given. Always pad with at least a 0x80 byte.
+     * 
+     * See 6.2.3.1 in ISO7816-4
      * 
      * @param buffer array to pad
      * @param offset to data
@@ -151,17 +139,17 @@ public class PassportUtil implements ISO7816 {
      * 
      */
     public static short pad(byte[] buffer, short offset, short len) {
-        short padbytes = (short)(8 - (len % 8));
-        
-        if((short)buffer.length < (short)(padbytes + offset + len)) {
-            ISOException.throwIt((short)0x6d66);
-        }
-        
+    	short padbytes = (short)(lengthWithPadding(len) - len);
+                
         for(short i=0; i<padbytes; i++) {
             buffer[(short)(offset+len+i)] = (i == 0 ? (byte)0x80 : 0x00);
         }
         
         return (short)(len + padbytes);
+    }
+    
+    public static short lengthWithPadding(short inputLength) {
+    	return (short)(((inputLength + 8) / 8) * 8); 
     }
     
 //    public static void pad(APDU aapdu, short pad_len) {
