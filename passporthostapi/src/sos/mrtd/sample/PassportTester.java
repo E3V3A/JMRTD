@@ -113,7 +113,7 @@ public class PassportTester extends JPanel
 						paPanel.setService(service);
 						aaPanel.setService(service);
 						evilPanel.setService(service);
-						initPanel.setService(service);
+						//initPanel.setService(service);
 						
 						openButton.setEnabled(false);
 						closeButton.setEnabled(true);

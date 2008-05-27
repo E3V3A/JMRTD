@@ -7,6 +7,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Vector;
@@ -30,6 +31,7 @@ import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.sample.PassportGUI;
+import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 
@@ -49,20 +51,17 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             super(new GridBagLayout());
             this.service = service;
             this.gui = gui;
-            
-            try {
-                TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
-            CardTerminal[] terminals = null;
-            List<CardTerminal> l = tf.terminals().list();
-            terminals = new CardTerminal[l.size()];
-            int i = 0;
-            for(CardTerminal t : l) {
-                terminals[i++] = t;
-            }
-            readers = new JComboBox(terminals);
-            }catch(Exception ce) {
-              ce.printStackTrace();    
-            }
+                        
+//            TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
+//            CardTerminal[] terminals = null;
+//            List<CardTerminal> l = tf.terminals().list();
+//            terminals = new CardTerminal[l.size()];
+//            int i = 0;
+//            for(CardTerminal t : l) {
+//                terminals[i++] = t;
+//            }
+            Collection<CardTerminal> terminals = CardManager.getInstance().getTerminals();
+            readers = new JComboBox(terminals.toArray());
             GridBagConstraints c = new GridBagConstraints();
             c.insets = new Insets(5, 5, 5, 5);
             add(new JLabel("Card writing terminal: "),c);
@@ -125,31 +124,31 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             PassportManager.getInstance().removePassportListener(gui);
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
             
-
-            newPassport = new PassportPersoService(new TerminalCardService((CardTerminal)readers.getSelectedItem()));
-            newPassport.open();
+            PassportService ps = new PassportService(new TerminalCardService((CardTerminal)readers.getSelectedItem()));
+            newPassport = new PassportPersoService(ps);
+            ps.open();
             newPassport.putMRZ(num.getBytes("ASCII"), dob.getBytes("ASCII"), doe.getBytes("ASCII"));
 
             InputStream in = new ByteArrayInputStream(sodContents);
             
             //new ProgressThread(this, in, "Writing SOD").start();
-            newPassport.createFile(null, PassportService.EF_SOD, (short)sodContents.length);
-            newPassport.selectFile(null, PassportService.EF_SOD);
-            newPassport.writeFile(null, PassportService.EF_SOD, in);
+            newPassport.createFile(PassportService.EF_SOD, (short)sodContents.length);
+            newPassport.selectFile(PassportService.EF_SOD);
+            newPassport.writeFile(PassportService.EF_SOD, in);
                         
             in = new ByteArrayInputStream(dg1Contents);
             //new ProgressThread(this, in, "Writing DG1").start();
-            newPassport.createFile(null, PassportService.EF_DG1, (short)dg1Contents.length);
-            newPassport.selectFile(null, PassportService.EF_DG1);
-            newPassport.writeFile(null, PassportService.EF_DG1, in);
+            newPassport.createFile(PassportService.EF_DG1, (short)dg1Contents.length);
+            newPassport.selectFile(PassportService.EF_DG1);
+            newPassport.writeFile(PassportService.EF_DG1, in);
 
             in = new ByteArrayInputStream(dg2Contents);
             new ProgressThread(this, in, "Writing DG2").start();
-            newPassport.createFile(null, PassportService.EF_DG2, (short)dg2Contents.length);
-            newPassport.selectFile(null, PassportService.EF_DG2);
-            newPassport.writeFile(null, PassportService.EF_DG2, in);
+            newPassport.createFile(PassportService.EF_DG2, (short)dg2Contents.length);
+            newPassport.selectFile(PassportService.EF_DG2);
+            newPassport.writeFile(PassportService.EF_DG2, in);
             
-            newPassport.lockApplet(null);
+            newPassport.lockApplet();
 
             JOptionPane.showMessageDialog(this, "Finished. Remove the card.");
 

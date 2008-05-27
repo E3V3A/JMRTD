@@ -73,7 +73,6 @@ AuthListener
 	private HexField fidField;
 	private File fileToUpload;
 	private PassportPersoService service;
-	private SecureMessagingWrapper wrapper;
 	private JButton personalisationButton;
 	private JTextField docNrField;
 	private JTextField dobField;
@@ -104,9 +103,6 @@ AuthListener
 		add(personalisationPanel);
 		add(fileSendingPanel);
 		add(initAAPanel);
-
-		setService(service);
-		this.wrapper = null;
 
 		selectLocalFileButton = new JButton("Select local file ... ");
 		createFileButton = new JButton("Create file");
@@ -155,10 +151,6 @@ AuthListener
 		initAAPanel.add(uploadPublicKey);
 	}
 
-	public void setService(CardService service) throws CardServiceException {
-		this.service = new PassportPersoService(service);
-	}
-
 	public void actionPerformed(ActionEvent ae) {
 		JButton butt = (JButton) ae.getSource();
 
@@ -192,7 +184,7 @@ AuthListener
 //		new Thread(new Runnable() {
 //	public void run() {
 	try {
-		service.lockApplet(wrapper);
+		service.lockApplet();
 	} catch (CardServiceException cse) {
 		cse.printStackTrace();
 	}
@@ -207,13 +199,10 @@ AuthListener
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					service.createFile(wrapper,
-							PassportService.EF_DG15,
+					service.createFile(PassportService.EF_DG15,
 							(short) DG15.available());
-					service.selectFile(wrapper, PassportService.EF_DG15);
-					service.writeFile(wrapper,
-							PassportService.EF_DG15,
-							DG15);
+					service.selectFile(PassportService.EF_DG15);
+					service.writeFile(PassportService.EF_DG15, DG15);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -247,7 +236,7 @@ AuthListener
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					service.putPrivateKey(wrapper, keyPair.getPrivate());
+					service.putPrivateKey(keyPair.getPrivate());
 				} catch (CardServiceException e) {
 					e.printStackTrace();
 				}
@@ -286,8 +275,7 @@ AuthListener
 			public void run() {
 				try {
 					FileInputStream in = new FileInputStream(fileToUpload);
-					service.writeFile(wrapper,
-							(short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)),
+					service.writeFile((short) (((fid[0] & 0x000000FF) << 8) | (fid[1] & 0x000000FF)),
 							in);
 					in.close();
 				} catch (CardServiceException cse) {
@@ -306,7 +294,7 @@ AuthListener
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					service.selectFile(wrapper, fid);
+					service.selectFile((short)((fid[0] << 8) & 0xff | fid[1] & 0xff));
 				} catch (CardServiceException e) {
 					e.printStackTrace();
 				}
@@ -321,7 +309,7 @@ AuthListener
 		new Thread(new Runnable() {
 			public void run() {
 				try {
-					service.createFile(wrapper, fid, len);
+					service.createFile(fid, len);
 				} catch (CardServiceException cse) {
 					cse.printStackTrace();
 				}
@@ -353,8 +341,7 @@ AuthListener
 		lenField.setValue(fileToUpload.length());
 	}
 
-	public void performedBAC(BACEvent be) {
-		this.wrapper = be.getWrapper();
+	public void performedBAC(BACEvent be) {		
 	}
 
 	public void performedAA(AAEvent ae) {

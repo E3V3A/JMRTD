@@ -24,7 +24,7 @@ package sos.mrtd;
 
 import sos.tlv.BERTLVObject;
 
-public class DataGroup extends PassportFile
+public abstract class DataGroup extends PassportFile
 {
    /**
     * Constructor only visible to the other
@@ -57,4 +57,6 @@ public class DataGroup extends PassportFile
       }
       return super.toString();
    }
+   
+   public abstract int getTag();
 }

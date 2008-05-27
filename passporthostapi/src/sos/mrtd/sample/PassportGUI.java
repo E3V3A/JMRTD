@@ -132,10 +132,12 @@ public class PassportGUI extends JPanel implements PassportListener
 			PAPanel paPanel = new PAPanel(service);
 			AAPanel aaPanel = new AAPanel(service);
 			APDUTestPanel apduPanel = new APDUTestPanel(service);
+			CopyAndBurnPanel ccPanel = new CopyAndBurnPanel(service);
 			bacPanel.addAuthenticationListener(mrzPanel);
 			bacPanel.addAuthenticationListener(facePanel);
 			bacPanel.addAuthenticationListener(paPanel);
 			bacPanel.addAuthenticationListener(aaPanel);
+			bacPanel.addAuthenticationListener(ccPanel);
 			tabbedPane.setPreferredSize(new Dimension(600, 400));
 			tabbedPane.addTab("BAC", bacPanel);
 			tabbedPane.addTab("MRZ", mrzPanel);
@@ -143,6 +145,7 @@ public class PassportGUI extends JPanel implements PassportListener
 			tabbedPane.addTab("PA", paPanel);
 			tabbedPane.addTab("AA", aaPanel);
 			tabbedPane.addTab("APDU test", apduPanel);
+			tabbedPane.addTab("Clone & Copy", ccPanel);
             ClonePanel clonePanel = new ClonePanel(service, this);
             bacPanel.addAuthenticationListener(clonePanel);
             tabbedPane.addTab("Clone Passport", clonePanel);            
