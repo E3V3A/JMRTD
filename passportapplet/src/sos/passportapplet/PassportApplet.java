@@ -135,7 +135,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 	 * @see javacard.framework.Applet#install(byte[], byte, byte)
 	 */
 	public static void install(byte[] buffer, short offset, byte length) {
-		(new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
+		(new PassportApplet(PassportCrypto.CREF_MODE)).register();
 	}
 
 	/**
@@ -427,7 +427,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
 		// incoming message is e_ifd || m_ifd
 		// where e_ifd == E_KENC(rnd_ifd || rnd_icc || k_ifd)
-		if (bytesLeft != (short) e_ifd_length + MAC_LENGTH)
+		if (bytesLeft != (short)(e_ifd_length + MAC_LENGTH))
 			ISOException.throwIt(SW_WRONG_LENGTH);
 
 		short e_ifd_p = OFFSET_CDATA;
@@ -616,12 +616,12 @@ public class PassportApplet extends Applet implements ISO7816 {
 		while (true) {
 			fileSystem.writeData(selectedFile, offset, buffer, OFFSET_CDATA,
 					readCount);
+			offset += readCount;
 			if (apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
 				readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
 			} else {
 				break;
-			}
-			offset += readCount;
+			}			
 		}
 	}
 

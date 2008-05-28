@@ -29,9 +29,6 @@ import javacard.framework.ISO7816;
 /**
  * FileSystem.
  * 
- * Private fid's (files that cannot be read through READ_BINARY) have the first
- * byte set to 0x00.
- * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 

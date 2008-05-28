@@ -149,7 +149,7 @@ public class PassportUtil implements ISO7816 {
     }
     
     public static short lengthWithPadding(short inputLength) {
-    	return (short)(((inputLength + 8) / 8) * 8); 
+    	return (short)((((short)(inputLength + 8)) / 8) * 8); 
     }
     
 //    public static void pad(APDU aapdu, short pad_len) {
