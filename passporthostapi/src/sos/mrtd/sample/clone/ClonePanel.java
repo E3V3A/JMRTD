@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
 
@@ -99,21 +100,40 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             readers.setEnabled(false);
             PassportService s = new PassportService(service);
             s.setWrapper(wrapper);
-            InputStream sodStream = s.readFile(PassportService.EF_SOD);
+            
+            InputStream input = null;
+            
+            input = s.readFile(PassportService.EF_SOD);
 
             //new ProgressThread(this, sodStream, "Reading SOD").start();
 
-            byte[] sodContents = getByteArray(sodStream);
-            sodStream = new ByteArrayInputStream(sodContents);
-            SODFile sodFile = new SODFile(sodStream);
+            byte[] sodContents = getByteArray(input);
             
-            InputStream dg1Stream = s.readFile(PassportService.EF_DG1);
+            input = s.readFile(PassportService.EF_DG1);
             //new ProgressThread(this, dg1Stream, "Reading DG1").start();
-            byte[] dg1Contents = getByteArray(dg1Stream);
+            byte[] dg1Contents = getByteArray(input);
             DG1File dg1File = new DG1File(new ByteArrayInputStream(dg1Contents));
-            InputStream dg2Stream = s.readFile(PassportService.EF_DG2);
-            new ProgressThread(this, dg2Stream, "Reading DG2").start();
-            byte[] dg2Contents = getByteArray(dg2Stream);
+            byte[] dg11Contents = null; 
+            try {
+                input = s.readFile(PassportService.EF_DG11);
+                dg11Contents = getByteArray(input);            
+            }catch(Exception e) {
+                e.printStackTrace();
+                System.out.println("DG11 not found on the passport.");
+            }
+
+            byte[] dg15Contents = null; 
+            try {
+                input = s.readFile(PassportService.EF_DG15);
+                dg15Contents = getByteArray(input);            
+            }catch(Exception e) {
+                e.printStackTrace();
+                System.out.println("DG15 not found on the passport.");
+            }
+
+            input = s.readFile(PassportService.EF_DG2);
+            new ProgressThread(this, input, "Reading DG2").start();
+            byte[] dg2Contents = getByteArray(input);
             String reader = ((CardTerminal)readers.getSelectedItem()).getName();
 
             String num = dg1File.getMRZInfo().getDocumentNumber();
@@ -142,6 +162,22 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             newPassport.selectFile(PassportService.EF_DG1);
             newPassport.writeFile(PassportService.EF_DG1, in);
 
+            if(dg11Contents != null) {
+                in = new ByteArrayInputStream(dg11Contents);
+                //new ProgressThread(this, in, "Writing DG1").start();
+                newPassport.createFile(PassportService.EF_DG11, (short)dg11Contents.length);
+                newPassport.selectFile(PassportService.EF_DG11);
+                newPassport.writeFile(PassportService.EF_DG11, in);                
+            }
+
+            if(dg15Contents != null) {
+                in = new ByteArrayInputStream(dg15Contents);
+                //new ProgressThread(this, in, "Writing DG1").start();
+                newPassport.createFile(PassportService.EF_DG15, (short)dg15Contents.length);
+                newPassport.selectFile(PassportService.EF_DG15);
+                newPassport.writeFile(PassportService.EF_DG15, in);                
+            }
+
             in = new ByteArrayInputStream(dg2Contents);
             new ProgressThread(this, in, "Writing DG2").start();
             newPassport.createFile(PassportService.EF_DG2, (short)dg2Contents.length);
@@ -150,7 +186,16 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             
             newPassport.lockApplet();
 
-            JOptionPane.showMessageDialog(this, "Finished. Remove the card.");
+            LinkedList<String> list = new LinkedList<String>();
+            
+            if(sodContents!=null) list.add("SOD");
+            if(dg1Contents!=null) list.add("DG1");
+            if(dg2Contents!=null) list.add("DG2");
+            if(dg11Contents!=null) list.add("DG11");
+            if(dg15Contents!=null) list.add("DG15");
+            
+            JOptionPane.showMessageDialog(this, "Finished.\n" +
+                    "Data groups copied: "+ list + "\nRemove the card.");
 
             PassportManager.getInstance().addPassportListener(gui);
             clone.setEnabled(true);

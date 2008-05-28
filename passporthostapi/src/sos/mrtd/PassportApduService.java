@@ -303,6 +303,13 @@ public class PassportApduService extends CardService
       if (wrapper != null) {
          rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
       }
+      short sw = (short)rapdu.getSW();
+      if(sw == ISO7816.SW_FILE_NOT_FOUND) {
+          throw new CardServiceException("File not found.");
+      }
+      if(sw != ISO7816.SW_NO_ERROR) {
+          throw new CardServiceException("Error occured.");
+      }
    }
 
    synchronized void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)

@@ -423,7 +423,7 @@ public class PassportPersoService {
 								 PassportService.EF_DG11, PassportService.EF_DG12, PassportService.EF_DG13, PassportService.EF_DG14, PassportService.EF_DG15, PassportService.EF_DG16, PassportService.EF_COM, PassportService.EF_SOD};
 
 		for(short i : passportFiles) {
-			InputStream is = null;
+            InputStream is = null;
 			try {
 				is = service.readFile(i);
 			} catch (CardServiceException e) {
