@@ -12,6 +12,11 @@ Authors
    Martijn Oostdijk (martijno@cs.ru.nl)
    Ronny Wichers Schreur (ronny@cs.ru.nl)
 
+Supplementary code & testing
+
+   Adam Laurie (adam@algroup.co.uk)
+   http://rfidiot.org
+
 Coffee & cold drinks
 
    Arnout Engelen (arnouten@bzzt.net)
@@ -34,6 +39,7 @@ Dependencies (might be included in distribution)
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath
         Tested with bcprov-jdk16-137.jar.
+        Tested with bcprov-jdk16-139.jar.
         URL: http://www.bouncycastle.org/
 
    * JAI ImageIO for interpreting JPEG 2000 data:
@@ -50,8 +56,17 @@ Dependencies (might be included in distribution)
    * JCOP toolset (optional)
         offcard.jar part of JCOP plugin for Eclipse
         Tested with version 3.1.1
+        Tested with version 3.1.2
         When making from source, expects a copy or link to this jar
         (or stub) in lib directory.
+
+   * GlobalPlatform (optional)
+	gpshell tool for installing to JCOP cards
+	http://sourceforge.net/projects/globalplatform/
+
+   * RFIDIOt (optional)
+	mrpkey.py command line tool for testing/reading/writing/cloning
+	http://rfidiot.org/
 
 Website
 
