@@ -40,7 +40,7 @@ class Log {
         
     private void writeLogByteNoUpdate(byte b) {
         log[(byte) ((sessionBase + sessionOffset) & 0xff)] = b;
-        log[sessionBase + 1] = (byte) (sessionOffset & 0xff);
+        log[(byte) (sessionBase + 1)] = (byte) (sessionOffset & 0xff);
     }
     
 
