@@ -3,8 +3,6 @@ package sos.smartcards;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sos.util.Hex;
-
 /**
  * Inputstream for reading ISO 7816 file system cards.
  * 
