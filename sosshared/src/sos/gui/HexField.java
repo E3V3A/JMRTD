@@ -23,7 +23,7 @@ import sos.util.Hex;
 
 /**
  * GUI text field component that only accepts hexadecimal representations
- * of byte array of given length.
+ * of byte arrays of given length.
  * 
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * @version $Revision: 70 $
@@ -43,9 +43,9 @@ public class HexField extends Box
    }
 
    /**
-    * Constructs a new hex field of length <code>length</code>.
+    * Constructs a new hex field of length <code>byteCount</code>.
     * 
-    * @param byteCount the length of this new hex field (in bytes).
+    * @param byteCount the length of this new hex field (in bytes)
     */
    public HexField(int byteCount) {
       super(BoxLayout.X_AXIS);
@@ -86,7 +86,7 @@ public class HexField extends Box
    /**
     * Sets the length of this hex field to <code>length</code>.
     * 
-    * @param length the new length of this hex field.
+    * @param length the new length of this hex fields
     */
    public void setLength(int length) {
       if (length >= 0) {
@@ -99,7 +99,7 @@ public class HexField extends Box
    /**
     * Sets the editability of this hex field.
     * 
-    * @param editable indicates whether to enable or disable editability.
+    * @param editable indicates whether to enable or disable editability
     */
    public void setEditable(boolean editable) {
       textField.setEditable(editable);
@@ -140,7 +140,8 @@ public class HexField extends Box
    /**
     * Formats the text.
     * 
-    * @param The text to be formatted.
+    * @param The text to be formatted
+    * 
     * @return The formatted text.
     */
    private String format(String text) {
@@ -175,7 +176,7 @@ public class HexField extends Box
    /**
     * Sets the value of this hex field to <code>value</code>.
     * 
-    * @param value the new value.
+    * @param value the new value
     */
    public void setValue(byte[] value) {
       String result = "";
@@ -188,7 +189,7 @@ public class HexField extends Box
    /**
     * Adds <code>l</code> to the action listener list of this hex field.
     * 
-    * @param l the <code>ActionListener</code> to add.
+    * @param l the <code>ActionListener</code> to add
     */
    public void addActionListener(ActionListener l) {
       textField.addActionListener(l);
