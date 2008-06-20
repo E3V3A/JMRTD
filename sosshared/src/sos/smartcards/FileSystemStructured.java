@@ -1,5 +1,11 @@
 package sos.smartcards;
 
+/**
+ * Implement this interface to tell {@link CardFileInputStream}
+ * how to deal with card files.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public interface FileSystemStructured
 {
 	/**
@@ -22,9 +28,9 @@ public interface FileSystemStructured
 	 * Reads a fragment of the currently selected file.
 	 * 
 	 * @param offset offset
-	 * @param length length
-	 * @return contents of currently selected file.
-	 * @throws CardServiceException
+	 * @param length the number of bytes to read (the result may be shorter, though)
+	 * @return contents of currently selected file, contains at least 1 byte, at most length.
+	 * @throws CardServiceException on error (for instance: end of file)
 	 */
 	byte[] readBinary(int offset, int length) throws CardServiceException;
 	

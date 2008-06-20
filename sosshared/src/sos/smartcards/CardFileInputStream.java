@@ -82,6 +82,15 @@ public class CardFileInputStream extends InputStream
 	public boolean markSupported() {
 		return true;
 	}
+	
+	/**
+	 * Gets the length of the underlying card file.
+	 *
+	 * @return the length of the underlying card file.
+	 */
+	public int getFileLength() {
+		return fileLength;
+	}
 
 	/**
 	 * Reads from file with id <code>fid</code>.
