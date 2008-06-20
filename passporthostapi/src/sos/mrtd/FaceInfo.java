@@ -193,6 +193,8 @@ public class FaceInfo
    private int deviceType;
    private int quality;
    private BufferedImage image;
+   
+   private DataInputStream dataIn;
 
    /**
     * Constructs a new face information data structure instance.
@@ -229,7 +231,7 @@ public class FaceInfo
     * @throws IOException if input cannot be read
     */
    FaceInfo(InputStream in) throws IOException {
-      DataInputStream dataIn = new DataInputStream(in);
+      dataIn = new DataInputStream(in);
       
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
@@ -287,20 +289,7 @@ public class FaceInfo
        * Read image data, image data type code based on Section 5.8.1
        * ISO 19794-5
        */
-      switch (imageDataType) {
-      case IMAGE_DATA_TYPE_JPEG:
-         image = readImage(dataIn, "image/jpeg");
-         break;
-      case IMAGE_DATA_TYPE_JPEG2000:
-         image = readImage(dataIn, "image/jpeg2000");
-         break;
-      default:
-         throw new IOException("Unknown image data type!");
-      }
-      
-      /* Set width and height for real. */
-      width = image.getWidth();
-      height = image.getHeight();
+      image = null;
    }
    
    public byte[] getEncoded() {
@@ -351,6 +340,7 @@ public class FaceInfo
           * Read image data, image data type code based on Section 5.8.1
           * ISO 19794-5
           */
+         if (image == null) { image = (BufferedImage)getImage(); }
          switch (imageDataType) {
          case IMAGE_DATA_TYPE_JPEG:
             writeImage(image, dataOut, "image/jpeg");
@@ -437,7 +427,28 @@ public class FaceInfo
     * @return image
     */
    public Image getImage() {
-      return image;
+	   if (image == null) {
+		   try {
+			   switch (imageDataType) {
+			   case IMAGE_DATA_TYPE_JPEG:
+				   image = readImage(dataIn, "image/jpeg");
+				   break;
+			   case IMAGE_DATA_TYPE_JPEG2000:
+				   image = readImage(dataIn, "image/jpeg2000");
+				   break;
+			   default:
+				   throw new IOException("Unknown image data type!");
+			   }
+
+			   /* Set width and height for real. */
+			   width = image.getWidth();
+			   height = image.getHeight();
+		   } catch (IOException ioe) {
+			   ioe.printStackTrace();
+		   }
+	   }
+
+	   return image;
    }
    
    /**

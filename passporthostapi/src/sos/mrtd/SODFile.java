@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.Signature;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -194,7 +195,7 @@ public class SODFile extends PassportFile
     * @return the document signing certificate
     */
    public Certificate getDocSigningCertificate()
-   throws IOException, Exception {
+   throws IOException, CertificateException {
       byte[] certSpec = null;
       ASN1Set certs = signedData.getCertificates();
       if (certs.size() != 1) {
