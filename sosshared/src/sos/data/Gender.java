@@ -20,7 +20,7 @@ public enum Gender
 
 	public abstract int toInt();
 
-	public static Gender toGender(int b) {
+	public static Gender getInstance(int b) {
 		for(Gender g : Gender.values()) {
 			if(g.toInt() == b) {
 				return g;
@@ -29,5 +29,3 @@ public enum Gender
 		return null;
 	}
 }
-
-
