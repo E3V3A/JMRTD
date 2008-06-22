@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
+import sos.data.Gender;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -59,30 +60,6 @@ public class MRZInfo
    public static final int DOC_TYPE_ID2 = 2;
    /** ID3 document type for passport booklets. */
    public static final int DOC_TYPE_ID3 = 3;                           
-
-   /** Possible value for passport holder's gender. */
-   public enum Gender {
-      MALE { int toInt() { return GENDER_MALE; } }, 
-      FEMALE {int toInt() { return GENDER_FEMALE; }}, 
-      UNKNOWN { int toInt() { return GENDER_UNKNOWN; } }, 
-      UNSPECIFIED {int toInt() { return GENDER_UNSPECIFIED; } };
-
-      abstract int toInt();
-
-      static Gender toGender(int b) {
-         for(Gender g : Gender.values()) {
-            if(g.toInt() == b) {
-               return g;
-            }
-         }
-         return null;
-      }
-   }
-
-   public static final int GENDER_UNSPECIFIED = 0x00,
-   GENDER_MALE = 0x01,
-   GENDER_FEMALE = 0x02,
-   GENDER_UNKNOWN = 0x03;
 
    private static final String MRZ_CHARS = "<0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
@@ -782,7 +759,7 @@ public class MRZInfo
          MRZInfo mrzInfo =
             new MRZInfo(3, "NLD",
                   "Balkenende", secundaries,
-                  "PPNUMMER0", "NLD", parseDate(1900, "560507"), MRZInfo.Gender.MALE, 
+                  "PPNUMMER0", "NLD", parseDate(1900, "560507"), Gender.MALE, 
                   parseDate(2000, "100101"),  "876543210<<<<<");
 
          BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        

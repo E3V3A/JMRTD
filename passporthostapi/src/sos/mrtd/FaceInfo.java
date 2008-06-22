@@ -45,6 +45,7 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import sos.data.Gender;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -57,11 +58,7 @@ import sos.tlv.BERTLVObject;
  */
 public class FaceInfo
 {
-   /** Gender code based on Section 5.5.3 of ISO 19794-5. */
-//   public static final int GENDER_UNSPECIFIED = 0x00,
-//                           GENDER_MALE = 0x01,
-//                           GENDER_FEMALE = 0x02,
-//                           GENDER_UNKNOWN = 0x03;
+   /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
     /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
    public enum EyeColor { 
@@ -176,7 +173,7 @@ public class FaceInfo
    private static final int YAW = 0, PITCH = 1, ROLL = 2;
    
    private long faceImageBlockLength;
-   private MRZInfo.Gender gender;
+   private Gender gender;
    private EyeColor eyeColor;
    private int hairColor;
    private long featureMask;
@@ -206,7 +203,7 @@ public class FaceInfo
     * @param sourceType source type
     * @param image image
     */
-   public FaceInfo(MRZInfo.Gender gender, EyeColor eyeColor, int hairColor, short expression,
+   public FaceInfo(Gender gender, EyeColor eyeColor, int hairColor, short expression,
          int sourceType, BufferedImage image) {
       this.faceImageBlockLength = 0L;
       this.gender = gender;
@@ -236,7 +233,7 @@ public class FaceInfo
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
       int featurePointCount = dataIn.readUnsignedShort();
-      gender = MRZInfo.Gender.toGender(dataIn.readUnsignedByte());
+      gender = Gender.toGender(dataIn.readUnsignedByte());
       eyeColor = EyeColor.toEyeColor(dataIn.readUnsignedByte());
       hairColor = dataIn.readUnsignedByte();
       featureMask = dataIn.readUnsignedByte();
@@ -690,7 +687,7 @@ public class FaceInfo
     * 
     * @return gender
     */
-   public MRZInfo.Gender getGender() {
+   public Gender getGender() {
       return gender;
    }
 
@@ -889,7 +886,7 @@ public class FaceInfo
    public static void main(String[] arg) {
       try {
          BufferedImage image = ImageIO.read(new File(arg[0]));
-         FaceInfo info = new FaceInfo(MRZInfo.Gender.MALE,
+         FaceInfo info = new FaceInfo(Gender.MALE,
                EyeColor.BLUE, HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
                SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM, image);
          byte[] zero0 = { 0x00 };
