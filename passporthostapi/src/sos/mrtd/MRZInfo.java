@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
+import sos.data.Country;
 import sos.data.Gender;
 import sos.tlv.BERTLVObject;
 
@@ -67,10 +68,10 @@ public class MRZInfo
       new SimpleDateFormat("yyMMdd");
 
    private int documentType;
-   private String issuingState;
+   private Country issuingState;
    private String primaryIdentifier;
    private String[] secondaryIdentifiers;
-   private String nationality;
+   private Country nationality;
    private String documentNumber;
    private String personalNumber;
    private Date dateOfBirth;
@@ -97,9 +98,9 @@ public class MRZInfo
     * @param dateOfExpiry date of expiry
     * @param personalNumber personal number
     */
-   public MRZInfo(int documentType, String issuingState,
+   public MRZInfo(int documentType, Country issuingState,
          String primaryIdentifier, String[] secondaryIdentifiers,
-         String documentNumber, String nationality, Date dateOfBirth,
+         String documentNumber, Country nationality, Date dateOfBirth,
          Gender gender, Date dateOfExpiry, String personalNumber) {
       this.documentType = documentType;
       this.issuingState = issuingState;
@@ -267,7 +268,7 @@ public class MRZInfo
    }
 
    private void writeIssuingState(DataOutputStream dataOut) throws IOException {
-      dataOut.write(issuingState.getBytes("UTF-8"));
+      dataOut.write(issuingState.toAlpha3Code().getBytes("UTF-8"));
    }
 
    private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
@@ -287,7 +288,7 @@ public class MRZInfo
    }
 
    private void writeNationality(DataOutputStream dataOut) throws IOException {
-      dataOut.write(nationality.getBytes("UTF-8"));
+      dataOut.write(nationality.toAlpha3Code().getBytes("UTF-8"));
    }
 
    private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
@@ -359,10 +360,10 @@ public class MRZInfo
     *         
     * @throws IOException if something goes wrong
     */
-   private String readIssuingState(DataInputStream in) throws IOException {
+   private Country readIssuingState(DataInputStream in) throws IOException {
       byte[] data = new byte[3];
       in.readFully(data);
-      return new String(data);
+      return Country.getInstance(new String(data));
    }
 
    /**
@@ -420,10 +421,10 @@ public class MRZInfo
     * 
     * @throws IOException if something goes wrong
     */
-   private String readNationality(DataInputStream in) throws IOException {
+   private Country readNationality(DataInputStream in) throws IOException {
       byte[] data = new byte[3];
       in.readFully(data);
-      return new String(data).trim();
+      return Country.getInstance(new String(data).trim());
    }
 
    /**
@@ -531,7 +532,7 @@ public class MRZInfo
     * 
     * @return issuing state
     */
-   public String getIssuingState() {
+   public Country getIssuingState() {
       return issuingState;
    }
 
@@ -556,9 +557,9 @@ public class MRZInfo
    /**
     * Gets the passport holder's nationality.
     * 
-    * @return a 3 letter country code
+    * @return a country
     */
-   public String getNationality() {
+   public Country getNationality() {
       return nationality;
    }
 
@@ -757,9 +758,9 @@ public class MRZInfo
 //       return;
 
          MRZInfo mrzInfo =
-            new MRZInfo(3, "NLD",
+            new MRZInfo(3, Country.getInstance("NLD"),
                   "Balkenende", secundaries,
-                  "PPNUMMER0", "NLD", parseDate(1900, "560507"), Gender.MALE, 
+                  "PPNUMMER0", Country.getInstance("NLD"), parseDate(1900, "560507"), Gender.MALE, 
                   parseDate(2000, "100101"),  "876543210<<<<<");
 
          BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        

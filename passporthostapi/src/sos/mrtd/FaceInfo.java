@@ -233,7 +233,7 @@ public class FaceInfo
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
       int featurePointCount = dataIn.readUnsignedShort();
-      gender = Gender.toGender(dataIn.readUnsignedByte());
+      gender = Gender.getInstance(dataIn.readUnsignedByte());
       eyeColor = EyeColor.toEyeColor(dataIn.readUnsignedByte());
       hairColor = dataIn.readUnsignedByte();
       featureMask = dataIn.readUnsignedByte();
