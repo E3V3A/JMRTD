@@ -1,8 +1,18 @@
+/*
+ * $Id: $
+ */
+
 package sos.data;
 
-/** Possible values for gender. */
-public enum Gender {
-
+/**
+ * Possible values for a person's gender.
+ * Integer values correspond to Section 5.5.3 of ISO 19794-5.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author Cees-Bart Breunesse (ceesb@riscure.com)
+ */
+public enum Gender
+{
 	MALE { public int toInt() { return 0x01; } }, 
 	FEMALE {public int toInt() { return 0x02; }}, 
 	UNKNOWN { public int toInt() { return 0x03; } }, 
