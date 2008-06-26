@@ -70,6 +70,7 @@ public class CardManager
 		try {
 			/* Default factory will contain connected PCSC terminals. */
 			addTerminals(TerminalFactory.getDefault());
+            // addTerminals(TerminalFactory.getInstance("ACR", null, new ds.smartcards.acr122.ACR122Provider()));
 
 			/* Our own factories for 'special' terminals. */
 			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
