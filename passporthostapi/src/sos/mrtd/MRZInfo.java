@@ -88,11 +88,11 @@ public class MRZInfo
     * Constructs a new MRZ.
     * 
     * @param documentType document type
-    * @param issuingState issuing state 3 letter abreviation
+    * @param issuingState issuing state
     * @param primaryIdentifier card holder name
     * @param secondaryIdentifiers card holder name
     * @param documentNumber document number
-    * @param nationality nationality 3 letter abreviation
+    * @param nationality nationality
     * @param dateOfBirth date of birth
     * @param gender gender
     * @param dateOfExpiry date of expiry
@@ -600,7 +600,7 @@ public class MRZInfo
           *        should go into this one as well...
           */
          out.append(documentTypeToString());
-         out.append(issuingState);
+         out.append(issuingState.toAlpha3Code());
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
          out.append(mrzFormat(personalNumber, 15));
@@ -611,7 +611,7 @@ public class MRZInfo
          out.append(genderToString());
          out.append(SDF.format(dateOfExpiry));
          out.append(dateOfExpiryCheckDigit);
-         out.append(nationality);
+         out.append(nationality.toAlpha3Code());
          out.append(optionalData2);
          out.append(compositeCheckDigit); // should be: upper + middle line?
          out.append("\n");
@@ -619,12 +619,12 @@ public class MRZInfo
          out.append("\n");
       } else {
          out.append(documentTypeToString());
-         out.append(issuingState);
+         out.append(issuingState.toAlpha3Code());
          out.append(nameToString());
          out.append("\n");
          out.append(documentNumber);
          out.append(documentNumberCheckDigit);
-         out.append(nationality);
+         out.append(nationality.toAlpha3Code());
          out.append(SDF.format(dateOfBirth));
          out.append(dateOfBirthCheckDigit);
          out.append(genderToString());
