@@ -2,17 +2,14 @@ package sos.gui;
 
 import java.awt.Font;
 import java.awt.Image;
-import java.io.File;
-import java.net.URL;
 
-import javax.imageio.IIOException;
-import javax.imageio.ImageIO;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
 import sos.data.Country;
+import sos.data.Gender;
 
 public class CountryLabel extends Box
 {
