@@ -13,7 +13,8 @@ import sos.gui.Icons;
 public class VerificationIndicator extends Box
 {
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
-
+	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, DS_INDICATOR = 2, CS_INDICATOR = 3;
+	
 	public static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
 
 	public Image
@@ -65,30 +66,38 @@ public class VerificationIndicator extends Box
 		csKeyLabel.setFont(KEY_FONT);
 		add(csKeyLabel);
 		add(csLabel);
-
 	}
 
-	public void setBACState(int state) {
-		switch (state) {
-		case VERIFICATION_SUCCEEDED: bacIcon.setImage(VERIFICATION_SUCCEEDED_ICON); bacLabel.setToolTipText("Succeeded"); break;
-		case VERIFICATION_FAILED: bacIcon.setImage(VERIFICATION_FAILED_ICON); bacLabel.setToolTipText("Failed"); break;
-		default: bacIcon.setImage(VERIFICATION_UNKNOWN_ICON); bacLabel.setToolTipText("Not checked"); break;
+	public void setBACState(int state) { setState(BAC_INDICATOR, state); }
+
+	public void setAAState(int state) { setState(AA_INDICATOR, state);	}
+
+	public void setDSState(int state) { setState(DS_INDICATOR, state); }
+	
+	public void setCSState(int state) {	setState(CS_INDICATOR, state); }
+	
+	private void setState(int indicator, int result) {
+		ImageIcon icon = null;
+		JLabel label = null;
+		switch (indicator) {
+		case BAC_INDICATOR: label= bacLabel; icon = bacIcon; break;
+		case AA_INDICATOR: label = aaLabel; icon = aaIcon; break;
+		case DS_INDICATOR: label = dsLabel; icon = dsIcon; break;
+		case CS_INDICATOR: label = csLabel; icon = csIcon; break;
 		}
-	}
-
-	public void setAAState(int state) {
-		switch (state) {
-		case VERIFICATION_SUCCEEDED: aaIcon.setImage(VERIFICATION_SUCCEEDED_ICON); aaLabel.setToolTipText("Succeeded"); break;
-		case VERIFICATION_FAILED: aaIcon.setImage(VERIFICATION_FAILED_ICON); aaLabel.setToolTipText("Failed"); break;
-		default: aaIcon.setImage(VERIFICATION_UNKNOWN_ICON); aaLabel.setToolTipText("Not checked"); break;
-		}
-	}
-
-	public void setDSState(int state) {
-		switch (state) {
-		case VERIFICATION_SUCCEEDED: dsIcon.setImage(VERIFICATION_SUCCEEDED_ICON); dsLabel.setToolTipText("Succeeded"); break;
-		case VERIFICATION_FAILED: dsIcon.setImage(VERIFICATION_FAILED_ICON); dsLabel.setToolTipText("Failed"); break;
-		default: dsIcon.setImage(VERIFICATION_UNKNOWN_ICON); dsLabel.setToolTipText("Not checked"); break;
+		switch (result) {
+		case VERIFICATION_SUCCEEDED:
+			icon.setImage(VERIFICATION_SUCCEEDED_ICON);
+			label.setToolTipText("Succeeded");
+			break;
+		case VERIFICATION_FAILED:
+			icon.setImage(VERIFICATION_FAILED_ICON);
+			label.setToolTipText("Failed");
+			break;
+		default:
+			icon.setImage(VERIFICATION_UNKNOWN_ICON);
+			label.setToolTipText("Not checked");
+			break;
 		}
 	}
 }

@@ -33,25 +33,30 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.security.auth.x500.X500Principal;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -63,16 +68,21 @@ import javax.swing.filechooser.FileFilter;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
+import sos.data.Country;
 import sos.gui.Icons;
+import sos.gui.ImagePanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
+import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
+import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
+import sos.util.Files;
 import sos.util.Hex;
 
 /**
@@ -86,7 +96,7 @@ public class PassportFrame extends JFrame
 {
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(500, 420);
-	
+
 	private static final Icon CERTIFICATE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("rosette"));
 	private static final Icon CERTIFICATE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("rosette"));
 	private static final Icon MAGNIFIER_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
@@ -96,6 +106,8 @@ public class PassportFrame extends JFrame
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
+	private FacePanel facePanel;
+	
 	private JPanel panel, centerPanel;
 	private Map<Short, InputStream> passportFiles;
 
@@ -103,6 +115,8 @@ public class PassportFrame extends JFrame
 	private DG15File dg15;
 	private SODFile sod;
 	private COMFile com;
+
+	Certificate docSigningCert, countrySigningCert;
 
 	private VerificationIndicator verificationPanel;
 	private boolean isBACVerified;
@@ -138,16 +152,12 @@ public class PassportFrame extends JFrame
 			this.isBACVerified = isBACVerified;
 			bufferFile(PassportService.EF_COM, service);
 			bufferFile(PassportService.EF_SOD, service);
-			InputStream comIn = passportFiles.get(PassportService.EF_COM);
+			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
-			comIn.reset();
 			int[] tags = com.getTagList();
 			for (int i = 0; i < tags.length; i++) {
 				bufferFile(PassportFile.lookupFIDByTag(tags[i]), service);
 			}
-
-
-
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 			dispose();
@@ -176,32 +186,42 @@ public class PassportFrame extends JFrame
 
 	public void readFromZipFile(File file) throws IOException {
 		final ZipFile zipIn = new ZipFile(file);
-		(new Thread(new Runnable() {
-			public void run() {
+//		(new Thread(new Runnable() {
+//		public void run() {
+		try {
+			Enumeration<? extends ZipEntry> entries = zipIn.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				if (entry == null) { break; }
+				String fileName = entry.getName();
+				int size = (int)(entry.getSize() & 0x00000000FFFFFFFFL);
 				try {
-					Enumeration<? extends ZipEntry> entries = zipIn.entries();
-					while (entries.hasMoreElements()) {
-						ZipEntry entry = entries.nextElement();
-						if (entry == null) { break; }
-						String fileName = entry.getName();
-						int size = (int)(entry.getSize() & 0x00000000FFFFFFFFL);
-						try {
-							short fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
-							byte[] bytes = new byte[size];
-							DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
-							dataIn.readFully(bytes);
-							passportFiles.put(fid, new ByteArrayInputStream(bytes));
-						} catch (NumberFormatException nfe) {
-							/* NOTE: ignore this file */
-						}
-					}
-					displayInputStreams();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					dispose();
+					short fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
+					byte[] bytes = new byte[size];
+					DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
+					dataIn.readFully(bytes);
+					passportFiles.put(fid, new ByteArrayInputStream(bytes));
+				} catch (NumberFormatException nfe) {
+					/* NOTE: ignore this file */
 				}
 			}
-		})).start();
+
+			displayInputStreams();
+
+			try {
+				verifySecurity(null);
+			} catch (CardServiceException cse) {
+				cse.printStackTrace();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			dispose();
+		}
+//		}
+//		})).start();
 	}
 
 	public void setEnabled(boolean enabled) {
@@ -230,17 +250,18 @@ public class PassportFrame extends JFrame
 					centerPanel.revalidate();
 					break;
 				case PassportService.EF_DG2:
-					centerPanel.add(new FacePanel(in, 160, 200), BorderLayout.WEST);
-					panel.revalidate();
+					facePanel = new FacePanel(in, 160, 200);
+					centerPanel.add(facePanel, BorderLayout.WEST);
+					centerPanel.revalidate();
 					break;
 				case PassportService.EF_DG15:
-					dg15 = new DG15File(in);
+					// dg15 = new DG15File(in);
 					break;
 				case PassportService.EF_COM:
-					com = new COMFile(in);
+					// com = new COMFile(in);
 					break;
 				case PassportService.EF_SOD:
-					sod = new SODFile(in);
+					// sod = new SODFile(in);
 					break;
 				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(id));
 				}
@@ -251,6 +272,17 @@ public class PassportFrame extends JFrame
 		}
 	}
 
+	private InputStream getFile(short tag) {
+		try {
+			InputStream in = passportFiles.get(tag);
+			in.reset();
+			return in;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalStateException("ERROR: " + ioe.toString());
+		}
+	}
+
 	private void verifySecurity(PassportService service)
 	throws IOException, CardServiceException {
 
@@ -258,25 +290,24 @@ public class PassportFrame extends JFrame
 		verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check active authentication */
-		InputStream dg15In = passportFiles.get(PassportService.EF_DG15);
-		dg15In.reset();
-		if (dg15In != null) {
+		InputStream dg15In = getFile(PassportService.EF_DG15);
+		if (dg15In != null && service != null) {
 			DG15File dg15 = new DG15File(dg15In);
 			PublicKey pubKey = dg15.getPublicKey();
-			dg15In.reset();
 			isAAVerified = service.doAA(pubKey);
 		}
 		verificationPanel.setAAState(isAAVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
-		/* Check hashes signed by document signer */
+		docSigningCert = null;
+		countrySigningCert = null;
+
+		/* Check hashes in the SOd correspond to hashes we compute. */
 		try {
-			InputStream comIn = passportFiles.get(PassportService.EF_COM);
-			comIn.reset();
+			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
 			int[] tags = com.getTagList();
 
-			InputStream sodIn = passportFiles.get(PassportService.EF_SOD);
-			sodIn.reset();
+			InputStream sodIn = getFile(PassportService.EF_SOD);
 			SODFile sod = new SODFile(sodIn);
 			DataGroupHash[] hashes = sod.getDataGroupHashes();
 			isDSVerified = true;
@@ -307,12 +338,39 @@ public class PassportFrame extends JFrame
 				}
 			}
 
+			docSigningCert = sod.getDocSigningCertificate();
+			isDSVerified &= sod.checkDocSignature(docSigningCert);
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
 		} catch (Exception ioe) {
 			ioe.printStackTrace();
 		}
 		verificationPanel.setDSState(isDSVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
+
+		/* Check country signer certificate, if known. */
+		Country issuingState = null;
+		InputStream dg1In = getFile(PassportService.EF_DG1);
+		if (dg1In != null) {
+			DG1File dg1 = new DG1File(dg1In);
+			MRZInfo mrzInfo = dg1.getMRZInfo();
+			issuingState = mrzInfo.getIssuingState();
+		}
+
+		try {
+			URL baseDir = Files.getBaseDir();
+			URL cscaDir = new URL(baseDir + "/csca");
+			/* TODO: also check .pem, .der formats? */
+			URL cscaFile = new URL(cscaDir + "/" + issuingState.toString().toLowerCase() + ".cer");
+			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			countrySigningCert = certFactory.generateCertificate(cscaFile.openStream());
+			docSigningCert.verify(countrySigningCert.getPublicKey());
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
+		} catch (CertificateException e) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+		} catch (GeneralSecurityException gse) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+			gse.printStackTrace();
+		}
 
 		verificationPanel.revalidate();
 	}
@@ -390,10 +448,9 @@ public class PassportFrame extends JFrame
 					File file = fileChooser.getSelectedFile();
 					FileOutputStream fileOut = new FileOutputStream(file);
 					ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-					for (short id: passportFiles.keySet()) {
-						String entryName = Hex.shortToHexString(id) + ".bin";
-						InputStream dg = passportFiles.get(id);
-						try { dg.reset(); } catch (IOException ioe) { System.out.println("DEBUG: entryName = " + entryName); }
+					for (short tag: passportFiles.keySet()) {
+						String entryName = Hex.shortToHexString(tag) + ".bin";
+						InputStream dg = getFile(tag);
 						zipOut.putNextEntry(new ZipEntry(entryName));
 						int bytesRead;
 						byte[] dgBytes = new byte[1024];
@@ -425,13 +482,18 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			InputStream dg2In = passportFiles.get(PassportService.EF_DG2);
-			try { dg2In.reset(); } catch (IOException ioe) { ioe.printStackTrace(); }
+			int index = facePanel.getSelectedIndex();
+			InputStream dg2In = getFile(PassportService.EF_DG2);
 			DG2File dg2File = new DG2File(dg2In);
-			FaceInfo face = dg2File.getFaces().get(0);
-			Image image = face.getImage();
-			JLabel label = new JLabel(new ImageIcon(image));
-			JOptionPane.showMessageDialog(getContentPane(), label, "Portrait", JOptionPane.PLAIN_MESSAGE, null);
+			FaceInfo faceInfo = dg2File.getFaces().get(index);
+			FaceFrame faceFrame = new FaceFrame(faceInfo);
+			faceFrame.setVisible(true);
+			faceFrame.pack();
+			
+//			Image image = face.getImage();
+//			ImagePanel imagePanel = new ImagePanel();
+//			imagePanel.setImage(image);
+//			JOptionPane.showMessageDialog(getContentPane(), imagePanel, "Portrait", JOptionPane.PLAIN_MESSAGE, null);
 		}
 	}
 
@@ -441,26 +503,14 @@ public class PassportFrame extends JFrame
 			putValue(SMALL_ICON, CERTIFICATE_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
 			putValue(SHORT_DESCRIPTION, "View Document Signer Certificate");
-			putValue(NAME, "DS Cert...");
+			putValue(NAME, "Doc. Cert...");
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			try {
-
-				InputStream sodIn = passportFiles.get(PassportService.EF_SOD);
-				sodIn.reset();
-				SODFile sodFile = new SODFile(sodIn);
-				Certificate cert = sodFile.getDocSigningCertificate();
-				JTextArea textArea = new JTextArea(cert.toString(), 20, 40);
-				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(textArea), "Document Signer Certificate", JOptionPane.PLAIN_MESSAGE, null);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			} catch (CertificateException ce) {
-				ce.printStackTrace();
-			} catch (CardServiceException cse) {
-				cse.printStackTrace();
-			}
-
+			String dialogTitle = "Document Signer Certificate";
+			String certText = certificateToString(docSigningCert);
+			JTextArea textArea = new JTextArea(certText, 20, 40);
+			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(textArea), dialogTitle, JOptionPane.PLAIN_MESSAGE, null);
 		}
 	}
 
@@ -470,11 +520,49 @@ public class PassportFrame extends JFrame
 			putValue(SMALL_ICON, CERTIFICATE_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
 			putValue(SHORT_DESCRIPTION, "View Country Signer Certificate");
-			putValue(NAME, "CS Cert...");
+			putValue(NAME, "CSCA Cert...");
 		}
 
 		public void actionPerformed(ActionEvent e) {
+			String certText = certificateToString(countrySigningCert);
+			String dialogTitle = "Country Signer Certificate";
+			JTextArea textArea = new JTextArea(certText, 20, 40);
+			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(textArea), dialogTitle, JOptionPane.PLAIN_MESSAGE, null);
 		}
+	}
+
+	private static String certificateToString(Certificate cert) {
+		String certText = null;
+		if (cert instanceof X509Certificate) {
+			StringBuffer result = new StringBuffer();
+			X509Certificate x509Cert = (X509Certificate)cert;
+			result.append("subject:\n" );
+			result.append(principalToString(x509Cert.getSubjectX500Principal()));
+			result.append('\n');
+			result.append("issuer:\n");
+			result.append(principalToString(x509Cert.getIssuerX500Principal()));
+			result.append('\n');
+			result.append("Not before: " + x509Cert.getNotBefore() + "\n");
+			result.append("Not after: " + x509Cert.getNotAfter() + "\n");
+			certText = result.toString();
+		} else {
+			certText = cert.toString();
+		}
+		return certText;
+	}
+
+	private static String principalToString(X500Principal principal) {
+		StringBuffer result = new StringBuffer();
+		String subject = principal.getName(X500Principal.RFC1779);
+		Scanner scanner = new Scanner(subject);
+		scanner.useDelimiter(",");
+		while (scanner.hasNext()) {
+			String token = scanner.next().trim();
+			result.append("   ");
+			result.append(token);
+			result.append('\n');
+		}
+		return result.toString();
 	}
 
 }

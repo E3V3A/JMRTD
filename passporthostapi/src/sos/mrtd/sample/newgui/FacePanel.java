@@ -51,6 +51,7 @@ public class FacePanel extends JPanel
 	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image"));
 	
 	private Dimension preferredSize;
+	private JTabbedPane tabbedPane;
 
 	public FacePanel(InputStream in) {
 		
@@ -61,10 +62,10 @@ public class FacePanel extends JPanel
 		preferredSize = new Dimension(width, height);
 		add(createFaceComponent(in, width, height));
 	}
-
-//	public Dimension getPreferredSize() {
-//		return preferredSize;
-//	}
+	
+	public int getSelectedIndex() {
+		return tabbedPane.getSelectedIndex();
+	}
 
 	/**
 	 * The face image component.
@@ -80,7 +81,7 @@ public class FacePanel extends JPanel
 	}
 	
 	private JComponent createFaceComponent(Collection<FaceInfo> faces, int width, int height) {
-		JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
 		int dw = width - 10, dh = height - 10;
 		int index = 0;
 		for (FaceInfo face: faces) {

@@ -193,15 +193,15 @@ public class PAPanel extends JPanel implements AuthListener
 					}
 
 					/* DEBUG... */
-					System.out.println("WRITING...");
-					FileOutputStream out = new FileOutputStream("docsigning_cert.der");
-					out.write(docSigningCert.getEncoded());
-					out.flush();
-					out.close();
-
-					System.out.println("DEBUG: docSigningCert.getClass() == " + docSigningCert.getClass());
-
-					System.out.println(((X509Certificate)docSigningCert).getType());
+//					System.out.println("WRITING...");
+//					FileOutputStream out = new FileOutputStream("docsigning_cert.der");
+//					out.write(docSigningCert.getEncoded());
+//					out.flush();
+//					out.close();
+//
+//					System.out.println("DEBUG: docSigningCert.getClass() == " + docSigningCert.getClass());
+//
+//					System.out.println(((X509Certificate)docSigningCert).getType());
 
 					File file = chooser.getSelectedFile();
 					CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
