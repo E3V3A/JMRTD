@@ -8,6 +8,7 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 
 import sos.data.Country;
+import sos.util.Files;
 
 /**
  * Utility class with methods for reading icons and other images from file.
@@ -35,22 +36,9 @@ public class Icons
 	DEFAULT_16X11_IMAGE =  new BufferedImage(16, 11, BufferedImage.TYPE_INT_ARGB);
 
 	private static URL getImagesDir() {
-		ClassLoader cl = (new Object() {
-			public String toString() { return super.toString(); }
-		}).getClass().getClassLoader();
-
 		try {
-			URL basePathURL = cl.getResource(".");
+			URL basePathURL = Files.getBaseDir();
 			URL imagesDirURL = new URL(basePathURL + "/images");
-			if (basePathURL.getProtocol().toLowerCase().startsWith("file")) {
-				File basePathFile = new File(basePathURL.getFile());
-				File imagesDirFile = new File(basePathFile, "images");
-				if (!imagesDirFile.isDirectory()) {
-					basePathFile = new File(basePathFile.getParent());
-					imagesDirFile = new File(basePathFile, "images");
-					imagesDirURL = new URL("file:" + imagesDirFile);
-				}
-			}			
 			return imagesDirURL;
 		} catch (Exception e) {
 			return null;
