@@ -49,7 +49,6 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
-import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 

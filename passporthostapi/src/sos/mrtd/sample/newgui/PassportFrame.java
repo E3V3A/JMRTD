@@ -24,7 +24,6 @@ package sos.mrtd.sample.newgui;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
@@ -70,7 +69,6 @@ import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
 import sos.gui.Icons;
-import sos.gui.ImagePanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -80,7 +78,6 @@ import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
-import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
 import sos.util.Files;
 import sos.util.Hex;

@@ -1,24 +1,20 @@
 package sos.mrtd.sample;
 
-import javax.smartcardio.CardTerminal;
-import javax.swing.JButton;
-import javax.swing.JComboBox;
-import javax.swing.JFileChooser;
-import javax.swing.JLabel;
-import javax.swing.JPanel;
-
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
-import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
+import javax.smartcardio.CardTerminal;
 import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
+import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
@@ -27,9 +23,7 @@ import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
-import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
-import sos.smartcards.TerminalCardService;
 
 /**
  * Class for copying and burning passports

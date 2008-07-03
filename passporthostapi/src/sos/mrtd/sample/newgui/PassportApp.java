@@ -78,8 +78,8 @@ public class PassportApp  implements PassportListener, AuthListener
 		new File(new File(System.getProperty("user.home")), ".jmrtd");
 
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_icon");
-	private static final Icon NEW_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("star"));
-	private static final Icon NEW_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("star"));
+	private static final Icon NEW_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
+	private static final Icon NEW_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon OPEN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));

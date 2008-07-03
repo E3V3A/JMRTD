@@ -28,7 +28,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -40,12 +39,13 @@ import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.Enumeration;
-import java.util.zip.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
 import sos.tlv.BERTLVObject;
