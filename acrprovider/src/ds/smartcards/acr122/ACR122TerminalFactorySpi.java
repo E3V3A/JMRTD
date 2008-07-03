@@ -199,9 +199,11 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
         }
 
         /** Lists all avaialable terminals */
-        public List<CardTerminal> list() throws CardException {
+        public List<CardTerminal> list() throws CardException {            
             List<CardTerminal> list = new LinkedList<CardTerminal>();
-            list.add(terminal);
+            if(terminal.virtualCard != null) {
+              list.add(terminal);
+            }
             return list;
         }
 
