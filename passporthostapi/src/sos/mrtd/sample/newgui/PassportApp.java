@@ -38,6 +38,7 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -322,7 +323,15 @@ public class PassportApp  implements PassportListener, AuthListener
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			System.out.println("DEBUG: TODO: terminal action " + terminal);
+			Object src = e.getSource();
+			if (src instanceof AbstractButton) {
+				AbstractButton button = (AbstractButton)src;
+				if (button.isSelected()) {
+					System.out.println("DEBUG: TODO: terminal action " + terminal + " switched on");
+				} else {
+					System.out.println("DEBUG: TODO: terminal action " + terminal + " switched off");
+				}
+			}
 		}	
 	}
 
