@@ -63,6 +63,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
@@ -78,6 +79,7 @@ import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
+import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
 import sos.util.Files;
 import sos.util.Hex;
@@ -104,9 +106,12 @@ public class PassportFrame extends JFrame
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
 	private FacePanel facePanel;
-	
+
 	private JPanel panel, centerPanel;
-	private Map<Short, InputStream> passportFiles;
+
+	private Map<Short, CardFileInputStream> fileStreams;
+	private Map<Short, InputStream> bufferedStreams;
+	private int totalLength;
 
 	private DG1File dg1;
 	private DG15File dg15;
@@ -127,26 +132,33 @@ public class PassportFrame extends JFrame
 		centerPanel = new JPanel(new BorderLayout());
 		panel.add(centerPanel, BorderLayout.CENTER);
 		panel.add(verificationPanel, BorderLayout.SOUTH);
-		passportFiles = new HashMap<Short, InputStream>();
+		bufferedStreams = new HashMap<Short, InputStream>();
+		fileStreams = new HashMap<Short, CardFileInputStream>();
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		setIconImage(Icons.getImage("jmrtd_icon"));
+		pack();
+		setVisible(true);
 	}
 
 	/**
-	 * Constructs the GUI based on a passport service.
-	 *
+	 * Fills the passportFiles inputstreams with passport inputstreams.
+	 * 
 	 * @param service the service
 	 * 
 	 * @return a passport frame.
 	 */
 	public void readFromService(PassportService service, boolean isBACVerified) throws CardServiceException {
+		long t0 = System.currentTimeMillis();
+		long t = t0;
+		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
 		try {
 			this.isBACVerified = isBACVerified;
+			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
 			bufferFile(PassportService.EF_COM, service);
 			bufferFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
@@ -162,29 +174,68 @@ public class PassportFrame extends JFrame
 			ioe.printStackTrace();
 		}
 
+		t = System.currentTimeMillis();
+		System.out.println("DEBUG: inputstreams buffered t = " + ((double)(t - t0) / 1000) + "s");
+
+
+		(new Thread(new Runnable() {
+			public void run() {
+				try {
+					ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
+					while (estimateBytesRead() >  0) {
+						Thread.sleep(200);
+						int bytesRead = estimateBytesRead();
+						m.setProgress(bytesRead);
+						m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
+					}
+				} catch (InterruptedException ie) {
+				} catch (Exception e) {
+				}
+			}
+		})).start();
+
 		displayInputStreams();
+		t = System.currentTimeMillis();
+		System.out.println("DEBUG: finished displaying t = " + ((double)(t - t0) / 1000) + "s");
 
 		try {
 			verifySecurity(s);
+			/* revalidate? */
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
+		t = System.currentTimeMillis();
+		System.out.println("DEBUG: finished verifying t = " + ((double)(t - t0) / 1000) + "s");
 	}
 
 	private InputStream bufferFile(short fid, PassportService service) throws CardServiceException, IOException {
-		InputStream in = service.readFile(fid);
-		InputStream bufferedIn = new BufferedInputStream(in, in.available() + 1);
-		bufferedIn.mark(in.available() + 2);
-		passportFiles.put(fid, bufferedIn);
-		return bufferedIn;
+		if (!bufferedStreams.containsKey(fid)) {
+			CardFileInputStream in = service.readFile(fid);
+			int length = in.getFileLength();
+			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
+			bufferedIn.mark(in.available() + 2);
+			fileStreams.put(fid, in);
+			bufferedStreams.put(fid, bufferedIn);
+			totalLength += length;
+			return bufferedIn;
+		} else {
+			return bufferedStreams.get(fid);
+		}
+	}
+
+	private int estimateBytesRead() {
+		int bytesRead = 0;
+		for (short tag: fileStreams.keySet()) {
+			CardFileInputStream in = fileStreams.get(tag);
+			bytesRead += in.getFilePos();
+		}
+		return bytesRead;
 	}
 
 	public void readFromZipFile(File file) throws IOException {
 		final ZipFile zipIn = new ZipFile(file);
-//		(new Thread(new Runnable() {
-//		public void run() {
 		try {
 			Enumeration<? extends ZipEntry> entries = zipIn.entries();
 			while (entries.hasMoreElements()) {
@@ -197,7 +248,7 @@ public class PassportFrame extends JFrame
 					byte[] bytes = new byte[size];
 					DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
 					dataIn.readFully(bytes);
-					passportFiles.put(fid, new ByteArrayInputStream(bytes));
+					bufferedStreams.put(fid, new ByteArrayInputStream(bytes));
 				} catch (NumberFormatException nfe) {
 					/* NOTE: ignore this file */
 				}
@@ -217,8 +268,6 @@ public class PassportFrame extends JFrame
 			ioe.printStackTrace();
 			dispose();
 		}
-//		}
-//		})).start();
 	}
 
 	public void setEnabled(boolean enabled) {
@@ -236,20 +285,27 @@ public class PassportFrame extends JFrame
 	 */
 	private void displayInputStreams() {
 		try {
-			for (short id: passportFiles.keySet()) {
-				InputStream in = passportFiles.get(id);
+			InputStream in = null;
+			in = getFile(PassportService.EF_DG1);
+			dg1 = new DG1File(in);
+			centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
+			centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
+			centerPanel.revalidate();
+			
+			for (short tag: bufferedStreams.keySet()) {
+				in = getFile(tag);
 				in.reset();
-				switch (id) {
+				switch (tag) {
 				case PassportService.EF_DG1:
-					dg1 = new DG1File(in);
-					centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
-					centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
-					centerPanel.revalidate();
+//					dg1 = new DG1File(in);
+//					centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
+//					centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
+//					centerPanel.repaint();
 					break;
 				case PassportService.EF_DG2:
 					facePanel = new FacePanel(in, 160, 200);
 					centerPanel.add(facePanel, BorderLayout.WEST);
-					centerPanel.revalidate();
+					centerPanel.repaint();
 					break;
 				case PassportService.EF_DG15:
 					// dg15 = new DG15File(in);
@@ -260,7 +316,7 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_SOD:
 					// sod = new SODFile(in);
 					break;
-				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(id));
+				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(tag));
 				}
 				in.reset();
 			}
@@ -271,7 +327,7 @@ public class PassportFrame extends JFrame
 
 	private InputStream getFile(short tag) {
 		try {
-			InputStream in = passportFiles.get(tag);
+			InputStream in = bufferedStreams.get(tag);
 			in.reset();
 			return in;
 		} catch (IOException ioe) {
@@ -320,7 +376,7 @@ public class PassportFrame extends JFrame
 				if (storedHash != null && storedHash.length == 20) { algorithm = "SHA1"; }
 				MessageDigest digest = MessageDigest.getInstance(algorithm);
 
-				InputStream dgIn = passportFiles.get(PassportFile.lookupFIDByTag(tags[i]));
+				InputStream dgIn = bufferedStreams.get(PassportFile.lookupFIDByTag(tags[i]));
 				dgIn.reset();
 				byte[] buf = new byte[1024];
 				while (true) {
@@ -445,7 +501,7 @@ public class PassportFrame extends JFrame
 					File file = fileChooser.getSelectedFile();
 					FileOutputStream fileOut = new FileOutputStream(file);
 					ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-					for (short tag: passportFiles.keySet()) {
+					for (short tag: bufferedStreams.keySet()) {
 						String entryName = Hex.shortToHexString(tag) + ".bin";
 						InputStream dg = getFile(tag);
 						zipOut.putNextEntry(new ZipEntry(entryName));
@@ -486,7 +542,7 @@ public class PassportFrame extends JFrame
 			FaceFrame faceFrame = new FaceFrame(faceInfo);
 			faceFrame.setVisible(true);
 			faceFrame.pack();
-			
+
 //			Image image = face.getImage();
 //			ImagePanel imagePanel = new ImagePanel();
 //			imagePanel.setImage(image);

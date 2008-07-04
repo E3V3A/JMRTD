@@ -99,5 +99,6 @@ public class VerificationIndicator extends Box
 			label.setToolTipText("Not checked");
 			break;
 		}
+		repaint();
 	}
 }

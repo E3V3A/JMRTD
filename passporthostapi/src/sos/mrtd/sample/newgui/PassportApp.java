@@ -191,8 +191,6 @@ public class PassportApp  implements PassportListener, AuthListener
 		PassportFrame gui = new PassportFrame();
 		gui.readFromService(service, authenticated);
 		serviceToFrameMap.put(service, gui);
-		gui.pack();
-		gui.setVisible(true);
 	}
 
 	private void sessionStopped(PassportService service) {
