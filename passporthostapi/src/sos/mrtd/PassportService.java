@@ -24,7 +24,6 @@ package sos.mrtd;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -140,22 +139,6 @@ public class PassportService extends PassportApduService
 		}
 		state = SESSION_STOPPED_STATE;
 	}
-
-	/**
-	 * Hack to construct a passport service from a service that is already open.
-	 * This should be removed some day.
-	 * 
-	 * @param service underlying service
-	 * @param wrapper encapsulates secure messaging state
-	 */
-//	public PassportService(CardService service, SecureMessagingWrapper wrapper)
-//	throws CardServiceException {
-//	this(service);
-//	this.wrapper = wrapper;
-//	if (state < BAC_AUTHENTICATED_STATE) {
-//	state = BAC_AUTHENTICATED_STATE;
-//	}
-//	}
 
 	/**
 	 * Opens a session. This is done by connecting to the card, selecting the
@@ -322,11 +305,11 @@ public class PassportService extends PassportApduService
 	 * 
 	 * @throws IOException if the file cannot be read
 	 */
-	public InputStream readFile(short fid) throws CardServiceException {
+	public CardFileInputStream readFile(short fid) throws CardServiceException {
 		return new CardFileInputStream(fid, maxBlockSize, fs);
 	}
 
-	public InputStream readDataGroup(int tag) throws CardServiceException {
+	public CardFileInputStream readDataGroup(int tag) throws CardServiceException {
 		short fid = PassportFile.lookupFIDByTag(tag);
 		return readFile(fid);
 	}
@@ -350,7 +333,7 @@ public class PassportService extends PassportApduService
 
 		public synchronized int getFileLength() throws CardServiceException {
 			try {
-				/* Each passport file is contained in a TLV structure. */
+				/* Each passport file consists of a TLV structure. */
 				byte[] prefix = readBinary(0, 8);
 				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
 				BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
