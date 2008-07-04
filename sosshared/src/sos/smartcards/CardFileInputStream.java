@@ -91,6 +91,10 @@ public class CardFileInputStream extends InputStream
 	public int getFileLength() {
 		return fileLength;
 	}
+	
+	public int getFilePos() {
+		return offsetBufferInFile + offsetInBuffer;
+	}
 
 	/**
 	 * Reads from file with id <code>fid</code>.
