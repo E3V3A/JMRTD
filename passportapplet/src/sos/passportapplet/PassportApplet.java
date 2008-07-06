@@ -368,7 +368,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 		short plaintext_len = (short) (hdr_len + m1_len + m1m2hash_len + trailer_len);
 		// sanity check
 		if (plaintext_len != 128) {
-			ISOException.throwIt((short) 0x6d66);
+			ISOException.throwIt(SW_INTERNAL_ERROR);
 		}
 		Cipher rsaCiph = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
 		rsaCiph.init(keyStore.rsaPrivateKey, Cipher.MODE_ENCRYPT);
@@ -376,7 +376,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 				plaintext_len, buffer, hdr_offset);
 		// sanity check
 		if (ciphertext_len != 128) {
-			ISOException.throwIt((short) 0x6d66);
+			ISOException.throwIt(SW_INTERNAL_ERROR);
 		}
 
 		return ciphertext_len;
@@ -582,6 +582,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 				(short) (fileSize - offset));
 		// FIXME: 37 magic
 		len = PassportUtil.min(len, (short) buffer.length);
+		len = PassportUtil.min(le, len);
 		short bufferOffset = 0;
 		if (protectedApdu) {
 			bufferOffset = crypto.getApduBufferOffset(len);
@@ -609,19 +610,13 @@ public class PassportApplet extends Applet implements ISO7816 {
 		short offset = Util.makeShort(p1, p2);
 
 		short readCount = (short) (buffer[ISO7816.OFFSET_LC] & 0xff);
-		if (apdu.getCurrentState() == APDU.STATE_INITIAL) {
-			readCount = apdu.setIncomingAndReceive();
-		}
+		readCount = apdu.setIncomingAndReceive();
 
-		while (true) {
+		while(readCount > 0) {
 			fileSystem.writeData(selectedFile, offset, buffer, OFFSET_CDATA,
 					readCount);
-			offset += readCount;
-			if (apdu.getCurrentState() != APDU.STATE_FULL_INCOMING) {
-				readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
-			} else {
-				break;
-			}			
+			offset += readCount;			
+			readCount = apdu.receiveBytes(ISO7816.OFFSET_CDATA);
 		}
 	}
 
