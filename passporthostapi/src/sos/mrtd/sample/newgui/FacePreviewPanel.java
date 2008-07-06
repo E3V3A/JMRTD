@@ -46,18 +46,18 @@ import sos.util.Icons;
  *
  * @version $Revision: $
  */
-public class FacePanel extends JPanel
+public class FacePreviewPanel extends JPanel
 {	
 	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image"));
 	
 	private Dimension preferredSize;
 	private JTabbedPane tabbedPane;
 
-	public FacePanel(InputStream in) {
+	public FacePreviewPanel(InputStream in) {
 		
 	}
 	
-	public FacePanel(InputStream in, int width, int height) {
+	public FacePreviewPanel(InputStream in, int width, int height) {
 		super(new FlowLayout());
 		preferredSize = new Dimension(width, height);
 		add(createFaceComponent(in, width, height));

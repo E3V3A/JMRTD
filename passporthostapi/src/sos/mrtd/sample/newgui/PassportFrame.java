@@ -105,7 +105,7 @@ public class PassportFrame extends JFrame
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
-	private FacePanel facePanel;
+	private FacePreviewPanel facePanel;
 
 	private JPanel panel, centerPanel;
 
@@ -303,7 +303,7 @@ public class PassportFrame extends JFrame
 //					centerPanel.repaint();
 					break;
 				case PassportService.EF_DG2:
-					facePanel = new FacePanel(in, 160, 200);
+					facePanel = new FacePreviewPanel(in, 160, 200);
 					centerPanel.add(facePanel, BorderLayout.WEST);
 					centerPanel.repaint();
 					break;
@@ -560,10 +560,9 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			String dialogTitle = "Document Signer Certificate";
-			String certText = certificateToString(docSigningCert);
-			JTextArea textArea = new JTextArea(certText, 20, 40);
-			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(textArea), dialogTitle, JOptionPane.PLAIN_MESSAGE, null);
+			JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", docSigningCert);
+			certificateFrame.pack();
+			certificateFrame.setVisible(true);
 		}
 	}
 
@@ -577,45 +576,9 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			String certText = certificateToString(countrySigningCert);
-			String dialogTitle = "Country Signer Certificate";
-			JTextArea textArea = new JTextArea(certText, 20, 40);
-			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(textArea), dialogTitle, JOptionPane.PLAIN_MESSAGE, null);
+			JFrame certificateFrame = new CertificateFrame("Country Signer Certificate", countrySigningCert);
+			certificateFrame.pack();
+			certificateFrame.setVisible(true);
 		}
 	}
-
-	private static String certificateToString(Certificate cert) {
-		String certText = null;
-		if (cert instanceof X509Certificate) {
-			StringBuffer result = new StringBuffer();
-			X509Certificate x509Cert = (X509Certificate)cert;
-			result.append("subject:\n" );
-			result.append(principalToString(x509Cert.getSubjectX500Principal()));
-			result.append('\n');
-			result.append("issuer:\n");
-			result.append(principalToString(x509Cert.getIssuerX500Principal()));
-			result.append('\n');
-			result.append("Not before: " + x509Cert.getNotBefore() + "\n");
-			result.append("Not after: " + x509Cert.getNotAfter() + "\n");
-			certText = result.toString();
-		} else {
-			certText = cert.toString();
-		}
-		return certText;
-	}
-
-	private static String principalToString(X500Principal principal) {
-		StringBuffer result = new StringBuffer();
-		String subject = principal.getName(X500Principal.RFC1779);
-		Scanner scanner = new Scanner(subject);
-		scanner.useDelimiter(",");
-		while (scanner.hasNext()) {
-			String token = scanner.next().trim();
-			result.append("   ");
-			result.append(token);
-			result.append('\n');
-		}
-		return result.toString();
-	}
-
 }
