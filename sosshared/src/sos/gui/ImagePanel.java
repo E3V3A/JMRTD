@@ -89,6 +89,10 @@ public class ImagePanel extends JPanel
       this.image = image; // FIXME: what if image param is not a BufferedImage?
       setVisible(true);
    }
+   
+   public Image getImage() {
+	   return image;
+   }
 
    /**
     * Clears the currently displayed image.
