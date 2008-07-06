@@ -27,10 +27,15 @@ import sos.mrtd.FaceInfo;
 import sos.util.Icons;
 import sos.util.Images;
 
-/* TODO: implement a frame instead of the dialog!
- *    including a menu bar with menu items:
- *       file -> save as JPEG, PNG, ...,
- *       view -> featurepoints (checkbox menu item)
+/**
+ * Frame for displaying and manipulating one portrait image.
+ * Portrait is displayed at actual size.
+ * 
+ * Menu bar includes menu for saving image in alternative format,
+ * displaying additional meta data, and an option to show feature
+ * points.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class FaceFrame extends JFrame
 {
@@ -48,7 +53,11 @@ public class FaceFrame extends JFrame
 	private ImagePanel imagePanel;
 
 	public FaceFrame(FaceInfo info) {
-		super("Portrait");
+		this("Portrait", info);
+	}
+	
+	public FaceFrame(String title, FaceInfo info) {
+		super(title);
 		this.info = info;
 
 		/* Menu bar */
@@ -125,9 +134,6 @@ public class FaceFrame extends JFrame
 			default: break;
 			}
 		}
-		
-
-
 	}
 
 	private class ViewImageInfoAction extends AbstractAction
@@ -160,10 +166,17 @@ public class FaceFrame extends JFrame
 			Object src = e.getSource();
 			if (src instanceof AbstractButton) {
 				AbstractButton button = (AbstractButton)src;
+				FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
 				if (button.isSelected()) {
-					System.out.println("DEBUG: Feature Points switched on");
+					for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+						String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+						imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
+					}
 				} else {
-					System.out.println("DEBUG: Feature Points switched off");
+					for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+						String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+						imagePanel.deHighlightPoint(key);
+					}
 				}
 			}
 		}
