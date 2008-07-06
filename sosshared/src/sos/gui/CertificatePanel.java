@@ -23,6 +23,7 @@ public class CertificatePanel extends JPanel
 		area.append(certificateToString(certificate));
 		area.setEditable(false);
 		add(new JScrollPane(area), BorderLayout.CENTER);
+		add(new KeyPanel(certificate.getPublicKey()), BorderLayout.SOUTH);
 	}
 	
 	public Certificate getCertificate() {
