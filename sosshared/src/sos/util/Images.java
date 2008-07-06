@@ -15,7 +15,7 @@ import javax.swing.ImageIcon;
 
 public class Images
 {
-	/* From Java almanac site. Check license. */
+	/* From Java Developers Almanac site. TODO: Check license. */
 	
 	// This method returns a buffered image with the contents of an image
     public static BufferedImage toBufferedImage(Image image) {
