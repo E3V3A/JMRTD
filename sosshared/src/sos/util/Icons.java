@@ -1,4 +1,4 @@
-package sos.gui;
+package sos.util;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
@@ -8,7 +8,6 @@ import java.net.URL;
 import javax.imageio.ImageIO;
 
 import sos.data.Country;
-import sos.util.Files;
 
 /**
  * Utility class with methods for reading icons and other images from file.

@@ -9,6 +9,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
 import sos.data.Gender;
+import sos.util.Icons;
 
 public class GenderLabel extends Box
 {
