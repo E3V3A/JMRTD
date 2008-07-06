@@ -9,7 +9,6 @@ import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
 import sos.data.Country;
-import sos.data.Gender;
 import sos.util.Icons;
 
 public class CountryLabel extends Box

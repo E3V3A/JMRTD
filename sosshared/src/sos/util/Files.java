@@ -1,7 +1,6 @@
 package sos.util;
 
 import java.io.File;
-import java.net.URI;
 import java.net.URL;
 
 public class Files {
