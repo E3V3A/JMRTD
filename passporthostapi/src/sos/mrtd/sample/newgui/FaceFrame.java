@@ -1,14 +1,31 @@
 package sos.mrtd.sample.newgui;
 
 import java.awt.Container;
+import java.awt.Graphics;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.HeadlessException;
 import java.awt.Image;
+import java.awt.Transparency;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.awt.image.ColorModel;
+import java.awt.image.PixelGrabber;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -16,10 +33,13 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.filechooser.FileFilter;
 
-import sos.gui.Icons;
 import sos.gui.ImagePanel;
 import sos.mrtd.FaceInfo;
+import sos.util.Hex;
+import sos.util.Icons;
+import sos.util.Images;
 
 /* TODO: implement a frame instead of the dialog!
  *    including a menu bar with menu items:
@@ -101,8 +121,27 @@ public class FaceFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			System.out.println("DEBUG: Save As PNG...");
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileFilter() {
+				public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("png") || f.getName().endsWith("PNG"); }
+				public String getDescription() { return "PNG files"; }				
+			});
+			int choice = fileChooser.showSaveDialog(getContentPane());
+			switch (choice) {
+			case JFileChooser.APPROVE_OPTION:
+				try {
+					File file = fileChooser.getSelectedFile();
+					ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);  
+				} catch (IOException fnfe) {
+					fnfe.printStackTrace();
+				}
+				break;
+			default: break;
+			}
 		}
+		
+
+
 	}
 
 	private class ViewImageInfoAction extends AbstractAction

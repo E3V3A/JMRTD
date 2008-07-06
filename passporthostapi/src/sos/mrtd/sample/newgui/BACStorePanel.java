@@ -19,7 +19,7 @@ import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
-import sos.gui.Icons;
+import sos.util.Icons;
 
 /**
  * GUI for managing the BAC store.

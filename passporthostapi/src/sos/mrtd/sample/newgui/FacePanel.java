@@ -35,9 +35,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import sos.gui.Icons;
 import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
+import sos.util.Icons;
 
 /**
  * GUI component for displaying the portrait.

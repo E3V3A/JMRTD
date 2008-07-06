@@ -8,7 +8,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import sos.gui.Icons;
+import sos.util.Icons;
 
 public class VerificationIndicator extends Box
 {

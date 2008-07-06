@@ -69,7 +69,6 @@ import javax.swing.filechooser.FileFilter;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
-import sos.gui.Icons;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -83,6 +82,7 @@ import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
 import sos.util.Files;
 import sos.util.Hex;
+import sos.util.Icons;
 
 /**
  * Displays a passport while (and after) it is being read.

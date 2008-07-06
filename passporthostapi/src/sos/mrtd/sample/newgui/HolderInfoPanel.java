@@ -35,6 +35,7 @@ import java.util.List;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -57,7 +58,7 @@ public class HolderInfoPanel extends JPanel
 
 	private static final Color VALUE_FOREGROUND_COLOR = new Color(0x1A1A1A);
 	private static final Color VALUE_BACKGROUND_COLOR = new Color(0xFFF8F8);
-	private static final Font VALUE_FONT = new Font("Monospaced", Font.ITALIC, 12);
+	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private static final Color MRZ_FOREGROUND_COLOR = new Color(0x000000);
 	private static final Color MRZ_BACKGROUND_COLOR = new Color(0xFFFFFF);
@@ -122,9 +123,10 @@ public class HolderInfoPanel extends JPanel
 			return lbl;
 		} else {
 			String valueString = value.toString().trim();
-			JLabel lbl = new JLabel(" " + valueString + " ");
-			lbl.setFont(VALUE_FONT);
-			return lbl;
+			JTextField tf = new JTextField(Math.max(valueString.length(), 20));
+			tf.setText(valueString);
+			tf.setFont(VALUE_FONT);
+			return tf;
 		}
 	}
 

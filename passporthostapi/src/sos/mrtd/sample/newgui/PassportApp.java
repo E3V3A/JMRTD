@@ -50,7 +50,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.filechooser.FileFilter;
 
-import sos.gui.Icons;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
@@ -62,6 +61,7 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.util.Icons;
 
 /**
  * Simple graphical application to demonstrate the
