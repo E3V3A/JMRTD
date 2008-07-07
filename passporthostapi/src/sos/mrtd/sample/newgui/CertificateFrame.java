@@ -11,7 +11,6 @@ import java.security.cert.CertificateEncodingException;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -20,7 +19,6 @@ import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
 import sos.gui.CertificatePanel;
-import sos.gui.ImagePanel;
 import sos.util.Icons;
 
 /* TODO: implement a frame instead of the dialog!
