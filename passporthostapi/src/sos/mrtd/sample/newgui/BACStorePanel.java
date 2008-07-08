@@ -3,6 +3,8 @@ package sos.mrtd.sample.newgui;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -30,6 +32,9 @@ import sos.util.Icons;
  */
 public class BACStorePanel extends JPanel
 {  
+	private static final SimpleDateFormat SDF =
+		new SimpleDateFormat("yyMMdd");
+	
 	private static final Icon DOWN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon DOWN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon UP_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_up"));
@@ -143,9 +148,9 @@ public class BACStorePanel extends JPanel
 		
 		public void actionPerformed(ActionEvent e) {
 			String documentNumber = entryField.getDocumentNumber();
-			String dateOfBirth = entryField.getDateOfBirth();
-			String dateOfExpiry = entryField.getDateOfExpiry();
-			store.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
+			Date dateOfBirth = entryField.getDateOfBirth();
+			Date dateOfExpiry = entryField.getDateOfExpiry();
+			store.addEntry(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
 			table.revalidate();
 		} 
 	}

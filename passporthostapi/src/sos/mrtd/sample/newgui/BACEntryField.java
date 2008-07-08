@@ -1,6 +1,8 @@
 package sos.mrtd.sample.newgui;
 
 import java.awt.event.ActionListener;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import javax.swing.Action;
 import javax.swing.Box;
@@ -9,16 +11,22 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
+import sos.gui.DateField;
+
 public class BACEntryField extends Box
 {
+
+	
 	private JButton addButton;
-	private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
+	private JTextField docNrTF;
+	private DateField dateOfBirthField, dateOfExpiryField;
 
 	public BACEntryField() {
 		super(BoxLayout.X_AXIS);
 		docNrTF = new JTextField(9);
-		dateOfBirthTF = new JTextField(6);
-		dateOfExpiryTF = new JTextField(6);
+		// dateOfBirthTF = new JTextField(6);
+		dateOfBirthField = new DateField();
+		dateOfExpiryField = new DateField();
 		addButton = new JButton("Add");
 		add(new JLabel("Document number: "));
 		add(Box.createHorizontalStrut(5));
@@ -26,20 +34,20 @@ public class BACEntryField extends Box
 		add(Box.createHorizontalStrut(10));
 		add(new JLabel("Date of birth: "));
 		add(Box.createHorizontalStrut(5));
-		add(dateOfBirthTF);
+		add(dateOfBirthField);
 		add(Box.createHorizontalStrut(10));
 		add(new JLabel("Date of expiry: "));
 		add(Box.createHorizontalStrut(5));
-		add(dateOfExpiryTF);
+		add(dateOfExpiryField);
 		add(Box.createHorizontalStrut(10));
 		add(addButton);
 	}
 	
-	public BACEntryField(String documentNumber, String dateOfBirth, String dateOfExpiry) {
+	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		this();
 		docNrTF.setText(documentNumber);
-		dateOfBirthTF.setText(dateOfBirth);
-		dateOfExpiryTF.setText(dateOfExpiry);
+		dateOfBirthField.setDate(dateOfBirth);
+		dateOfExpiryField.setDate(dateOfExpiry);
 	}
 
 	public void setAction(Action action) {
@@ -54,11 +62,11 @@ public class BACEntryField extends Box
 		return docNrTF.getText();
 	}
 
-	public String getDateOfBirth() {
-		return dateOfBirthTF.getText();
+	public Date getDateOfBirth() {
+		return dateOfBirthField.getDate();
 	}
 
-	public String getDateOfExpiry() {
-		return dateOfExpiryTF.getText();
+	public Date getDateOfExpiry() {
+		return dateOfExpiryField.getDate();
 	}
 }
