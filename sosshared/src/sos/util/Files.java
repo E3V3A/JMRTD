@@ -15,7 +15,6 @@ public class Files {
 
 		try {
 			URL basePathURL = cl.getResource(".");
-			
 			if (basePathURL.getProtocol().toLowerCase().startsWith("file")) {
 				File basePathFile = new File(basePathURL.getFile());
 				File imagesDirFile = new File(basePathFile, "images");
