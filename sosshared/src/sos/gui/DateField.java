@@ -26,7 +26,7 @@ import javax.swing.JComboBox;
  */
 public class DateField extends Box
 {
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM HH:mm:ss");
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
 	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private Calendar cal;
