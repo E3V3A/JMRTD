@@ -33,6 +33,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
@@ -41,6 +43,7 @@ import sos.data.Country;
 import sos.data.Gender;
 import sos.gui.CountryLabel;
 import sos.gui.GenderLabel;
+import sos.gui.GridLayout2;
 import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
@@ -93,24 +96,36 @@ public class HolderInfoPanel extends JPanel
 		add(makePropertiesDisplay(keys, values));
 	}
 
+//	private Component makePropertiesDisplay(List<String> keys, List<Object> values) {
+//		JPanel result = new JPanel(new GridLayout(keys.size(), 1));
+//		Iterator<Object> valuesIt = values.listIterator();
+//		for (String key: keys) {
+//			Object value = valuesIt.next();
+//			JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
+//			row.add(makeKey(key));
+//			row.add(makeValue(key, value));
+//			result.add(row);
+//		}
+//		return result;
+//	}
+
 	private Component makePropertiesDisplay(List<String> keys, List<Object> values) {
-		JPanel result = new JPanel(new GridLayout(keys.size(), 1));
+		JPanel result = new JPanel(new GridLayout2(keys.size(), 2, 3, 3));
 		Iterator<Object> valuesIt = values.listIterator();
 		for (String key: keys) {
 			Object value = valuesIt.next();
-			JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT));
-			row.add(makeKey(key));
-			row.add(makeValue(key, value));
-			result.add(row);
+			result.add(makeKey(key));
+			result.add(makeValue(key, value));
 		}
 		return result;
 	}
 
+	
 	private Component makeValue(String key, Object value) {
 		key = key.trim();
 		if (value instanceof Date) {
-			String valueString = SDF.format((Date)value);
-			JLabel lbl = new JLabel(" " + valueString + " ");
+			String valueString = SDF.format((Date)value).trim();
+			JLabel lbl = new JLabel(valueString);
 			lbl.setFont(VALUE_FONT);
 			return lbl;
 		} else if (value instanceof Gender) {

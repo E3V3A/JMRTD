@@ -40,6 +40,7 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
@@ -63,6 +65,7 @@ import javax.swing.filechooser.FileFilter;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
+import sos.gui.KeyPanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -92,6 +95,8 @@ public class PassportFrame extends JFrame
 
 	private static final Icon CERTIFICATE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("rosette"));
 	private static final Icon CERTIFICATE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("rosette"));
+	private static final Icon KEY_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
+	private static final Icon KEY_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
 	private static final Icon MAGNIFIER_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon MAGNIFIER_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
@@ -285,7 +290,7 @@ public class PassportFrame extends JFrame
 			centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
 			centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
 			centerPanel.revalidate();
-			
+
 			for (short tag: bufferedStreams.keySet()) {
 				in = getFile(tag);
 				in.reset();
@@ -456,6 +461,10 @@ public class PassportFrame extends JFrame
 		viewMenu.add(viewCountrySignerCertificate);
 		viewCountrySignerCertificate.setAction(new ViewCountrySignerCertificateAction());
 
+		JMenuItem viewAAPublicKey = new JMenuItem();
+		viewMenu.add(viewAAPublicKey);
+		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
+
 		return viewMenu;
 	}
 
@@ -573,6 +582,28 @@ public class PassportFrame extends JFrame
 			JFrame certificateFrame = new CertificateFrame("Country Signer Certificate", countrySigningCert);
 			certificateFrame.pack();
 			certificateFrame.setVisible(true);
+		}
+	}
+
+	private class ViewAAPublicKeyAction extends AbstractAction
+	{
+		public ViewAAPublicKeyAction() {
+			putValue(SMALL_ICON, KEY_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, KEY_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "View Active Authentication Public Key");
+			putValue(NAME, "AA Pub. Key...");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			try {
+				InputStream in = getFile(PassportService.EF_DG15);
+				DG15File file = new DG15File(in);
+				PublicKey pubKey = file.getPublicKey();
+				/* TODO: make a KeyFrame class, with menu for saving this key in X.509 format... */
+				JOptionPane.showMessageDialog(getContentPane(), new KeyPanel(pubKey), "Active Authentication Public Key", JOptionPane.PLAIN_MESSAGE, null);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
 		}
 	}
 }

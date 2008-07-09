@@ -85,6 +85,7 @@ public class CertificateFrame extends JFrame
 					|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
 					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
 					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+					|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
 					|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
 				public String getDescription() { return "Certificate files"; }				
 			});
