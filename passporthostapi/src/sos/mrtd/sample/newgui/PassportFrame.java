@@ -40,7 +40,6 @@ import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -64,7 +63,6 @@ import javax.swing.filechooser.FileFilter;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
-import sos.data.Country;
 import sos.gui.KeyPanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
@@ -123,6 +121,7 @@ public class PassportFrame extends JFrame
 	private boolean isBACVerified;
 	private boolean isAAVerified;
 	private boolean isDSVerified;
+	private Object issuingState;
 
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
@@ -400,7 +399,7 @@ public class PassportFrame extends JFrame
 		verificationPanel.setDSState(isDSVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check country signer certificate, if known. */
-		Country issuingState = null;
+		issuingState = null;
 		InputStream dg1In = getFile(PassportService.EF_DG1);
 		if (dg1In != null) {
 			DG1File dg1 = new DG1File(dg1In);
@@ -545,11 +544,6 @@ public class PassportFrame extends JFrame
 			FaceFrame faceFrame = new FaceFrame(faceInfo);
 			faceFrame.setVisible(true);
 			faceFrame.pack();
-
-//			Image image = face.getImage();
-//			ImagePanel imagePanel = new ImagePanel();
-//			imagePanel.setImage(image);
-//			JOptionPane.showMessageDialog(getContentPane(), imagePanel, "Portrait", JOptionPane.PLAIN_MESSAGE, null);
 		}
 	}
 
@@ -579,9 +573,11 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			JFrame certificateFrame = new CertificateFrame("Country Signer Certificate", countrySigningCert);
-			certificateFrame.pack();
-			certificateFrame.setVisible(true);
+			if (countrySigningCert != null) {
+				JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (" + issuingState + ", from file)", countrySigningCert);
+				certificateFrame.pack();
+				certificateFrame.setVisible(true);
+			}
 		}
 	}
 

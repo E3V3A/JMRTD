@@ -1,7 +1,6 @@
 package sos.mrtd.sample.newgui;
 
 import java.awt.event.ActionListener;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.Action;
