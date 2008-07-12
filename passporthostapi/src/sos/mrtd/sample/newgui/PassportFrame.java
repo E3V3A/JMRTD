@@ -595,12 +595,9 @@ public class PassportFrame extends JFrame
 				InputStream in = getFile(PassportService.EF_DG15);
 				DG15File file = new DG15File(in);
 				PublicKey pubKey = file.getPublicKey();
-				
-				KeyFrame keyFrame = new KeyFrame(pubKey);
+				KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
 				keyFrame.pack();
 				keyFrame.setVisible(true);
-				/* TODO: make a KeyFrame class, with menu for saving this key in X.509 format... */
-				// JOptionPane.showMessageDialog(getContentPane(), new KeyPanel(pubKey), "Active Authentication Public Key", JOptionPane.PLAIN_MESSAGE, null);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}

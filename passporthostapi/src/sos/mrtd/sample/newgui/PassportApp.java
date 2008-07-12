@@ -8,8 +8,15 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
@@ -30,6 +37,8 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.filechooser.FileFilter;
 
 import sos.mrtd.AAEvent;
@@ -43,6 +52,7 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.util.Files;
 import sos.util.Icons;
 
 /**
@@ -321,11 +331,28 @@ public class PassportApp  implements PassportListener, AuthListener
 			putValue(SMALL_ICON, INFORMATION_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, INFORMATION_LARGE_ICON);
 			putValue(SHORT_DESCRIPTION, "About this application");
-			putValue(NAME, "About");
+			putValue(NAME, "About...");
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon("images/jmrtd.png"));
+			try {
+				JTextArea area = new JTextArea(20, 35);
+				URL readMeFile = new URL(Files.getBaseDir() + "/README");
+				BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
+				while (true) {
+					String line = in.readLine();
+					if (line == null) { break; }
+					line.trim();
+					area.append("  " + line);
+					area.append("\n");
+				}
+				area.setCaretPosition(0);
+				area.setEditable(false);
+				JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
+			} catch (Exception ex) {
+				ex.printStackTrace();
+				JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
+			}
 		}
 	}
 
