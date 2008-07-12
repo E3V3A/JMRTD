@@ -5,8 +5,7 @@ import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
+import java.security.Key;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -18,23 +17,23 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
-import sos.gui.CertificatePanel;
+import sos.gui.KeyPanel;
 import sos.util.Icons;
 
-public class CertificateFrame extends JFrame
+public class KeyFrame extends JFrame
 {
 	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
-	private CertificatePanel certificatePanel;
+	private KeyPanel keyPanel;
 
-	public CertificateFrame(Certificate certificate) {
-		this("Certificate", certificate);
+	public KeyFrame(Key key) {
+		this("Key", key);
 	}
 
-	public CertificateFrame(String title, Certificate certificate) {
+	public KeyFrame(String title, Key key) {
 		super(title);
 
 		/* Menu bar */
@@ -43,9 +42,9 @@ public class CertificateFrame extends JFrame
 		setJMenuBar(menuBar);
 
 		/* Frame content */
-		certificatePanel = new CertificatePanel(certificate);
+		keyPanel = new KeyPanel(key);
 		Container cp = getContentPane();
-		cp.add(certificatePanel);
+		cp.add(keyPanel);
 	}
 
 	private JMenu createFileMenu() {
@@ -65,9 +64,9 @@ public class CertificateFrame extends JFrame
 	}
 
 	/**
-	 * Saves the certificate to file.
+	 * Saves the key in DER format.
 	 * 
-	 * Use <code>openssl x509 -inform DER -in &lt;file&gt;</code>
+	 * Use <code>openssl rsa -pubin -inform DER -in &lt;file&gt;</code>
 	 * to print the resulting file.
 	 */
 	private class SaveAsAction extends AbstractAction
@@ -75,7 +74,7 @@ public class CertificateFrame extends JFrame
 		public SaveAsAction() {
 			putValue(SMALL_ICON, SAVE_AS_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Save certificate to file");
+			putValue(SHORT_DESCRIPTION, "Save key to file");
 			putValue(NAME, "Save As...");
 		}
 
@@ -83,12 +82,11 @@ public class CertificateFrame extends JFrame
 			JFileChooser fileChooser = new JFileChooser();
 			fileChooser.setFileFilter(new FileFilter() {
 				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
 					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
 					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-					|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
-					|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
-				public String getDescription() { return "Certificate files"; }				
+					|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
+					|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
+				public String getDescription() { return "Key files"; }				
 			});
 			int choice = fileChooser.showSaveDialog(getContentPane());
 			switch (choice) {
@@ -97,11 +95,9 @@ public class CertificateFrame extends JFrame
 					File file = fileChooser.getSelectedFile();
 					FileOutputStream out = new FileOutputStream(file);
 					/* FIXME: This is DER encoding? */
-					out.write(certificatePanel.getCertificate().getEncoded());
+					out.write(keyPanel.getKey().getEncoded());
 					out.flush();
 					out.close();
-				} catch (CertificateEncodingException cee) {
-					cee.printStackTrace();
 				} catch (IOException fnfe) {
 					fnfe.printStackTrace();
 				}
