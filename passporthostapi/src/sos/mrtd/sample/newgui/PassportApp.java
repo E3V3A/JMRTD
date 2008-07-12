@@ -357,7 +357,7 @@ public class PassportApp  implements PassportListener, AuthListener
 	}
 
 	/**
-	 * Main method creates a GUI instance and puts it in a frame.
+	 * Main method creates an instance.
 	 *
 	 * @param arg command line arguments.
 	 */
