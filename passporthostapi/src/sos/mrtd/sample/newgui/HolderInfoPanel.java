@@ -41,6 +41,7 @@ import sos.data.Gender;
 import sos.gui.CountryLabel;
 import sos.gui.GenderLabel;
 import sos.gui.GridLayout2;
+import sos.gui.MRZEntryField;
 import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
@@ -104,7 +105,6 @@ public class HolderInfoPanel extends JPanel
 		return result;
 	}
 
-	
 	private Component makeValue(String key, Object value) {
 		key = key.trim();
 		if (value instanceof Date) {
@@ -122,7 +122,9 @@ public class HolderInfoPanel extends JPanel
 			return lbl;
 		} else {
 			String valueString = value.toString().trim();
-			JTextField tf = new JTextField(Math.max(valueString.length(), 20));
+			int textSize = Math.max(valueString.length(), 20);
+			// JTextField tf = new JTextField(textSize);
+			MRZEntryField tf = new MRZEntryField(textSize);
 			tf.setText(valueString);
 			tf.setFont(VALUE_FONT);
 			return tf;

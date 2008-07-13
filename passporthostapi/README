@@ -1,8 +1,8 @@
-JMRTD passport service and gui application
+JMRTD passport API and GUI application
 
-   JMRTD is a free implementation in Java of the Machine Readable
-   Travel Document (MRTD) standards as specified by the International
-   Civil Aviation Organization (ICAO).
+   JMRTD is a free implementation in Java of the Machine
+   Readable Travel Document (MRTD) standards as specified
+   by the International Civil Aviation Organization (ICAO).
 
 Authors
 

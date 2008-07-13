@@ -11,18 +11,19 @@ import javax.swing.JLabel;
 import javax.swing.JTextField;
 
 import sos.gui.DateField;
+import sos.gui.MRZEntryField;
 
 public class BACEntryField extends Box
 {
 
 	
 	private JButton addButton;
-	private JTextField docNrTF;
+	private MRZEntryField docNrTF;
 	private DateField dateOfBirthField, dateOfExpiryField;
 
 	public BACEntryField() {
 		super(BoxLayout.X_AXIS);
-		docNrTF = new JTextField(9);
+		docNrTF = new MRZEntryField(9);
 		// dateOfBirthTF = new JTextField(6);
 		dateOfBirthField = new DateField();
 		dateOfExpiryField = new DateField();
