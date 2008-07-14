@@ -34,7 +34,6 @@ import java.util.List;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 
 import sos.data.Country;
 import sos.data.Gender;

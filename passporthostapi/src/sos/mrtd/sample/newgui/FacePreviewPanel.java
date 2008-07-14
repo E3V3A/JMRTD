@@ -48,7 +48,7 @@ import sos.util.Icons;
  */
 public class FacePreviewPanel extends JPanel
 {	
-	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image"));
+	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
 	
 	private Dimension preferredSize;
 	private JTabbedPane tabbedPane;
