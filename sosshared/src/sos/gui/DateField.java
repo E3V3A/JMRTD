@@ -30,11 +30,14 @@ public class DateField extends Box
 	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private Calendar cal;
+	private JComboBox monthComboBox;
+	private NumField dayNumField;
+	private NumField yearNumField ;
 
 	public DateField() {
 		super(BoxLayout.X_AXIS);
 		cal = Calendar.getInstance();
-		JComboBox monthComboBox = new JComboBox();
+		monthComboBox = new JComboBox();
 		monthComboBox.setFont(FONT);
 		monthComboBox.addItem("Jan");
 		monthComboBox.addItem("Feb");
@@ -50,8 +53,8 @@ public class DateField extends Box
 		monthComboBox.addItem("Dec");
 		cal.set(Calendar.MONTH, 0);
 
-		final NumField dayNumField = new NumField(2, 1, 31);
-		final NumField yearNumField = new NumField(4, 0000, 9999);
+		dayNumField = new NumField(2, 1, 31);
+		yearNumField = new NumField(4, 0000, 9999);
 		add(dayNumField);
 		add(monthComboBox);
 		add(yearNumField);
@@ -111,8 +114,18 @@ public class DateField extends Box
 		});
 	}
 
+	public DateField(Date date) {
+		this();
+		setDate(date);
+	}
+
 	public void setDate(Date date) {
 		cal.setTime(date);
+		dayNumField.setValue(cal.get(Calendar.DATE));
+		monthComboBox.setSelectedIndex(cal.get(Calendar.MONTH));
+		yearNumField.setValue(cal.get(Calendar.YEAR));
+		revalidate();
+		repaint();
 	}
 
 	public Date getDate() {

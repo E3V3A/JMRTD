@@ -44,5 +44,9 @@ public class GenderLabel extends Box
 
 	public Gender getGender() {
 		return gender;
-	}	
+	}
+	
+	public String toString() {
+		return gender.toString();
+	}
 }

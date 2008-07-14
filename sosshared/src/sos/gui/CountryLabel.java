@@ -5,6 +5,7 @@ import java.awt.Image;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
@@ -19,10 +20,7 @@ public class CountryLabel extends Box
 	public CountryLabel(Country country) {
 		super(BoxLayout.X_AXIS);
 		this.country = country;
-		ImageIcon flagIcon = new ImageIcon();
-		Image flagImage = Icons.getFlagImage(country);
-		if (flagImage != null) { flagIcon.setImage(flagImage); }
-		flagLabel = new JLabel(flagIcon);
+		flagLabel = new JLabel(getIcon(country));
 		nameLabel = new JLabel(country.getName());
 		add(flagLabel);
 		add(Box.createHorizontalStrut(10));
@@ -36,5 +34,12 @@ public class CountryLabel extends Box
 
 	public Country getCountry() {
 		return country;
+	}
+	
+	private Icon getIcon(Country country) {
+		ImageIcon flagIcon = new ImageIcon();
+		Image flagImage = Icons.getFlagImage(country);
+		if (flagImage != null) { flagIcon.setImage(flagImage); }
+		return flagIcon;
 	}
 }
