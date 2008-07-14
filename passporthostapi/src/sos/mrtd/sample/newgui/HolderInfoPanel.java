@@ -37,8 +37,9 @@ import javax.swing.JPanel;
 
 import sos.data.Country;
 import sos.data.Gender;
-import sos.gui.CountryLabel;
-import sos.gui.GenderLabel;
+import sos.gui.CountryEntryField;
+import sos.gui.DateField;
+import sos.gui.GenderEntryField;
 import sos.gui.GridLayout2;
 import sos.gui.MRZEntryField;
 import sos.mrtd.DG1File;
@@ -99,6 +100,8 @@ public class HolderInfoPanel extends JPanel
 		for (String key: keys) {
 			Object value = valuesIt.next();
 			result.add(makeKey(key));
+//			JPanel p = new JPanel();
+//			p.add();
 			result.add(makeValue(key, value));
 		}
 		return result;
@@ -107,16 +110,15 @@ public class HolderInfoPanel extends JPanel
 	private Component makeValue(String key, Object value) {
 		key = key.trim();
 		if (value instanceof Date) {
-			String valueString = SDF.format((Date)value).trim();
-			JLabel lbl = new JLabel(valueString);
-			lbl.setFont(VALUE_FONT);
-			return lbl;
+			DateField tf = new DateField((Date)value);
+			tf.setFont(VALUE_FONT);
+			return tf;
 		} else if (value instanceof Gender) {
-			GenderLabel lbl = new GenderLabel((Gender)value);
-			lbl.setFont(VALUE_FONT);
-			return lbl;
+			GenderEntryField tf = new GenderEntryField((Gender)value);
+			tf.setFont(VALUE_FONT);
+			return tf;
 		} else if (value instanceof Country) {
-			CountryLabel lbl =  new CountryLabel((Country)value);
+			CountryEntryField lbl =  new CountryEntryField((Country)value);
 			lbl.setFont(VALUE_FONT);
 			return lbl;
 		} else {

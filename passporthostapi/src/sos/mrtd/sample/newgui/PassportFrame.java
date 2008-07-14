@@ -87,7 +87,7 @@ import sos.util.Icons;
 public class PassportFrame extends JFrame
 {
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
-	private static final Dimension PREFERRED_SIZE = new Dimension(500, 420);
+	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
 
 	private static final Icon CERTIFICATE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon CERTIFICATE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
