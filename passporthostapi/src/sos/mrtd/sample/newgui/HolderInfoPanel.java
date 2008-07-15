@@ -44,7 +44,7 @@ import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
 /**
- * GUI component for displaying the MRZ datagroup on the passport.
+ * Panel for displaying the MRZ datagroup on the passport.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *

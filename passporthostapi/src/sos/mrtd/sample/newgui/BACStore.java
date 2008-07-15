@@ -14,6 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
+/**
+ * Flat file based database for BAC entries.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public class BACStore {
 
 	private static final File BACDB_FILE =

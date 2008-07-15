@@ -20,6 +20,11 @@ import javax.swing.filechooser.FileFilter;
 import sos.gui.KeyPanel;
 import sos.util.Icons;
 
+/**
+ * Frame for displaying (and saving to file) keys.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class KeyFrame extends JFrame
 {
 	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));

@@ -24,7 +24,7 @@ import javax.swing.table.AbstractTableModel;
 import sos.util.Icons;
 
 /**
- * GUI for managing the BAC store.
+ * Panel for managing the BAC store.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *

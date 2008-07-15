@@ -12,6 +12,13 @@ import javax.swing.JLabel;
 import sos.gui.DateEntryField;
 import sos.gui.MRZEntryField;
 
+/**
+ * Text field for BAC entries.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public class BACEntryField extends Box
 {
 

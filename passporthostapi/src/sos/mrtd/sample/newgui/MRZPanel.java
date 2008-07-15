@@ -22,8 +22,6 @@
 
 package sos.mrtd.sample.newgui;
 
-import java.awt.Color;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
 
@@ -34,7 +32,7 @@ import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
 /**
- * GUI component for displaying the MRZ datagroup on the passport.
+ * Panel for displaying the MRZ datagroup on the passport.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *
@@ -42,25 +40,23 @@ import sos.mrtd.MRZInfo;
  */
 public class MRZPanel extends JPanel
 {
-   private static final Color MRZ_FOREGROUND_COLOR = new Color(0x000000);
-   private static final Color MRZ_BACKGROUND_COLOR = new Color(0xFFFFFF);
    private static final Font MRZ_FONT = new Font("Monospaced", Font.BOLD, 15);
 
    private MRZInfo info;
+   private JTextArea c;
 
    public MRZPanel(DG1File dg) {
       super(new FlowLayout());
+      c = new JTextArea();
       info = dg.getMRZInfo();
-      add(makeMRZ(info));
+      add(c);
+      setMRZ(info);
    }
 
-   private Component makeMRZ(MRZInfo info) {
-      JTextArea c = new JTextArea();
+   private void setMRZ(MRZInfo info) {
       c.setEditable(false);
-//      c.setForeground(MRZ_FOREGROUND_COLOR);
-//      c.setBackground(MRZ_BACKGROUND_COLOR);
       c.setFont(MRZ_FONT);
       c.setText(info.toString().trim());
-      return c;
+      revalidate(); repaint();
    }
 }

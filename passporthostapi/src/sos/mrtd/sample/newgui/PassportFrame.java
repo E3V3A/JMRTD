@@ -78,7 +78,7 @@ import sos.util.Hex;
 import sos.util.Icons;
 
 /**
- * Displays a passport while (and after) it is being read.
+ * Frame for displaying a passport while (and after) it is being read.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *

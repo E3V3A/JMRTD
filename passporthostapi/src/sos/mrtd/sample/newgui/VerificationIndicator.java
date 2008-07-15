@@ -10,6 +10,11 @@ import javax.swing.JLabel;
 
 import sos.util.Icons;
 
+/**
+ * Component for showing the verification status.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class VerificationIndicator extends Box
 {
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);

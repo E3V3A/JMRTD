@@ -21,6 +21,13 @@ import javax.swing.filechooser.FileFilter;
 import sos.gui.CertificatePanel;
 import sos.util.Icons;
 
+/**
+ * Frame for displaying (and saving to file) a public key certificate.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public class CertificateFrame extends JFrame
 {
 	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));

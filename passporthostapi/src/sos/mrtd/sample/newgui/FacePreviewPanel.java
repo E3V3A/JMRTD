@@ -40,7 +40,7 @@ import sos.mrtd.FaceInfo;
 import sos.util.Icons;
 
 /**
- * GUI component for displaying the portrait.
+ * Component for displaying a preview of the portrait.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
@@ -52,10 +52,6 @@ public class FacePreviewPanel extends JPanel
 	
 	private Dimension preferredSize;
 	private JTabbedPane tabbedPane;
-
-	public FacePreviewPanel(InputStream in) {
-		
-	}
 	
 	public FacePreviewPanel(InputStream in, int width, int height) {
 		super(new FlowLayout());
