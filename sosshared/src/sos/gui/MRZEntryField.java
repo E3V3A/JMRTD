@@ -20,12 +20,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JTextField;
 
 /**
- * GUI text field component that only accepts non-negative numerical
- * input with the possibility to add some constraints such as minimal
- * and maximal value.
+ * GUI text field component for entering MRZ values.
  * 
- * @version $Revision: 1.1 $
- * @author Martijn Oostdijk
+ * @version $Revision: $
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class MRZEntryField extends Box
 {

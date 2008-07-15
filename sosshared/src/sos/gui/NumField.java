@@ -187,7 +187,7 @@ public class NumField extends Box
       return getUnscrubbedValue();
    }
 
-   public int parseInt(char c) {
+   private int parseInt(char c) {
       switch (c) {
          case '0':
             return 0;

@@ -24,7 +24,7 @@ import javax.swing.JComboBox;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class DateField extends Box
+public class DateEntryField extends Box
 {
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
 	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
@@ -34,7 +34,7 @@ public class DateField extends Box
 	private NumField dayNumField;
 	private NumField yearNumField ;
 
-	public DateField() {
+	public DateEntryField() {
 		super(BoxLayout.X_AXIS);
 		cal = Calendar.getInstance();
 		monthComboBox = new JComboBox();
@@ -114,7 +114,7 @@ public class DateField extends Box
 		});
 	}
 
-	public DateField(Date date) {
+	public DateEntryField(Date date) {
 		this();
 		setDate(date);
 	}
