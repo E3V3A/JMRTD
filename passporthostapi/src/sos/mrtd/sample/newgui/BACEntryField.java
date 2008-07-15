@@ -9,7 +9,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 
-import sos.gui.DateField;
+import sos.gui.DateEntryField;
 import sos.gui.MRZEntryField;
 
 public class BACEntryField extends Box
@@ -18,14 +18,14 @@ public class BACEntryField extends Box
 	
 	private JButton addButton;
 	private MRZEntryField docNrTF;
-	private DateField dateOfBirthField, dateOfExpiryField;
+	private DateEntryField dateOfBirthField, dateOfExpiryField;
 
 	public BACEntryField() {
 		super(BoxLayout.X_AXIS);
 		docNrTF = new MRZEntryField(9);
 		// dateOfBirthTF = new JTextField(6);
-		dateOfBirthField = new DateField();
-		dateOfExpiryField = new DateField();
+		dateOfBirthField = new DateEntryField();
+		dateOfExpiryField = new DateEntryField();
 		addButton = new JButton("Add");
 		add(new JLabel("Document number: "));
 		add(Box.createHorizontalStrut(5));

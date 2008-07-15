@@ -22,11 +22,9 @@
 
 package sos.mrtd.sample.newgui;
 
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -38,7 +36,7 @@ import javax.swing.JPanel;
 import sos.data.Country;
 import sos.data.Gender;
 import sos.gui.CountryEntryField;
-import sos.gui.DateField;
+import sos.gui.DateEntryField;
 import sos.gui.GenderEntryField;
 import sos.gui.GridLayout2;
 import sos.gui.MRZEntryField;
@@ -54,19 +52,8 @@ import sos.mrtd.MRZInfo;
  */
 public class HolderInfoPanel extends JPanel
 {
-	private static final Color KEY_COLOR = new Color(0x1A1A1A);
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
-
-	private static final Color VALUE_FOREGROUND_COLOR = new Color(0x1A1A1A);
-	private static final Color VALUE_BACKGROUND_COLOR = new Color(0xFFF8F8);
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
-
-	private static final Color MRZ_FOREGROUND_COLOR = new Color(0x000000);
-	private static final Color MRZ_BACKGROUND_COLOR = new Color(0xFFFFFF);
-	private static final Font MRZ_FONT = new Font("Monospaced", Font.BOLD, 16);
-
-	private static final SimpleDateFormat SDF =
-		new SimpleDateFormat("MMMM dd, yyyy");
 
 	private MRZInfo info;
 
@@ -100,8 +87,6 @@ public class HolderInfoPanel extends JPanel
 		for (String key: keys) {
 			Object value = valuesIt.next();
 			result.add(makeKey(key));
-//			JPanel p = new JPanel();
-//			p.add();
 			result.add(makeValue(key, value));
 		}
 		return result;
@@ -110,7 +95,7 @@ public class HolderInfoPanel extends JPanel
 	private Component makeValue(String key, Object value) {
 		key = key.trim();
 		if (value instanceof Date) {
-			DateField tf = new DateField((Date)value);
+			DateEntryField tf = new DateEntryField((Date)value);
 			tf.setFont(VALUE_FONT);
 			return tf;
 		} else if (value instanceof Gender) {
@@ -124,7 +109,6 @@ public class HolderInfoPanel extends JPanel
 		} else {
 			String valueString = value.toString().trim();
 			int textSize = Math.max(valueString.length(), 20);
-			// JTextField tf = new JTextField(textSize);
 			MRZEntryField tf = new MRZEntryField(textSize);
 			tf.setText(valueString);
 			tf.setFont(VALUE_FONT);
@@ -136,7 +120,6 @@ public class HolderInfoPanel extends JPanel
 		key = key.trim();
 		JLabel c = new JLabel(key + ": ");
 		c.setFont(KEY_FONT);
-//		c.setForeground(KEY_COLOR);
 		return c;
 	}
 }
