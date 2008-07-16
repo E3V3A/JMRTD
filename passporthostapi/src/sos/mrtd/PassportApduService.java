@@ -35,6 +35,7 @@ import sos.smartcards.APDUListener;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
+import sos.util.Hex;
 
 /**
  * Low level card service for sending apdus to the passport.
@@ -293,7 +294,7 @@ public class PassportApduService extends CardService
     * @param wrapper the secure messaging wrapper to use
     * @param fid the file to select
     */
-   public synchronized  void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
+   public synchronized void sendSelectFile(SecureMessagingWrapper wrapper, short fid)
    throws CardServiceException {
       CommandAPDU capdu = createSelectFileAPDU(fid);
       if (wrapper != null) {
@@ -431,12 +432,20 @@ public class PassportApduService extends CardService
    public synchronized byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD,
          SecretKey kEnc, SecretKey kMac) throws CardServiceException {
       try {
-         byte[] rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
-               kMac)).getBytes();
-
-         if (rapdu.length != 42) {
-            throw new CardServiceException("Failed: expected length: 42, actual length: "
-                  + rapdu.length);
+         ResponseAPDU rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC, kIFD, kEnc,
+               kMac));
+         byte[] rapduBytes = rapdu.getBytes();
+         if (rapduBytes ==  null) {
+        	 throw new CardServiceException("Mutual authentication failed");
+         }
+         String errorCode = Hex.shortToHexString((short)rapdu.getSW()); 
+         if (rapduBytes.length == 2) {
+        	 throw new CardServiceException("Mutual authentication failed: error code:  " + errorCode);
+         }
+         
+         if (rapduBytes.length != 42) {
+            throw new CardServiceException("Mutual authentication failed: expected length: 42, actual length: "
+                  + rapduBytes.length + ", error code: " + errorCode);
          }
 
          /*
@@ -449,7 +458,7 @@ public class PassportApduService extends CardService
 
          /* Decrypt the response. */
          cipher.init(Cipher.DECRYPT_MODE, kEnc, ZERO_IV_PARAM_SPEC);
-         byte[] result = cipher.doFinal(rapdu, 0, rapdu.length - 8 - 2);
+         byte[] result = cipher.doFinal(rapduBytes, 0, rapduBytes.length - 8 - 2);
          if (result.length != 32) {
             throw new IllegalStateException("Cryptogram wrong length "
                   + result.length);
