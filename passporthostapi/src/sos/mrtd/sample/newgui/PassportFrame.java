@@ -50,8 +50,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -77,7 +75,6 @@ import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
-import sos.smartcards.APDUListener;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
 import sos.util.Files;
@@ -135,6 +132,8 @@ public class PassportFrame extends JFrame
 		centerPanel = new JPanel(new BorderLayout());
 		panel.add(centerPanel, BorderLayout.CENTER);
 		panel.add(verificationPanel, BorderLayout.SOUTH);
+		facePreviewPanel = new FacePreviewPanel(160, 200);
+		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 		bufferedStreams = new HashMap<Short, InputStream>();
 		fileStreams = new HashMap<Short, CardFileInputStream>();
 		getContentPane().add(panel);
@@ -159,14 +158,13 @@ public class PassportFrame extends JFrame
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
-		s.addAPDUListener(new APDUListener() {
-			int i;
-
-			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-				System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
-				System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
-			}
-		});
+//		s.addAPDUListener(new APDUListener() {
+//			int i;
+//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+//				System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
+//				System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
+//			}
+//		});
 		try {
 			this.isBACVerified = isBACVerified;
 			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -276,12 +274,15 @@ public class PassportFrame extends JFrame
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
+			centerPanel.repaint();
 			holderInfoPanel.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					MRZInfo info = holderInfoPanel.getMRZ();
 					mrzPanel.setMRZ(info);
 					dg1 = new DG1File(info);
 					putFile(PassportService.EF_DG1, dg1.getEncoded());
+					isBACVerified = false;
+					isAAVerified = false;
 					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
 					verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
 					verificationPanel.setDSState(VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -296,9 +297,7 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_DG1:
 					break;
 				case PassportService.EF_DG2:
-					facePreviewPanel = new FacePreviewPanel(in, 160, 200);
-					centerPanel.add(facePreviewPanel, BorderLayout.WEST);
-					centerPanel.repaint();
+					facePreviewPanel.showFaces(in);
 					break;
 				case PassportService.EF_DG15:
 					break;
