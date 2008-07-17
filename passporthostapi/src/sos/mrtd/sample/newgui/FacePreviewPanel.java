@@ -61,8 +61,8 @@ public class FacePreviewPanel extends JPanel
 		add(tabbedPane);
 	}
 	
-	public void showFaces(InputStream in) {
-		Collection<FaceInfo> faces = (new DG2File(in)).getFaces();
+	public void showFaces(DG2File dg2) {
+		Collection<FaceInfo> faces = dg2.getFaces();
 		addFaces(faces, width, height);
 		removeImage(0);
 		revalidate(); repaint();

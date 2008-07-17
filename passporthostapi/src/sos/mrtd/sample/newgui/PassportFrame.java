@@ -26,6 +26,7 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -50,6 +51,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -66,6 +68,8 @@ import javax.swing.filechooser.FileFilter;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
+import sos.data.Gender;
+import sos.gui.ImagePanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -80,6 +84,7 @@ import sos.smartcards.CardServiceException;
 import sos.util.Files;
 import sos.util.Hex;
 import sos.util.Icons;
+import sos.util.Images;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.
@@ -103,6 +108,8 @@ public class PassportFrame extends JFrame
 	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon OPEN_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon OPEN_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
 
 	private FacePreviewPanel facePreviewPanel;
 
@@ -113,6 +120,7 @@ public class PassportFrame extends JFrame
 	private int totalLength;
 
 	private DG1File dg1;
+	private DG2File dg2;
 	private DG15File dg15;
 	private SODFile sod;
 	private COMFile com;
@@ -140,7 +148,8 @@ public class PassportFrame extends JFrame
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
-		menuBar.add(createViewMenu());
+		menuBar.add(createImagesMenu());
+		menuBar.add(createCertificatesMenu());
 		setIconImage(Icons.getImage("jmrtd_icon"));
 		pack();
 		setVisible(true);
@@ -159,11 +168,11 @@ public class PassportFrame extends JFrame
 		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
 //		s.addAPDUListener(new APDUListener() {
-//			int i;
-//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-//				System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
-//				System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
-//			}
+//		int i;
+//		public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+//		System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
+//		System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
+//		}
 //		});
 		try {
 			this.isBACVerified = isBACVerified;
@@ -297,7 +306,8 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_DG1:
 					break;
 				case PassportService.EF_DG2:
-					facePreviewPanel.showFaces(in);
+					dg2 = new DG2File(in);
+					facePreviewPanel.showFaces(dg2);
 					break;
 				case PassportService.EF_DG15:
 					break;
@@ -466,29 +476,40 @@ public class PassportFrame extends JFrame
 		return fileMenu;
 	}
 
-	private JMenu createViewMenu() {
-		JMenu viewMenu = new JMenu("View");
+	private JMenu createImagesMenu() {
+		JMenu imagesMenu = new JMenu("Images");
 
-		/* Image full size... */
+		/* View portrait at full size... */
 		JMenuItem viewImageAtOriginalSize = new JMenuItem();
-		viewMenu.add(viewImageAtOriginalSize);
-		viewImageAtOriginalSize.setAction(new ViewImageAtOriginalSizeAction());
+		imagesMenu.add(viewImageAtOriginalSize);
+		viewImageAtOriginalSize.setAction(new ViewPortraitAtOriginalSizeAction());
+
+		/* Load additional portrait from file... */
+		JMenuItem loadPortraitFromFile = new JMenuItem();
+		imagesMenu.add(loadPortraitFromFile);
+		loadPortraitFromFile.setAction(new ImportPortraitFromFile());
+
+		return imagesMenu;
+	}
+
+	private JMenu createCertificatesMenu() {
+		JMenu certsMenu = new JMenu("Certificates");
 
 		/* DS Certificate... */
 		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
-		viewMenu.add(viewDocumentSignerCertificate);
+		certsMenu.add(viewDocumentSignerCertificate);
 		viewDocumentSignerCertificate.setAction(new ViewDocumentSignerCertificateAction());
 
 		/* CS Certificate... */
 		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-		viewMenu.add(viewCountrySignerCertificate);
+		certsMenu.add(viewCountrySignerCertificate);
 		viewCountrySignerCertificate.setAction(new ViewCountrySignerCertificateAction());
 
 		JMenuItem viewAAPublicKey = new JMenuItem();
-		viewMenu.add(viewAAPublicKey);
+		certsMenu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
 
-		return viewMenu;
+		return certsMenu;
 	}
 
 	private class CloseAction extends AbstractAction
@@ -551,24 +572,74 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private class ViewImageAtOriginalSizeAction extends AbstractAction
+	private class ViewPortraitAtOriginalSizeAction extends AbstractAction
 	{
-		public ViewImageAtOriginalSizeAction() {
+		public ViewPortraitAtOriginalSizeAction() {
 			putValue(SMALL_ICON, MAGNIFIER_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, MAGNIFIER_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View image at original size");
-			putValue(NAME, "Image at 100%...");
+			putValue(SHORT_DESCRIPTION, "View portrait image at original size");
+			putValue(NAME, "Portrait at 100%...");
 		}
 
 		public void actionPerformed(ActionEvent e) {
 			int index = facePreviewPanel.getSelectedIndex();
-			InputStream dg2In = getFile(PassportService.EF_DG2);
-			DG2File dg2File = new DG2File(dg2In);
-			FaceInfo faceInfo = dg2File.getFaces().get(index);
-			FaceFrame faceFrame = new FaceFrame(faceInfo);
+			if (dg2 == null) {
+				InputStream dg2In = getFile(PassportService.EF_DG2);
+				dg2 = new DG2File(dg2In);
+			}
+			FaceInfo faceInfo = dg2.getFaces().get(index);
+			PortraitFrame faceFrame = new PortraitFrame(faceInfo);
 			faceFrame.setVisible(true);
 			faceFrame.pack();
 		}
+	}
+
+	private class ImportPortraitFromFile extends AbstractAction
+	{
+		public ImportPortraitFromFile() {
+			putValue(SMALL_ICON, OPEN_IMAGE_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, OPEN_IMAGE_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "Import portrait from file");
+			putValue(NAME, "Import portrait...");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileFilter() {
+				public boolean accept(File f) { return f.isDirectory()
+					|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
+					|| f.getName().endsWith("png") || f.getName().endsWith("PNG")
+					|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
+				public String getDescription() { return "Image files"; }				
+			});
+			int choice = fileChooser.showOpenDialog(getContentPane());
+			switch (choice) {
+			case JFileChooser.APPROVE_OPTION:
+				try {
+					File file = fileChooser.getSelectedFile();
+					BufferedImage image = ImageIO.read(file);
+
+					FaceInfo faceInfo = new FaceInfo(
+							Gender.UNSPECIFIED,
+							FaceInfo.EyeColor.UNSPECIFIED,
+							FaceInfo.HAIR_COLOR_UNSPECIFIED,
+							FaceInfo.EXPRESSION_UNSPECIFIED,
+							FaceInfo.SOURCE_TYPE_UNSPECIFIED,
+							image);
+					if (dg2 == null) {
+						InputStream dg2In = getFile(PassportService.EF_DG2);
+						dg2 = new DG2File(dg2In);
+					}
+					dg2.addFaceInfo(faceInfo);
+					facePreviewPanel.showFaces(dg2);
+				} catch (IOException ioe) {
+					/* NOTE: Do nothing. */
+				}
+				break;
+			default: break;
+			}
+		}
+
 	}
 
 	private class ViewDocumentSignerCertificateAction extends AbstractAction

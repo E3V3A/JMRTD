@@ -37,7 +37,7 @@ import sos.util.Images;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class FaceFrame extends JFrame
+public class PortraitFrame extends JFrame
 {
 	private static final Icon SAVE_AS_PNG_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon SAVE_AS_PNG_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
@@ -52,11 +52,11 @@ public class FaceFrame extends JFrame
 	private FaceInfo info;
 	private ImagePanel imagePanel;
 
-	public FaceFrame(FaceInfo info) {
+	public PortraitFrame(FaceInfo info) {
 		this("Portrait", info);
 	}
 	
-	public FaceFrame(String title, FaceInfo info) {
+	public PortraitFrame(String title, FaceInfo info) {
 		super(title);
 		this.info = info;
 
@@ -126,7 +126,7 @@ public class FaceFrame extends JFrame
 			case JFileChooser.APPROVE_OPTION:
 				try {
 					File file = fileChooser.getSelectedFile();
-					ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);  
+					ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);
 				} catch (IOException fnfe) {
 					fnfe.printStackTrace();
 				}
@@ -149,7 +149,6 @@ public class FaceFrame extends JFrame
 			JTextArea area = new JTextArea();
 			area.append(info.toString());
 			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "Image information", JOptionPane.PLAIN_MESSAGE, null);
-
 		}
 	}
 
