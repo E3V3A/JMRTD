@@ -22,8 +22,11 @@
 
 package sos.mrtd;
 
+import java.awt.Dimension;
+import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -160,6 +163,7 @@ public class FaceInfo
    public enum SourceType { UNSPECIFIED, STATIC_PHOTO_UNKNOWN_SOURCE, STATIC_PHOTO_DIGITAL_CAM,
        STATIC_PHOTO_SCANNER, VIDEO_FRAME_UNKNOWN_SOURCE, VIDEO_FRAME_ANALOG_CAM, VIDEO_FRAME_DIGITAL_CAM,
        UNKNOWN };
+
    public static final int SOURCE_TYPE_UNSPECIFIED = 0x00,
                            SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE = 0x01,
                            SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM = 0x02,
@@ -391,6 +395,47 @@ public class FaceInfo
       }
       throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
+   
+   private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
+   throws IOException {
+	   if (desiredWidth > width) { desiredWidth = width; }
+	   if (desiredHeight > height) { desiredHeight = height; }
+	   ImageInputStream iis = ImageIO.createImageInputStream(in);
+	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
+	   while (readers.hasNext()) {
+		   try {
+			   ImageReader reader = (ImageReader)readers.next();
+			   reader.setInput(iis);
+			   ImageReadParam pm = reader.getDefaultReadParam();
+			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+			   if (pm.canSetSourceRenderSize()) {
+				   pm.setSourceRenderSize(new Dimension(desiredWidth, desiredHeight));
+				   BufferedImage image = reader.read(0, pm);
+				   return image;
+			   } else {
+				   int xSubSampling = (int)(Math.round((double)width / (double)desiredWidth));
+				   int ySubSampling = (int)(Math.round((double)height / (double)desiredHeight));
+				   pm.setSourceSubsampling(xSubSampling, ySubSampling, 0, 0);
+				   BufferedImage image = reader.read(0, pm);
+				   if (image != null) {
+					   double xScale = (double)desiredWidth / (double)image.getWidth();
+					   double yScale = (double)desiredHeight / (double)image.getHeight();
+					   double scale = xScale < yScale ? xScale : yScale;
+
+					   BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
+					   Graphics2D g2 = scaledImage.createGraphics();
+					   AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
+					   g2.drawImage(image, at, null); 
+					   return scaledImage;
+				   }
+			   }
+		   } catch (Exception e) {
+			   e.printStackTrace();
+			   continue;
+		   }
+	   }
+	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
+   }
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
@@ -416,6 +461,38 @@ public class FaceInfo
             ios.flush();
          }
       }
+   }
+   
+   /**
+    * Gets a preview image of desired width and height.
+    * 
+    * @param width integer
+    * @param height integer
+    * @return image
+    */
+   public Image getPreviewImage(int width, int height) {
+	   if (image == null) {
+		   try {
+			   switch (imageDataType) {
+			   case IMAGE_DATA_TYPE_JPEG:
+				   image = readScaledImage(dataIn, "image/jpeg", width, height);
+				   break;
+			   case IMAGE_DATA_TYPE_JPEG2000:
+				   image = readScaledImage(dataIn, "image/jpeg2000", width, height);
+				   break;
+			   default:
+				   throw new IOException("Unknown image data type!");
+			   }
+
+			   /* Set width and height for real. */
+			   width = image.getWidth();
+			   height = image.getHeight();
+		   } catch (IOException ioe) {
+			   ioe.printStackTrace();
+		   }
+	   }
+
+	   return image;
    }
    
    /**

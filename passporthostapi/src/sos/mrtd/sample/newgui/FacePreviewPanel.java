@@ -22,7 +22,6 @@
 
 package sos.mrtd.sample.newgui;
 
-import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
 import java.io.InputStream;
@@ -30,7 +29,6 @@ import java.util.Collection;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
@@ -49,46 +47,29 @@ import sos.util.Icons;
 public class FacePreviewPanel extends JPanel
 {	
 	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
-	
-	private Dimension preferredSize;
+
 	private JTabbedPane tabbedPane;
-	
+
 	public FacePreviewPanel(InputStream in, int width, int height) {
 		super(new FlowLayout());
-		preferredSize = new Dimension(width, height);
-		add(createFaceComponent(in, width, height));
+		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
+		add(tabbedPane);
+		Collection<FaceInfo> faces = (new DG2File(in)).getFaces();
+		addFaces(faces, width, height);
 	}
-	
+
 	public int getSelectedIndex() {
 		return tabbedPane.getSelectedIndex();
 	}
 
-	/**
-	 * The face image component.
-	 * 
-	 * @param in inputstream containing the image
-	 * @param width the width of the resulting component
-	 * @param height the height of the resulting component
-	 * @return a component displaying the image
-	 */	
-	private JComponent createFaceComponent(InputStream in, int width, int height) {
-		Collection<FaceInfo> faces = (new DG2File(in)).getFaces();
-		return createFaceComponent(faces, width, height);
-	}
-	
-	private JComponent createFaceComponent(Collection<FaceInfo> faces, int width, int height) {
-		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-		int dw = width - 10, dh = height - 10;
+	private void addFaces(Collection<FaceInfo> faces, int width, int height) {
 		int index = 0;
-		for (FaceInfo face: faces) {
+		for (FaceInfo faceInfo: faces) {
 			index++;
 			JPanel panel = new JPanel(new FlowLayout());
-			Image origImage = face.getImage();
-			Image image = (origImage.getHeight(this) / dh < origImage.getWidth(this) / dw) ? origImage.getScaledInstance(dw, -1, Image.SCALE_SMOOTH) : origImage.getScaledInstance(-1, dh, Image.SCALE_SMOOTH);
-
+			Image image = faceInfo.getPreviewImage(width - 10, height - 10);
 			panel.add(new JLabel(new ImageIcon(image)));
 			tabbedPane.addTab(Integer.toString(index), IMAGE_SMALL_ICON, add(panel));
-		}
-		return tabbedPane;		
+		}	
 	}
 }

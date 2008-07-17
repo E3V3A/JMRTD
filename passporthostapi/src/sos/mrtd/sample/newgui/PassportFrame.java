@@ -50,6 +50,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -58,12 +60,14 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
 
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
+import sos.data.Country;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -73,6 +77,7 @@ import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
+import sos.smartcards.APDUListener;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
 import sos.util.Files;
@@ -121,7 +126,7 @@ public class PassportFrame extends JFrame
 	private boolean isBACVerified;
 	private boolean isAAVerified;
 	private boolean isDSVerified;
-	private Object issuingState;
+	private Country issuingState;
 
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
@@ -154,6 +159,14 @@ public class PassportFrame extends JFrame
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
+		s.addAPDUListener(new APDUListener() {
+			int i;
+
+			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+				System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
+				System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
+			}
+		});
 		try {
 			this.isBACVerified = isBACVerified;
 			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -196,13 +209,7 @@ public class PassportFrame extends JFrame
 		t = System.currentTimeMillis();
 		System.out.println("DEBUG: finished displaying t = " + ((double)(t - t0) / 1000) + "s");
 
-		try {
-			verifySecurity(s);
-		} catch (CardServiceException cse) {
-			cse.printStackTrace();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
+		verifySecurity(s);
 		t = System.currentTimeMillis();
 		System.out.println("DEBUG: finished verifying t = " + ((double)(t - t0) / 1000) + "s");
 	}
@@ -238,13 +245,7 @@ public class PassportFrame extends JFrame
 
 			displayInputStreams();
 
-			try {
-				verifySecurity(null);
-			} catch (CardServiceException cse) {
-				cse.printStackTrace();
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
+			verifySecurity(null);
 
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -281,6 +282,10 @@ public class PassportFrame extends JFrame
 					mrzPanel.setMRZ(info);
 					dg1 = new DG1File(info);
 					putFile(PassportService.EF_DG1, dg1.getEncoded());
+					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
+					verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
+					verificationPanel.setDSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+					verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
 				}
 			});
 
@@ -321,13 +326,13 @@ public class PassportFrame extends JFrame
 			totalLength += length;
 		} 
 	}
-	
+
 	private void putFile(short fid, byte[] bytes) {
 		fileStreams.put(fid, null);
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		bufferedStreams.put(fid, in);
 	}
-	
+
 	/**
 	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
 	 * 
@@ -345,23 +350,27 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private void verifySecurity(PassportService service)
-	throws IOException, CardServiceException {
+	private void verifySecurity(PassportService service) {
 
 		/* Check whether BAC was used */
 		verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check active authentication */
-		InputStream dg15In = getFile(PassportService.EF_DG15);
-		if (dg15In != null && service != null) {
-			DG15File dg15 = new DG15File(dg15In);
-			PublicKey pubKey = dg15.getPublicKey();
-			isAAVerified = service.doAA(pubKey);
+		try {
+			InputStream dg15In = getFile(PassportService.EF_DG15);
+			if (dg15In != null && service != null) {
+				DG15File dg15 = new DG15File(dg15In);
+				PublicKey pubKey = dg15.getPublicKey();
+				isAAVerified = service.doAA(pubKey);
+			}
+			verificationPanel.setAAState(isAAVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
+			docSigningCert = null;
+			countrySigningCert = null;
+		} catch (IOException ioe) {
+			verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
+		} catch (CardServiceException cse) {
+			verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		}
-		verificationPanel.setAAState(isAAVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
-
-		docSigningCert = null;
-		countrySigningCert = null;
 
 		/* Check hashes in the SOd correspond to hashes we compute. */
 		try {
@@ -410,15 +419,14 @@ public class PassportFrame extends JFrame
 		verificationPanel.setDSState(isDSVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check country signer certificate, if known. */
-		issuingState = null;
-		InputStream dg1In = getFile(PassportService.EF_DG1);
-		if (dg1In != null) {
-			DG1File dg1 = new DG1File(dg1In);
-			MRZInfo mrzInfo = dg1.getMRZInfo();
-			issuingState = mrzInfo.getIssuingState();
-		}
-
 		try {
+			issuingState = null;
+			InputStream dg1In = getFile(PassportService.EF_DG1);
+			if (dg1In != null) {
+				DG1File dg1 = new DG1File(dg1In);
+				MRZInfo mrzInfo = dg1.getMRZInfo();
+				issuingState = mrzInfo.getIssuingState();
+			}
 			URL baseDir = Files.getBaseDir();
 			URL cscaDir = new URL(baseDir + "/csca");
 			/* TODO: also check .pem, .der formats? */
@@ -428,17 +436,19 @@ public class PassportFrame extends JFrame
 			docSigningCert.verify(countrySigningCert.getPublicKey());
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
 		} catch (FileNotFoundException fnfe) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		} catch (CertificateException e) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		} catch (GeneralSecurityException gse) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 			gse.printStackTrace();
+		} catch (IOException ioe) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		}
 
 		verificationPanel.revalidate();
 	}
-	
+
 	/* Menu stuff... */
 
 	private JMenu createFileMenu() {
@@ -588,7 +598,9 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			if (countrySigningCert != null) {
+			if (countrySigningCert == null) {
+				JOptionPane.showMessageDialog(getContentPane(), "CSCA for " + issuingState.getName() + " not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
+			} else {
 				JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (" + issuingState + ", from file)", countrySigningCert);
 				certificateFrame.pack();
 				certificateFrame.setVisible(true);
