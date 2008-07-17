@@ -40,23 +40,31 @@ import sos.mrtd.MRZInfo;
  */
 public class MRZPanel extends JPanel
 {
-   private static final Font MRZ_FONT = new Font("Monospaced", Font.BOLD, 15);
+	private static final Font MRZ_FONT = new Font("Monospaced", Font.BOLD, 15);
 
-   private MRZInfo info;
-   private JTextArea c;
+	private MRZInfo info;
+	private JTextArea c;
 
-   public MRZPanel(DG1File dg) {
-      super(new FlowLayout());
-      c = new JTextArea();
-      info = dg.getMRZInfo();
-      add(c);
-      setMRZ(info);
-   }
+	public MRZPanel(DG1File dg) {
+		this(dg.getMRZInfo());
+	}
 
-   private void setMRZ(MRZInfo info) {
-      c.setEditable(false);
-      c.setFont(MRZ_FONT);
-      c.setText(info.toString().trim());
-      revalidate(); repaint();
-   }
+	public MRZPanel(MRZInfo info) {
+		super(new FlowLayout());
+		c = new JTextArea();
+		add(c);
+		setMRZ(info);
+	}
+
+	public void setMRZ(MRZInfo info) {
+		this.info = info;
+		c.setEditable(false);
+		c.setFont(MRZ_FONT);
+		c.setText(info.toString().trim());
+		revalidate(); repaint();
+	}
+	
+	public MRZInfo getMRZ() {
+		return info;
+	}
 }

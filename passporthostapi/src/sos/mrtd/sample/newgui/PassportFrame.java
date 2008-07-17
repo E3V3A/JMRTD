@@ -25,10 +25,12 @@ package sos.mrtd.sample.newgui;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -100,7 +102,7 @@ public class PassportFrame extends JFrame
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
-	private FacePreviewPanel facePanel;
+	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;
 
@@ -155,13 +157,13 @@ public class PassportFrame extends JFrame
 		try {
 			this.isBACVerified = isBACVerified;
 			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
-			bufferFile(PassportService.EF_COM, service);
-			bufferFile(PassportService.EF_SOD, service);
+			putFile(PassportService.EF_COM, service);
+			putFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
 			int[] tags = com.getTagList();
 			for (int i = 0; i < tags.length; i++) {
-				bufferFile(PassportFile.lookupFIDByTag(tags[i]), service);
+				putFile(PassportFile.lookupFIDByTag(tags[i]), service);
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
@@ -196,7 +198,6 @@ public class PassportFrame extends JFrame
 
 		try {
 			verifySecurity(s);
-			/* revalidate? */
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 		} catch (IOException ioe) {
@@ -204,21 +205,6 @@ public class PassportFrame extends JFrame
 		}
 		t = System.currentTimeMillis();
 		System.out.println("DEBUG: finished verifying t = " + ((double)(t - t0) / 1000) + "s");
-	}
-
-	private InputStream bufferFile(short fid, PassportService service) throws CardServiceException, IOException {
-		if (!bufferedStreams.containsKey(fid)) {
-			CardFileInputStream in = service.readFile(fid);
-			int length = in.getFileLength();
-			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
-			bufferedIn.mark(in.available() + 2);
-			fileStreams.put(fid, in);
-			bufferedStreams.put(fid, bufferedIn);
-			totalLength += length;
-			return bufferedIn;
-		} else {
-			return bufferedStreams.get(fid);
-		}
 	}
 
 	private int estimateBytesRead() {
@@ -244,7 +230,7 @@ public class PassportFrame extends JFrame
 					byte[] bytes = new byte[size];
 					DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
 					dataIn.readFully(bytes);
-					bufferedStreams.put(fid, new ByteArrayInputStream(bytes));
+					putFile(fid, bytes);
 				} catch (NumberFormatException nfe) {
 					/* NOTE: ignore this file */
 				}
@@ -284,33 +270,36 @@ public class PassportFrame extends JFrame
 			InputStream in = null;
 			in = getFile(PassportService.EF_DG1);
 			dg1 = new DG1File(in);
-			centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
-			centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
+			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1);
+			final MRZPanel mrzPanel = new MRZPanel(dg1);
+			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
+			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
+			holderInfoPanel.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					MRZInfo info = holderInfoPanel.getMRZ();
+					mrzPanel.setMRZ(info);
+					dg1 = new DG1File(info);
+					putFile(PassportService.EF_DG1, dg1.getEncoded());
+				}
+			});
 
 			for (short tag: bufferedStreams.keySet()) {
 				in = getFile(tag);
 				in.reset();
 				switch (tag) {
 				case PassportService.EF_DG1:
-//					dg1 = new DG1File(in);
-//					centerPanel.add(new HolderInfoPanel(dg1), BorderLayout.CENTER);
-//					centerPanel.add(new MRZPanel(dg1), BorderLayout.SOUTH);
-//					centerPanel.repaint();
 					break;
 				case PassportService.EF_DG2:
-					facePanel = new FacePreviewPanel(in, 160, 200);
-					centerPanel.add(facePanel, BorderLayout.WEST);
+					facePreviewPanel = new FacePreviewPanel(in, 160, 200);
+					centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 					centerPanel.repaint();
 					break;
 				case PassportService.EF_DG15:
-					// dg15 = new DG15File(in);
 					break;
 				case PassportService.EF_COM:
-					// com = new COMFile(in);
 					break;
 				case PassportService.EF_SOD:
-					// sod = new SODFile(in);
 					break;
 				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(tag));
 				}
@@ -321,6 +310,30 @@ public class PassportFrame extends JFrame
 		}
 	}
 
+	private void putFile(short fid, PassportService service) throws CardServiceException, IOException {
+		if (!bufferedStreams.containsKey(fid)) {
+			CardFileInputStream in = service.readFile(fid);
+			int length = in.getFileLength();
+			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
+			bufferedIn.mark(in.available() + 2);
+			fileStreams.put(fid, in);
+			bufferedStreams.put(fid, bufferedIn);
+			totalLength += length;
+		} 
+	}
+	
+	private void putFile(short fid, byte[] bytes) {
+		fileStreams.put(fid, null);
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		bufferedStreams.put(fid, in);
+	}
+	
+	/**
+	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
+	 * 
+	 * @param tag
+	 * @return
+	 */
 	private InputStream getFile(short tag) {
 		try {
 			InputStream in = bufferedStreams.get(tag);
@@ -414,6 +427,8 @@ public class PassportFrame extends JFrame
 			countrySigningCert = certFactory.generateCertificate(cscaFile.openStream());
 			docSigningCert.verify(countrySigningCert.getPublicKey());
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
+		} catch (FileNotFoundException fnfe) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		} catch (CertificateException e) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		} catch (GeneralSecurityException gse) {
@@ -423,6 +438,8 @@ public class PassportFrame extends JFrame
 
 		verificationPanel.revalidate();
 	}
+	
+	/* Menu stuff... */
 
 	private JMenu createFileMenu() {
 		JMenu fileMenu = new JMenu("File");
@@ -535,7 +552,7 @@ public class PassportFrame extends JFrame
 		}
 
 		public void actionPerformed(ActionEvent e) {
-			int index = facePanel.getSelectedIndex();
+			int index = facePreviewPanel.getSelectedIndex();
 			InputStream dg2In = getFile(PassportService.EF_DG2);
 			DG2File dg2File = new DG2File(dg2In);
 			FaceInfo faceInfo = dg2File.getFaces().get(index);
