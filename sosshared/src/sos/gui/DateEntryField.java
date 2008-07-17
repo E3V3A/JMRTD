@@ -12,7 +12,9 @@ import java.awt.event.FocusListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 
 import javax.swing.Box;
@@ -33,9 +35,12 @@ public class DateEntryField extends Box
 	private JComboBox monthComboBox;
 	private NumField dayNumField;
 	private NumField yearNumField ;
+	
+	private Collection<ActionListener> listeners;
 
 	public DateEntryField() {
 		super(BoxLayout.X_AXIS);
+		listeners = new ArrayList<ActionListener>();
 		cal = Calendar.getInstance();
 		monthComboBox = new JComboBox();
 		monthComboBox.setFont(FONT);
@@ -76,6 +81,7 @@ public class DateEntryField extends Box
 				if (choice.equals("Nov")) { month = 10; }
 				if (choice.equals("Dec")) { month = 11; }
 				cal.set(Calendar.MONTH, month);
+				notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 			}
 		});
 
@@ -83,6 +89,7 @@ public class DateEntryField extends Box
 			public void actionPerformed(ActionEvent e) {
 				int day = (int)dayNumField.getValue();
 				cal.set(Calendar.DATE, day);
+				notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 			}
 		});
 
@@ -93,6 +100,7 @@ public class DateEntryField extends Box
 			public void focusLost(FocusEvent e) {
 				int day = (int)dayNumField.getValue();
 				cal.set(Calendar.DATE, day);
+				notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 			}
 		});
 
@@ -100,6 +108,7 @@ public class DateEntryField extends Box
 			public void actionPerformed(ActionEvent e) {
 				int year = (int)yearNumField.getValue();
 				cal.set(Calendar.YEAR, year);
+				notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 			}
 		});
 
@@ -110,6 +119,7 @@ public class DateEntryField extends Box
 			public void focusLost(FocusEvent e) {
 				int year = (int)yearNumField.getValue();
 				cal.set(Calendar.YEAR, year);
+				notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 			}
 		});
 	}
@@ -126,6 +136,7 @@ public class DateEntryField extends Box
 		yearNumField.setValue(cal.get(Calendar.YEAR));
 		revalidate();
 		repaint();
+		notifyActionPerformed(new ActionEvent(this, 0, "Date changed"));
 	}
 
 	public Date getDate() {
@@ -134,5 +145,15 @@ public class DateEntryField extends Box
 
 	public String toString() {
 		return SDF.format(cal.getTime());
+	}
+
+	public void addActionListener(ActionListener l) {
+		listeners.add(l);
+	}
+	
+	private void notifyActionPerformed(ActionEvent e) {
+		for (ActionListener l: listeners) {
+			l.actionPerformed(e);
+		}
 	}
 }

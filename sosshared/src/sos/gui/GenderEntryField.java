@@ -21,14 +21,14 @@ public class GenderEntryField extends Box
 	private static final Icon FEMALE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("female"));
 	private static final Icon UNKNOWN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("error"));
 	private static final Icon UNSPECIFIED_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("error"));
-	
+
 	private JLabel iconLabel;
 	private JComboBox comboBox;
 
 	public GenderEntryField() {
 		this(Gender.UNSPECIFIED);
 	}
-	
+
 	public GenderEntryField(Gender gender) {
 		super(BoxLayout.X_AXIS);
 		iconLabel = new JLabel(getIcon(gender));
@@ -64,7 +64,7 @@ public class GenderEntryField extends Box
 		}
 		comboBox.revalidate(); comboBox.repaint();
 	}
-	
+
 	public void setFont(Font font) {
 		super.setFont(font);
 		comboBox.setFont(font);
@@ -76,7 +76,7 @@ public class GenderEntryField extends Box
 			}
 		}
 	}
-	
+
 	private Icon getIcon(Gender gender) {
 		switch (gender) {
 		case MALE: return MALE_ICON;
@@ -84,5 +84,9 @@ public class GenderEntryField extends Box
 		case UNSPECIFIED: return UNSPECIFIED_ICON;
 		default: return UNKNOWN_ICON;
 		}
+	}
+
+	public void addActionListener(ActionListener l) {
+		comboBox.addActionListener(l);
 	}
 }

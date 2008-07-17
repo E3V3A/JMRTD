@@ -13,6 +13,8 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import javax.swing.Action;
 import javax.swing.Box;
@@ -31,6 +33,8 @@ public class MRZEntryField extends Box
 
 	private int length;
 	private JTextField textField;
+	
+	private Collection<ActionListener> listeners;
 
 	/**
 	 * Constructs a new numeric field of length 8.
@@ -46,23 +50,27 @@ public class MRZEntryField extends Box
 	 */
 	public MRZEntryField(int newLength) {
 		super(BoxLayout.X_AXIS);
+		listeners = new ArrayList<ActionListener>();
 		this.length = newLength;
 		textField = new JTextField(this.length + 1);
 		textField.setFont(FONT);
 		textField.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ae) {
 				scrubInput();
+				notifyActionPerformed(new ActionEvent(this, 0, "Value changed"));
 			}
 		});
 		textField.addFocusListener(new FocusAdapter() {
 			public void focusLost(FocusEvent e) {
 				scrubInput();
+				notifyActionPerformed(new ActionEvent(this, 0, "Value changed"));
 			}
 		});
 		add(textField);
 		textField.addKeyListener(new KeyAdapter() {
 			public void keyTyped(KeyEvent e) {
 				scrubKeyTyped(e);
+				// notifyActionPerformed(new ActionEvent(this, 0, "Value changed"));
 			}
 		});
 		setEditable(true);
@@ -191,12 +199,12 @@ public class MRZEntryField extends Box
 	}
 
 	/**
-	 * Adds <code>l</code> to the action listener list of this numeric field.
+	 * Adds <code>l</code> to the action listener list of this field.
 	 * 
 	 * @param l The <code>ActionListener</code> to add.
 	 */
 	public void addActionListener(ActionListener l) {
-		textField.addActionListener(l);
+		listeners.add(l);
 	}
 
 	public void addFocusListener(FocusListener l) {
@@ -216,5 +224,11 @@ public class MRZEntryField extends Box
 		int width = (int)super.getPreferredSize().getWidth();
 		int height = (int)textField.getPreferredSize().getHeight();
 		return new Dimension(width, height);
+	}
+	
+	private void notifyActionPerformed(ActionEvent e) {
+		for (ActionListener l: listeners) {
+			l.actionPerformed(e);
+		}
 	}
 }

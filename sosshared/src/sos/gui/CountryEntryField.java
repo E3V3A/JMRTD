@@ -5,6 +5,8 @@ import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -35,7 +37,16 @@ public class CountryEntryField extends Box
 			public void actionPerformed(ActionEvent e) {
 				setCountry(getCountry());
 			}
-		});		
+		});
+		comboBox.addFocusListener(new FocusListener() {
+			public void focusGained(FocusEvent e) {
+				setCountry(getCountry());
+			}
+
+			public void focusLost(FocusEvent e) {
+				setCountry(getCountry());
+			}	
+		});
 		add(iconLabel);
 		add(Box.createHorizontalStrut(10));
 		add(comboBox);
@@ -104,5 +115,9 @@ public class CountryEntryField extends Box
 			if (!other.getClass().equals(this.getClass())) { return false; }
 			return ((CountryDisplayContainer)other).getCountry().equals(country);
 		}
+	}
+	
+	public void addActionListener(ActionListener l) {
+		comboBox.addActionListener(l);
 	}
 }
