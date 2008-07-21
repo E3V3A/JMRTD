@@ -7,26 +7,20 @@ package sos.tlv;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Stack;
 
+/**
+ * TLV input stream.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class BERTLVInputStream extends InputStream
 {
-	/** Tag. */
-	private int tag;
-
-	/** Length. */
-	private int length;
-
 	/** Carrier. */
 	private DataInputStream in;
 
-	private static final int
-	STATE_INIT = 0,
-	STATE_TAG_READ = 1,
-	STATE_LENGTH_READ = 2,
-	STATE_UNDETERMINED = 3;
-
-	private int state;
-	private int markedState;
+	private State state;
+	private State markedState;
 
 	/**
 	 * Constructs a new TLV stream based on another stream.
@@ -34,32 +28,31 @@ public class BERTLVInputStream extends InputStream
 	 * @param in a TLV object
 	 */
 	public BERTLVInputStream(InputStream in) {
-		this.in = (in instanceof DataInputStream) ? (DataInputStream)in: new DataInputStream(in);
-		state = STATE_INIT;
-		markedState = STATE_UNDETERMINED;
+		this.in = new DataInputStream(in);
+		state = new State();
+		markedState = null;
 	}
 
 	public int readTag() throws IOException {
-		if (state != STATE_INIT) {
-			throw new IllegalStateException("Tag already read");
-		}
+		int tag = -1;
+		int bytesRead = 0;
 		try {
-			int b = in.readUnsignedByte();
+			int b = in.readUnsignedByte(); bytesRead++;
 			while (b == 0x00 || b == 0xFF) {
-				// throw new IllegalArgumentException("00 or FF tag not allowed");
-				b = in.readUnsignedByte(); /* skip 00 and FF */
+				b = in.readUnsignedByte(); bytesRead++; /* skip 00 and FF */
 			}
 			switch (b & 0x1F) {
 			case 0x1F:
 				tag = b; /* We store the first byte including LHS nibble */
-				b = in.readUnsignedByte();
+				b = in.readUnsignedByte(); bytesRead++;
 				while ((b & 0x80) == 0x80) {
 					tag <<= 8;
 					tag |= (b & 0x7F);
-					b = in.readUnsignedByte();
+					b = in.readUnsignedByte(); bytesRead++;
 				}
 				tag <<= 8;
-				tag |= (b & 0x7F); /*
+				tag |= (b & 0x7F);
+				/*
 				 * Byte with MSB set is last byte of
 				 * tag...
 				 */
@@ -68,21 +61,19 @@ public class BERTLVInputStream extends InputStream
 				tag = b;
 			break;
 			}
-			state = STATE_TAG_READ;
+			state.setTagRead(tag, bytesRead);
 			return tag;
 		} catch (IOException e) {
-			state = STATE_UNDETERMINED;
 			throw e;
 		}
 	}
 
 	public int readLength() throws IOException {
-		if (state != STATE_TAG_READ) {
-			throw new IllegalStateException("Tag not yet read or length already read");
-		}
 		try {
-			length = 0;
-			int b = in.readUnsignedByte();
+			if (!state.isAtStartOfLength()) { throw new IllegalStateException("Not at start of length"); }
+			int bytesRead = 0;
+			int length = 0;
+			int b = in.readUnsignedByte(); bytesRead++;
 			if ((b & 0x80) == 0x00) {
 				/* short form */
 				length = b;
@@ -91,44 +82,65 @@ public class BERTLVInputStream extends InputStream
 				int count = b & 0x7F;
 				length = 0;
 				for (int i = 0; i < count; i++) {
-					b = in.readUnsignedByte();
+					b = in.readUnsignedByte(); bytesRead++;
 					length <<= 8;
 					length |= b;
 				}
 			}
-			state = STATE_LENGTH_READ;
+			state.setLengthRead(length, bytesRead);
 			return length;
 		} catch (IOException e) {
-			state = STATE_UNDETERMINED;
 			throw e;
 		}
 	}
 
 	public byte[] readValue() throws IOException {
-		if (state != STATE_LENGTH_READ) {
-			throw new IllegalStateException("Length not yet read");
-		}
 		try {
+			int length = state.getLength();
 			byte[] value = new byte[length];
 			in.readFully(value);
-			state = STATE_INIT;
+			state.updateValueBytesRead(length);
 			return value;
 		} catch (IOException e) {
-			state = STATE_UNDETERMINED;
 			throw e;
 		}
 	}
 
-	public void skipValue() throws IOException {
-		if (state != STATE_LENGTH_READ) {
-			throw new IllegalStateException("Tag and length not yet read");
-		}
-		try {
-			in.skip(length);
-			state = STATE_INIT;
-		} catch (IOException e) {
-			state = STATE_UNDETERMINED;
-			throw e;
+	private long skipValue() throws IOException {
+		if (state.isAtStartOfTag()) { return 0; }
+		if (state.isAtStartOfLength()) { return 0; }
+		int bytesLeft = state.getValueBytesLeft();
+		return skip(bytesLeft);
+	}
+
+
+	/**
+	 * Skips in this stream until a given tag is found (depth first).
+	 * The stream is positioned right after the first occurence of the tag.
+	 * 
+	 * @param tag the tag to search for
+	 * @throws IOException
+	 */
+	public void skipToTag(short searchTag) throws IOException {
+		while (true) {
+			/* Get the next tag. */
+			int tag = -1;
+			if (state.isAtStartOfTag()) {
+				/* Nothing. */
+			} else if (state.isAtStartOfLength()) {
+				readLength();
+				if (isPrimitive(state.getTag())) { skipValue(); }
+			} else {
+				if (isPrimitive(state.getTag())) { skipValue(); }
+
+			}
+			tag = readTag();
+			if  (tag == searchTag) { return; }
+
+			if (isPrimitive(tag)) {
+				readLength();
+				skipValue(); /* Now at next tag. */
+			}
 		}
 	}
 
@@ -136,37 +148,34 @@ public class BERTLVInputStream extends InputStream
 		return in.available();
 	}
 
-	/**
-	 * Warning: will set state to undetermined.
-	 */
 	public int read() throws IOException {
 		int result = in.read();
-		state = STATE_UNDETERMINED;
+		state.updateValueBytesRead(1);
 		return result;
 	}
 
-	/**
-	 * Warning: will set state to undetermined.
-	 */
 	public long skip(long n) throws IOException {
 		long result = in.skip(n);
-		state = STATE_UNDETERMINED;
+		state.updateValueBytesRead((int)result);
 		return result;
 	}
 
 	public synchronized void mark(int readLimit) {
 		in.mark(readLimit);
-		markedState = state;
+		markedState = state; /* FIXME: need deep copy */
 	}
 
+
 	public boolean markSupported() {
-		return false;
+		return false; // FIXME: see mark(), in.markSupported();
 	}
 
 	public synchronized void reset() throws IOException {
+		if (!markSupported()) {
+			throw new IOException("mark/reset not supported");
+		}
 		in.reset();
-		state = STATE_UNDETERMINED;
-		throw new IOException("mark/reset not supported");
+		state = markedState;
 	}
 
 	public void close() throws IOException {
@@ -185,29 +194,136 @@ public class BERTLVInputStream extends InputStream
 	}
 
 	/**
-	 * Skips in this stream until a given tag is found (depth first).
-	 * Will also read the length of the TLV structure (which is returned).
-	 * 
-	 * @param tag the tag to search for
-	 * @return length of the TLV object
-	 * @throws IOException
+	 *
 	 */
-	public int skipToTag(short tag) throws IOException {
-		while (true) {
-			switch (state) {
-			case STATE_INIT: readTag(); /* NOTE: no break! */
-			case STATE_TAG_READ: readLength(); /* NOTE: no break! */
-			case STATE_LENGTH_READ: break;
-			default: throw new IllegalStateException("Cannot search value from undetermined state");
+	private class State
+	{
+		private Stack<TLStruct> state;
+		private boolean isAtStartOfTag;
+
+		public State() {
+			state = new Stack<TLStruct>();
+			isAtStartOfTag = true;
+		}
+
+		public boolean isAtStartOfTag() { /* FIXME: wrong */
+			return isAtStartOfTag;
+//			if (state.isEmpty()) { return true; }
+//			TLStruct currentObject = state.peek();
+//			return (currentObject.getLength() >= 0 && currentObject.getBytesRead() == 0);
+		}
+
+		public boolean isAtStartOfLength() {
+			if (state.isEmpty()) { return false; }
+			TLStruct currentObject = state.peek();
+			return currentObject.getLength() < 0;
+		}
+
+		public int getTag() {
+			if (state.isEmpty()) {
+				throw new IllegalStateException("Tag not yet read.");
 			}
-			if (this.tag == tag) {
-				return this.length; /* Now at value corresponding to search-tag. */
+			TLStruct currentObject = state.peek();
+			return currentObject.getTag();
+		}
+
+		public int getLength() {
+			if (state.isEmpty()) {
+				throw new IllegalStateException("Length not yet read.");
 			}
-			if (isPrimitive(this.tag)) {
-				skipValue(); /* Now at next tag. */
+			TLStruct currentObject = state.peek();
+			int length = currentObject.getLength();
+			if (length < 0) {
+				throw new IllegalStateException("Length not yet read.");
+			}
+			return length;
+		}
+
+		public int getValueBytesLeft() {
+			if (state.isEmpty()) {
+				throw new IllegalStateException("Not yet reading value.");
+			}
+			TLStruct currentObject = state.peek();
+			int currentLength = currentObject.getLength();
+			if (currentLength < 0) {
+				throw new IllegalStateException("Not yet reading value.");
+			}
+			int currentBytesRead = currentObject.getBytesRead();
+			return currentLength - currentBytesRead;
+		}
+
+		public void setTagRead(int tag, int bytesRead) {
+			TLStruct obj = new TLStruct(tag, -1);
+			if (!state.isEmpty()) {
+				TLStruct parent = state.peek();
+				parent.updateValueBytesRead(bytesRead);
+			}
+			state.push(obj);
+			isAtStartOfTag = false;
+		}
+
+		public void setLengthRead(int length, int bytesRead) {
+			if (length < 0) {
+				throw new IllegalArgumentException("Cannot set negative length (length = " + length + ").");
+			}
+			TLStruct obj = state.pop();
+			if (!state.isEmpty()) {
+				TLStruct parent = state.peek();
+				parent.updateValueBytesRead(bytesRead);
+			}
+			obj.setLength(length);
+			state.push(obj);
+			isAtStartOfTag = false;
+		}
+
+		public void updateValueBytesRead(int n) {
+			if (state.isEmpty()) { return; }
+			TLStruct currentObject = state.peek();
+			int bytesLeft = currentObject.getLength() - currentObject.getBytesRead();
+			if (n > bytesLeft) {
+				throw new IllegalArgumentException("Cannot read " + n + " bytes! Only " + bytesLeft + " bytes left in this TLV object " + currentObject);
+			}
+			currentObject.updateValueBytesRead(n);
+			int currentLength = currentObject.getLength();
+			if (currentObject.getBytesRead() == currentLength) {
+				state.pop();
+				/* Recursively update parent. */
+				updateValueBytesRead(currentLength);
+				isAtStartOfTag = true;
 			} else {
-				state = STATE_INIT; /* Now at tag of embedded TLV struct. */
+				isAtStartOfTag = false;
 			}
+		}
+
+		private class TLStruct implements Cloneable
+		{
+			private int tag, length, bytesRead;
+
+			public TLStruct(int tag, int length) {
+				this.tag = tag; this.length = length; this.bytesRead = 0;
+			}
+
+			public void setLength(int length) {
+				this.length = length;
+			}
+
+			public int getTag() { return tag; }
+
+			public int getLength() { return length; }
+
+			public int getBytesRead() { return bytesRead; }
+
+			public void updateValueBytesRead(int n) {
+				this.bytesRead += n;
+			}
+
+			public Object clone() {
+				TLStruct result = new TLStruct(tag, length);
+				result.bytesRead = bytesRead;
+				return result;
+			}
+
+			public String toString() { return "[TLStruct " + Integer.toHexString(tag) + ", " + length + ", " + bytesRead + "]"; }
 		}
 	}
 }

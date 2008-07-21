@@ -106,6 +106,10 @@ public class BERTLVObject
             ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
          } else if (value instanceof BERTLVObject[]) {
             this.value = value;
+         } else if (value instanceof Byte) {
+        	 this.length = 1;
+        	 this.value = new byte[1];
+        	 ((byte[])this.value)[0] = ((Byte)value).byteValue();
          } else if (value instanceof Integer) {
             this.value = new BERTLVObject[1];
             ((BERTLVObject[])this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
