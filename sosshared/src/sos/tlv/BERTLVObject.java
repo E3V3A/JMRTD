@@ -279,7 +279,7 @@ public class BERTLVObject
     * 
     * @return the length of the encoded value
     */
-   private void reconstructLength() {
+   public void reconstructLength() {
       /* NOTE: needed after sub-objects have been added. */
       length = getValueAsBytes().length;
    }

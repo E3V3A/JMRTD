@@ -135,11 +135,20 @@ public class BERTLVInputStream extends InputStream
 
 			}
 			tag = readTag();
+			System.out.println("DEBUG: stt (" + Integer.toHexString(searchTag) + ") " + Integer.toHexString(tag));
 			if  (tag == searchTag) { return; }
 
 			if (isPrimitive(tag)) {
-				readLength();
-				skipValue(); /* Now at next tag. */
+				int length = readLength();
+				int skippedBytes = (int)skipValue();
+				if (skippedBytes >= length) {
+					/* Now at next tag. */
+					continue;
+				} else {
+					/* Could only skip less than length bytes,
+					 * we're lost, probably at EOF. */
+					break;
+				}
 			}
 		}
 	}
@@ -150,11 +159,13 @@ public class BERTLVInputStream extends InputStream
 
 	public int read() throws IOException {
 		int result = in.read();
+		if (result < 0) { return -1; }
 		state.updateValueBytesRead(1);
 		return result;
 	}
 
 	public long skip(long n) throws IOException {
+		if (n <= 0) { return 0; }
 		long result = in.skip(n);
 		state.updateValueBytesRead((int)result);
 		return result;
