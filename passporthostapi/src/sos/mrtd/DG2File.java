@@ -61,8 +61,8 @@ public class DG2File extends DataGroup
 	private static final byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
 	private static final short BIOMETRIC_DATA_TAG = 0x5F2E;
 
-	private static final byte FORMAT_OWNER_TAG = (byte) 0x87;
-	private static final byte FORMAT_TYPE_TAG = (byte) 0x88;
+	private static final int FORMAT_OWNER_TAG = 0x87;
+	private static final int FORMAT_TYPE_TAG = 0x88;
 
 	// Facial Record Header, Sect. 5.4, ISO SC37
 	private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
@@ -151,15 +151,12 @@ public class DG2File extends DataGroup
 
 			System.out.println("DEBUG: DG2.getEncoded says faces.size() = " + faces.size());
 
-			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
+			
 			byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG; /* A1 */
 			for (FaceInfo info: faces) {
-				System.out.println("DEBUG: Writing face");
 				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
-						new BERTLVObject(FORMAT_TYPE_TAG,
-								formatType(info.getImage())));
-				header.addSubObject(new BERTLVObject(FORMAT_OWNER_TAG,
-						formatOwner(info.getImage())));
+						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
+				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
 
 				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFO_TAG /* 7F60 */, header);
 
@@ -179,9 +176,12 @@ public class DG2File extends DataGroup
 
 				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_TAG /* 5F2E */, facialRecord));
 				group.addSubObject(faceObject);
-				System.out.println("DEBUG: group = " + group);
 			}
+			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
+			dg2.reconstructLength();
 			sourceObject = dg2;
+
+			System.out.println("DEBUG: ++++++++++ dg2 = " + dg2);
 			isSourceConsistent = true;
 			return dg2.getEncoded();
 		} catch (Exception ioe) {
