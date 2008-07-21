@@ -25,6 +25,7 @@ package sos.mrtd.sample.newgui;
 import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 
@@ -57,40 +58,42 @@ public class FacePreviewPanel extends JPanel
 		this.width = width;
 		this.height = height;
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-		addDummyFace(width, height);
 		add(tabbedPane);
-	}
-	
-	public void showFaces(DG2File dg2) {
-		Collection<FaceInfo> faces = dg2.getFaces();
-		addFaces(faces, width, height);
-		removeImage(0);
-		revalidate(); repaint();
 	}
 
 	public int getSelectedIndex() {
 		return tabbedPane.getSelectedIndex();
 	}
 
-	private void addFaces(Collection<FaceInfo> faces, int width, int height) {
-		for (FaceInfo faceInfo: faces) {
+	public void addFace(FaceInfo faceInfo) {
+		try {
 			Image image = faceInfo.getPreviewImage(width - 10, height - 10);
 			addImage(image);
+			revalidate(); repaint();
+		} catch (IOException ioe) {
+			/* We'll just skip this image then. */
+			ioe.printStackTrace();
 		}	
 	}
 	
+	public void addFaces(Collection<FaceInfo> faces) {
+		for (FaceInfo faceInfo: faces) {
+			addFace(faceInfo);
+		}
+	}
+
 	private void addImage(Image image) {
 		JPanel panel = new JPanel(new FlowLayout());
 		panel.add(new JLabel(new ImageIcon(image)));
 		int index = tabbedPane.getTabCount();
 		tabbedPane.addTab(Integer.toString(index), IMAGE_SMALL_ICON, panel);
 	}
-		
+
 	private void addDummyFace(int width, int height) {
 		BufferedImage dummyImage = new BufferedImage(width - 10, height - 10, BufferedImage.TYPE_INT_ARGB);
 		addImage(dummyImage);
 	}
-	
+
 	private void removeImage(int index) {
 		tabbedPane.removeTabAt(index);
 	}

@@ -26,6 +26,7 @@ import java.awt.Image;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,6 +40,13 @@ import sos.tlv.BERTLVObject;
  * the document holder.
  * See A 13.3 in MRTD's LDS document.
  * 
+ * NOTE: multiple FaceInfos may be embedded in two ways:
+ * 1) as multiple images in the same record (see Fig. 3 in ISO/IEC
+ * 19794-5)
+ * 2) as multiple records (see A 13.3 in LDS technical report).
+ * For writing we choose option 2, because otherwise we have to
+ * precalc the total length of all FaceInfos, which sucks. -- CB
+ * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
@@ -46,122 +54,142 @@ import sos.tlv.BERTLVObject;
  */
 public class DG2File extends DataGroup
 {
-   private static final short BIOMETRIC_INFO_GROUP_TAG = 0x7F61;
-   private static final short BIOMETRIC_INFO_TAG = 0x7F60;
-   
-   private static final byte BIOMETRIC_INFO_COUNT_TAG = 0x02;
-   private static final byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
-   private static final short BIOMETRIC_DATA_TAG = 0x5F2E;
+	private static final short BIOMETRIC_INFO_GROUP_TAG = 0x7F61;
+	private static final short BIOMETRIC_INFO_TAG = 0x7F60;
 
-   private static final byte FORMAT_OWNER_TAG = (byte) 0x87;
-   private static final byte FORMAT_TYPE_TAG = (byte) 0x88;
+	private static final byte BIOMETRIC_INFO_COUNT_TAG = 0x02;
+	private static final byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
+	private static final short BIOMETRIC_DATA_TAG = 0x5F2E;
 
-   // Facial Record Header, Sect. 5.4, ISO SC37
-   private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
-   private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
+	private static final byte FORMAT_OWNER_TAG = (byte) 0x87;
+	private static final byte FORMAT_TYPE_TAG = (byte) 0x88;
 
-   private List<FaceInfo> faces;
+	// Facial Record Header, Sect. 5.4, ISO SC37
+	private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
+	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
 
-   /**
-    * Constructs a new file.
-    */
-   public DG2File() {
-      faces = new ArrayList<FaceInfo>();
-   }
+	private List<FaceInfo> faces;
 
-   public DG2File(InputStream in) {
-      this();
-      try {
-         BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-         int tlvLength = tlvIn.skipToTag(BIOMETRIC_DATA_TAG);
-         DataInputStream dataIn =
-            new DataInputStream(tlvIn);
-         /* Facial Record Header (14) */
-         dataIn.skip(4); // 'F', 'A', 'C', 0
-         dataIn.skip(4); // version in ascii (e.g. "010")
-         long length = dataIn.readInt() & 0x000000FFFFFFFFL;
-         int faceCount = dataIn.readUnsignedShort();
-         for (int i = 0; i < faceCount; i++) {
-            addFaceInfo(new FaceInfo(dataIn));
-         }
-      } catch (Exception e) {
-         e.printStackTrace();
-         throw new IllegalArgumentException("Could not decode: " + e.toString());
-      }
-      isSourceConsistent = true;
-   }
-   
-   public int getTag() {
-      return EF_DG2_TAG;
-   }
-   
-   public void addFaceInfo(FaceInfo fi) {
-      faces.add(fi);
-      isSourceConsistent = false;
-   }
+	/**
+	 * Constructs a new file.
+	 */
+	public DG2File() {
+		faces = new ArrayList<FaceInfo>();
+		isSourceConsistent = false;
+	}
 
-   private byte[] formatOwner(Image i) {
-      // FIXME
-      byte[] ownr = { 0x01, 0x01 };
-      return ownr;
-   }
+	public DG2File(InputStream in) {
+		this();
+		try {
+			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			tlvIn.skipToTag(BIOMETRIC_INFO_GROUP_TAG); /* 7F61 */
+			tlvIn.readLength();
+			tlvIn.skipToTag(BIOMETRIC_INFO_COUNT_TAG); /* 02 */
+			int tlvBioInfoCountLength = tlvIn.readLength();
+			if (tlvBioInfoCountLength != 1) { throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1"); }
+			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
+			System.out.println("DEBUG: bioInfoCount = " + bioInfoCount);
+			for (int i = 0; i < bioInfoCount; i++) {
+				readBioInfoTemplate(tlvIn);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException("Could not decode: " + e.toString());
+		}
+		isSourceConsistent = false;
+	}
 
-   private byte[] formatType(Image i) {
-      // FIXME
-      byte[] fmt = { 0x00, 0x08 };
-      return fmt;
-   }
+	private void readBioInfoTemplate(BERTLVInputStream tlvIn) throws IOException {
+		tlvIn.skipToTag(BIOMETRIC_DATA_TAG); /* 5F2E */
+		tlvIn.readLength();
+		readBioData(tlvIn);
+	}
 
-   public byte[] getEncoded() {
-      if (isSourceConsistent) {
-         return sourceObject.getEncoded();
-      }
-      try {
-         BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG,
-               new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG,
-                     (byte) faces.size()));
-         BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
-         byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG;
-         for (FaceInfo info: faces) {
-            BERTLVObject header = new BERTLVObject(bioHeaderTag++,
-                  new BERTLVObject(FORMAT_TYPE_TAG,
-                        formatType(info.getImage())));
-            header.addSubObject(new BERTLVObject(FORMAT_OWNER_TAG,
-                  formatOwner(info.getImage())));
+	private void readBioData(BERTLVInputStream tlvIn) throws IOException {
+		DataInputStream dataIn = new DataInputStream(tlvIn);
+		/* Facial Record Header (14) */
+		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
+		int version = dataIn.readInt(); // version in ascii (e.g. "010" 0x00)
+		long length = dataIn.readInt() & 0x000000FFFFFFFFL;
+		int faceCount = dataIn.readUnsignedShort();
+		System.out.println("DEBUG: bio data faceCount = " + faceCount);
+		for (int i = 0; i < faceCount; i++) {
+			addFaceInfo(new FaceInfo(dataIn));
+		}
+	}
 
-            BERTLVObject face = new BERTLVObject(BIOMETRIC_INFO_TAG, header);
-            
-            // NOTE: multiple FaceInfos may be embedded in two ways:
-            // 1) as multiple images in the same record (see Fig. 3 in ISO/IEC
-            // 19794-5)
-            // 2) as multiple records (see A 13.3 in LDS technical report).
-            // We choose option 2, because otherwise we have to precalc the
-            // total length of all FaceInfos, which sucks.
-            int lengthOfRecord =
-               FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
-            short nrOfImagesInRecord = 1;
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            DataOutputStream dataOut = new DataOutputStream(out);
-            dataOut.write(FORMAT_IDENTIFIER);
-            dataOut.write(VERSION_NUMBER);
-            dataOut.writeInt(lengthOfRecord);
-            dataOut.writeShort(nrOfImagesInRecord);
-            dataOut.write(info.getEncoded());
-            dataOut.flush();
-            byte[] facialRecord = out.toByteArray();
+	public int getTag() {
+		return EF_DG2_TAG;
+	}
 
-            face.addSubObject(new BERTLVObject(BIOMETRIC_DATA_TAG, facialRecord));
-            group.addSubObject(face);
-         }
-         sourceObject = dg2;
-         isSourceConsistent = true;
-         return dg2.getEncoded();
-      } catch (Exception ioe) {
-         return null;
-      }
-   }
-   
-   public List<FaceInfo> getFaces() {
-      return faces;
-   }
+	public void addFaceInfo(FaceInfo fi) {
+		faces.add(fi);
+		isSourceConsistent = false;
+	}
+
+	private byte[] formatOwner(Image i) {
+		// FIXME
+		byte[] ownr = { 0x01, 0x01 };
+		return ownr;
+	}
+
+	private byte[] formatType(Image i) {
+		// FIXME
+		byte[] fmt = { 0x00, 0x08 };
+		return fmt;
+	}
+
+	public byte[] getEncoded() {
+		if (isSourceConsistent) {
+			return sourceObject.getEncoded();
+		}
+		try {
+			/* FIXME: Consider using a BERTLVOutputStream instead of BERTLVObject here? */
+			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG /* 7F61 */,
+					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
+							(byte)faces.size()));
+
+			System.out.println("DEBUG: DG2.getEncoded says faces.size() = " + faces.size());
+
+			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
+			byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG; /* A1 */
+			for (FaceInfo info: faces) {
+				System.out.println("DEBUG: Writing face");
+				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
+						new BERTLVObject(FORMAT_TYPE_TAG,
+								formatType(info.getImage())));
+				header.addSubObject(new BERTLVObject(FORMAT_OWNER_TAG,
+						formatOwner(info.getImage())));
+
+				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFO_TAG /* 7F60 */, header);
+
+				int lengthOfRecord =
+					FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
+				short nrOfImagesInRecord = 1;
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				DataOutputStream dataOut = new DataOutputStream(out);
+				dataOut.write(FORMAT_IDENTIFIER);
+				dataOut.write(VERSION_NUMBER);
+				dataOut.writeInt(lengthOfRecord);
+				dataOut.writeShort(nrOfImagesInRecord);
+				System.out.println("DEBUG: writing nrOfImagesInRecord = " + nrOfImagesInRecord);
+				dataOut.write(info.getEncoded());
+				dataOut.flush();
+				byte[] facialRecord = out.toByteArray();
+
+				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_TAG /* 5F2E */, facialRecord));
+				group.addSubObject(faceObject);
+				System.out.println("DEBUG: group = " + group);
+			}
+			sourceObject = dg2;
+			isSourceConsistent = true;
+			return dg2.getEncoded();
+		} catch (Exception ioe) {
+			return null;
+		}
+	}
+
+	public List<FaceInfo> getFaces() {
+		return faces;
+	}
 }

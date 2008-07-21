@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportGUI.java 308 2008-01-23 11:16:00Z martijno $
+ * $Id: $
  */
 
 package sos.mrtd.sample.newgui;
@@ -69,7 +69,6 @@ import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
 import sos.data.Gender;
-import sos.gui.ImagePanel;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
@@ -84,7 +83,6 @@ import sos.smartcards.CardServiceException;
 import sos.util.Files;
 import sos.util.Hex;
 import sos.util.Icons;
-import sos.util.Images;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.
@@ -307,7 +305,7 @@ public class PassportFrame extends JFrame
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
-					facePreviewPanel.showFaces(dg2);
+					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
 				case PassportService.EF_DG15:
 					break;
@@ -429,6 +427,7 @@ public class PassportFrame extends JFrame
 
 		/* Check country signer certificate, if known. */
 		try {
+			if (docSigningCert == null) { throw new IllegalStateException("Cannot check CSCA if DS failed"); }
 			issuingState = null;
 			InputStream dg1In = getFile(PassportService.EF_DG1);
 			if (dg1In != null) {
@@ -441,9 +440,14 @@ public class PassportFrame extends JFrame
 			/* TODO: also check .pem, .der formats? */
 			URL cscaFile = new URL(cscaDir + "/" + issuingState.toString().toLowerCase() + ".cer");
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-			countrySigningCert = certFactory.generateCertificate(cscaFile.openStream());
+			InputStream cscaIn = cscaFile.openStream();
+			if (cscaIn == null) {
+				throw new IllegalStateException("CSCA check failed");
+			}
+			countrySigningCert = certFactory.generateCertificate(cscaIn);
 			docSigningCert.verify(countrySigningCert.getPublicKey());
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
+
 		} catch (FileNotFoundException fnfe) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		} catch (CertificateException e) {
@@ -453,6 +457,8 @@ public class PassportFrame extends JFrame
 			gse.printStackTrace();
 		} catch (IOException ioe) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+		} catch (Exception e) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		}
 
 		verificationPanel.revalidate();
@@ -588,9 +594,9 @@ public class PassportFrame extends JFrame
 				dg2 = new DG2File(dg2In);
 			}
 			FaceInfo faceInfo = dg2.getFaces().get(index);
-			PortraitFrame faceFrame = new PortraitFrame(faceInfo);
-			faceFrame.setVisible(true);
-			faceFrame.pack();
+			PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
+			portraitFrame.setVisible(true);
+			portraitFrame.pack();
 		}
 	}
 
@@ -631,15 +637,16 @@ public class PassportFrame extends JFrame
 						dg2 = new DG2File(dg2In);
 					}
 					dg2.addFaceInfo(faceInfo);
-					facePreviewPanel.showFaces(dg2);
+					putFile(PassportService.EF_DG2, dg2.getEncoded());
+					facePreviewPanel.addFace(faceInfo);
 				} catch (IOException ioe) {
 					/* NOTE: Do nothing. */
 				}
 				break;
-			default: break;
+			default:
+				break;
 			}
 		}
-
 	}
 
 	private class ViewDocumentSignerCertificateAction extends AbstractAction

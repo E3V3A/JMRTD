@@ -28,6 +28,7 @@ import java.io.InputStream;
 import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.
@@ -100,19 +101,11 @@ public class COMFile extends PassportFile
          if (tag != EF_COM_TAG) {
             throw new IOException("Wrong tag!");
          }
-         tlvIn.readLength();
+         int length = tlvIn.readLength();
          byte[] valueBytes = tlvIn.readValue();
-         setValue(new BERTLVObject(tag, valueBytes));
-      } catch (IOException ioe) {
-         throw new CardServiceException(ioe.toString());
-      }
-   }
 
-   void setValue(BERTLVObject object) {
-      try {
-         if (object.getTag() != EF_COM_TAG) {
-            throw new IOException("Wrong tag!");
-         }         
+         BERTLVObject object = new BERTLVObject(tag, valueBytes);
+         
          BERTLVObject versionLDSObject = object.getSubObject(VERSION_LDS_TAG);
          BERTLVObject versionUnicodeObject = object.getSubObject(VERSION_UNICODE_TAG);
          BERTLVObject tagListObject = object.getSubObject(TAG_LIST_TAG);
@@ -133,9 +126,10 @@ public class COMFile extends PassportFile
          tagList = new int[tagBytes.length];
          for (int i = 0; i < tagBytes.length; i++) { tagList[i] = (tagBytes[i] & 0xFF); }
       } catch (IOException ioe) {
-         throw new IllegalArgumentException(ioe.toString());
+         throw new CardServiceException(ioe.toString());
       }
    }
+
 
    /**
     * The tag byte of this file.

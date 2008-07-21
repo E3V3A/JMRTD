@@ -52,18 +52,12 @@ public class DG1File extends DataGroup
 		this.mrz = mrz;
 	}
 
-//	private DG1File(BERTLVObject in) {
-//		this(new MRZInfo(new ByteArrayInputStream((byte[])in.getSubObject(MRZ_INFO_TAG).getValue())));
-//		sourceObject = in;
-//		isSourceConsistent = true;
-//	}
-
 	public DG1File(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != PassportFile.EF_DG1_TAG) { throw new IllegalArgumentException("Expected EF_DG1_TAG"); }
-		int length = tlvIn.readLength();
 		tlvIn.skipToTag(MRZ_INFO_TAG);
+		tlvIn.readLength();
 		isSourceConsistent = false;
 		this.mrz = new MRZInfo(tlvIn);
 	}

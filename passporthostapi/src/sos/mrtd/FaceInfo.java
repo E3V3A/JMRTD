@@ -28,6 +28,7 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -291,6 +292,10 @@ public class FaceInfo
        * ISO 19794-5
        */
       image = null;
+      if (!dataIn.markSupported()) {
+    	  dataIn = new DataInputStream(new BufferedInputStream(in, (int)faceImageBlockLength + 1));
+      }
+      dataIn.mark((int)faceImageBlockLength);
    }
    
    public byte[] getEncoded() {
@@ -374,32 +379,48 @@ public class FaceInfo
       }
    }
    
-   private BufferedImage readImage(InputStream in, String mimeType)
+   private BufferedImage processImage(InputStream in, String mimeType)
    throws IOException {
-      ImageInputStream iis = ImageIO.createImageInputStream(in);
-      Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-      while (readers.hasNext()) {
-         try {
-            ImageReader reader = (ImageReader)readers.next();
-            reader.setInput(iis);
-            ImageReadParam pm = reader.getDefaultReadParam();
-            pm.setSourceRegion(new Rectangle(0, 0, width, height));
-            BufferedImage image = reader.read(0, pm);
-            if (image != null) {
-               return image;
-            }
-         } catch (Exception e) {
-            e.printStackTrace();
-            continue;
-         }
-      }
-      throw new IOException("Could not decode \"" + mimeType + "\" image!");
+	   if (in.markSupported()) { in.reset(); }
+	   /* If !in.markSupported() we assume the inputstream is at the beginning of the image block. */
+	   ImageInputStream iis = ImageIO.createImageInputStream(in);
+	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
+	   while (readers.hasNext()) {
+		   try {
+			   ImageReader reader = (ImageReader)readers.next();
+			   reader.setInput(iis);
+			   ImageReadParam pm = reader.getDefaultReadParam();
+			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+			   BufferedImage image = reader.read(0, pm);
+			   if (image != null) {
+				   return image;
+			   }
+		   } catch (Exception e) {
+			   e.printStackTrace();
+			   continue;
+		   }
+	   }
+	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
    
    private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
    throws IOException {
+	   /* The desired dimensions will be smaller than the actual image. */
 	   if (desiredWidth > width) { desiredWidth = width; }
 	   if (desiredHeight > height) { desiredHeight = height; }
+
+	   /* A scaling factor that respects aspect ratio. */
+	   double xScale = (double)desiredWidth / (double)width;
+	   double yScale = (double)desiredHeight / (double)height;
+	   double scale = xScale < yScale ? xScale : yScale;
+	   
+	   if (image != null) {
+		   /* Full image already read, we'll just scale it down... */
+		   return scaleImage(image, scale);
+	   }
+
+	   /* We'll read the preview image from the inputstream as efficient as possible. */
+	   if (in.markSupported()) { in.reset(); }
 	   ImageInputStream iis = ImageIO.createImageInputStream(in);
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
@@ -409,7 +430,7 @@ public class FaceInfo
 			   ImageReadParam pm = reader.getDefaultReadParam();
 			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
 			   if (pm.canSetSourceRenderSize()) {
-				   pm.setSourceRenderSize(new Dimension(desiredWidth, desiredHeight));
+				   pm.setSourceRenderSize(new Dimension((int)(width * scale), (int)(height * scale)));
 				   BufferedImage image = reader.read(0, pm);
 				   return image;
 			   } else {
@@ -418,15 +439,11 @@ public class FaceInfo
 				   pm.setSourceSubsampling(xSubSampling, ySubSampling, 0, 0);
 				   BufferedImage image = reader.read(0, pm);
 				   if (image != null) {
-					   double xScale = (double)desiredWidth / (double)image.getWidth();
-					   double yScale = (double)desiredHeight / (double)image.getHeight();
-					   double scale = xScale < yScale ? xScale : yScale;
-
-					   BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
-					   Graphics2D g2 = scaledImage.createGraphics();
-					   AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
-					   g2.drawImage(image, at, null); 
-					   return scaledImage;
+					   /* Rescale, just in case. */
+					   xScale = (double)desiredWidth / (double)image.getWidth();
+					   yScale = (double)desiredHeight / (double)image.getHeight();
+					   scale = xScale < yScale ? xScale : yScale;
+					   return scaleImage(image, scale);
 				   }
 			   }
 		   } catch (Exception e) {
@@ -435,6 +452,23 @@ public class FaceInfo
 		   }
 	   }
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
+   }
+   
+   /**
+    * Scales image to an image of size at most the size indicated by parameters
+    * keeping same aspect ratio.
+    * 
+    * @param image an image
+    * @param desiredWidth maximum width
+    * @param desiredHeight maximum height
+    * @return
+    */
+   private BufferedImage scaleImage(BufferedImage image, double scale) {
+	   BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
+	   Graphics2D g2 = scaledImage.createGraphics();
+	   AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
+	   g2.drawImage(image, at, null); 
+	   return scaledImage;
    }
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
@@ -470,29 +504,15 @@ public class FaceInfo
     * @param height integer
     * @return image
     */
-   public Image getPreviewImage(int width, int height) {
-	   if (image == null) {
-		   try {
-			   switch (imageDataType) {
-			   case IMAGE_DATA_TYPE_JPEG:
-				   image = readScaledImage(dataIn, "image/jpeg", width, height);
-				   break;
-			   case IMAGE_DATA_TYPE_JPEG2000:
-				   image = readScaledImage(dataIn, "image/jpeg2000", width, height);
-				   break;
-			   default:
-				   throw new IOException("Unknown image data type!");
-			   }
-
-			   /* Set width and height for real. */
-			   width = image.getWidth();
-			   height = image.getHeight();
-		   } catch (IOException ioe) {
-			   ioe.printStackTrace();
-		   }
+   public Image getPreviewImage(int width, int height) throws IOException {
+	   switch (imageDataType) {
+	   case IMAGE_DATA_TYPE_JPEG:
+		   return readScaledImage(dataIn, "image/jpeg", width, height);
+	   case IMAGE_DATA_TYPE_JPEG2000:
+		   return readScaledImage(dataIn, "image/jpeg2000", width, height);
+	   default:
+		   throw new IOException("Unknown image data type!");
 	   }
-
-	   return image;
    }
    
    /**
@@ -501,27 +521,25 @@ public class FaceInfo
     * @return image
     */
    public Image getImage() {
-	   if (image == null) {
-		   try {
-			   switch (imageDataType) {
-			   case IMAGE_DATA_TYPE_JPEG:
-				   image = readImage(dataIn, "image/jpeg");
-				   break;
-			   case IMAGE_DATA_TYPE_JPEG2000:
-				   image = readImage(dataIn, "image/jpeg2000");
-				   break;
-			   default:
-				   throw new IOException("Unknown image data type!");
-			   }
-
-			   /* Set width and height for real. */
-			   width = image.getWidth();
-			   height = image.getHeight();
-		   } catch (IOException ioe) {
-			   ioe.printStackTrace();
+	   if (image != null) { return image; }
+	   try {
+		   switch (imageDataType) {
+		   case IMAGE_DATA_TYPE_JPEG:
+			   image = processImage(dataIn, "image/jpeg");
+			   break;
+		   case IMAGE_DATA_TYPE_JPEG2000:
+			   image = processImage(dataIn, "image/jpeg2000");
+			   break;
+		   default:
+			   throw new IOException("Unknown image data type!");
 		   }
-	   }
 
+		   /* Set width and height for real. */
+		   width = image.getWidth();
+		   height = image.getHeight();
+	   } catch (IOException ioe) {
+		   ioe.printStackTrace();
+	   }
 	   return image;
    }
    
