@@ -135,7 +135,6 @@ public class BERTLVInputStream extends InputStream
 
 			}
 			tag = readTag();
-			System.out.println("DEBUG: stt (" + Integer.toHexString(searchTag) + ") " + Integer.toHexString(tag));
 			if  (tag == searchTag) { return; }
 
 			if (isPrimitive(tag)) {
