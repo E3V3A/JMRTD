@@ -28,7 +28,6 @@ import java.io.InputStream;
 import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
-import sos.util.Hex;
 
 /**
  * File structure for the EF_COM file.

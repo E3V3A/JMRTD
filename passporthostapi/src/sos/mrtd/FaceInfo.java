@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -223,6 +222,7 @@ public class FaceInfo
       this.width = image.getWidth();
       this.height = image.getHeight();
       this.featurePoints = new FeaturePoint[0];
+      this.imageDataType = IMAGE_DATA_TYPE_JPEG2000;
    }
 
    /**
@@ -292,9 +292,7 @@ public class FaceInfo
        * ISO 19794-5
        */
       image = null;
-      if (!dataIn.markSupported()) {
-    	  dataIn = new DataInputStream(new BufferedInputStream(in, (int)faceImageBlockLength + 1));
-      }
+      dataIn = new DataInputStream(new BufferedInputStream(in, (int)faceImageBlockLength + 1));
       dataIn.mark((int)faceImageBlockLength);
    }
    
@@ -404,55 +402,73 @@ public class FaceInfo
    }
    
    private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
-   throws IOException {
-	   /* The desired dimensions will be smaller than the actual image. */
-	   if (desiredWidth > width) { desiredWidth = width; }
-	   if (desiredHeight > height) { desiredHeight = height; }
+   {
+	   try {
+		   image = processImage(in, mimeType);
+		   /* A scaling factor that respects aspect ratio. */
+		   double xScale = (double)desiredWidth / (double)width;
+		   double yScale = (double)desiredHeight / (double)height;
+		   double scale = xScale < yScale ? xScale : yScale;
 
-	   /* A scaling factor that respects aspect ratio. */
-	   double xScale = (double)desiredWidth / (double)width;
-	   double yScale = (double)desiredHeight / (double)height;
-	   double scale = xScale < yScale ? xScale : yScale;
-	   
-	   if (image != null) {
-		   /* Full image already read, we'll just scale it down... */
 		   return scaleImage(image, scale);
+	   } catch (IOException ioe) {
+		   throw new IllegalStateException(ioe.toString());
 	   }
-
-	   /* We'll read the preview image from the inputstream as efficient as possible. */
-	   if (in.markSupported()) { in.reset(); }
-	   ImageInputStream iis = ImageIO.createImageInputStream(in);
-	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-	   while (readers.hasNext()) {
-		   try {
-			   ImageReader reader = (ImageReader)readers.next();
-			   reader.setInput(iis);
-			   ImageReadParam pm = reader.getDefaultReadParam();
-			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-			   if (pm.canSetSourceRenderSize()) {
-				   pm.setSourceRenderSize(new Dimension((int)(width * scale), (int)(height * scale)));
-				   BufferedImage image = reader.read(0, pm);
-				   return image;
-			   } else {
-				   int xSubSampling = (int)(Math.round((double)width / (double)desiredWidth));
-				   int ySubSampling = (int)(Math.round((double)height / (double)desiredHeight));
-				   pm.setSourceSubsampling(xSubSampling, ySubSampling, 0, 0);
-				   BufferedImage image = reader.read(0, pm);
-				   if (image != null) {
-					   /* Rescale, just in case. */
-					   xScale = (double)desiredWidth / (double)image.getWidth();
-					   yScale = (double)desiredHeight / (double)image.getHeight();
-					   scale = xScale < yScale ? xScale : yScale;
-					   return scaleImage(image, scale);
-				   }
-			   }
-		   } catch (Exception e) {
-			   e.printStackTrace();
-			   continue;
-		   }
-	   }
-	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
+
+   
+//   private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
+//   throws IOException {
+//	   /* The desired dimensions will be smaller than the actual image. */
+//	   if (desiredWidth > width) { desiredWidth = width; }
+//	   if (desiredHeight > height) { desiredHeight = height; }
+//
+//	   System.out.println("DEBUG: wwidth = " + width);
+//	   
+//	   /* A scaling factor that respects aspect ratio. */
+//	   double xScale = (double)desiredWidth / (double)width;
+//	   double yScale = (double)desiredHeight / (double)height;
+//	   double scale = xScale < yScale ? xScale : yScale;
+//	   
+//	   if (image != null) {
+//		   /* Full image already read, we'll just scale it down... */
+//		   return scaleImage(image, scale);
+//	   }
+//
+//	   /* We'll read the preview image from the inputstream as efficiently as possible. */
+//	   if (in.markSupported()) { in.reset(); }
+//	   ImageInputStream iis = ImageIO.createImageInputStream(in);
+//	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
+//	   while (readers.hasNext()) {
+//		   try {
+//			   ImageReader reader = (ImageReader)readers.next();
+//			   reader.setInput(iis);
+//			   ImageReadParam pm = reader.getDefaultReadParam();
+//			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+//			   if (pm.canSetSourceRenderSize()) {
+//				   pm.setSourceRenderSize(new Dimension((int)(width * scale), (int)(height * scale)));
+//				   BufferedImage image = reader.read(0, pm);
+//				   return image;
+//			   } else {
+//				   int xSubSampling = (int)(Math.round((double)width / (double)desiredWidth));
+//				   int ySubSampling = (int)(Math.round((double)height / (double)desiredHeight));
+//				   pm.setSourceSubsampling(xSubSampling, ySubSampling, 0, 0);
+//				   BufferedImage image = reader.read(0, pm);
+//				   if (image != null) {
+//					   /* Rescale, just in case. */
+//					   xScale = (double)desiredWidth / (double)image.getWidth();
+//					   yScale = (double)desiredHeight / (double)image.getHeight();
+//					   scale = xScale < yScale ? xScale : yScale;
+//					   return scaleImage(image, scale);
+//				   }
+//			   }
+//		   } catch (Exception e) {
+//			   e.printStackTrace();
+//			   continue;
+//		   }
+//	   }
+//	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
+//   }
    
    /**
     * Scales image to an image of size at most the size indicated by parameters
@@ -473,6 +489,7 @@ public class FaceInfo
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
+	   System.out.println("DEBUG: writing mimeType = " + mimeType);
       Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
       if (!writers.hasNext()) {
          throw new IOException("No writers for \"" + mimeType + "\"");
@@ -1015,7 +1032,6 @@ public class FaceInfo
          dataOut.flush();
          byte[] facialRecord = out.toByteArray();
          
-       
          BERTLVObject objectA1 = new BERTLVObject(0xa1, new BERTLVObject(0x81, zero2));
          objectA1.addSubObject(new BERTLVObject(0x82, zero0));
          objectA1.addSubObject(new BERTLVObject(0x87, zero101));

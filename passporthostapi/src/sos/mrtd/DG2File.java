@@ -23,6 +23,7 @@
 package sos.mrtd;
 
 import java.awt.Image;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -81,14 +82,13 @@ public class DG2File extends DataGroup
 	public DG2File(InputStream in) {
 		this();
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			BERTLVInputStream tlvIn = new BERTLVInputStream(in);			
 			tlvIn.skipToTag(BIOMETRIC_INFO_GROUP_TAG); /* 7F61 */
 			tlvIn.readLength();
 			tlvIn.skipToTag(BIOMETRIC_INFO_COUNT_TAG); /* 02 */
 			int tlvBioInfoCountLength = tlvIn.readLength();
 			if (tlvBioInfoCountLength != 1) { throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1"); }
 			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
-			System.out.println("DEBUG: bioInfoCount = " + bioInfoCount);
 			for (int i = 0; i < bioInfoCount; i++) {
 				readBioInfoTemplate(tlvIn);
 			}
@@ -101,18 +101,17 @@ public class DG2File extends DataGroup
 
 	private void readBioInfoTemplate(BERTLVInputStream tlvIn) throws IOException {
 		tlvIn.skipToTag(BIOMETRIC_DATA_TAG); /* 5F2E */
-		tlvIn.readLength();
-		readBioData(tlvIn);
+		int length = tlvIn.readLength();
+		readBioData(tlvIn, length);
 	}
 
-	private void readBioData(BERTLVInputStream tlvIn) throws IOException {
-		DataInputStream dataIn = new DataInputStream(tlvIn);
+	private void readBioData(BERTLVInputStream tlvIn, int valueLength) throws IOException {
+		DataInputStream dataIn = new DataInputStream(new BufferedInputStream(tlvIn, valueLength + 1));
 		/* Facial Record Header (14) */
 		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
-		int version = dataIn.readInt(); // version in ascii (e.g. "010" 0x00)
+		int version = dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)
 		long length = dataIn.readInt() & 0x000000FFFFFFFFL;
 		int faceCount = dataIn.readUnsignedShort();
-		System.out.println("DEBUG: bio data faceCount = " + faceCount);
 		for (int i = 0; i < faceCount; i++) {
 			addFaceInfo(new FaceInfo(dataIn));
 		}
@@ -148,9 +147,6 @@ public class DG2File extends DataGroup
 			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG /* 7F61 */,
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
 							(byte)faces.size()));
-
-			System.out.println("DEBUG: DG2.getEncoded says faces.size() = " + faces.size());
-
 			
 			byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG; /* A1 */
 			for (FaceInfo info: faces) {
@@ -169,7 +165,6 @@ public class DG2File extends DataGroup
 				dataOut.write(VERSION_NUMBER);
 				dataOut.writeInt(lengthOfRecord);
 				dataOut.writeShort(nrOfImagesInRecord);
-				System.out.println("DEBUG: writing nrOfImagesInRecord = " + nrOfImagesInRecord);
 				dataOut.write(info.getEncoded());
 				dataOut.flush();
 				byte[] facialRecord = out.toByteArray();
@@ -180,8 +175,6 @@ public class DG2File extends DataGroup
 			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
 			dg2.reconstructLength();
 			sourceObject = dg2;
-
-			System.out.println("DEBUG: ++++++++++ dg2 = " + dg2);
 			isSourceConsistent = true;
 			return dg2.getEncoded();
 		} catch (Exception ioe) {

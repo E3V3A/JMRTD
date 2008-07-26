@@ -26,7 +26,6 @@ import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 
 import javax.swing.Icon;
@@ -35,7 +34,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
 import sos.util.Icons;
 
