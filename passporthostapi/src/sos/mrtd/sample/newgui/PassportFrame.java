@@ -108,6 +108,9 @@ public class PassportFrame extends JFrame
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon OPEN_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
 	private static final Icon OPEN_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon DELETE_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
+	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
+	
 
 	private FacePreviewPanel facePreviewPanel;
 
@@ -146,8 +149,8 @@ public class PassportFrame extends JFrame
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
-		menuBar.add(createImagesMenu());
-		menuBar.add(createCertificatesMenu());
+		menuBar.add(createViewMenu());
+		menuBar.add(createToolsMenu());
 		setIconImage(Icons.getImage("jmrtd_icon"));
 		pack();
 		setVisible(true);
@@ -482,40 +485,48 @@ public class PassportFrame extends JFrame
 		return fileMenu;
 	}
 
-	private JMenu createImagesMenu() {
-		JMenu imagesMenu = new JMenu("Images");
+	private JMenu createViewMenu() {
+		JMenu menu = new JMenu("View");
 
 		/* View portrait at full size... */
 		JMenuItem viewImageAtOriginalSize = new JMenuItem();
-		imagesMenu.add(viewImageAtOriginalSize);
+		menu.add(viewImageAtOriginalSize);
 		viewImageAtOriginalSize.setAction(new ViewPortraitAtOriginalSizeAction());
+
+		menu.addSeparator();
+		
+		/* View DS Certificate... */
+		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
+		menu.add(viewDocumentSignerCertificate);
+		viewDocumentSignerCertificate.setAction(new ViewDocumentSignerCertificateAction());
+
+		/* View CS Certificate... */
+		JMenuItem viewCountrySignerCertificate = new JMenuItem();
+		menu.add(viewCountrySignerCertificate);
+		viewCountrySignerCertificate.setAction(new ViewCountrySignerCertificateAction());
+
+		/* View AA public key */
+		JMenuItem viewAAPublicKey = new JMenuItem();
+		menu.add(viewAAPublicKey);
+		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
+		
+		return menu;
+	}
+
+	private JMenu createToolsMenu() {
+		JMenu menu = new JMenu("Tools");
 
 		/* Load additional portrait from file... */
 		JMenuItem loadPortraitFromFile = new JMenuItem();
-		imagesMenu.add(loadPortraitFromFile);
-		loadPortraitFromFile.setAction(new ImportPortraitFromFile());
+		menu.add(loadPortraitFromFile);
+		loadPortraitFromFile.setAction(new ImportPortraitFromFileAction());
 
-		return imagesMenu;
-	}
-
-	private JMenu createCertificatesMenu() {
-		JMenu certsMenu = new JMenu("Certificates");
-
-		/* DS Certificate... */
-		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
-		certsMenu.add(viewDocumentSignerCertificate);
-		viewDocumentSignerCertificate.setAction(new ViewDocumentSignerCertificateAction());
-
-		/* CS Certificate... */
-		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-		certsMenu.add(viewCountrySignerCertificate);
-		viewCountrySignerCertificate.setAction(new ViewCountrySignerCertificateAction());
-
-		JMenuItem viewAAPublicKey = new JMenuItem();
-		certsMenu.add(viewAAPublicKey);
-		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
-
-		return certsMenu;
+		/* Delete selected portrait */
+		JMenuItem deletePortrait = new JMenuItem();
+		menu.add(deletePortrait);
+		deletePortrait.setAction(new DeletePortraitAction());
+		
+		return menu;
 	}
 
 	private class CloseAction extends AbstractAction
@@ -600,9 +611,9 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private class ImportPortraitFromFile extends AbstractAction
+	private class ImportPortraitFromFileAction extends AbstractAction
 	{
-		public ImportPortraitFromFile() {
+		public ImportPortraitFromFileAction() {
 			putValue(SMALL_ICON, OPEN_IMAGE_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, OPEN_IMAGE_LARGE_ICON);
 			putValue(SHORT_DESCRIPTION, "Import portrait from file");
@@ -705,6 +716,23 @@ public class PassportFrame extends JFrame
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
+		}
+	}
+	
+	private class DeletePortraitAction extends AbstractAction
+	{
+		public DeletePortraitAction() {
+			putValue(SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
+			putValue(LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
+			putValue(SHORT_DESCRIPTION, "Delete selected portrait");
+			putValue(NAME, "Delete portrait");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			int index = facePreviewPanel.getSelectedIndex();
+			FaceInfo faceInfo = dg2.getFaces().get(index);
+			/* TODO: delete that one from dg2; update dg2stream */
+			System.out.println("DEBUG: TODO: delete that one from dg2; update dg2stream");
 		}
 	}
 }

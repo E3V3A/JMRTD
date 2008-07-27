@@ -404,16 +404,22 @@ public class FaceInfo
    private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
    {
 	   try {
-		   image = processImage(in, mimeType);
-		   /* A scaling factor that respects aspect ratio. */
-		   double xScale = (double)desiredWidth / (double)width;
-		   double yScale = (double)desiredHeight / (double)height;
-		   double scale = xScale < yScale ? xScale : yScale;
-
-		   return scaleImage(image, scale);
+		   if (image == null) {  image = processImage(in, mimeType); }
+		   return scaleImage(image, calculateScale(desiredWidth, desiredHeight));
 	   } catch (IOException ioe) {
 		   throw new IllegalStateException(ioe.toString());
 	   }
+   }
+   
+   /**
+    * A scaling factor resulting in at most desiredWidth and desiredHeight yet
+    * that respects aspect ratio of original width and height.
+    */
+   private double calculateScale(int desiredWidth, int desiredHeight) {
+	   double xScale = (double)desiredWidth / (double)width;
+	   double yScale = (double)desiredHeight / (double)height;
+	   double scale = xScale < yScale ? xScale : yScale;
+	   return scale;
    }
 
    
