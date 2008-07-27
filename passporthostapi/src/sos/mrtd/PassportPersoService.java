@@ -213,16 +213,11 @@ public class PassportPersoService {
 		return rapdu.getData();
 	}
 
-	// FIXEDME: MO added the arraycopy here...
-	// MO: Did I? Changed offset to 0...
 	private CommandAPDU createUpdateBinaryAPDU(short offset, int data_len,
 			byte[] data) {
 		byte p1 = (byte) ((offset >>> 8) & 0xff);
 		byte p2 = (byte) (offset & 0xff);
 		byte[] chunk = new byte[data_len];
-		// System.out.println("DEBUG: offset = " + offset + " data.length = " +
-		// data.length + " chunk.length = " + chunk.length + " data_len = " +
-		// data_len);
 		System.arraycopy(data, 0, chunk, 0, data_len);
 		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
 				ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
