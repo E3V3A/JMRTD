@@ -110,7 +110,6 @@ public class PassportFrame extends JFrame
 	private static final Icon OPEN_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
 	private static final Icon DELETE_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-	
 
 	private FacePreviewPanel facePreviewPanel;
 
@@ -126,7 +125,7 @@ public class PassportFrame extends JFrame
 	private SODFile sod;
 	private COMFile com;
 
-	Certificate docSigningCert, countrySigningCert;
+	private Certificate docSigningCert, countrySigningCert;
 
 	private VerificationIndicator verificationPanel;
 	private boolean isBACVerified;
@@ -195,7 +194,6 @@ public class PassportFrame extends JFrame
 
 		t = System.currentTimeMillis();
 		System.out.println("DEBUG: inputstreams buffered t = " + ((double)(t - t0) / 1000) + "s");
-
 
 		(new Thread(new Runnable() {
 			public void run() {
@@ -494,7 +492,7 @@ public class PassportFrame extends JFrame
 		viewImageAtOriginalSize.setAction(new ViewPortraitAtOriginalSizeAction());
 
 		menu.addSeparator();
-		
+
 		/* View DS Certificate... */
 		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
 		menu.add(viewDocumentSignerCertificate);
@@ -509,7 +507,7 @@ public class PassportFrame extends JFrame
 		JMenuItem viewAAPublicKey = new JMenuItem();
 		menu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
-		
+
 		return menu;
 	}
 
@@ -525,7 +523,7 @@ public class PassportFrame extends JFrame
 		JMenuItem deletePortrait = new JMenuItem();
 		menu.add(deletePortrait);
 		deletePortrait.setAction(new DeletePortraitAction());
-		
+
 		return menu;
 	}
 
@@ -718,7 +716,7 @@ public class PassportFrame extends JFrame
 			}
 		}
 	}
-	
+
 	private class DeletePortraitAction extends AbstractAction
 	{
 		public DeletePortraitAction() {
@@ -732,7 +730,7 @@ public class PassportFrame extends JFrame
 			int index = facePreviewPanel.getSelectedIndex();
 			FaceInfo faceInfo = dg2.getFaces().get(index);
 			/* TODO: delete that one from dg2; update dg2stream */
-			System.out.println("DEBUG: TODO: delete that one from dg2; update dg2stream");
+			System.out.println("DEBUG: TODO: delete image " + index + "  from dg2; update dg2stream");
 		}
 	}
 }
