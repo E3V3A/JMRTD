@@ -84,6 +84,7 @@ public class DG1File extends DataGroup
 				new BERTLVObject(EF_DG1_TAG,
 						new BERTLVObject(0x5F1F, mrz.getEncoded()));
 			sourceObject = ef0101;
+			ef0101.reconstructLength();
 			isSourceConsistent = true;
 			return ef0101.getEncoded();
 		} catch (Exception e) {

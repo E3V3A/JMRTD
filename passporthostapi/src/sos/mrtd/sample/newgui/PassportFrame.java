@@ -106,9 +106,13 @@ public class PassportFrame extends JFrame
 	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon OPEN_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
-	private static final Icon OPEN_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon LOAD_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon LOAD_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
 	private static final Icon DELETE_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
+	private static final Icon LOAD_CERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
+	private static final Icon LOAD_CERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
+	private static final Icon LOAD_KEY_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
+	private static final Icon LOAD_KEY_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
 
 	private FacePreviewPanel facePreviewPanel;
@@ -524,6 +528,18 @@ public class PassportFrame extends JFrame
 		menu.add(deletePortrait);
 		deletePortrait.setAction(new RemovePortraitAction());
 
+		menu.addSeparator();
+		
+		/* Replace DSC with another certificate from file... */
+		JMenuItem loadDocSignCertFromFile = new JMenuItem();
+		menu.add(loadDocSignCertFromFile);
+		loadDocSignCertFromFile.setAction(new LoadDocSignCertAction());
+		
+		/* Replace AA key with another key from file... */
+		JMenuItem loadAAKeyFromFile = new JMenuItem();
+		menu.add(loadAAKeyFromFile);
+		loadAAKeyFromFile.setAction(new LoadAAKeyAction());
+		
 		return menu;
 	}
 
@@ -612,9 +628,9 @@ public class PassportFrame extends JFrame
 	private class AddPortraitAction extends AbstractAction
 	{
 		public AddPortraitAction() {
-			putValue(SMALL_ICON, OPEN_IMAGE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, OPEN_IMAGE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Import portrait from file");
+			putValue(SMALL_ICON, LOAD_IMAGE_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, LOAD_IMAGE_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "Import (additional) portrait from file");
 			putValue(NAME, "Import portrait...");
 		}
 
@@ -674,7 +690,78 @@ public class PassportFrame extends JFrame
 			facePreviewPanel.removeFace(index);
 		}
 	}
+	
+	private class LoadDocSignCertAction extends AbstractAction
+	{
+		public LoadDocSignCertAction() {
+			putValue(SMALL_ICON, LOAD_CERT_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, LOAD_CERT_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "Import (and replace) Document Signer Certificate from file");
+			putValue(NAME, "Import Doc.Cert...");
+		}
 
+		public void actionPerformed(ActionEvent e) {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileFilter() {
+				public boolean accept(File f) { return f.isDirectory()
+					|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
+					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+					|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
+					|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
+				public String getDescription() { return "Certificate files"; }				
+			});
+			int choice = fileChooser.showOpenDialog(getContentPane());
+			switch (choice) {
+			case JFileChooser.APPROVE_OPTION:
+				try {
+					File file = fileChooser.getSelectedFile();
+					throw new IOException("TODO: do something with " + file);
+				} catch (IOException ioe) {
+					/* NOTE: Do nothing. */
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+
+	private class LoadAAKeyAction extends AbstractAction
+	{
+		public LoadAAKeyAction() {
+			putValue(SMALL_ICON, LOAD_KEY_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, LOAD_KEY_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "Import (and replace) Active Authentication public key from file");
+			putValue(NAME, "Import AA Pub.Key...");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(new FileFilter() {
+				public boolean accept(File f) { return f.isDirectory()
+					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+					|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
+					|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
+				public String getDescription() { return "Key files"; }								
+			});
+			int choice = fileChooser.showOpenDialog(getContentPane());
+			switch (choice) {
+			case JFileChooser.APPROVE_OPTION:
+				try {
+					File file = fileChooser.getSelectedFile();
+					throw new IOException("TODO: do something with " + file);
+				} catch (IOException ioe) {
+					/* NOTE: Do nothing. */
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	
 	private class ViewDocumentSignerCertificateAction extends AbstractAction
 	{
 		public ViewDocumentSignerCertificateAction() {

@@ -84,10 +84,12 @@ public class FacePreviewPanel extends JPanel
 	}
 	
 	public void removeFace(int index) {
+		Dimension size = tabbedPane.getSize();
 		removeImage(index);
 		int tabCount = tabbedPane.getTabCount();
 		if (tabCount <= 0) {
 			remove(tabbedPane);
+			PLACE_HOLDER.setPreferredSize(size);
 			add(PLACE_HOLDER);
 		}
 		revalidate(); repaint();
