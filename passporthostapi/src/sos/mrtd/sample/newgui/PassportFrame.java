@@ -517,12 +517,12 @@ public class PassportFrame extends JFrame
 		/* Load additional portrait from file... */
 		JMenuItem loadPortraitFromFile = new JMenuItem();
 		menu.add(loadPortraitFromFile);
-		loadPortraitFromFile.setAction(new ImportPortraitFromFileAction());
+		loadPortraitFromFile.setAction(new AddPortraitAction());
 
 		/* Delete selected portrait */
 		JMenuItem deletePortrait = new JMenuItem();
 		menu.add(deletePortrait);
-		deletePortrait.setAction(new DeletePortraitAction());
+		deletePortrait.setAction(new RemovePortraitAction());
 
 		return menu;
 	}
@@ -609,9 +609,9 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private class ImportPortraitFromFileAction extends AbstractAction
+	private class AddPortraitAction extends AbstractAction
 	{
-		public ImportPortraitFromFileAction() {
+		public AddPortraitAction() {
 			putValue(SMALL_ICON, OPEN_IMAGE_SMALL_ICON);
 			putValue(LARGE_ICON_KEY, OPEN_IMAGE_LARGE_ICON);
 			putValue(SHORT_DESCRIPTION, "Import portrait from file");
@@ -655,6 +655,23 @@ public class PassportFrame extends JFrame
 			default:
 				break;
 			}
+		}
+	}
+	
+	private class RemovePortraitAction extends AbstractAction
+	{
+		public RemovePortraitAction() {
+			putValue(SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
+			putValue(LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
+			putValue(SHORT_DESCRIPTION, "Delete selected portrait");
+			putValue(NAME, "Delete portrait");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			int index = facePreviewPanel.getSelectedIndex();
+			dg2.removeFaceInfo(index);
+			putFile(PassportService.EF_DG2, dg2.getEncoded());
+			facePreviewPanel.removeFace(index);
 		}
 	}
 
@@ -714,23 +731,6 @@ public class PassportFrame extends JFrame
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
-		}
-	}
-
-	private class DeletePortraitAction extends AbstractAction
-	{
-		public DeletePortraitAction() {
-			putValue(SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
-			putValue(LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
-			putValue(SHORT_DESCRIPTION, "Delete selected portrait");
-			putValue(NAME, "Delete portrait");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			int index = facePreviewPanel.getSelectedIndex();
-			FaceInfo faceInfo = dg2.getFaces().get(index);
-			/* TODO: delete that one from dg2; update dg2stream */
-			System.out.println("DEBUG: TODO: delete image " + index + "  from dg2; update dg2stream");
 		}
 	}
 }

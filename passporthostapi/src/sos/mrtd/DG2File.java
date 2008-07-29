@@ -125,6 +125,11 @@ public class DG2File extends DataGroup
 		faces.add(fi);
 		isSourceConsistent = false;
 	}
+	
+	public void removeFaceInfo(int index) {
+		faces.remove(index);
+		isSourceConsistent = false;
+	}
 
 	private byte[] formatOwner(Image i) {
 		// FIXME

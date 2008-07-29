@@ -74,6 +74,11 @@ public class FacePreviewPanel extends JPanel
 		}	
 	}
 	
+	public void removeFace(int index) {
+		removeImage(index);
+		revalidate(); repaint();
+	}
+	
 	public void addFaces(Collection<FaceInfo> faces) {
 		for (FaceInfo faceInfo: faces) {
 			addFace(faceInfo);
@@ -87,10 +92,10 @@ public class FacePreviewPanel extends JPanel
 		tabbedPane.addTab(Integer.toString(index), IMAGE_SMALL_ICON, panel);
 	}
 
-	private void addDummyFace(int width, int height) {
-		BufferedImage dummyImage = new BufferedImage(width - 10, height - 10, BufferedImage.TYPE_INT_ARGB);
-		addImage(dummyImage);
-	}
+//	private void addDummyFace(int width, int height) {
+//		BufferedImage dummyImage = new BufferedImage(width - 10, height - 10, BufferedImage.TYPE_INT_ARGB);
+//		addImage(dummyImage);
+//	}
 
 	private void removeImage(int index) {
 		tabbedPane.removeTabAt(index);
