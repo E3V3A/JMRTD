@@ -22,6 +22,8 @@
 
 package sos.mrtd.sample.newgui;
 
+import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
 import java.io.IOException;
@@ -37,7 +39,7 @@ import sos.mrtd.FaceInfo;
 import sos.util.Icons;
 
 /**
- * Component for displaying a preview of the portrait.
+ * Component for displaying a preview of the portrait(s).
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
@@ -46,6 +48,7 @@ import sos.util.Icons;
 public class FacePreviewPanel extends JPanel
 {	
 	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
+	private static final Component PLACE_HOLDER = new JLabel("No image", JLabel.CENTER);
 
 	private int width, height;
 	private JTabbedPane tabbedPane;
@@ -55,7 +58,9 @@ public class FacePreviewPanel extends JPanel
 		this.width = width;
 		this.height = height;
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-		add(tabbedPane);
+		// add(tabbedPane);
+		PLACE_HOLDER.setPreferredSize(new Dimension(width + 40, height + 10));
+		add(PLACE_HOLDER);
 	}
 
 	public int getSelectedIndex() {
@@ -64,6 +69,11 @@ public class FacePreviewPanel extends JPanel
 
 	public void addFace(FaceInfo faceInfo) {
 		try {
+			int tabCount = tabbedPane.getTabCount();
+			if (tabCount <= 0) {
+				remove(PLACE_HOLDER);
+				add(tabbedPane);
+			}
 			Image image = faceInfo.getPreviewImage(width - 10, height - 10);
 			addImage(image);
 			revalidate(); repaint();
@@ -75,6 +85,11 @@ public class FacePreviewPanel extends JPanel
 	
 	public void removeFace(int index) {
 		removeImage(index);
+		int tabCount = tabbedPane.getTabCount();
+		if (tabCount <= 0) {
+			remove(tabbedPane);
+			add(PLACE_HOLDER);
+		}
 		revalidate(); repaint();
 	}
 	
