@@ -245,16 +245,14 @@ public class PassportFrame extends JFrame
 		
 		/* EF.DG1 */
 		Date today = Calendar.getInstance().getTime();
-		String primaryIdentifier = "BINLADEN";
-		String[] secondaryIdentifiers = { "OSAMA" };
+		String primaryIdentifier = "";
+		String[] secondaryIdentifiers = { "" };
 		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
-		System.out.println("DEBUG: mrzInfo = \n" + mrzInfo);
 		DG1File dg1File = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1File.getEncoded();
-		System.out.println("DEBUG: dg1Bytes = \n" + Hex.bytesToPrettyString(dg1Bytes));
 
 		/* EF.DG2 */
-		BufferedImage image = new BufferedImage(449, 599, BufferedImage.TYPE_INT_ARGB);
+		BufferedImage image = new BufferedImage(449, 599, BufferedImage.TYPE_INT_ARGB); // FIXME: create a DG2 with 0 images instead?!?
 		FaceInfo faceInfo = new FaceInfo( 
 				Gender.UNSPECIFIED,
 				FaceInfo.EyeColor.UNSPECIFIED,

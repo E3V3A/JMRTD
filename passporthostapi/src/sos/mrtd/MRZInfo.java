@@ -206,10 +206,10 @@ public class MRZInfo
 			if (documentType == DOC_TYPE_ID1) {
 				/* Assume it's an ID1 document */
 				writeIssuingState(dataOut);
-				writeDocumentNumber(dataOut); /* FIXME: max size of field */
+				writeDocumentNumber(dataOut, 9); /* FIXME: max size of field */
 				dataOut.write(documentNumberCheckDigit);
-				writePersonalNumber(dataOut); /* FIXME: max size of field */
-				dataOut.write('<'); /* FIXME: should be personalNumberCheckDigit? */
+				writePersonalNumber(dataOut, 14); /* FIXME: max size of field */
+				dataOut.write('<'); /* FIXME: personal number may be length 15 in ID1? */
 				// dataOut.write(personalNumberCheckDigit);
 				writeDateOfBirth(dataOut);
 				dataOut.write(dateOfBirthCheckDigit);
@@ -224,7 +224,7 @@ public class MRZInfo
 				/* Assume it's a ID3 document */
 				writeIssuingState(dataOut);
 				writeName(dataOut, 39);
-				writeDocumentNumber(dataOut); /* FIXME: max size of field */
+				writeDocumentNumber(dataOut, 9);
 				dataOut.write(documentNumberCheckDigit);
 				writeNationality(dataOut);
 				writeDateOfBirth(dataOut);
@@ -232,7 +232,7 @@ public class MRZInfo
 				writeGender(dataOut);
 				writeDateOfExpiry(dataOut);
 				dataOut.write(dateOfExpiryCheckDigit);
-				writePersonalNumber(dataOut); /* FIXME: max size of field */
+				writePersonalNumber(dataOut, 14); /* FIXME: max size of field */
 				dataOut.write(personalNumberCheckDigit);
 				dataOut.write(compositeCheckDigit);
 			}
@@ -249,8 +249,8 @@ public class MRZInfo
 		dataOut.write(issuingState.toAlpha3Code().getBytes("UTF-8"));
 	}
 
-	private void writePersonalNumber(DataOutputStream dataOut) throws IOException {
-		dataOut.write(mrzFormat(personalNumber, 14).getBytes("UTF-8"));
+	private void writePersonalNumber(DataOutputStream dataOut, int width) throws IOException {
+		dataOut.write(mrzFormat(personalNumber, width).getBytes("UTF-8"));
 	}
 
 	private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
@@ -269,8 +269,8 @@ public class MRZInfo
 		dataOut.write(nationality.toAlpha3Code().getBytes("UTF-8"));
 	}
 
-	private void writeDocumentNumber(DataOutputStream dataOut) throws IOException {
-		dataOut.write(documentNumber.getBytes("UTF-8"));
+	private void writeDocumentNumber(DataOutputStream dataOut, int width) throws IOException {
+		dataOut.write(mrzFormat(documentNumber, width).getBytes("UTF-8"));
 	}
 
 	private void writeName(DataOutputStream dataOut, int width) throws IOException {
