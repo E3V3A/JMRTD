@@ -206,9 +206,9 @@ public class MRZInfo
 			if (documentType == DOC_TYPE_ID1) {
 				/* Assume it's an ID1 document */
 				writeIssuingState(dataOut);
-				writeDocumentNumber(dataOut);
+				writeDocumentNumber(dataOut); /* FIXME: max size of field */
 				dataOut.write(documentNumberCheckDigit);
-				writePersonalNumber(dataOut);
+				writePersonalNumber(dataOut); /* FIXME: max size of field */
 				dataOut.write('<'); /* FIXME: should be personalNumberCheckDigit? */
 				// dataOut.write(personalNumberCheckDigit);
 				writeDateOfBirth(dataOut);
@@ -219,12 +219,12 @@ public class MRZInfo
 				writeNationality(dataOut);
 				dataOut.write(optionalData2.getBytes("UTF-8")); // TODO: Understand this...
 				dataOut.write(compositeCheckDigit);
-				writeName(dataOut);
+				writeName(dataOut, 30);
 			} else {
 				/* Assume it's a ID3 document */
 				writeIssuingState(dataOut);
-				writeName(dataOut);
-				writeDocumentNumber(dataOut);
+				writeName(dataOut, 39);
+				writeDocumentNumber(dataOut); /* FIXME: max size of field */
 				dataOut.write(documentNumberCheckDigit);
 				writeNationality(dataOut);
 				writeDateOfBirth(dataOut);
@@ -232,7 +232,7 @@ public class MRZInfo
 				writeGender(dataOut);
 				writeDateOfExpiry(dataOut);
 				dataOut.write(dateOfExpiryCheckDigit);
-				writePersonalNumber(dataOut);
+				writePersonalNumber(dataOut); /* FIXME: max size of field */
 				dataOut.write(personalNumberCheckDigit);
 				dataOut.write(compositeCheckDigit);
 			}
@@ -273,8 +273,8 @@ public class MRZInfo
 		dataOut.write(documentNumber.getBytes("UTF-8"));
 	}
 
-	private void writeName(DataOutputStream dataOut) throws IOException {
-		dataOut.write(nameToString().getBytes("UTF-8"));
+	private void writeName(DataOutputStream dataOut, int width) throws IOException {
+		dataOut.write(nameToString(width).getBytes("UTF-8"));
 	}
 
 	private void writeDocumentType(DataOutputStream dataOut) throws IOException {
@@ -298,8 +298,7 @@ public class MRZInfo
 		}
 	}
 
-	private String nameToString() {
-		int width = (documentType == DOC_TYPE_ID1) ? 30 : 39;
+	private String nameToString(int width) {
 		StringBuffer name = new StringBuffer();
 		name.append(primaryIdentifier);
 		name.append("<");
@@ -649,12 +648,12 @@ public class MRZInfo
 			out.append(optionalData2);
 			out.append(compositeCheckDigit); // should be: upper + middle line?
 			out.append("\n");
-			out.append(nameToString());
+			out.append(nameToString(30));
 			out.append("\n");
 		} else {
 			out.append(documentTypeToString());
 			out.append(issuingState.toAlpha3Code());
-			out.append(nameToString());
+			out.append(nameToString(39));
 			out.append("\n");
 			out.append(documentNumber);
 			out.append(documentNumberCheckDigit);

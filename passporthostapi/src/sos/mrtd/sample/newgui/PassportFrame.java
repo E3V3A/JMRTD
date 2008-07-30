@@ -44,6 +44,8 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -65,6 +67,7 @@ import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
 
+import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
@@ -123,7 +126,7 @@ public class PassportFrame extends JFrame
 	private Map<Short, InputStream> bufferedStreams;
 	private int totalLength;
 
-	private DG1File dg1;
+	private DG1File dg1File;
 	private DG2File dg2;
 	private DG15File dg15;
 	private SODFile sod;
@@ -184,8 +187,8 @@ public class PassportFrame extends JFrame
 			putFile(PassportService.EF_COM, service);
 			putFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
-			COMFile com = new COMFile(comIn);
-			int[] tags = com.getTagList();
+			COMFile comFile = new COMFile(comIn);
+			int[] tags = comFile.getTagList();
 			for (int i = 0; i < tags.length; i++) {
 				putFile(PassportFile.lookupFIDByTag(tags[i]), service);
 			}
@@ -231,6 +234,51 @@ public class PassportFrame extends JFrame
 			bytesRead += in.getFilePos();
 		}
 		return bytesRead;
+	}
+	
+	public void createEmptyPassport() {
+
+		/* EF.COM */
+		int[] tagList = { PassportService.EF_DG1, PassportService.EF_DG2 };
+		COMFile comFile = new COMFile("00", "00", "00", "00", "00", tagList); // TODO: What are typical values?
+		byte[] comBytes = comFile.getEncoded();
+		
+		/* EF.DG1 */
+		Date today = Calendar.getInstance().getTime();
+		String primaryIdentifier = "BINLADEN";
+		String[] secondaryIdentifiers = { "OSAMA" };
+		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
+		System.out.println("DEBUG: mrzInfo = \n" + mrzInfo);
+		DG1File dg1File = new DG1File(mrzInfo);
+		byte[] dg1Bytes = dg1File.getEncoded();
+		System.out.println("DEBUG: dg1Bytes = \n" + Hex.bytesToPrettyString(dg1Bytes));
+
+		/* EF.DG2 */
+		BufferedImage image = new BufferedImage(449, 599, BufferedImage.TYPE_INT_ARGB);
+		FaceInfo faceInfo = new FaceInfo( 
+				Gender.UNSPECIFIED,
+				FaceInfo.EyeColor.UNSPECIFIED,
+				FaceInfo.HAIR_COLOR_UNSPECIFIED,
+				FaceInfo.EXPRESSION_UNSPECIFIED,
+				FaceInfo.SOURCE_TYPE_UNSPECIFIED,
+				image); 
+		DG2File dg2File = new DG2File(); 
+		dg2File.addFaceInfo(faceInfo);
+		byte[] dg2Bytes = dg2File.getEncoded();
+
+		/* EF.SOD */
+		SignedData signedData = null; // TODO: create hashes of DGs and put them in signeddata struct...
+		SODFile sodFile = new SODFile(signedData);
+		byte[] sodBytes = sodFile.getEncoded();
+		
+		putFile(PassportService.EF_COM, comBytes);
+		putFile(PassportService.EF_DG1, dg1Bytes);
+		putFile(PassportService.EF_DG2, dg2Bytes);
+		putFile(PassportService.EF_SOD, sodBytes);
+		
+		displayInputStreams();
+
+		verifySecurity(null);
 	}
 
 	public void readFromZipFile(File file) throws IOException {
@@ -280,9 +328,9 @@ public class PassportFrame extends JFrame
 		try {
 			InputStream in = null;
 			in = getFile(PassportService.EF_DG1);
-			dg1 = new DG1File(in);
-			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1);
-			final MRZPanel mrzPanel = new MRZPanel(dg1);
+			dg1File = new DG1File(in);
+			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1File);
+			final MRZPanel mrzPanel = new MRZPanel(dg1File);
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
@@ -291,8 +339,8 @@ public class PassportFrame extends JFrame
 				public void actionPerformed(ActionEvent e) {
 					MRZInfo info = holderInfoPanel.getMRZ();
 					mrzPanel.setMRZ(info);
-					dg1 = new DG1File(info);
-					putFile(PassportService.EF_DG1, dg1.getEncoded());
+					dg1File = new DG1File(info);
+					putFile(PassportService.EF_DG1, dg1File.getEncoded());
 					isBACVerified = false;
 					isAAVerified = false;
 					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -341,8 +389,10 @@ public class PassportFrame extends JFrame
 
 	private void putFile(short fid, byte[] bytes) {
 		fileStreams.put(fid, null);
-		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-		bufferedStreams.put(fid, in);
+		if (bytes != null) {
+			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+			bufferedStreams.put(fid, in);
+		}
 	}
 
 	/**
@@ -387,12 +437,12 @@ public class PassportFrame extends JFrame
 		/* Check hashes in the SOd correspond to hashes we compute. */
 		try {
 			InputStream comIn = getFile(PassportService.EF_COM);
-			COMFile com = new COMFile(comIn);
-			int[] tags = com.getTagList();
+			COMFile comFile = new COMFile(comIn);
+			int[] tags = comFile.getTagList();
 
 			InputStream sodIn = getFile(PassportService.EF_SOD);
-			SODFile sod = new SODFile(sodIn);
-			DataGroupHash[] hashes = sod.getDataGroupHashes();
+			SODFile sodFile = new SODFile(sodIn);
+			DataGroupHash[] hashes = sodFile.getDataGroupHashes();
 			isDSVerified = true;
 			for (int i = 0; i < hashes.length; i++) {
 
@@ -421,8 +471,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 
-			docSigningCert = sod.getDocSigningCertificate();
-			isDSVerified &= sod.checkDocSignature(docSigningCert);
+			docSigningCert = sodFile.getDocSigningCertificate();
+			isDSVerified &= sodFile.checkDocSignature(docSigningCert);
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
 		} catch (Exception ioe) {

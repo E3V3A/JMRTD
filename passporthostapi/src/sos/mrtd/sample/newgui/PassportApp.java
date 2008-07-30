@@ -245,6 +245,10 @@ public class PassportApp  implements PassportListener, AuthListener
 
 		public void actionPerformed(ActionEvent e) {
 			System.out.println("DEBUG: TODO: new action");
+			PassportFrame passportFrame = new PassportFrame();
+			passportFrame.createEmptyPassport();
+			passportFrame.pack();
+			passportFrame.setVisible(true);
 		}
 	}
 
@@ -269,10 +273,10 @@ public class PassportApp  implements PassportListener, AuthListener
 			case JFileChooser.APPROVE_OPTION:
 				try {
 					File file = fileChooser.getSelectedFile();
-					PassportFrame gui = new PassportFrame();
-					gui.readFromZipFile(file);
-					gui.pack();
-					gui.setVisible(true);
+					PassportFrame passportFrame = new PassportFrame();
+					passportFrame.readFromZipFile(file);
+					passportFrame.pack();
+					passportFrame.setVisible(true);
 				} catch (IOException ioe) {
 					/* NOTE: Do nothing. */
 				}
