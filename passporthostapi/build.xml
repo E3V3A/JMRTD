@@ -67,7 +67,7 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
-				<attribute name="Main-class" value="sos.mrtd.sample.newgui.PassportApp" />
+				<attribute name="Main-class" value="sos.mrtd.sample.PassportGUI" />
 				<attribute name="VMOptions" value="-Xms256M -Xmx256M" />
 				<attribute name="Class-path" value="ext/bcprov-jdk16-137.jar ext/jai_imageio.jar" />
 			</manifest>
