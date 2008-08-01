@@ -123,8 +123,6 @@ public class PassportPersoService {
 	 * Sends a PUT_DATA command to the card to set the private keys used for
 	 * Active Authentication.
 	 * 
-	 * @param wrapper
-	 *            for secure messaging.
 	 * @param key
 	 *            holding the private key data.
 	 * @throws IOException
@@ -177,8 +175,6 @@ public class PassportPersoService {
 	/***************************************************************************
 	 * Sends a CREATE_FILE APDU to the card.
 	 * 
-	 * @param wrapper
-	 *            for secure messaging.
 	 * @param fid
 	 *            (file identifier) of the new file.
 	 * @param length
@@ -253,8 +249,6 @@ public class PassportPersoService {
 	/**
 	 * Writes a DataGroup in the passport
 	 * 
-	 * @param wrapper
-	 *            the secure messaging wrapper
 	 * @param fid
 	 *            the fid of the file to write
 	 * @param i
@@ -334,7 +328,6 @@ public class PassportPersoService {
 	/**
 	 * Locks the passport applet so that no data may be written to it.
 	 * 
-	 * @param wrapper
 	 * @throws CardServiceException
 	 */
 	public void lockApplet()
@@ -350,7 +343,6 @@ public class PassportPersoService {
 	/**
 	 * Selects a file on the applet.
 	 * 
-	 * @param wrapper the secure messaging wrapper
 	 * @param fid the file ID to select
 	 * @throws CardServiceException
 	 */
@@ -372,7 +364,6 @@ public class PassportPersoService {
 	/**
 	 * Burns a passport
 	 * 
-	 * @param wrapper
 	 * @param passportData
 	 * @throws CardServiceException
 	 * @throws IOException

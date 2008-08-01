@@ -86,8 +86,8 @@ public class HolderInfoPanel extends JPanel
 
 		surNameTF = makeMRZEntryField(nfo.getPrimaryIdentifier());
 		givenNamesTF = makeMRZEntryField(nameStr.toString());
-		documentNumberTF = makeMRZEntryField(nfo.getDocumentNumber());
-		personalNumberTF = makeMRZEntryField(nfo.getPersonalNumber());
+		documentNumberTF = makeMRZEntryField(nfo.getDocumentNumber(), 9);
+		personalNumberTF = makeMRZEntryField(nfo.getPersonalNumber(), 14);
 		nationalityTF = makeCountryField(nfo.getNationality());
 		issuingStateTF = makeCountryField(nfo.getIssuingState());
 		dateOfBirthTF = makeDateEntryField(nfo.getDateOfBirth());
@@ -178,8 +178,12 @@ public class HolderInfoPanel extends JPanel
 	}
 
 	private MRZEntryField makeMRZEntryField(String value) {
+		return makeMRZEntryField(value, 20);
+	}
+	
+	private MRZEntryField makeMRZEntryField(String value, int width) {
 		value = value.trim();
-		int textSize = Math.max(value.length(), 20);
+		int textSize = Math.max(value.length(), width);
 		MRZEntryField tf = new MRZEntryField(textSize);
 		tf.setText(value);
 		tf.setFont(VALUE_FONT);

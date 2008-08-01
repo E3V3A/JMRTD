@@ -97,7 +97,10 @@ public class PassportService extends PassportApduService
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
 
-	/** The file read block size, some passports cannot handle large values */
+	/**
+	 * The file read block size, some passports cannot handle large values
+	 * @deprecated hack
+	 */
 	public static int maxBlockSize = 255;
 
 	private static final int SESSION_STOPPED_STATE = 0;
@@ -109,6 +112,9 @@ public class PassportService extends PassportApduService
 
 	private Collection<AuthListener> authListeners;
 
+	/**
+	 * @deprecated visibility will be set to private
+	 */
 	protected SecureMessagingWrapper wrapper;
 	private Signature aaSignature;
 	private MessageDigest aaDigest;
@@ -299,7 +305,7 @@ public class PassportService extends PassportApduService
 	/**
 	 * Gets the file indicated by a file identifier.
 	 * 
-	 * @param tag ICAO file tag
+	 * @param fid ICAO file identifier
 	 * 
 	 * @return the file
 	 * 

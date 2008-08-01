@@ -40,8 +40,7 @@ public class BACEvent extends EventObject
    /**
     * Constructs a new event.
     * 
-    * @param src event source
-    * @param wrapper resulting wrapper
+    * @param service event source
     * @param rndICC nonce sent by ICC
     * @param rndIFD nonce sent by IFD
     * @param kICC key material provided by ICC
