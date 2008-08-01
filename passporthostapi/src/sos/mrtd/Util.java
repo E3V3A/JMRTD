@@ -33,6 +33,8 @@ import javax.crypto.spec.DESedeKeySpec;
 
 /**
  * Some static helper functions. Mostly dealing with low-level crypto.
+ * 
+ * @deprecated The visibility of this class will be changed to package.
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
@@ -45,6 +47,9 @@ public class Util
 {
    public static final int ENC_MODE = 1;
    public static final int MAC_MODE = 2;
+   
+   private Util() {
+   }
 
    /**
     * Derives the ENC or MAC key from the keySeed.
