@@ -8,9 +8,15 @@
 	<property name="build" location="bin" />
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
-    <!-- property name="arch" value="${os.arch}" -->
+	<!-- property name="arch" value="${os.arch}" -->
 	<property name="arch" value="i386" />
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build"/>
+
+	<property name="bcprov" value="bcprov-*.jar" />
+
+	<property name="jai_imageio" value="jai_imageio.jar" />
+	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
+	<property name="libclib_jiio" value="libclib_jiio.*" />
 
 	<target name="init">
 		<!-- Create the time stamp -->
@@ -33,16 +39,14 @@
 		<mkdir dir="${distlib}/${arch}" />
 
 		<!-- Copy bouncy castle -->
-		<property name="bcprov" value="bcprov-*.jar" />
+
 		<copy todir="${distlib}/ext">
 			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
 			<fileset dir="${java.home}/lib/ext" includes="${bcprov}" />
 		</copy>
 
 		<!-- Copy jai imageio -->
-		<property name="jai_imageio" value="jai_imageio.jar" />
-		<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
-		<property name="libclib_jiio" value="libclib_jiio.*" />
+
 		<copy todir="${distlib}/ext">
 			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio}" />
 			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio}" />
@@ -50,16 +54,16 @@
 		<copy todir="${distlib}/${arch}">
 			<fileset dir="${java.home}/lib/${arch}" includes="${libclib_jiio}" />
 		</copy>
-		
+
 
 	</target>
 
-	<target name="dist" depends="extensions, compile" description="generate the distribution">
+	<target name="dist" depends="extensions, compile, doc" description="generate the distribution">
 		<!-- Copy license, etc. -->
 		<copy todir="${dist}">
 			<fileset dir="." includes="LICENSE, README" />
 		</copy>
-		
+
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
@@ -79,5 +83,15 @@
 		<!-- Delete the ${build} and ${dist} directory trees -->
 		<delete dir="${build}" />
 		<delete dir="${dist}" />
+	</target>
+
+	<target name="doc" description="Generate API docs">
+		<javadoc classpath="${sos-shared-build};d:/Software/bcprov-jdk16-139.jar" destdir="apidocs" package="true" doctitle="JMRTD API" windowtitle="JMRTD API" packagenames="sos.mrtd">
+			<link href="http://java.sun.com/javase/6/docs/api" />
+			<link href="http://www.bouncycastle.org/docs/docs1.6" />
+			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
+			<sourcepath path="src" />
+			<package name="sos.mrtd" />
+		</javadoc>
 	</target>
 </project>
