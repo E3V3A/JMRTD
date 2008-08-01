@@ -42,106 +42,110 @@ import sos.util.Hex;
  */
 public class HexViewPanel extends JPanel
 {
-   private static final Font FONT = new Font("Monospaced",Font.PLAIN,10);
-   private static final int COLUMNS = 16;
-   private static final int CHAR_WIDTH = 12;
+	private static final long serialVersionUID = -7378971057034801064L;
 
-   private JTable table;
+	private static final Font FONT = new Font("Monospaced",Font.PLAIN,10);
+	private static final int COLUMNS = 16;
+	private static final int CHAR_WIDTH = 12;
 
-   private DefaultTableColumnModel columnModel;
-   private HexViewPanelDataModel dataModel;
+	private JTable table;
 
-   /**
-    * Constructs a hex view panel.
-    *
-    * @param data the data to view
-    */
-   public HexViewPanel(byte[] data) {
-      this(data, 0);
-   }
-   
-   /**
-    * Constructs a hex view panel.
-    *
-    * @param data the data to view
-    * @param startOffset the offset to display next to the first byte
-    */
-   public HexViewPanel(byte[] data, int startOffset) {
-      super(new FlowLayout());
-      columnModel = new DefaultTableColumnModel();
-      dataModel = new HexViewPanelDataModel(data, startOffset);
-      table = new JTable();
-      table.setColumnModel(columnModel);
-      table.setModel(dataModel);
-      TableColumn column = columnModel.getColumn(COLUMNS + 1);
-      column.setPreferredWidth(COLUMNS * CHAR_WIDTH);
-      for (int i = COLUMNS; i > 0; i--) {
-         column = columnModel.getColumn(i);
-         column.setPreferredWidth(2 * CHAR_WIDTH);
-      }
-      column = columnModel.getColumn(0);
-      column.setPreferredWidth(8 * CHAR_WIDTH);
-      add(table);
-   }
+	private DefaultTableColumnModel columnModel;
+	private HexViewPanelDataModel dataModel;
 
-   /**
-    * The font used.
-    *
-    * @return the font used
-    */
-   public Font getFont() {
-      return FONT;
-   }
+	/**
+	 * Constructs a hex view panel.
+	 *
+	 * @param data the data to view
+	 */
+	public HexViewPanel(byte[] data) {
+		this(data, 0);
+	}
 
-   private class HexViewPanelDataModel extends DefaultTableModel
-   {
-      int startOffset;
-      private byte[][] rows;
+	/**
+	 * Constructs a hex view panel.
+	 *
+	 * @param data the data to view
+	 * @param startOffset the offset to display next to the first byte
+	 */
+	public HexViewPanel(byte[] data, int startOffset) {
+		super(new FlowLayout());
+		columnModel = new DefaultTableColumnModel();
+		dataModel = new HexViewPanelDataModel(data, startOffset);
+		table = new JTable();
+		table.setColumnModel(columnModel);
+		table.setModel(dataModel);
+		TableColumn column = columnModel.getColumn(COLUMNS + 1);
+		column.setPreferredWidth(COLUMNS * CHAR_WIDTH);
+		for (int i = COLUMNS; i > 0; i--) {
+			column = columnModel.getColumn(i);
+			column.setPreferredWidth(2 * CHAR_WIDTH);
+		}
+		column = columnModel.getColumn(0);
+		column.setPreferredWidth(8 * CHAR_WIDTH);
+		add(table);
+	}
 
-      public HexViewPanelDataModel(byte[] data, int startOffset) {
-         super();
-         this.startOffset = startOffset;
-         rows = Hex.split(data, COLUMNS);
-      }
+	/**
+	 * The font used.
+	 *
+	 * @return the font used
+	 */
+	public Font getFont() {
+		return FONT;
+	}
 
-      public int getRowCount() {
-         return rows == null ? 0 : rows.length;
-      }
+	private class HexViewPanelDataModel extends DefaultTableModel
+	{
+		private static final long serialVersionUID = 8498422046117447836L;
 
-      public int getColumnCount() {
-         return 1 + COLUMNS + 1;
-      }
+		int startOffset;
+		private byte[][] rows;
 
-      public String getColumnName(int col) {
-         switch (col) {
-            case 0:
-               return "Index";
-            case COLUMNS + 1:
-               return "ASCII";
-            default:
-               return Hex.byteToHexString((byte)(col - 1));
-         }
-      }
+		public HexViewPanelDataModel(byte[] data, int startOffset) {
+			super();
+			this.startOffset = startOffset;
+			rows = Hex.split(data, COLUMNS);
+		}
 
-      public Object getValueAt(int row, int col) {
-         switch (col) {
-            case 0:
-               return Hex.intToHexString(startOffset + COLUMNS * row);
-            case COLUMNS + 1:
-               return Hex.bytesToASCIIString(rows[row]);
-            default:
-               if (row < 0 || row >= rows.length) {
-                  return null;
-               } else if ((col - 1) < 0 || (col - 1) >= rows[row].length) {
-                  return null;
-               } else {
-                  return Hex.byteToHexString(rows[row][col - 1]);
-               }
-         }
-      }
+		public int getRowCount() {
+			return rows == null ? 0 : rows.length;
+		}
 
-      public boolean isCellEditable(int row, int col) {
-         return false;
-      }
-   }
+		public int getColumnCount() {
+			return 1 + COLUMNS + 1;
+		}
+
+		public String getColumnName(int col) {
+			switch (col) {
+			case 0:
+				return "Index";
+			case COLUMNS + 1:
+				return "ASCII";
+			default:
+				return Hex.byteToHexString((byte)(col - 1));
+			}
+		}
+
+		public Object getValueAt(int row, int col) {
+			switch (col) {
+			case 0:
+				return Hex.intToHexString(startOffset + COLUMNS * row);
+			case COLUMNS + 1:
+				return Hex.bytesToASCIIString(rows[row]);
+			default:
+				if (row < 0 || row >= rows.length) {
+					return null;
+				} else if ((col - 1) < 0 || (col - 1) >= rows[row].length) {
+					return null;
+				} else {
+					return Hex.byteToHexString(rows[row][col - 1]);
+				}
+			}
+		}
+
+		public boolean isCellEditable(int row, int col) {
+			return false;
+		}
+	}
 }

@@ -14,6 +14,8 @@ import sos.util.Icons;
 
 public class CountryLabel extends Box
 {
+	private static final long serialVersionUID = 4580680157430310682L;
+
 	private Country country;
 	private JLabel flagLabel, nameLabel;
 
@@ -35,7 +37,7 @@ public class CountryLabel extends Box
 	public Country getCountry() {
 		return country;
 	}
-	
+
 	private Icon getIcon(Country country) {
 		ImageIcon flagIcon = new ImageIcon();
 		Image flagImage = Icons.getFlagImage(country);

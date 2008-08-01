@@ -44,25 +44,27 @@ import javax.swing.JPanel;
  * @version $Revision: 147 $
  */
 public class ImagePanel extends JPanel
-{  
-   private static final int MAX_RADIUS = 40;
-   private Image image;;
+{
+	private static final long serialVersionUID = 1245196754602799575L;
 
-   Map<String, Point> highlights;
-   Color highlightColor;
-   int radius;
+	private static final int MAX_RADIUS = 40;
+	private Image image;;
 
-   /**
-    * Constructs a new image panel with empty image.
-    */
-   public ImagePanel() {
-      super(null);
-      highlightColor = new Color(1, (float)0.1, (float)0.1, (float)0.7);
-      radius = MAX_RADIUS;
-      highlights = new HashMap<String, Point>();
-      image = null;
+	Map<String, Point> highlights;
+	Color highlightColor;
+	int radius;
 
-      /*
+	/**
+	 * Constructs a new image panel with empty image.
+	 */
+	public ImagePanel() {
+		super(null);
+		highlightColor = new Color(1, (float)0.1, (float)0.1, (float)0.7);
+		radius = MAX_RADIUS;
+		highlights = new HashMap<String, Point>();
+		image = null;
+
+		/*
       (new Thread(new Runnable() {
          public void run() {
             try {
@@ -76,92 +78,92 @@ public class ImagePanel extends JPanel
             }
          }
       })).start();
-       */
-   }
+		 */
+	}
 
-   /**
-    * Sets the image to <code>image</code>.
-    *
-    * @param image the image.
-    */
-   public void setImage(Image image) {
-      setVisible(false);
-      this.image = image; // FIXME: what if image param is not a BufferedImage?
-      setVisible(true);
-   }
-   
-   public Image getImage() {
-	   return image;
-   }
+	/**
+	 * Sets the image to <code>image</code>.
+	 *
+	 * @param image the image.
+	 */
+	public void setImage(Image image) {
+		setVisible(false);
+		this.image = image; // FIXME: what if image param is not a BufferedImage?
+		setVisible(true);
+	}
 
-   /**
-    * Clears the currently displayed image.
-    */
-   public void clearImage() {
-      setVisible(false);
-      setVisible(true);
-   }
+	public Image getImage() {
+		return image;
+	}
 
-   public void highlightPoint(String key, int x, int y) {
-      setVisible(false);
-      highlights.put(key, new Point(x, y));
-      setVisible(true);
-   }
+	/**
+	 * Clears the currently displayed image.
+	 */
+	public void clearImage() {
+		setVisible(false);
+		setVisible(true);
+	}
 
-   public void deHighlightPoint(String key) {
-      setVisible(false);
-      highlights.remove(key);
-      setVisible(true);
-   }
+	public void highlightPoint(String key, int x, int y) {
+		setVisible(false);
+		highlights.put(key, new Point(x, y));
+		setVisible(true);
+	}
 
-   public Dimension getPreferredSize() {
-      if (image == null) {
-         return super.getPreferredSize();
-      } else {
-         return new Dimension(image.getWidth(this), image.getHeight(this));
-      }
-   }
+	public void deHighlightPoint(String key) {
+		setVisible(false);
+		highlights.remove(key);
+		setVisible(true);
+	}
 
-   public void paint(Graphics g) {
-      super.paint(g);
-      Graphics2D g2 = (Graphics2D)g;
-      if (image == null) {
-         return;
-      }
-      g2.drawImage(image, 0, 0, this);
-      Iterator<String> it = highlights.keySet().iterator();
-      while (it != null && it.hasNext()) {
-         String key = (String)it.next();
-         Point p = (Point)highlights.get(key);
-         int x = (int)p.getX();
-         int y = (int)p.getY();
-         // Graphics g = image.getGraphics();
-         g2.setColor(highlightColor);
+	public Dimension getPreferredSize() {
+		if (image == null) {
+			return super.getPreferredSize();
+		} else {
+			return new Dimension(image.getWidth(this), image.getHeight(this));
+		}
+	}
 
-         /* kruisje
+	public void paint(Graphics g) {
+		super.paint(g);
+		Graphics2D g2 = (Graphics2D)g;
+		if (image == null) {
+			return;
+		}
+		g2.drawImage(image, 0, 0, this);
+		Iterator<String> it = highlights.keySet().iterator();
+		while (it != null && it.hasNext()) {
+			String key = (String)it.next();
+			Point p = (Point)highlights.get(key);
+			int x = (int)p.getX();
+			int y = (int)p.getY();
+			// Graphics g = image.getGraphics();
+			g2.setColor(highlightColor);
+
+			/* kruisje
          g2.drawLine(x, y - 5, x, y + 5);
          g2.drawLine(x - 5, y, x + 5, y);
-          */
+			 */
 
-         /* lijnen */
-         g2.drawLine(x, y, image.getWidth(this), y);
-         g2.drawLine(x, y, x, image.getHeight(this));
+			/* lijnen */
+			g2.drawLine(x, y, image.getWidth(this), y);
+			g2.drawLine(x, y, x, image.getHeight(this));
 
-         /* bewegende cirkels
+			/* bewegende cirkels
          int r0 = radius;
          int r2 = (radius + 2 * (MAX_RADIUS / 4)) % MAX_RADIUS;
          g2.drawOval(x - r0/2, y - r0/2, r0, r0);
          g2.drawOval(x - r2/2, y - r2/2, r2, r2);    
-          */
+			 */
 
-         /* Draw key label... */
-         g2.setColor(Color.black);
-         g2.drawString(key, x + 4, y + 14);
-         g2.drawString(key, x + 6, y + 14);
-         g2.drawString(key, x + 5, y + 13);
-         g2.drawString(key, x + 5, y + 15);
-         g2.setColor(Color.white);
-         g2.drawString(key, x + 5, y + 14);
-      }
-   }
+			/* Draw key label... */
+			g2.setColor(Color.black);
+			g2.drawString(key, x + 4, y + 14);
+			g2.drawString(key, x + 6, y + 14);
+			g2.drawString(key, x + 5, y + 13);
+			g2.drawString(key, x + 5, y + 15);
+			g2.setColor(Color.white);
+			g2.drawString(key, x + 5, y + 14);
+		}
+	}
 }

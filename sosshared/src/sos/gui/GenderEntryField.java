@@ -17,6 +17,8 @@ import sos.util.Icons;
 
 public class GenderEntryField extends Box
 {
+	private static final long serialVersionUID = 7546245397652016137L;
+
 	private static final Icon MALE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("male"));
 	private static final Icon FEMALE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("female"));
 	private static final Icon UNKNOWN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("error"));

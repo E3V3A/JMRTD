@@ -13,6 +13,8 @@ import java.awt.Insets;
  */
 public class GridLayout2 extends GridLayout 
 {
+	private static final long serialVersionUID = 2770646126149020396L;
+
 	public GridLayout2() {
 		this(1, 0, 0, 0);
 	}

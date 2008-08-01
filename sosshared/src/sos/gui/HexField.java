@@ -30,183 +30,185 @@ import sos.util.Hex;
  */
 public class HexField extends Box
 {
-   private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
+	private static final long serialVersionUID = 8103090655226548370L;
 
-   private int length;
-   private JTextField textField;
+	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
-   /**
-    * Constructs a new hex field of length 1.
-    */
-   public HexField() {
-      this(1);
-   }
+	private int length;
+	private JTextField textField;
 
-   /**
-    * Constructs a new hex field of length <code>byteCount</code>.
-    * 
-    * @param byteCount the length of this new hex field (in bytes)
-    */
-   public HexField(int byteCount) {
-      super(BoxLayout.X_AXIS);
-      JLabel xLabel = new JLabel("0x");
-      xLabel.setFont(FONT);
-      add(xLabel);
-      textField = new JTextField(2 * byteCount + 1);
-      textField.setFont(FONT);
-      this.length = byteCount;
-      textField.addActionListener(new ActionListener() {
-         public void actionPerformed(ActionEvent ae) {
-            format();
-         }
-      });
-      textField.addFocusListener(new FocusAdapter() {
-         public void focusLost(FocusEvent e) {
-            format();
-         }
-      });
-      add(textField);
-      textField.addKeyListener(new KeyAdapter() {
-         public void keyTyped(KeyEvent e) {
-            scrubKeyTyped(e);
-         }
-      });
-      setEditable(true);
-   }
-   
-   /**
-    * The length of this hex field.
-    * 
-    * @return the length (number of bytes) of this hex field.
-    */
-   public int length() {
-      return length;
-   }
+	/**
+	 * Constructs a new hex field of length 1.
+	 */
+	public HexField() {
+		this(1);
+	}
 
-   /**
-    * Sets the length of this hex field to <code>length</code>.
-    * 
-    * @param length the new length of this hex fields
-    */
-   public void setLength(int length) {
-      if (length >= 0) {
-         this.length = length;
-         clearText();
-         textField.setColumns(2 * length + 1);
-      }
-   }
+	/**
+	 * Constructs a new hex field of length <code>byteCount</code>.
+	 * 
+	 * @param byteCount the length of this new hex field (in bytes)
+	 */
+	public HexField(int byteCount) {
+		super(BoxLayout.X_AXIS);
+		JLabel xLabel = new JLabel("0x");
+		xLabel.setFont(FONT);
+		add(xLabel);
+		textField = new JTextField(2 * byteCount + 1);
+		textField.setFont(FONT);
+		this.length = byteCount;
+		textField.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent ae) {
+				format();
+			}
+		});
+		textField.addFocusListener(new FocusAdapter() {
+			public void focusLost(FocusEvent e) {
+				format();
+			}
+		});
+		add(textField);
+		textField.addKeyListener(new KeyAdapter() {
+			public void keyTyped(KeyEvent e) {
+				scrubKeyTyped(e);
+			}
+		});
+		setEditable(true);
+	}
 
-   /**
-    * Sets the editability of this hex field.
-    * 
-    * @param editable indicates whether to enable or disable editability
-    */
-   public void setEditable(boolean editable) {
-      textField.setEditable(editable);
-   }
+	/**
+	 * The length of this hex field.
+	 * 
+	 * @return the length (number of bytes) of this hex field.
+	 */
+	public int length() {
+		return length;
+	}
 
-   /**
-    * Clears this hex field.
-    */
-   public void clearText() {
-      textField.setText("");
-   }
+	/**
+	 * Sets the length of this hex field to <code>length</code>.
+	 * 
+	 * @param length the new length of this hex fields
+	 */
+	public void setLength(int length) {
+		if (length >= 0) {
+			this.length = length;
+			clearText();
+			textField.setColumns(2 * length + 1);
+		}
+	}
 
-   /**
-    * Formats the text.
-    */
-   void format() {
-      textField.setText(format(textField.getText()));
-   }
+	/**
+	 * Sets the editability of this hex field.
+	 * 
+	 * @param editable indicates whether to enable or disable editability
+	 */
+	public void setEditable(boolean editable) {
+		textField.setEditable(editable);
+	}
 
-   private void scrubKeyTyped(KeyEvent e) {
-      String validhex = "0123456789abcdefABCDEF";
-      char c = e.getKeyChar();
-      int len = textField.getText().length();
-      if ((len < 2 * length || textField.getSelectedText() != null)
-            && validhex.indexOf(c) >= 0) {
-         e.setKeyChar(Character.toUpperCase(c));
-         return;
-      } else if (c == KeyEvent.VK_ENTER) {
-         return;
-      } else if (c == KeyEvent.VK_BACK_SPACE || c == KeyEvent.VK_DELETE
-            || c == KeyEvent.VK_TAB || e.isActionKey()) {
-         return;
-      } else {
-         e.consume();
-      }
-   }
-   
-   /**
-    * Formats the text.
-    * 
-    * @param The text to be formatted
-    * 
-    * @return The formatted text.
-    */
-   private String format(String text) {
-      String result = text.trim();
-      int N = 2 * length - result.length();
-      for (int i = 0; i < N; i++) {
-         result = "0" + result;
-      }
-      return result;
-   }
+	/**
+	 * Clears this hex field.
+	 */
+	public void clearText() {
+		textField.setText("");
+	}
 
-   /**
-    * The hexadecimal value entered in the hex field.
-    * 
-    * @return the hexadecimal value entered in the hex field.
-    */
-   public byte[] getValue() {
-      format();
-      return Hex.hexStringToBytes(textField.getText());
-   }
+	/**
+	 * Formats the text.
+	 */
+	void format() {
+		textField.setText(format(textField.getText()));
+	}
 
-   public void setValue(long value) {
-      byte[] newValue = new byte[length];
-      for (int i = 0; i < length; i++) {
-         int s = 8 * (length - i - 1);
-         long mask = (0x00000000000000FFL << s);
-         newValue[i] = (byte)((value & mask) >> s);
-      }
-      setValue(newValue);
-   }
+	private void scrubKeyTyped(KeyEvent e) {
+		String validhex = "0123456789abcdefABCDEF";
+		char c = e.getKeyChar();
+		int len = textField.getText().length();
+		if ((len < 2 * length || textField.getSelectedText() != null)
+				&& validhex.indexOf(c) >= 0) {
+			e.setKeyChar(Character.toUpperCase(c));
+			return;
+		} else if (c == KeyEvent.VK_ENTER) {
+			return;
+		} else if (c == KeyEvent.VK_BACK_SPACE || c == KeyEvent.VK_DELETE
+				|| c == KeyEvent.VK_TAB || e.isActionKey()) {
+			return;
+		} else {
+			e.consume();
+		}
+	}
 
-   /**
-    * Sets the value of this hex field to <code>value</code>.
-    * 
-    * @param value the new value
-    */
-   public void setValue(byte[] value) {
-      String result = "";
-      for (byte element : value) {
-         result += Hex.byteToHexString(element);
-      }
-      textField.setText(result);
-   }
+	/**
+	 * Formats the text.
+	 * 
+	 * @param The text to be formatted
+	 * 
+	 * @return The formatted text.
+	 */
+	private String format(String text) {
+		String result = text.trim();
+		int N = 2 * length - result.length();
+		for (int i = 0; i < N; i++) {
+			result = "0" + result;
+		}
+		return result;
+	}
 
-   /**
-    * Adds <code>l</code> to the action listener list of this hex field.
-    * 
-    * @param l the <code>ActionListener</code> to add
-    */
-   public void addActionListener(ActionListener l) {
-      textField.addActionListener(l);
-   }
-   
-   public void addFocusListener(FocusListener l) {
-      textField.addFocusListener(l);
-   }
+	/**
+	 * The hexadecimal value entered in the hex field.
+	 * 
+	 * @return the hexadecimal value entered in the hex field.
+	 */
+	public byte[] getValue() {
+		format();
+		return Hex.hexStringToBytes(textField.getText());
+	}
 
-   /**
-    * Gets the preferred size of this component.
-    * 
-    * @return the preferred size of this component.
-    */
-   public Dimension getPreferredSize() {
-      int width = (int)super.getPreferredSize().getWidth();
-      int height = (int)textField.getPreferredSize().getHeight();
-      return new Dimension(width, height);
-   }
+	public void setValue(long value) {
+		byte[] newValue = new byte[length];
+		for (int i = 0; i < length; i++) {
+			int s = 8 * (length - i - 1);
+			long mask = (0x00000000000000FFL << s);
+			newValue[i] = (byte)((value & mask) >> s);
+		}
+		setValue(newValue);
+	}
+
+	/**
+	 * Sets the value of this hex field to <code>value</code>.
+	 * 
+	 * @param value the new value
+	 */
+	public void setValue(byte[] value) {
+		String result = "";
+		for (byte element : value) {
+			result += Hex.byteToHexString(element);
+		}
+		textField.setText(result);
+	}
+
+	/**
+	 * Adds <code>l</code> to the action listener list of this hex field.
+	 * 
+	 * @param l the <code>ActionListener</code> to add
+	 */
+	public void addActionListener(ActionListener l) {
+		textField.addActionListener(l);
+	}
+
+	public void addFocusListener(FocusListener l) {
+		textField.addFocusListener(l);
+	}
+
+	/**
+	 * Gets the preferred size of this component.
+	 * 
+	 * @return the preferred size of this component.
+	 */
+	public Dimension getPreferredSize() {
+		int width = (int)super.getPreferredSize().getWidth();
+		int height = (int)textField.getPreferredSize().getHeight();
+		return new Dimension(width, height);
+	}
 }

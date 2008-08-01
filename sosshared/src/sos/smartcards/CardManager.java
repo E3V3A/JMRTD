@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2008  Martijn Oostdijk
+ * Copyright (C) 2008  Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,17 +67,30 @@ public class CardManager
 	}
 
 	private void addTerminals() {
-		try {
-			/* Default factory will contain connected PCSC terminals. */
-			addTerminals(TerminalFactory.getDefault());
-            // addTerminals(TerminalFactory.getInstance("ACR", null, new ds.smartcards.acr122.ACR122Provider()));
 
-			/* Our own factories for 'special' terminals. */
+		/* Default factory will contain connected PCSC terminals. */
+		addTerminals(TerminalFactory.getDefault());
+
+		/* Our own factories for 'non-PCSC' terminals. */
+
+//		try {
+//		addTerminals(TerminalFactory.getInstance("ACR", null, new ds.smartcards.acr122.ACR122Provider()));
+//		} catch (NoSuchAlgorithmException nsae) {
+//		/* Listing readers of this factory failed. */
+//		}
+
+		/* Factories for simulators. */
+
+		try {
 			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
+		} catch (NoSuchAlgorithmException nsae) {
+			/* Listing readers of this factory failed. */
+		}
+
+		try {
 			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
 		} catch (NoSuchAlgorithmException nsae) {
-			/* Listing other readers failed. */
-			nsae.printStackTrace();
+			/* Listing readers of this factory failed. */
 		}
 	}
 

@@ -13,6 +13,8 @@ import sos.util.Icons;
 
 public class GenderLabel extends Box
 {
+	private static final long serialVersionUID = -4210216741229320608L;
+
 	private Gender gender;
 	private JLabel  textLabel;
 

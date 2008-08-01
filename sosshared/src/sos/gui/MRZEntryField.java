@@ -25,15 +25,18 @@ import javax.swing.JTextField;
  * GUI text field component for entering MRZ values.
  * 
  * @version $Revision: $
+ * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class MRZEntryField extends Box
 {
+	private static final long serialVersionUID = -421722490816671919L;
+
 	private static final Font FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private int length;
 	private JTextField textField;
-	
+
 	private Collection<ActionListener> listeners;
 
 	/**
@@ -225,7 +228,7 @@ public class MRZEntryField extends Box
 		int height = (int)textField.getPreferredSize().getHeight();
 		return new Dimension(width, height);
 	}
-	
+
 	private void notifyActionPerformed(ActionEvent e) {
 		for (ActionListener l: listeners) {
 			l.actionPerformed(e);

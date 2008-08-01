@@ -13,6 +13,8 @@ import javax.swing.JTextArea;
 
 public class CertificatePanel extends JPanel
 {
+	private static final long serialVersionUID = -1109469067988004311L;
+
 	private Certificate certificate;
 	private JTextArea area;
 	

@@ -554,7 +554,7 @@ public class BERTLVObject
          InputStream in) throws IOException {
       BERTLVInputStream tlvIn = (in instanceof BERTLVInputStream) ? (BERTLVInputStream)in : new BERTLVInputStream(in);
       int tag = tlvIn.readTag();
-      int length = tlvIn.readLength();
+      tlvIn.readLength();
       byte[] valueBytes = tlvIn.readValue();
       BERTLVObject result = new BERTLVObject(tag, valueBytes);
       return result;

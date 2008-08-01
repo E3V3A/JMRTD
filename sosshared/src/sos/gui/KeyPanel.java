@@ -12,6 +12,8 @@ import javax.swing.JTextArea;
 
 public class KeyPanel extends JPanel
 {
+	private static final long serialVersionUID = 1447754792790045211L;
+
 	private Key key;
 	private JTextArea area;
 	

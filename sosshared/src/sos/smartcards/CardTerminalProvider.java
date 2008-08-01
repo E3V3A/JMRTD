@@ -2,7 +2,9 @@ package sos.smartcards;
 
 import java.security.Provider;
 
-public class CardTerminalProvider extends Provider {
+public class CardTerminalProvider extends Provider
+{
+	private static final long serialVersionUID = 6049577128262232444L;
 
 	protected CardTerminalProvider() {
 		super("CardTerminalProvider", 0.1d, "SoS Card Terminal Provider");

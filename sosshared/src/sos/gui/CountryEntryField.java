@@ -20,6 +20,8 @@ import sos.util.Icons;
 
 public class CountryEntryField extends Box
 {
+	private static final long serialVersionUID = 3508225695511326613L;
+
 	private static final int MAX_COUNTRY_NAME_LENGTH = 20;
 
 	private JLabel iconLabel;
@@ -116,7 +118,7 @@ public class CountryEntryField extends Box
 			return ((CountryDisplayContainer)other).getCountry().equals(country);
 		}
 	}
-	
+
 	public void addActionListener(ActionListener l) {
 		comboBox.addActionListener(l);
 	}
