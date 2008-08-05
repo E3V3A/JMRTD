@@ -183,6 +183,8 @@ public class COMFile extends PassportFile
          BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
          BERTLVObject ef011E =
             new BERTLVObject(EF_COM_TAG, value);
+         ef011E.reconstructLength();
+         System.out.println("DEBUG: ef011E = " + ef011E);
          return ef011E.getEncoded();
       } catch (Exception e) {
          e.printStackTrace();

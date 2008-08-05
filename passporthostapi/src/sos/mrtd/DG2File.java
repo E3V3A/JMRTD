@@ -153,6 +153,8 @@ public class DG2File extends DataGroup
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
 							(byte)faces.size()));
 			
+			group.reconstructLength();
+			
 			byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG; /* A1 */
 			for (FaceInfo info: faces) {
 				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,

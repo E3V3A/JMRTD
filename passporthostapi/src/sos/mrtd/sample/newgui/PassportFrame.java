@@ -235,14 +235,14 @@ public class PassportFrame extends JFrame
 		}
 		return bytesRead;
 	}
-	
+
 	public void createEmptyPassport() {
 
 		/* EF.COM */
-		int[] tagList = { PassportService.EF_DG1, PassportService.EF_DG2 };
+		int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
 		COMFile comFile = new COMFile("00", "00", "00", "00", "00", tagList); // TODO: What are typical values?
 		byte[] comBytes = comFile.getEncoded();
-		
+
 		/* EF.DG1 */
 		Date today = Calendar.getInstance().getTime();
 		String primaryIdentifier = "";
@@ -252,28 +252,19 @@ public class PassportFrame extends JFrame
 		byte[] dg1Bytes = dg1File.getEncoded();
 
 		/* EF.DG2 */
-		BufferedImage image = new BufferedImage(449, 599, BufferedImage.TYPE_INT_ARGB); // FIXME: create a DG2 with 0 images instead?!?
-		FaceInfo faceInfo = new FaceInfo( 
-				Gender.UNSPECIFIED,
-				FaceInfo.EyeColor.UNSPECIFIED,
-				FaceInfo.HAIR_COLOR_UNSPECIFIED,
-				FaceInfo.EXPRESSION_UNSPECIFIED,
-				FaceInfo.SOURCE_TYPE_UNSPECIFIED,
-				image); 
 		DG2File dg2File = new DG2File(); 
-		dg2File.addFaceInfo(faceInfo);
 		byte[] dg2Bytes = dg2File.getEncoded();
 
 		/* EF.SOD */
 		SignedData signedData = null; // TODO: create hashes of DGs and put them in signeddata struct...
 		SODFile sodFile = new SODFile(signedData);
 		byte[] sodBytes = sodFile.getEncoded();
-		
+
 		putFile(PassportService.EF_COM, comBytes);
 		putFile(PassportService.EF_DG1, dg1Bytes);
 		putFile(PassportService.EF_DG2, dg2Bytes);
 		putFile(PassportService.EF_SOD, sodBytes);
-		
+
 		displayInputStreams();
 
 		verifySecurity(null);
@@ -402,8 +393,11 @@ public class PassportFrame extends JFrame
 	private InputStream getFile(short tag) {
 		try {
 			InputStream in = bufferedStreams.get(tag);
-			in.reset();
+			if (in != null) {
+				in.reset(); 
+			}
 			return in;
+
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			throw new IllegalStateException("ERROR: " + ioe.toString());
@@ -577,17 +571,17 @@ public class PassportFrame extends JFrame
 		deletePortrait.setAction(new RemovePortraitAction());
 
 		menu.addSeparator();
-		
+
 		/* Replace DSC with another certificate from file... */
 		JMenuItem loadDocSignCertFromFile = new JMenuItem();
 		menu.add(loadDocSignCertFromFile);
 		loadDocSignCertFromFile.setAction(new LoadDocSignCertAction());
-		
+
 		/* Replace AA key with another key from file... */
 		JMenuItem loadAAKeyFromFile = new JMenuItem();
 		menu.add(loadAAKeyFromFile);
 		loadAAKeyFromFile.setAction(new LoadAAKeyAction());
-		
+
 		return menu;
 	}
 
@@ -721,7 +715,7 @@ public class PassportFrame extends JFrame
 			}
 		}
 	}
-	
+
 	private class RemovePortraitAction extends AbstractAction
 	{
 		public RemovePortraitAction() {
@@ -738,7 +732,7 @@ public class PassportFrame extends JFrame
 			facePreviewPanel.removeFace(index);
 		}
 	}
-	
+
 	private class LoadDocSignCertAction extends AbstractAction
 	{
 		public LoadDocSignCertAction() {
@@ -809,7 +803,7 @@ public class PassportFrame extends JFrame
 			}
 		}
 	}
-	
+
 	private class ViewDocumentSignerCertificateAction extends AbstractAction
 	{
 		public ViewDocumentSignerCertificateAction() {
