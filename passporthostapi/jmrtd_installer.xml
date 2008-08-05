@@ -6,17 +6,20 @@
 
 <installation version="1.0">
 
+
     <!-- The info section.  -->
     <info>
         <appname>JMRTD</appname>
-        <appversion>0.0.3</appversion>
+        <appversion>0.4</appversion>
         <authors>
-            <author name="SoS group, Radboud University"
-                    email="martijno@cs.ru.nl" />
+            <author name="JMRTD team"
+                    email="martijn.oostdijk@gmail.com" />
         </authors>
         <url>http://jmrtd.sourceforge.net/</url>
         <javaversion>1.6</javaversion>
     </info>
+
+
     
     <!-- The gui preferences indication.  -->
     <guiprefs width="640" height="480" resizable="no">
@@ -34,8 +37,13 @@
         <res id="InfoPanel.info" src="README" />
         <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
         <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
+
+       <res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
+
     </resources>
-    
+
+    <native type="izpack" name="ShellLink.dll" /> 
+
     <!-- The panels section.  -->
     <panels>
         <panel classname="HelloPanel" />
@@ -43,6 +51,7 @@
         <panel classname="TargetPanel" /> 
         <panel classname="PacksPanel" />
         <panel classname="InstallPanel" />
+        <panel classname="ShortcutPanel" />
         <panel classname="FinishPanel" />
     </panels>
     
@@ -59,9 +68,18 @@
             <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
             <parsable targetfile="$INSTALL_PATH/jmrtd.sh" type="shell" />
             <executable targetfile="$INSTALL_PATH/jmrtd.sh" stage="never" />
+
             <file src="jmrtd.bat" targetdir="$INSTALL_PATH" />
             <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
             <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
+
+            <file src="uninstall.bat" targetdir="$INSTALL_PATH" />
+            <parsable targetfile="$INSTALL_PATH/uninstall.bat" type="shell" />
+            <executable targetfile="$INSTALL_PATH/uninstall.bat" stage="never" />
+
+            <!-- Icons for windows -->
+            <file src="images/jmrtd_win.ico" targetdir="$INSTALL_PATH" />
+            <file src="images/uninstall_win.ico" targetdir="$INSTALL_PATH" />
 
             <!-- jmrtd.jar, ext, i386 -->
             <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
@@ -71,6 +89,7 @@
             <file src="src" targetdir="$INSTALL_PATH" />
         </pack>
     </packs>
+
     
 </installation>
 

@@ -12,7 +12,8 @@
 	<property name="arch" value="i386" />
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build"/>
 
-	<property name="bcprov" value="bcprov-*.jar" />
+	<!-- property name="bcprov" value="bcprov-*.jar" / -->
+	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
 
 	<property name="jai_imageio" value="jai_imageio.jar" />
 	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
@@ -42,7 +43,8 @@
 
 		<copy todir="${distlib}/ext">
 			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
-			<fileset dir="${java.home}/lib/ext" includes="${bcprov}" />
+			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
+			<fileset file="${bcprovjar}" />
 		</copy>
 
 		<!-- Copy jai imageio -->
@@ -67,9 +69,9 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
-				<attribute name="Main-class" value="sos.mrtd.sample.PassportGUI" />
+				<attribute name="Main-class" value="sos.mrtd.sample.newgui.PassportApp" />
 				<attribute name="VMOptions" value="-Xms256M -Xmx256M" />
-				<attribute name="Class-path" value="ext/bcprov-jdk16-137.jar ext/jai_imageio.jar" />
+				<attribute name="Class-path" value="ext/bcprov-jdk16-139.jar ext/jai_imageio.jar" />
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class"/>
@@ -86,7 +88,7 @@
 	</target>
 
 	<target name="doc" description="Generate API docs">
-		<javadoc classpath="${sos-shared-build};d:/Software/bcprov-jdk16-139.jar" destdir="apidocs" package="true" doctitle="JMRTD API" windowtitle="JMRTD API" packagenames="sos.mrtd">
+		<javadoc classpath="${sos-shared-build};${bcprovjar}" destdir="apidocs" package="true" doctitle="JMRTD API" windowtitle="JMRTD API" packagenames="sos.mrtd">
 			<link href="http://java.sun.com/javase/6/docs/api" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
