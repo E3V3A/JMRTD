@@ -10,7 +10,7 @@
     <!-- The info section.  -->
     <info>
         <appname>JMRTD</appname>
-        <appversion>0.4</appversion>
+        <appversion>0.4.1</appversion>
         <authors>
             <author name="JMRTD team"
                     email="martijn.oostdijk@gmail.com" />
