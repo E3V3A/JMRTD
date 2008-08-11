@@ -92,10 +92,6 @@ public class SODFile extends PassportFile
       }
    }
 
-   SODFile(byte[] in) throws Exception {
-      this(new ByteArrayInputStream(in));
-   }
-
    /**
     * The tag of this file.
     * 
