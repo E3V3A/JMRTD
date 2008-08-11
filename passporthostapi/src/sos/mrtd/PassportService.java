@@ -28,9 +28,11 @@ import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Signature;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Random;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
@@ -119,6 +121,7 @@ public class PassportService extends PassportApduService
 	private Signature aaSignature;
 	private MessageDigest aaDigest;
 	private Cipher aaCipher;
+	private Random random;
 
 	private PassportFileSystem fs;
 
@@ -138,6 +141,7 @@ public class PassportService extends PassportApduService
 			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
+			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
 			fs = new PassportFileSystem();
 		} catch (GeneralSecurityException gse) {
@@ -178,8 +182,10 @@ public class PassportService extends PassportApduService
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();
-			byte[] rndIFD = new byte[8]; /* TODO: random */
-			byte[] kIFD = new byte[16]; /* TODO: random */
+			byte[] rndIFD = new byte[8];
+			random.nextBytes(rndIFD);
+			byte[] kIFD = new byte[16];
+			random.nextBytes(kIFD);
 			byte[] response = sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
 			byte[] kICC = new byte[16];
 			System.arraycopy(response, 16, kICC, 0, 16);
@@ -246,7 +252,8 @@ public class PassportService extends PassportApduService
 			}
 			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
 			aaSignature.initVerify(publicKey);
-			byte[] m2 = new byte[8]; /* TODO: random rndIFD */
+			byte[] m2 = new byte[8];
+			random.nextBytes(m2);
 			byte[] response = sendInternalAuthenticate(wrapper, m2);
 			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
 			byte[] plaintext = aaCipher.doFinal(response);
