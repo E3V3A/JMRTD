@@ -233,16 +233,19 @@ public class PassportService extends PassportApduService
 	/**
 	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
-	 * @param pubkey the public key to use (usually read from the card)
+	 * @param publicKey the public key to use (usually read from the card)
 	 * 
 	 * @return a boolean indicating whether the card was authenticated
 	 * 
 	 * @throws GeneralSecurityException if something goes wrong
 	 */
-	public boolean doAA(PublicKey pubkey) throws CardServiceException {
+	public boolean doAA(PublicKey publicKey) throws CardServiceException {
 		try {
-			aaCipher.init(Cipher.DECRYPT_MODE, pubkey);
-			aaSignature.initVerify(pubkey);
+			if (publicKey == null) {
+				throw new CardServiceException("AA failed: bad key");
+			}
+			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
+			aaSignature.initVerify(publicKey);
 			byte[] m2 = new byte[8]; /* TODO: random rndIFD */
 			byte[] response = sendInternalAuthenticate(wrapper, m2);
 			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
@@ -251,12 +254,14 @@ public class PassportService extends PassportApduService
 			aaSignature.update(m1);
 			aaSignature.update(m2);
 			boolean success = aaSignature.verify(response);
-			AAEvent event = new AAEvent(this, pubkey, m1, m2, success);
+			AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
 			notifyAAPerformed(event);
 			if (success) {
 				state = AA_AUTHENTICATED_STATE;
 			}
 			return success;
+		} catch (IllegalArgumentException iae) {
+			throw new CardServiceException(iae.toString());
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}

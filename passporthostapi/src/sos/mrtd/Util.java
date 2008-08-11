@@ -183,6 +183,9 @@ public class Util
     * @return the m1 part of the message
     */
    public static byte[] recoverMessage(int digestLength, byte[] plaintext) {
+	  if (plaintext == null || plaintext.length < 1) {
+		  throw new IllegalArgumentException("Plaintext too short to recover message");
+	  }
       if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
          throw new NumberFormatException("Could not get M1");
       }
