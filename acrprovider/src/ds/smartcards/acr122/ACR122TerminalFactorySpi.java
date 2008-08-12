@@ -44,13 +44,13 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
     private static final int TR_BLOCK_SIZE = 32;
 
     /**
-     * The maximum timeout for the card to reply to an APDU. Set to 2 seconds.
+     * The maximum timeout for the card to reply to an APDU. Set to 10 seconds.
      * This could probably set to infinite, but it may happen that the card
      * session will lock (I have seen this happening). If the card needs more
-     * than 2 seconds to process an APDU it has to explicitly ask for a time
+     * than the given time to process an APDU it has to explicitly ask for a time
      * extension (I assume), see below in ACRChannel.transmit.
      */
-    private static final long TIMEOUT = 2000;
+    private static final long TIMEOUT = 10000;
 
     /**
      * Constants and commands found in the ACR122 documentation:
