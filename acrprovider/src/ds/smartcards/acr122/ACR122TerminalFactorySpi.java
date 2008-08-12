@@ -559,15 +559,14 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
 
         /** Disconnect the card, possibly reset the reader. */
         public void disconnect(boolean reset) throws CardException {
-            if (terminal.state == ABSENT)
-                throw new IllegalStateException(
-                        "Card is not present or already disconnected.");
-            virtualChannel.transmit(new CommandAPDU(ACRcommand(DESELECT)));
-            if (reset) {
-                virtualChannel
-                        .transmit(new CommandAPDU(ACRcommand(ANTENNA_OFF)));
+            if(terminal.state != ABSENT) {
+              virtualChannel.transmit(new CommandAPDU(ACRcommand(DESELECT)));
+              if (reset) {
+                  virtualChannel
+                          .transmit(new CommandAPDU(ACRcommand(ANTENNA_OFF)));
+              }
+              terminal.state = ABSENT;
             }
-            terminal.state = ABSENT;
         }
 
         public String getProtocol() {
