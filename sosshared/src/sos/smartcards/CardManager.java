@@ -22,6 +22,7 @@
 package sos.smartcards;
 
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -73,11 +74,12 @@ public class CardManager
 
 		/* Our own factories for 'non-PCSC' terminals. */
 
-//		try {
-//		addTerminals(TerminalFactory.getInstance("ACR", null, new ds.smartcards.acr122.ACR122Provider()));
-//		} catch (NoSuchAlgorithmException nsae) {
-//		/* Listing readers of this factory failed. */
-//		}
+        try {
+          Class acrProvClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+          Provider acrProv = (Provider)acrProvClass.newInstance();
+          addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));          
+        } catch (Exception e) {
+        }
 
 		/* Factories for simulators. */
 
