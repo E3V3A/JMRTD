@@ -445,7 +445,12 @@ public class PassportFrame extends JFrame
 				 * Find out how to properly parse the sig. alg from the security object.
 				 */
 				String algorithm = "SHA256";
-				if (storedHash != null && storedHash.length == 20) { algorithm = "SHA1"; }
+				if (storedHash != null) { 
+                    if(storedHash.length == 20) { algorithm = "SHA1"; }
+                    else if(storedHash.length == 32) { algorithm = "SHA256"; }
+                    else if(storedHash.length == 64) { algorithm = "SHA512"; }
+                }
+                
 				MessageDigest digest = MessageDigest.getInstance(algorithm);
 
 				InputStream dgIn = bufferedStreams.get(PassportFile.lookupFIDByTag(tags[i]));
