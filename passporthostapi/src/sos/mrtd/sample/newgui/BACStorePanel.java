@@ -3,6 +3,8 @@ package sos.mrtd.sample.newgui;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -57,7 +59,7 @@ public class BACStorePanel extends JPanel
 	 */
 	public BACStorePanel(BACStore store)  {
 		super(new BorderLayout());
-		this.store =  store;
+		this.store = store;
 		
 		moveUpAction = new MoveUpAction();
 		moveDownAction = new MoveDownAction();
@@ -86,6 +88,8 @@ public class BACStorePanel extends JPanel
 		downButton.setAction(moveDownAction);
 		deleteButton.setAction(deleteAction);
 		add(toolBar, BorderLayout.NORTH);
+		
+		// addKeyListener(new TypedMRZBACEntrySource(store));
 	}
 
 	private class BACStoreTable extends JTable
