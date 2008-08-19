@@ -471,8 +471,10 @@ public class PassportFrame extends JFrame
 			docSigningCert = sodFile.getDocSigningCertificate();
 			isDSVerified &= sodFile.checkDocSignature(docSigningCert);
 		} catch (NoSuchAlgorithmException nsae) {
+			isDSVerified = false;
 			nsae.printStackTrace();
 		} catch (Exception ioe) {
+			isDSVerified = false;
 			ioe.printStackTrace();
 		}
 		verificationPanel.setDSState(isDSVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
