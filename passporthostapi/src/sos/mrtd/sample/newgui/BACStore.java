@@ -121,6 +121,15 @@ public class BACStore {
 			e.printStackTrace();
 		}
 	}
+	
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		for (BACStoreEntry entry: entries) {
+			result.append(entry.toString());
+			result.append('\n');
+		}
+		return result.toString();
+	}
 
 	public void removeEntry(int index) {
 		entries.remove(index);
@@ -169,7 +178,4 @@ public class BACStore {
 	public BACStoreEntry getEntry(int entryRowIndex) {
 		return entries.get(entryRowIndex);
 	}
-
-
-
 }
