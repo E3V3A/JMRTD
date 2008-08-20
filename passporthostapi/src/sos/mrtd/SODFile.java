@@ -95,6 +95,8 @@ public class SODFile extends PassportFile
          ASN1InputStream asn1in =
             new ASN1InputStream(in);
          DERSequence seq = (DERSequence)asn1in.readObject();
+         //To test DER spitting:
+         //System.out.println("Test\n"+Util.printDERObject(seq));
          DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
          DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
          this.signedData = new SignedData(s2);
@@ -186,9 +188,14 @@ public class SODFile extends PassportFile
    }
 
    public DataGroupHash[] getDataGroupHashes() throws Exception {
-      return getSecurityObject().getDatagroupHash();
+       return getSecurityObject().getDatagroupHash();
+      
    }
 
+   public String getDigestAlgorithmSpec() throws Exception {
+       return getHashAlgSpec(getSecurityObject().getDigestAlgorithmIdentifier().getObjectId());      
+   }
+   
    /**
     * Gets the document signing certificate.
     * Use this certificate to verify that

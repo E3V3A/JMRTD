@@ -258,8 +258,7 @@ public class PassportApduService extends CardService
 
       byte[] data = new byte[32 + 8];
       System.arraycopy(ciphertext, 0, data, 0, 32);
-      System.arraycopy(mactext, 0, data, 32, 8);
-
+      System.arraycopy(mactext, 0, data, 32, 8);      
       int le = 40;
       CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
             ISO7816.INS_EXTERNAL_AUTHENTICATE, p1, p2, data, le);

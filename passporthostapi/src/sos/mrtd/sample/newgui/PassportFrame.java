@@ -67,6 +67,8 @@ import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
 
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
@@ -435,23 +437,13 @@ public class PassportFrame extends JFrame
 			InputStream sodIn = getFile(PassportService.EF_SOD);
 			SODFile sodFile = new SODFile(sodIn);
 			DataGroupHash[] hashes = sodFile.getDataGroupHashes();
+            String algorithm = sodFile.getDigestAlgorithmSpec();
+            MessageDigest digest = MessageDigest.getInstance(algorithm);
 			isDSVerified = true;
 			for (int i = 0; i < hashes.length; i++) {
 
 				byte[] storedHash = hashes[i].getDataGroupHashValue().getOctets();
-
-				/*
-				 * TODO: This is a hack...
-				 * Find out how to properly parse the sig. alg from the security object.
-				 */
-				String algorithm = "SHA256";
-				if (storedHash != null) { 
-                    if(storedHash.length == 20) { algorithm = "SHA1"; }
-                    else if(storedHash.length == 32) { algorithm = "SHA256"; }
-                    else if(storedHash.length == 64) { algorithm = "SHA512"; }
-                }
-                
-				MessageDigest digest = MessageDigest.getInstance(algorithm);
+				digest.reset();
 
 				InputStream dgIn = bufferedStreams.get(PassportFile.lookupFIDByTag(tags[i]));
 				dgIn.reset();
