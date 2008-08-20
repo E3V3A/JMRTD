@@ -316,8 +316,9 @@ public class SODFile extends PassportFile
       boolean result = false;
       try {
           result = sig.verify(signature);
-          if(result)
+          if(result) {
               return result;
+          }
       }catch(Exception e) {
           
       }
@@ -348,10 +349,13 @@ public class SODFile extends PassportFile
       }catch(Exception e) {
           
       }
-      if(result)
+      if(result) {
+          // At this point it also means that the certificate alg. is not consistent with reality
           return result;
+      }
       // 3. Finally, simply try SHA1withRSA
 
+      sigAlg = "SHA1withRSA";
       sig = Signature.getInstance(sigAlg);
       sig.initVerify(docSigningCert);
       sig.update(eContent);
@@ -360,8 +364,6 @@ public class SODFile extends PassportFile
       }catch(Exception e) {
             
       }      
-      //DigestInfo dInfo = new DigestInfo(AlgorithmIdentifier.getInstance(SHA1_HASH_ALG_OID), digestBytes);
-      //byte[] digestEncoded = dInfo.getEncoded(ASN1Encodable.DER);
       
       return result;
    }
