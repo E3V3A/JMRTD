@@ -26,14 +26,20 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
+import javax.crypto.Cipher;
+
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERApplicationSpecific;
+import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -43,11 +49,16 @@ import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
+import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_SOD file.
@@ -73,6 +84,7 @@ public class SODFile extends PassportFile
 
    public SODFile(SignedData signedData) {
       this.signedData = signedData;
+      System.out.println("Here?");
    }
 
    public SODFile(InputStream in) throws CardServiceException {
@@ -84,7 +96,6 @@ public class SODFile extends PassportFile
             new ASN1InputStream(in);
          DERSequence seq = (DERSequence)asn1in.readObject();
          DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
-
          DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
          this.signedData = new SignedData(s2);
       } catch (IOException e) {
@@ -225,9 +236,10 @@ public class SODFile extends PassportFile
     * @return the contents of the security object over which the
     *         signature is to be computed
     */
-   private byte[] getEContent() {
+   private byte[] getEContent() throws IOException {
       SignerInfo signerInfo = getSignerInfo();
       ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
+
       if (signedAttributes.size() == 0) {
          /* Signed attributes absent, digest the contents... */
          ContentInfo contentInfo = signedData.getEncapContentInfo();
@@ -289,13 +301,100 @@ public class SODFile extends PassportFile
     */
    public boolean checkDocSignature(Certificate docSigningCert)
    throws GeneralSecurityException, IOException {
-      String sigAlg = "SHA256";
+      String sigAlg = "SHA256"; 
+            
+      byte[] eContent = getEContent();      
+      byte[] signature = getSignature();
+      
+      // 1. Try whatever the certificate says, if anything
       if (docSigningCert instanceof X509Certificate) {
          sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
       }
       Signature sig = Signature.getInstance(sigAlg);
       sig.initVerify(docSigningCert);
-      sig.update(getEContent());
-      return sig.verify(getSignature());
+      sig.update(eContent);
+      boolean result = false;
+      try {
+          result = sig.verify(signature);
+          if(result)
+              return result;
+      }catch(Exception e) {
+          
+      }
+      // 2. Do it manually, decrypt the signature and extract the hashing algorithm
+
+      try {
+          Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+          c.init(Cipher.DECRYPT_MODE, docSigningCert);
+          c.update(signature);
+          byte[] decryptedBytes = c.doFinal();
+          String id = getHashId(decryptedBytes);
+          byte[] expectedHash = getHashBytes(decryptedBytes);
+          AlgorithmIdentifier aId = AlgorithmIdentifier.getInstance(id);
+          MessageDigest digest = MessageDigest.getInstance(getHashAlgSpec(aId.getObjectId()));
+          digest.update(eContent);
+          byte[] digestBytes = digest.digest();
+          if(digestBytes.length != expectedHash.length) {
+              result = false;
+          }else{
+              result = true;
+              for(int i=0; i<digestBytes.length; i++) {
+                  if(digestBytes[i] != expectedHash[i]) {
+                      result = false;
+                      break;
+                  }
+              }
+          }
+      }catch(Exception e) {
+          
+      }
+      if(result)
+          return result;
+      // 3. Finally, simply try SHA1withRSA
+
+      sig = Signature.getInstance(sigAlg);
+      sig.initVerify(docSigningCert);
+      sig.update(eContent);
+      try {
+          result = sig.verify(signature);
+      }catch(Exception e) {
+            
+      }      
+      //DigestInfo dInfo = new DigestInfo(AlgorithmIdentifier.getInstance(SHA1_HASH_ALG_OID), digestBytes);
+      //byte[] digestEncoded = dInfo.getEncoded(ASN1Encodable.DER);
+      
+      return result;
+   }
+   
+   private static String getHashId(byte[] derBytes) throws IOException {
+       ASN1InputStream asn1in = new ASN1InputStream(derBytes);
+       DERSequence seq = (DERSequence)asn1in.readObject();
+       return ((DERObjectIdentifier)((DERSequence)seq.getObjectAt(0)).getObjectAt(0)).getId();       
+   }
+
+   private static byte[] getHashBytes(byte[] derBytes) throws IOException {
+       ASN1InputStream asn1in = new ASN1InputStream(derBytes);
+       DERSequence seq = (DERSequence)asn1in.readObject();
+       return ((DEROctetString)seq.getObjectAt(1)).getOctets();       
+   }
+
+   private static String getHashAlgSpec(DERObjectIdentifier oid) {
+       if(oid.equals(X509ObjectIdentifiers.id_SHA1)) {
+           return "SHA1"; 
+       }
+       if(oid.equals(NISTObjectIdentifiers.id_sha224)) {
+           return "SHA224"; 
+       }
+       if(oid.equals(NISTObjectIdentifiers.id_sha256)) {
+           return "SHA256"; 
+       }
+       if(oid.equals(NISTObjectIdentifiers.id_sha384)) {
+           return "SHA384"; 
+       }
+       if(oid.equals(NISTObjectIdentifiers.id_sha512)) {
+           return "SHA512"; 
+       }
+       return "SHA1";
    }
 }
+
