@@ -32,6 +32,7 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 import javax.crypto.Cipher;
 
@@ -342,17 +343,7 @@ public class SODFile extends PassportFile
           MessageDigest digest = MessageDigest.getInstance(getHashAlgSpec(aId.getObjectId()));
           digest.update(eContent);
           byte[] digestBytes = digest.digest();
-          if(digestBytes.length != expectedHash.length) {
-              result = false;
-          }else{
-              result = true;
-              for(int i=0; i<digestBytes.length; i++) {
-                  if(digestBytes[i] != expectedHash[i]) {
-                      result = false;
-                      break;
-                  }
-              }
-          }
+          result = Arrays.equals(digestBytes, expectedHash);
       }catch(Exception e) {
           
       }
@@ -370,8 +361,7 @@ public class SODFile extends PassportFile
           result = sig.verify(signature);
       }catch(Exception e) {
             
-      }      
-      
+      }            
       return result;
    }
    
