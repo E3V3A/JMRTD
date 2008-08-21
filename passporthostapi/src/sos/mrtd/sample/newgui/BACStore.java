@@ -26,23 +26,23 @@ public class BACStore {
 	private static final File BACDB_FILE =
 		new File(PassportApp.JMRTD_USER_DIR, "bacdb.txt");
 
-	private List<BACStoreEntry> entries;
+	private List<BACEntry> entries;
 
 	public BACStore() {
-		entries = new ArrayList<BACStoreEntry>();
+		entries = new ArrayList<BACEntry>();
 		read();
 	}
 
-	public List<BACStoreEntry> getEntries() {
+	public List<BACEntry> getEntries() {
 		return entries;
 	}
 
 	public void addEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-		BACStoreEntry entry = new BACStoreEntry(documentNumber.trim(), dateOfBirth.trim(), dateOfExpiry.trim());
+		BACEntry entry = new BACEntry(documentNumber.trim(), dateOfBirth.trim(), dateOfExpiry.trim());
 		addEntry(entry);
 	}
 
-	public void addEntry(BACStoreEntry entry) {
+	public void addEntry(BACEntry entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
 			write();
@@ -53,7 +53,7 @@ public class BACStore {
 		}
 	}
 
-	public void addEntry(int i, BACStoreEntry entry) {
+	public void addEntry(int i, BACEntry entry) {
 		entries.add(i, entry);
 		write();
 	}
@@ -70,9 +70,9 @@ public class BACStore {
 		return getMostRecentEntry().getDateOfExpiry();
 	}
 
-	private BACStoreEntry getMostRecentEntry() {
+	private BACEntry getMostRecentEntry() {
 		if (entries.isEmpty()) {
-			return new BACStoreEntry("", "", "");
+			return new BACEntry("", "", "");
 		}
 		return entries.get(entries.size() - 1);
 	}
@@ -94,7 +94,7 @@ public class BACStore {
 				String line = d.readLine();
 				if (line == null) { break; }
 				String[] fields = getFields(line);
-				entries.add(new BACStoreEntry(fields[0], fields[1], fields[2]));
+				entries.add(new BACEntry(fields[0], fields[1], fields[2]));
 			}
 		} catch (FileNotFoundException fnfe) {
 			/* NOTE: no problem... */
@@ -112,7 +112,7 @@ public class BACStore {
 				BACDB_FILE.createNewFile();
 			}
 			PrintWriter d = new PrintWriter(new FileWriter(BACDB_FILE));
-			for (BACStoreEntry entry: entries) {
+			for (BACEntry entry: entries) {
 				d.println(entry);
 			}
 			d.flush();
@@ -124,7 +124,7 @@ public class BACStore {
 	
 	public String toString() {
 		StringBuffer result = new StringBuffer();
-		for (BACStoreEntry entry: entries) {
+		for (BACEntry entry: entries) {
 			result.append(entry.toString());
 			result.append('\n');
 		}
@@ -136,46 +136,7 @@ public class BACStore {
 		write();
 	}
 
-	public class BACStoreEntry
-	{
-		private String documentNumber;
-		private String dateOfBirth;
-		private String dateOfExpiry;
-
-		public BACStoreEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-			this.documentNumber = documentNumber.trim();
-			this.dateOfBirth = dateOfBirth.trim();
-			this.dateOfExpiry = dateOfExpiry.trim();
-		}
-
-		public String getDocumentNumber() {
-			return documentNumber;
-		}
-
-		public String getDateOfBirth() {
-			return dateOfBirth;
-		}
-
-		public String getDateOfExpiry() {
-			return dateOfExpiry;
-		}
-
-		public String toString() {
-			return documentNumber + ", " + dateOfBirth + ", " + dateOfExpiry;
-		}
-
-		public boolean equals(Object other) {
-			if (other == null) { return false; }
-			if (other.getClass() != BACStoreEntry.class) { return false; }
-			if (other == this) { return true; }
-			BACStoreEntry previous = (BACStoreEntry)other;
-			return documentNumber.equals(previous.documentNumber) &&
-			dateOfBirth.equals(previous.dateOfBirth) &&
-			dateOfExpiry.equals(previous.dateOfExpiry);
-		}
-	}
-
-	public BACStoreEntry getEntry(int entryRowIndex) {
+	public BACEntry getEntry(int entryRowIndex) {
 		return entries.get(entryRowIndex);
 	}
 }

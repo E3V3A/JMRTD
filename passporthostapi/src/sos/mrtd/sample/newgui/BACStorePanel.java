@@ -11,15 +11,19 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
+import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
@@ -88,8 +92,11 @@ public class BACStorePanel extends JPanel
 		downButton.setAction(moveDownAction);
 		deleteButton.setAction(deleteAction);
 		add(toolBar, BorderLayout.NORTH);
-		
-		// addKeyListener(new TypedMRZBACEntrySource(store));
+	}
+	
+	public void addKeyListener(KeyListener l) {
+		super.addKeyListener(l);
+		table.addKeyListener(l);
 	}
 
 	private class BACStoreTable extends JTable
@@ -123,8 +130,8 @@ public class BACStorePanel extends JPanel
 		}
 
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			List<BACStore.BACStoreEntry> entries = store.getEntries();
-			BACStore.BACStoreEntry entry = entries.get(rowIndex);
+			List<BACEntry> entries = store.getEntries();
+			BACEntry entry = entries.get(rowIndex);
 			switch(columnIndex) {
 			case 0: return entry.getDocumentNumber();
 			case 1: return entry.getDateOfBirth();
@@ -198,7 +205,7 @@ public class BACStorePanel extends JPanel
 			try {
 				int entryRowIndex = table.getSelectedRow();
 				if (entryRowIndex <= 0) { return; }
-				BACStore.BACStoreEntry entry = store.getEntry(entryRowIndex);
+				BACEntry entry = store.getEntry(entryRowIndex);
 				store.removeEntry(entryRowIndex);
 				store.addEntry(entryRowIndex - 1, entry);
 				table.removeRowSelectionInterval(entryRowIndex - 1, entryRowIndex);
@@ -222,7 +229,7 @@ public class BACStorePanel extends JPanel
 			try {
 				int entryRowIndex = table.getSelectedRow();
 				if (entryRowIndex >= table.getRowCount()) { return; }
-				BACStore.BACStoreEntry entry = store.getEntry(entryRowIndex);
+				BACEntry entry = store.getEntry(entryRowIndex);
 				store.removeEntry(entryRowIndex);
 				store.addEntry(entryRowIndex + 1, entry);
 				table.removeRowSelectionInterval(entryRowIndex, entryRowIndex + 1);

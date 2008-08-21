@@ -8,6 +8,7 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -24,9 +25,12 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -108,6 +112,8 @@ public class PassportApp  implements PassportListener, AuthListener
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
+//			KeyboardBACEntrySource keySource = new KeyboardBACEntrySource(bacStore);
+//			bacStorePanel.addKeyListener(keySource);
 			JMenuBar menuBar = new JMenuBar();
 			menuBar.add(createFileMenu());
 			menuBar.add(bacStorePanel.getBACMenu());
@@ -134,9 +140,9 @@ public class PassportApp  implements PassportListener, AuthListener
 			});
 			service.open();
 			service.addAuthenticationListener(this);
-			BACStore.BACStoreEntry previousEntry = null;
+			BACEntry previousEntry = null;
 			while (!authenticated) {
-				for (BACStore.BACStoreEntry entry: bacStore.getEntries()) {
+				for (BACEntry entry: bacStore.getEntries()) {
 					try {
 						if (!entry.equals(previousEntry)) {
 							String documentNumber = entry.getDocumentNumber();

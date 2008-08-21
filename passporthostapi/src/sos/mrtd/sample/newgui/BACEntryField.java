@@ -19,10 +19,8 @@ import sos.gui.MRZEntryField;
  *
  * @version $Revision: $
  */
-public class BACEntryField extends Box
+public class BACEntryField extends Box implements BACEntrySource
 {
-
-	
 	private JButton addButton;
 	private MRZEntryField docNrTF;
 	private DateEntryField dateOfBirthField, dateOfExpiryField;
@@ -48,7 +46,7 @@ public class BACEntryField extends Box
 		add(Box.createHorizontalStrut(10));
 		add(addButton);
 	}
-	
+
 	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		this();
 		docNrTF.setText(documentNumber);
@@ -59,11 +57,11 @@ public class BACEntryField extends Box
 	public void setAction(Action action) {
 		addButton.setAction(action);
 	}
-	
+
 	public void addActionListener(ActionListener l) {
 		addButton.addActionListener(l);
 	}
-	
+
 	public String getDocumentNumber() {
 		return docNrTF.getText();
 	}
