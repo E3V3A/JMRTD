@@ -74,12 +74,12 @@ public class CardManager
 
 		/* Our own factories for 'non-PCSC' terminals. */
 
-        try {
-          Class acrProvClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
-          Provider acrProv = (Provider)acrProvClass.newInstance();
-          addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));          
-        } catch (Exception e) {
-        }
+		try {
+			Class<?> acrProvClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+			Provider acrProv = (Provider)acrProvClass.newInstance();
+			addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));          
+		} catch (Exception e) {
+		}
 
 		/* Factories for simulators. */
 
