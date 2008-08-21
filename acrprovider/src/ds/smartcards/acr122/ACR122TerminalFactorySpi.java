@@ -75,8 +75,11 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
     private static final byte[] READER_ID = new byte[] { ACR_CLA, 0x00, 0x48,
             0x00, 0x00 };
 
-    private static final byte[] POLL_COMMAND = new byte[] { ACR_BYTE, 0x4A,
+    private static final byte[] POLL_COMMAND_A = new byte[] { ACR_BYTE, 0x4A,
             0x01, 0x00 };
+
+    private static final byte[] POLL_COMMAND_B = new byte[] { ACR_BYTE, 0x4A,
+        0x01, 0x03, 0x00 };
 
     private static final byte[] ANTENNA_OFF = new byte[] { ACR_BYTE, 0x32,
             0x01, 0x00 };
@@ -109,9 +112,6 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
     private static final byte[] BAUD_212 = new byte[] { ACR_BYTE, 0x4E, 0x01,
             0x01, 0x01 };
 
-    private static final byte[] POLL_COMMAND_B = new byte[] { ACR_BYTE, 0x4A,
-            0x01, 0x03, 0x00 };
-
     /** Wraps a command to be sent to the ACR terminal with FF 00 00 00 Len */
     private static byte[] ACRcommand(byte[] command) {
         byte[] result = new byte[command.length + 5];
@@ -138,6 +138,25 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
         }
     }
 
+/*
+    private static byte[] addCRCB(byte[] data) {
+        int wCRC = 0xFFFF;
+        byte[] result = new byte[data.length + 2];
+        System.arraycopy(data, 0, result, 0, data.length);
+        int i = 0;
+        for(;i<data.length; i++) {
+            byte b = data[i];
+            b = (byte)(b ^ (wCRC & 0xFF));
+            b = (byte)(b ^ (b << 4));
+            wCRC = (wCRC >> 8)^((b << 8) ^ (b << 3) ^ (b >> 4));
+        }
+        wCRC = ~wCRC;
+        result[i++] = (byte)(wCRC & 0xFF);
+        result[i++] = (byte)((wCRC >> 8) & 0xFF);
+        return result;
+    }
+*/
+    
     private static String byteArrayToString(byte[] a, boolean space) {
         if (a == null)
             return "NULL";
@@ -301,10 +320,14 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
          * store.
          */
         public Card connect(String protocol) throws CardException {
-            if (virtualCard == null)
+            if (virtualCard == null) {
+                debug("virtualCard == null");
                 throw new CardException("Reader not initilised.");
+            }
             if (!isCardPresent()) {
+                debug("!isCardPresent()");
                 throw new CardException("No card present.");
+
             }
             // Spit out the UID:
             info("Card UID: " + byteArrayToString(uid, false));
@@ -348,40 +371,144 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
                 if (res[3] == pByte && res[4] == CID) {
                     state = PRESENT;
                 } else {
-                    // Poll the card
-                    res = channel.transmit(
-                            new CommandAPDU(ACRcommand(POLL_COMMAND)))
-                            .getBytes();
-                    debug("Poll result: " + byteArrayToString(res, false));
-                    int index = 0;
-                    if (res[index] == ACR_BYTE_ACK)
-                        index++;
-                    if (res[index] == POLL_ACK)
-                        index++;
-                    if (res[index] == (byte) 0x00) {
-                        state = ABSENT;
-                    } else {
-                        // The card is there, get its UID and ATS/ATR, set the
-                        // communication speed.
-                        state = PRESENT;
-                        sequenceByte = (byte) 0x0A;
-                        index += 3;
-                        int uidLen = res[index++];
-                        uid = new byte[uidLen];
-                        System.arraycopy(res, index, uid, 0, uidLen);
-                        index += uidLen;
-                        channel.transmit(new CommandAPDU(ACRcommand(BAUD_424)));
-                        res = channel.transmit(
-                                new CommandAPDU(ACRcommand(RATS))).getBytes();
-                        index = 3;
-                        ats = new byte[res[index++]];
-                        System.arraycopy(res, index, ats, 0, ats.length);
-                    }
+                    pollCard();
                 }
                 return (state == PRESENT);
             }
         }
 
+        private void pollCard() throws CardException {
+            byte[] res = null;
+            // Poll the card
+            res = channel.transmit(
+                    new CommandAPDU(ACRcommand(POLL_COMMAND_A)))
+                    .getBytes();
+            debug("Poll result (type A): " + byteArrayToString(res, false));
+            int index = 0;
+            if (res[index] == ACR_BYTE_ACK)
+                index++;
+            if (res[index] == POLL_ACK)
+                index++;
+            if (res[index] == (byte) 0x00) {
+                // try polling a B card
+                res = channel.transmit(
+                        new CommandAPDU(ACRcommand(POLL_COMMAND_B)))
+                        .getBytes();
+                debug("Poll result (type B): " + byteArrayToString(res, false));
+                index = 0;
+                if (res[index] == ACR_BYTE_ACK)
+                    index++;
+                if (res[index] == POLL_ACK)
+                    index++;
+                if (res[index] == (byte) 0x00) {
+                    state = ABSENT;
+                } else {
+                  while(res[index++] != 0x50);
+                  debug("Poll result (type B): " + byteArrayToString(res, false));
+                  // The card is there (type B)
+                  state = PRESENT;
+                  sequenceByte = (byte) 0x0A;
+                  int uidLen = 4;
+                  uid = new byte[uidLen];
+                  System.arraycopy(res, index, uid, 0, uidLen);
+                  debug("uid: "+byteArrayToString(uid, false));
+                  index += uidLen;
+                  index += 4; // skip application data
+                  byte bitRateCap = res[index++];
+                  byte frameSizeProtType = res[index++];
+                  byte cidNad = res[index++];
+                  byte frameSize = (byte)((frameSizeProtType>> 4) & 0x0F);
+                  byte picPcd = (byte)(bitRateCap & 0x70);
+                  byte pcdPic = (byte)(bitRateCap & 0x07);
+                  byte protType = (byte)(frameSizeProtType & 0x0F);
+                  
+                  int picPcdSpeed = 0;
+                  int pcdPicSpeed = 0;
+                  if (picPcd >= 0x40)        picPcdSpeed=847;
+                  else if(picPcd >= 0x20)   picPcdSpeed=424;
+                  else if(picPcd >= 0x10)    picPcdSpeed=212;
+                  else                      picPcdSpeed=106;
+
+                  if(pcdPic >= 0x04)        pcdPicSpeed =  847;
+                  else if(pcdPic >= 0x02)  pcdPicSpeed =  424;
+                  else if(pcdPic >= 0x01)  pcdPicSpeed =  212;
+                  else                     pcdPicSpeed =  106;
+
+                  debug("Max. PICC to PCD speed "+picPcdSpeed+" kbit/s");
+                  debug("Max. PCD to PICC speed "+pcdPicSpeed+" kbit/s");
+
+                  String sup = ((byte)(cidNad & 0x01) == 0x01) ? "" : "not ";
+                  debug("CID is "+sup+"supported.");
+                  
+                  sup = (protType == 0x01) ? "" : "not ";
+                  debug("PICC is "+sup+"ISO14443-4 compliant.");
+
+                  int fsBytes = 0;
+                  if(frameSize == 0)
+                      fsBytes = 16;
+                  else if(frameSize == 1)
+                      fsBytes = 24;
+                  else if(frameSize == 2)
+                      fsBytes = 32;
+                  else if(frameSize == 3)
+                      fsBytes = 40;
+                  else if(frameSize == 4)
+                      fsBytes = 48;
+                  else if(frameSize == 5)
+                      fsBytes = 64;
+                  else if(frameSize == 6)
+                      fsBytes = 96;
+                  else if(frameSize == 7)
+                      fsBytes = 128;
+                  else if(frameSize == 8)
+                      fsBytes = 256;
+
+                  debug("Maximum frame size is: "+fsBytes);
+                  
+                  /*
+                  byte rPicPcd, rPcdPic;
+                  if(picPcd >= 0x40)
+                      rPicPcd = (byte)0xC0;
+                  else if(picPcd >= 0x20)
+                      rPicPcd = (byte)0x80;
+                  else if(picPcd >= 0x10)
+                      rPicPcd = (byte)0x40;
+                  else
+                      rPicPcd = (byte)0x00;
+
+                  if(pcdPic >= 0x04)
+                      rPcdPic = (byte)0x30;
+                  else if(pcdPic >= 0x02)
+                      rPcdPic = (byte)0x20;
+                  else if(pcdPic >= 0x01)
+                      rPcdPic = (byte)0x10;
+                  else
+                      rPcdPic = (byte)0x00;
+*/
+
+                  // OK, how is ATS/ATR extracted for type B cards
+                  ats = new byte[9];
+                  debug("ats: "+byteArrayToString(ats, false));
+                }
+            } else {
+                // The card is there (type A), get its UID and ATS/ATR, set the
+                // communication speed.
+                state = PRESENT;
+                sequenceByte = (byte) 0x0A;
+                index += 3;
+                int uidLen = res[index++];
+                uid = new byte[uidLen];
+                System.arraycopy(res, index, uid, 0, uidLen);
+                index += uidLen;
+                channel.transmit(new CommandAPDU(ACRcommand(BAUD_424)));
+                res = channel.transmit(
+                        new CommandAPDU(ACRcommand(RATS))).getBytes();
+                index = 3;
+                ats = new byte[res[index++]];
+                System.arraycopy(res, index, ats, 0, ats.length);
+            }            
+        }
+        
         /**
          * Wait for a given card presence state (present or absent) with a
          * timeout. Also note whether the new state (after the required state
@@ -725,7 +852,8 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
                     || r[1] != RAW_SEND_ACK
                     || r[2] != RESP_BYTE_OK
                     || (byte) (r[3] & (byte) 0x0F) != card.terminal.sequenceByte
-                    || r[4] != CID) {
+                    || r[4] != CID
+                    ) {
                 noCard(true);
             }
             byte[] result = new byte[r.length - 7];
@@ -794,8 +922,17 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
                         .getPing()));
                 CommandAPDU cext = null;
                 while (resp.getBytes()[2] != RESP_BYTE_OK
-                        || (byte) (resp.getBytes()[3] & 0xF0) == (byte) 0xF0) {
-                    if (resp.getBytes()[2] != RESP_BYTE_OK) {
+                        || (byte) (resp.getBytes()[3] & 0xF0) == (byte) 0xF0
+                        || (resp.getBytes()[2] == RESP_BYTE_OK && resp.getBytes().length == 5)) {
+                    if (resp.getBytes()[2] != RESP_BYTE_OK || (resp.getBytes()[2] == RESP_BYTE_OK && resp.getBytes().length == 5)) {
+                        if(resp.getBytes()[2] != RESP_BYTE_OK) {
+                            // For some cards (ie. JCOP41) we have to slow down a bit,
+                            // otherwise the card gets stuck
+                            try {
+                                Thread.sleep(100);
+                            }catch(InterruptedException ex) {
+                            }
+                        }
                         debug("response retry ping: "
                                 + byteArrayToString(c.getBytes(), false));
                         resp = card.virtualChannel.transmit(c);
