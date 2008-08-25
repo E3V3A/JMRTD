@@ -345,17 +345,22 @@ public class SODFile extends PassportFile
 			// At this point it also means that the certificate alg. is not consistent with reality
 			return result;
 		}
-		// 3. Finally, simply try SHA1withRSA
+		// 3. Finally, simply try some other common things:
+        // SHA1withRSA, SHA1withRSA/PSS, SHA256withRSA/PSS
 
-		sigAlg = "SHA1withRSA";
-		sig = Signature.getInstance(sigAlg);
-		sig.initVerify(docSigningCert);
-		sig.update(eContent);
-		try {
-			result = sig.verify(signature);
-		}catch(Exception e) {
-
-		}            
+		String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
+        for(String alg : sigAlgs) {
+            sig = Signature.getInstance(alg);
+            sig.initVerify(docSigningCert);
+            sig.update(eContent);
+            try {
+                result = sig.verify(signature);
+                if(result) {
+                    return result;
+                }
+            }catch(Exception e) {
+            }
+        }
 		return result;
 	}
 
