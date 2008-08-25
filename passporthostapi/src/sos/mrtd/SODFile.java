@@ -31,10 +31,7 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
-
-import javax.crypto.Cipher;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
@@ -48,7 +45,6 @@ import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
@@ -75,6 +71,7 @@ public class SODFile extends PassportFile
 //	private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";
 //	private static final String ICAO_SOD_OID = "2.23.136.1.1.1";
 //	private static final String E_CONTENT_TYPE_OID = "1.2.528.1.1006.1.20.1";
+    private static final String RSA_SA_PSS_OID = "1.2.840.113549.1.1.10";
 
 	private SignedData signedData;
 
@@ -303,29 +300,37 @@ public class SODFile extends PassportFile
 	 */
 	public boolean checkDocSignature(Certificate docSigningCert)
 	throws GeneralSecurityException, IOException {
-		String sigAlg = "SHA256"; 
 
 		byte[] eContent = getEContent();      
 		byte[] signature = getSignature();
+        
+        String encAlg = getSignerInfo().getDigestEncryptionAlgorithm().getObjectId().getId();
 
-		// 1. Try whatever the certificate says, if anything
-		if (docSigningCert instanceof X509Certificate) {
-			sigAlg = ((X509Certificate)docSigningCert).getSigAlgName();
-		}
-		Signature sig = Signature.getInstance(sigAlg);
+        // For the cases where the signature is simply a digest (haven't seen a passport like this, 
+        // thus this is guessing)
+
+        if(encAlg == null) {
+            String digestAlg = getSignerInfo().getDigestAlgorithm().getObjectId().getId();
+            MessageDigest digest = MessageDigest.getInstance(digestAlg);
+            digest.update(eContent);
+            byte[] digestBytes = digest.digest();
+            return Arrays.equals(digestBytes, signature);
+        }
+
+        // For the RSA_SA_PSS 1. the default hash is SHA1, 2. The hash id is not encoded in OID
+        // So it has to be specified "manually"
+        if(encAlg.equals(RSA_SA_PSS_OID)) {
+            encAlg = getHashAlgSpec(getSignerInfo().getDigestAlgorithm().getObjectId())+
+            "withRSA/PSS"; 
+        }
+
+        Signature sig = Signature.getInstance(encAlg);
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
-		boolean result = false;
-		try {
-			result = sig.verify(signature);
-			if(result) {
-				return result;
-			}
-		}catch(Exception e) {
+	    return sig.verify(signature);
 
-		}
-		// 2. Do it manually, decrypt the signature and extract the hashing algorithm
-
+        // 2. Do it manually, decrypt the signature and extract the hashing algorithm
+/*
 		try {
 			Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
 			c.init(Cipher.DECRYPT_MODE, docSigningCert);
@@ -333,50 +338,33 @@ public class SODFile extends PassportFile
 			byte[] decryptedBytes = c.doFinal();
 			String id = getHashId(decryptedBytes);
 			byte[] expectedHash = getHashBytes(decryptedBytes);
-			AlgorithmIdentifier aId = AlgorithmIdentifier.getInstance(id);
-			MessageDigest digest = MessageDigest.getInstance(getHashAlgSpec(aId.getObjectId()));
+			MessageDigest digest = MessageDigest.getInstance(id);
 			digest.update(eContent);
 			byte[] digestBytes = digest.digest();
 			result = Arrays.equals(digestBytes, expectedHash);
 		}catch(Exception e) {
 
 		}
-		if(result) {
-			// At this point it also means that the certificate alg. is not consistent with reality
-			return result;
-		}
-		// 3. Finally, simply try some other common things:
-        // SHA1withRSA, SHA1withRSA/PSS, SHA256withRSA/PSS
-
-		String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
-        for(String alg : sigAlgs) {
-            sig = Signature.getInstance(alg);
-            sig.initVerify(docSigningCert);
-            sig.update(eContent);
-            try {
-                result = sig.verify(signature);
-                if(result) {
-                    return result;
-                }
-            }catch(Exception e) {
-            }
-        }
-		return result;
+        String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
+*/
 	}
 
-	private static String getHashId(byte[] derBytes) throws IOException {
+/*
+    private static String getHashId(byte[] derBytes) throws IOException {
 		ASN1InputStream asn1in = new ASN1InputStream(derBytes);
 		DERSequence seq = (DERSequence)asn1in.readObject();
 		return ((DERObjectIdentifier)((DERSequence)seq.getObjectAt(0)).getObjectAt(0)).getId();       
 	}
-
+*/
+/*
 	private static byte[] getHashBytes(byte[] derBytes) throws IOException {
 		ASN1InputStream asn1in = new ASN1InputStream(derBytes);
 		DERSequence seq = (DERSequence)asn1in.readObject();
 		return ((DEROctetString)seq.getObjectAt(1)).getOctets();       
 	}
+*/
 
-	private static String getHashAlgSpec(DERObjectIdentifier oid) {
+    private static String getHashAlgSpec(DERObjectIdentifier oid) {
 		if(oid.equals(X509ObjectIdentifiers.id_SHA1)) {
 			return "SHA1"; 
 		}
