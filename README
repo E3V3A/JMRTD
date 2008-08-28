@@ -30,3 +30,4 @@ Files
    passportapplet/ - passport applet project files
    passporthostapi/ - host side API project files
 
+See passporthostapi/README for more detailed notes.

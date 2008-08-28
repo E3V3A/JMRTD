@@ -58,6 +58,7 @@ Optional stuff
         Tested with version 2.2.2
         When making from source, expects a copy or link to this jar
         (or stub) in lib directory.
+	http://java.sun.com/javacard/devkit/
 
    * JCOP toolset
         offcard.jar part of JCOP plugin for Eclipse
