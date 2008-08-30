@@ -3,7 +3,6 @@ package sos.mrtd.sample.newgui;
 
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -11,19 +10,15 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.InputMap;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
-import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.AbstractTableModel;
 
@@ -38,6 +33,8 @@ import sos.util.Icons;
  */
 public class BACStorePanel extends JPanel
 {  
+	private static final long serialVersionUID = 8209327475448864084L;
+
 	private static final SimpleDateFormat SDF =
 		new SimpleDateFormat("yyMMdd");
 	

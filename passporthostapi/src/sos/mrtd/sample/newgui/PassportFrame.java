@@ -67,8 +67,6 @@ import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 
