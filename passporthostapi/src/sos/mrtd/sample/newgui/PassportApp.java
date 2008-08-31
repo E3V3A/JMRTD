@@ -5,9 +5,13 @@
 package sos.mrtd.sample.newgui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.beans.PropertyChangeListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
@@ -15,8 +19,11 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
+import java.text.CharacterIterator;
+import java.text.StringCharacterIterator;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.smartcardio.CardTerminal;
@@ -24,9 +31,13 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.InputMap;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -35,6 +46,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
 import sos.mrtd.AAEvent;
@@ -103,13 +115,15 @@ public class PassportApp  implements PassportListener, AuthListener
 			this.bacStore =  new BACStore();
 			serviceToFrameMap = new HashMap<CardService, JFrame>();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
-			JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
+			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
-//			KeyboardBACEntrySource keySource = new KeyboardBACEntrySource(bacStore);
+
+			final KeyboardBACEntrySource keySource = new KeyboardBACEntrySource(bacStore);
 //			bacStorePanel.addKeyListener(keySource);
+			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
 			menuBar.add(createFileMenu());
 			menuBar.add(bacStorePanel.getBACMenu());
@@ -123,6 +137,26 @@ public class PassportApp  implements PassportListener, AuthListener
 			e.printStackTrace();
 			System.exit(1);
 		}
+	}
+
+	private void addMRZKeyListener(JFrame frame, KeyListener l) {
+		final Component component = frame;
+		final KeyListener keyListener = l;
+		ActionMap am = frame.getRootPane().getActionMap();
+		InputMap im = frame.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
+		String mrzChars = "<0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		for (int i = 0; i < mrzChars.length(); i++) {
+			final char c = mrzChars.charAt(i);
+			String actionMapKey = "KeyActionFor_" + Character.toString(c);
+			am.put(actionMapKey, new AbstractAction() {
+				public void actionPerformed(ActionEvent e) {
+					KeyEvent ke = new KeyEvent(component, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, Character.toUpperCase(c));
+					keyListener.keyTyped(ke);
+				}
+			});
+			im.put(KeyStroke.getKeyStroke(c), actionMapKey);
+		}
+
 	}
 
 	public void passportInserted(PassportEvent ce) {

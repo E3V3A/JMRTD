@@ -13,7 +13,7 @@ import sos.mrtd.MRZInfo;
  */
 public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 {
-	private static final int TIMEOUT = 2000;
+	private static final int TIMEOUT = 20000;
 	private BACStore store;
 	private char[] buffer;
 	private int indexInBuffer;
@@ -37,7 +37,7 @@ public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 		char c = e.getKeyChar();
 		appendToBuffer(c);
 		heartBeat = System.currentTimeMillis();
-		System.out.print("DEBUG: " + Character.toString(c) + " - ");
+		System.out.print(Character.toString(c));
 		tryAndAddBACStoreEntry();
 	}
 
