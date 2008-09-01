@@ -95,6 +95,11 @@ public class BACStorePanel extends JPanel
 		super.addKeyListener(l);
 		table.addKeyListener(l);
 	}
+	
+	public void addEntry(BACEntry entry) {
+		store.addEntry(entry);
+		table.revalidate();
+	}
 
 	private class BACStoreTable extends JTable
 	{
@@ -158,8 +163,7 @@ public class BACStorePanel extends JPanel
 			String documentNumber = entryField.getDocumentNumber();
 			Date dateOfBirth = entryField.getDateOfBirth();
 			Date dateOfExpiry = entryField.getDateOfExpiry();
-			store.addEntry(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
-			table.revalidate();
+			addEntry(new BACEntry(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry)));
 		} 
 	}
 	

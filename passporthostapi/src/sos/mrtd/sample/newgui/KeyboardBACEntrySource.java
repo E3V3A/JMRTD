@@ -14,12 +14,12 @@ import sos.mrtd.MRZInfo;
 public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 {
 	private static final int TIMEOUT = 20000;
-	private BACStore store;
+	private BACStorePanel store;
 	private char[] buffer;
 	private int indexInBuffer;
 	private long heartBeat;
 
-	public KeyboardBACEntrySource(BACStore store) {
+	public KeyboardBACEntrySource(BACStorePanel store) {
 		buffer = new char[256];
 		resetBuffer();
 		this.store = store;
