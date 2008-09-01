@@ -13,7 +13,7 @@ import sos.mrtd.MRZInfo;
  */
 public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 {
-	private static final int TIMEOUT = 20000;
+	private static final int TIMEOUT = 3000;
 	private BACStorePanel store;
 	private char[] buffer;
 	private int indexInBuffer;
