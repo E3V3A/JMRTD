@@ -131,8 +131,8 @@ public class MRZInfo
 				this.documentNumber = readDocumentNumber(dataIn, 9);
 				this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
 				this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 15));
-				/* FIXME is the last char always '<'? is it part of personal nr? or is this indeed a checkbit? */
-				this.personalNumberCheckDigit = checkDigit(this.personalNumber);
+				this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14)); // (FIXED by hakan@elgin.nl) not 15 but 14 let control digit out of this read 
+				this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // (FIXED by hakan@elgin.nl) read control digite of sofinumber 
 				this.dateOfBirth = readDateOfBirth(dataIn);
 				this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
 				this.gender = readGender(dataIn);
