@@ -130,8 +130,9 @@ public class MRZInfo
 				this.issuingState = readIssuingState(dataIn);
 				this.documentNumber = readDocumentNumber(dataIn, 9);
 				this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-				this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14)); // (FIXED by hakan@elgin.nl) not 15 but 14 let control digit out of this read 
-				this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte(); // (FIXED by hakan@elgin.nl) read control digite of sofinumber 
+				this.personalNumber = trimFillerChars(readPersonalNumber(dataIn, 14)); // (FIXED by hakan@elgin.nl) not 15 but 14 let control digit out of this read
+				dataIn.readByte(); // MO: always '<'?
+				this.personalNumberCheckDigit = checkDigit(personalNumber); // (Also: hakan@elgin.nl sugests to: read control digite of sofinumber instead.)
 				this.dateOfBirth = readDateOfBirth(dataIn);
 				this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
 				this.gender = readGender(dataIn);
@@ -208,8 +209,7 @@ public class MRZInfo
 				writeDocumentNumber(dataOut, 9); /* FIXME: max size of field */
 				dataOut.write(documentNumberCheckDigit);
 				writePersonalNumber(dataOut, 14); /* FIXME: max size of field */
-				dataOut.write('<'); /* FIXME: personal number may be length 15 in ID1? */
-				// dataOut.write(personalNumberCheckDigit);
+				dataOut.write('<'); // FIXME: correct? Some people suggested checkDigit(personalNumber)...
 				writeDateOfBirth(dataOut);
 				dataOut.write(dateOfBirthCheckDigit);
 				writeGender(dataOut);
@@ -635,8 +635,9 @@ public class MRZInfo
 			out.append(issuingState.toAlpha3Code());
 			out.append(documentNumber);
 			out.append(documentNumberCheckDigit);
-			out.append(mrzFormat(personalNumber, 15));
-			// out.append(personalNumberCheckDigit);
+			out.append(mrzFormat(personalNumber, 14));
+			out.append("<"); // FIXME: not sure... maybe check digit?
+			// out.append(checkDigit(personalNumber));
 			out.append("\n");
 			out.append(SDF.format(dateOfBirth));
 			out.append(dateOfBirthCheckDigit);
