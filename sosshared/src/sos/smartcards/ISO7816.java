@@ -61,7 +61,9 @@ public interface ISO7816
    static final byte INS_SELECT_FILE = (byte)0xA4;
    static final byte INS_CLOSE_APPLICATION = (byte)0xAC;
    static final byte INS_READ_BINARY = (byte)0xB0;
+   static final byte INS_READ_BINARY2 = (byte)0xB1;
    static final byte INS_READ_RECORD = (byte)0xB2;
+   static final byte INS_READ_RECORD2 = (byte)0xB3;
    static final byte INS_READ_RECORDS = (byte)0xB2;
    static final byte INS_READ_BINARY_STAMPED = (byte)0xB4;
    static final byte INS_READ_RECORD_STAMPED = (byte)0xB6;
