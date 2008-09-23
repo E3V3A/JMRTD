@@ -59,6 +59,7 @@ import sos.tlv.BERTLVInputStream;
  * TODO: implement this without coupling the public interface of
  * this class to the Bouncy Castle classes.
  * 
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  * 
  * @version $Revision: $
@@ -296,7 +297,7 @@ public class SODFile extends PassportFile
 	 * @throws GeneralSecurityException if something goes wrong
 	 * @throws IOException if something goes wrong
 	 * 
-	 * @deprecated Leave this responsibility to client
+	 * @deprecated Leave this responsibility to client?
 	 */
 	public boolean checkDocSignature(Certificate docSigningCert)
 	throws GeneralSecurityException, IOException {

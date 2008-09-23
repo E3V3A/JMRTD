@@ -204,47 +204,52 @@ public class Util
     * @return the m1 part of the message
     */
    public static byte[] recoverMessage(int digestLength, byte[] plaintext) {
-	  if (plaintext == null || plaintext.length < 1) {
-		  throw new IllegalArgumentException("Plaintext too short to recover message");
-	  }
-      if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
-      if (((plaintext[plaintext.length - 1] & 0xF) ^ 0xC) != 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
-      int delta = 0;
-      if (((plaintext[plaintext.length - 1] & 0xFF) ^ 0xBC) == 0) {
-         delta = 1;
-      } else {
-         throw new NumberFormatException("Could not get M1");
-      }
+	   if (plaintext == null || plaintext.length < 1) {
+		   throw new IllegalArgumentException("Plaintext too short to recover message");
+	   }
+	   if (((plaintext[0] & 0xC0) ^ 0x40) != 0) {
+		   // 0xC0 = 1100 0000, 0x40 = 0100 0000
+		   throw new NumberFormatException("Could not get M1");
+	   }
+	   if (((plaintext[plaintext.length - 1] & 0xF) ^ 0xC) != 0) {
+		   // 0xF = 0000 1111, 0xC = 0000 1100
+		   throw new NumberFormatException("Could not get M1");
+	   }
+	   int delta = 0;
+	   if (((plaintext[plaintext.length - 1] & 0xFF) ^ 0xBC) == 0) {
+		   delta = 1;
+	   } else {
+		   // 0xBC = 1011 1100
+		   throw new NumberFormatException("Could not get M1");
+	   }
 
-      /* find out how much padding we've got */
-      int mStart = 0;
-      for (mStart = 0; mStart < plaintext.length; mStart++) {
-         if (((plaintext[mStart] & 0x0F) ^ 0x0A) == 0) {
-            break;
-         }
-      }
-      mStart++;
+	   /* find out how much padding we've got */
+	   int paddingLength = 0;
+	   for (; paddingLength < plaintext.length; paddingLength++) {
+		   // 0x0A = 0000 1010
+		   if (((plaintext[paddingLength] & 0x0F) ^ 0x0A) == 0) {
+			   break;
+		   }
+	   }
+	   int messageOffset = paddingLength + 1;
 
-      int off = plaintext.length - delta - digestLength;
+	   int paddedMessageLength = plaintext.length - delta - digestLength;
+	   int messageLength = paddedMessageLength - messageOffset;
+	   System.out.println("DEBUG: messageLength == " + messageLength); // Should be 64 bits.
 
-      /* there must be at least one byte of message string */
-      if ((off - mStart) <= 0) {
-         throw new NumberFormatException("Could not get M1");
-      }
+	   /* there must be at least one byte of message string */
+	   if (messageLength <= 0) {
+		   throw new NumberFormatException("Could not get M1");
+	   }
 
-      /* if we contain the whole message as well, check the hash of that. */
-      if ((plaintext[0] & 0x20) == 0) {
-         throw new NumberFormatException("Could not get M1");
-      } else {
-         byte[] recoveredMessage = new byte[off - mStart];
-         System.arraycopy(plaintext, mStart, recoveredMessage, 0,
-               recoveredMessage.length);
-         return recoveredMessage;
-      }
+	   /* TODO: if we contain the whole message as well, check the hash of that. */
+	   if ((plaintext[0] & 0x20) == 0) {
+		   throw new NumberFormatException("Could not get M1");
+	   } else {
+		   byte[] recoveredMessage = new byte[messageLength];
+		   System.arraycopy(plaintext, messageOffset, recoveredMessage, 0, messageLength);
+		   return recoveredMessage;
+	   }
    }
    
    public static String printDERObject(byte[] derBytes) throws IOException {

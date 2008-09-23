@@ -42,6 +42,7 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.FileSystemStructured;
 import sos.tlv.BERTLVInputStream;
+import sos.util.Hex;
 
 /**
  * Card service for reading datagroups and using the BAC and AA protocols
@@ -246,20 +247,40 @@ public class PassportService extends PassportApduService
 	 * @throws GeneralSecurityException if something goes wrong
 	 */
 	public boolean doAA(PublicKey publicKey) throws CardServiceException {
+		byte[] m2 = new byte[8];
+		random.nextBytes(m2);
+		return doAA(publicKey, m2);
+	}
+	
+	/**
+	 * Performs the <i>Active Authentication</i> protocol.
+	 * 
+	 * @param publicKey the public key to use (usually read from the card)
+	 * @param m2 the random challenge of exactly 8 bytes
+	 * 
+	 * @return a boolean indicating whether the card was authenticated
+	 * 
+	 * @throws GeneralSecurityException if something goes wrong
+	 */
+	public boolean doAA(PublicKey publicKey, byte[] m2) throws CardServiceException {
 		try {
 			if (publicKey == null) {
 				throw new CardServiceException("AA failed: bad key");
 			}
+			if (m2 == null || m2.length != 8) {
+				throw new CardServiceException("AA failed: bad random");
+			}
 			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
 			aaSignature.initVerify(publicKey);
-			byte[] m2 = new byte[8];
-			random.nextBytes(m2);
 			byte[] response = sendInternalAuthenticate(wrapper, m2);
 			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
 			byte[] plaintext = aaCipher.doFinal(response);
 			byte[] m1 = Util.recoverMessage(digestLength, plaintext);
 			aaSignature.update(m1);
 			aaSignature.update(m2);
+			System.out.println("DEBUG: m1 = " + Hex.bytesToHexString(m1));
+			System.out.println("DEBUG: m2 = " + Hex.bytesToHexString(m2));
+			System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
 			boolean success = aaSignature.verify(response);
 			AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
 			notifyAAPerformed(event);
