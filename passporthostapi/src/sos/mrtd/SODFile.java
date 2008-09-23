@@ -163,8 +163,6 @@ public class SODFile extends PassportFile
 					byte[] dataGroupHash = dgh.getDataGroupHashValue().getOctets();
 					System.out.println("DEBUG:      dg " + dataGroupNumber + " -> " + Hex.bytesToHexString(dataGroupHash));
 				}
-				
-				
 
 				Certificate docSigningCertificate = getDocSigningCertificate();
 				System.out.println("DEBUG:   DSC");
@@ -346,6 +344,7 @@ public class SODFile extends PassportFile
 		} else {
 			/* Signed attributes present, return the attributes to be digested... */
 			/* This option is taken by ICAO passports. */
+			/* FIXME: we should probably check that the contents actually digest to this value! */
 			return signedAttributes.getDEREncoded();
 		}
 	}
