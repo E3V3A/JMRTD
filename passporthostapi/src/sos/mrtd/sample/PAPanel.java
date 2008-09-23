@@ -33,6 +33,7 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
+import java.util.Map;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -82,7 +83,7 @@ public class PAPanel extends JPanel implements AuthListener
 	private Certificate docSigningCert;
 	private Certificate countrySigningCert;
 
-	private Object[] storedHashes;
+	private Map<Integer, byte[]> storedHashes;
 
 	public PAPanel(PassportApduService service)
 	throws CardServiceException {
@@ -99,13 +100,11 @@ public class PAPanel extends JPanel implements AuthListener
 					SODFile sodFile =
 						new SODFile(passportService.readFile(PassportService.EF_SOD));
 					area.append("Read pubkey security object\n");
-					DataGroupHash[] hashes = sodFile.getDataGroupHashes();
-					storedHashes = new Object[hashes.length];
-					for (int i = 0; i < hashes.length; i++) {
-						storedHashes[i] = hashes[i].getDataGroupHashValue().getOctets();
+					storedHashes = sodFile.getDataGroupHashes();
+					for (int i: storedHashes.keySet()) {
 						area.append("   stored hash of ");
-						area.append("DG" + hashes[i].getDataGroupNumber() + ": ");
-						area.append(Hex.bytesToHexString((byte[])storedHashes[i]));
+						area.append("DG" + i + ": ");
+						area.append(Hex.bytesToHexString(storedHashes.get(i)));
 						area.append("\n");
 					}
 					area.append("\n");
@@ -123,25 +122,26 @@ public class PAPanel extends JPanel implements AuthListener
 						try {
 							String alg = "SHA256";
 							// TODO: this is a hack... find out how to properly parse the sig. alg from the security object
-							if (storedHashes != null && storedHashes.length > 0
-									&& ((byte[])storedHashes[0]).length == 20) {
+							if (storedHashes != null && storedHashes.size() > 0
+									&& (storedHashes.get(1)).length == 20) {
 								alg = "SHA1";
 							}
 							MessageDigest digest = MessageDigest.getInstance(alg);
 							COMFile comFile = new COMFile(passportService.readFile(PassportService.EF_COM));
 							int[] tags = comFile.getTagList();
 							for (int i = 0; i < tags.length; i++) {
-								BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(tags[i]));
+								int dgTag = tags[i];
+								int dgNumber = PassportFile.lookupDataGroupNumberByTag(dgTag);
+								BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(dgTag));
 								int tag = tlvIn.readTag();
 								tlvIn.readLength();
 								byte[] valueBytes = tlvIn.readValue();
 								byte[] file = (new BERTLVObject(tag, valueBytes)).getEncoded();
 								byte[] computedHash = digest.digest(file);
 								area.append("   computed hash of ");
-								area.append("DG" + PassportFile.lookupDataGroupNumberByTag(tags[i]) + ": ");
-								area.append(Hex.bytesToHexString(computedHash));
-								if (storedHashes != null && storedHashes.length > i
-										&& Arrays.equals((byte[])storedHashes[i], computedHash)) {
+								area.append("DG" + dgNumber + ": " + Hex.bytesToHexString(computedHash));
+								if (storedHashes != null && storedHashes.size() > i
+										&& Arrays.equals(storedHashes.get(dgNumber), computedHash)) {
 									area.append(" --> OK");
 								} else {
 									area.append(" --> FAIL");

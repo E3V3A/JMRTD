@@ -187,4 +187,27 @@ public abstract class PassportFile
             throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
       }
    }
+   
+   public static int lookupTagByDataGroupNumber(int tag) {
+	      switch (tag) {
+	         case 1: return EF_DG1_TAG;
+	         case 2: return EF_DG2_TAG;
+	         case 3: return EF_DG3_TAG;
+	         case 4: return EF_DG4_TAG;
+	         case 5: return EF_DG5_TAG;
+	         case 6: return EF_DG6_TAG;
+	         case 7: return EF_DG7_TAG;
+	         case 8: return EF_DG8_TAG;
+	         case 9: return EF_DG9_TAG;
+	         case 10: return EF_DG10_TAG;
+	         case 11: return EF_DG11_TAG;
+	         case 12: return EF_DG12_TAG;
+	         case 13: return EF_DG13_TAG;
+	         case 14: return EF_DG14_TAG;
+	         case 15: return EF_DG15_TAG;
+	         case 16: return EF_DG16_TAG;
+	         default:
+	            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+	      }
+	   }
 }

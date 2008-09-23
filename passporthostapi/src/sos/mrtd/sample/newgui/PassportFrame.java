@@ -434,16 +434,23 @@ public class PassportFrame extends JFrame
 
 			InputStream sodIn = getFile(PassportService.EF_SOD);
 			SODFile sodFile = new SODFile(sodIn);
-			DataGroupHash[] hashes = sodFile.getDataGroupHashes();
+			Map<Integer, byte[]> hashes = sodFile.getDataGroupHashes();
+
+			if (tags.length != hashes.size()) {
+				System.err.println("WARNING: \"Jeroen van Beek sanity check\" failed!");
+			}
+			
             String algorithm = sodFile.getDigestAlgorithmSpec();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
 			isDSVerified = true;
-			for (int i = 0; i < hashes.length; i++) {
+			for (int dgNumber: hashes.keySet()) {
+				int dgTag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
+				short dgFID = PassportFile.lookupFIDByTag(dgTag);
+				byte[] storedHash = hashes.get(dgNumber);
 
-				byte[] storedHash = hashes[i].getDataGroupHashValue().getOctets();
 				digest.reset();
 
-				InputStream dgIn = bufferedStreams.get(PassportFile.lookupFIDByTag(tags[i]));
+				InputStream dgIn = bufferedStreams.get(dgFID);
 				dgIn.reset();
 				byte[] buf = new byte[1024];
 				while (true) {

@@ -31,16 +31,23 @@ import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.cms.SignerIdentifier;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
@@ -51,6 +58,7 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_SOD file.
@@ -76,6 +84,25 @@ public class SODFile extends PassportFile
 
 	private SignedData signedData;
 
+	/**
+	 * Constructs a Security Object file.
+	 *
+	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param dataGroupHashes maps datagroupnumbers (1 to 16) to hashes of the data groups
+	 * @param signature ???
+	 * @param docSigningCertificate the document signing certificate
+	 */
+	public SODFile(String digestAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			Certificate docSigningCertificate) {
+		ASN1Set digestAlgorithmsSet = null;
+		ContentInfo contentInfo = null;
+		ASN1Set certificates =  null;
+		ASN1Set crls = null;
+		ASN1Set signerInfos = null;
+		signedData = new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
+	}
+	
 	public SODFile(SignedData signedData) {
 		this.signedData = signedData;
 	}
@@ -89,10 +116,65 @@ public class SODFile extends PassportFile
 				new ASN1InputStream(in);
 			DERSequence seq = (DERSequence)asn1in.readObject();
 			//To test DER spitting:
-				//System.out.println("Test\n"+Util.printDERObject(seq));
+			//System.out.println("Test\n" + Util.printDERObject(seq));
 			DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
 			DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
 			this.signedData = new SignedData(s2);
+
+			
+			
+				
+			// DEBUG code below -- MO
+
+			try {
+				System.out.println("DEBUG: SOD contents ");
+
+				DERInteger versionObject = signedData.getVersion(); // Should be 3
+				int version = versionObject.getValue().intValue();
+				System.out.println("DEBUG:    versionInt = " + version);
+
+				ASN1Set digestAlgorithmsObject = signedData.getDigestAlgorithms();
+				Enumeration<?> digestAlgorithmsEnum = digestAlgorithmsObject.getObjects();
+				List<String> digestAlgorithms = new ArrayList<String>();
+				while (digestAlgorithmsEnum.hasMoreElements()) {
+					DERSequence digestAlgorithmSequence = (DERSequence)digestAlgorithmsEnum.nextElement();
+					DERObjectIdentifier digestAlgorithmOID = (DERObjectIdentifier)digestAlgorithmSequence.getObjectAt(0);
+					String digestAlgorithm = getHashAlgSpec(digestAlgorithmOID);
+					digestAlgorithms.add(digestAlgorithm);
+				}
+				System.out.println("DEBUG:   digestAlgorithms = " + digestAlgorithms);
+
+				LDSSecurityObject sObject = getSecurityObject();
+				sObject.getDigestAlgorithmIdentifier();
+				DataGroupHash[] dghs = sObject.getDatagroupHash();
+				for (int i = 0; i < dghs.length; i++) {
+					DataGroupHash dgh = dghs[i];
+					int dataGroupNumber = dgh.getDataGroupNumber();
+					byte[] dataGroupHash = dgh.getDataGroupHashValue().getOctets();
+					System.out.println("DEBUG:      dg " + dataGroupNumber + " -> " + Hex.bytesToHexString(dataGroupHash));
+				}
+
+				Certificate dsc = getDocSigningCertificate();
+				System.out.println("DEBUG:   DSC");
+
+				SignerInfo signerInfo = getSignerInfo();
+				System.out.println("DEBUG:    signerInfo = " + signerInfo);
+				SignerIdentifier signerIdentifier = signerInfo.getSID();
+				System.out.println("DEBUG:        signerInfo.getSID().getId() = " + signerIdentifier.getId()); // In Dutch NIK v009/001: [[[[2.5.4.3, CSCA NL]], [[2.5.4.11, Ministry of the Interior and Kingdom Relations]], [[2.5.4.10, State of the Netherlands]], [[2.5.4.6, NL]]], 2]
+				signerInfo.getEncryptedDigest();
+				signerInfo.getUnauthenticatedAttributes();
+				System.out.println("DEBUG:        signerInfo.getVersion() = " + signerInfo.getVersion()); // In Dutch NIK v009/001: 1
+				System.out.println("DEBUG:        signerInfo.getDigestAlgorithm() = " + getHashAlgSpec(signerInfo.getDigestAlgorithm().getObjectId())); // In Dutch NIK v009/001: SHA256
+				System.out.println("DEBUG:        signerInfo.getDigestEncryptionAlgorithm = " + getHashAlgSpec(signerInfo.getDigestEncryptionAlgorithm().getObjectId()));  // In Dutch NIK v009/001: SHA1
+				System.out.println("DEBUG:        signerInfo.getDigestEncryptionAlgorithm params = " + signerInfo.getDigestEncryptionAlgorithm().getParameters()); // In Dutch NIK v009/001: null
+
+
+				ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
+
+			} catch (Exception exx) {
+				exx.printStackTrace();
+			}
+			
 		} catch (IOException e) {
 			throw new CardServiceException(e.toString());
 		}
@@ -180,9 +262,16 @@ public class SODFile extends PassportFile
 		return sod;
 	}
 
-	public DataGroupHash[] getDataGroupHashes() throws Exception {
-		return getSecurityObject().getDatagroupHash();
-
+	public Map<Integer, byte[]> getDataGroupHashes() throws Exception {
+		DataGroupHash[] hashObjects = getSecurityObject().getDatagroupHash();
+		Map<Integer, byte[]> hashMap = new HashMap<Integer, byte[]>(); /* HashMap... get it? :) */
+		for (int i = 0; i < hashObjects.length; i++) {
+			DataGroupHash hashObject = hashObjects[i];
+			int number = hashObject.getDataGroupNumber();
+			byte[] hashValue = hashObject.getDataGroupHashValue().getOctets();
+			hashMap.put(number, hashValue);
+		}
+		return hashMap;
 	}
 
 	public String getDigestAlgorithmSpec() throws Exception {
@@ -264,7 +353,7 @@ public class SODFile extends PassportFile
 	 * @return the contents of the security object over which the
 	 *         signature is to be computed
 	 */
-	public byte[] getSignedAttributes() {
+	private byte[] getSignedAttributes() {
 		SignerInfo signerInfo = getSignerInfo();
 		ASN1Set signedAttributes = signerInfo.getAuthenticatedAttributes();
 		return signedAttributes.getDEREncoded();
