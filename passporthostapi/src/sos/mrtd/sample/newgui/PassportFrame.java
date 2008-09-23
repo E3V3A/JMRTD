@@ -440,7 +440,7 @@ public class PassportFrame extends JFrame
 				System.err.println("WARNING: \"Jeroen van Beek sanity check\" failed!");
 			}
 			
-            String algorithm = sodFile.getDigestAlgorithmSpec();
+            String algorithm = sodFile.getDigestAlgorithm();
             MessageDigest digest = MessageDigest.getInstance(algorithm);
 			isDSVerified = true;
 			for (int dgNumber: hashes.keySet()) {
