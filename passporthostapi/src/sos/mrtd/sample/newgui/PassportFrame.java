@@ -253,9 +253,10 @@ public class PassportFrame extends JFrame
 			byte[] dg2Bytes = dg2File.getEncoded();
 
 			/* EF.SOD */
+			// FIXME: docSigningCert == null, generate something here...
 			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 			String digestAlgorithm = "SHA256";
-			String signatureAlgorithm = "RSAwithSHA256";
+			String signatureAlgorithm = "SHA256withRSA";
 			MessageDigest digest = MessageDigest.getInstance("SHA256");
 			hashes.put(1, digest.digest(dg1Bytes));
 			hashes.put(2, digest.digest(dg2Bytes));

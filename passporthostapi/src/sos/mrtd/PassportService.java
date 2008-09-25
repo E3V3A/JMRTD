@@ -278,9 +278,6 @@ public class PassportService extends PassportApduService
 			byte[] m1 = Util.recoverMessage(digestLength, plaintext);
 			aaSignature.update(m1);
 			aaSignature.update(m2);
-			System.out.println("DEBUG: m1 = " + Hex.bytesToHexString(m1));
-			System.out.println("DEBUG: m2 = " + Hex.bytesToHexString(m2));
-			System.out.println("DEBUG: response = " + Hex.bytesToHexString(response));
 			boolean success = aaSignature.verify(response);
 			AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
 			notifyAAPerformed(event);
