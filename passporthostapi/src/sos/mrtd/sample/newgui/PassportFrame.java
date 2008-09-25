@@ -237,7 +237,7 @@ public class PassportFrame extends JFrame
 		try {
 			/* EF.COM */
 			int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
-			COMFile comFile = new COMFile("00", "00", "00", "00", "00", tagList); // TODO: What are typical values?
+			COMFile comFile = new COMFile("01", "07", "04", "00", "00", tagList);
 			byte[] comBytes = comFile.getEncoded();
 
 			/* EF.DG1 */
@@ -257,7 +257,7 @@ public class PassportFrame extends JFrame
 			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 			String digestAlgorithm = "SHA256";
 			String signatureAlgorithm = "SHA256withRSA";
-			MessageDigest digest = MessageDigest.getInstance("SHA256");
+			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 			hashes.put(1, digest.digest(dg1Bytes));
 			hashes.put(2, digest.digest(dg2Bytes));
 			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Should be use a private key to generate a real signature?
