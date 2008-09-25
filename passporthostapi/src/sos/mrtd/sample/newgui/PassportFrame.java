@@ -40,9 +40,9 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
@@ -66,9 +66,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 import javax.swing.filechooser.FileFilter;
-
-import org.bouncycastle.asn1.cms.SignedData;
-import org.bouncycastle.asn1.icao.DataGroupHash;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -132,7 +129,7 @@ public class PassportFrame extends JFrame
 	private SODFile sod;
 	private COMFile com;
 
-	private Certificate docSigningCert, countrySigningCert;
+	private X509Certificate docSigningCert, countrySigningCert;
 
 	private VerificationIndicator verificationPanel;
 	private boolean isBACVerified;
@@ -237,37 +234,46 @@ public class PassportFrame extends JFrame
 	}
 
 	public void createEmptyPassport() {
+		try {
+			/* EF.COM */
+			int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
+			COMFile comFile = new COMFile("00", "00", "00", "00", "00", tagList); // TODO: What are typical values?
+			byte[] comBytes = comFile.getEncoded();
 
-		/* EF.COM */
-		int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
-		COMFile comFile = new COMFile("00", "00", "00", "00", "00", tagList); // TODO: What are typical values?
-		byte[] comBytes = comFile.getEncoded();
+			/* EF.DG1 */
+			Date today = Calendar.getInstance().getTime();
+			String primaryIdentifier = "";
+			String[] secondaryIdentifiers = { "" };
+			MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
+			DG1File dg1File = new DG1File(mrzInfo);
+			byte[] dg1Bytes = dg1File.getEncoded();
 
-		/* EF.DG1 */
-		Date today = Calendar.getInstance().getTime();
-		String primaryIdentifier = "";
-		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
-		DG1File dg1File = new DG1File(mrzInfo);
-		byte[] dg1Bytes = dg1File.getEncoded();
+			/* EF.DG2 */
+			DG2File dg2File = new DG2File(); 
+			byte[] dg2Bytes = dg2File.getEncoded();
 
-		/* EF.DG2 */
-		DG2File dg2File = new DG2File(); 
-		byte[] dg2Bytes = dg2File.getEncoded();
+			/* EF.SOD */
+			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
+			String digestAlgorithm = "SHA256";
+			String signatureAlgorithm = "RSAwithSHA256";
+			MessageDigest digest = MessageDigest.getInstance("SHA256");
+			hashes.put(1, digest.digest(dg1Bytes));
+			hashes.put(2, digest.digest(dg2Bytes));
+			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Should be use a private key to generate a real signature?
+			SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
+			byte[] sodBytes = sodFile.getEncoded();
 
-		/* EF.SOD */
-		SignedData signedData = null; // TODO: create hashes of DGs and put them in signeddata struct...
-		SODFile sodFile = new SODFile(signedData);
-		byte[] sodBytes = sodFile.getEncoded();
+			putFile(PassportService.EF_COM, comBytes);
+			putFile(PassportService.EF_DG1, dg1Bytes);
+			putFile(PassportService.EF_DG2, dg2Bytes);
+			putFile(PassportService.EF_SOD, sodBytes);
 
-		putFile(PassportService.EF_COM, comBytes);
-		putFile(PassportService.EF_DG1, dg1Bytes);
-		putFile(PassportService.EF_DG2, dg2Bytes);
-		putFile(PassportService.EF_SOD, sodBytes);
+			displayInputStreams();
 
-		displayInputStreams();
-
-		verifySecurity(null);
+			verifySecurity(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 
 	public void readFromZipFile(File file) throws IOException {
@@ -495,7 +501,7 @@ public class PassportFrame extends JFrame
 			if (cscaIn == null) {
 				throw new IllegalStateException("CSCA check failed");
 			}
-			countrySigningCert = certFactory.generateCertificate(cscaIn);
+			countrySigningCert = (X509Certificate)certFactory.generateCertificate(cscaIn);
 			docSigningCert.verify(countrySigningCert.getPublicKey());
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
 

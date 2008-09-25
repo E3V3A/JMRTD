@@ -222,7 +222,7 @@ public class Util
 		   // 0xBC = 1011 1100
 		   throw new NumberFormatException("Could not get M1");
 	   }
-
+	   
 	   /* find out how much padding we've got */
 	   int paddingLength = 0;
 	   for (; paddingLength < plaintext.length; paddingLength++) {
@@ -235,6 +235,10 @@ public class Util
 
 	   int paddedMessageLength = plaintext.length - delta - digestLength;
 	   int messageLength = paddedMessageLength - messageOffset;
+	   
+	   System.out.println("DEBUG: plaintext = " + Hex.bytesToHexString(plaintext));
+	   System.out.println("DEBUG: paddingLength = " + paddingLength);
+	   System.out.println("DEBUG: paddedMessageLength = " + paddedMessageLength);
 	   System.out.println("DEBUG: messageLength == " + messageLength); // Should be 64 bits.
 
 	   /* there must be at least one byte of message string */
