@@ -29,6 +29,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -47,9 +48,9 @@ import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -73,7 +74,6 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
 
 import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
 import sos.util.Hex;
 
 /**
@@ -118,7 +118,8 @@ public class SODFile extends PassportFile
 	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes,
 			byte[] signature,
-			X509Certificate docSigningCertificate) throws NoSuchAlgorithmException {
+			X509Certificate docSigningCertificate)
+	throws NoSuchAlgorithmException, CertificateException {
 		signedData = createSignedData(digestAlgorithm, digestEncryptionAlgorithm, dataGroupHashes, signature, docSigningCertificate);
 	}
 	
@@ -184,6 +185,16 @@ public class SODFile extends PassportFile
 				Certificate docSigningCertificate = getDocSigningCertificate();
 				System.out.println("DEBUG:   DSC" + createCertificates((X509Certificate)docSigningCertificate));
 
+				ASN1Set certs = createCertificates((X509Certificate)docSigningCertificate);
+				byte[] certSpec = null;
+				for (int i = 0; i < certs.size(); i++) {
+					X509CertificateStructure e =
+						new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
+					certSpec = new X509CertificateObject(e).getEncoded();
+				}
+				CertificateFactory factory = CertificateFactory.getInstance("X.509");
+				Certificate cert = factory.generateCertificate(new ByteArrayInputStream(certSpec));
+				System.out.println("DEBUG: cert = " + cert);
 				
 				// SignerInfo reading
 				
@@ -235,7 +246,6 @@ public class SODFile extends PassportFile
 		return null;
 	}
 
-
 	/**
 	 * Gets the stored data group hashes.
 	 *
@@ -251,6 +261,14 @@ public class SODFile extends PassportFile
 			hashMap.put(number, hashValue);
 		}
 		return hashMap;
+	}
+	
+	public byte[] getEContent() {
+		return getEContent(signedData);
+	}
+	
+	public byte[] getEncryptedDigest() {
+		return getEncryptedDigest(signedData);
 	}
 
 	/**
@@ -311,6 +329,8 @@ public class SODFile extends PassportFile
 		Certificate cert = factory.generateCertificate(new ByteArrayInputStream(certSpec));
 		return cert;
 	}
+	
+	/* ONLY PRIVATE METHODS BELOW */
 
 	private static SignerInfo getSignerInfo(SignedData signedData)  {
 		ASN1Set signerInfos = signedData.getSignerInfos();
@@ -419,9 +439,8 @@ public class SODFile extends PassportFile
 	 * @see #getDocSigningCertificate()
 	 * 
 	 * @return the signature
-	 * @throws IOException when something goes wrong
 	 */
-	public static byte[] getSignature(SignedData signedData) throws IOException {
+	private static byte[] getEncryptedDigest(SignedData signedData) {
 		SignerInfo signerInfo = getSignerInfo(signedData);
 		return signerInfo.getEncryptedDigest().getOctets();
 	}
@@ -438,15 +457,14 @@ public class SODFile extends PassportFile
 	 * @return status of the verification
 	 * 
 	 * @throws GeneralSecurityException if something goes wrong
-	 * @throws IOException if something goes wrong
 	 * 
 	 * @deprecated Leave this responsibility to client?
 	 */
 	public boolean checkDocSignature(Certificate docSigningCert)
-	throws GeneralSecurityException, IOException {
+	throws GeneralSecurityException {
 
 		byte[] eContent = getEContent(signedData);      
-		byte[] signature = getSignature(signedData);
+		byte[] signature = getEncryptedDigest(signedData);
 
 		String encAlg = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId().getId();
 
@@ -501,25 +519,25 @@ public class SODFile extends PassportFile
 			Map<Integer, byte[]> dataGroupHashes,
 			byte[] signature,
 			X509Certificate docSigningCertificate)
-	throws NoSuchAlgorithmException {
+	throws NoSuchAlgorithmException, CertificateException {
 		ASN1Set digestAlgorithmsSet = null; // ASN1Set.getInstance(...);
 		ContentInfo contentInfo = createContentInfo(digestAlgorithm, dataGroupHashes);
 		ASN1Set certificates =  createCertificates(docSigningCertificate);
-		ASN1Set crls = null; // should be?
+		ASN1Set crls = null; // can be empty?
 		SignerInfo signerInfo = createSignerInfo(digestAlgorithm, digestEncryptionAlgorithm, docSigningCertificate);
 		ASN1Set signerInfos = ASN1Set.getInstance(signerInfo);
 		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
 	}
 
-	private static ASN1Set createCertificates(X509Certificate cert)  {
+	private static ASN1Set createCertificates(X509Certificate cert) throws CertificateException {
+		/* Generate a singleton set with the docSigningCertificate. */
 		try {
-			byte[] tbsCertBytes = cert.getTBSCertificate();
-			ASN1Encodable obj = (new ASN1InputStream(tbsCertBytes)).readObject();
-			ASN1Encodable[] result = { obj };
+			byte[] certSpec = cert.getEncoded();
+			ASN1Sequence certSeq = (ASN1Sequence)(new ASN1InputStream(certSpec)).readObject();
+			ASN1Encodable[] result = { certSeq };
 			return new DERSet(result);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+		} catch (IOException ioe) {
+			throw new CertificateException("Could not construct certificate byte stream");
 		}
 	}
 
