@@ -148,6 +148,12 @@ public class DateEntryField extends Box
 	public String toString() {
 		return SDF.format(cal.getTime());
 	}
+	
+	public void setEnabled(boolean b) {
+		monthComboBox.setEnabled(b);
+		dayNumField.setEnabled(b);
+		yearNumField.setEnabled(b);
+	}
 
 	public void addActionListener(ActionListener l) {
 		listeners.add(l);

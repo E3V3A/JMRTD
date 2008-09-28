@@ -248,4 +248,8 @@ public class NumField extends Box
 		int height = (int)textField.getPreferredSize().getHeight();
 		return new Dimension(width, height);
 	}
+	
+	public void setEnabled(boolean b) {
+		textField.setEnabled(b);
+	}
 }

@@ -218,6 +218,10 @@ public class MRZEntryField extends Box
 		textField.setAction(a);
 	}
 
+	public void setEnabled(boolean b) {
+		textField.setEnabled(b);
+	}
+
 	/**
 	 * Gets the preferred size of this component.
 	 * 
