@@ -54,6 +54,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
+import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -114,7 +115,9 @@ public class PassportFrame extends JFrame
 	private static final Icon LOAD_KEY_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon LOAD_KEY_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-
+	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;
@@ -123,7 +126,7 @@ public class PassportFrame extends JFrame
 	private Map<Short, InputStream> bufferedStreams;
 	private int totalLength;
 
-	private DG1File dg1File;
+	private DG1File dg1;
 	private DG2File dg2;
 	private DG15File dg15;
 	private SODFile sod;
@@ -324,9 +327,9 @@ public class PassportFrame extends JFrame
 		try {
 			InputStream in = null;
 			in = getFile(PassportService.EF_DG1);
-			dg1File = new DG1File(in);
-			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1File);
-			final MRZPanel mrzPanel = new MRZPanel(dg1File);
+			dg1 = new DG1File(in);
+			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1);
+			final MRZPanel mrzPanel = new MRZPanel(dg1);
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
@@ -335,8 +338,8 @@ public class PassportFrame extends JFrame
 				public void actionPerformed(ActionEvent e) {
 					MRZInfo info = holderInfoPanel.getMRZ();
 					mrzPanel.setMRZ(info);
-					dg1File = new DG1File(info);
-					putFile(PassportService.EF_DG1, dg1File.getEncoded());
+					dg1 = new DG1File(info);
+					putFile(PassportService.EF_DG1, dg1.getEncoded());
 					isBACVerified = false;
 					isAAVerified = false;
 					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -357,6 +360,7 @@ public class PassportFrame extends JFrame
 					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
 				case PassportService.EF_DG15:
+					dg15 = new DG15File(in);
 					break;
 				case PassportService.EF_COM:
 					break;
@@ -420,7 +424,7 @@ public class PassportFrame extends JFrame
 		try {
 			InputStream dg15In = getFile(PassportService.EF_DG15);
 			if (dg15In != null && service != null) {
-				DG15File dg15 = new DG15File(dg15In);
+				dg15 = new DG15File(dg15In);
 				PublicKey pubKey = dg15.getPublicKey();
 				isAAVerified = service.doAA(pubKey);
 			}
@@ -592,6 +596,12 @@ public class PassportFrame extends JFrame
 		JMenuItem loadAAKeyFromFile = new JMenuItem();
 		menu.add(loadAAKeyFromFile);
 		loadAAKeyFromFile.setAction(new LoadAAKeyAction());
+
+		menu.addSeparator();
+		
+		JMenuItem upload = new JMenuItem();
+		menu.add(upload);
+		upload.setAction(new UploadAction());
 
 		return menu;
 	}
@@ -863,13 +873,49 @@ public class PassportFrame extends JFrame
 		public void actionPerformed(ActionEvent e) {
 			try {
 				InputStream in = getFile(PassportService.EF_DG15);
-				DG15File file = new DG15File(in);
-				PublicKey pubKey = file.getPublicKey();
+				dg15 = new DG15File(in);
+				PublicKey pubKey = dg15.getPublicKey();
 				KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
 				keyFrame.pack();
 				keyFrame.setVisible(true);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
+			}
+		}
+	}
+	
+	private class UploadAction extends AbstractAction
+	{
+		public UploadAction() {
+			putValue(SMALL_ICON, UPLOAD_SMALL_ICON);
+			putValue(LARGE_ICON_KEY, UPLOAD_LARGE_ICON);
+			putValue(SHORT_DESCRIPTION, "Upload this passport to a passport applet");
+			putValue(NAME, "Upload passport...");
+		}
+
+		public void actionPerformed(ActionEvent e) {
+			BACEntry bacEntry = null;
+			if (dg1 != null) {
+				MRZInfo mrzInfo = dg1.getMRZInfo();
+				bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
+			}
+			PublicKey aaPublicKey = null;
+			if (dg15 != null) {
+				aaPublicKey = dg15.getPublicKey();
+			}
+			UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
+			int choice = chooser.showOptionsDialog(getContentPane());
+			switch (choice) {
+			case UploadOptionsChooser.APPROVE_OPTION:
+				try {
+					CardTerminal terminal = chooser.getSelectedTerminal();
+					throw new IOException("TODO: do something with " + terminal);
+				} catch (IOException ioe) {
+					/* NOTE: Do nothing. */
+				}
+				break;
+			default:
+				break;
 			}
 		}
 	}

@@ -68,7 +68,7 @@ public class BACStorePanel extends JPanel
 		addAction = new AddAction();
 		
 		table = new BACStoreTable();
-		entryField = new BACEntryField();
+		entryField = new BACEntryField(true);
 		entryField.setAction(addAction);
 		add(new JScrollPane(table), BorderLayout.CENTER);
 		add(entryField, BorderLayout.SOUTH);

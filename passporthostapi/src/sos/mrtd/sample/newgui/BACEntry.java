@@ -1,11 +1,20 @@
 package sos.mrtd.sample.newgui;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public class BACEntry
 {
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("ddMMyy");
+
 	private String documentNumber;
 	private String dateOfBirth;
 	private String dateOfExpiry;
 
+	public BACEntry(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+		this(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
+	}
+	
 	public BACEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth.trim();
