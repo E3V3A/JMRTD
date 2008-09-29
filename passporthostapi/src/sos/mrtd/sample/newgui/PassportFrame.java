@@ -909,6 +909,12 @@ public class PassportFrame extends JFrame
 			case UploadOptionsChooser.APPROVE_OPTION:
 				try {
 					CardTerminal terminal = chooser.getSelectedTerminal();
+					if (chooser.isBACSelected()) {
+						
+					}
+					if (chooser.isAASelected()) {
+						
+					}
 					throw new IOException("TODO: do something with " + terminal);
 				} catch (IOException ioe) {
 					/* NOTE: Do nothing. */
