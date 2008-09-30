@@ -191,6 +191,20 @@ public class COMFile extends PassportFile
          return null;
       }
    }
+   
+   public String toString() {
+	   StringBuffer result = new StringBuffer();
+	   result.append("COMFile ");
+	   result.append("V" + versionLDS + "." + updateLevelLDS);
+	   result.append(" ");
+	   result.append(majorVersionUnicode + "." + minorVersionUnicode + "." + releaseLevelUnicode);
+	   result.append(", ");
+	   for (int tag: tagList) {
+		   result.append("DG" + PassportFile.lookupDataGroupNumberByTag(tag));
+		   result.append(" ");
+	   }
+	   return result.toString();
+   }
 
    /*
    // JUST TESTING!

@@ -188,6 +188,10 @@ public class DG2File extends DataGroup
 			return null;
 		}
 	}
+	
+	public String toString() {
+		return "DG2File with " + faces.size() + " portrait(s)";
+	}
 
 	public List<FaceInfo> getFaces() {
 		return faces;

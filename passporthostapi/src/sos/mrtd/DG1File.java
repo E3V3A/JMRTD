@@ -74,6 +74,10 @@ public class DG1File extends DataGroup
 	public MRZInfo getMRZInfo() {
 		return mrz;
 	}
+	
+	public String toString() {
+		return "DG1File for " + mrz.getDocumentNumber();
+	}
 
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {

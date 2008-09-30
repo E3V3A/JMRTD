@@ -188,9 +188,10 @@ public class PassportFrame extends JFrame
 			putFile(PassportService.EF_COM, service);
 			putFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
-			COMFile comFile = new COMFile(comIn);
-			int[] tags = comFile.getTagList();
+			COMFile com = new COMFile(comIn);
+			int[] tags = com.getTagList();
 			for (int i = 0; i < tags.length; i++) {
+				System.out.println("DEBUG: reading DG" + PassportFile.lookupDataGroupNumberByTag(tags[i]));
 				putFile(PassportFile.lookupFIDByTag(tags[i]), service);
 			}
 		} catch (CardServiceException cse) {

@@ -95,7 +95,7 @@ public class SODFile extends PassportFile
 	private static final DERObjectIdentifier PKCS1_SHA384_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.12");
 	private static final DERObjectIdentifier PKCS1_SHA512_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.13");
 	private static final DERObjectIdentifier PKCS1_SHA224_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.14");
-	
+
 	private SignedData signedData;
 
 	/**
@@ -116,10 +116,10 @@ public class SODFile extends PassportFile
 			X509Certificate docSigningCertificate)
 	throws NoSuchAlgorithmException, CertificateException {
 		signedData = createSignedData(digestAlgorithm,
-									  digestEncryptionAlgorithm,
-									  dataGroupHashes,
-									  encryptedDigest,
-									  docSigningCertificate);
+				digestEncryptionAlgorithm,
+				dataGroupHashes,
+				encryptedDigest,
+				docSigningCertificate);
 	}
 
 	/**
@@ -160,12 +160,21 @@ public class SODFile extends PassportFile
 		if (isSourceConsistent) {
 			return sourceObject.getEncoded();
 		}
-		
+
 		/* TODO: where is that DERTaggedObject specified? */
 		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
 		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
 		BERTLVObject sodFile = new BERTLVObject(EF_SOD_TAG, fileContentsObject.getDEREncoded());
 		return sodFile.getEncoded();
+	}
+
+	public String toString() {
+		try {
+			X509Certificate cert = getDocSigningCertificate();
+			return "SODFile " + cert.getIssuerX500Principal();
+		} catch (Exception e) {
+			return "SODFile";
+		}
 	}
 
 	/**
@@ -184,7 +193,7 @@ public class SODFile extends PassportFile
 		}
 		return hashMap;
 	}
-	
+
 	/**
 	 * Gets the signature (the encrypted digest) over the hashes.
 	 *
@@ -207,7 +216,7 @@ public class SODFile extends PassportFile
 			throw new IllegalStateException(nsae.toString());
 		}
 	}
-	
+
 	/**
 	 * Gets the name of the algorithm used in the signature.
 	 * 
@@ -253,7 +262,7 @@ public class SODFile extends PassportFile
 		X509Certificate cert = (X509Certificate)factory.generateCertificate(new ByteArrayInputStream(certSpec));
 		return cert;
 	}
-	
+
 	/**
 	 * Verifies the signature over the contents of the security object.
 	 * Clients can also use the accessors of this class and check the
@@ -319,7 +328,7 @@ public class SODFile extends PassportFile
         String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
 		 */
 	}
-	
+
 	/* ONLY PRIVATE METHODS BELOW */
 
 	private static SignerInfo getSignerInfo(SignedData signedData)  {
@@ -361,7 +370,7 @@ public class SODFile extends PassportFile
 			throw new IllegalStateException("Could not read security object in signedData");
 		}
 	}
-	
+
 	/**
 	 * Gets the contents of the security object over which the
 	 * signature is to be computed. 
@@ -401,11 +410,11 @@ public class SODFile extends PassportFile
 					Attribute attribute = new Attribute((DERSequence)attributes.nextElement());
 					DERObjectIdentifier attrType = attribute.getAttrType();
 					if (attrType.equals(RFC_3369_MESSAGE_DIGEST_OID)) {
-					   ASN1Set attrValuesSet = attribute.getAttrValues();
-					   if (attrValuesSet.size() != 1) {
-						   System.err.println("WARNING: expected only one attribute value in signedAttribute message digest in eContent!");
-					   }
-					   storedDigestedContent = ((DEROctetString)attrValuesSet.getObjectAt(0)).getOctets();
+						ASN1Set attrValuesSet = attribute.getAttrValues();
+						if (attrValuesSet.size() != 1) {
+							System.err.println("WARNING: expected only one attribute value in signedAttribute message digest in eContent!");
+						}
+						storedDigestedContent = ((DEROctetString)attrValuesSet.getObjectAt(0)).getOctets();
 					}
 				}
 				if (storedDigestedContent == null) {
@@ -436,7 +445,7 @@ public class SODFile extends PassportFile
 	}
 
 	/* METHODS BELOW ARE FOR CONSTRUCTING SOD STRUCTS */
-	
+
 	private static SignedData createSignedData(
 			String digestAlgorithm,
 			String digestEncryptionAlgorithm,
@@ -452,7 +461,7 @@ public class SODFile extends PassportFile
 		ASN1Set signerInfos = createSingletonSet(createSignerInfo(digestAlgorithm, digestEncryptionAlgorithm, content, encryptedDigest, docSigningCertificate).toASN1Object());
 		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
 	}
-	
+
 	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
 		DERObjectIdentifier algorithmIdentifier = lookupOIDByMnemonic(digestAlgorithm);
 		ASN1Encodable[] result = { algorithmIdentifier };
@@ -484,7 +493,7 @@ public class SODFile extends PassportFile
 		LDSSecurityObject sObject2 = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray);
 		return new ContentInfo(ICAO_SOD_OID, new DEROctetString(sObject2));
 	}
-	
+
 	private static SignerInfo createSignerInfo(
 			String digestAlgorithm,
 			String digestEncryptionAlgorithm,
@@ -497,10 +506,10 @@ public class SODFile extends PassportFile
 		X509Name docSignerName = new X509Name(docSignerPrincipal.getName()); // RFC 2253 format
 		BigInteger serial = ((X509Certificate)docSigningCertificate).getSerialNumber();
 		SignerIdentifier sid = new SignerIdentifier(new IssuerAndSerialNumber(docSignerName, serial));
-		
+
 		AlgorithmIdentifier digestAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm)); 
 		AlgorithmIdentifier digestEncryptionAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestEncryptionAlgorithm));
-		
+
 		ASN1Set authenticatedAttributes = createAuthenticatedAttributes(digestAlgorithm, content); // struct containing the hash of content
 		ASN1OctetString encryptedDigestObject = new DEROctetString(encryptedDigest); // this is the signature
 		ASN1Set unAuthenticatedAttributes = null; // should be empty set?
@@ -553,7 +562,7 @@ public class SODFile extends PassportFile
 		if (oid.equals(PKCS1_SHA224_WITH_RSA_OID)) { return "SHA224withRSA"; }
 		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
-	
+
 	private static DERObjectIdentifier lookupOIDByMnemonic(String name) throws NoSuchAlgorithmException {
 		if (name.equals("O")) { return X509ObjectIdentifiers.organization; }
 		if (name.equals("OU")) { return X509ObjectIdentifiers.organizationalUnitName; }

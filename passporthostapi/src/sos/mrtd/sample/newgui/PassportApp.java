@@ -38,10 +38,10 @@ import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -65,15 +65,18 @@ import javax.swing.filechooser.FileFilter;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.COMFile;
 import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
+import sos.smartcards.APDUListener;
+import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
+import sos.util.Hex;
 import sos.util.Icons;
 
 /**
@@ -110,8 +113,6 @@ public class PassportApp  implements PassportListener, AuthListener
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-	private Map<CardService, JFrame> serviceToFrameMap;
-
 	private Container contentPane;
 	private boolean authenticated;
 	private BACStore bacStore;
@@ -127,7 +128,6 @@ public class PassportApp  implements PassportListener, AuthListener
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			this.bacStore =  new BACStore();
-			serviceToFrameMap = new HashMap<CardService, JFrame>();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
@@ -175,23 +175,33 @@ public class PassportApp  implements PassportListener, AuthListener
 	public void passportInserted(PassportEvent ce) {
 		try {
 			PassportService service = ce.getService();
-			readPassport(service);
+			authenticatePassport(service);
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
 	}
 
-	private void readPassport(PassportService service) throws CardServiceException {
-//		service.addAPDUListener(new APDUListener() {
-//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-//				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
-//				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
-//			}
-//		});
+	private void authenticatePassport(PassportService service) throws CardServiceException {
+		service.addAPDUListener(new APDUListener() {
+			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
+				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
+			}
+		});
 		service.open();
 		service.addAuthenticationListener(this);
 		BACEntry previousEntry = null;
 		authenticated = false;
+		try {
+			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
+			COMFile com = new COMFile(comIn);
+			authenticated = true;
+			sessionStarted(service);
+			System.out.println("DEBUG: We could read plain EF.COM, no need to try BAC");
+			System.out.println("DEBUG: " + com);
+		} catch (CardServiceException cse) {
+			System.out.println("DEBUG: Could not read plain EF.COM, trying BAC");
+		}
 		while (!authenticated) {
 			for (BACEntry entry: bacStore.getEntries()) {
 				try {
@@ -200,12 +210,10 @@ public class PassportApp  implements PassportListener, AuthListener
 						Date dateOfBirth = entry.getDateOfBirth();
 						Date dateOfExpiry = entry.getDateOfExpiry();
 						service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+						/* NOTE: if authentication was ok, performedBAC will be called back. */
 					}
 				} catch (CardServiceException cse) {
-					/* NOTE: BAC failed? Perhaps this passport doesn't support BAC. */
-					// cse.printStackTrace();
-					// if (!authenticated) { sessionStarted(service); }
-					/* TODO: test this... */
+					/* NOTE: BAC failed? Try next BACEntry */
 				}
 				previousEntry = entry;
 			}
@@ -232,16 +240,12 @@ public class PassportApp  implements PassportListener, AuthListener
 	private void sessionStarted(PassportService service) throws CardServiceException {
 		PassportFrame passportFrame = new PassportFrame();
 		passportFrame.readFromService(service, authenticated);
-		serviceToFrameMap.put(service, passportFrame);
 	}
 
 	private void sessionStopped(PassportService service) {
-		// JFrame frame = serviceToFrameMap.get(service);
 		if (service != null) {
 			service.close();
 		}
-		// frame.dispose();
-		serviceToFrameMap.remove(service);
 		authenticated = false;
 	}
 
@@ -385,7 +389,7 @@ public class PassportApp  implements PassportListener, AuthListener
 					public void run() {
 						try {
 							PassportService service = new PassportService(new TerminalCardService(terminal));
-							readPassport(service);
+							authenticatePassport(service);
 						} catch (CardServiceException cse) {
 							cse.printStackTrace();
 						}
