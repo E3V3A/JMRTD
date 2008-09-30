@@ -182,12 +182,12 @@ public class PassportApp  implements PassportListener, AuthListener
 	}
 
 	private void authenticatePassport(PassportService service) throws CardServiceException {
-		service.addAPDUListener(new APDUListener() {
-			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
-				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
-			}
-		});
+//		service.addAPDUListener(new APDUListener() {
+//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+//				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
+//				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
+//			}
+//		});
 		service.open();
 		service.addAuthenticationListener(this);
 		BACEntry previousEntry = null;
