@@ -69,6 +69,7 @@ public class CardManager
 	 */
 	public void start() {
 		/* For each terminal start a polling thread. */
+		if (isPolling) { return; }
 		isPolling = true;
 		for (CardTerminal terminal: terminals) {
 			(new Thread(new TerminalPoller(terminal))).start();
