@@ -50,20 +50,38 @@ public class CardManager
 
 	private Collection<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
+	private boolean isPolling;
 
 	private CardManager() {	   
 		try {
 			listeners = new ArrayList<CardTerminalListener>();
 			terminals = new HashSet<CardTerminal>();
 			addTerminals();
+			start();
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
 			ex.printStackTrace();
 		}
+	}
 
+	/**
+	 * Starts polling.
+	 */
+	public void start() {
 		/* For each terminal start a polling thread. */
+		isPolling = true;
 		for (CardTerminal terminal: terminals) {
 			(new Thread(new TerminalPoller(terminal))).start();
+		}
+	}
+
+	/**
+	 * Stops polling.
+	 */
+	public void stop() {
+		synchronized(INSTANCE) {
+			isPolling = false;
+			notifyAll();
 		}
 	}
 
@@ -106,13 +124,17 @@ public class CardManager
 		}
 	}
 
-	public synchronized void addCardTerminalListener(CardTerminalListener l) {
-		listeners.add(l);
-		notifyAll();
+	public void addCardTerminalListener(CardTerminalListener l) {
+		synchronized(INSTANCE) {
+			listeners.add(l);
+			notifyAll();
+		}
 	}
 
-	public synchronized void removeCardTerminalListener(CardTerminalListener l) {
-		listeners.remove(l);
+	public void removeCardTerminalListener(CardTerminalListener l) {
+		synchronized(INSTANCE) {
+			listeners.remove(l);
+		}
 	}
 
 	private synchronized void notifyCardInserted(CardService service) {
@@ -151,7 +173,7 @@ public class CardManager
 
 		public void run() {
 			try {
-				while (true) {
+				while (isPolling) {
 					if (hasNoListeners()) {
 						synchronized(INSTANCE) {
 							while (hasNoListeners()) {
@@ -190,6 +212,7 @@ public class CardManager
 						// NOTE: remain in same state?!?
 						ce.printStackTrace();
 					} finally {
+						if (!isPolling && service != null) { service.close(); }
 						Thread.sleep(POLL_INTERVAL);
 					}
 				}
