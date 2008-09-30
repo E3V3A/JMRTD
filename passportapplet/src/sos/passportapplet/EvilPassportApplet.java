@@ -4,9 +4,6 @@
 package sos.passportapplet;
 
 import javacard.framework.APDU;
-import sos.passportapplet.EvilInterface;
-import sos.passportapplet.PassportApplet;
-import sos.passportapplet.PassportCrypto;
 
 /**
  * @author ronny

@@ -23,7 +23,6 @@
 package sos.passportapplet;
 
 import javacard.framework.ISO7816;
-import javacard.framework.ISOException;
 
 /**
  * Generic helpers for the Passport.
