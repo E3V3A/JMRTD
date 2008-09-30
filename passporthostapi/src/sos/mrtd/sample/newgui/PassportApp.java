@@ -36,8 +36,10 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
@@ -127,6 +129,8 @@ public class PassportApp  implements PassportListener, AuthListener
 			Security.insertProviderAt(PROVIDER, 4);
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
+			CardManager cm = CardManager.getInstance();
+			cm.stop();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
@@ -183,14 +187,13 @@ public class PassportApp  implements PassportListener, AuthListener
 
 	private void authenticatePassport(PassportService service) throws CardServiceException {
 //		service.addAPDUListener(new APDUListener() {
-//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-//				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
-//				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
-//			}
+//		public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+//		System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
+//		System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
+//		}
 //		});
 		service.open();
 		service.addAuthenticationListener(this);
-		BACEntry previousEntry = null;
 		authenticated = false;
 		try {
 			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
@@ -200,23 +203,29 @@ public class PassportApp  implements PassportListener, AuthListener
 			System.out.println("DEBUG: We could read plain EF.COM, no need to try BAC");
 			System.out.println("DEBUG: " + com);
 		} catch (CardServiceException cse) {
-			System.out.println("DEBUG: Could not read plain EF.COM, trying BAC");
+			System.out.println("DEBUG: Could not read plain EF.COM, going into BAC loop");
 		}
-		while (!authenticated) {
-			for (BACEntry entry: bacStore.getEntries()) {
-				try {
-					if (!entry.equals(previousEntry)) {
-						String documentNumber = entry.getDocumentNumber();
-						Date dateOfBirth = entry.getDateOfBirth();
-						Date dateOfExpiry = entry.getDateOfExpiry();
-						service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
-						/* NOTE: if authentication was ok, performedBAC will be called back. */
+		int tries = 10;
+		List<BACEntry> triedBACEntries = new ArrayList<BACEntry>();
+		try {
+			while (!authenticated && tries-- > 0) {
+				for (BACEntry entry: bacStore.getEntries()) {
+					try {
+						if (!triedBACEntries.contains(entry)) {
+							String documentNumber = entry.getDocumentNumber();
+							Date dateOfBirth = entry.getDateOfBirth();
+							Date dateOfExpiry = entry.getDateOfExpiry();
+							service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+							/* NOTE: if authentication was ok, performedBAC will be called back. */
+						}
+						Thread.sleep(500);
+					} catch (CardServiceException cse) {
+						/* NOTE: BAC failed? Try next BACEntry */
 					}
-				} catch (CardServiceException cse) {
-					/* NOTE: BAC failed? Try next BACEntry */
 				}
-				previousEntry = entry;
 			}
+		} catch (InterruptedException ie) {
+			/* NOTE: Interrupted? leave loop. */
 		}
 	}
 
@@ -277,7 +286,7 @@ public class PassportApp  implements PassportListener, AuthListener
 		CardManager cm = CardManager.getInstance();
 
 		JCheckBoxMenuItem useCardManagerItem = new JCheckBoxMenuItem(getUseCardManagerItem());
-		useCardManagerItem.setSelected(true);
+		useCardManagerItem.setSelected(false);
 		terminalMenu.add(useCardManagerItem);
 
 		terminalMenu.addSeparator();

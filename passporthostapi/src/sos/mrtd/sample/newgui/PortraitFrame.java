@@ -31,6 +31,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -46,6 +47,7 @@ import javax.swing.filechooser.FileFilter;
 
 import sos.gui.ImagePanel;
 import sos.mrtd.FaceInfo;
+import sos.util.Files;
 import sos.util.Icons;
 import sos.util.Images;
 
@@ -77,7 +79,7 @@ public class PortraitFrame extends JFrame
 	public PortraitFrame(FaceInfo info) {
 		this("Portrait", info);
 	}
-	
+
 	public PortraitFrame(String title, FaceInfo info) {
 		super(title);
 		this.info = info;
@@ -102,12 +104,12 @@ public class PortraitFrame extends JFrame
 		/* Save As...*/
 		JMenuItem saveAsItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(new SaveAsPNGAction());
+		saveAsItem.setAction(getSaveAsAction());
 
 		/* Close */
 		JMenuItem closeItem = new JMenuItem("Close");
 		fileMenu.add(closeItem);
-		closeItem.setAction(new CloseAction());
+		closeItem.setAction(getCloseAction());
 
 		return fileMenu;
 	}
@@ -118,102 +120,104 @@ public class PortraitFrame extends JFrame
 		/* Image Info */
 		JMenuItem viewImageInfo = new JMenuItem();
 		viewMenu.add(viewImageInfo);
-		viewImageInfo.setAction(new ViewImageInfoAction());
+		viewImageInfo.setAction(getViewImageInfoAction());
 
 		/* Feature Points */
 		JCheckBoxMenuItem viewFeaturePoints = new JCheckBoxMenuItem();
 		viewMenu.add(viewFeaturePoints);
-		viewFeaturePoints.setAction(new ViewFeaturePointsAction());
+		viewFeaturePoints.setAction(getViewFeaturePointsAction());
 
 		return viewMenu;
 	}
 
-	private class SaveAsPNGAction extends AbstractAction
-	{
-		public SaveAsPNGAction() {
-			putValue(SMALL_ICON, SAVE_AS_PNG_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, SAVE_AS_PNG_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Save image in PNG format");
-			putValue(NAME, "Save As PNG...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("png") || f.getName().endsWith("PNG"); }
-				public String getDescription() { return "PNG files"; }				
-			});
-			int choice = fileChooser.showSaveDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);
-				} catch (IOException fnfe) {
-					fnfe.printStackTrace();
-				}
-				break;
-			default: break;
-			}
-		}
-	}
-
-	private class ViewImageInfoAction extends AbstractAction
-	{
-		public ViewImageInfoAction() {
-			putValue(SMALL_ICON, IMAGE_INFO_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, IMAGE_INFO_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View Image Information");
-			putValue(NAME, "Image Info...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JTextArea area = new JTextArea();
-			area.append(info.toString());
-			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "Image information", JOptionPane.PLAIN_MESSAGE, null);
-		}
-	}
-
-	private class ViewFeaturePointsAction extends AbstractAction
-	{
-		public ViewFeaturePointsAction() {
-			putValue(SMALL_ICON, FEATURE_POINTS_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, FEATURE_POINTS_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View Feature Points");
-			putValue(NAME, "Feature Points");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			Object src = e.getSource();
-			if (src instanceof AbstractButton) {
-				AbstractButton button = (AbstractButton)src;
-				FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
-				if (button.isSelected()) {
-					for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
-						String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
-						imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
+	private Action getSaveAsAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
+				int choice = fileChooser.showSaveDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						String fileName = file.getName().toLowerCase();
+						if (fileName.endsWith(".png")) {
+							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);
+						} else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ) {
+							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "jpg", file);
+						} else if (fileName.endsWith(".bmp")) {
+							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "bmp", file);
+						} else if (fileName.endsWith(".gif")) {
+							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "gif", file);
+						}
+					} catch (IOException fnfe) {
+						fnfe.printStackTrace();
 					}
-				} else {
-					for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
-						String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
-						imagePanel.deHighlightPoint(key);
-					}
+					break;
+				default: break;
 				}
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, SAVE_AS_PNG_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_PNG_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Save image as bitmap");
+		action.putValue(Action.NAME, "Save As...");
+		return action;
 	}
 
-	private class CloseAction extends AbstractAction
-	{
-		public CloseAction() {
-			putValue(SMALL_ICON, CLOSE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, CLOSE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Close Window");
-			putValue(NAME, "Close");
-		}
+	private Action getViewImageInfoAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JTextArea area = new JTextArea();
+				area.append(info.toString());
+				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "Image information", JOptionPane.PLAIN_MESSAGE, null);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, IMAGE_INFO_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, IMAGE_INFO_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Image Information");
+		action.putValue(Action.NAME, "Image Info...");
+		return action;
+	}
 
-		public void actionPerformed(ActionEvent e) {
-			dispose();
-		}
+	private Action getViewFeaturePointsAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				Object src = e.getSource();
+				if (src instanceof AbstractButton) {
+					AbstractButton button = (AbstractButton)src;
+					FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+					if (button.isSelected()) {
+						for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+							String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+							imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
+						}
+					} else {
+						for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+							String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+							imagePanel.deHighlightPoint(key);
+						}
+					}
+				}
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, FEATURE_POINTS_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, FEATURE_POINTS_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Feature Points");
+		action.putValue(Action.NAME, "Feature Points");
+		return action;
+	}
+
+	private Action getCloseAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
+		action.putValue(Action.NAME, "Close");
+		return action;
 	}
 }

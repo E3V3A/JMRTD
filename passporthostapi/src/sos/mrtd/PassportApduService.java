@@ -312,11 +312,6 @@ public class PassportApduService extends CardService
       }
    }
 
-   synchronized void sendSelectFile(SecureMessagingWrapper wrapper, byte[] fid)
-   throws CardServiceException {
-      sendSelectFile(wrapper, (short)(((fid[0] & 0xFF) << 8) | (fid[1] & 0xFF)));
-   }
-
    /**
     * Sends a <code>READ BINARY</code> command to the passport.
     *

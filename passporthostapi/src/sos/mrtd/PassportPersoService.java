@@ -311,7 +311,6 @@ public class PassportPersoService extends CardService {
 		}
 	}
 
-
 	/**
 	 * Locks the passport applet so that no data may be written to it.
 	 * 
@@ -322,11 +321,6 @@ public class PassportPersoService extends CardService {
 		putData((byte) 0xde, (byte) 0xad, null);
 	}
 
-	private void selectFile(byte[] fid)
-	throws CardServiceException {
-		service.sendSelectFile(service.getWrapper(), fid);
-	}
-
 	/**
 	 * Selects a file on the applet.
 	 * 
@@ -335,8 +329,7 @@ public class PassportPersoService extends CardService {
 	 */
 	public void selectFile(short fid)
 	throws CardServiceException {
-		byte[] fiddle = { (byte) ((fid >>> 8) & 0xff), (byte) (fid & 0xff) };
-		selectFile(fiddle);
+		service.sendSelectFile(service.getWrapper(), fid);
 	}
 
 	private short getFidFromFilename(String fileName) {

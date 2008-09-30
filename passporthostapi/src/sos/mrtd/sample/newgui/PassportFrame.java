@@ -68,7 +68,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
-import javax.swing.filechooser.FileFilter;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -643,10 +642,7 @@ public class PassportFrame extends JFrame
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
-					public String getDescription() { return "ZIP archives"; }				
-				});
+				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -709,13 +705,7 @@ public class PassportFrame extends JFrame
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) { return f.isDirectory()
-						|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
-						|| f.getName().endsWith("png") || f.getName().endsWith("PNG")
-						|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
-					public String getDescription() { return "Image files"; }				
-				});
+				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -773,15 +763,7 @@ public class PassportFrame extends JFrame
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) { return f.isDirectory()
-						|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
-						|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-						|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-						|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
-						|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
-					public String getDescription() { return "Certificate files"; }				
-				});
+				fileChooser.setFileFilter(Files.CERTIFICATE_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -809,14 +791,7 @@ public class PassportFrame extends JFrame
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) { return f.isDirectory()
-						|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-						|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-						|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
-						|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
-					public String getDescription() { return "Key files"; }								
-				});
+				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -925,9 +900,14 @@ public class PassportFrame extends JFrame
 							persoService.putPrivateKey(chooser.getAAPrivateKey());
 						}
 						for (short fid: bufferedStreams.keySet()) {
-							byte[] fileBytes = getFileBytes(fid); 
+							byte[] fileBytes = getFileBytes(fid);
+							System.out.println("DEBUG: createFile " + Integer.toHexString(fid));
 							persoService.createFile(fid, (short)fileBytes.length);
-							persoService.selectFile(fid);
+
+							 System.out.println("DEBUG: selectFile " + Integer.toHexString(fid));
+							 persoService.selectFile(fid);
+
+							System.out.println("DEBUG: writeFile " + Integer.toHexString(fid) + " " + fileBytes.length);
 							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));
 						}
 						persoService.lockApplet();
@@ -939,7 +919,7 @@ public class PassportFrame extends JFrame
 					} catch (GeneralSecurityException gse) {
 						gse.printStackTrace();
 					} finally {
-						if (wasCardManagerStarted) { cm.start(); }
+						if (wasCardManagerStarted) { cm.start(); System.out.println("DEBUG: restarting cm"); } else { System.out.println("DEBUG: not restarting cm"); }
 					}
 					break;
 				default:

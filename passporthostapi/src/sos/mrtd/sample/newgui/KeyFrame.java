@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.security.Key;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -40,6 +41,7 @@ import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
 import sos.gui.KeyPanel;
+import sos.util.Files;
 import sos.util.Icons;
 
 /**
@@ -80,12 +82,12 @@ public class KeyFrame extends JFrame
 		/* Save As...*/
 		JMenuItem saveAsItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(new SaveAsAction());
+		saveAsItem.setAction(getSaveAsAction());
 
 		/* Close */
 		JMenuItem closeItem = new JMenuItem("Close");
 		fileMenu.add(closeItem);
-		closeItem.setAction(new CloseAction());
+		closeItem.setAction(getCloseAction());
 
 		return fileMenu;
 	}
@@ -96,55 +98,46 @@ public class KeyFrame extends JFrame
 	 * Use <code>openssl rsa -pubin -inform DER -in &lt;file&gt;</code>
 	 * to print the resulting file.
 	 */
-	private class SaveAsAction extends AbstractAction
-	{
-		public SaveAsAction() {
-			putValue(SMALL_ICON, SAVE_AS_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Save key to file");
-			putValue(NAME, "Save As...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-					|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
-					|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
-				public String getDescription() { return "Key files"; }				
-			});
-			int choice = fileChooser.showSaveDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					FileOutputStream out = new FileOutputStream(file);
-					/* FIXME: This is DER encoding? */
-					out.write(keyPanel.getKey().getEncoded());
-					out.flush();
-					out.close();
-				} catch (IOException fnfe) {
-					fnfe.printStackTrace();
+	private Action getSaveAsAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				int choice = fileChooser.showSaveDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						FileOutputStream out = new FileOutputStream(file);
+						/* FIXME: This is DER encoding? */
+						out.write(keyPanel.getKey().getEncoded());
+						out.flush();
+						out.close();
+					} catch (IOException fnfe) {
+						fnfe.printStackTrace();
+					}
+					break;
+				default: break;
 				}
-				break;
-			default: break;
-			}
-		}
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, SAVE_AS_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Save key to file");
+		action.putValue(Action.NAME, "Save As...");
+		return action;
 	}
 
-	private class CloseAction extends AbstractAction
-	{
-		public CloseAction() {
-			putValue(SMALL_ICON, CLOSE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, CLOSE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Close Window");
-			putValue(NAME, "Close");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			dispose();
-		}
+	private Action getCloseAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}	
+		};
+		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
+		action.putValue(Action.NAME, "Close");
+		return action;
 	}
 }

@@ -42,6 +42,7 @@ import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
+import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 
 /**
@@ -100,6 +101,8 @@ public class PassportGUI extends JPanel implements PassportListener
 			tabbedPane = new JTabbedPane();
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
+			CardManager cm = CardManager.getInstance();
+			cm.start();
 			
 			/* DEBUG: For debugging! */
 //			CardManager cm = CardManager.getInstance();
