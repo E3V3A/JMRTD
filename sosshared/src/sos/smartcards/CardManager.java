@@ -57,7 +57,6 @@ public class CardManager
 			listeners = new ArrayList<CardTerminalListener>();
 			terminals = new HashSet<CardTerminal>();
 			addTerminals();
-			start();
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
 			ex.printStackTrace();
@@ -67,7 +66,7 @@ public class CardManager
 	/**
 	 * Starts polling.
 	 */
-	public void start() {
+	public synchronized void start() {
 		/* For each terminal start a polling thread. */
 		if (isPolling) { return; }
 		isPolling = true;
@@ -79,13 +78,11 @@ public class CardManager
 	/**
 	 * Stops polling.
 	 */
-	public void stop() {
-		synchronized(INSTANCE) {
-			isPolling = false;
-			notifyAll();
-		}
+	public synchronized void stop() {
+		isPolling = false;
+		notifyAll();
 	}
-	
+
 	/**
 	 * Whether the card manager is running.
 	 * 

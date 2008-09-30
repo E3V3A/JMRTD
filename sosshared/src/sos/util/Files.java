@@ -3,8 +3,43 @@ package sos.util;
 import java.io.File;
 import java.net.URL;
 
-public class Files {
+import javax.swing.filechooser.FileFilter;
 
+public class Files
+{
+	public static final FileFilter CERTIFICATE_FILE_FILTER = new FileFilter() {
+		public boolean accept(File f) { return f.isDirectory()
+			|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
+			|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+			|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+			|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
+			|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
+		public String getDescription() { return "Certificate files"; }				
+	};
+
+	public static final FileFilter KEY_FILE_FILTER = new FileFilter() {
+		public boolean accept(File f) { return f.isDirectory()
+			|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+			|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+			|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
+			|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8")
+			|| f.getName().endsWith("key") || f.getName().endsWith("KEY"); }
+		public String getDescription() { return "Key files"; }				
+	};
+	
+	public static final FileFilter ZIP_FILE_FILTER = new FileFilter() {
+		public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
+		public String getDescription() { return "ZIP archives"; }				
+	};
+	
+	public static final FileFilter IMAGE_FILE_FILTER = new FileFilter() {
+		public boolean accept(File f) { return f.isDirectory()
+			|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
+			|| f.getName().endsWith("png") || f.getName().endsWith("PNG")
+			|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
+		public String getDescription() { return "Image files"; }				
+	};
+	
 	private Files() {
 	}
 
