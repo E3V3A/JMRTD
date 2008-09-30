@@ -181,12 +181,11 @@ public class Util
         i--;
       }
       if ((in[i] & 0x000000FF) != 0x00000080) {
-         throw new IllegalStateException("unpad expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF)));
+         throw new IllegalStateException("unpad expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF))
+        		 + "\nDEBUG: in = " + Hex.bytesToHexString(in) + ", index = " + i);
       }
       byte[] out = new byte[i];
       System.arraycopy(in, 0, out, 0, i);
-      System.out.println("DEBUG: in = " + Hex.bytesToHexString(in));
-      System.out.println("DEBUG: out = " + Hex.bytesToHexString(out));
       return out;
    }
 
