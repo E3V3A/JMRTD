@@ -29,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,6 +57,7 @@ import java.util.zip.ZipOutputStream;
 import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -77,10 +79,12 @@ import sos.mrtd.DG2File;
 import sos.mrtd.FaceInfo;
 import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
+import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardServiceException;
+import sos.smartcards.TerminalCardService;
 import sos.util.Files;
 import sos.util.Hex;
 import sos.util.Icons;
@@ -117,7 +121,7 @@ public class PassportFrame extends JFrame
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
 	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-	
+
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;
@@ -349,10 +353,10 @@ public class PassportFrame extends JFrame
 				}
 			});
 
-			for (short tag: bufferedStreams.keySet()) {
-				in = getFile(tag);
+			for (short fid: bufferedStreams.keySet()) {
+				in = getFile(fid);
 				in.reset();
-				switch (tag) {
+				switch (fid) {
 				case PassportService.EF_DG1:
 					break;
 				case PassportService.EF_DG2:
@@ -366,7 +370,7 @@ public class PassportFrame extends JFrame
 					break;
 				case PassportService.EF_SOD:
 					break;
-				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(tag));
+				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(fid));
 				}
 				in.reset();
 			}
@@ -398,12 +402,12 @@ public class PassportFrame extends JFrame
 	/**
 	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
 	 * 
-	 * @param tag
+	 * @param fid
 	 * @return
 	 */
-	private InputStream getFile(short tag) {
+	private InputStream getFile(short fid) {
 		try {
-			InputStream in = bufferedStreams.get(tag);
+			InputStream in = bufferedStreams.get(fid);
 			if (in != null) {
 				in.reset(); 
 			}
@@ -413,6 +417,22 @@ public class PassportFrame extends JFrame
 			ioe.printStackTrace();
 			throw new IllegalStateException("ERROR: " + ioe.toString());
 		}
+	}
+	
+	private byte[] getFileBytes(short fid) {
+		InputStream in = getFile(fid);
+		if (in == null) { return null; }
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] buf = new byte[256];
+		while (true)
+		try {
+			int bytesRead = in.read(buf);
+			if (bytesRead < 0) { break; }
+			out.write(buf, 0, bytesRead);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+		return out.toByteArray();
 	}
 
 	private void verifySecurity(PassportService service) {
@@ -450,9 +470,9 @@ public class PassportFrame extends JFrame
 			if (tags.length != hashes.size()) {
 				System.err.println("WARNING: \"Jeroen van Beek sanity check\" failed!");
 			}
-			
-            String algorithm = sodFile.getDigestAlgorithm();
-            MessageDigest digest = MessageDigest.getInstance(algorithm);
+
+			String algorithm = sodFile.getDigestAlgorithm();
+			MessageDigest digest = MessageDigest.getInstance(algorithm);
 			isDSVerified = true;
 			for (int dgNumber: hashes.keySet()) {
 				int dgTag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
@@ -598,10 +618,10 @@ public class PassportFrame extends JFrame
 		loadAAKeyFromFile.setAction(new LoadAAKeyAction());
 
 		menu.addSeparator();
-		
+
 		JMenuItem upload = new JMenuItem();
 		menu.add(upload);
-		upload.setAction(new UploadAction());
+		upload.setAction(getUploadAction());
 
 		return menu;
 	}
@@ -883,46 +903,61 @@ public class PassportFrame extends JFrame
 			}
 		}
 	}
-	
-	private class UploadAction extends AbstractAction
-	{
-		public UploadAction() {
-			putValue(SMALL_ICON, UPLOAD_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, UPLOAD_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Upload this passport to a passport applet");
-			putValue(NAME, "Upload passport...");
-		}
 
-		public void actionPerformed(ActionEvent e) {
-			BACEntry bacEntry = null;
-			if (dg1 != null) {
-				MRZInfo mrzInfo = dg1.getMRZInfo();
-				bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
-			}
-			PublicKey aaPublicKey = null;
-			if (dg15 != null) {
-				aaPublicKey = dg15.getPublicKey();
-			}
-			UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
-			int choice = chooser.showOptionsDialog(getContentPane());
-			switch (choice) {
-			case UploadOptionsChooser.APPROVE_OPTION:
-				try {
-					CardTerminal terminal = chooser.getSelectedTerminal();
-					if (chooser.isBACSelected()) {
-						
-					}
-					if (chooser.isAASelected()) {
-						
-					}
-					throw new IOException("TODO: do something with " + terminal);
-				} catch (IOException ioe) {
-					/* NOTE: Do nothing. */
+	private Action getUploadAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				BACEntry bacEntry = null;
+				if (dg1 != null) {
+					MRZInfo mrzInfo = dg1.getMRZInfo();
+					bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 				}
-				break;
-			default:
-				break;
-			}
-		}
+				PublicKey aaPublicKey = null;
+				if (dg15 != null) {
+					aaPublicKey = dg15.getPublicKey();
+				}
+				UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
+				int choice = chooser.showOptionsDialog(getContentPane());
+				switch (choice) {
+				case UploadOptionsChooser.APPROVE_OPTION:
+					try {
+						CardTerminal terminal = chooser.getSelectedTerminal();
+						if (chooser.isBACSelected()) {
+
+						}
+
+						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
+						persoService.open();
+
+						persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+
+						if (chooser.isAASelected()) {
+							persoService.putPrivateKey(chooser.getAAPrivateKey());
+						}
+
+						for (short fid: bufferedStreams.keySet()) {
+							byte[] fileBytes = getFileBytes(fid); 
+							persoService.createFile(fid, (short)fileBytes.length);
+							persoService.selectFile(fid);
+							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));
+						}
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
+					} catch (CardServiceException cse) {
+						cse.printStackTrace();
+					} catch (GeneralSecurityException gse) {
+						gse.printStackTrace();
+					}
+					break;
+				default:
+					break;
+				}
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, UPLOAD_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, UPLOAD_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Upload this passport to a passport applet");
+		action.putValue(Action.NAME, "Upload passport...");
+		return action;
 	}
 }

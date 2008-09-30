@@ -30,8 +30,10 @@ import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -42,7 +44,6 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.FileSystemStructured;
 import sos.tlv.BERTLVInputStream;
-import sos.util.Hex;
 
 /**
  * Card service for reading datagroups and using the BAC and AA protocols
@@ -99,6 +100,8 @@ public class PassportService extends PassportApduService
 	public static final short EF_SOD = 0x011D;
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
+	
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/**
 	 * The file read block size, some passports cannot handle large values
@@ -153,7 +156,7 @@ public class PassportService extends PassportApduService
 
 	/**
 	 * Opens a session. This is done by connecting to the card, selecting the
-	 * passport applet.
+	 * passport application.
 	 */
 	public void open() throws CardServiceException {
 		if (isOpen()) {
@@ -176,10 +179,10 @@ public class PassportService extends PassportApduService
 	 * 
 	 * @throws CardServiceException if authentication failed
 	 */
-	public synchronized void doBAC(String documentNumber, String dateOfBirth, String dateOfExpiry)
+	public synchronized void doBAC(String documentNumber, Date dateOfBirth, Date dateOfExpiry)
 	throws CardServiceException {
 		try {
-			byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
+			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();

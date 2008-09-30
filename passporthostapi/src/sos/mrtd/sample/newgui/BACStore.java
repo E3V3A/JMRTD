@@ -10,7 +10,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 
@@ -21,10 +24,12 @@ import java.util.StringTokenizer;
  *
  * @version $Revision: $
  */
-public class BACStore {
-
+public class BACStore
+{
 	private static final File BACDB_FILE =
 		new File(PassportApp.JMRTD_USER_DIR, "bacdb.txt");
+	
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private List<BACEntry> entries;
 
@@ -62,17 +67,20 @@ public class BACStore {
 		return getMostRecentEntry().getDocumentNumber();
 	}
 
-	public String getDateOfBirth() {
+	public Date getDateOfBirth() {
 		return getMostRecentEntry().getDateOfBirth();
 	}
 
-	public String getDateOfExpiry() {
+	public Date getDateOfExpiry() {
 		return getMostRecentEntry().getDateOfExpiry();
 	}
 
 	private BACEntry getMostRecentEntry() {
 		if (entries.isEmpty()) {
-			return new BACEntry("", "", "");
+			String defaultDocumentNumber = "";
+			Date defaultDateOfBirth = Calendar.getInstance().getTime();
+			Date defaultDateOfExpiry = Calendar.getInstance().getTime();
+			return new BACEntry(defaultDocumentNumber, defaultDateOfBirth, defaultDateOfExpiry);
 		}
 		return entries.get(entries.size() - 1);
 	}
@@ -94,7 +102,7 @@ public class BACStore {
 				String line = d.readLine();
 				if (line == null) { break; }
 				String[] fields = getFields(line);
-				entries.add(new BACEntry(fields[0], fields[1], fields[2]));
+				entries.add(new BACEntry(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
 			}
 		} catch (FileNotFoundException fnfe) {
 			/* NOTE: no problem... */

@@ -19,6 +19,7 @@ import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -171,8 +172,8 @@ public class PassportApp  implements PassportListener, AuthListener
 					try {
 						if (!entry.equals(previousEntry)) {
 							String documentNumber = entry.getDocumentNumber();
-							String dateOfBirth = entry.getDateOfBirth();
-							String dateOfExpiry = entry.getDateOfExpiry();
+							Date dateOfBirth = entry.getDateOfBirth();
+							Date dateOfExpiry = entry.getDateOfExpiry();
 							service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
 						}
 					} catch (CardServiceException cse) {

@@ -2,6 +2,9 @@ package sos.mrtd.sample.newgui;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import sos.mrtd.MRZInfo;
 
@@ -13,6 +16,8 @@ import sos.mrtd.MRZInfo;
  */
 public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 {
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+
 	private static final int TIMEOUT = 3000;
 	private BACStorePanel store;
 	private char[] buffer;
@@ -72,23 +77,29 @@ public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 			char doeCheckDigit = buffer[offset + length - 1];
 			char[] doeChars = new char[6];
 			System.arraycopy(buffer, offset + length - 7, doeChars, 0, 6);
-			String doe = new String(doeChars);
+			String doeString = new String(doeChars);
 			char gender = buffer[offset + length - 8];
 			char dobCheckDigit = buffer[offset + length - 9];
 			char[] dobChars = new char[6];
 			System.arraycopy(buffer, offset + length - 15, dobChars, 0, 6);
-			String dob = new String(dobChars);
+			String dobString = new String(dobChars);
 			char docNumberCheckDigit = buffer[offset + length - 31];
 			char[] docNumberChars = new char[9];
 			System.arraycopy(buffer, offset + length - 40, docNumberChars, 0, 9);
 			String docNumber = new String(docNumberChars);
-			if (dobCheckDigit == MRZInfo.checkDigit(dob) &&
-					doeCheckDigit == MRZInfo.checkDigit(doe) &&
-					docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
-					(gender == 'M' || gender == 'F' || gender == '<')) {
-				store.addEntry(new BACEntry(docNumber, dob, doe));
-				resetBuffer();
-				return;
+			try {
+				Date dob = SDF.parse(dobString);
+				Date doe = SDF.parse(doeString);
+				if (dobCheckDigit == MRZInfo.checkDigit(dobString) &&
+						doeCheckDigit == MRZInfo.checkDigit(doeString) &&
+						docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
+						(gender == 'M' || gender == 'F' || gender == '<')) {
+					store.addEntry(new BACEntry(docNumber, dob, doe));
+					resetBuffer();
+					return;
+				}
+			} catch (ParseException pe) {
+				/* NOTE: Do nothing, apparently not ID 1, maybe it's ID 3. */
 			}
 		}
 
@@ -100,22 +111,28 @@ public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 			char doeCheckDigit = buffer[offset + length - 1];
 			char[] doeChars = new char[6];
 			System.arraycopy(buffer, offset + length - 7, doeChars, 0, 6);
-			String doe = new String(doeChars);
+			String doeString = new String(doeChars);
 			char gender = buffer[offset + length - 8];
 			char dobCheckDigit = buffer[offset + length - 9];
 			char[] dobChars = new char[6];
 			System.arraycopy(buffer, offset + length - 15, dobChars, 0, 6);
-			String dob = new String(dobChars);
+			String dobString = new String(dobChars);
 			char docNumberCheckDigit = buffer[offset + length - 19];
 			char[] docNumberChars = new char[9];
 			System.arraycopy(buffer, offset + length - 28, docNumberChars, 0, 9);
 			String docNumber = new String(docNumberChars);
-			if (dobCheckDigit == MRZInfo.checkDigit(dob) &&
-					doeCheckDigit == MRZInfo.checkDigit(doe) &&
-					docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
-					(gender == 'M' || gender == 'F' || gender == '<')) {	
-				store.addEntry(new BACEntry(docNumber, dob, doe));
-				resetBuffer();
+			try {
+				Date dob = SDF.parse(dobString);
+				Date doe = SDF.parse(doeString);
+				if (dobCheckDigit == MRZInfo.checkDigit(dobString) &&
+						doeCheckDigit == MRZInfo.checkDigit(doeString) &&
+						docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
+						(gender == 'M' || gender == 'F' || gender == '<')) {	
+					store.addEntry(new BACEntry(docNumber, dob, doe));
+					resetBuffer();
+				}
+			} catch (ParseException pe) {
+				/* NOTE: do nothing, no BACEntry found. */
 			}
 		}
 	}

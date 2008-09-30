@@ -5,36 +5,32 @@ import java.util.Date;
 
 public class BACEntry
 {
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("ddMMyy");
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private String documentNumber;
-	private String dateOfBirth;
-	private String dateOfExpiry;
+	private Date dateOfBirth;
+	private Date dateOfExpiry;
 
 	public BACEntry(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
-		this(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
-	}
-	
-	public BACEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
 		this.documentNumber = documentNumber.trim();
-		this.dateOfBirth = dateOfBirth.trim();
-		this.dateOfExpiry = dateOfExpiry.trim();
+		this.dateOfBirth = dateOfBirth;
+		this.dateOfExpiry = dateOfExpiry;
 	}
 
 	public String getDocumentNumber() {
 		return documentNumber;
 	}
 
-	public String getDateOfBirth() {
+	public Date getDateOfBirth() {
 		return dateOfBirth;
 	}
 
-	public String getDateOfExpiry() {
+	public Date getDateOfExpiry() {
 		return dateOfExpiry;
 	}
 
 	public String toString() {
-		return documentNumber + ", " + dateOfBirth + ", " + dateOfExpiry;
+		return documentNumber + ", " + SDF.format(dateOfBirth) + ", " + SDF.format(dateOfExpiry);
 	}
 
 	public boolean equals(Object other) {

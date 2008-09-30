@@ -34,9 +34,6 @@ import sos.util.Icons;
 public class BACStorePanel extends JPanel
 {  
 	private static final long serialVersionUID = 8209327475448864084L;
-
-	private static final SimpleDateFormat SDF =
-		new SimpleDateFormat("yyMMdd");
 	
 	private static final Icon DOWN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon DOWN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
@@ -46,6 +43,8 @@ public class BACStorePanel extends JPanel
 	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_delete"));
 	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
 	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
+	
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
 	
 	private final BACStore store;
 	private BACStoreTable table;
@@ -136,8 +135,8 @@ public class BACStorePanel extends JPanel
 			BACEntry entry = entries.get(rowIndex);
 			switch(columnIndex) {
 			case 0: return entry.getDocumentNumber();
-			case 1: return entry.getDateOfBirth();
-			case 2: return entry.getDateOfExpiry();
+			case 1: return SDF.format(entry.getDateOfBirth());
+			case 2: return SDF.format(entry.getDateOfExpiry());
 			default: return null;
 			}
 		}
@@ -163,7 +162,7 @@ public class BACStorePanel extends JPanel
 			String documentNumber = entryField.getDocumentNumber();
 			Date dateOfBirth = entryField.getDateOfBirth();
 			Date dateOfExpiry = entryField.getDateOfExpiry();
-			addEntry(new BACEntry(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry)));
+			addEntry(new BACEntry(documentNumber, dateOfBirth, dateOfExpiry));
 		} 
 	}
 	

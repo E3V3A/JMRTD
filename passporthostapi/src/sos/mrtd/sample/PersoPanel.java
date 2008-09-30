@@ -26,11 +26,11 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 
@@ -39,14 +39,16 @@ import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import sos.gui.DateEntryField;
 import sos.gui.HexField;
+import sos.gui.MRZEntryField;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.DG15File;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardService;
@@ -73,9 +75,9 @@ AuthListener
 	private File fileToUpload;
 	private PassportPersoService service;
 	private JButton personalisationButton;
-	private JTextField docNrField;
-	private JTextField dobField;
-	private JTextField doeField;
+	private MRZEntryField docNrField;
+	private DateEntryField dobField;
+	private DateEntryField doeField;
 	private JButton generateKeyPairButton;
 	private JButton uploadPrivateKey;
 	private JButton uploadPublicKey;
@@ -124,9 +126,9 @@ AuthListener
 
 		personalisationButton = new JButton("Personalize");
 		personalisationButton.addActionListener(this);
-		docNrField = new JTextField(9);
-		dobField = new JTextField(6);
-		doeField = new JTextField(6);
+		docNrField = new MRZEntryField(9);
+		dobField = new DateEntryField();
+		doeField = new DateEntryField();
 		lockButton = new JButton("Lock");
 		lockButton.addActionListener(this);
 
@@ -193,7 +195,7 @@ AuthListener
 
 	private void pressedUploadPublicKey() throws IOException {
 
-		final InputStream DG15 = service.createDG15(keyPair.getPublic());
+		final InputStream DG15 = new ByteArrayInputStream(new DG15File(keyPair.getPublic()).getEncoded());
 
 		new Thread(new Runnable() {
 			public void run() {
@@ -248,23 +250,15 @@ AuthListener
 	}
 
 	private void pressedPersonalisationButton() {
-		try {
-			final byte[] docNr = docNrField.getText().getBytes("ASCII");
-			final byte[] dob = dobField.getText().getBytes("ASCII");
-			final byte[] doe = doeField.getText().getBytes("ASCII");
-
-			new Thread(new Runnable() {
-				public void run() {
-					try {
-						service.putMRZ(docNr, dob, doe);
-					} catch(CardServiceException e) {
-						e.printStackTrace();
-					}
+		new Thread(new Runnable() {
+			public void run() {
+				try {
+					service.setBAC(docNrField.getText(), dobField.getDate(), doeField.getDate());
+				} catch(CardServiceException e) {
+					e.printStackTrace();
 				}
-			}).start();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		}
+			}
+		}).start();
 	}
 
 	private void pressedUpdateBinaryButton() {

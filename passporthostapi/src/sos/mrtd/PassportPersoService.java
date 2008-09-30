@@ -23,7 +23,6 @@
 package sos.mrtd;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,10 +33,10 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -46,10 +45,10 @@ import java.util.zip.ZipOutputStream;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
+import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.ISO7816;
 import sos.tlv.BERTLVObject;
-import sos.util.ASN1Utils;
 import sos.util.Hex;
 
 /**
@@ -58,7 +57,7 @@ import sos.util.Hex;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 
  */
-public class PassportPersoService {
+public class PassportPersoService extends CardService {
 	private static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
 	private static final short AAPRIVKEY_FID = 0x0001;
 	private static final byte INS_PUT_DATA = (byte) 0xda;;
@@ -66,14 +65,17 @@ public class PassportPersoService {
 	private static final byte PRIVMODULUS_TAG = 0x60;
 	private static final byte PRIVEXPONENT_TAG = 0x61;
 	private static final byte MRZ_TAG = 0x62;
+	
+
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private PassportService service;
-	
-	public PassportPersoService(PassportService service)
-			throws CardServiceException {
-		this.service = service;
+
+	public PassportPersoService(CardService service)
+	throws CardServiceException {
+		this.service = (service instanceof PassportService) ? (PassportService)service : new PassportService(service);
 	}
-	
+
 	/**
 	 * Generates an RSA keypair fit for Active Authentication.
 	 * 
@@ -81,9 +83,10 @@ public class PassportPersoService {
 	 * @throws GeneralSecurityException
 	 * @throws NoSuchAlgorithmException
 	 *             when BouncyCastle provider cannot be found.
+	 * @deprecated Leave this responsibility to the client
 	 */
 	public static KeyPair generateAAKeyPair() throws GeneralSecurityException,
-			NoSuchAlgorithmException {
+	NoSuchAlgorithmException {
 		String preferredProvider = "BC";
 		Provider provider = Security.getProvider(preferredProvider);
 		if (provider == null) {
@@ -108,7 +111,7 @@ public class PassportPersoService {
 			byte[] data) throws CardServiceException {
 		CommandAPDU capdu = createPutDataApdu(p1, p2, data);
 		SecureMessagingWrapper wrapper = service.getWrapper();
-		
+
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
@@ -129,19 +132,19 @@ public class PassportPersoService {
 	 *             on error.
 	 */
 	public void putPrivateKey(PrivateKey key)
-			throws CardServiceException {
+	throws CardServiceException {
 		try {
 			byte[] encodedPriv = key.getEncoded();
 			BERTLVObject encodedPrivObject = BERTLVObject
-					.getInstance(new ByteArrayInputStream(encodedPriv));
+			.getInstance(new ByteArrayInputStream(encodedPriv));
 			byte[] privKeyData = (byte[]) encodedPrivObject.getChildByIndex(2)
-					.getValue();
+			.getValue();
 			BERTLVObject privKeyDataObject = BERTLVObject
-					.getInstance(new ByteArrayInputStream(privKeyData));
+			.getInstance(new ByteArrayInputStream(privKeyData));
 			byte[] privModulus = (byte[]) privKeyDataObject.getChildByIndex(1)
-					.getValue();
+			.getValue();
 			byte[] privExponent = (byte[]) privKeyDataObject.getChildByIndex(3)
-					.getValue();
+			.getValue();
 
 			putPrivateKey(privModulus, privExponent);
 		} catch (IOException ioe) {
@@ -152,7 +155,7 @@ public class PassportPersoService {
 	}
 
 	private void putPrivateKey(byte[] privModulus, byte[] privExponent)
-			throws CardServiceException {
+	throws CardServiceException {
 		try {
 			BERTLVObject privModulusObject = new BERTLVObject(PRIVMODULUS_TAG,
 					new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
@@ -222,7 +225,7 @@ public class PassportPersoService {
 
 	private byte[] sendUpdateBinary(SecureMessagingWrapper wrapper,
 			short offset, int data_len, byte[] data)
-			throws CardServiceException {
+	throws CardServiceException {
 		CommandAPDU capdu = createUpdateBinaryAPDU(offset, data_len, data);
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
@@ -286,12 +289,15 @@ public class PassportPersoService {
 	 * @param dob
 	 *            the date of birth of the holder
 	 * @param doe
-	 *            the expiry data of the passport
+	 *            the date of expiry of the passport
 	 * @throws CardServiceException
 	 */
-	public void putMRZ(byte[] docNr, byte[] dob, byte[] doe)
-			throws CardServiceException {
+	public void setBAC(String documentNumber, Date dateOfBirth, Date dateOfExpiry)
+	throws CardServiceException {
 		try {
+			byte[] docNr = documentNumber.trim().toUpperCase().getBytes("UTF-8");
+			byte[] dob = (SDF.format(dateOfBirth)).getBytes("UTF-8");
+			byte[] doe = (SDF.format(dateOfExpiry)).getBytes("UTF-8");
 			BERTLVObject mrzObject = new BERTLVObject(MRZ_TAG,
 					new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, docNr));
 			mrzObject.addSubObject(new BERTLVObject(
@@ -305,25 +311,6 @@ public class PassportPersoService {
 		}
 	}
 
-	/**
-	 * Returns an InputStream (formatted as DG15) given a public key
-	 * 
-	 * @param key the PublicKey instance
-	 * @return an InputStream 
-	 * @throws IOException
-	 */
-	public InputStream createDG15(PublicKey key) throws IOException {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-		byte[] keyBytes = key.getEncoded();
-
-		out.write(0x6F);
-		out.write(ASN1Utils.lengthId(keyBytes.length)); // FIXME: use
-		// BERTLVOutputStream
-		out.write(keyBytes);
-
-		return new ByteArrayInputStream(out.toByteArray());
-	}
 
 	/**
 	 * Locks the passport applet so that no data may be written to it.
@@ -331,12 +318,12 @@ public class PassportPersoService {
 	 * @throws CardServiceException
 	 */
 	public void lockApplet()
-			throws CardServiceException {
+	throws CardServiceException {
 		putData((byte) 0xde, (byte) 0xad, null);
 	}
 
 	private void selectFile(byte[] fid)
-			throws CardServiceException {
+	throws CardServiceException {
 		service.sendSelectFile(service.getWrapper(), fid);
 	}
 
@@ -347,7 +334,7 @@ public class PassportPersoService {
 	 * @throws CardServiceException
 	 */
 	public void selectFile(short fid)
-			throws CardServiceException {
+	throws CardServiceException {
 		byte[] fiddle = { (byte) ((fid >>> 8) & 0xff), (byte) (fid & 0xff) };
 		selectFile(fiddle);
 	}
@@ -385,18 +372,11 @@ public class PassportPersoService {
 			if (fid == 0x0101) {
 				DG1File dg1 = new DG1File(passportData.getInputStream(dgZip));
 				MRZInfo mrzInfo = dg1.getMRZInfo();
-				String docNrString = mrzInfo.getDocumentNumber();
-				SimpleDateFormat sdf = new SimpleDateFormat("yyMMdd");
-				String birthData = sdf.format(mrzInfo.getDateOfBirth());
-				String expData = sdf.format(mrzInfo.getDateOfExpiry());
-				byte[] docNr = docNrString.getBytes("ASCII");
-				byte[] dob = birthData.getBytes("ASCII");
-				byte[] doe = expData.getBytes("ASCII");
-				putMRZ(docNr, dob, doe);
+				setBAC(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 			}
 		}
 	}
-	
+
 	/**
 	 * Dumps the content of a passport as a zip file
 	 * 
@@ -404,12 +384,12 @@ public class PassportPersoService {
 	 */
 	public void dumpPassport(File f) throws IOException {
 		ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(f));
-		
+
 		short passportFiles[] = {PassportService.EF_DG1, PassportService.EF_DG2, PassportService.EF_DG3, PassportService.EF_DG4, PassportService.EF_DG5, PassportService.EF_DG6, PassportService.EF_DG7, PassportService.EF_DG8, PassportService.EF_DG9, PassportService.EF_DG10,
-								 PassportService.EF_DG11, PassportService.EF_DG12, PassportService.EF_DG13, PassportService.EF_DG14, PassportService.EF_DG15, PassportService.EF_DG16, PassportService.EF_COM, PassportService.EF_SOD};
+				PassportService.EF_DG11, PassportService.EF_DG12, PassportService.EF_DG13, PassportService.EF_DG14, PassportService.EF_DG15, PassportService.EF_DG16, PassportService.EF_COM, PassportService.EF_SOD};
 
 		for(short i : passportFiles) {
-            InputStream is = null;
+			InputStream is = null;
 			try {
 				is = service.readFile(i);
 			} catch (CardServiceException e) {
@@ -425,5 +405,20 @@ public class PassportPersoService {
 			zip.closeEntry();			
 		}
 		zip.close();
+	}
+
+	public void close() {
+		service.close();
+	}
+
+	public boolean isOpen() {
+		return service.isOpen();	}
+
+	public void open() throws CardServiceException {
+		service.open();
+	}
+
+	public ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException {
+		return service.transmit(apdu);
 	}
 }

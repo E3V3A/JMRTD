@@ -24,12 +24,14 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG1File;
+import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.sample.PassportGUI;
 import sos.smartcards.CardManager;
+import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 
@@ -133,18 +135,15 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
             byte[] dg2Contents = getByteArray(input);
             String reader = ((CardTerminal)readers.getSelectedItem()).getName();
 
-            String num = dg1File.getMRZInfo().getDocumentNumber();
-            String dob = getDateString(dg1File.getMRZInfo().getDateOfBirth());
-            String doe = getDateString(dg1File.getMRZInfo().getDateOfExpiry());
-
+            MRZInfo mrzInfo = dg1File.getMRZInfo();
 
             PassportManager.getInstance().removePassportListener(gui);
             JOptionPane.showMessageDialog(this, "Insert a passport applet card into reader \""+ reader + "\"");
             
-            PassportService ps = new PassportService(new TerminalCardService((CardTerminal)readers.getSelectedItem()));
+            CardService ps = new TerminalCardService((CardTerminal)readers.getSelectedItem());
             newPassport = new PassportPersoService(ps);
             ps.open();
-            newPassport.putMRZ(num.getBytes("ASCII"), dob.getBytes("ASCII"), doe.getBytes("ASCII"));
+            newPassport.setBAC(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 
             InputStream in = new ByteArrayInputStream(sodContents);
             
@@ -206,6 +205,7 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
     }
     
     // Woj: there should be a cleaner way to do it!
+    // MO: Use SimpleDataFormat
     private String getDateString(Date date) {
         String s = date.toString();
         String year = s.substring(s.lastIndexOf(' ')+3);

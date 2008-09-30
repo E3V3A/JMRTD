@@ -25,14 +25,13 @@ package sos.mrtd.sample;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
-import javax.swing.border.EtchedBorder;
 
 import sos.mrtd.AuthListener;
 import sos.mrtd.PassportService;
@@ -48,51 +47,52 @@ import sos.smartcards.CardServiceException;
  */
 public class BACPanel extends JPanel
 {
-   private static final Border PANEL_BORDER =
-      BorderFactory.createEtchedBorder(EtchedBorder.RAISED);
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
-   private JButton doBACButton;
-   private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
-   private BACStore bacDB = new BACStore();
+	private JButton doBACButton;
+	private JTextField docNrTF, dateOfBirthTF, dateOfExpiryTF;
+	private BACStore bacDB = new BACStore();
 
-   private PassportService service;
+	private PassportService service;
 
-   public BACPanel(PassportService passportService) throws CardServiceException {
-      super(new FlowLayout());
-      this.service = passportService;
-      JPanel top = new JPanel(new FlowLayout());
-      docNrTF = new JTextField(9);
-      dateOfBirthTF = new JTextField(6);
-      dateOfExpiryTF = new JTextField(6);
-      docNrTF.setText(bacDB.getDocumentNumber());
-      dateOfBirthTF.setText(bacDB.getDateOfBirth());
-      dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
-      top.add(new JLabel("Document number: "));
-      top.add(docNrTF);
-      top.add(new JLabel("Birth (YYMMDD): "));
-      top.add(dateOfBirthTF);
-      top.add(new JLabel("Expiry (YYMMDD): "));
-      top.add(dateOfExpiryTF);
-      doBACButton = new JButton("Authenticate");
-      top.add(doBACButton);
-      doBACButton.addActionListener(new ActionListener() {
-         public void actionPerformed(ActionEvent e) {
-            try {
-               String documentNumber = docNrTF.getText().toUpperCase();
-               String dateOfBirth = dateOfBirthTF.getText();
-               String dateOfExpiry = dateOfExpiryTF.getText();
-               service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
-               bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
-               docNrTF.setText(documentNumber);
-            } catch (CardServiceException cse) {
-               System.out.println("DEBUG: BAC failed!");
-            }
-         }         
-      });
-      add(top);
-   }
-   
-   public void addAuthenticationListener(AuthListener l) {
-      service.addAuthenticationListener(l);
-   }
+	public BACPanel(PassportService passportService) throws CardServiceException {
+		super(new FlowLayout());
+		this.service = passportService;
+		JPanel top = new JPanel(new FlowLayout());
+		docNrTF = new JTextField(9);
+		dateOfBirthTF = new JTextField(6);
+		dateOfExpiryTF = new JTextField(6);
+		docNrTF.setText(bacDB.getDocumentNumber());
+		dateOfBirthTF.setText(bacDB.getDateOfBirth());
+		dateOfExpiryTF.setText(bacDB.getDateOfExpiry());
+		top.add(new JLabel("Document number: "));
+		top.add(docNrTF);
+		top.add(new JLabel("Birth (YYMMDD): "));
+		top.add(dateOfBirthTF);
+		top.add(new JLabel("Expiry (YYMMDD): "));
+		top.add(dateOfExpiryTF);
+		doBACButton = new JButton("Authenticate");
+		top.add(doBACButton);
+		doBACButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					String documentNumber = docNrTF.getText().toUpperCase();
+					String dateOfBirth = dateOfBirthTF.getText();
+					String dateOfExpiry = dateOfExpiryTF.getText();
+					service.doBAC(documentNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry));
+					bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
+					docNrTF.setText(documentNumber);
+				} catch (CardServiceException cse) {
+					System.out.println("DEBUG: BAC failed!");
+				} catch (ParseException pe) {
+					System.out.println("DEBUG: BAC failed!");
+				}
+			}         
+		});
+		add(top);
+	}
+
+	public void addAuthenticationListener(AuthListener l) {
+		service.addAuthenticationListener(l);
+	}
 }

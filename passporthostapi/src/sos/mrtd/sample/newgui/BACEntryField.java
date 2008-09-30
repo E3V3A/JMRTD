@@ -1,8 +1,6 @@
 package sos.mrtd.sample.newgui;
 
 import java.awt.event.ActionListener;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import javax.swing.Action;
@@ -23,7 +21,6 @@ import sos.gui.MRZEntryField;
  */
 public class BACEntryField extends Box implements BACEntrySource
 {
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("ddMMyy");
 	private JButton addButton;
 	private MRZEntryField docNrTF;
 	private DateEntryField dateOfBirthField, dateOfExpiryField;
@@ -31,7 +28,6 @@ public class BACEntryField extends Box implements BACEntrySource
 	public BACEntryField(boolean showAddButton) {
 		super(BoxLayout.X_AXIS);
 		docNrTF = new MRZEntryField(9);
-		// dateOfBirthTF = new JTextField(6);
 		dateOfBirthField = new DateEntryField();
 		dateOfExpiryField = new DateEntryField();
 		addButton = new JButton("Add");
@@ -54,11 +50,7 @@ public class BACEntryField extends Box implements BACEntrySource
 
 	public BACEntryField(BACEntry bacEntry, boolean showAddButton) {
 		this(showAddButton);
-		try {
-			setValue(bacEntry.getDocumentNumber(), SDF.parse(bacEntry.getDateOfBirth()), SDF.parse(bacEntry.getDateOfExpiry()));
-		} catch (ParseException pe) {
-			throw new IllegalArgumentException(pe.toString());
-		}
+		setValue(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
 	}
 
 	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry, boolean showAddButton) {
