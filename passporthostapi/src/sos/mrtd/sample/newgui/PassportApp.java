@@ -1,5 +1,23 @@
 /*
- * $Id $
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2008  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id: $
  */
 
 package sos.mrtd.sample.newgui;
@@ -24,10 +42,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
+import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -52,10 +69,10 @@ import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
-import sos.smartcards.APDUListener;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.smartcards.TerminalCardService;
 import sos.util.Files;
 import sos.util.Icons;
 
@@ -68,7 +85,7 @@ import sos.util.Icons;
  * @version $Revision: 308 $
  */
 public class PassportApp  implements PassportListener, AuthListener
-{  
+{
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
 	public static final File JMRTD_USER_DIR =
@@ -83,11 +100,12 @@ public class PassportApp  implements PassportListener, AuthListener
 	private static final Icon EXIT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
 	private static final Icon TERMINAL_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
 	private static final Icon TERMINAL_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
+	private static final Icon TERMINAL_GO_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
+	private static final Icon TERMINAL_GO_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
 	private static final Icon INFORMATION_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 	private static final Icon INFORMATION_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 
-	/* TODO: read this from a .txt file. */
-	private static final String ABOUT_INFO = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.sourceforge.net/ for more information.";
+	private static final String ABOUT_INFO = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
@@ -157,35 +175,40 @@ public class PassportApp  implements PassportListener, AuthListener
 	public void passportInserted(PassportEvent ce) {
 		try {
 			PassportService service = ce.getService();
-			service.addAPDUListener(new APDUListener() {
-				public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-//					System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
-//					System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
-				}
-			});
-			service.open();
-			service.addAuthenticationListener(this);
-			BACEntry previousEntry = null;
-			while (!authenticated) {
-				for (BACEntry entry: bacStore.getEntries()) {
-					try {
-						if (!entry.equals(previousEntry)) {
-							String documentNumber = entry.getDocumentNumber();
-							Date dateOfBirth = entry.getDateOfBirth();
-							Date dateOfExpiry = entry.getDateOfExpiry();
-							service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
-						}
-					} catch (CardServiceException cse) {
-						/* NOTE: BAC failed? Perhaps this passport doesn't support BAC. */
-						// cse.printStackTrace();
-						// if (!authenticated) { sessionStarted(service); }
-						/* TODO: test this... */
-					}
-					previousEntry = entry;
-				}
-			}
+			readPassport(service);
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	private void readPassport(PassportService service) throws CardServiceException {
+//		service.addAPDUListener(new APDUListener() {
+//			public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+//				System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
+//				System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
+//			}
+//		});
+		service.open();
+		service.addAuthenticationListener(this);
+		BACEntry previousEntry = null;
+		authenticated = false;
+		while (!authenticated) {
+			for (BACEntry entry: bacStore.getEntries()) {
+				try {
+					if (!entry.equals(previousEntry)) {
+						String documentNumber = entry.getDocumentNumber();
+						Date dateOfBirth = entry.getDateOfBirth();
+						Date dateOfExpiry = entry.getDateOfExpiry();
+						service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+					}
+				} catch (CardServiceException cse) {
+					/* NOTE: BAC failed? Perhaps this passport doesn't support BAC. */
+					// cse.printStackTrace();
+					// if (!authenticated) { sessionStarted(service); }
+					/* TODO: test this... */
+				}
+				previousEntry = entry;
+			}
 		}
 	}
 
@@ -207,9 +230,9 @@ public class PassportApp  implements PassportListener, AuthListener
 	}
 
 	private void sessionStarted(PassportService service) throws CardServiceException {
-		PassportFrame gui = new PassportFrame();
-		gui.readFromService(service, authenticated);
-		serviceToFrameMap.put(service, gui);
+		PassportFrame passportFrame = new PassportFrame();
+		passportFrame.readFromService(service, authenticated);
+		serviceToFrameMap.put(service, passportFrame);
 	}
 
 	private void sessionStopped(PassportService service) {
@@ -228,19 +251,19 @@ public class PassportApp  implements PassportListener, AuthListener
 		/* New... */
 		JMenuItem newItem = new JMenuItem();
 		fileMenu.add(newItem);
-		newItem.setAction(new NewAction());
+		newItem.setAction(getNewAction());
 
 		/* Open... */
 		JMenuItem openItem = new JMenuItem();
 		fileMenu.add(openItem);
-		openItem.setAction(new OpenAction());
+		openItem.setAction(getOpenAction());
 
 		fileMenu.addSeparator();
 
 		/* Exit */
 		JMenuItem closeItem = new JMenuItem();
 		fileMenu.add(closeItem);
-		closeItem.setAction(new ExitAction());
+		closeItem.setAction(getExitAction());
 
 		return fileMenu;
 	}
@@ -248,10 +271,16 @@ public class PassportApp  implements PassportListener, AuthListener
 	private JMenu createTerminalMenu() {
 		JMenu terminalMenu = new JMenu("Terminals");
 		CardManager cm = CardManager.getInstance();
+
+		JCheckBoxMenuItem useCardManagerItem = new JCheckBoxMenuItem(getUseCardManagerItem());
+		useCardManagerItem.setSelected(true);
+		terminalMenu.add(useCardManagerItem);
+
+		terminalMenu.addSeparator();
+
 		Collection<CardTerminal> terminals = cm.getTerminals();
 		for (CardTerminal terminal: terminals) {
-			JCheckBoxMenuItem menuItem = new JCheckBoxMenuItem(new TerminalAction(terminal));
-			menuItem.setSelected(true);
+			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
 			terminalMenu.add(menuItem);
 		}
 		return terminalMenu;
@@ -260,131 +289,146 @@ public class PassportApp  implements PassportListener, AuthListener
 	private JMenu createHelpMenu() {
 		JMenu helpMenu = new JMenu("Help");
 		JMenuItem aboutItem = new JMenuItem();
-		aboutItem.setAction(new AboutAction());
+		aboutItem.setAction(getAboutAction());
 		helpMenu.add(aboutItem);
 		return helpMenu;
 	}
 
-	private class NewAction extends AbstractAction
-	{
-		public NewAction() {
-			putValue(SMALL_ICON, NEW_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, NEW_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Create new passport");
-			putValue(NAME, "New");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			System.out.println("DEBUG: TODO: new action");
-			PassportFrame passportFrame = new PassportFrame();
-			passportFrame.createEmptyPassport();
-			passportFrame.pack();
-			passportFrame.setVisible(true);
-		}
+	private Action getNewAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				System.out.println("DEBUG: TODO: new action");
+				PassportFrame passportFrame = new PassportFrame();
+				passportFrame.createEmptyPassport();
+				passportFrame.pack();
+				passportFrame.setVisible(true);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, NEW_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, NEW_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Create new passport");
+		action.putValue(Action.NAME, "New");
+		return action;
 	}
 
-	private class OpenAction extends AbstractAction
-	{
+	private Action getOpenAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
+					public String getDescription() { return "ZIP archives"; }				
+				});
+				int choice = fileChooser.showOpenDialog(contentPane);
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						PassportFrame passportFrame = new PassportFrame();
+						passportFrame.readFromZipFile(file);
+						passportFrame.pack();
+						passportFrame.setVisible(true);
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
+					}
+					break;
+				default: break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, OPEN_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, OPEN_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Read passport from file");
+		action.putValue(Action.NAME, "Open File...");
+		return action;
+	}
 
-		public OpenAction() {
-			putValue(SMALL_ICON, OPEN_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, OPEN_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Read passport from file");
-			putValue(NAME, "Open File...");
-		}
+	private Action getExitAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, EXIT_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, EXIT_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Exit application");
+		action.putValue(Action.NAME, "Exit");
+		return action;
+	}
 
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
-				public String getDescription() { return "ZIP archives"; }				
-			});
-			int choice = fileChooser.showOpenDialog(contentPane);
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
+	private Action getUseCardManagerItem() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				Object src = e.getSource();
+				if (src instanceof AbstractButton) {
+					AbstractButton button = (AbstractButton)src;
+					CardManager cm = CardManager.getInstance();
+					if (button.isSelected()) {
+						cm.start();
+					} else {
+						cm.stop();
+					}
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, TERMINAL_GO_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_GO_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Poll all terminals using the card manager");
+		action.putValue(Action.NAME, "Use card manager");
+		return action;
+	}
+
+	private Action getUseTerminalAction(final CardTerminal terminal) {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				new Thread(new Runnable() {
+					public void run() {
+						try {
+							PassportService service = new PassportService(new TerminalCardService(terminal));
+							readPassport(service);
+						} catch (CardServiceException cse) {
+							cse.printStackTrace();
+						}
+					}
+				}).start();
+
+			}	
+		};
+		action.putValue(Action.SMALL_ICON, TERMINAL_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Read card from " + terminal.getName());
+		action.putValue(Action.NAME, "Read from " + terminal.getName());
+		return action;
+	}
+
+	private Action getAboutAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
 				try {
-					File file = fileChooser.getSelectedFile();
-					PassportFrame passportFrame = new PassportFrame();
-					passportFrame.readFromZipFile(file);
-					passportFrame.pack();
-					passportFrame.setVisible(true);
-				} catch (IOException ioe) {
-					/* NOTE: Do nothing. */
-				}
-				break;
-			default: break;
-			}
-		}
-	}
-
-	private class ExitAction extends AbstractAction
-	{
-		public ExitAction() {
-			putValue(SMALL_ICON, EXIT_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, EXIT_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Exit application");
-			putValue(NAME, "Exit");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			System.exit(0);
-		}
-	}
-
-	private class TerminalAction extends AbstractAction
-	{
-		private CardTerminal terminal;
-
-		public TerminalAction(CardTerminal terminal) {
-			this.terminal = terminal;
-			putValue(SMALL_ICON, TERMINAL_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, TERMINAL_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Do something with " + terminal.getName());
-			putValue(NAME, terminal.getName());
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			Object src = e.getSource();
-			if (src instanceof AbstractButton) {
-				AbstractButton button = (AbstractButton)src;
-				if (button.isSelected()) {
-					System.out.println("DEBUG: TODO: terminal action " + terminal + " switched on");
-				} else {
-					System.out.println("DEBUG: TODO: terminal action " + terminal + " switched off");
+					JTextArea area = new JTextArea(20, 35);
+					URL readMeFile = new URL(Files.getBaseDir() + "/README");
+					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
+					while (true) {
+						String line = in.readLine();
+						if (line == null) { break; }
+						line.trim();
+						area.append("  " + line);
+						area.append("\n");
+					}
+					area.setCaretPosition(0);
+					area.setEditable(false);
+					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
 				}
 			}
-		}	
-	}
-
-	private class AboutAction extends AbstractAction
-	{	
-		public AboutAction() {
-			putValue(SMALL_ICON, INFORMATION_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, INFORMATION_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "About this application");
-			putValue(NAME, "About...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			try {
-				JTextArea area = new JTextArea(20, 35);
-				URL readMeFile = new URL(Files.getBaseDir() + "/README");
-				BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
-				while (true) {
-					String line = in.readLine();
-					if (line == null) { break; }
-					line.trim();
-					area.append("  " + line);
-					area.append("\n");
-				}
-				area.setCaretPosition(0);
-				area.setEditable(false);
-				JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
-			} catch (Exception ex) {
-				ex.printStackTrace();
-				JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
-			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, INFORMATION_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "About this application");
+		action.putValue(Action.NAME, "About...");
+		return action;
 	}
 
 	/**

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006  SoS group, ICIS, Radboud University
+ * Copyright (C) 2008  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -76,6 +76,7 @@ import sos.mrtd.COMFile;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
+import sos.mrtd.DataGroup;
 import sos.mrtd.FaceInfo;
 import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
@@ -133,7 +134,9 @@ public class PassportFrame extends JFrame
 
 	private DG1File dg1;
 	private DG2File dg2;
+	private DataGroup dg3, dg4, dg5, dg6, dg7, dg8, dg9, dg10, dg11, dg12, dg13, dg14;
 	private DG15File dg15;
+	private DataGroup dg16;
 	private SODFile sod;
 	private COMFile com;
 
@@ -179,13 +182,6 @@ public class PassportFrame extends JFrame
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
-//		s.addAPDUListener(new APDUListener() {
-//		int i;
-//		public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-//		System.out.println("-> (" + (i++) + ") " + Hex.bytesToHexString(capdu.getBytes()));
-//		System.out.println("<- " + Hex.bytesToHexString(rapdu.getBytes()));
-//		}
-//		});
 		try {
 			this.isBACVerified = isBACVerified;
 			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -245,20 +241,20 @@ public class PassportFrame extends JFrame
 		try {
 			/* EF.COM */
 			int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
-			COMFile comFile = new COMFile("01", "07", "04", "00", "00", tagList);
-			byte[] comBytes = comFile.getEncoded();
+			COMFile com = new COMFile("01", "07", "04", "00", "00", tagList);
+			byte[] comBytes = com.getEncoded();
 
 			/* EF.DG1 */
 			Date today = Calendar.getInstance().getTime();
 			String primaryIdentifier = "";
 			String[] secondaryIdentifiers = { "" };
 			MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
-			DG1File dg1File = new DG1File(mrzInfo);
-			byte[] dg1Bytes = dg1File.getEncoded();
+			DG1File dg1 = new DG1File(mrzInfo);
+			byte[] dg1Bytes = dg1.getEncoded();
 
 			/* EF.DG2 */
-			DG2File dg2File = new DG2File(); 
-			byte[] dg2Bytes = dg2File.getEncoded();
+			DG2File dg2 = new DG2File(); 
+			byte[] dg2Bytes = dg2.getEncoded();
 
 			/* EF.SOD */
 			// FIXME: docSigningCert == null, generate something here...
@@ -269,8 +265,8 @@ public class PassportFrame extends JFrame
 			hashes.put(1, digest.digest(dg1Bytes));
 			hashes.put(2, digest.digest(dg2Bytes));
 			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Should be use a private key to generate a real signature?
-			SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
-			byte[] sodBytes = sodFile.getEncoded();
+			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
+			byte[] sodBytes = sod.getEncoded();
 
 			putFile(PassportService.EF_COM, comBytes);
 			putFile(PassportService.EF_DG1, dg1Bytes);
@@ -547,7 +543,7 @@ public class PassportFrame extends JFrame
 		verificationPanel.revalidate();
 	}
 
-	/* Menu stuff... */
+	/* Menu stuff below... */
 
 	private JMenu createFileMenu() {
 		JMenu fileMenu = new JMenu("File");
@@ -555,12 +551,12 @@ public class PassportFrame extends JFrame
 		/* Save As...*/
 		JMenuItem saveAsItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(new SaveAsAction());
+		saveAsItem.setAction(getSaveAsAction());
 
 		/* Close */
 		JMenuItem closeItem = new JMenuItem("Close");
 		fileMenu.add(closeItem);
-		closeItem.setAction(new CloseAction());
+		closeItem.setAction(getCloseAction());
 
 		return fileMenu;
 	}
@@ -571,24 +567,24 @@ public class PassportFrame extends JFrame
 		/* View portrait at full size... */
 		JMenuItem viewImageAtOriginalSize = new JMenuItem();
 		menu.add(viewImageAtOriginalSize);
-		viewImageAtOriginalSize.setAction(new ViewPortraitAtOriginalSizeAction());
+		viewImageAtOriginalSize.setAction(getViewPortraitAtOriginalSizeAction());
 
 		menu.addSeparator();
 
 		/* View DS Certificate... */
 		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
 		menu.add(viewDocumentSignerCertificate);
-		viewDocumentSignerCertificate.setAction(new ViewDocumentSignerCertificateAction());
+		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
 		/* View CS Certificate... */
 		JMenuItem viewCountrySignerCertificate = new JMenuItem();
 		menu.add(viewCountrySignerCertificate);
-		viewCountrySignerCertificate.setAction(new ViewCountrySignerCertificateAction());
+		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
 
 		/* View AA public key */
 		JMenuItem viewAAPublicKey = new JMenuItem();
 		menu.add(viewAAPublicKey);
-		viewAAPublicKey.setAction(new ViewAAPublicKeyAction());
+		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
 
 		return menu;
 	}
@@ -599,24 +595,24 @@ public class PassportFrame extends JFrame
 		/* Load additional portrait from file... */
 		JMenuItem loadPortraitFromFile = new JMenuItem();
 		menu.add(loadPortraitFromFile);
-		loadPortraitFromFile.setAction(new AddPortraitAction());
+		loadPortraitFromFile.setAction(getAddPortraitAction());
 
 		/* Delete selected portrait */
 		JMenuItem deletePortrait = new JMenuItem();
 		menu.add(deletePortrait);
-		deletePortrait.setAction(new RemovePortraitAction());
+		deletePortrait.setAction(getRemovePortraitAction());
 
 		menu.addSeparator();
 
 		/* Replace DSC with another certificate from file... */
 		JMenuItem loadDocSignCertFromFile = new JMenuItem();
 		menu.add(loadDocSignCertFromFile);
-		loadDocSignCertFromFile.setAction(new LoadDocSignCertAction());
+		loadDocSignCertFromFile.setAction(getLoadDocSignCertAction());
 
 		/* Replace AA key with another key from file... */
 		JMenuItem loadAAKeyFromFile = new JMenuItem();
 		menu.add(loadAAKeyFromFile);
-		loadAAKeyFromFile.setAction(new LoadAAKeyAction());
+		loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
 
 		menu.addSeparator();
 
@@ -626,290 +622,283 @@ public class PassportFrame extends JFrame
 
 		return menu;
 	}
+	
+	/* Menu item actions below... */
 
-	private class CloseAction extends AbstractAction
-	{
-		public CloseAction() {
-			putValue(SMALL_ICON, CLOSE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, CLOSE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Close Window");
-			putValue(NAME, "Close");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			dispose();
-		}
+	private Action getCloseAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
+		action.putValue(Action.NAME, "Close");
+		return action;
 	}
 
-	private class SaveAsAction extends AbstractAction
-	{
-		public SaveAsAction() {
-			putValue(SMALL_ICON, SAVE_AS_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Save passport to file");
-			putValue(NAME, "Save As...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
-				public String getDescription() { return "ZIP archives"; }				
-			});
-			int choice = fileChooser.showSaveDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					FileOutputStream fileOut = new FileOutputStream(file);
-					ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-					for (short tag: bufferedStreams.keySet()) {
-						String entryName = Hex.shortToHexString(tag) + ".bin";
-						InputStream dg = getFile(tag);
-						zipOut.putNextEntry(new ZipEntry(entryName));
-						int bytesRead;
-						byte[] dgBytes = new byte[1024];
-						while((bytesRead = dg.read(dgBytes)) > 0){
-							zipOut.write(dgBytes, 0, bytesRead);
+	private Action getSaveAsAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
+					public String getDescription() { return "ZIP archives"; }				
+				});
+				int choice = fileChooser.showSaveDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						FileOutputStream fileOut = new FileOutputStream(file);
+						ZipOutputStream zipOut = new ZipOutputStream(fileOut);
+						for (short tag: bufferedStreams.keySet()) {
+							String entryName = Hex.shortToHexString(tag) + ".bin";
+							InputStream dg = getFile(tag);
+							zipOut.putNextEntry(new ZipEntry(entryName));
+							int bytesRead;
+							byte[] dgBytes = new byte[1024];
+							while((bytesRead = dg.read(dgBytes)) > 0){
+								zipOut.write(dgBytes, 0, bytesRead);
+							}
+							zipOut.closeEntry();
 						}
-						zipOut.closeEntry();
+						zipOut.finish();
+						zipOut.close();
+						fileOut.flush();
+						fileOut.close();						
+						break;
+					} catch (IOException fnfe) {
+						fnfe.printStackTrace();
 					}
-					zipOut.finish();
-					zipOut.close();
-					fileOut.flush();
-					fileOut.close();						
+				default: break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, SAVE_AS_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Save passport to file");
+		action.putValue(Action.NAME, "Save As...");
+		return action;
+	}
+
+	private Action getViewPortraitAtOriginalSizeAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				int index = facePreviewPanel.getSelectedIndex();
+				if (dg2 == null) {
+					InputStream dg2In = getFile(PassportService.EF_DG2);
+					dg2 = new DG2File(dg2In);
+				}
+				FaceInfo faceInfo = dg2.getFaces().get(index);
+				PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
+				portraitFrame.setVisible(true);
+				portraitFrame.pack();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, MAGNIFIER_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
+		action.putValue(Action.NAME, "Portrait at 100%...");
+		return action;
+	}
+
+	private Action getAddPortraitAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory()
+						|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
+						|| f.getName().endsWith("png") || f.getName().endsWith("PNG")
+						|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
+					public String getDescription() { return "Image files"; }				
+				});
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						BufferedImage image = ImageIO.read(file);
+
+						FaceInfo faceInfo = new FaceInfo(
+								Gender.UNSPECIFIED,
+								FaceInfo.EyeColor.UNSPECIFIED,
+								FaceInfo.HAIR_COLOR_UNSPECIFIED,
+								FaceInfo.EXPRESSION_UNSPECIFIED,
+								FaceInfo.SOURCE_TYPE_UNSPECIFIED,
+								image);
+						if (dg2 == null) {
+							InputStream dg2In = getFile(PassportService.EF_DG2);
+							dg2 = new DG2File(dg2In);
+						}
+						dg2.addFaceInfo(faceInfo);
+						putFile(PassportService.EF_DG2, dg2.getEncoded());
+						facePreviewPanel.addFace(faceInfo);
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
+					}
 					break;
-				} catch (IOException fnfe) {
-					fnfe.printStackTrace();
+				default:
+					break;
 				}
-			default: break;
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_IMAGE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_IMAGE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (additional) portrait from file");
+		action.putValue(Action.NAME, "Import portrait...");
+		return action;
 	}
 
-	private class ViewPortraitAtOriginalSizeAction extends AbstractAction
-	{
-		public ViewPortraitAtOriginalSizeAction() {
-			putValue(SMALL_ICON, MAGNIFIER_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, MAGNIFIER_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View portrait image at original size");
-			putValue(NAME, "Portrait at 100%...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			int index = facePreviewPanel.getSelectedIndex();
-			if (dg2 == null) {
-				InputStream dg2In = getFile(PassportService.EF_DG2);
-				dg2 = new DG2File(dg2In);
+	private Action getRemovePortraitAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				int index = facePreviewPanel.getSelectedIndex();
+				dg2.removeFaceInfo(index);
+				putFile(PassportService.EF_DG2, dg2.getEncoded());
+				facePreviewPanel.removeFace(index);
 			}
-			FaceInfo faceInfo = dg2.getFaces().get(index);
-			PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
-			portraitFrame.setVisible(true);
-			portraitFrame.pack();
-		}
+		};
+		action.putValue(Action.SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Delete selected portrait");
+		action.putValue(Action.NAME, "Delete portrait");
+		return action;
 	}
 
-	private class AddPortraitAction extends AbstractAction
-	{
-		public AddPortraitAction() {
-			putValue(SMALL_ICON, LOAD_IMAGE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, LOAD_IMAGE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Import (additional) portrait from file");
-			putValue(NAME, "Import portrait...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
-					|| f.getName().endsWith("png") || f.getName().endsWith("PNG")
-					|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
-				public String getDescription() { return "Image files"; }				
-			});
-			int choice = fileChooser.showOpenDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					BufferedImage image = ImageIO.read(file);
-
-					FaceInfo faceInfo = new FaceInfo(
-							Gender.UNSPECIFIED,
-							FaceInfo.EyeColor.UNSPECIFIED,
-							FaceInfo.HAIR_COLOR_UNSPECIFIED,
-							FaceInfo.EXPRESSION_UNSPECIFIED,
-							FaceInfo.SOURCE_TYPE_UNSPECIFIED,
-							image);
-					if (dg2 == null) {
-						InputStream dg2In = getFile(PassportService.EF_DG2);
-						dg2 = new DG2File(dg2In);
+	private Action getLoadDocSignCertAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory()
+						|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
+						|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+						|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+						|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
+						|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
+					public String getDescription() { return "Certificate files"; }				
+				});
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						throw new IOException("TODO: do something with " + file);
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
 					}
-					dg2.addFaceInfo(faceInfo);
-					putFile(PassportService.EF_DG2, dg2.getEncoded());
-					facePreviewPanel.addFace(faceInfo);
-				} catch (IOException ioe) {
-					/* NOTE: Do nothing. */
+					break;
+				default:
+					break;
 				}
-				break;
-			default:
-				break;
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_CERT_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer Certificate from file");
+		action.putValue(Action.NAME, "Import Doc.Cert...");
+		return action;
+
 	}
 
-	private class RemovePortraitAction extends AbstractAction
-	{
-		public RemovePortraitAction() {
-			putValue(SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
-			putValue(LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
-			putValue(SHORT_DESCRIPTION, "Delete selected portrait");
-			putValue(NAME, "Delete portrait");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			int index = facePreviewPanel.getSelectedIndex();
-			dg2.removeFaceInfo(index);
-			putFile(PassportService.EF_DG2, dg2.getEncoded());
-			facePreviewPanel.removeFace(index);
-		}
-	}
-
-	private class LoadDocSignCertAction extends AbstractAction
-	{
-		public LoadDocSignCertAction() {
-			putValue(SMALL_ICON, LOAD_CERT_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, LOAD_CERT_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Import (and replace) Document Signer Certificate from file");
-			putValue(NAME, "Import Doc.Cert...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
-					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-					|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
-					|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
-				public String getDescription() { return "Certificate files"; }				
-			});
-			int choice = fileChooser.showOpenDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					throw new IOException("TODO: do something with " + file);
-				} catch (IOException ioe) {
-					/* NOTE: Do nothing. */
+	private Action getLoadAAPublicKeyAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory()
+						|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+						|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+						|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
+						|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
+					public String getDescription() { return "Key files"; }								
+				});
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						throw new IOException("TODO: do something with " + file);
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
+					}
+					break;
+				default:
+					break;
 				}
-				break;
-			default:
-				break;
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_KEY_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication public key from file");
+		action.putValue(Action.NAME, "Import AA Pub.Key...");
+		return action;
 	}
 
-	private class LoadAAKeyAction extends AbstractAction
-	{
-		public LoadAAKeyAction() {
-			putValue(SMALL_ICON, LOAD_KEY_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, LOAD_KEY_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Import (and replace) Active Authentication public key from file");
-			putValue(NAME, "Import AA Pub.Key...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-					|| f.getName().endsWith("x509") || f.getName().endsWith("X509")
-					|| f.getName().endsWith("pkcs8") || f.getName().endsWith("PKCS8"); }
-				public String getDescription() { return "Key files"; }								
-			});
-			int choice = fileChooser.showOpenDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					throw new IOException("TODO: do something with " + file);
-				} catch (IOException ioe) {
-					/* NOTE: Do nothing. */
-				}
-				break;
-			default:
-				break;
-			}
-		}
-	}
-
-	private class ViewDocumentSignerCertificateAction extends AbstractAction
-	{
-		public ViewDocumentSignerCertificateAction() {
-			putValue(SMALL_ICON, CERTIFICATE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View Document Signer Certificate");
-			putValue(NAME, "Doc. Cert...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", docSigningCert);
-			certificateFrame.pack();
-			certificateFrame.setVisible(true);
-		}
-	}
-
-	private class ViewCountrySignerCertificateAction extends AbstractAction
-	{
-		public ViewCountrySignerCertificateAction() {
-			putValue(SMALL_ICON, CERTIFICATE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View Country Signer Certificate");
-			putValue(NAME, "CSCA Cert...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			if (countrySigningCert == null) {
-				JOptionPane.showMessageDialog(getContentPane(), "CSCA for " + issuingState.getName() + " not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-			} else {
-				JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (" + issuingState + ", from file)", countrySigningCert);
+	private Action getViewDocumentSignerCertificateAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", docSigningCert);
 				certificateFrame.pack();
 				certificateFrame.setVisible(true);
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Document Signer Certificate");
+		action.putValue(Action.NAME, "Doc. Cert...");
+		return action;
 	}
 
-	private class ViewAAPublicKeyAction extends AbstractAction
-	{
-		public ViewAAPublicKeyAction() {
-			putValue(SMALL_ICON, KEY_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, KEY_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "View Active Authentication Public Key");
-			putValue(NAME, "AA Pub. Key...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			try {
-				InputStream in = getFile(PassportService.EF_DG15);
-				dg15 = new DG15File(in);
-				PublicKey pubKey = dg15.getPublicKey();
-				KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
-				keyFrame.pack();
-				keyFrame.setVisible(true);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
+	private Action getViewCountrySignerCertificateAction() {
+		Action action = new AbstractAction() {	
+			public void actionPerformed(ActionEvent e) {
+				if (countrySigningCert == null) {
+					JOptionPane.showMessageDialog(getContentPane(), "CSCA for " + issuingState.getName() + " not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
+				} else {
+					JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (" + issuingState + ", from file)", countrySigningCert);
+					certificateFrame.pack();
+					certificateFrame.setVisible(true);
+				}
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
+		action.putValue(Action.NAME, "CSCA Cert...");
+		return action;
+	}
+
+	private Action getViewAAPublicKeyAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					InputStream in = getFile(PassportService.EF_DG15);
+					dg15 = new DG15File(in);
+					PublicKey pubKey = dg15.getPublicKey();
+					KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
+					keyFrame.pack();
+					keyFrame.setVisible(true);
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Public Key");
+		action.putValue(Action.NAME, "AA Pub. Key...");
+		return action;
 	}
 
 	private Action getUploadAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
-				cm.stop();
+				boolean wasCardManagerStarted = cm.isPolling();
 				BACEntry bacEntry = null;
 				if (dg1 != null) {
 					MRZInfo mrzInfo = dg1.getMRZInfo();
@@ -924,6 +913,7 @@ public class PassportFrame extends JFrame
 				switch (choice) {
 				case UploadOptionsChooser.APPROVE_OPTION:
 					try {
+						cm.stop();
 						CardTerminal terminal = chooser.getSelectedTerminal();
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
@@ -948,7 +938,7 @@ public class PassportFrame extends JFrame
 					} catch (GeneralSecurityException gse) {
 						gse.printStackTrace();
 					} finally {
-						cm.start();
+						if (wasCardManagerStarted) { cm.start(); }
 					}
 					break;
 				default:
