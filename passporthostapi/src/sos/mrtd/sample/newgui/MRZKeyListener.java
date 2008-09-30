@@ -14,7 +14,7 @@ import sos.mrtd.MRZInfo;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
+public class MRZKeyListener implements KeyListener, BACEntrySource
 {
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
@@ -24,7 +24,7 @@ public class KeyboardBACEntrySource implements KeyListener, BACEntrySource
 	private int indexInBuffer;
 	private long heartBeat;
 
-	public KeyboardBACEntrySource(BACStorePanel store) {
+	public MRZKeyListener(BACStorePanel store) {
 		buffer = new char[256];
 		resetBuffer();
 		this.store = store;

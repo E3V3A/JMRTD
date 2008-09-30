@@ -117,8 +117,7 @@ public class PassportApp  implements PassportListener, AuthListener
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 
-			final KeyboardBACEntrySource keySource = new KeyboardBACEntrySource(bacStorePanel);
-//			bacStorePanel.addKeyListener(keySource);
+			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
 			menuBar.add(createFileMenu());

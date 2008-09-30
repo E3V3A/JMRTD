@@ -83,6 +83,7 @@ import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.smartcards.CardFileInputStream;
+import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
@@ -920,33 +921,34 @@ public class PassportFrame extends JFrame
 				int choice = chooser.showOptionsDialog(getContentPane());
 				switch (choice) {
 				case UploadOptionsChooser.APPROVE_OPTION:
+					CardManager cm = CardManager.getInstance();
+					cm.stop();
 					try {
 						CardTerminal terminal = chooser.getSelectedTerminal();
-						if (chooser.isBACSelected()) {
-
-						}
-
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
-
-						persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
-
+						if (chooser.isBACSelected()) {
+							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+						}
 						if (chooser.isAASelected()) {
 							persoService.putPrivateKey(chooser.getAAPrivateKey());
 						}
-
 						for (short fid: bufferedStreams.keySet()) {
 							byte[] fileBytes = getFileBytes(fid); 
 							persoService.createFile(fid, (short)fileBytes.length);
 							persoService.selectFile(fid);
 							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));
 						}
+						persoService.lockApplet();
+						persoService.close();
 					} catch (IOException ioe) {
 						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
 						cse.printStackTrace();
 					} catch (GeneralSecurityException gse) {
 						gse.printStackTrace();
+					} finally {
+						cm.start();
 					}
 					break;
 				default:
