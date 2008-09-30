@@ -419,21 +419,21 @@ public class PassportFrame extends JFrame
 			throw new IllegalStateException("ERROR: " + ioe.toString());
 		}
 	}
-	
+
 	private byte[] getFileBytes(short fid) {
 		InputStream in = getFile(fid);
 		if (in == null) { return null; }
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] buf = new byte[256];
 		while (true)
-		try {
-			int bytesRead = in.read(buf);
-			if (bytesRead < 0) { break; }
-			out.write(buf, 0, bytesRead);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return out.toByteArray();
+			try {
+				int bytesRead = in.read(buf);
+				if (bytesRead < 0) { break; }
+				out.write(buf, 0, bytesRead);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+			return out.toByteArray();
 	}
 
 	private void verifySecurity(PassportService service) {
@@ -908,6 +908,8 @@ public class PassportFrame extends JFrame
 	private Action getUploadAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
+				CardManager cm = CardManager.getInstance();
+				cm.stop();
 				BACEntry bacEntry = null;
 				if (dg1 != null) {
 					MRZInfo mrzInfo = dg1.getMRZInfo();
@@ -921,8 +923,6 @@ public class PassportFrame extends JFrame
 				int choice = chooser.showOptionsDialog(getContentPane());
 				switch (choice) {
 				case UploadOptionsChooser.APPROVE_OPTION:
-					CardManager cm = CardManager.getInstance();
-					cm.stop();
 					try {
 						CardTerminal terminal = chooser.getSelectedTerminal();
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
@@ -954,6 +954,7 @@ public class PassportFrame extends JFrame
 				default:
 					break;
 				}
+				cm.start();
 			}			
 		};
 		action.putValue(Action.SMALL_ICON, UPLOAD_SMALL_ICON);
