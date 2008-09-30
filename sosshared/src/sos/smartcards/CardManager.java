@@ -107,11 +107,12 @@ public class CardManager
 			/* Listing readers of this factory failed. */
 		}
 
-		try {
-			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
-		} catch (NoSuchAlgorithmException nsae) {
-			/* Listing readers of this factory failed. */
-		}
+		/* FIXME: JCOPEmulatorTerminal seems to deadlock CM. Not sure why. -- MO
+//		try {
+//			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
+//		} catch (NoSuchAlgorithmException nsae) {
+//			/* Listing readers of this factory failed. */
+//		}
 	}
 
 	private void addTerminals(TerminalFactory factory) {
@@ -196,7 +197,6 @@ public class CardManager
 							}
 						}
 						isCardPresent = terminal.isCardPresent();
-
 						if (wasCardPresent && !isCardPresent) {
 							if (service != null) {
 								notifyCardRemoved(service);
