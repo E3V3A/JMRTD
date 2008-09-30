@@ -85,6 +85,15 @@ public class CardManager
 			notifyAll();
 		}
 	}
+	
+	/**
+	 * Whether the card manager is running.
+	 * 
+	 * @return a boolean indicating whether the card manager is running.
+	 */
+	public boolean isPolling() {
+		return isPolling;
+	}
 
 	private void addTerminals() {
 
@@ -126,6 +135,11 @@ public class CardManager
 		}
 	}
 
+	/**
+	 * Adds a listener.
+	 * 
+	 * @param l the listener to add
+	 */
 	public void addCardTerminalListener(CardTerminalListener l) {
 		synchronized(INSTANCE) {
 			listeners.add(l);
@@ -133,6 +147,11 @@ public class CardManager
 		}
 	}
 
+	/**
+	 * Removes a listener.
+	 * 
+	 * @param l the listener to remove
+	 */
 	public void removeCardTerminalListener(CardTerminalListener l) {
 		synchronized(INSTANCE) {
 			listeners.remove(l);
@@ -155,10 +174,20 @@ public class CardManager
 		return listeners.isEmpty();
 	}
 
+	/**
+	 * Gets a list of terminals.
+	 * 
+	 * @return a list of terminals
+	 */
 	public Collection<CardTerminal> getTerminals() {
 		return terminals;
 	}
 
+	/**
+	 * Gets the card manager.
+	 * 
+	 * @return the card manager
+	 */
 	public static CardManager getInstance() {
 		return INSTANCE;
 	}
