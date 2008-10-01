@@ -45,7 +45,7 @@ public class KeyStore {
     
     KeyStore(byte mode) {
         this.mode = mode;
-        sm_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+        sm_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES_TRANSIENT_RESET,
                                                KeyBuilder.LENGTH_DES3_2KEY,
                                                false);
         ma_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
@@ -62,7 +62,7 @@ public class KeyStore {
 
         switch(mode) {
         case PassportCrypto.PERFECTWORLD_MODE: 
-            sm_kMac = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+            sm_kMac = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES_TRANSIENT_RESET,
                                                    KeyBuilder.LENGTH_DES3_2KEY,
                                                    false);
             ma_kMac = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
@@ -71,10 +71,10 @@ public class KeyStore {
             break;
         case PassportCrypto.CREF_MODE:
         case PassportCrypto.JCOP41_MODE:
-            sm_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+            sm_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES_TRANSIENT_RESET,
                                                      KeyBuilder.LENGTH_DES,
                                                      false);
-            sm_kMac_b = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
+            sm_kMac_b = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES_TRANSIENT_RESET,
                                                      KeyBuilder.LENGTH_DES,
                                                      false);
             ma_kMac_a = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES,
