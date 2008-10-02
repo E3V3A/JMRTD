@@ -42,8 +42,6 @@ import java.util.Date;
 import java.util.List;
 
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -72,13 +70,11 @@ import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
-import sos.smartcards.APDUListener;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
-import sos.util.Hex;
 import sos.util.Icons;
 
 /**

@@ -22,17 +22,10 @@
 
 package sos.mrtd;
 
-import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
 
 /**
  * File structure for CBEFF formated files.
