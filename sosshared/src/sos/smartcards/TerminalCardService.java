@@ -22,8 +22,6 @@
 
 package sos.smartcards;
 
-import java.util.ArrayList;
-
 import javax.smartcardio.Card;
 import javax.smartcardio.CardChannel;
 import javax.smartcardio.CardException;
@@ -40,82 +38,66 @@ import javax.smartcardio.ResponseAPDU;
  */
 public class TerminalCardService extends CardService
 {
-   private static ArrayList<String> protocols;
+	private CardTerminal terminal;
+	private Card card;
+	private CardChannel channel;
 
-   private CardTerminal terminal;
-   private Card card;
-   private CardChannel channel;
+	/**
+	 * Constructs a new card service.
+	 * 
+	 * @param terminal the card terminal to connect to
+	 */
+	public TerminalCardService(CardTerminal terminal) {
+		this.terminal = terminal;
+	}
 
-   /**
-    * Constructs a new card service.
-    * @param terminal 
-    */
-   public TerminalCardService(CardTerminal terminal) {
-	   this.terminal = terminal;
-      if (protocols == null) {
-         protocols = new ArrayList<String>();
-      }
-      if (protocols.size() < 2) {
-    	  protocols.add("T=CL");
-         protocols.add("T=1");
-         protocols.add("T=0");
-      }
-   }
-   
-   public void open() throws CardServiceException {
-      if (isOpen()) { return; }
-      for (String protocol: protocols) {
-         try {
-            card = terminal.connect(protocol);
-            if (protocols.indexOf(protocol) != 0) {
-               protocols.remove(protocols.indexOf(protocol));
-               protocols.add(0, protocol);
-            }
-            break;
-         } catch (Exception e) {
-            continue;
-         }
-      }
-      channel = card.getBasicChannel();
-      if (channel == null) { throw new CardServiceException("channel == null"); }
-      state = SESSION_STARTED_STATE;
-   }
-   
-   public boolean isOpen() {
-      return (state != SESSION_STOPPED_STATE);
-   }
+	public void open() throws CardServiceException {
+		if (isOpen()) { return; }
+		try {
+			card = terminal.connect("*");
+			channel = card.getBasicChannel();
+			if (channel == null) { throw new CardServiceException("channel == null"); }
+			state = SESSION_STARTED_STATE;
+		} catch (CardException ce) {
+			throw new CardServiceException(ce.toString());
+		}
+	}
 
-   /**
-    * Sends an apdu to the card.
-    * 
-    * @param ourCommandAPDU the command apdu to send.
-    * @return the response from the card, including the status word.
-    */
-   public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) throws CardServiceException {
-      try {
-         if (channel == null) {
-            throw new CardServiceException("channel == null");
-         }
-         ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
-         notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
-         return ourResponseAPDU;
-      } catch (CardException ce) {
-    	  ce.printStackTrace();
-         throw new CardServiceException(ce.toString());
-      }
-   }
+	public boolean isOpen() {
+		return (state != SESSION_STOPPED_STATE);
+	}
 
-   /**
-    * Closes the session with the card.
-    */
-   public void close() {
-      try {
-         if (card != null) {
-            card.disconnect(false);
-         }
-         state = SESSION_STOPPED_STATE;
-      } catch (CardException ce) {
-         ce.printStackTrace();
-      }
-   }
+	/**
+	 * Sends an APDU to the card.
+	 * 
+	 * @param ourCommandAPDU the command apdu to send
+	 * @return the response from the card, including the status word
+	 */
+	public ResponseAPDU transmit(CommandAPDU ourCommandAPDU) throws CardServiceException {
+		try {
+			if (channel == null) {
+				throw new CardServiceException("channel == null");
+			}
+			ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
+			notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
+			return ourResponseAPDU;
+		} catch (CardException ce) {
+			ce.printStackTrace();
+			throw new CardServiceException(ce.toString());
+		}
+	}
+
+	/**
+	 * Closes the session with the card.
+	 */
+	public void close() {
+		try {
+			if (card != null) {
+				card.disconnect(false);
+			}
+			state = SESSION_STOPPED_STATE;
+		} catch (CardException ce) {
+			ce.printStackTrace();
+		}
+	}
 }

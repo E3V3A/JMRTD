@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2008  Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * Copyright (C) 2008  The JMRTD team
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,7 +37,8 @@ import javax.smartcardio.TerminalFactory;
  * Manages all card terminals.
  * This is the source of card insertion and removal events.
  * Ideally this should be the only place where low level CardService
- * instances are created.
+ * instances (such as {@link sos.smartcards.TerminalCardService TerminalCardService})
+ * are created.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
@@ -210,6 +211,7 @@ public class CardManager
 						}
 					}
 					try {
+						/* FIXME: use waitForCardAbsent and waitForCardPresent somehow... */
 						boolean wasCardPresent = false;
 						boolean isCardPresent = false;
 						if (service != null) {
