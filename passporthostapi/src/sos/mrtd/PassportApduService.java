@@ -278,15 +278,6 @@ public class PassportApduService extends CardService
 
    /**
     * Sends a <code>SELECT FILE</code> command to the passport.
-    *
-    * @param fid the file to select
-    */
-   public synchronized void sendSelectFile(short fid) throws CardServiceException {
-      sendSelectFile(null, fid);
-   }
-
-   /**
-    * Sends a <code>SELECT FILE</code> command to the passport.
     * Secure messaging will be applied to the command and response
     * apdu.
     *
@@ -373,17 +364,6 @@ public class PassportApduService extends CardService
    public synchronized byte[] sendGetChallenge() throws CardServiceException {
       ResponseAPDU rapdu = transmit(createGetChallengeAPDU());
       return rapdu.getData();
-   }
-
-   /**
-    * Sends an <code>INTERNAL AUTHENTICATE</code> command to the passport.
-    *
-    * @param rndIFD the challenge to send
-    * 
-    * @return the response from the passport (status word removed)
-    */
-   public synchronized byte[] sendInternalAuthenticate(byte[] rndIFD) throws CardServiceException {
-      return sendInternalAuthenticate(null, rndIFD);
    }
 
    /**

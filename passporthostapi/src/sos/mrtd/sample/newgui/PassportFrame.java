@@ -41,6 +41,7 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -54,6 +55,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import javax.crypto.Cipher;
 import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
@@ -82,6 +84,7 @@ import sos.mrtd.PassportFile;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
+import sos.mrtd.Util;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
@@ -147,6 +150,8 @@ public class PassportFrame extends JFrame
 	private boolean isDSVerified;
 	private Country issuingState;
 
+	private PassportService service; // FIXME: only pass it as param, not store it in field?
+
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
 		verificationPanel = new VerificationIndicator();
@@ -177,6 +182,7 @@ public class PassportFrame extends JFrame
 	 * @return a passport frame.
 	 */
 	public void readFromService(PassportService service, boolean isBACVerified) throws CardServiceException {
+		this.service = service;
 		long t0 = System.currentTimeMillis();
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
@@ -448,8 +454,6 @@ public class PassportFrame extends JFrame
 			verificationPanel.setAAState(isAAVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 			docSigningCert = null;
 			countrySigningCert = null;
-		} catch (IOException ioe) {
-			verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		} catch (CardServiceException cse) {
 			verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
 		}
@@ -622,7 +626,7 @@ public class PassportFrame extends JFrame
 
 		return menu;
 	}
-	
+
 	/* Menu item actions below... */
 
 	private Action getCloseAction() {
@@ -851,16 +855,12 @@ public class PassportFrame extends JFrame
 	private Action getViewAAPublicKeyAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-				try {
-					InputStream in = getFile(PassportService.EF_DG15);
-					dg15 = new DG15File(in);
-					PublicKey pubKey = dg15.getPublicKey();
-					KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
-					keyFrame.pack();
-					keyFrame.setVisible(true);
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
+				InputStream in = getFile(PassportService.EF_DG15);
+				dg15 = new DG15File(in);
+				PublicKey pubKey = dg15.getPublicKey();
+				KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
+				keyFrame.pack();
+				keyFrame.setVisible(true);
 			}
 		};
 		action.putValue(Action.SMALL_ICON, KEY_SMALL_ICON);
@@ -904,8 +904,8 @@ public class PassportFrame extends JFrame
 							System.out.println("DEBUG: createFile " + Integer.toHexString(fid));
 							persoService.createFile(fid, (short)fileBytes.length);
 
-							 System.out.println("DEBUG: selectFile " + Integer.toHexString(fid));
-							 persoService.selectFile(fid);
+							System.out.println("DEBUG: selectFile " + Integer.toHexString(fid));
+							persoService.selectFile(fid);
 
 							System.out.println("DEBUG: writeFile " + Integer.toHexString(fid) + " " + fileBytes.length);
 							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));

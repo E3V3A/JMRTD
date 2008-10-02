@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -42,58 +41,58 @@ import sos.tlv.BERTLVObject;
  */
 public class DG15File extends DataGroup
 {
-   private PublicKey publicKey;
+	private PublicKey publicKey;
 
-   /**
-    * Constructs a new file.
-    * 
-    * @param publicKey the key to store in this file
-    */
-   public DG15File(PublicKey publicKey) {
-      this.publicKey = publicKey;
-   }
+	/**
+	 * Constructs a new file.
+	 * 
+	 * @param publicKey the key to store in this file
+	 */
+	public DG15File(PublicKey publicKey) {
+		this.publicKey = publicKey;
+	}
 
-   public DG15File(InputStream in) throws IOException {
-      BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-      tlvIn.readTag();
-      tlvIn.readLength();
-      byte[] value = tlvIn.readValue();
-      try {
-         X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
-         KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-         publicKey = keyFactory.generatePublic(pubKeySpec);
-      } catch (Exception e) {
-         throw new IllegalArgumentException(e.toString());
-      }
-   }
+	public DG15File(InputStream in) {
+		try {
+			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			tlvIn.readTag();
+			tlvIn.readLength();
+			byte[] value = tlvIn.readValue();
+			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
+			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			publicKey = keyFactory.generatePublic(pubKeySpec);
+		} catch (Exception e) {
+			throw new IllegalArgumentException(e.toString());
+		}
+	}
 
-   public byte[] getEncoded() {
-      if (isSourceConsistent) {
-         return sourceObject.getEncoded();
-      }
-      try {
-         BERTLVObject ef010F =
-            new BERTLVObject(PassportFile.EF_DG15_TAG,
-                  publicKey.getEncoded());
-         sourceObject = ef010F;
-         isSourceConsistent = true;
-         return ef010F.getEncoded();
-      } catch (Exception e) {
-         e.printStackTrace();
-         return null;
-      }
-   }
+	public byte[] getEncoded() {
+		if (isSourceConsistent) {
+			return sourceObject.getEncoded();
+		}
+		try {
+			BERTLVObject ef010F =
+				new BERTLVObject(PassportFile.EF_DG15_TAG,
+						publicKey.getEncoded());
+			sourceObject = ef010F;
+			isSourceConsistent = true;
+			return ef010F.getEncoded();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-   public int getTag() {
-      return EF_DG15_TAG;
-   }
+	public int getTag() {
+		return EF_DG15_TAG;
+	}
 
-   /**
-    * Gets the public key stored in this file.
-    * 
-    * @return the public key
-    */
-   public PublicKey getPublicKey() {
-      return publicKey;
-   }
+	/**
+	 * Gets the public key stored in this file.
+	 * 
+	 * @return the public key
+	 */
+	public PublicKey getPublicKey() {
+		return publicKey;
+	}
 }

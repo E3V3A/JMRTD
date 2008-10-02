@@ -23,6 +23,7 @@
 package sos.mrtd;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -100,7 +101,7 @@ public class PassportService extends PassportApduService
 	public static final short EF_SOD = 0x011D;
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
-	
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/**
@@ -250,32 +251,12 @@ public class PassportService extends PassportApduService
 	 * @throws GeneralSecurityException if something goes wrong
 	 */
 	public boolean doAA(PublicKey publicKey) throws CardServiceException {
-		byte[] m2 = new byte[8];
-		random.nextBytes(m2);
-		return doAA(publicKey, m2);
-	}
-	
-	/**
-	 * Performs the <i>Active Authentication</i> protocol.
-	 * 
-	 * @param publicKey the public key to use (usually read from the card)
-	 * @param m2 the random challenge of exactly 8 bytes
-	 * 
-	 * @return a boolean indicating whether the card was authenticated
-	 * 
-	 * @throws GeneralSecurityException if something goes wrong
-	 */
-	public boolean doAA(PublicKey publicKey, byte[] m2) throws CardServiceException {
 		try {
-			if (publicKey == null) {
-				throw new CardServiceException("AA failed: bad key");
-			}
-			if (m2 == null || m2.length != 8) {
-				throw new CardServiceException("AA failed: bad random");
-			}
+			byte[] m2 = new byte[8];
+			random.nextBytes(m2);
+			byte[] response = sendAA(publicKey, m2);
 			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
 			aaSignature.initVerify(publicKey);
-			byte[] response = sendInternalAuthenticate(wrapper, m2);
 			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
 			byte[] plaintext = aaCipher.doFinal(response);
 			byte[] m1 = Util.recoverMessage(digestLength, plaintext);
@@ -294,6 +275,29 @@ public class PassportService extends PassportApduService
 			throw new CardServiceException(gse.toString());
 		}
 	}
+
+	/**
+	 * Performs the <i>Active Authentication</i> protocol. This method
+	 * just gives the response from the card without checking. Use {@link #doAA(PublicKey)}
+	 * instead.
+	 * 
+	 * @param publicKey the public key to use (usually read from the card)
+	 * @param challenge the random challenge of exactly 8 bytes
+	 * 
+	 * @return response from the card
+	 */
+	public byte[] sendAA(PublicKey publicKey, byte[] challenge) throws CardServiceException {
+		if (publicKey == null) {
+			throw new IllegalArgumentException("AA failed: bad key");
+		}
+		if (challenge == null || challenge.length != 8) {
+			throw new IllegalArgumentException("AA failed: bad challenge");
+		}
+		byte[] response = sendInternalAuthenticate(wrapper, challenge);
+		return response;
+	}
+
+
 
 	/**
 	 * Notifies listeners about AA event.
