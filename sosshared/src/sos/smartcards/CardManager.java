@@ -41,6 +41,7 @@ import javax.smartcardio.TerminalFactory;
  * are created.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
  * @version $Revision$
  */
