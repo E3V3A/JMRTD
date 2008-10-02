@@ -190,7 +190,7 @@ public class MRZInfo
 		secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
 	}
 
-	private String trimFillerChars(String str) {
+	private static String trimFillerChars(String str) {
 		byte[] chars = str.trim().getBytes();
 		for (int i = 0; i < chars.length; i++) {
 			if (chars[i] == '<') { chars[i] = ' '; }
