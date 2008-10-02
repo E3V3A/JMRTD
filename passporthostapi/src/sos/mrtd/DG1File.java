@@ -76,7 +76,7 @@ public class DG1File extends DataGroup
 	}
 	
 	public String toString() {
-		return "DG1File for " + mrz.getDocumentNumber();
+		return "DG1File " + mrz.toString().replaceAll("\n", "").trim();
 	}
 
 	public byte[] getEncoded() {

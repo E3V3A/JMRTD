@@ -41,7 +41,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.Signature;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -55,7 +54,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import javax.crypto.Cipher;
 import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
@@ -84,7 +82,6 @@ import sos.mrtd.PassportFile;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
-import sos.mrtd.Util;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
@@ -196,7 +193,6 @@ public class PassportFrame extends JFrame
 			COMFile com = new COMFile(comIn);
 			int[] tags = com.getTagList();
 			for (int i = 0; i < tags.length; i++) {
-				System.out.println("DEBUG: reading DG" + PassportFile.lookupDataGroupNumberByTag(tags[i]));
 				putFile(PassportFile.lookupFIDByTag(tags[i]), service);
 			}
 		} catch (CardServiceException cse) {
@@ -324,7 +320,6 @@ public class PassportFrame extends JFrame
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
-
 
 	/**
 	 * Reads the datagroups and adds them to the GUI.
@@ -919,7 +914,7 @@ public class PassportFrame extends JFrame
 					} catch (GeneralSecurityException gse) {
 						gse.printStackTrace();
 					} finally {
-						if (wasCardManagerStarted) { cm.start(); System.out.println("DEBUG: restarting cm"); } else { System.out.println("DEBUG: not restarting cm"); }
+						if (wasCardManagerStarted) { cm.start(); }
 					}
 					break;
 				default:

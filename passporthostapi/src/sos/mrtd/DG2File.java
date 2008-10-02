@@ -188,9 +188,21 @@ public class DG2File extends DataGroup
 			return null;
 		}
 	}
-	
+
 	public String toString() {
-		return "DG2File with " + faces.size() + " portrait(s)";
+		StringBuffer result = new StringBuffer();
+		result.append("DG2File");
+		result.append(" [");
+		int faceCount = faces.size();
+		int i = 0;
+		for (FaceInfo faceInfo: faces) {
+			result.append(faceInfo.getWidth() + "x" + faceInfo.getHeight());
+			if (i < faceCount - 1) { result.append(", "); }
+			i++;
+		}
+		result.append("]");
+		return result.toString();
+		
 	}
 
 	public List<FaceInfo> getFaces() {

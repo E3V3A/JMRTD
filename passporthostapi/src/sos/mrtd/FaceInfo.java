@@ -780,6 +780,24 @@ public class FaceInfo
 */
    
    /**
+    * Gets the width of this face.
+    * 
+    * @return width
+    */
+   public int getWidth() {
+	   return width;
+   }
+   
+   /**
+    * Gets the height of this face.
+    * 
+    * @return height;
+    */
+   public int getHeight() {
+	   return height;
+   }
+   
+   /**
     * Gets the expression
     * (neutral, smiling, eyebrow raised, etc).
     * 
