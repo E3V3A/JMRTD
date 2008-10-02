@@ -48,7 +48,7 @@ import javax.smartcardio.TerminalFactory;
 public class CardManager
 {
 	private static final CardManager INSTANCE = new CardManager();
-	private static final int POLL_INTERVAL = 200;
+	private static final int POLL_INTERVAL = 1000;
 
 	private Collection<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
@@ -205,16 +205,17 @@ public class CardManager
 			try {
 				while (isPolling) {
 					if (hasNoListeners()) {
+						/* No listeners, we go to sleep. */
 						synchronized(INSTANCE) {
 							while (hasNoListeners()) {
 								INSTANCE.wait();
 							}
 						}
 					}
+					boolean wasCardPresent = false;
+					boolean isCardPresent = false;
 					try {
-						/* FIXME: use waitForCardAbsent and waitForCardPresent somehow... */
-						boolean wasCardPresent = false;
-						boolean isCardPresent = false;
+						
 						if (service != null) {
 							wasCardPresent = true;
 						} else {
@@ -238,12 +239,21 @@ public class CardManager
 								notifyCardInserted(service);
 							}
 						}
+						
+
+						if (isCardPresent) {
+							terminal.waitForCardAbsent(POLL_INTERVAL);
+						} else {
+							terminal.waitForCardPresent(POLL_INTERVAL);
+						}
+						// Thread.sleep(POLL_INTERVAL);
 					} catch (CardException ce) {
-						// NOTE: remain in same state?!?
-						ce.printStackTrace();
+						/* NOTE: remain in same state?!? */
+						/* FIXME: what if reader no longer connected? */
+						ce.printStackTrace(); // for debugging
 					} finally {
 						if (!isPolling && service != null) { service.close(); }
-						Thread.sleep(POLL_INTERVAL);
+						
 					}
 				}
 			} catch (InterruptedException ie) {
