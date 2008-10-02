@@ -53,18 +53,8 @@ import sos.tlv.BERTLVObject;
  * 
  * @version $Revision: $
  */
-public class DG2File extends DataGroup
+public class DG2File extends CBEFFDataGroup
 {
-	private static final short BIOMETRIC_INFO_GROUP_TAG = 0x7F61;
-	private static final short BIOMETRIC_INFO_TAG = 0x7F60;
-
-	private static final byte BIOMETRIC_INFO_COUNT_TAG = 0x02;
-	private static final byte BIOMETRIC_HEADER_BASE_TAG = (byte) 0xA1;
-	private static final short BIOMETRIC_DATA_TAG = 0x5F2E;
-
-	private static final int FORMAT_OWNER_TAG = 0x87;
-	private static final int FORMAT_TYPE_TAG = 0x88;
-
 	// Facial Record Header, Sect. 5.4, ISO SC37
 	private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
 	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
@@ -99,13 +89,7 @@ public class DG2File extends DataGroup
 		isSourceConsistent = false;
 	}
 
-	private void readBioInfoTemplate(BERTLVInputStream tlvIn) throws IOException {
-		tlvIn.skipToTag(BIOMETRIC_DATA_TAG); /* 5F2E */
-		int length = tlvIn.readLength();
-		readBioData(tlvIn, length);
-	}
-
-	private void readBioData(BERTLVInputStream tlvIn, int valueLength) throws IOException {
+	protected void readBioData(BERTLVInputStream tlvIn, int valueLength) throws IOException {
 		DataInputStream dataIn = new DataInputStream(new BufferedInputStream(tlvIn, valueLength + 1));
 		/* Facial Record Header (14) */
 		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
