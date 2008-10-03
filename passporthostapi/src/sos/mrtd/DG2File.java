@@ -32,7 +32,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 /**
@@ -65,32 +64,15 @@ public class DG2File extends CBEFFDataGroup
 	 * Constructs a new file.
 	 */
 	public DG2File() {
-		faces = new ArrayList<FaceInfo>();
 		isSourceConsistent = false;
 	}
 
 	public DG2File(InputStream in) {
-		this();
-		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);			
-			tlvIn.skipToTag(BIOMETRIC_INFO_GROUP_TAG); /* 7F61 */
-			tlvIn.readLength();
-			tlvIn.skipToTag(BIOMETRIC_INFO_COUNT_TAG); /* 02 */
-			int tlvBioInfoCountLength = tlvIn.readLength();
-			if (tlvBioInfoCountLength != 1) { throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1"); }
-			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
-			for (int i = 0; i < bioInfoCount; i++) {
-				readBioInfoTemplate(tlvIn);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("Could not decode: " + e.toString());
-		}
-		isSourceConsistent = false;
+		super(in);
 	}
 
-	protected void readBioData(BERTLVInputStream tlvIn, int valueLength) throws IOException {
-		DataInputStream dataIn = new DataInputStream(new BufferedInputStream(tlvIn, valueLength + 1));
+	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
+		DataInputStream dataIn = new DataInputStream(new BufferedInputStream(in, valueLength + 1));
 		/* Facial Record Header (14) */
 		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
 		int version = dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)
@@ -106,6 +88,7 @@ public class DG2File extends CBEFFDataGroup
 	}
 
 	public void addFaceInfo(FaceInfo fi) {
+		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
 		faces.add(fi);
 		isSourceConsistent = false;
 	}
@@ -132,20 +115,21 @@ public class DG2File extends CBEFFDataGroup
 			return sourceObject.getEncoded();
 		}
 		try {
+			/* FIXME: some of this should be moved to CBEFFDataGroup! */
 			/* FIXME: Consider using a BERTLVOutputStream instead of BERTLVObject here? */
-			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFO_GROUP_TAG /* 7F61 */,
+			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
 							(byte)faces.size()));
 			
 			group.reconstructLength();
 			
-			byte bioHeaderTag = BIOMETRIC_HEADER_BASE_TAG; /* A1 */
+			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
 			for (FaceInfo info: faces) {
 				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
 						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
 				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
 
-				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFO_TAG /* 7F60 */, header);
+				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */, header);
 
 				int lengthOfRecord =
 					FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
@@ -160,7 +144,7 @@ public class DG2File extends CBEFFDataGroup
 				dataOut.flush();
 				byte[] facialRecord = out.toByteArray();
 
-				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_TAG /* 5F2E */, facialRecord));
+				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */, facialRecord));
 				group.addSubObject(faceObject);
 			}
 			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);

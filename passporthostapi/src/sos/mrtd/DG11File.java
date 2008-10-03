@@ -56,7 +56,7 @@ import sos.tlv.BERTLVInputStream;
  * <li>Custody Information</li>
  * </ol>
  * 
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision: $
  */

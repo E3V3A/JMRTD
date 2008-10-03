@@ -1,8 +1,7 @@
 package sos.mrtd;
 
 import java.io.IOException;
-
-import sos.tlv.BERTLVInputStream;
+import java.io.InputStream;
 
 public class DG4File extends CBEFFDataGroup
 {
@@ -15,14 +14,13 @@ public class DG4File extends CBEFFDataGroup
 		return EF_DG4_TAG;
 	}
 
-	protected void readBioData(BERTLVInputStream tlvIn, int valueLength)
-			throws IOException {
-		// TODO Auto-generated method stub
-
+	protected void readBiometricData(InputStream in, int length)
+	throws IOException {
 	}
 
 	public String toString() {
-		// TODO Auto-generated method stub
-		return null;
+		return "DG4File";
 	}
+
+
 }
