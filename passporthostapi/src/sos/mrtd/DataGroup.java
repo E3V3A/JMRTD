@@ -22,41 +22,74 @@
 
 package sos.mrtd;
 
+import java.io.IOException;
+import java.io.InputStream;
+
+import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
 public abstract class DataGroup extends PassportFile
 {
-   /**
-    * Constructor only visible to the other
-    * classes in this package.
-    */
-   DataGroup() {
-   }
-   
-   /**
-    * Constructor only visible to the other
-    * classes in this package.
-    * 
-    * @param object datagroup contents.
-    */
-   DataGroup(BERTLVObject object) {
-      sourceObject = object;
-      isSourceConsistent = true;
-   }
-   
-   public byte[] getEncoded() {
-      if (isSourceConsistent) {
-         return sourceObject.getEncoded();
-      }
-      return null;
-   }
-   
-   public String toString() {
-      if (isSourceConsistent) {
-         return sourceObject.toString();
-      }
-      return super.toString();
-   }
-   
-   public abstract int getTag();
+	private int dataGroupTag;
+	private int dataGroupLength;
+
+	/**
+	 * Constructor only visible to the other
+	 * classes in this package.
+	 */
+	DataGroup() {
+	}
+
+	public DataGroup(InputStream in) {
+		try {
+			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
+			dataGroupTag = tlvIn.readTag();
+			dataGroupLength = tlvIn.readLength();
+		} catch (IOException ioe) {
+			throw new IllegalArgumentException("Could not decode: " + ioe.toString());
+		}
+	}
+
+	/**
+	 * Constructor only visible to the other
+	 * classes in this package.
+	 * 
+	 * @param object datagroup contents.
+	 */
+	DataGroup(BERTLVObject object) {
+		sourceObject = object;
+		isSourceConsistent = true;
+	}
+
+	public byte[] getEncoded() {
+		if (isSourceConsistent) {
+			return sourceObject.getEncoded();
+		}
+		return null;
+	}
+
+	public String toString() {
+		if (isSourceConsistent) {
+			return sourceObject.toString();
+		}
+		return super.toString();
+	}
+
+	/**
+	 * The data group tag.
+	 * 
+	 * @return the tag of the data group
+	 */
+	public int getTag() {
+		return dataGroupTag;
+	}
+
+	/**
+	 * The length of the value of the data group.
+	 * 
+	 * @return the length of the value of the data group
+	 */
+	public int getLength() {
+		return dataGroupLength;
+	}
 }

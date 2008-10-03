@@ -29,13 +29,14 @@ import sos.tlv.BERTLVInputStream;
 
 /**
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
+ * Abstract super class for DG2 - DG4.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision: $
  */
-public abstract class CBEFFDataGroup extends DataGroup
+abstract class CBEFFDataGroup extends DataGroup
 {
 	static final int BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG = 0x7F61;
 	static final int BIOMETRIC_INFORMATION_TEMPLATE_TAG = 0x7F60;
@@ -48,9 +49,6 @@ public abstract class CBEFFDataGroup extends DataGroup
 	static final int FORMAT_OWNER_TAG = 0x87;
 	static final int FORMAT_TYPE_TAG = 0x88;
 
-	private int dataGroupTag;
-	private int dataGroupLength;
-
 	protected CBEFFDataGroup() {
 	}
 
@@ -60,10 +58,9 @@ public abstract class CBEFFDataGroup extends DataGroup
 	 * @param in a TLV encoded input stream
 	 */
 	public CBEFFDataGroup(InputStream in) {
+		super(in);
 		try {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
-			dataGroupTag = tlvIn.readTag();
-			dataGroupLength = tlvIn.readLength();
 			int bioInfoGroupTemplateTag = tlvIn.readTag();
 			if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
 				throw new IllegalArgumentException("Expected tag 0x7F61 in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
@@ -87,8 +84,6 @@ public abstract class CBEFFDataGroup extends DataGroup
 		}
 		isSourceConsistent = false;
 	}
-	
-	
 
 	private void readBiometricInformationTemplate(BERTLVInputStream tlvIn) throws IOException {
 		int bioInfoTemplateTag = tlvIn.readTag();
@@ -125,24 +120,6 @@ public abstract class CBEFFDataGroup extends DataGroup
 	 * @throws IOException if reading fails
 	 */
 	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
-
-	/**
-	 * The data group tag.
-	 * 
-	 * @return the tag of the data group
-	 */
-	public int getTag() {
-		return dataGroupTag;
-	}
-	
-	/**
-	 * The length of the value of the data group.
-	 * 
-	 * @return the length of the value of the data group
-	 */
-	public int getLength() {
-		return dataGroupLength;
-	}
 
 	public abstract byte[] getEncoded();
 

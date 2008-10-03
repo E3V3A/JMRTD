@@ -22,26 +22,29 @@
 
 package sos.mrtd;
 
-import java.io.IOException;
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
 
-public class DG3File extends CBEFFDataGroup
+public class DG5File extends DisplayedImageDataGroup
 {
+	public DG5File(BufferedImage image) {
+		super(image);
+	}
+
+	public DG5File(InputStream in) {
+		super(in);
+	}
+
+	public int getTag() {
+		return EF_DG5_TAG;
+	}
+	
 	public byte[] getEncoded() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public int getTag() {
-		return EF_DG3_TAG;
-	}
-
 	public String toString() {
-		return "DG3File";
-	}
-
-	protected void readBiometricData(InputStream in, int length)
-			throws IOException {
-		// TODO Auto-generated method stub
+		return "DG5File";
 	}
 }
