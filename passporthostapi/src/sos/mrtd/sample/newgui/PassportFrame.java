@@ -72,9 +72,15 @@ import javax.swing.ProgressMonitor;
 import sos.data.Country;
 import sos.data.Gender;
 import sos.mrtd.COMFile;
+import sos.mrtd.DG11File;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
+import sos.mrtd.DG3File;
+import sos.mrtd.DG4File;
+import sos.mrtd.DG5File;
+import sos.mrtd.DG6File;
+import sos.mrtd.DG7File;
 import sos.mrtd.DataGroup;
 import sos.mrtd.FaceInfo;
 import sos.mrtd.MRZInfo;
@@ -133,7 +139,14 @@ public class PassportFrame extends JFrame
 
 	private DG1File dg1;
 	private DG2File dg2;
-	private DataGroup dg3, dg4, dg5, dg6, dg7, dg8, dg9, dg10, dg11, dg12, dg13, dg14;
+	private DG3File dg3;
+	private DG4File dg4;
+	private DG5File dg5;
+	private DG6File dg6;
+	private DG7File dg7;
+	private DataGroup dg8, dg9, dg10;
+	private DG11File dg11;
+	private DataGroup dg12, dg13, dg14;
 	private DG15File dg15;
 	private DataGroup dg16;
 	private SODFile sod;
@@ -146,8 +159,6 @@ public class PassportFrame extends JFrame
 	private boolean isAAVerified;
 	private boolean isDSVerified;
 	private Country issuingState;
-
-	private PassportService service; // FIXME: only pass it as param, not store it in field?
 
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
@@ -179,7 +190,6 @@ public class PassportFrame extends JFrame
 	 * @return a passport frame.
 	 */
 	public void readFromService(PassportService service, boolean isBACVerified) throws CardServiceException {
-		this.service = service;
 		long t0 = System.currentTimeMillis();
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
@@ -355,18 +365,39 @@ public class PassportFrame extends JFrame
 				in = getFile(fid);
 				in.reset();
 				switch (fid) {
+				case PassportService.EF_COM:
+					/* NOTE: Alread processed this one above. */
+					break;
 				case PassportService.EF_DG1:
+					/* NOTE: Alread processed this one above. */
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
 					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
+				case PassportService.EF_DG3:
+					dg3 = new DG3File(in);
+					break;
+				case PassportService.EF_DG4:
+					dg4 = new DG4File(in);
+					break;
+				case PassportService.EF_DG5:
+					dg5 = new DG5File(in);
+					break;
+				case PassportService.EF_DG6:
+					dg6 = new DG6File(in);
+					break;
+				case PassportService.EF_DG7:
+					dg7 = new DG7File(in);
+					break;
+				case PassportService.EF_DG11:
+					dg11 = new DG11File(in);
+					break;
 				case PassportService.EF_DG15:
 					dg15 = new DG15File(in);
 					break;
-				case PassportService.EF_COM:
-					break;
 				case PassportService.EF_SOD:
+					/* NOTE: Alread processed this one above. */
 					break;
 				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(fid));
 				}

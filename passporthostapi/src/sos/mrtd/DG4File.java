@@ -27,6 +27,10 @@ import java.io.InputStream;
 
 public class DG4File extends CBEFFDataGroup
 {
+	public DG4File(InputStream in) {
+		super(in);
+	}
+
 	public byte[] getEncoded() {
 		// TODO Auto-generated method stub
 		return null;
