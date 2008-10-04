@@ -104,7 +104,7 @@ public class CardManager
 		try {
 			Class<?> acrProvClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
 			Provider acrProv = (Provider)acrProvClass.newInstance();
-			addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));          
+			addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));
 		} catch (Exception e) {
 		}
 
