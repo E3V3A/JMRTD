@@ -40,7 +40,7 @@ public abstract class DataGroup extends PassportFile
 	DataGroup() {
 	}
 
-	public DataGroup(InputStream in) {
+	protected DataGroup(InputStream in) {
 		try {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
 			dataGroupTag = tlvIn.readTag();

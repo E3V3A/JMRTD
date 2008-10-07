@@ -169,7 +169,6 @@ public class PassportApp  implements PassportListener, AuthListener
 			});
 			im.put(KeyStroke.getKeyStroke(c), actionMapKey);
 		}
-
 	}
 
 	public void passportInserted(PassportEvent ce) {

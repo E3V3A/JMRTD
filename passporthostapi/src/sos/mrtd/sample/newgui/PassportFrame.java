@@ -44,11 +44,14 @@ import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -73,6 +76,7 @@ import sos.data.Country;
 import sos.data.Gender;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG11File;
+import sos.mrtd.DG12File;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
@@ -137,6 +141,7 @@ public class PassportFrame extends JFrame
 	private Map<Short, InputStream> bufferedStreams;
 	private int totalLength;
 
+	private COMFile com;
 	private DG1File dg1;
 	private DG2File dg2;
 	private DG3File dg3;
@@ -146,11 +151,11 @@ public class PassportFrame extends JFrame
 	private DG7File dg7;
 	private DataGroup dg8, dg9, dg10;
 	private DG11File dg11;
-	private DataGroup dg12, dg13, dg14;
+	private DG12File dg12;
+	private DataGroup dg13, dg14;
 	private DG15File dg15;
 	private DataGroup dg16;
 	private SODFile sod;
-	private COMFile com;
 
 	private X509Certificate docSigningCert, countrySigningCert;
 
@@ -201,9 +206,8 @@ public class PassportFrame extends JFrame
 			putFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
-			int[] tags = com.getTagList();
-			for (int i = 0; i < tags.length; i++) {
-				putFile(PassportFile.lookupFIDByTag(tags[i]), service);
+			for (int dgTag: com.getTagList()) {
+				putFile(PassportFile.lookupFIDByTag(dgTag), service);
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
@@ -252,7 +256,9 @@ public class PassportFrame extends JFrame
 	public void createEmptyPassport() {
 		try {
 			/* EF.COM */
-			int[] tagList = { PassportFile.EF_DG1_TAG, PassportFile.EF_DG2_TAG };
+			List<Integer> tagList = new ArrayList<Integer>();
+			tagList.add(PassportFile.EF_DG1_TAG);
+			tagList.add(PassportFile.EF_DG2_TAG);
 			COMFile com = new COMFile("01", "07", "04", "00", "00", tagList);
 			byte[] comBytes = com.getEncoded();
 
@@ -393,6 +399,9 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_DG11:
 					dg11 = new DG11File(in);
 					break;
+				case PassportService.EF_DG12:
+					dg12 = new DG12File(in);
+					break;
 				case PassportService.EF_DG15:
 					dg15 = new DG15File(in);
 					break;
@@ -488,19 +497,27 @@ public class PassportFrame extends JFrame
 		try {
 			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile comFile = new COMFile(comIn);
-			int[] tags = comFile.getTagList();
-
+			List<Integer> tagList = comFile.getTagList();
+			Collections.sort(tagList);
+			
 			InputStream sodIn = getFile(PassportService.EF_SOD);
 			SODFile sodFile = new SODFile(sodIn);
 			Map<Integer, byte[]> hashes = sodFile.getDataGroupHashes();
-
-			if (tags.length != hashes.size()) {
+			
+			isDSVerified = true;
+			
+			/* Jeroen van Beek sanity check */
+			List<Integer> tagsOfHashes = new ArrayList<Integer>();
+			tagsOfHashes.addAll(hashes.keySet());
+			Collections.sort(tagsOfHashes);
+			if (tagsOfHashes.equals(tagList)) {
 				System.err.println("WARNING: \"Jeroen van Beek sanity check\" failed!");
+				isDSVerified = false;
 			}
 
 			String algorithm = sodFile.getDigestAlgorithm();
 			MessageDigest digest = MessageDigest.getInstance(algorithm);
-			isDSVerified = true;
+
 			for (int dgNumber: hashes.keySet()) {
 				int dgTag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
 				short dgFID = PassportFile.lookupFIDByTag(dgTag);

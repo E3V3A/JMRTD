@@ -174,6 +174,8 @@ public class DG11File extends DataGroup
 		}
 	}
 
+	/* Field parsing and interpretation below. */
+	
 	private void parseCustodyInformation(String in) {
 		custodyInformation = in.replace("<", " ").trim();
 	}
@@ -252,6 +254,8 @@ public class DG11File extends DataGroup
 			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
 		}
 	}
+	
+	/* Accessors below. */
 
 	public int getTag() {
 		return EF_DG11_TAG;
@@ -352,6 +356,9 @@ public class DG11File extends DataGroup
 		return "DG11File";
 	}
 
+	/**
+	 * TODO: in progress.
+	 */
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
 			return sourceObject.getEncoded();

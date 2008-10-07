@@ -33,6 +33,7 @@ import java.security.MessageDigest;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import javax.swing.BorderFactory;
@@ -126,9 +127,9 @@ public class PAPanel extends JPanel implements AuthListener
 							}
 							MessageDigest digest = MessageDigest.getInstance(alg);
 							COMFile comFile = new COMFile(passportService.readFile(PassportService.EF_COM));
-							int[] tags = comFile.getTagList();
-							for (int i = 0; i < tags.length; i++) {
-								int dgTag = tags[i];
+							List<Integer> tagList = comFile.getTagList();
+							for (int i = 0; i < tagList.size(); i++) {
+								int dgTag = tagList.get(i);
 								int dgNumber = PassportFile.lookupDataGroupNumberByTag(dgTag);
 								BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(dgTag));
 								int tag = tlvIn.readTag();

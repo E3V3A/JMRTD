@@ -25,6 +25,8 @@ package sos.mrtd;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import sos.tlv.BERTLVInputStream;
 
@@ -42,10 +44,10 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	private static final int DISPLAYED_PORTRAIT_TAG = 0x5F40;
 	private static final int DISPLAYED_SIGNATURE_OR_MARK_TAG = 0x5F43;
 
-	private BufferedImage image;
+	private List<BufferedImage> images;
 
 	protected DisplayedImageDataGroup(BufferedImage image) {
-		this.image = image;
+		this.images = new ArrayList<BufferedImage>();
 	}
 
 	/**
@@ -94,13 +96,17 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		 * Displayed Finger: ANSI/NIST-ITL 1-2000
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
 		 */
-		image = javax.imageio.ImageIO.read(tlvIn);
+		BufferedImage image = javax.imageio.ImageIO.read(tlvIn);
+		images.add(image);
 	}
 
-	public BufferedImage getImage() {
-		return image;
+	public List<BufferedImage> getImages() {
+		return images;
 	}
 
+	/**
+	 * TODO: can be concrete method here.
+	 */
 	public abstract byte[] getEncoded();
 
 	public abstract String toString();
