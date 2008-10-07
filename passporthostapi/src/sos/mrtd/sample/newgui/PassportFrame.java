@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2008  The JMRTD team
+ * Copyright (C) 2006 - 2008  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -132,7 +132,10 @@ public class PassportFrame extends JFrame
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
 	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	private static final Icon TREE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_side_tree"));
+	private static final Icon TREE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_side_tree"));
 
+	
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;
@@ -499,13 +502,13 @@ public class PassportFrame extends JFrame
 			COMFile comFile = new COMFile(comIn);
 			List<Integer> tagList = comFile.getTagList();
 			Collections.sort(tagList);
-			
+
 			InputStream sodIn = getFile(PassportService.EF_SOD);
 			SODFile sodFile = new SODFile(sodIn);
 			Map<Integer, byte[]> hashes = sodFile.getDataGroupHashes();
-			
+
 			isDSVerified = true;
-			
+
 			/* Jeroen van Beek sanity check */
 			List<Integer> tagsOfHashes = new ArrayList<Integer>();
 			tagsOfHashes.addAll(hashes.keySet());
