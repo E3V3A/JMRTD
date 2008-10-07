@@ -88,7 +88,7 @@
 	</target>
 
 	<target name="doc" description="Generate API docs">
-		<javadoc classpath="${sos-shared-build};${bcprovjar}" destdir="apidocs" package="true" doctitle="JMRTD API" windowtitle="JMRTD API" packagenames="sos.mrtd">
+		<javadoc classpath="${sos-shared-build};${bcprovjar}" destdir="apidocs" package="false" doctitle="JMRTD API 0.4.1" windowtitle="JMRTD API 0.4.1" packagenames="sos.mrtd">
 			<link href="http://java.sun.com/javase/6/docs/api" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
