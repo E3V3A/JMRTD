@@ -45,6 +45,8 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.event.IIOReadProgressListener;
+import javax.imageio.event.IIOReadUpdateListener;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -527,7 +529,7 @@ public class FaceInfo
     * @param height integer
     * @return image
     */
-   public Image getPreviewImage(int width, int height) throws IOException {
+   public BufferedImage getThumbNail(int width, int height) throws IOException {
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
 		   return readScaledImage(dataIn, "image/jpeg", width, height);

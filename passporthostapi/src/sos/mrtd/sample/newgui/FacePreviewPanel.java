@@ -74,7 +74,7 @@ public class FacePreviewPanel extends JPanel
 				remove(PLACE_HOLDER);
 				add(tabbedPane);
 			}
-			Image image = faceInfo.getPreviewImage(width - 10, height - 10);
+			Image image = faceInfo.getThumbNail(width - 10, height - 10);
 			addImage(image);
 			revalidate(); repaint();
 		} catch (IOException ioe) {
