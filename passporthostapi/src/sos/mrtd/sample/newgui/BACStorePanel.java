@@ -36,6 +36,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -55,7 +56,7 @@ import sos.util.Icons;
 public class BACStorePanel extends JPanel
 {  
 	private static final long serialVersionUID = 8209327475448864084L;
-	
+
 	private static final Icon DOWN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon DOWN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon UP_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_up"));
@@ -64,13 +65,13 @@ public class BACStorePanel extends JPanel
 	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_delete"));
 	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
 	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
-	
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
-	
+
 	private final BACStore store;
 	private BACStoreTable table;
 	private BACEntryField entryField;
-	
+
 	private Action addAction, deleteAction, moveUpAction, moveDownAction;
 
 	/**
@@ -81,41 +82,43 @@ public class BACStorePanel extends JPanel
 	public BACStorePanel(BACStore store)  {
 		super(new BorderLayout());
 		this.store = store;
-		
-		moveUpAction = new MoveUpAction();
-		moveDownAction = new MoveDownAction();
-		deleteAction = new DeleteAction();
-		addAction = new AddAction();
-		
+
+		moveUpAction = getMoveUpAction();
+		moveDownAction = getMoveDownAction();
+		deleteAction = getDeleteAction();
+		addAction = getAddAction();
+
 		table = new BACStoreTable();
-		entryField = new BACEntryField(true);
-		entryField.setAction(addAction);
+		entryField = new BACEntryField();
 		add(new JScrollPane(table), BorderLayout.CENTER);
-		add(entryField, BorderLayout.SOUTH);
 
 		JToolBar toolBar = new JToolBar();
 		JButton upButton = new JButton();
 		toolBar.add(upButton);
-		
+
 		JButton downButton = new JButton();
 		toolBar.add(downButton);
-		
+
 		toolBar.addSeparator();
-		
+
+		JButton addButton = new JButton();
+		toolBar.add(addButton);
+
 		JButton deleteButton = new JButton();
 		toolBar.add(deleteButton);
-				
+
 		upButton.setAction(moveUpAction);
 		downButton.setAction(moveDownAction);
+		addButton.setAction(addAction);
 		deleteButton.setAction(deleteAction);
 		add(toolBar, BorderLayout.NORTH);
 	}
-	
+
 	public void addKeyListener(KeyListener l) {
 		super.addKeyListener(l);
 		table.addKeyListener(l);
 	}
-	
+
 	public void addEntry(BACEntry entry) {
 		store.addEntry(entry);
 		table.revalidate();
@@ -170,97 +173,98 @@ public class BACStorePanel extends JPanel
 	/**
 	 * Add the entry in the entryField to the store (and thus to the table).
 	 */
-	private class AddAction extends AbstractAction
-	{
-		public AddAction() {
-			putValue(SMALL_ICON, TABLE_ROW_INSERT_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, TABLE_ROW_INSERT_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Add BAC Entry");
-			putValue(NAME, "Add");
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			String documentNumber = entryField.getDocumentNumber();
-			Date dateOfBirth = entryField.getDateOfBirth();
-			Date dateOfExpiry = entryField.getDateOfExpiry();
-			addEntry(new BACEntry(documentNumber, dateOfBirth, dateOfExpiry));
-		} 
+	private Action getAddAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				int choice = JOptionPane.showOptionDialog(table, entryField, "Enter BAC",
+						JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
+						null, null, null);
+				if (choice == JOptionPane.OK_OPTION) {
+					String documentNumber = entryField.getDocumentNumber();
+					Date dateOfBirth = entryField.getDateOfBirth();
+					Date dateOfExpiry = entryField.getDateOfExpiry();
+					addEntry(new BACEntry(documentNumber, dateOfBirth, dateOfExpiry));
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, TABLE_ROW_INSERT_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, TABLE_ROW_INSERT_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Add BAC Entry");
+		action.putValue(Action.NAME, "Add");
+		return action;
 	}
-	
+
 	/**
 	 * Delete the selected entry from the store (and thus from the table).
 	 */
-	private class DeleteAction extends AbstractAction
-	{
-		public DeleteAction() {
-			putValue(SMALL_ICON, TABLE_ROW_DELETE_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, TABLE_ROW_DELETE_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Delete BAC Entry");
-			putValue(NAME, "Delete");
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			try {
-				int entryRowIndex = table.getSelectedRow();
-				store.removeEntry(entryRowIndex);
-				table.revalidate();
-			} catch (IndexOutOfBoundsException ioobe) {
-				/* NOTE: Nothing selected, do nothing. */
-			}
-		}
+	private Action getDeleteAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					int entryRowIndex = table.getSelectedRow();
+					store.removeEntry(entryRowIndex);
+					table.revalidate();
+				} catch (IndexOutOfBoundsException ioobe) {
+					/* NOTE: Nothing selected, do nothing. */
+				}
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, TABLE_ROW_DELETE_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, TABLE_ROW_DELETE_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Delete BAC Entry");
+		action.putValue(Action.NAME, "Delete");
+		return action;
 	}
-	
+
 	/**
 	 * Delete the selected entry from the store (and thus from the table).
 	 */
-	private class MoveUpAction extends AbstractAction
-	{
-		public MoveUpAction() {
-			putValue(SMALL_ICON, UP_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, UP_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Move BAC Entry Up");
-			putValue(NAME, "Up");
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			try {
-				int entryRowIndex = table.getSelectedRow();
-				if (entryRowIndex <= 0) { return; }
-				BACEntry entry = store.getEntry(entryRowIndex);
-				store.removeEntry(entryRowIndex);
-				store.addEntry(entryRowIndex - 1, entry);
-				table.removeRowSelectionInterval(entryRowIndex - 1, entryRowIndex);
-				table.revalidate();
-			} catch (IndexOutOfBoundsException ioobe) {
-				/* NOTE: Nothing selected, do nothing. */
+	private Action getMoveUpAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					int entryRowIndex = table.getSelectedRow();
+					if (entryRowIndex <= 0) { return; }
+					BACEntry entry = store.getEntry(entryRowIndex);
+					store.removeEntry(entryRowIndex);
+					store.addEntry(entryRowIndex - 1, entry);
+					table.removeRowSelectionInterval(entryRowIndex - 1, entryRowIndex);
+					table.revalidate();
+				} catch (IndexOutOfBoundsException ioobe) {
+					/* NOTE: Nothing selected, do nothing. */
+				}
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, UP_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, UP_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Move BAC Entry Up");
+		action.putValue(Action.NAME, "Up");
+		return action;
 	}
-	
-	private class MoveDownAction extends AbstractAction
-	{
-		public MoveDownAction() {
-			putValue(SMALL_ICON, DOWN_SMALL_ICON);
-			putValue(LARGE_ICON_KEY, DOWN_LARGE_ICON);
-			putValue(SHORT_DESCRIPTION, "Move BAC Entry Down");
-			putValue(NAME, "Down");
-		}
-		
-		public void actionPerformed(ActionEvent e) {
-			try {
-				int entryRowIndex = table.getSelectedRow();
-				if (entryRowIndex >= table.getRowCount()) { return; }
-				BACEntry entry = store.getEntry(entryRowIndex);
-				store.removeEntry(entryRowIndex);
-				store.addEntry(entryRowIndex + 1, entry);
-				table.removeRowSelectionInterval(entryRowIndex, entryRowIndex + 1);
-				table.revalidate();
-			} catch (IndexOutOfBoundsException ioobe) {
-				/* NOTE: Nothing selected, do nothing. */
+
+	private Action getMoveDownAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				try {
+					int entryRowIndex = table.getSelectedRow();
+					if (entryRowIndex >= table.getRowCount()) { return; }
+					BACEntry entry = store.getEntry(entryRowIndex);
+					store.removeEntry(entryRowIndex);
+					store.addEntry(entryRowIndex + 1, entry);
+					table.removeRowSelectionInterval(entryRowIndex, entryRowIndex + 1);
+					table.revalidate();
+				} catch (IndexOutOfBoundsException ioobe) {
+					/* NOTE: Nothing selected, do nothing. */
+				}
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, DOWN_SMALL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, DOWN_LARGE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Move BAC Entry Down");
+		action.putValue(Action.NAME, "Down");
+		return action;
 	}
-	
+
 	public JMenu getBACMenu() {
 		JMenu result = new JMenu("BACs");
 		JMenuItem addItem = new JMenuItem();
@@ -279,4 +283,3 @@ public class BACStorePanel extends JPanel
 		return result;
 	}
 }
-

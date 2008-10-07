@@ -146,7 +146,7 @@ public class UploadOptionsChooser extends JComponent
 			JPanel bacPanel = new JPanel();
 			bacCheckBox = new JCheckBox(getBACSelectedAction());
 			bacPanel.add(bacCheckBox);
-			bacEntryField = new BACEntryField(bacEntry, false);
+			bacEntryField = new BACEntryField(bacEntry);
 			bacEntryField.setEnabled(bacCheckBox.isSelected());
 			bacPanel.add(bacEntryField);
 

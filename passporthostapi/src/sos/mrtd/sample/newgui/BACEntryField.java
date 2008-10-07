@@ -22,13 +22,10 @@
 
 package sos.mrtd.sample.newgui;
 
-import java.awt.event.ActionListener;
 import java.util.Date;
 
-import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JLabel;
 
 import sos.gui.DateEntryField;
@@ -43,16 +40,14 @@ import sos.gui.MRZEntryField;
  */
 public class BACEntryField extends Box implements BACEntrySource
 {
-	private JButton addButton;
 	private MRZEntryField docNrTF;
 	private DateEntryField dateOfBirthField, dateOfExpiryField;
 
-	public BACEntryField(boolean showAddButton) {
+	public BACEntryField() {
 		super(BoxLayout.X_AXIS);
 		docNrTF = new MRZEntryField(9);
 		dateOfBirthField = new DateEntryField();
 		dateOfExpiryField = new DateEntryField();
-		addButton = new JButton("Add");
 		add(new JLabel("Doc.nr.: "));
 		add(Box.createHorizontalStrut(5));
 		add(docNrTF);
@@ -64,19 +59,15 @@ public class BACEntryField extends Box implements BACEntrySource
 		add(new JLabel("DoE: "));
 		add(Box.createHorizontalStrut(5));
 		add(dateOfExpiryField);
-		if (showAddButton) {
-			add(Box.createHorizontalStrut(10));
-			add(addButton);
-		}
 	}
 
-	public BACEntryField(BACEntry bacEntry, boolean showAddButton) {
-		this(showAddButton);
+	public BACEntryField(BACEntry bacEntry) {
+		this();
 		setValue(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
 	}
 
-	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry, boolean showAddButton) {
-		this(showAddButton);
+	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+		this();
 		setValue(documentNumber, dateOfBirth, dateOfExpiry);
 	}
 
@@ -84,14 +75,6 @@ public class BACEntryField extends Box implements BACEntrySource
 		docNrTF.setText(documentNumber);
 		dateOfBirthField.setDate(dateOfBirth);
 		dateOfExpiryField.setDate(dateOfExpiry);
-	}
-
-	public void setAction(Action action) {
-		addButton.setAction(action);
-	}
-
-	public void addActionListener(ActionListener l) {
-		addButton.addActionListener(l);
 	}
 
 	public String getDocumentNumber() {
@@ -107,7 +90,6 @@ public class BACEntryField extends Box implements BACEntrySource
 	}
 
 	public void setEnabled(boolean b) {
-		addButton.setEnabled(b);
 		docNrTF.setEnabled(b);
 		dateOfBirthField.setEnabled(b);
 		dateOfExpiryField.setEnabled(b);
