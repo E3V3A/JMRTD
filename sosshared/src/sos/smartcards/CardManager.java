@@ -21,7 +21,6 @@
 
 package sos.smartcards;
 
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,43 +94,48 @@ public class CardManager
 	}
 
 	private void addTerminals() {
-
-		/* Default factory will contain connected PCSC terminals. */
-		addTerminals(TerminalFactory.getDefault());
-
-		/* Our own factories for 'non-PCSC' terminals. */
-
+		int n = addTerminals(TerminalFactory.getDefault());
+		if (n == 0) {
+			System.out.println("DEBUG: no PC/SC terminals found!");
+		}
 		try {
-			Class<?> acrProvClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
-			Provider acrProv = (Provider)acrProvClass.newInstance();
-			addTerminals(TerminalFactory.getInstance("ACR", null, acrProv));
+			/* Other terminals */
+			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+			Provider acrProvider = (Provider)acrProviderClass.newInstance();
+			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
+			n += addTerminals(acrFactory);
 		} catch (Exception e) {
+			/* Ignore this provider */
 		}
-
-		/* Factories for simulators. */
-
 		try {
-			addTerminals(TerminalFactory.getInstance("CREF", "localhost:9025", new sos.smartcards.CardTerminalProvider()));
-		} catch (NoSuchAlgorithmException nsae) {
-			/* Listing readers of this factory failed. */
+			/* Simulators */
+			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
+			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
+			n += addTerminals(crefFactory);
+//			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
+//			factories.add(jcopFactory);
+		} catch (Exception e) {
+			/* Ignore this provider */
 		}
-
-		/* FIXME: JCOPEmulatorTerminal seems to deadlock CM. Not sure why. -- MO
-//		try {
-//			addTerminals(TerminalFactory.getInstance("JCOP", "localhost:8050", new sos.smartcards.CardTerminalProvider()));
-//		} catch (NoSuchAlgorithmException nsae) {
-//			/* Listing readers of this factory failed. */
-//		}
 	}
 
-	private void addTerminals(TerminalFactory factory) {
+	/**
+	 * 
+	 * @param factory
+	 * @return
+	 */
+	private int addTerminals(TerminalFactory factory) {
 		try {
-			CardTerminals defaultTerminals = factory.terminals();
-			List<CardTerminal> defaultTerminalsList = defaultTerminals.list();
-			terminals.addAll(defaultTerminalsList);
+			CardTerminals newTerminals = factory.terminals();
+			if (newTerminals == null) { return 0; }
+			List<CardTerminal> newTerminalsList = newTerminals.list();
+			if (newTerminalsList == null) { return 0; }
+			terminals.addAll(newTerminalsList);
+			return newTerminalsList.size();
 		} catch (CardException cde) {
 			/* NOTE: Listing of readers failed. Don't add anything. */
 		}
+		return 0;
 	}
 
 	/**
