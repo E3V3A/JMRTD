@@ -24,7 +24,6 @@ package sos.smartcards;
 import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
 
 import javax.smartcardio.CardException;
@@ -49,14 +48,14 @@ public class CardManager
 	private static final CardManager INSTANCE = new CardManager();
 	private static final int POLL_INTERVAL = 1000;
 
-	private Collection<CardTerminal> terminals;
+	private List<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
 	private boolean isPolling;
 
 	private CardManager() {	   
 		try {
 			listeners = new ArrayList<CardTerminalListener>();
-			terminals = new HashSet<CardTerminal>();
+			terminals = new ArrayList<CardTerminal>();
 			addTerminals();
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
@@ -161,15 +160,25 @@ public class CardManager
 		}
 	}
 
-	private synchronized void notifyCardInserted(CardService service) {
-		for (CardTerminalListener l: listeners) {
-			l.cardInserted(new CardEvent(CardEvent.INSERTED, service));
+	private synchronized void notifyCardInserted(final CardService service) {
+		final CardEvent ce = new CardEvent(CardEvent.INSERTED, service);
+		for (final CardTerminalListener l: listeners) {
+			(new Thread(new Runnable() {
+				public void run() {
+					l.cardInserted(ce);
+				}
+			})).start();
 		}
 	}
 
-	private synchronized void notifyCardRemoved(CardService service) {
-		for (CardTerminalListener l: listeners) {
-			l.cardRemoved(new CardEvent(CardEvent.REMOVED, service));
+	private synchronized void notifyCardRemoved(final CardService service) {
+		final CardEvent ce = new CardEvent(CardEvent.REMOVED, service);
+		for (final CardTerminalListener l: listeners) {
+			(new Thread(new Runnable() {
+				public void run() {
+					l.cardRemoved(ce);
+				}
+			})).start();
 		}
 	}
 
@@ -182,7 +191,7 @@ public class CardManager
 	 * 
 	 * @return a list of terminals
 	 */
-	public Collection<CardTerminal> getTerminals() {
+	public List<CardTerminal> getTerminals() {
 		return terminals;
 	}
 
@@ -219,7 +228,7 @@ public class CardManager
 					boolean wasCardPresent = false;
 					boolean isCardPresent = false;
 					try {
-						
+
 						if (service != null) {
 							wasCardPresent = true;
 						} else {
@@ -243,7 +252,7 @@ public class CardManager
 								notifyCardInserted(service);
 							}
 						}
-						
+
 
 						if (isCardPresent) {
 							terminal.waitForCardAbsent(POLL_INTERVAL);
@@ -254,10 +263,10 @@ public class CardManager
 					} catch (CardException ce) {
 						/* NOTE: remain in same state?!? */
 						/* FIXME: what if reader no longer connected? */
-						ce.printStackTrace(); // for debugging
+						// ce.printStackTrace(); // for debugging
 					} finally {
 						if (!isPolling && service != null) { service.close(); }
-						
+
 					}
 				}
 			} catch (InterruptedException ie) {

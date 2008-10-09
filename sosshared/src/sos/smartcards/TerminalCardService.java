@@ -98,7 +98,16 @@ public class TerminalCardService extends CardService
 			}
 			state = SESSION_STOPPED_STATE;
 		} catch (CardException ce) {
-			ce.printStackTrace();
+			/* Disconnect failed? Fine... */
 		}
+	}
+	
+	/**
+	 * The terminal used by this service.
+	 *
+	 * @return a terminal
+	 */
+	public CardTerminal getTerminal() {
+		return terminal;
 	}
 }
