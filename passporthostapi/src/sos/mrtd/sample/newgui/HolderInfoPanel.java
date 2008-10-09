@@ -45,6 +45,7 @@ import sos.mrtd.MRZInfo;
 
 /**
  * Panel for displaying and editing DG1.
+ * TODO: maybe also involve DG11.
  *
  * @author Martijn Oostdijk (martijno@cs.ru.nl)
  *

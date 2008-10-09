@@ -35,57 +35,77 @@ import sos.smartcards.CardTerminalListener;
 
 public class PassportManager
 {
-   private enum CardType { OTHER_CARD, PASSPORT };
+	private enum CardType { OTHER_CARD, PASSPORT };
 
-   private static final PassportManager INSTANCE = new PassportManager();
+	private static final PassportManager INSTANCE = new PassportManager();
 
-   private Map<CardService, CardType> cardTypes;
-   private Map<CardService, PassportService> passportServices;
-   private Collection<PassportListener> listeners;
+	private Map<CardService, CardType> cardTypes;
+	private Map<CardService, PassportService> passportServices;
+	private Collection<PassportListener> listeners;
 
-   private PassportManager() {
-      cardTypes = new Hashtable<CardService, CardType>();
-      passportServices = new Hashtable<CardService, PassportService>();
-      listeners = new ArrayList<PassportListener>();
-      CardManager cm = CardManager.getInstance();
-      cm.addCardTerminalListener(new CardTerminalListener() {
+	private PassportManager() {
+		cardTypes = new Hashtable<CardService, CardType>();
+		passportServices = new Hashtable<CardService, PassportService>();
+		listeners = new ArrayList<PassportListener>();
+		CardManager cm = CardManager.getInstance();
+		cm.addCardTerminalListener(new CardTerminalListener() {
 
-         public void cardInserted(CardEvent ce) {
-            CardService service = ce.getService();
-            
-            try {
-               PassportService passportService = new PassportService(service);
-               passportService.open(); /* Selects applet... */
-               cardTypes.put(service, CardType.PASSPORT);
-               passportServices.put(service, passportService);
-               PassportEvent pe = new PassportEvent(PassportEvent.INSERTED, passportService);
-               for (PassportListener l : listeners) { l.passportInserted(pe); };
-            } catch (CardServiceException cse) {
-               cardTypes.put(service, CardType.OTHER_CARD);
-            }
-         }
+			public void cardInserted(CardEvent ce) {
+				CardService service = ce.getService();
 
-         public void cardRemoved(CardEvent ce) {
-            CardService service = ce.getService();
-            CardType cardType = cardTypes.remove(service);
-            if (cardType != null && cardType == CardType.PASSPORT) {
-               PassportService passportService = passportServices.get(service);
-               PassportEvent pe = new PassportEvent(PassportEvent.REMOVED, passportService);
-               for (PassportListener l : listeners) {  l.passportRemoved(pe); };
-            }
-         }
-      });
-   }
+				try {
+					PassportService passportService = new PassportService(service);
+					passportService.open(); /* Selects applet... */
+					cardTypes.put(service, CardType.PASSPORT);
+					passportServices.put(service, passportService);
+					notifyPassportInserted(passportService);
+				} catch (CardServiceException cse) {
+					cardTypes.put(service, CardType.OTHER_CARD);
+				}
+			}
 
-   public synchronized void addPassportListener(PassportListener l) {
-      listeners.add(l);
-   }
+			public void cardRemoved(CardEvent ce) {
+				CardService service = ce.getService();
+				CardType cardType = cardTypes.remove(service);
+				if (cardType != null && cardType == CardType.PASSPORT) {
+					PassportService passportService = passportServices.get(service);
+					notifyPassportRemoved(passportService);
+				}
+			}
+		});
+	}
 
-   public synchronized void removePassportListener(PassportListener l) {
-      listeners.remove(l);
-   }
-   
-   public static PassportManager getInstance() {
-	   return INSTANCE;
-   }
+	public synchronized void addPassportListener(PassportListener l) {
+		listeners.add(l);
+	}
+
+	public synchronized void removePassportListener(PassportListener l) {
+		listeners.remove(l);
+	}
+
+	public static PassportManager getInstance() {
+		return INSTANCE;
+	}
+
+	private void notifyPassportInserted(final PassportService passportService) {
+		final PassportEvent pe = new PassportEvent(PassportEvent.INSERTED, passportService);
+		for (final PassportListener l : listeners) { 
+			(new Thread(new Runnable() {
+				public void run() {
+					l.passportInserted(pe);
+				}
+			})).start();
+		}
+	}
+
+	private void notifyPassportRemoved(final PassportService passportService) {
+		final PassportEvent pe = new PassportEvent(PassportEvent.REMOVED, passportService);
+		for (final PassportListener l : listeners) {
+			(new Thread(new Runnable() {
+				public void run() {
+					l.passportRemoved(pe);
+				}
+			})).start();
+		}
+	}
 }

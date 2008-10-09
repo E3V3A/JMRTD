@@ -45,6 +45,7 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.event.IIOReadProgressListener;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -389,6 +390,58 @@ public class FaceInfo
 			   reader.setInput(iis);
 			   ImageReadParam pm = reader.getDefaultReadParam();
 			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+			   pm.setSourceProgressivePasses(2, 8);
+			   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
+
+				@Override
+				public void imageComplete(ImageReader source) {
+					System.out.println("DEBUG: imageComplete");
+				}
+
+				@Override
+				public void imageProgress(ImageReader source,
+						float percentageDone) {
+					System.out.println("DEBUG: imageProgress " + percentageDone);
+				}
+
+				@Override
+				public void imageStarted(ImageReader source, int imageIndex) {
+					System.out.println("DEBUG: imageStarted");
+				}
+
+				@Override
+				public void readAborted(ImageReader source) {
+					System.out.println("DEBUG: readAborted");
+				}
+
+				@Override
+				public void sequenceComplete(ImageReader source) {
+					System.out.println("DEBUG: sequenceComplete");
+				}
+
+				@Override
+				public void sequenceStarted(ImageReader source, int minIndex) {
+					System.out.println("DEBUG: sequenceStarted");
+				}
+
+				@Override
+				public void thumbnailComplete(ImageReader source) {
+					System.out.println("DEBUG: thumbnailComplete");
+				}
+
+				@Override
+				public void thumbnailProgress(ImageReader source,
+						float percentageDone) {
+					System.out.println("DEBUG: thumbnailProgress");
+				}
+
+				@Override
+				public void thumbnailStarted(ImageReader source,
+						int imageIndex, int thumbnailIndex) {
+					System.out.println("DEBUG: thumbnailStarted");
+				}
+				   
+			   });
 			   BufferedImage image = reader.read(0, pm);
 			   if (image != null) {
 				   return image;
@@ -401,16 +454,6 @@ public class FaceInfo
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
    
-   private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
-   {
-	   try {
-		   if (image == null) {  image = processImage(in, mimeType); }
-		   return scaleImage(image, calculateScale(desiredWidth, desiredHeight));
-	   } catch (IOException ioe) {
-		   throw new IllegalStateException(ioe.toString());
-	   }
-   }
-   
    /**
     * A scaling factor resulting in at most desiredWidth and desiredHeight yet
     * that respects aspect ratio of original width and height.
@@ -421,7 +464,6 @@ public class FaceInfo
 	   double scale = xScale < yScale ? xScale : yScale;
 	   return scale;
    }
-
    
 //   private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
 //   throws IOException {
@@ -528,13 +570,20 @@ public class FaceInfo
     * @return image
     */
    public BufferedImage getThumbNail(int width, int height) throws IOException {
+	   String mimeType = null;
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
-		   return readScaledImage(dataIn, "image/jpeg", width, height);
+		   mimeType = "image/jpeg"; break;
 	   case IMAGE_DATA_TYPE_JPEG2000:
-		   return readScaledImage(dataIn, "image/jpeg2000", width, height);
+		   mimeType = "image/jpeg2000"; break;
 	   default:
 		   throw new IOException("Unknown image data type!");
+	   }
+	   try {
+		   if (image == null) {  image = processImage(dataIn, mimeType); }
+		   return scaleImage(image, calculateScale(width, height));
+	   } catch (IOException ioe) {
+		   throw new IllegalStateException(ioe.toString());
 	   }
    }
    

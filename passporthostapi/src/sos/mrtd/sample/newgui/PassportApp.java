@@ -43,13 +43,11 @@ import java.util.List;
 
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.InputMap;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -58,6 +56,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
@@ -133,13 +132,16 @@ public class PassportApp  implements PassportListener, AuthListener
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
-			contentPane.add(bacStorePanel, BorderLayout.CENTER);
+			
+			JTabbedPane tabbedPane = new JTabbedPane();
+			tabbedPane.addTab("BAC", bacStorePanel);
+			tabbedPane.addTab("Terminals", new PassportManagerPanel());
+			contentPane.add(tabbedPane, BorderLayout.CENTER);
 
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
 			menuBar.add(createFileMenu());
-			menuBar.add(bacStorePanel.getBACMenu());
 			menuBar.add(createTerminalMenu());
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
@@ -280,12 +282,6 @@ public class PassportApp  implements PassportListener, AuthListener
 		JMenu terminalMenu = new JMenu("Terminals");
 		CardManager cm = CardManager.getInstance();
 
-		JCheckBoxMenuItem useCardManagerItem = new JCheckBoxMenuItem(getUseCardManagerItem());
-		useCardManagerItem.setSelected(false);
-		terminalMenu.add(useCardManagerItem);
-
-		terminalMenu.addSeparator();
-
 		Collection<CardTerminal> terminals = cm.getTerminals();
 		for (CardTerminal terminal: terminals) {
 			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
@@ -363,29 +359,7 @@ public class PassportApp  implements PassportListener, AuthListener
 		action.putValue(Action.NAME, "Exit");
 		return action;
 	}
-
-	private Action getUseCardManagerItem() {
-		Action action = new AbstractAction() {
-			public void actionPerformed(ActionEvent e) {
-				Object src = e.getSource();
-				if (src instanceof AbstractButton) {
-					AbstractButton button = (AbstractButton)src;
-					CardManager cm = CardManager.getInstance();
-					if (button.isSelected()) {
-						cm.start();
-					} else {
-						cm.stop();
-					}
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, TERMINAL_GO_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_GO_LARGE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Poll all terminals using the card manager");
-		action.putValue(Action.NAME, "Use card manager");
-		return action;
-	}
-
+	
 	private Action getUseTerminalAction(final CardTerminal terminal) {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {

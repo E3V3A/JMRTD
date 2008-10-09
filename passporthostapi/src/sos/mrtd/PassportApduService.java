@@ -442,4 +442,8 @@ public class PassportApduService extends CardService
          throw new CardServiceException(gse.toString());
       }
    }
+   
+   public CardService getService() {
+	   return service;
+   }
 }

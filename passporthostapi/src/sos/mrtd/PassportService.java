@@ -138,8 +138,7 @@ public class PassportService extends PassportApduService
 	 * @throws GeneralSecurityException when the available JCE providers
 	 *         cannot provide the necessary cryptographic primitives.
 	 */
-	public PassportService(CardService service)
-	throws CardServiceException {
+	public PassportService(CardService service) throws CardServiceException {
 		super(service);
 		try {
 			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */

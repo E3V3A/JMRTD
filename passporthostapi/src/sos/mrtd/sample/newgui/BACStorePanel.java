@@ -34,8 +34,6 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
-import javax.swing.JMenu;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -263,23 +261,5 @@ public class BACStorePanel extends JPanel
 		action.putValue(Action.SHORT_DESCRIPTION, "Move BAC Entry Down");
 		action.putValue(Action.NAME, "Down");
 		return action;
-	}
-
-	public JMenu getBACMenu() {
-		JMenu result = new JMenu("BACs");
-		JMenuItem addItem = new JMenuItem();
-		addItem.setAction(addAction);
-		result.add(addItem);
-		JMenuItem deleteItem = new JMenuItem();
-		deleteItem.setAction(deleteAction);
-		result.add(deleteItem);
-		result.addSeparator();
-		JMenuItem moveUpItem = new JMenuItem();
-		moveUpItem.setAction(moveUpAction);
-		result.add(moveUpItem);
-		JMenuItem moveDownItem = new JMenuItem();
-		moveDownItem.setAction(moveDownAction);
-		result.add(moveDownItem);
-		return result;
 	}
 }
