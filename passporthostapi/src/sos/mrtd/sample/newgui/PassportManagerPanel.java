@@ -36,9 +36,10 @@ import sos.util.Icons;
 public class PassportManagerPanel extends JPanel
 {
 	private static final Icon CM_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("computer"));
-	private static final Icon TERMINAL_NO_CARD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
-	private static final Icon TERMINAL_OTHER_CARD_ICON  = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_delete"));
-	private static final Icon TERMINAL_PASSPORT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_add"));
+	private static final Icon TERMINAL_NOT_POLLING_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
+	private static final Icon TERMINAL_NO_CARD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_delete"));
+	private static final Icon TERMINAL_OTHER_CARD_ICON  = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_add"));
+	private static final Icon TERMINAL_PASSPORT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
 
 	JTree tree;
 
@@ -84,12 +85,11 @@ public class PassportManagerPanel extends JPanel
 				if (service instanceof TerminalCardService) {
 					CardTerminal terminal = ((TerminalCardService)service).getTerminal();
 					TerminalNode node = terminalNodes.get(terminals.indexOf(terminal));
-					if (node.getIcon() == TERMINAL_NO_CARD_ICON) {
+					Icon icon = node.getIcon();
+					if (icon == TERMINAL_NOT_POLLING_ICON || node.getIcon() == TERMINAL_NO_CARD_ICON) {
 						node.setIcon(TERMINAL_OTHER_CARD_ICON);
 					}
-					tree.repaint();
 					revalidate();
-					repaint();
 				}
 			}
 
@@ -99,9 +99,7 @@ public class PassportManagerPanel extends JPanel
 					CardTerminal terminal = ((TerminalCardService)service).getTerminal();
 					TerminalNode node = terminalNodes.get(terminals.indexOf(terminal));
 					node.setIcon(TERMINAL_NO_CARD_ICON);
-					tree.repaint();
 					revalidate();
-					repaint();
 				}
 			}			
 		});
@@ -114,16 +112,14 @@ public class PassportManagerPanel extends JPanel
 					CardTerminal terminal = ((TerminalCardService)service).getTerminal();
 					TerminalNode node = terminalNodes.get(terminals.indexOf(terminal));
 					node.setIcon(TERMINAL_PASSPORT_ICON);
-					tree.repaint();
 					revalidate();
-					repaint();
 				}
-				
+
 			}
 
 			public void passportRemoved(PassportEvent pe) {
 				// TODO Auto-generated method stub
-				
+
 			}	
 		});
 	}
@@ -141,7 +137,7 @@ public class PassportManagerPanel extends JPanel
 		};
 	}
 
-	public static Action getUseCardManagerAction() {
+	public Action getUseCardManagerAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				Object src = e.getSource();
@@ -149,9 +145,17 @@ public class PassportManagerPanel extends JPanel
 					AbstractButton button = (AbstractButton)src;
 					CardManager cm = CardManager.getInstance();
 					if (button.isSelected()) {
+						for (TerminalNode node: terminalNodes) {
+							node.setIcon(TERMINAL_NO_CARD_ICON);
+						}
+						revalidate();
 						cm.start();
 					} else {
 						cm.stop();
+						for (TerminalNode node: terminalNodes) {
+							node.setIcon(TERMINAL_NOT_POLLING_ICON);
+						}
+						revalidate();
 					}
 				}
 			}
@@ -172,7 +176,11 @@ public class PassportManagerPanel extends JPanel
 
 		public TerminalNode(CardTerminal terminal) {
 			this.terminal = terminal;
-			this.icon = TERMINAL_NO_CARD_ICON;
+			if (CardManager.getInstance().isPolling()) {
+				this.icon = TERMINAL_NO_CARD_ICON;
+			} else {
+				this.icon = TERMINAL_NOT_POLLING_ICON;
+			}
 		}
 
 		public void setIcon(Icon icon) {
@@ -190,5 +198,12 @@ public class PassportManagerPanel extends JPanel
 		public CardTerminal getTerminal() {
 			return terminal;
 		}
+	}
+	
+	public void revalidate() {
+		super.revalidate();
+		if (tree != null) { tree.repaint(); }
+		super.revalidate();
+		repaint();
 	}
 }

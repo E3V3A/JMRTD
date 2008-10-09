@@ -199,6 +199,7 @@ public class PassportApp  implements PassportListener, AuthListener
 			sessionStarted(service);
 			System.out.println("DEBUG: We could read plain EF.COM, no need to try BAC");
 			System.out.println("DEBUG: " + com);
+			// FIXME: what to do with non-BAC passports?
 		} catch (CardServiceException cse) {
 			System.out.println("DEBUG: Could not read plain EF.COM, going into BAC loop");
 		}
@@ -223,6 +224,9 @@ public class PassportApp  implements PassportListener, AuthListener
 			}
 		} catch (InterruptedException ie) {
 			/* NOTE: Interrupted? leave loop. */
+		}
+		if (!authenticated) {
+			System.out.println("DEBUG: maybe check nationality by matching the fingerprint of this passport?");
 		}
 	}
 
