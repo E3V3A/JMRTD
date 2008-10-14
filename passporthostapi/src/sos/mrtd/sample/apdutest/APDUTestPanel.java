@@ -49,7 +49,7 @@ import sos.util.Hex;
  */
 public class APDUTestPanel extends JPanel implements ISO7816,ActionListener{
 
-    public static final String DEF_FILE_NAME = "apdu_defualt.txt";
+    public static final String DEF_FILE_NAME = "apdu_default.txt";
     public static final String DEF_SAVE_LOCATION = ".";
     
     private File saveLocation = new File(DEF_SAVE_LOCATION);

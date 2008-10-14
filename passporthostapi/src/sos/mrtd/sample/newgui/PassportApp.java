@@ -63,6 +63,7 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
+import sos.mrtd.APDUFingerprint;
 import sos.mrtd.COMFile;
 import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
@@ -87,7 +88,7 @@ import sos.util.Icons;
  */
 public class PassportApp  implements PassportListener
 {
-	private static final boolean DEBUG = false;
+	private static final boolean APDU_DEBUG = false;
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
 	public static final File JMRTD_USER_DIR =
@@ -184,7 +185,7 @@ public class PassportApp  implements PassportListener
 	}
 
 	private void readPassport(PassportService service) throws CardServiceException {
-		if (DEBUG) {
+		if (APDU_DEBUG) {
 			service.addAPDUListener(new APDUListener() {
 				public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
 					System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
@@ -232,9 +233,16 @@ public class PassportApp  implements PassportListener
 			sessionStarted(service, false);
 		} else if (isBACAuthenticated) {
 			sessionStarted(service, true);
-		} else  {
+		} else {
 			/* Passport requires BAC, but we failed to authenticate. */
-			System.out.println("DEBUG: maybe check nationality by matching the fingerprint of this passport?");
+			APDUFingerprint fp = new APDUFingerprint(service);
+			String countryDescription = fp.guessCountry();
+			if (countryDescription == null) {
+				JOptionPane.showMessageDialog(contentPane, "Cannot authenticate this passport.\nCannot fingerprint country.", "Cannot read this ePassport", JOptionPane.INFORMATION_MESSAGE, null);
+			} else {
+				JOptionPane.showMessageDialog(contentPane, "Cannot authenticate this passport.\nFingerprint information suggests this is a \"" + countryDescription + "\".", "Cannot read this ePassport", JOptionPane.INFORMATION_MESSAGE, null);
+
+			}
 		}
 	}
 
@@ -277,7 +285,7 @@ public class PassportApp  implements PassportListener
 	}
 
 	private JMenu createTerminalMenu() {
-		JMenu terminalMenu = new JMenu("Terminals");
+		JMenu terminalMenu = new JMenu("Tools");
 		CardManager cm = CardManager.getInstance();
 
 		Collection<CardTerminal> terminals = cm.getTerminals();
