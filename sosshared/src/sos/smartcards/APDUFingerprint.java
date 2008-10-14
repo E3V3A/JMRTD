@@ -29,6 +29,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.StringTokenizer;
 
 import javax.smartcardio.CommandAPDU;
@@ -39,16 +40,19 @@ import sos.util.Hex;
 
 /**
  * Fingerprint data structure. Basically maps commands to response codes (status words).
- * Under construction. Reads files in <code>basedir/fingerprintfiles</code>
- * filestructures of Henning.
+ * <strong>Under construction!</strong> Reads and parses files in <code>basedir/fingerprintfiles</code>
+ * formatted with filestructures of Henning.
  * 
  * TODO: We should think of some other fileformat: Henning's format is based on
- * <code>toString()</code> of APDU classes, not under our control.
+ * <code>toString()</code> of <code>javax.smartcardio.*APDU</code> classes,
+ * not under our control.
+ * 
+ * TODO: For long term: maybe turn this into some CardType like system similar to OCF?
  *
  * @author Henning Richter (hrichter@fh-lausitz.de)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class APDUFingerprint
+public class APDUFingerprint implements CardFingerprint
 {
 	/** The fingerprint directory contains txt and png files. We only consider the txt ones. */
 	private static final FilenameFilter HENNING_FILE_FILENAME_FILTER = new FilenameFilter() {
@@ -136,13 +140,16 @@ public class APDUFingerprint
 	 *
 	 * @return some string that identifies this card
 	 */
-	public String guessIdentity() {
+	public Properties guessProperties() {
+		Properties properties = new Properties();
+		int i = 0;
 		for (APDUFingerprint storedFingerprint: STORED_FINGERPRINTS.keySet()) {
 			if (isAllowedBy(this, storedFingerprint)) {
-				return STORED_FINGERPRINTS.get(storedFingerprint);
+				String fileName = STORED_FINGERPRINTS.get(storedFingerprint);
+				properties.put("stored.fingerprint.match." + i, fileName);
 			}
 		}
-		return null;
+		return properties;
 	}
 
 	private static void getFingerprintsFromHenningFile() {
@@ -157,7 +164,7 @@ public class APDUFingerprint
 				System.out.println("DEBUG: cannot open fingerprint dir: " + fingerprintDir);
 			}
 			for (File fingerPrintFile: fingerPrintFiles) {
-				String fileName = fileName = fingerPrintFile.getName();
+				String fileName = fingerPrintFile.getName();
 				try {
 					APDUFingerprint fingerprint = getFingerprintFromHenningFile(fingerPrintFile);
 					STORED_FINGERPRINTS.put(fingerprint, fileName);
