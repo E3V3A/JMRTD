@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
@@ -236,13 +237,9 @@ public class PassportApp  implements PassportListener
 		} else {
 			/* Passport requires BAC, but we failed to authenticate. */
 			APDUFingerprint fp = new APDUFingerprint(service);
-			String message = "Cannot get access to this passport.";
-			String countryDescription = fp.guessIdentity();
-			if (countryDescription == null) {
-				message += "\nCannot fingerprint country.";
-			} else {
-				message += "\nFingerprint information suggests this is a \"";
-			}
+			String message = "Cannot get access to passport.";
+			Properties properties = fp.guessProperties();
+			message += "\nFingerprint information: \"" + properties + "\"";
 			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
 		}
 	}
