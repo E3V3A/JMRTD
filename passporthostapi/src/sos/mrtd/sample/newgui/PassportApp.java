@@ -63,12 +63,12 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
-import sos.mrtd.APDUFingerprint;
 import sos.mrtd.COMFile;
 import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
+import sos.smartcards.APDUFingerprint;
 import sos.smartcards.APDUListener;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
@@ -236,13 +236,14 @@ public class PassportApp  implements PassportListener
 		} else {
 			/* Passport requires BAC, but we failed to authenticate. */
 			APDUFingerprint fp = new APDUFingerprint(service);
-			String countryDescription = fp.guessCountry();
+			String message = "Cannot get access to this passport.";
+			String countryDescription = fp.guessIdentity();
 			if (countryDescription == null) {
-				JOptionPane.showMessageDialog(contentPane, "Cannot authenticate this passport.\nCannot fingerprint country.", "Cannot read this ePassport", JOptionPane.INFORMATION_MESSAGE, null);
+				message += "\nCannot fingerprint country.";
 			} else {
-				JOptionPane.showMessageDialog(contentPane, "Cannot authenticate this passport.\nFingerprint information suggests this is a \"" + countryDescription + "\".", "Cannot read this ePassport", JOptionPane.INFORMATION_MESSAGE, null);
-
+				message += "\nFingerprint information suggests this is a \"";
 			}
+			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
 		}
 	}
 
