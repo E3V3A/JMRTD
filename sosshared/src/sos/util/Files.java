@@ -1,6 +1,7 @@
 package sos.util;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 
 import javax.swing.filechooser.FileFilter;
@@ -26,12 +27,12 @@ public class Files
 			|| f.getName().endsWith("key") || f.getName().endsWith("KEY"); }
 		public String getDescription() { return "Key files"; }				
 	};
-	
+
 	public static final FileFilter ZIP_FILE_FILTER = new FileFilter() {
 		public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
 		public String getDescription() { return "ZIP archives"; }				
 	};
-	
+
 	public static final FileFilter IMAGE_FILE_FILTER = new FileFilter() {
 		public boolean accept(File f) { return f.isDirectory()
 			|| f.getName().endsWith("jpg") || f.getName().endsWith("JPG")
@@ -39,7 +40,7 @@ public class Files
 			|| f.getName().endsWith("bmp") || f.getName().endsWith("BMP"); }
 		public String getDescription() { return "Image files"; }				
 	};
-	
+
 	private Files() {
 	}
 
@@ -65,5 +66,19 @@ public class Files
 		} catch (Exception e) {
 			return null;
 		}
+	}
+
+	public static File getBaseDirAsFile() {
+		URL baseDirURL = getBaseDir();
+		File baseDirFile = null;
+		try {
+			baseDirFile = new File(baseDirURL.toURI());
+			if (baseDirFile.isDirectory()) {
+				return baseDirFile;
+			}
+		} catch(URISyntaxException e) {
+			/* Fall through */
+		}
+		return new File(baseDirURL.getPath().replace("%20", " "));
 	}
 }
