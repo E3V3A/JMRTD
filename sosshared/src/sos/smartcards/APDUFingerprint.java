@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: AuthListener.java 562 2008-10-07 14:27:33Z martijno $
+ * $Id: $
  */
 
 package sos.smartcards;
