@@ -47,7 +47,7 @@ import sos.util.Hex;
  * <code>toString()</code> of <code>javax.smartcardio.*APDU</code> classes,
  * not under our control.
  * 
- * TODO: For long term: maybe turn this into some CardType like system similar to OCF?
+ * TODO: For long term: maybe turn this into some CardType-like system similar to OCF?
  *
  * @author Henning Richter (hrichter@fh-lausitz.de)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
