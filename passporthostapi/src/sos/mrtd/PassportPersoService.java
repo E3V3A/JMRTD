@@ -284,11 +284,11 @@ public class PassportPersoService extends CardService {
 	/**
 	 * Initiates the passport with MRZ data
 	 * 
-	 * @param docNr
+	 * @param documentNumber
 	 *            the passport document number
-	 * @param dob
+	 * @param dateOfBirth
 	 *            the date of birth of the holder
-	 * @param doe
+	 * @param dateOfExpiry
 	 *            the date of expiry of the passport
 	 * @throws CardServiceException
 	 */
