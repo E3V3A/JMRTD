@@ -46,7 +46,9 @@ import javax.smartcardio.TerminalFactory;
 public class CardManager
 {
 	private static final CardManager INSTANCE = new CardManager();
-	private static final int POLL_INTERVAL = 1000;
+	private static final int
+		WAIT_FOR_CARD_PRESENT_TIME = 1000,
+		WAIT_FOR_CARD_ABSENT_TIME = 5000;
 
 	private List<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
@@ -99,18 +101,18 @@ public class CardManager
 		}
 		try {
 			/* Other terminals */
-			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
-			Provider acrProvider = (Provider)acrProviderClass.newInstance();
-			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
-			n += addTerminals(acrFactory);
+//			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+//			Provider acrProvider = (Provider)acrProviderClass.newInstance();
+//			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
+//			n += addTerminals(acrFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
 		}
 		try {
 			/* Simulators */
-			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
-			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
-			n += addTerminals(crefFactory);
+//			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
+//			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
+//			n += addTerminals(crefFactory);
 //			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
 //			factories.add(jcopFactory);
 		} catch (Exception e) {
@@ -255,9 +257,9 @@ public class CardManager
 
 
 						if (isCardPresent) {
-							terminal.waitForCardAbsent(POLL_INTERVAL);
+							terminal.waitForCardAbsent(WAIT_FOR_CARD_ABSENT_TIME);
 						} else {
-							terminal.waitForCardPresent(POLL_INTERVAL);
+							terminal.waitForCardPresent(WAIT_FOR_CARD_PRESENT_TIME);
 						}
 						// Thread.sleep(POLL_INTERVAL);
 					} catch (CardException ce) {
