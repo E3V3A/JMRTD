@@ -42,6 +42,7 @@ public class TerminalCardService extends CardService
 	private CardTerminal terminal;
 	private Card card;
 	private CardChannel channel;
+	private long lastActiveTime;
 
 	/**
 	 * Constructs a new card service.
@@ -50,6 +51,7 @@ public class TerminalCardService extends CardService
 	 */
 	public TerminalCardService(CardTerminal terminal) {
 		this.terminal = terminal;
+		lastActiveTime = System.currentTimeMillis();
 	}
 
 	public void open() throws CardServiceException {
@@ -81,6 +83,7 @@ public class TerminalCardService extends CardService
 			}
 			ResponseAPDU ourResponseAPDU = channel.transmit(ourCommandAPDU);
 			notifyExchangedAPDU(ourCommandAPDU, ourResponseAPDU);
+			lastActiveTime = System.currentTimeMillis();
 			return ourResponseAPDU;
 		} catch (CardException ce) {
 			ce.printStackTrace();
@@ -109,5 +112,9 @@ public class TerminalCardService extends CardService
 	 */
 	public CardTerminal getTerminal() {
 		return terminal;
+	}
+	
+	/* package visible */ long getLastActiveTime() {
+	   return lastActiveTime;
 	}
 }

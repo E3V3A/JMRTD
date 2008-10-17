@@ -47,8 +47,7 @@ public class CardManager
 {
 	private static final CardManager INSTANCE = new CardManager();
 	private static final int
-		WAIT_FOR_CARD_PRESENT_TIME = 1000,
-		WAIT_FOR_CARD_ABSENT_TIME = 5000;
+		POLL_INTERVAL = 450;
 
 	private List<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
@@ -209,7 +208,7 @@ public class CardManager
 	private class TerminalPoller implements Runnable
 	{
 		private CardTerminal terminal;
-		private CardService service;
+		private TerminalCardService service;
 
 		public TerminalPoller(CardTerminal terminal) {
 			this.terminal = terminal;
@@ -229,8 +228,8 @@ public class CardManager
 					}
 					boolean wasCardPresent = false;
 					boolean isCardPresent = false;
+					long currentTime = System.currentTimeMillis();
 					try {
-
 						if (service != null) {
 							wasCardPresent = true;
 						} else {
@@ -242,7 +241,11 @@ public class CardManager
 								if (service != null) { service.close(); }
 							}
 						}
-						isCardPresent = terminal.isCardPresent();
+						if (service != null && (currentTime - service.getLastActiveTime() < POLL_INTERVAL)) {
+						   isCardPresent = true;
+						} else {
+						   isCardPresent = terminal.isCardPresent();
+						}
 						if (wasCardPresent && !isCardPresent) {
 							if (service != null) {
 								notifyCardRemoved(service);
@@ -256,12 +259,12 @@ public class CardManager
 						}
 
 
-						if (isCardPresent) {
-							terminal.waitForCardAbsent(WAIT_FOR_CARD_ABSENT_TIME);
-						} else {
-							terminal.waitForCardPresent(WAIT_FOR_CARD_PRESENT_TIME);
-						}
-						// Thread.sleep(POLL_INTERVAL);
+//						if (isCardPresent) {
+//							terminal.waitForCardAbsent(WAIT_FOR_CARD_ABSENT_TIME);
+//						} else {
+//							terminal.waitForCardPresent(WAIT_FOR_CARD_PRESENT_TIME);
+//						}
+						Thread.sleep(POLL_INTERVAL);
 					} catch (CardException ce) {
 						/* NOTE: remain in same state?!? */
 						/* FIXME: what if reader no longer connected? */
