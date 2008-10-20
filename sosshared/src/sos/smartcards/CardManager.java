@@ -109,9 +109,9 @@ public class CardManager
 		}
 		try {
 			/* Simulators */
-//			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
-//			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
-//			n += addTerminals(crefFactory);
+			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
+			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
+			n += addTerminals(crefFactory);
 //			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
 //			factories.add(jcopFactory);
 		} catch (Exception e) {

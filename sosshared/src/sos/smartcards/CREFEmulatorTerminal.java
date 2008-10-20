@@ -118,7 +118,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 	 */
 	public boolean isCardPresent() {
 		synchronized (terminal) {
-			if(open) 
+			if(isChannelOpen) 
 				return true;
 			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
 
@@ -235,7 +235,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 	/**
 	 * Basic card channel to the CREF emulator.
 	 */
-	private static boolean open = false;
+	private static boolean isChannelOpen = false;
 	private class CREFCardChannel extends CardChannel
 	{
 		private CadClientInterface cad;
@@ -255,7 +255,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 					byte[] atrBytes = cad.powerUp();
 					atr = new ATR(atrBytes);
 					heartBeat = System.currentTimeMillis();
-					open = true;
+					isChannelOpen = true;
 				} catch (CadTransportException e) {
 					if (sock != null) { try { sock.close(); } catch (IOException ioex) {} }
 					throw new CardException(e.toString());
@@ -278,9 +278,9 @@ public class CREFEmulatorTerminal extends CardTerminal
 					if (cad != null) {
 						cad.powerDown(); // TODO: Can we also use cad.powerDown(false)?
 						sock.close();
-						open = false;
+						isChannelOpen = false;
 					}
-				} catch (Exception e) { /* NOTE: We're closing anyway. */}
+				} catch (Exception e) { /* NOTE: We're closing anyway. */ }
 			}
 		}
 
