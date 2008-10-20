@@ -132,7 +132,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	}
 
 	/**
-	 * Waits for a card to be present.
+	 * Waits for a card to be present. TODO: NEEDS TESTING!
 	 * 
 	 * @param timeout a timeout
 	 * 
@@ -157,7 +157,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	}
 
 	/**
-	 * Waits for a card to be absent.
+	 * Waits for a card to be absent. TODO: NEEDS TESTING!
 	 * 
 	 * @param timeout a timeout
 	 * 
