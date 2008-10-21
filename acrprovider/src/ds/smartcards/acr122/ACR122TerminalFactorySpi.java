@@ -198,16 +198,16 @@ public class ACR122TerminalFactorySpi extends TerminalFactorySpi {
         public List<CardTerminal> list(State state) throws CardException {
             if (terminal.virtualCard != null) {
                 if (state == CardTerminals.State.CARD_INSERTION
-                        && terminal.state == PRESENT && terminal.inserted) {
+                        && terminal.isCardPresent() && terminal.inserted) {
                     return list();
                 } else if (state == CardTerminals.State.CARD_REMOVAL
-                        && terminal.state == ABSENT && terminal.removed) {
+                        && !terminal.isCardPresent() && terminal.removed) {
                     return list();
                 } else if (state == CardTerminals.State.CARD_PRESENT
-                        && terminal.state == PRESENT) {
+                        && terminal.isCardPresent()) {
                     return list();
                 } else if (state == CardTerminals.State.CARD_ABSENT
-                        && terminal.state == ABSENT) {
+                        && !terminal.isCardPresent()) {
                     return list();
                 } else if (state == CardTerminals.State.ALL) {
                     return list();
