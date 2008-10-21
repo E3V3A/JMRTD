@@ -59,7 +59,6 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
@@ -128,18 +127,14 @@ public class PassportApp  implements PassportListener
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			CardManager cm = CardManager.getInstance();
-			cm.stop();
+			cm.start();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
-
-			JTabbedPane tabbedPane = new JTabbedPane();
-			tabbedPane.addTab("BAC", bacStorePanel);
-			tabbedPane.addTab("Terminals", new PassportManagerPanel());
-			contentPane.add(tabbedPane, BorderLayout.CENTER);
+			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
