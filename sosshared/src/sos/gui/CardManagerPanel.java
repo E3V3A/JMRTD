@@ -49,7 +49,6 @@ public class CardManagerPanel extends JPanel
 	private static final Icon TERMINAL_NOT_POLLING_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
 	private static final Icon TERMINAL_NO_CARD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_delete"));
 	private static final Icon TERMINAL_OTHER_CARD_ICON  = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_add"));
-	private static final Icon TERMINAL_PASSPORT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
 
 	private JTree tree;
 
@@ -162,7 +161,6 @@ public class CardManagerPanel extends JPanel
 	private JPopupMenu getPopupMenu(CardTerminal terminal) {
 		JPopupMenu menu = new JPopupMenu();
 		JMenuItem readPassportItem = new JMenuItem();
-		// readPassportItem.setAction(getUseTerminalAction(terminal));
 		menu.add(readPassportItem);
 		JMenuItem guessCountryItem = new JMenuItem();
 		menu.add(guessCountryItem);
@@ -201,6 +199,8 @@ public class CardManagerPanel extends JPanel
 
 	private class TerminalNode extends DefaultMutableTreeNode
 	{
+		private static final long serialVersionUID = -5808106190717549930L;
+
 		CardTerminal terminal;
 		Icon icon;
 
