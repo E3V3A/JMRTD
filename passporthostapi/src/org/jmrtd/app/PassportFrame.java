@@ -109,6 +109,8 @@ import sos.util.Icons;
  */
 public class PassportFrame extends JFrame
 {
+	private static final long serialVersionUID = -4624658204381014128L;
+
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
 
@@ -132,10 +134,7 @@ public class PassportFrame extends JFrame
 	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
 	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-	private static final Icon TREE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_side_tree"));
-	private static final Icon TREE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_side_tree"));
 
-	
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;

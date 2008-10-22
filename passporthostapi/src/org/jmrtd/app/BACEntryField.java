@@ -40,6 +40,8 @@ import sos.gui.MRZEntryField;
  */
 public class BACEntryField extends Box implements BACEntrySource
 {
+	private static final long serialVersionUID = 6780286228880496605L;
+
 	private MRZEntryField docNrTF;
 	private DateEntryField dateOfBirthField, dateOfExpiryField;
 

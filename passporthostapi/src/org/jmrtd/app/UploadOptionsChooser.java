@@ -23,6 +23,7 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -43,7 +44,6 @@ import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -54,7 +54,7 @@ import javax.swing.filechooser.FileFilter;
 
 import sos.smartcards.CardManager;
 
-public class UploadOptionsChooser extends JComponent
+public class UploadOptionsChooser // extends JComponent
 {
 	private static final long serialVersionUID = 3923435091525731764L;
 
@@ -76,13 +76,12 @@ public class UploadOptionsChooser extends JComponent
 		return panel.getSelectedTerminal();
 	}
 
-
-	private File browseForKeyFile(String title) {
+	private File browseForKeyFile(String title, Component parent) {
 		JFileChooser chooser = new JFileChooser();
 		chooser.setFileFilter(getPrivateKeyFileFilter());
 		chooser.setDialogTitle(title);
 		chooser.setToolTipText(title);
-		int choice = chooser.showOpenDialog(getParent());
+		int choice = chooser.showOpenDialog(parent);
 		switch (choice) {
 		case JFileChooser.APPROVE_OPTION:
 			return chooser.getSelectedFile();
@@ -128,6 +127,7 @@ public class UploadOptionsChooser extends JComponent
 	
 	private class UploadOptionsPanel extends JPanel
 	{
+		private static final long serialVersionUID = 961491777511960967L;
 		private JComboBox terminalsComboBox;
 		private JCheckBox bacCheckBox, aaCheckBox;
 		private BACEntryField bacEntryField;
@@ -150,7 +150,7 @@ public class UploadOptionsChooser extends JComponent
 			bacEntryField.setEnabled(bacCheckBox.isSelected());
 			bacPanel.add(bacEntryField);
 
-			JPanel aaPanel = new JPanel();
+			final JPanel aaPanel = new JPanel();
 			aaCheckBox = new JCheckBox(getAASelectedAction());
 			aaCheckBox.setSelected(aaPublicKey != null);
 			aaPanel.add(aaCheckBox);
@@ -161,7 +161,7 @@ public class UploadOptionsChooser extends JComponent
 			browseButton.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
 					try {
-						File file = browseForKeyFile("Select private key for Active Authentication");
+						File file = browseForKeyFile("Select private key for Active Authentication", aaPanel);
 						if (file != null) {
 							fileTF.setText(file.getAbsolutePath());
 						}

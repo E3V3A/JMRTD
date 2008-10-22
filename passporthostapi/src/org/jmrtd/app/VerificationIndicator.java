@@ -39,6 +39,8 @@ import sos.util.Icons;
  */
 public class VerificationIndicator extends Box
 {
+	private static final long serialVersionUID = -1458554034529575752L;
+
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
 	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, DS_INDICATOR = 2, CS_INDICATOR = 3;
 	

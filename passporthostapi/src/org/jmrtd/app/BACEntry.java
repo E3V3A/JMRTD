@@ -54,6 +54,14 @@ public class BACEntry
 	public String toString() {
 		return documentNumber + ", " + SDF.format(dateOfBirth) + ", " + SDF.format(dateOfExpiry);
 	}
+	
+	public int hashCode() {
+		int result = 5;
+		result = 61 * result + (documentNumber == null ? 0 : documentNumber.hashCode());
+		result = 61 * result + (dateOfBirth == null ? 0 : dateOfBirth.hashCode());
+		result = 61 * result + (dateOfExpiry == null ? 0: dateOfExpiry.hashCode());
+		return result;
+	}
 
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
