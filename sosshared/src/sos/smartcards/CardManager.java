@@ -46,8 +46,7 @@ import javax.smartcardio.TerminalFactory;
 public class CardManager
 {
 	private static final CardManager INSTANCE = new CardManager();
-	private static final int
-		POLL_INTERVAL = 450;
+	private static final int POLL_INTERVAL = 450;
 
 	private List<CardTerminal> terminals;
 	private Collection<CardTerminalListener> listeners;
@@ -160,24 +159,15 @@ public class CardManager
 			listeners.remove(l);
 		}
 	}
-
-	private synchronized void notifyCardInserted(final CardService service) {
-		final CardEvent ce = new CardEvent(CardEvent.INSERTED, service);
-		for (final CardTerminalListener l: listeners) {
+	
+	private void notifyCardEvent(final CardEvent ce) {
+		for (final CardTerminalListener l : listeners) { 
 			(new Thread(new Runnable() {
 				public void run() {
-					l.cardInserted(ce);
-				}
-			})).start();
-		}
-	}
-
-	private synchronized void notifyCardRemoved(final CardService service) {
-		final CardEvent ce = new CardEvent(CardEvent.REMOVED, service);
-		for (final CardTerminalListener l: listeners) {
-			(new Thread(new Runnable() {
-				public void run() {
-					l.cardRemoved(ce);
+					switch (ce.getType()) {
+					case CardEvent.INSERTED: l.cardInserted(ce); break;
+					case CardEvent.REMOVED: l.cardRemoved(ce); break;
+					}	
 				}
 			})).start();
 		}
@@ -248,13 +238,15 @@ public class CardManager
 						}
 						if (wasCardPresent && !isCardPresent) {
 							if (service != null) {
-								notifyCardRemoved(service);
+								final CardEvent ce = new CardEvent(CardEvent.REMOVED, service);
+								notifyCardEvent(ce);
 								service.close();
 							}
 							service = null;
 						} else if (!wasCardPresent && isCardPresent) {
 							if (service != null) {
-								notifyCardInserted(service);
+								final CardEvent ce = new CardEvent(CardEvent.INSERTED, service);
+								notifyCardEvent(ce);
 							}
 						}
 
