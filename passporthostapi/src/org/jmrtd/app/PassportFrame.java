@@ -162,10 +162,11 @@ public class PassportFrame extends JFrame
 	private X509Certificate docSigningCert, countrySigningCert;
 
 	private VerificationIndicator verificationPanel;
-	private boolean isBACVerified;
 	private boolean isAAVerified;
 	private boolean isDSVerified;
 	private Country issuingState;
+
+	private BACEntry bacEntry;
 
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
@@ -196,14 +197,14 @@ public class PassportFrame extends JFrame
 	 * 
 	 * @return a passport frame.
 	 */
-	public void readFromService(PassportService service, boolean isBACVerified) throws CardServiceException {
+	public void readFromService(PassportService service, BACEntry bacEntry) throws CardServiceException {
 		long t0 = System.currentTimeMillis();
 		long t = t0;
 		System.out.println("DEBUG: start reading from service t = 0");
 		final PassportService s = service;
 		try {
-			this.isBACVerified = isBACVerified;
-			verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
+			this.bacEntry = bacEntry;
+			verificationPanel.setBACState(bacEntry != null ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
 			putFile(PassportService.EF_COM, service);
 			putFile(PassportService.EF_SOD, service);
 			InputStream comIn = getFile(PassportService.EF_COM);
@@ -348,19 +349,26 @@ public class PassportFrame extends JFrame
 			InputStream in = null;
 			in = getFile(PassportService.EF_DG1);
 			dg1 = new DG1File(in);
-			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(dg1);
-			final MRZPanel mrzPanel = new MRZPanel(dg1);
+			MRZInfo mrzInfo = dg1.getMRZInfo();
+			if (bacEntry != null &&
+					!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
+					mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
+					mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
+				System.out.println("WARNING: MRZ used in BAC differs from MRZ in DG1!");
+			}
+			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
+			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
 			centerPanel.repaint();
 			holderInfoPanel.addActionListener(new ActionListener() {
+				/* User changes DG1 info in GUI. */
 				public void actionPerformed(ActionEvent e) {
-					MRZInfo info = holderInfoPanel.getMRZ();
-					mrzPanel.setMRZ(info);
-					dg1 = new DG1File(info);
+					MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
+					mrzPanel.setMRZ(updatedMRZInfo);
+					dg1 = new DG1File(updatedMRZInfo);
 					putFile(PassportService.EF_DG1, dg1.getEncoded());
-					isBACVerified = false;
 					isAAVerified = false;
 					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
 					verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
@@ -478,7 +486,7 @@ public class PassportFrame extends JFrame
 	private void verifySecurity(PassportService service) {
 
 		/* Check whether BAC was used */
-		verificationPanel.setBACState(isBACVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
+		verificationPanel.setBACState(bacEntry != null ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check active authentication */
 		try {

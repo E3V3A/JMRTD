@@ -22,9 +22,9 @@
 
 package sos.mrtd;
 
-import java.util.EventListener;
+import sos.smartcards.CardTerminalListener;
 
-public interface PassportListener extends EventListener
+public interface PassportListener extends CardTerminalListener
 {
    void passportInserted(PassportEvent pe);
 

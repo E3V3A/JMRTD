@@ -28,7 +28,6 @@ import java.awt.Font;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
-import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
 /**
@@ -44,10 +43,6 @@ public class MRZPanel extends JPanel
 
 	private MRZInfo info;
 	private JTextArea c;
-
-	public MRZPanel(DG1File dg) {
-		this(dg.getMRZInfo());
-	}
 
 	public MRZPanel(MRZInfo info) {
 		super(new FlowLayout());

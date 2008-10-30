@@ -42,6 +42,7 @@ import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
+import sos.smartcards.CardEvent;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 
@@ -168,6 +169,14 @@ public class PassportGUI extends JPanel implements PassportListener
 		tabbedPane.removeAll();
 		setEnabled(false);
 		revalidate();
+	}
+	
+	public void cardInserted(CardEvent ce) {
+		/* Do nothing. */
+	}
+	
+	public void cardRemoved(CardEvent ce) {
+		/* Do nothing. */
 	}
 
 	public void setEnabled(boolean enabled) {

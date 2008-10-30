@@ -70,8 +70,10 @@ import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.smartcards.APDUFingerprint;
 import sos.smartcards.APDUListener;
+import sos.smartcards.CardEvent;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
+import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
@@ -170,13 +172,28 @@ public class PassportApp  implements PassportListener
 			im.put(KeyStroke.getKeyStroke(c), actionMapKey);
 		}
 	}
-
+	
 	public void passportInserted(PassportEvent ce) {
 		try {
 			PassportService service = ce.getService();
 			readPassport(service);
 		} catch (Exception ex) {
 			ex.printStackTrace();
+		}
+	}
+
+	public void passportRemoved(PassportEvent ce) {
+		/* Do nothing. */
+	}
+	
+	public void cardInserted(CardEvent ce) {
+		/* Ignore non-passport card. */
+	}
+	
+	public void cardRemoved(CardEvent ce) {
+		CardService service = ce.getService();
+		if (service != null) {
+			service.close();
 		}
 	}
 
@@ -191,7 +208,7 @@ public class PassportApp  implements PassportListener
 		}
 		service.open();
 		boolean isBACPassport = false;
-		boolean isBACAuthenticated = false;
+		BACEntry bacEntry = null;
 		try {
 			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
@@ -203,7 +220,7 @@ public class PassportApp  implements PassportListener
 			int tries = 10;
 			List<BACEntry> triedBACEntries = new ArrayList<BACEntry>();
 			try {
-				while (!isBACAuthenticated && tries-- > 0) {
+				while (bacEntry == null && tries-- > 0) {
 					for (BACEntry entry: bacStore.getEntries()) {
 						try {
 							if (!triedBACEntries.contains(entry)) {
@@ -212,7 +229,7 @@ public class PassportApp  implements PassportListener
 								Date dateOfExpiry = entry.getDateOfExpiry();
 								service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
 								/* NOTE: if authentication was ok, performedBAC will be called back. */
-								isBACAuthenticated = true;
+								bacEntry = entry;
 								break; /* out of for loop */
 							}
 							Thread.sleep(500);
@@ -225,10 +242,9 @@ public class PassportApp  implements PassportListener
 				/* NOTE: Interrupted? leave loop. */
 			}
 		}
-		if (!isBACPassport) {
-			sessionStarted(service, false);
-		} else if (isBACAuthenticated) {
-			sessionStarted(service, true);
+		if (!isBACPassport || bacEntry != null) {
+			PassportFrame passportFrame = new PassportFrame();
+			passportFrame.readFromService(service, bacEntry);
 		} else {
 			/* Passport requires BAC, but we failed to authenticate. */
 			APDUFingerprint fp = new APDUFingerprint(service);
@@ -236,21 +252,6 @@ public class PassportApp  implements PassportListener
 			Properties properties = fp.guessProperties();
 			message += "\nFingerprint information: \"" + properties + "\"";
 			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
-		}
-	}
-
-	public void passportRemoved(PassportEvent ce) {
-		sessionStopped(ce.getService());
-	}
-
-	private void sessionStarted(PassportService service, boolean authenticated) throws CardServiceException {
-		PassportFrame passportFrame = new PassportFrame();
-		passportFrame.readFromService(service, authenticated);
-	}
-
-	private void sessionStopped(PassportService service) {
-		if (service != null) {
-			service.close();
 		}
 	}
 

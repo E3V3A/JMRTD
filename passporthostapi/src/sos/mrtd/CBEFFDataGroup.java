@@ -115,7 +115,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * Reads the biometric data block. This method should be implemented by concrete
 	 * subclasses. The 5F2E or 7F2E tag and the length are already read.
 	 * 
-	 * @param tlvIn the input stream positioned so that biometric data block tag and length are already read
+	 * @param in the input stream positioned so that biometric data block tag and length are already read
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */

@@ -194,7 +194,7 @@ public class PassportService extends PassportApduService
 			System.arraycopy(response, 16, kICC, 0, 16);
 			keySeed = new byte[16];
 			for (int i = 0; i < 16; i++) {
-				keySeed[i] = (byte) ((kIFD[i] & 0x000000FF) ^ (kICC[i] & 0x000000FF));
+				keySeed[i] = (byte) ((kIFD[i] & 0xFF) ^ (kICC[i] & 0xFF));
 			}
 			SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);

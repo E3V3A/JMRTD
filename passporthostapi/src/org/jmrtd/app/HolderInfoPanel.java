@@ -40,7 +40,6 @@ import sos.gui.DateEntryField;
 import sos.gui.GenderEntryField;
 import sos.gui.GridLayout2;
 import sos.gui.MRZEntryField;
-import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
 
 /**
@@ -68,10 +67,6 @@ public class HolderInfoPanel extends JPanel
 	private GenderEntryField genderTF;
 
 	private Collection<ActionListener> listeners;
-
-	public HolderInfoPanel(DG1File dg) {
-		this(dg.getMRZInfo());
-	}
 
 	public HolderInfoPanel(MRZInfo nfo) {
 		super(new GridLayout2(9, 2, 3, 3));
