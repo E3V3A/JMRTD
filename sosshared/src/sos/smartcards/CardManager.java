@@ -21,7 +21,6 @@
 
 package sos.smartcards;
 
-import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -91,39 +90,21 @@ public class CardManager
 	public boolean isPolling() {
 		return isPolling;
 	}
-
+	
 	private void addTerminals() {
 		int n = addTerminals(TerminalFactory.getDefault());
 		if (n == 0) {
 			System.out.println("DEBUG: no PC/SC terminals found!");
 		}
-		try {
-			/* Other terminals */
-//			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
-//			Provider acrProvider = (Provider)acrProviderClass.newInstance();
-//			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
-//			n += addTerminals(acrFactory);
-		} catch (Exception e) {
-			/* Ignore this provider */
-		}
-		try {
-			/* Simulators */
-			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
-			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
-			n += addTerminals(crefFactory);
-//			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
-//			factories.add(jcopFactory);
-		} catch (Exception e) {
-			/* Ignore this provider */
-		}
 	}
 
 	/**
-	 * 
+	 * Adds the terminals produced by <code>factory</code>.
+	 *
 	 * @param factory
 	 * @return
 	 */
-	private int addTerminals(TerminalFactory factory) {
+	public synchronized int addTerminals(TerminalFactory factory) {
 		try {
 			CardTerminals newTerminals = factory.terminals();
 			if (newTerminals == null) { return 0; }
@@ -159,7 +140,7 @@ public class CardManager
 			listeners.remove(l);
 		}
 	}
-	
+
 	private void notifyCardEvent(final CardEvent ce) {
 		for (final CardTerminalListener l : listeners) { 
 			(new Thread(new Runnable() {
@@ -188,6 +169,7 @@ public class CardManager
 
 	/**
 	 * Gets the card manager.
+	 * By default only PC/SC terminals are added, use {@link #addTerminals(TerminalFactory)} to add additional terminals.
 	 * 
 	 * @return the card manager
 	 */
@@ -232,9 +214,9 @@ public class CardManager
 							}
 						}
 						if (service != null && (currentTime - service.getLastActiveTime() < POLL_INTERVAL)) {
-						   isCardPresent = true;
+							isCardPresent = true;
 						} else {
-						   isCardPresent = terminal.isCardPresent();
+							isCardPresent = terminal.isCardPresent();
 						}
 						if (wasCardPresent && !isCardPresent) {
 							if (service != null) {
@@ -251,11 +233,12 @@ public class CardManager
 						}
 
 
-//						if (isCardPresent) {
-//							terminal.waitForCardAbsent(WAIT_FOR_CARD_ABSENT_TIME);
-//						} else {
-//							terminal.waitForCardPresent(WAIT_FOR_CARD_PRESENT_TIME);
-//						}
+						// // This doesn't seem to work on some variants of Linux + pcsclite. :(
+						//						if (isCardPresent) {
+						//							terminal.waitForCardAbsent(POLL_INTERVAL);
+						//						} else {
+						//							terminal.waitForCardPresent(POLL_INTERVAL);
+						//						}
 						Thread.sleep(POLL_INTERVAL);
 					} catch (CardException ce) {
 						/* NOTE: remain in same state?!? */
