@@ -22,10 +22,13 @@
 
 package sos.mrtd;
 
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
+
+import javax.smartcardio.TerminalFactory;
 
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardManager;
@@ -48,6 +51,25 @@ public class PassportManager
 		passportServices = new Hashtable<CardService, PassportService>();
 		listeners = new ArrayList<PassportListener>();
 		final CardManager cm = CardManager.getInstance();
+		try {
+			/* Other terminals */
+			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+			Provider acrProvider = (Provider)acrProviderClass.newInstance();
+			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
+			cm.addTerminals(acrFactory);
+		} catch (Exception e) {
+			/* Ignore this provider */
+		}
+		try {
+			/* Simulators */
+			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
+			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
+			cm.addTerminals(crefFactory);
+			//			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
+			//			factories.add(jcopFactory);
+		} catch (Exception e) {
+			/* Ignore this provider */
+		}
 		cm.addCardTerminalListener(new CardTerminalListener() {
 
 			public void cardInserted(CardEvent ce) {
