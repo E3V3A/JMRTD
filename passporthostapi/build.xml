@@ -8,16 +8,25 @@
 	<property name="build" location="bin" />
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
-	<!-- property name="arch" value="${os.arch}" -->
+
+	<!-- Would like to use ${os.arch} here, but is set to "x86" instead of "i386"?!? -->
 	<property name="arch" value="i386" />
+	
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build"/>
 
 	<!-- property name="bcprov" value="bcprov-*.jar" / -->
 	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
+	
+	<property name="izpackdir" value="c:/Program files/IzPack" />
+	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
 
 	<property name="jai_imageio" value="jai_imageio.jar" />
 	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
 	<property name="libclib_jiio" value="libclib_jiio.*" />
+
+	<!-- Allows us to use the IzPack Ant task -->
+	<taskdef name="izpack" classpath="${izpack-standalone-compiler}"
+	classname="com.izforge.izpack.ant.IzPackTask" />
 
 	<target name="init">
 		<!-- Create the time stamp -->
@@ -69,7 +78,7 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
-				<attribute name="Main-class" value="sos.mrtd.sample.newgui.PassportApp" />
+				<attribute name="Main-class" value="org.jmrtd.app.PassportApp" />
 				<attribute name="VMOptions" value="-Xms256M -Xmx256M" />
 				<attribute name="Class-path" value="ext/bcprov-jdk16-139.jar ext/jai_imageio.jar" />
 			</manifest>
@@ -79,6 +88,14 @@
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="." includes="README,LICENSE" />
 		</jar>
+		
+		<!-- Use IzPack to create the installer -->
+		<izpack
+				input="jmrtd_installer.xml"
+				output="jmrtd_installer.jar"
+				basedir="${basedir}"
+				izpackdir="${izpackdir}"
+			/>
 	</target>
 
 	<target name="clean" description="clean up">
@@ -96,4 +113,5 @@
 			<package name="sos.mrtd" />
 		</javadoc>
 	</target>
+
 </project>
