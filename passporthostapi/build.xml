@@ -1,7 +1,8 @@
 <project name="jmrtd" default="dist" basedir=".">
+
 	<description>
-      JMRTD host API build file
-   </description>
+		JMRTD host API distribution build file
+	</description>
 
 	<!-- Global properties for this build -->
 	<property name="src" location="src" />
@@ -11,22 +12,30 @@
 
 	<!-- Would like to use ${os.arch} here, but is set to "x86" instead of "i386"?!? -->
 	<property name="arch" value="i386" />
-	
-	<property name="sos-shared-build" location="${basedir}/../sosshared/build"/>
 
-	<!-- property name="bcprov" value="bcprov-*.jar" / -->
-	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
-	
-	<property name="izpackdir" value="c:/Program files/IzPack" />
+	<!-- Defines IzPack Ant task -->
+	<property name="izpackdir" value="c:/Program Files/IzPack" />
 	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
+	<taskdef name="izpack"
+		classpath="${izpack-standalone-compiler}"
+		classname="com.izforge.izpack.ant.IzPackTask" />
 
+	<!-- Defines JSmooth Ant task -->
+	<property name="jsmoothdir" value="c:/Program Files/JSmooth 0.9.9-7" />
+	<taskdef name="jsmoothgen"
+		classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
+    	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
+
+	<!-- sosshared class files will be included in main jar -->
+	<property name="sos-shared-build" location="${basedir}/../sosshared/build" />
+
+	<!-- bouncy castle will be added as an extensions jar -->
+	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
+
+	<!-- jai_imageio will also be added as an extensions jar -->
 	<property name="jai_imageio" value="jai_imageio.jar" />
 	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
 	<property name="libclib_jiio" value="libclib_jiio.*" />
-
-	<!-- Allows us to use the IzPack Ant task -->
-	<taskdef name="izpack" classpath="${izpack-standalone-compiler}"
-	classname="com.izforge.izpack.ant.IzPackTask" />
 
 	<target name="init">
 		<!-- Create the time stamp -->
@@ -45,6 +54,7 @@
 	</target>
 
 	<target name="extensions" description="copy extensions into distribution">
+
 		<mkdir dir="${distlib}/ext" />
 		<mkdir dir="${distlib}/${arch}" />
 
@@ -66,10 +76,10 @@
 			<fileset dir="${java.home}/lib/${arch}" includes="${libclib_jiio}" />
 		</copy>
 
-
 	</target>
 
 	<target name="dist" depends="extensions, compile, doc" description="generate the distribution">
+
 		<!-- Copy license, etc. -->
 		<copy todir="${dist}">
 			<fileset dir="." includes="LICENSE, README" />
@@ -89,13 +99,18 @@
 			<fileset dir="." includes="README,LICENSE" />
 		</jar>
 		
-		<!-- Use IzPack to create the installer -->
+		<!-- Use IzPack to create the installer jar -->
 		<izpack
 				input="jmrtd_installer.xml"
 				output="jmrtd_installer.jar"
 				basedir="${basedir}"
-				izpackdir="${izpackdir}"
-			/>
+				izpackdir="${izpackdir}" />
+
+		<!-- Use JSmooth to create a Windows executable from the installer jar -->
+		<jsmoothgen
+			project="jmrtd_installer.jsmooth" 
+			skeletonroot="${jsmoothdir}/skeletons" />
+
 	</target>
 
 	<target name="clean" description="clean up">

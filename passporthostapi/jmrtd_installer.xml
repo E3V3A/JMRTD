@@ -6,7 +6,6 @@
 
 <installation version="1.0">
 
-
     <!-- The info section.  -->
     <info>
         <appname>JMRTD</appname>
@@ -15,11 +14,9 @@
             <author name="JMRTD team"
                     email="info@jmrtd.org" />
         </authors>
-        <url>http://jmrtd.sourceforge.net/</url>
+        <url>http://jmrtd.org/</url>
         <javaversion>1.6</javaversion>
     </info>
-
-
     
     <!-- The gui preferences indication.  -->
     <guiprefs width="640" height="480" resizable="no">
@@ -37,7 +34,6 @@
         <res id="InfoPanel.info" src="README" />
         <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
         <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
-
        <res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
 
     </resources>
@@ -46,10 +42,10 @@
 
     <!-- The panels section.  -->
     <panels>
-        <panel classname="HelloPanel" />
+        <!-- panel classname="HelloPanel" / -->
         <panel classname="InfoPanel" />
         <panel classname="TargetPanel" /> 
-        <panel classname="PacksPanel" />
+        <!-- panel classname="PacksPanel" / -->
         <panel classname="InstallPanel" />
         <panel classname="ShortcutPanel" />
         <panel classname="FinishPanel" />
@@ -84,12 +80,10 @@
             <!-- jmrtd.jar, ext, i386 -->
             <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
         </pack>
-        <pack name="Sources" required="no">
+        <!-- pack name="Sources" required="no">
             <description>The Java sources</description>
             <file src="src" targetdir="$INSTALL_PATH" />
-        </pack>
+        </pack -->
     </packs>
 
-    
 </installation>
-
