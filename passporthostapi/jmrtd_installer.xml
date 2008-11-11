@@ -20,7 +20,7 @@
     
     <!-- The gui preferences indication.  -->
     <guiprefs width="640" height="480" resizable="no">
-       <modifier key="useHeadingPanel" value="yes" />
+        <modifier key="useHeadingPanel" value="yes" />
     </guiprefs>
 
     <!-- The locale section.  -->
