@@ -105,10 +105,80 @@
 		
 		<!-- Use IzPack to create the installer jar -->
 		<izpack
-				input="jmrtd_installer.xml"
 				output="jmrtd_installer.jar"
 				basedir="${basedir}"
-				izpackdir="${izpackdir}" />
+				izpackdir="${izpackdir}">
+			<config><![CDATA[
+				<installation version="1.0">
+				    <info>
+				        <appname>JMRTD</appname>
+				        <appversion>0.4.1</appversion>
+				        <authors>
+				            <author name="JMRTD team"
+				                    email="info@jmrtd.org" />
+				        </authors>
+				        <url>http://jmrtd.org/</url>
+				        <javaversion>1.6</javaversion>
+				    </info>
+				    
+				    <guiprefs width="640" height="480" resizable="no">
+				        <modifier key="useHeadingPanel" value="yes" />
+				    </guiprefs>
+
+				    <locale>
+				        <langpack iso3="eng" />
+				    </locale>
+
+				    <resources>
+				        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
+				        <res id="InfoPanel.info" src="README" />
+				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
+				        <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
+				       <res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
+
+				    </resources>
+
+				    <native type="izpack" name="ShellLink.dll" /> 
+
+				    <panels>
+				        <!-- panel classname="HelloPanel" / -->
+				        <panel classname="InfoPanel" />
+				        <panel classname="TargetPanel" /> 
+				        <!-- panel classname="PacksPanel" / -->
+				        <panel classname="InstallPanel" />
+				        <panel classname="ShortcutPanel" />
+				        <panel classname="SimpleFinishPanel" />
+				    </panels>
+				    
+				    <packs>
+				        <pack name="Passport API" required="yes">
+				            <description>The Passport API and host application</description>
+
+				            <file src="README" targetdir="$INSTALL_PATH" />
+				            <file src="LICENSE" targetdir="$INSTALL_PATH" />
+
+				            <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
+				            <parsable targetfile="$INSTALL_PATH/jmrtd.sh" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/jmrtd.sh" stage="never" />
+
+				            <file src="jmrtd.bat" targetdir="$INSTALL_PATH" />
+				            <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
+
+				            <file src="uninstall.bat" targetdir="$INSTALL_PATH" />
+				            <parsable targetfile="$INSTALL_PATH/uninstall.bat" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/uninstall.bat" stage="never" />
+
+				            <file src="images/jmrtd_win.ico" targetdir="$INSTALL_PATH" />
+				            <file src="images/uninstall_win.ico" targetdir="$INSTALL_PATH" />
+
+				            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
+				        </pack>
+				    </packs>
+
+				</installation>
+			]]></config>
+		</izpack>
 
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<jsmoothgen
