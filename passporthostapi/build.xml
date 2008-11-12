@@ -134,8 +134,7 @@
 				        <res id="InfoPanel.info" src="README" />
 				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
 				        <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
-				       <res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
-
+						<res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
 				    </resources>
 
 				    <native type="izpack" name="ShellLink.dll" /> 
