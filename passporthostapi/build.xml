@@ -28,7 +28,10 @@
 
 	<!-- sosshared class files will be included in main jar -->
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build" />
-
+	
+	<!-- acrprovider class files will be included in main jar -->
+	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
+	
 	<!-- bouncy castle will be added as an extensions jar -->
 	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
 
@@ -93,7 +96,8 @@
 				<attribute name="Class-path" value="ext/bcprov-jdk16-139.jar ext/jai_imageio.jar" />
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${sos-shared-build}" includes="**/*.class"/>
+			<fileset dir="${sos-shared-build}" includes="**/*.class" />
+			<fileset dir="${acrprovider-build}" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_icon.png,images/jmrtd.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="." includes="README,LICENSE" />

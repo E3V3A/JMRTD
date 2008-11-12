@@ -48,7 +48,7 @@
         <!-- panel classname="PacksPanel" / -->
         <panel classname="InstallPanel" />
         <panel classname="ShortcutPanel" />
-        <panel classname="FinishPanel" />
+        <panel classname="SimpleFinishPanel" />
     </panels>
     
     <!-- The packs section.  -->
@@ -80,10 +80,6 @@
             <!-- jmrtd.jar, ext, i386 -->
             <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
         </pack>
-        <!-- pack name="Sources" required="no">
-            <description>The Java sources</description>
-            <file src="src" targetdir="$INSTALL_PATH" />
-        </pack -->
     </packs>
 
 </installation>
