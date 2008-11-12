@@ -1,3 +1,5 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
 <project name="jmrtd" default="dist" basedir=".">
 
 	<description>
@@ -12,6 +14,14 @@
 
 	<!-- Would like to use ${os.arch} here, but is set to "x86" instead of "i386"?!? -->
 	<property name="arch" value="i386" />
+
+	<property name="minimal_jre_version" value="1.6" />
+	
+	<property name="app_name" value="JMRTD" />
+	<property name="app_version" value="0.4.1" />
+	<property name="author_name" value="The JMRTD team" />
+	<property name="author_email" value="info@jmrtd.org" />
+	<property name="author_url" value="http://jmrtd.org/" />
 
 	<!-- Defines IzPack Ant task -->
 	<property name="izpackdir" value="c:/Program Files/IzPack" />
@@ -49,6 +59,8 @@
 
 		<!-- Create the distribution directory structure -->
 		<mkdir dir="${distlib}" />
+		<mkdir dir="${distlib}/ext" />
+		<mkdir dir="${distlib}/${arch}" />
 	</target>
 
 	<target name="compile" depends="init" description="compile the source ">
@@ -56,10 +68,7 @@
 		<javac srcdir="${src}" destdir="${build}" />
 	</target>
 
-	<target name="extensions" description="copy extensions into distribution">
-
-		<mkdir dir="${distlib}/ext" />
-		<mkdir dir="${distlib}/${arch}" />
+	<target name="extensions" depends="init" description="copy extensions into distribution">
 
 		<!-- Copy bouncy castle -->
 
@@ -81,11 +90,19 @@
 
 	</target>
 
-	<target name="dist" depends="extensions, compile, doc" description="generate the distribution">
+	<target name="dist" depends="extensions, compile" description="generate the distribution">
 
+		<!-- Create a new header for README containing version number -->
+		<concat append="false" force="true" destfile="${dist}/README">
+			<header filtering="no" trimleading="yes">${app_name} ${app_version}-${DSTAMP}
+
+			</header>
+			<fileset dir="." includes="README" />
+		</concat>
+		
 		<!-- Copy license, etc. -->
 		<copy todir="${dist}">
-			<fileset dir="." includes="LICENSE, README" />
+			<fileset dir="." includes="LICENSE" />
 		</copy>
 
 		<!-- Create the distribution jar file -->
@@ -100,7 +117,7 @@
 			<fileset dir="${acrprovider-build}" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_icon.png,images/jmrtd.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
-			<fileset dir="." includes="README,LICENSE" />
+			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>
 		
 		<!-- Use IzPack to create the installer jar -->
@@ -111,14 +128,14 @@
 			<config><![CDATA[
 				<installation version="1.0">
 				    <info>
-				        <appname>JMRTD</appname>
-				        <appversion>0.4.1</appversion>
+				        <appname>@{app_name}</appname>
+				        <appversion>@{app_version}</appversion>
 				        <authors>
-				            <author name="JMRTD team"
-				                    email="info@jmrtd.org" />
+				            <author name="@{author_name}"
+				                    email="@{author_email}" />
 				        </authors>
-				        <url>http://jmrtd.org/</url>
-				        <javaversion>1.6</javaversion>
+				        <url>@{author_url}</url>
+				        <javaversion>@{minimal_jre_version}</javaversion>
 				    </info>
 				    
 				    <guiprefs width="640" height="480" resizable="no">
@@ -131,17 +148,17 @@
 
 				    <resources>
 				        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
-				        <res id="InfoPanel.info" src="README" />
+				        <!-- res id="InfoPanel.info" src="README" / -->
 				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
 				        <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
-						<res src="jmrtd_installer_shortcuts_windows.xml" id="shortcutSpec.xml" />
+						<res id="shortcutSpec.xml" src="jmrtd_installer_shortcuts_windows.xml" />
 				    </resources>
 
 				    <native type="izpack" name="ShellLink.dll" /> 
 
 				    <panels>
-				        <!-- panel classname="HelloPanel" / -->
-				        <panel classname="InfoPanel" />
+				        <panel classname="HelloPanel" />
+				        <!-- panel classname="InfoPanel" / -->
 				        <panel classname="TargetPanel" /> 
 				        <!-- panel classname="PacksPanel" / -->
 				        <panel classname="InstallPanel" />
@@ -154,6 +171,8 @@
 				            <description>The Passport API and host application</description>
 
 				            <file src="README" targetdir="$INSTALL_PATH" />
+							<parsable targetfile="$INSTALL_PATH/README" type="plain" />
+				
 				            <file src="LICENSE" targetdir="$INSTALL_PATH" />
 
 				            <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
@@ -181,8 +200,8 @@
 
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<jsmoothgen
-			project="jmrtd_installer.jsmooth" 
-			skeletonroot="${jsmoothdir}/skeletons" />
+			skeletonroot="${jsmoothdir}/skeletons"
+			project="jmrtd_installer.jsmooth" />
 
 	</target>
 
