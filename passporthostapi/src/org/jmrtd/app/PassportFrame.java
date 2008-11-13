@@ -53,6 +53,8 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -135,6 +137,8 @@ public class PassportFrame extends JFrame
 	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
+	private Logger logger = Logger.getLogger(getClass().getName());
+	
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel;
@@ -170,6 +174,7 @@ public class PassportFrame extends JFrame
 
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
+		logger.setLevel(Level.ALL);
 		verificationPanel = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
@@ -200,7 +205,7 @@ public class PassportFrame extends JFrame
 	public void readFromService(PassportService service, BACEntry bacEntry) throws CardServiceException {
 		long t0 = System.currentTimeMillis();
 		long t = t0;
-		System.out.println("DEBUG: start reading from service t = 0");
+		logger.info("start reading from service t = 0");
 		final PassportService s = service;
 		try {
 			this.bacEntry = bacEntry;
@@ -220,7 +225,7 @@ public class PassportFrame extends JFrame
 		}
 
 		t = System.currentTimeMillis();
-		System.out.println("DEBUG: inputstreams buffered t = " + ((double)(t - t0) / 1000) + "s");
+		logger.info("inputstreams buffered t = " + ((double)(t - t0) / 1000) + "s");
 
 		(new Thread(new Runnable() {
 			public void run() {
@@ -240,11 +245,11 @@ public class PassportFrame extends JFrame
 
 		displayInputStreams();
 		t = System.currentTimeMillis();
-		System.out.println("DEBUG: finished displaying t = " + ((double)(t - t0) / 1000) + "s");
+		logger.info("finished displaying t = " + ((double)(t - t0) / 1000) + "s");
 
 		verifySecurity(s);
 		t = System.currentTimeMillis();
-		System.out.println("DEBUG: finished verifying t = " + ((double)(t - t0) / 1000) + "s");
+		logger.info("finished verifying t = " + ((double)(t - t0) / 1000) + "s");
 	}
 
 	private int estimateBytesRead() {
