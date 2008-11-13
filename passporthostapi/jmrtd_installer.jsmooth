@@ -6,13 +6,14 @@
 <JVMSearchPath>jdkpath</JVMSearchPath>
 <JVMSearchPath>exepath</JVMSearchPath>
 <JVMSearchPath>jview</JVMSearchPath>
+<arguments></arguments>
 <embeddedJar>true</embeddedJar>
 <executableName>jmrtd_installer.exe</executableName>
-<iconLocation>images\jmrtd_installer.ico</iconLocation>
-<initialMemoryHeap>-1</initialMemoryHeap>
+<iconLocation>images\jmrtd_box.ico</iconLocation>
+<initialMemoryHeap>268435456</initialMemoryHeap>
 <jarLocation>jmrtd_installer.jar</jarLocation>
 <mainClassName>com.izforge.izpack.installer.Installer</mainClassName>
-<maximumMemoryHeap>-1</maximumMemoryHeap>
+<maximumMemoryHeap>268435456</maximumMemoryHeap>
 <maximumVersion></maximumVersion>
 <minimumVersion>1.6</minimumVersion>
 <skeletonName>Windowed Wrapper</skeletonName>
@@ -30,7 +31,7 @@
 </skeletonProperties>
 <skeletonProperties>
 <key>SingleInstance</key>
-<value>0</value>
+<value>1</value>
 </skeletonProperties>
 <skeletonProperties>
 <key>JniSmooth</key>
