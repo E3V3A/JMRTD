@@ -9,7 +9,7 @@
 <arguments></arguments>
 <embeddedJar>true</embeddedJar>
 <executableName>jmrtd_installer.exe</executableName>
-<iconLocation>images\jmrtd_box.ico</iconLocation>
+<iconLocation>images\install.ico</iconLocation>
 <initialMemoryHeap>268435456</initialMemoryHeap>
 <jarLocation>jmrtd_installer.jar</jarLocation>
 <mainClassName>com.izforge.izpack.installer.Installer</mainClassName>

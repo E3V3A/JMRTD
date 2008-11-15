@@ -23,6 +23,7 @@
 package org.jmrtd.app;
 
 import java.awt.Container;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -52,6 +53,8 @@ import sos.util.Icons;
  */
 public class CertificateFrame extends JFrame
 {
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-16x16");
+
 	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -65,6 +68,7 @@ public class CertificateFrame extends JFrame
 
 	public CertificateFrame(String title, Certificate certificate) {
 		super(title);
+		setIconImage(JMRTD_ICON);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();

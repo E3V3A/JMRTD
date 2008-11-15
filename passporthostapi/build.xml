@@ -115,7 +115,7 @@
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class" />
 			<fileset dir="${acrprovider-build}" includes="**/*.class" />
-			<fileset dir="." includes="images/jmrtd_icon.png,images/jmrtd.png,images/famfamfam_silk/*.png,images/flags/*.png" />
+			<fileset dir="." includes="images/jmrtd_logo-16x16.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>
@@ -150,7 +150,7 @@
 				        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
 				        <!-- res id="InfoPanel.info" src="README" / -->
 				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
-				        <res id="Heading.image" src="images/jmrtd_icon-48x48.png"/>
+				        <res id="Heading.image" src="images/jmrtd_logo-48x48.png"/>
 						<res id="shortcutSpec.xml" src="jmrtd_installer_shortcuts_windows.xml" />
 				    </resources>
 
@@ -187,8 +187,8 @@
 				            <parsable targetfile="$INSTALL_PATH/uninstall.bat" type="shell" />
 				            <executable targetfile="$INSTALL_PATH/uninstall.bat" stage="never" />
 
-				            <file src="images/jmrtd_win.ico" targetdir="$INSTALL_PATH" />
-				            <file src="images/uninstall_win.ico" targetdir="$INSTALL_PATH" />
+				            <file src="images/jmrtd_spiral.ico" targetdir="$INSTALL_PATH" />
+				            <file src="images/uninstall.ico" targetdir="$INSTALL_PATH" />
 
 				            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
 				        </pack>

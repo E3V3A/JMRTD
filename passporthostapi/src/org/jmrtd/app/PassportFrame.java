@@ -24,6 +24,7 @@ package org.jmrtd.app;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
@@ -113,6 +114,7 @@ public class PassportFrame extends JFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-16x16");
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
 
@@ -190,7 +192,7 @@ public class PassportFrame extends JFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());
-		setIconImage(Icons.getImage("jmrtd_icon"));
+		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
 	}

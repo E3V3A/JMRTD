@@ -96,7 +96,7 @@ public class PassportApp  implements PassportListener
 	public static final File JMRTD_USER_DIR =
 		new File(new File(System.getProperty("user.home")), ".jmrtd");
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_icon");
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-16x16");
 	private static final Icon NEW_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon NEW_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
@@ -399,10 +399,10 @@ public class PassportApp  implements PassportListener
 					}
 					area.setCaretPosition(0);
 					area.setEditable(false);
-					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
+					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd_logo-100x100")));
 				} catch (Exception ex) {
 					ex.printStackTrace();
-					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd")));
+					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd_logo-100x100")));
 				}
 			}
 		};

@@ -62,6 +62,8 @@ import sos.util.Images;
  */
 public class PortraitFrame extends JFrame
 {
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-16x16");
+
 	private static final Icon SAVE_AS_PNG_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon SAVE_AS_PNG_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -82,6 +84,7 @@ public class PortraitFrame extends JFrame
 	public PortraitFrame(String title, FaceInfo info) {
 		super(title);
 		this.info = info;
+		setIconImage(JMRTD_ICON);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
