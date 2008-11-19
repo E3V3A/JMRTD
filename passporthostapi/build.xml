@@ -14,6 +14,7 @@
 
 	<!-- Would like to use ${os.arch} here, but is set to "x86" instead of "i386"?!? -->
 	<property name="arch" value="i386" />
+	<!-- property name="arch" value="amd64" / --> <!-- TBD: unix -->
 
 	<property name="minimal_jre_version" value="1.6" />
 	
@@ -25,6 +26,7 @@
 
 	<!-- Defines IzPack Ant task -->
 	<property name="izpackdir" value="c:/Program Files/IzPack" />
+	<!-- property name="izpackdir" value="/win/Program Files/IzPack" / --> <!-- TBD: unix -->
 	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
 	<taskdef name="izpack"
 		classpath="${izpack-standalone-compiler}"
@@ -32,6 +34,7 @@
 
 	<!-- Defines JSmooth Ant task -->
 	<property name="jsmoothdir" value="c:/Program Files/JSmooth 0.9.9-7" />
+	<!-- property name="jsmoothdir" value="/win/Program Files/JSmooth 0.9.9-7" / --> <!-- TBD: unix -->
 	<taskdef name="jsmoothgen"
 		classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
     	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
@@ -44,6 +47,8 @@
 	
 	<!-- bouncy castle will be added as an extensions jar -->
 	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
+	<!-- property name="bcprovjar" value="/winsoftware/bcprov-jdk16-139.jar" / --> <!-- TBD: unix -->
+
 
 	<!-- jai_imageio will also be added as an extensions jar -->
 	<property name="jai_imageio" value="jai_imageio.jar" />
@@ -152,9 +157,10 @@
 				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
 				        <res id="Heading.image" src="images/jmrtd_logo-48x48.png"/>
 						<res id="shortcutSpec.xml" src="jmrtd_installer_shortcuts_windows.xml" />
+						<res id="Unix_shortcutSpec.xml" src="jmrtd_installer_shortcuts_unix.xml" />
 				    </resources>
 
-				    <native type="izpack" name="ShellLink.dll" /> 
+				    <native type="izpack" name="ShellLink.dll" /> <!-- TBD: only on win -->
 
 				    <panels>
 				        <panel classname="HelloPanel" />
@@ -183,13 +189,19 @@
 				            <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
 				            <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
 
-				            <file src="uninstall.bat" targetdir="$INSTALL_PATH" />
+				            <file src="uninstall.bat" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
 				            <parsable targetfile="$INSTALL_PATH/uninstall.bat" type="shell" />
 				            <executable targetfile="$INSTALL_PATH/uninstall.bat" stage="never" />
+						    <file src="images/jmrtd_spiral.ico" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
+				            <file src="images/uninstall.ico" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
+				
+				            <file src="uninstall.sh" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
+				            <parsable targetfile="$INSTALL_PATH/uninstall.sh" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/uninstall.sh" stage="never" />
+				            <file src="images/jmrtd_spiral-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
+	        			    <file src="images/uninstall-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
 
-				            <file src="images/jmrtd_spiral.ico" targetdir="$INSTALL_PATH" />
-				            <file src="images/uninstall.ico" targetdir="$INSTALL_PATH" />
-
+				        
 				            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
 				        </pack>
 				    </packs>

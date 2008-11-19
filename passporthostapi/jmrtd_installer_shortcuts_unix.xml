@@ -7,11 +7,11 @@
 
   <shortcut
     name="JMRTD"
-    target="$INSTALL_PATH\jmrtd.bat"
+    description="This starts JMRTD"
+    target="$INSTALL_PATH/jmrtd.sh"
     commandLine=""
     workingDirectory="$INSTALL_PATH"
-    description="This starts JMRTD"
-    iconFile="$INSTALL_PATH\jmrtd_spiral.ico"
+    iconFile="$INSTALL_PATH/jmrtd_spiral-48x48.png"
     initialState="noShow"
     programGroup="yes"
     desktop="yes"
@@ -21,18 +21,18 @@
    </shortcut>
 
    <shortcut
-     name="Uninstall"
+     name="JMRTD - Uninstall"
+     description="This uninstalls JMRTD"
      programGroup="yes"
      desktop="no"
      applications="no"
-     target="$INSTALL_PATH\uninstall.bat"
+     target="$INSTALL_PATH/uninstall.sh"
      initialState="noShow"
-     iconFile="$INSTALL_PATH\uninstall.ico"
+     iconFile="$INSTALL_PATH/uninstall-48x48.png"
      iconIndex="0"
      workingDirectory="$INSTALL_PATH"
      type="Application"
-     encoding="UTF-8"
-     description="Uninstall the application">
+     encoding="UTF-8">
    </shortcut>
 
 </shortcuts>
