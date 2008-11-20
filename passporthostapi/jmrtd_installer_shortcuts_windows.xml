@@ -21,7 +21,7 @@
    </shortcut>
 
    <shortcut
-     name="Uninstall"
+     name="JMRTD - Uninstall"
      programGroup="yes"
      desktop="no"
      applications="no"
