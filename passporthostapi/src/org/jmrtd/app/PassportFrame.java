@@ -114,7 +114,7 @@ public class PassportFrame extends JFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-16x16");
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
 
