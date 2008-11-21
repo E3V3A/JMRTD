@@ -95,7 +95,7 @@
 
 	</target>
 
-	<target name="dist" depends="extensions, compile" description="generate the distribution">
+	<target name="dist" depends="extensions, compile, doc" description="generate the distribution">
 
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
