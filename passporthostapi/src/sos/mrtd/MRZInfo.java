@@ -805,45 +805,45 @@ public class MRZInfo
 		}
 	}
 
-	public static void main(String[] arg) {
-		try {
-			//FileInputStream fileIn = new FileInputStream(arg[0]);
-			String[] secundaries = { "JAN", "PETER" };
-
-//			int[] mrzpath = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
-
-//			BERTLVObject ef0101 = BERTLVObject.getInstance(new FileInputStream(arg[0]));
-//			System.out.println(ef0101.getSubObject(mrzpath, 0, mrzpath.length));
-
-//			MRZInfo bla = new MRZInfo(new ByteArrayInputStream(ef0101.getSubObject(mrzpath, 0, mrzpath.length).getValueAsBytes()));
-//			System.out.println(bla);
-
-//			if(arg.length > 0)
-//			return;
-
-			MRZInfo mrzInfo =
-				new MRZInfo(3, Country.getInstance("NLD"),
-						"Balkenende", secundaries,
-						"PPNUMMER0", Country.getInstance("NLD"), parseDate(1900, "560507"), Gender.MALE, 
-						parseDate(2000, "100101"),  "876543210<<<<<");
-
-			BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
-			System.out.println(ef0101);
-			FileOutputStream out = new FileOutputStream(arg[0]);
-			out.write(ef0101.getEncoded());
-			out.close();
-
-//			System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
-//			String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
-//			for (int i = 0; i < secondaryIdentifiers.length; i++) {
-//			System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
-//			}
-
-//			ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
-//			MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
-//			System.out.println(mrzInfo2);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	public static void main(String[] arg) {
+//		try {
+//			//FileInputStream fileIn = new FileInputStream(arg[0]);
+//			String[] secundaries = { "JAN", "PETER" };
+//
+////			int[] mrzpath = { PassportASN1Service.EF_DG1_TAG, 0x5F1F };
+//
+////			BERTLVObject ef0101 = BERTLVObject.getInstance(new FileInputStream(arg[0]));
+////			System.out.println(ef0101.getSubObject(mrzpath, 0, mrzpath.length));
+//
+////			MRZInfo bla = new MRZInfo(new ByteArrayInputStream(ef0101.getSubObject(mrzpath, 0, mrzpath.length).getValueAsBytes()));
+////			System.out.println(bla);
+//
+////			if(arg.length > 0)
+////			return;
+//
+//			MRZInfo mrzInfo =
+//				new MRZInfo(3, Country.getInstance("NLD"),
+//						"Balkenende", secundaries,
+//						"PPNUMMER0", Country.getInstance("NLD"), parseDate(1900, "560507"), Gender.MALE, 
+//						parseDate(2000, "100101"),  "876543210<<<<<");
+//
+//			BERTLVObject ef0101 = new BERTLVObject(PassportFile.EF_DG1_TAG, new BERTLVObject(0x5f1f, mrzInfo.getEncoded()));        
+//			System.out.println(ef0101);
+//			FileOutputStream out = new FileOutputStream(arg[0]);
+//			out.write(ef0101.getEncoded());
+//			out.close();
+//
+////			System.out.println("primaryIdentifier = " + mrzInfo.getPrimaryIdentifier());
+////			String[] secondaryIdentifiers = mrzInfo.getSecondaryIdentifiers();
+////			for (int i = 0; i < secondaryIdentifiers.length; i++) {
+////			System.out.println("secondaryIdentifiers[" + i + "] = " + secondaryIdentifiers[i]);
+////			}
+//
+////			ByteArrayInputStream mrzIn = new ByteArrayInputStream(mrzInfo.getEncoded());
+////			MRZInfo mrzInfo2 = new MRZInfo(mrzIn);
+////			System.out.println(mrzInfo2);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 }
