@@ -35,6 +35,8 @@ import sos.mrtd.MRZInfo;
  * data being entered.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
  */
 public class MRZKeyListener implements KeyListener, BACEntrySource
 {

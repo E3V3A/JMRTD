@@ -32,7 +32,7 @@ import sos.gui.DateEntryField;
 import sos.gui.MRZEntryField;
 
 /**
- * Text field for BAC entries.
+ * Text field for entering BAC entries.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *

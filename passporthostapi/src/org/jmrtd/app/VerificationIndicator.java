@@ -36,6 +36,8 @@ import sos.util.Icons;
  * Component for showing the verification status.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
  */
 public class VerificationIndicator extends Box
 {

@@ -48,6 +48,8 @@ import sos.util.Icons;
  * Frame for displaying (and saving to file) keys.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
  */
 public class KeyFrame extends JFrame
 {

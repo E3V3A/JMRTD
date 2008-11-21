@@ -22,6 +22,13 @@
 
 package org.jmrtd.app;
 
+/**
+ * Implement this if you produce BAC key entries.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public interface BACEntrySource
 {
 }

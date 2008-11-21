@@ -59,6 +59,8 @@ import sos.util.Images;
  * points.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
  */
 public class PortraitFrame extends JFrame
 {

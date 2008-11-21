@@ -106,7 +106,7 @@ import sos.util.Icons;
 /**
  * Frame for displaying a passport while (and after) it is being read.
  *
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: 308 $
  */

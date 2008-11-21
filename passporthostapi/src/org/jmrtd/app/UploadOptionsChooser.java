@@ -54,6 +54,13 @@ import javax.swing.filechooser.FileFilter;
 
 import sos.smartcards.CardManager;
 
+/**
+ * Options component for uploading to applet.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
+ */
 public class UploadOptionsChooser // extends JComponent
 {
 	private static final long serialVersionUID = 3923435091525731764L;

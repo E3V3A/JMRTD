@@ -25,6 +25,13 @@ package org.jmrtd.app;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+/**
+ * A BAC key entry.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public class BACEntry
 {
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");

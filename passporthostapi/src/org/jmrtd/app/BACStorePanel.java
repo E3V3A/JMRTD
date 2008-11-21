@@ -47,7 +47,7 @@ import sos.util.Icons;
 /**
  * Panel for managing the BAC store.
  *
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: 308 $
  */
