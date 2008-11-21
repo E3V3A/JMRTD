@@ -24,11 +24,14 @@ package org.jmrtd.app;
 
 import java.awt.FlowLayout;
 import java.awt.Font;
+import java.io.File;
 
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import sos.mrtd.MRZInfo;
+import sos.util.Files;
+import sos.util.Fonts;
 
 /**
  * Panel for displaying the MRZ datagroup on the passport.
@@ -39,13 +42,20 @@ import sos.mrtd.MRZInfo;
  */
 public class MRZPanel extends JPanel
 {
-	private static final Font MRZ_FONT = new Font("Monospaced", Font.BOLD, 15);
+	private static final String MRZ_FONT_NAME = "OCR-B_10_BT.ttf";
+
+	private Font mrzFont;
 
 	private MRZInfo info;
 	private JTextArea c;
 
 	public MRZPanel(MRZInfo info) {
 		super(new FlowLayout());
+		try {
+			mrzFont = Fonts.getFont(MRZ_FONT_NAME, Font.PLAIN, 14);
+		} catch (Exception e) {
+			mrzFont = new Font("Monospaced", Font.PLAIN, 14);
+		}
 		c = new JTextArea();
 		add(c);
 		setMRZ(info);
@@ -54,11 +64,11 @@ public class MRZPanel extends JPanel
 	public void setMRZ(MRZInfo info) {
 		this.info = info;
 		c.setEditable(false);
-		c.setFont(MRZ_FONT);
+		c.setFont(mrzFont);
 		c.setText(info.toString().trim());
 		revalidate(); repaint();
 	}
-	
+
 	public MRZInfo getMRZ() {
 		return info;
 	}
