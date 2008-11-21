@@ -15,7 +15,6 @@
     initialState="noShow"
     programGroup="yes"
     desktop="yes"
-    applications="no"
     type="Application"
     encoding="UTF-8">
    </shortcut>
@@ -25,7 +24,6 @@
      description="This uninstalls JMRTD"
      programGroup="yes"
      desktop="no"
-     applications="no"
      target="$INSTALL_PATH/uninstall.sh"
      initialState="noShow"
      iconFile="$INSTALL_PATH/uninstall-48x48.png"
