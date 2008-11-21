@@ -46,8 +46,8 @@
 	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
 	
 	<!-- bouncy castle will be added as an extensions jar -->
-	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-139.jar" />
-	<!-- property name="bcprovjar" value="/winsoftware/bcprov-jdk16-139.jar" / --> <!-- TBD: unix -->
+	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-141.jar" />
+	<!-- property name="bcprovjar" value="/winsoftware/bcprov-jdk16-141.jar" / --> <!-- TBD: unix -->
 
 
 	<!-- jai_imageio will also be added as an extensions jar -->
