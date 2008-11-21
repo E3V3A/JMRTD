@@ -54,7 +54,7 @@ public class MRZPanel extends JPanel
 		try {
 			mrzFont = Fonts.getFont(MRZ_FONT_NAME, Font.PLAIN, 14);
 		} catch (Exception e) {
-			mrzFont = new Font("Monospaced", Font.PLAIN, 14);
+			mrzFont = new Font("Monospaced", Font.BOLD, 14);
 		}
 		c = new JTextArea();
 		add(c);

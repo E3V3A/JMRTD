@@ -120,7 +120,7 @@
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class" />
 			<fileset dir="${acrprovider-build}" includes="**/*.class" />
-			<fileset dir="." includes="images/jmrtd_logo-16x16.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
+			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>
