@@ -37,11 +37,16 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -74,6 +79,9 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
+
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -285,14 +293,30 @@ public class PassportFrame extends JFrame
 			byte[] dg2Bytes = dg2.getEncoded();
 
 			/* EF.SOD */
-			// FIXME: docSigningCert == null, generate something here...
-			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+			keyPairGenerator.initialize(1024);
+			KeyPair keyPair = keyPairGenerator.generateKeyPair();
+			PublicKey publicKey = keyPair.getPublic();
+			PrivateKey privateKey = keyPair.getPrivate();
+			Date dateOfIssuing = today;
+			Date dateOfExpiry = today;
 			String digestAlgorithm = "SHA256";
 			String signatureAlgorithm = "SHA256withRSA";
+			X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
+			certGenerator.setSerialNumber(new BigInteger("1"));
+			certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+			certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+			certGenerator.setNotBefore(dateOfIssuing);
+			certGenerator.setNotAfter(dateOfExpiry);
+			certGenerator.setPublicKey(publicKey);
+			certGenerator.setSignatureAlgorithm(signatureAlgorithm);
+			docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
+			// FIXME: docSigningCert == null, generate something here...
+			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 			hashes.put(1, digest.digest(dg1Bytes));
 			hashes.put(2, digest.digest(dg2Bytes));
-			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Should be use a private key to generate a real signature?
+			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Use a private key to generate a real signature?
 			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
 			byte[] sodBytes = sod.getEncoded();
 
@@ -389,10 +413,10 @@ public class PassportFrame extends JFrame
 				in.reset();
 				switch (fid) {
 				case PassportService.EF_COM:
-					/* NOTE: Alread processed this one above. */
+					/* NOTE: Already processed this one above. */
 					break;
 				case PassportService.EF_DG1:
-					/* NOTE: Alread processed this one above. */
+					/* NOTE: Already processed this one above. */
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
@@ -593,6 +617,8 @@ public class PassportFrame extends JFrame
 
 		} catch (FileNotFoundException fnfe) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+		} catch (SignatureException se) {
+			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		} catch (CertificateException e) {
 			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
 		} catch (GeneralSecurityException gse) {
