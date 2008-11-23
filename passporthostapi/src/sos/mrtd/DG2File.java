@@ -64,11 +64,13 @@ public class DG2File extends CBEFFDataGroup
 	 * Constructs a new file.
 	 */
 	public DG2File() {
+		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
 		isSourceConsistent = false;
 	}
 
 	public DG2File(InputStream in) {
 		super(in);
+		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
@@ -153,6 +155,7 @@ public class DG2File extends CBEFFDataGroup
 			isSourceConsistent = true;
 			return dg2.getEncoded();
 		} catch (Exception ioe) {
+			ioe.printStackTrace();
 			return null;
 		}
 	}
