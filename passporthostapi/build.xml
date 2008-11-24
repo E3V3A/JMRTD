@@ -19,7 +19,8 @@
 	<property name="minimal_jre_version" value="1.6" />
 	
 	<property name="app_name" value="JMRTD" />
-	<property name="app_version" value="0.4.1" />
+	<property name="app_version" value="0.4.2" />
+	<property name="app_title" value="${app_name} ${app_version}" />
 	<property name="author_name" value="The JMRTD team" />
 	<property name="author_email" value="info@jmrtd.org" />
 	<property name="author_url" value="http://jmrtd.org/" />
@@ -40,6 +41,7 @@
     	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
 
 	<!-- sosshared class files will be included in main jar -->
+	<property name="sos-shared-src" location="${basedir}/../sosshared/src" />
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build" />
 	
 	<!-- acrprovider class files will be included in main jar -->
@@ -99,7 +101,7 @@
 
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
-			<header filtering="no" trimleading="yes">${app_name} ${app_version}-${DSTAMP}
+			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
 
 			</header>
 			<fileset dir="." includes="README" />
@@ -224,12 +226,25 @@
 	</target>
 
 	<target name="doc" description="Generate API docs">
-		<javadoc classpath="${sos-shared-build};${bcprovjar}" destdir="apidocs" package="false" doctitle="JMRTD API 0.4.1" windowtitle="JMRTD API 0.4.1" packagenames="sos.mrtd">
+		<javadoc classpath="${sos-shared-build};${bcprovjar}"
+				destdir="apidocs"
+				package="false"
+				doctitle="${app_title}"
+				windowtitle="${app_title}"
+				header="${app_title}"
+				packagenames="sos.mrtd">
 			<link href="http://java.sun.com/javase/6/docs/api" />
+			<link href="http://java.sun.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
-			<sourcepath path="src" />
+			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
+			<sourcepath path="src;${sos-shared-src}" />
 			<package name="sos.mrtd" />
+			<package name="sos.data" />
+			<package name="sos.smartcards" />
+			<package name="sos.tlv" />
+			<!-- package name="sos.gui" / --> <!-- Not used in public interface -->
+			<!-- package name="sos.util" / --> <!-- Not used in public interface -->
 		</javadoc>
 	</target>
 
