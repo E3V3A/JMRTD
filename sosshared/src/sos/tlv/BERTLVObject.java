@@ -275,9 +275,7 @@ public class BERTLVObject
    }
 
    /**
-    * The length of the encoded value.
-    * 
-    * @return the length of the encoded value
+    * Reconstructs the length of the encoded value.
     */
    public void reconstructLength() {
       /* NOTE: needed after sub-objects have been added. */

@@ -102,7 +102,7 @@ public class CardManager
 	 * Adds the terminals produced by <code>factory</code>.
 	 *
 	 * @param factory
-	 * @return
+	 * @return the number of terminals added
 	 */
 	public synchronized int addTerminals(TerminalFactory factory) {
 		try {

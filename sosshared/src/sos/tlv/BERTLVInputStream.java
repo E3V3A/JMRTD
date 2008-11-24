@@ -118,7 +118,7 @@ public class BERTLVInputStream extends InputStream
 	 * Skips in this stream until a given tag is found (depth first).
 	 * The stream is positioned right after the first occurrence of the tag.
 	 * 
-	 * @param tag the tag to search for
+	 * @param searchTag the tag to search for
 	 * @throws IOException
 	 */
 	public void skipToTag(int searchTag) throws IOException {
