@@ -81,7 +81,6 @@
 
 		<copy todir="${distlib}/ext">
 			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
-			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
 			<fileset file="${bcprovjar}" />
 		</copy>
 
@@ -202,7 +201,6 @@
 				            <executable targetfile="$INSTALL_PATH/uninstall.sh" stage="never" />
 				            <file src="images/jmrtd_spiral-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
 	        			    <file src="images/uninstall-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
-
 				        
 				            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
 				        </pack>
