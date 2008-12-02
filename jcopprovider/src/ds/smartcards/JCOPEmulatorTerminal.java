@@ -53,6 +53,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	private int port;
 
 	private long heartBeat;
+	private boolean isCheckingForCardPresent;
 
 	private final Object terminal;
 	private boolean wasCardPresent;
@@ -73,6 +74,7 @@ public class JCOPEmulatorTerminal extends CardTerminal
 		jcTerminal = new RemoteJCTerminal();
 		jcTerminal.init(hostName.trim() + ":" + port);
 		heartBeat = System.currentTimeMillis();
+		isCheckingForCardPresent = false;
 	}
 
 	/**
@@ -111,29 +113,28 @@ public class JCOPEmulatorTerminal extends CardTerminal
 	 * @return whether a card is present.
 	 */
 	public boolean isCardPresent() {
+		if (jcTerminal == null) { return false; }
+		if (isCheckingForCardPresent) { return wasCardPresent; }
+		if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
 		synchronized (terminal) {
-			if (jcTerminal == null) { return false; }
-			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
+			isCheckingForCardPresent = true;
 			try {
-				System.out.println("DEBUG: 1");
 				jcTerminal.open();
 			} catch (Throwable e1) {
 				wasCardPresent = false;
-				System.out.println("DEBUG: 2b");
+				isCheckingForCardPresent = false;
 				return false;
 			}
-			System.out.println("DEBUG: 2a");
 			switch(jcTerminal.getState()) {
 			case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
 			case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
 			case JCTerminal.ERROR: wasCardPresent = false; break;
 			default: wasCardPresent = false; break;
 			}
-			System.out.println("DEBUG: 3");
 			heartBeat = System.currentTimeMillis();
-
+			isCheckingForCardPresent = false;
+			return wasCardPresent;
 		}
-		return wasCardPresent;
 	}
 
 	/**
