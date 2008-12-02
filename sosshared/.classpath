@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="APDUIO_LIB"/>
-	<classpathentry kind="var" path="JCOP_OFFCARD"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/acrprovider"/>
 	<classpathentry kind="output" path="build"/>
 </classpath>
