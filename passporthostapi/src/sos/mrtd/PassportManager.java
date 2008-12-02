@@ -61,7 +61,7 @@ public class PassportManager
 			System.out.println("DEBUG: ACR122 provider disabled");
 		}
 		try {
-			Class<?> crefProviderClass = Class.forName("sos.smartcards.CREFTerminalProvider");
+			Class<?> crefProviderClass = Class.forName("ds.smartcards.CREFTerminalProvider");
 			Provider crefProvider = (Provider)crefProviderClass.newInstance();
 			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
 			cm.addTerminals(crefFactory);
