@@ -31,7 +31,8 @@ import java.security.Provider;
  */
 public class JCOPTerminalProvider extends Provider
 {
-	private static final long serialVersionUID = 6049577128262232444L;
+
+	private static final long serialVersionUID = -959161628374948639L;
 
 	/**
 	 * Constructs the provider.

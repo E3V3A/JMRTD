@@ -35,7 +35,7 @@ import javax.smartcardio.TerminalFactorySpi;
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * @version $Revision: $
  */
-public class JCOPEmulatorTerminalFactorySpi  extends TerminalFactorySpi
+public class JCOPEmulatorTerminalFactorySpi extends TerminalFactorySpi
 {
 	private static final List<CardTerminal> TERMINAL_LIST = new ArrayList<CardTerminal>();
 	private static final CardTerminals TERMINALS = new CardTerminals() {

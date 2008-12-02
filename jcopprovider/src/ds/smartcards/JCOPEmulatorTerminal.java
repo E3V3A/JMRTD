@@ -115,18 +115,23 @@ public class JCOPEmulatorTerminal extends CardTerminal
 			if (jcTerminal == null) { return false; }
 			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
 			try {
-				jcTerminal.open();	
-				switch(jcTerminal.getState()) {
-				case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
-				case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
-				case JCTerminal.ERROR: wasCardPresent = false; break;
-				default: wasCardPresent = false; break;
-				}
-				heartBeat = System.currentTimeMillis();
+				System.out.println("DEBUG: 1");
+				jcTerminal.open();
 			} catch (Throwable e1) {
 				wasCardPresent = false;
-//				try { jcTerminal.close(); } catch (Exception e2) { }
+				System.out.println("DEBUG: 2b");
+				return false;
 			}
+			System.out.println("DEBUG: 2a");
+			switch(jcTerminal.getState()) {
+			case JCTerminal.CARD_PRESENT: wasCardPresent = true; break;
+			case JCTerminal.NOT_CONNECTED: wasCardPresent = false; break;
+			case JCTerminal.ERROR: wasCardPresent = false; break;
+			default: wasCardPresent = false; break;
+			}
+			System.out.println("DEBUG: 3");
+			heartBeat = System.currentTimeMillis();
+
 		}
 		return wasCardPresent;
 	}
