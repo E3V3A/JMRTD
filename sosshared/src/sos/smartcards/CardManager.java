@@ -93,9 +93,9 @@ public class CardManager
 	
 	private void addTerminals() {
 		int n = addTerminals(TerminalFactory.getDefault());
-		if (n == 0) {
-			System.out.println("DEBUG: no PC/SC terminals found!");
-		}
+//		if (n == 0) {
+//			System.out.println("DEBUG: no PC/SC terminals found!");
+//		}
 	}
 
 	/**
@@ -232,17 +232,16 @@ public class CardManager
 							}
 						}
 
-
 						// // This doesn't seem to work on some variants of Linux + pcsclite. :(
-						//						if (isCardPresent) {
-						//							terminal.waitForCardAbsent(POLL_INTERVAL);
-						//						} else {
-						//							terminal.waitForCardPresent(POLL_INTERVAL);
-						//						}
+						//		if (isCardPresent) {
+						//			terminal.waitForCardAbsent(POLL_INTERVAL); // or longer..
+						//		} else {
+						//			terminal.waitForCardPresent(POLL_INTERVAL); // or longer..
+						//		}
+						// // ... so we'll just sleep for a while as a courtesy to other threads...
 						Thread.sleep(POLL_INTERVAL);
 					} catch (CardException ce) {
-						/* NOTE: remain in same state?!? */
-						/* FIXME: what if reader no longer connected? */
+						/* FIXME: what if reader no longer connected, should we remove it from list? */
 						// ce.printStackTrace(); // for debugging
 					} finally {
 						if (!isPolling && service != null) { service.close(); }
