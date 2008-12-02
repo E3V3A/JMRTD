@@ -36,6 +36,14 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.CardTerminalListener;
 
+/**
+ * Manages passport insertion and removal events.
+ *
+ * FIXME: Perhaps have this class extend sos.smartcards.CardManager?
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
+ */
 public class PassportManager
 {
 	private enum CardType { OTHER_CARD, PASSPORT };
@@ -58,7 +66,6 @@ public class PassportManager
 			cm.addTerminals(acrFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
-			System.out.println("DEBUG: ACR122 provider disabled");
 		}
 		try {
 			Class<?> crefProviderClass = Class.forName("ds.smartcards.CREFTerminalProvider");
@@ -67,7 +74,7 @@ public class PassportManager
 			cm.addTerminals(crefFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
-			System.out.println("DEBUG: CREF emulation provider disabled");
+			e.printStackTrace();
 		}
 		try {
 			Class<?> jcopProviderClass = Class.forName("ds.smartcards.JCOPTerminalProvider");
@@ -76,7 +83,7 @@ public class PassportManager
 			cm.addTerminals(jcopFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
-			System.out.println("DEBUG: JCOP emulation provider disabled");
+			e.printStackTrace();
 		}
 		cm.addCardTerminalListener(new CardTerminalListener() {
 
