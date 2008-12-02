@@ -52,7 +52,6 @@ public class PassportManager
 		listeners = new ArrayList<PassportListener>();
 		final CardManager cm = CardManager.getInstance();
 		try {
-			/* Other terminals */
 			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
@@ -61,12 +60,18 @@ public class PassportManager
 			/* Ignore this provider */
 		}
 		try {
-			/* Simulators */
-			Provider sosProvider = new sos.smartcards.CardTerminalProvider();
-			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", sosProvider);
+			Class<?> crefProviderClass = Class.forName("sos.smartcards.CREFTerminalProvider");
+			Provider crefProvider = (Provider)crefProviderClass.newInstance();
+			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
 			cm.addTerminals(crefFactory);
-			//			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", sosProvider);
-			//			factories.add(jcopFactory);
+		} catch (Exception e) {
+			/* Ignore this provider */
+		}
+		try {
+			Class<?> jcopProviderClass = Class.forName("sos.smartcards.JCOPTerminalProvider");
+			Provider jcopProvider = (Provider)jcopProviderClass.newInstance();
+			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", jcopProvider);
+			cm.addTerminals(jcopFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
 		}
