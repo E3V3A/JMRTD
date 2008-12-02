@@ -17,7 +17,7 @@
 	<!-- property name="arch" value="amd64" / --> <!-- TBD: unix -->
 
 	<property name="minimal_jre_version" value="1.6" />
-	
+
 	<property name="app_name" value="JMRTD" />
 	<property name="app_version" value="0.4.2" />
 	<property name="app_title" value="${app_name} ${app_version}" />
@@ -44,8 +44,10 @@
 	<property name="sos-shared-src" location="${basedir}/../sosshared/src" />
 	<property name="sos-shared-build" location="${basedir}/../sosshared/build" />
 	
-	<!-- acrprovider class files will be included in main jar -->
+	<!-- Terminal provider classes will be included in main jar -->
 	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
+	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
+	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 	
 	<!-- bouncy castle will be added as an extensions jar -->
 	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-141.jar" />
@@ -105,7 +107,7 @@
 			</header>
 			<fileset dir="." includes="README" />
 		</concat>
-		
+
 		<!-- Copy license, etc. -->
 		<copy todir="${dist}">
 			<fileset dir="." includes="LICENSE" />
@@ -121,11 +123,13 @@
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class" />
 			<fileset dir="${acrprovider-build}" includes="**/*.class" />
+			<fileset dir="${crefprovider-build}" includes="**/*.class" />
+			<fileset dir="${jcopprovider-build}" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>
-		
+
 		<!-- Use IzPack to create the installer jar -->
 		<izpack
 				output="jmrtd_installer.jar"
