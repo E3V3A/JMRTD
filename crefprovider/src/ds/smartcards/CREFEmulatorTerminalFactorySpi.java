@@ -1,5 +1,5 @@
 /*
- * ACR 120 USB driver for javax.smartcardio framework.
+ * CREF Emulation driver for javax.smartcardio framework.
 
  * Copyright (C) 2008  Martijn Oostdijk
  *
