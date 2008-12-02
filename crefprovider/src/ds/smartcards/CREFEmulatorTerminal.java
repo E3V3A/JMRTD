@@ -62,6 +62,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 	private int port;
 
 	private long heartBeat;
+	private boolean isCheckingForCardPresent;
 
 	private final Object terminal;
 	private boolean wasCardPresent;
@@ -78,6 +79,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 		this.hostName = hostName;
 		this.port = port;
 		heartBeat = System.currentTimeMillis();
+		isCheckingForCardPresent = false;
 	}
 
 	/**
@@ -120,23 +122,22 @@ public class CREFEmulatorTerminal extends CardTerminal
 	 * @return whether a card is present.
 	 */
 	public boolean isCardPresent() {
-		synchronized (terminal) {
-			if(isChannelOpen) 
-				return true;
-			if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
-
+		if (isCheckingForCardPresent) { return wasCardPresent; }
+		if(isChannelOpen) { return true; }
+		if ((System.currentTimeMillis() - heartBeat) < HEARTBEAT_TIMEOUT) { return wasCardPresent; }
+		synchronized (terminal) {	
 			try {
 				heartBeat = System.currentTimeMillis();
+				isCheckingForCardPresent = true;
 				Socket s = new Socket(hostName, port);
 				card = new CREFCard(s);
 				wasCardPresent = true;
 			} catch (ConnectException e) {
-				if (e.getMessage().startsWith("Connection refused")) {
-					wasCardPresent = false;
-				}
+				if (e.getMessage().startsWith("Connection refused")) { wasCardPresent = false; }
 			} catch (Exception e) {
 				wasCardPresent = true;
 			}
+			isCheckingForCardPresent = false;
 			return wasCardPresent;
 		}
 	}
