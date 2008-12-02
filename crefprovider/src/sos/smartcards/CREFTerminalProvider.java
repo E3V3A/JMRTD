@@ -16,7 +16,7 @@ public class CREFTerminalProvider extends Provider
 	 * Constructs the provider.
 	 */
 	public CREFTerminalProvider() {
-		super("CREFTerminalProvider", 0.1d, "CREF Emulator Card Terminal Provider");
+		super("CREFTerminalProvider", 0.1d, "CREF Emulation Provider");
 		put("TerminalFactory.CREF", "sos.smartcards.CREFEmulatorTerminalFactorySpi");
 	}
 }
