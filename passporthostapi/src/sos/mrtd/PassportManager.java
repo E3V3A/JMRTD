@@ -58,6 +58,7 @@ public class PassportManager
 			cm.addTerminals(acrFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
+			System.out.println("DEBUG: ACR122 provider disabled");
 		}
 		try {
 			Class<?> crefProviderClass = Class.forName("sos.smartcards.CREFTerminalProvider");
@@ -66,14 +67,16 @@ public class PassportManager
 			cm.addTerminals(crefFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
+			System.out.println("DEBUG: CREF emulation provider disabled");
 		}
 		try {
-			Class<?> jcopProviderClass = Class.forName("sos.smartcards.JCOPTerminalProvider");
+			Class<?> jcopProviderClass = Class.forName("ds.smartcards.JCOPTerminalProvider");
 			Provider jcopProvider = (Provider)jcopProviderClass.newInstance();
 			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", jcopProvider);
 			cm.addTerminals(jcopFactory);
 		} catch (Exception e) {
 			/* Ignore this provider */
+			System.out.println("DEBUG: JCOP emulation provider disabled");
 		}
 		cm.addCardTerminalListener(new CardTerminalListener() {
 
