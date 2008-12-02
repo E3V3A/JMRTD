@@ -16,7 +16,7 @@ public class JCOPTerminalProvider extends Provider
 	 * Constructs the provider.
 	 */
 	public JCOPTerminalProvider() {
-		super("JCOPTerminalProvider", 0.2d, "JCOP Emulator Card Terminal Provider");
+		super("JCOPTerminalProvider", 0.1d, "JCOP Emulation Provider");
 		put("TerminalFactory.JCOP", "sos.smartcards.JCOPEmulatorTerminalFactorySpi");
 	}
 }
