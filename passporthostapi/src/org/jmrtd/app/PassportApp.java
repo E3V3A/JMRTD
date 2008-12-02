@@ -42,6 +42,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -206,7 +207,13 @@ public class PassportApp  implements PassportListener
 				}
 			});
 		}
-		service.open();
+		try {
+			service.open();
+		} catch (Exception e) {
+			Object message = "Sorry, " + e.getMessage();
+			JOptionPane.showMessageDialog(contentPane, message, "Cannot open passport!", JOptionPane.ERROR_MESSAGE, null);
+			return;
+		}
 		boolean isBACPassport = false;
 		BACEntry bacEntry = null;
 		try {
@@ -252,6 +259,7 @@ public class PassportApp  implements PassportListener
 			Properties properties = fp.guessProperties();
 			message += "\nFingerprint information: \"" + properties + "\"";
 			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
+			return;
 		}
 	}
 
