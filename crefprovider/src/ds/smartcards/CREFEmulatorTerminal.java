@@ -19,7 +19,7 @@
  * $Id: $
  */
 
-package sos.smartcards;
+package ds.smartcards;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,6 +54,9 @@ public class CREFEmulatorTerminal extends CardTerminal
 {
 	private static final long CARD_CHECK_SLEEP_TIME = 150;
 	private static final long HEARTBEAT_TIMEOUT = 1200;
+
+	private static final byte OFFSET_LC = (byte)4;
+	private static final byte OFFSET_CDATA = (byte)5;
 
 	private String hostName;
 	private int port;
@@ -106,7 +109,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 	public String getName() {
 		return "CREF emulator at " + hostName + ":" + port;
 	}
-	
+
 	public String toString() {
 		return getName();
 	}
@@ -243,7 +246,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 		private ATR atr;
 
 		private Card card;
-		
+
 		public CREFCardChannel(Card card, Socket sock) throws CardException {
 			synchronized (terminal) {
 				try {
@@ -348,7 +351,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 				lc = 0;
 			} else if (len > 5) {
 				/* Byte at index 5 is not le, so it must be lc. */
-				lc = buffer[ISO7816.OFFSET_LC] & 0x000000FF;
+				lc = buffer[OFFSET_LC] & 0x000000FF;
 			}
 			if (4 + lc >= len) {
 				/* Value of lc covers rest of apdu length, there is no le. */
@@ -363,7 +366,7 @@ public class CREFEmulatorTerminal extends CardTerminal
 
 			/* Set data */
 			theirApdu.dataIn = new byte[lc];
-			System.arraycopy(buffer, ISO7816.OFFSET_CDATA, theirApdu.dataIn, 0, lc);
+			System.arraycopy(buffer, OFFSET_CDATA, theirApdu.dataIn, 0, lc);
 			return theirApdu;
 		}
 

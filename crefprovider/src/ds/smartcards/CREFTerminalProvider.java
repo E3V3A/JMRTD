@@ -1,4 +1,4 @@
-package sos.smartcards;
+package ds.smartcards;
 
 import java.security.Provider;
 

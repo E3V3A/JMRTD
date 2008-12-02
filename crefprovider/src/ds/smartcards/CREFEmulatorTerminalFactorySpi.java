@@ -19,7 +19,7 @@
  * $Id: $
  */
 
-package sos.smartcards;
+package ds.smartcards;
 
 import java.util.ArrayList;
 import java.util.List;
