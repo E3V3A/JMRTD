@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="jmrtd" default="dist" basedir=".">
+<project name="jmrtd" default="all" basedir=".">
 
 	<description>
 		JMRTD host API distribution build file
@@ -35,7 +35,7 @@
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 	
-	<target name="init">
+	<target name="init" depends="checkos" description="Initialize some variables">
 		<!-- Create the time stamp -->
 		<tstamp />
 
@@ -48,13 +48,12 @@
 		<mkdir dir="${distlib}/${arch}" />
 	</target>
 
-	<target name="compile" depends="init" description="compile the source ">
+	<target name="compile" depends="init" description="Compile the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
 		<javac srcdir="${src}" destdir="${build}" />
 	</target>
 
-	<target name="extensions" depends="init" description="copy extensions into distribution">
-
+	<target name="extensions" depends="init" description="Copy extensions into distribution directory">
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}/ext">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -71,8 +70,7 @@
 
 	</target>
 
-	<target name="dist" depends="extensions, compile, doc" description="generate the distribution">
-
+	<target name="dist" depends="extensions, compile" description="Generate the distribution .jar file">
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
 			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
@@ -102,7 +100,10 @@
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>
+		
+	</target>
 
+	<target name="installer_jar" depends="dist" description="Generate an installer .jar file using IzPack">
 		<!-- Use IzPack to create the installer jar -->
 		<izpack
 				output="jmrtd_installer.jar"
@@ -186,21 +187,24 @@
 				</installation>
 			]]></config>
 		</izpack>
-
+	</target>
+		
+	<target name="installer_exe" depends="dist" description="Wrap installer in .exe file using JSmooth" if="is_os_windows">
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<jsmoothgen
 			skeletonroot="${jsmoothdir}/skeletons"
 			project="jmrtd_installer.jsmooth" />
-
 	</target>
 
 	<target name="clean" description="clean up">
 		<!-- Delete the ${build} and ${dist} directory trees -->
 		<delete dir="${build}" />
 		<delete dir="${dist}" />
+		<delete file="jmrtd_installer.jar" />
+		<delete file="jmrtd_installer.exe" />
 	</target>
 
-	<target name="doc" description="Generate API docs">
+	<target name="doc" description="Generate API docs" if="build_java_doc">
 		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar}"
 				destdir="apidocs"
 				package="false"
@@ -221,6 +225,40 @@
 			<!-- package name="sos.gui" / --> <!-- Not used in public interface -->
 			<!-- package name="sos.util" / --> <!-- Not used in public interface -->
 		</javadoc>
+	</target>
+	
+	<target name="all" description="Build everything" depends="init, dist, doc, installer_jar, installer_exe" />
+
+	<!-- Ant hacks to check conditional stuff below -->
+
+	<target name="checkos">
+		<condition property="is_os_windows">
+	  		<or>
+	  			<equals arg1="${os.name}" arg2="Windows 95" />
+	  			<equals arg1="${os.name}" arg2="Windows 98" />
+	  			<equals arg1="${os.name}" arg2="Windows 2000" />
+	  			<equals arg1="${os.name}" arg2="Windows XP" />
+	  			<equals arg1="${os.name}" arg2="Windows NT" />
+	  			<equals arg1="${os.name}" arg2="Windows Vista" />
+			</or>
+		</condition>
+		<condition property="is_os_unix">
+			<or>
+				<equals arg1="${os.name}" arg2="AIX" />
+				<equals arg1="${os.name}" arg2="Digital Unix" />
+				<equals arg1="${os.name}" arg2="FreeBSD" />
+				<equals arg1="${os.name}" arg2="HP UX" />
+				<equals arg1="${os.name}" arg2="Irix" />
+				<equals arg1="${os.name}" arg2="Linux" />
+				<equals arg1="${os.name}" arg2="Solaris" />
+			</or>
+		</condition>
+		<condition property="is_os_mac">
+			<or>
+				<equals arg1="${os.name}" arg2="Mac OS" />
+				<equals arg1="${os.name}" arg2="Mac OS X" />
+			</or>
+		</condition>
 	</target>
 
 </project>
