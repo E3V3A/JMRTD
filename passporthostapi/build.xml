@@ -12,7 +12,7 @@
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
 
-	<property file="build.properties" />
+	<property file="jmrtd_installer.properties" />
 	<property name="app_title" value="${app_name} ${app_version}" />
 
 	<!-- Defines IzPack Ant task -->
