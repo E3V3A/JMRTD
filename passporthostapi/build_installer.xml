@@ -15,16 +15,7 @@
 	<property file="jmrtd_installer.properties" />
 	<property name="app_title" value="${app_name} ${app_version}" />
 
-	<!-- Defines IzPack Ant task -->
 	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
-	<taskdef name="izpack"
-		classpath="${izpack-standalone-compiler}"
-		classname="com.izforge.izpack.ant.IzPackTask" />
-
-	<!-- Defines JSmooth Ant task -->	
-	<taskdef name="jsmoothgen"
-		classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
-    	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
 
 	<!-- sosshared class files will be included in main jar -->
 	<property name="sos-shared-src" location="${basedir}/../sosshared/src" />
@@ -35,7 +26,7 @@
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 	
-	<target name="init" depends="checkos" description="Initialize some variables">
+	<target name="init" depends="check_os, init_izpack, init_jsmooth" description="Initialize some variables">
 		<!-- Create the time stamp -->
 		<tstamp />
 
@@ -48,6 +39,20 @@
 		<mkdir dir="${distlib}/${arch}" />
 	</target>
 
+	<target name="init_izpack" depends="check_izpack" description="Initialize IzPack" if="is_izpack_available">
+		<!-- Defines IzPack Ant task -->
+		<taskdef name="izpack"
+			classpath="${izpack-standalone-compiler}"
+			classname="com.izforge.izpack.ant.IzPackTask" />
+	</target>
+
+	<target name="init_jsmooth" depends="check_jsmooth" description="Initialize JSmooth" if="is_jsmooth_available">
+		<!-- Defines JSmooth Ant task -->	
+		<taskdef name="jsmoothgen"
+			classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
+   		 	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
+	</target>
+	
 	<target name="compile" depends="init" description="Compile the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
 		<javac srcdir="${src}" destdir="${build}" />
@@ -231,7 +236,15 @@
 
 	<!-- Ant hacks to check conditional stuff below -->
 
-	<target name="checkos">
+	<target name="check_izpack">
+		<available classname="com.izforge.izpack.ant.IzPackTask" property="is_izpack_available" />
+	</target>
+	
+	<target name="check_jsmooth">
+		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" property="is_jsmooth_available" />
+	</target>
+	
+	<target name="check_os">
 		<condition property="is_os_windows">
 	  		<or>
 	  			<equals arg1="${os.name}" arg2="Windows 95" />
