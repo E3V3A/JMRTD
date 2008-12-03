@@ -15,7 +15,7 @@
 	<property file="jmrtd_installer.properties" />
 	<property name="app_title" value="${app_name} ${app_version}" />
 
-	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
+	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
 	<!-- sosshared class files will be included in main jar -->
 	<property name="sos-shared-src" location="${basedir}/../sosshared/src" />
@@ -26,7 +26,7 @@
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 	
-	<target name="init" depends="check_os, init_izpack, init_jsmooth" description="Initialize some variables">
+	<target name="init" depends="check_os, check_providers, init_izpack, init_jsmooth" description="Initialize some variables">
 		<!-- Create the time stamp -->
 		<tstamp />
 
@@ -49,7 +49,7 @@
 	<target name="init_jsmooth" depends="check_jsmooth" description="Initialize JSmooth" if="is_jsmooth_available">
 		<!-- Defines JSmooth Ant task -->	
 		<taskdef name="jsmoothgen"
-			classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
+			classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar"
    		 	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
 	</target>
 	
@@ -95,6 +95,10 @@
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
 				<attribute name="Class-path" value="ext/${bcprov_jar} ext/${jai_imageio_jar}" />
+				<attribute name="Built-By" value="${user.name}"/>
+				<attribute name="Implementation-Vendor" value="${author_name}"/>
+				<attribute name="Implementation-Title" value="${app_name}"/>
+				<attribute name="Implementation-Version" value="${app_version}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class" />
@@ -113,7 +117,7 @@
 		<izpack
 				output="jmrtd_installer.jar"
 				basedir="${basedir}"
-				izpackdir="${izpackdir}">
+				izpackdir="${izpack_dir}">
 			<config><![CDATA[
 				<installation version="1.0">
 				    <info>
@@ -197,7 +201,7 @@
 	<target name="installer_exe" depends="dist" description="Wrap installer in .exe file using JSmooth" if="is_os_windows">
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<jsmoothgen
-			skeletonroot="${jsmoothdir}/skeletons"
+			skeletonroot="${jsmooth_dir}/skeletons"
 			project="jmrtd_installer.jsmooth" />
 	</target>
 
@@ -234,15 +238,17 @@
 	
 	<target name="all" description="Build everything" depends="init, dist, doc, installer_jar, installer_exe" />
 
-	<!-- Ant hacks to check conditional stuff below -->
+	<!-- Conditional stuff is set below -->
 
-	<target name="check_izpack">
-		<available classname="com.izforge.izpack.ant.IzPackTask" property="is_izpack_available" />
+	<target name="check_providers">
+		<available file="${acrprovider-build}" property="is_acr_available" />
+		<available file="${crefprovider-build}" property="is_cref_available" />
+		<available file="${jcopprovider-build}" property="is_jcop_available" />
 	</target>
 	
-	<target name="check_jsmooth">
-		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" property="is_jsmooth_available" />
-	</target>
+	<target name="check_izpack"><available classname="com.izforge.izpack.ant.IzPackTask" property="is_izpack_available" /></target>
+	
+	<target name="check_jsmooth"><available classname="net.charabia.jsmoothgen.ant.JSmoothGen" property="is_jsmooth_available" /></target>
 	
 	<target name="check_os">
 		<condition property="is_os_windows">
