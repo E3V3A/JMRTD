@@ -12,30 +12,16 @@
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
 
-	<!-- Would like to use ${os.arch} here, but is set to "x86" instead of "i386"?!? -->
-	<property name="arch" value="i386" />
-	<!-- property name="arch" value="amd64" / --> <!-- TBD: unix -->
-
-	<property name="minimal_jre_version" value="1.6" />
-
-	<property name="app_name" value="JMRTD" />
-	<property name="app_version" value="0.4.2" />
+	<property file="build.properties" />
 	<property name="app_title" value="${app_name} ${app_version}" />
-	<property name="author_name" value="The JMRTD team" />
-	<property name="author_email" value="info@jmrtd.org" />
-	<property name="author_url" value="http://jmrtd.org/" />
 
 	<!-- Defines IzPack Ant task -->
-	<property name="izpackdir" value="c:/Program Files/IzPack" />
-	<!-- property name="izpackdir" value="/win/Program Files/IzPack" / --> <!-- TBD: unix -->
 	<property name="izpack-standalone-compiler" value="${izpackdir}/lib/standalone-compiler.jar" />
 	<taskdef name="izpack"
 		classpath="${izpack-standalone-compiler}"
 		classname="com.izforge.izpack.ant.IzPackTask" />
 
-	<!-- Defines JSmooth Ant task -->
-	<property name="jsmoothdir" value="c:/Program Files/JSmooth 0.9.9-7" />
-	<!-- property name="jsmoothdir" value="/win/Program Files/JSmooth 0.9.9-7" / --> <!-- TBD: unix -->
+	<!-- Defines JSmooth Ant task -->	
 	<taskdef name="jsmoothgen"
 		classpath="${jsmoothdir}/lib/jsmoothgen-ant.jar"
     	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
@@ -49,16 +35,6 @@
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 	
-	<!-- bouncy castle will be added as an extensions jar -->
-	<property name="bcprovjar" value="d:/Software/bcprov-jdk16-141.jar" />
-	<!-- property name="bcprovjar" value="/winsoftware/bcprov-jdk16-141.jar" / --> <!-- TBD: unix -->
-
-
-	<!-- jai_imageio will also be added as an extensions jar -->
-	<property name="jai_imageio" value="jai_imageio.jar" />
-	<property name="clibwrapper_jiio" value="clibwrapper_jiio.jar" />
-	<property name="libclib_jiio" value="libclib_jiio.*" />
-
 	<target name="init">
 		<!-- Create the time stamp -->
 		<tstamp />
@@ -80,17 +56,14 @@
 	<target name="extensions" depends="init" description="copy extensions into distribution">
 
 		<!-- Copy bouncy castle -->
-
 		<copy todir="${distlib}/ext">
-			<!-- fileset dir="${java.home}/lib/ext" includes="${bcprov}" / -->
-			<fileset file="${bcprovjar}" />
+			<fileset file="${bcprov_dir}/${bcprov_jar}" />
 		</copy>
 
 		<!-- Copy jai imageio -->
-
 		<copy todir="${distlib}/ext">
-			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio}" />
-			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio}" />
+			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio_jar}" />
+			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio_jar}" />
 		</copy>
 		<copy todir="${distlib}/${arch}">
 			<fileset dir="${java.home}/lib/${arch}" includes="${libclib_jiio}" />
@@ -116,9 +89,9 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
-				<attribute name="Main-class" value="org.jmrtd.app.PassportApp" />
-				<attribute name="VMOptions" value="-Xms256M -Xmx256M" />
-				<attribute name="Class-path" value="ext/bcprov-jdk16-139.jar ext/jai_imageio.jar" />
+				<attribute name="Main-class" value="${app_main_class}" />
+				<attribute name="VMOptions" value="${vm_options}" />
+				<attribute name="Class-path" value="ext/${bcprov_jar} ext/${jai_imageio_jar}" />
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="${sos-shared-build}" includes="**/*.class" />
@@ -228,7 +201,7 @@
 	</target>
 
 	<target name="doc" description="Generate API docs">
-		<javadoc classpath="${sos-shared-build};${bcprovjar}"
+		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar}"
 				destdir="apidocs"
 				package="false"
 				doctitle="${app_title}"
