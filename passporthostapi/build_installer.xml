@@ -41,7 +41,7 @@
 	
 	<target name="compile" depends="init" description="Compile the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" destdir="${build}" />
+		<javac srcdir="${src}:${sos-shared-src}" classpath="${bcprov_dir}/${bcprov_jar}" destdir="${build}" />
 	</target>
 
 	<target name="extensions" depends="init" description="Copy extensions into distribution directory">
@@ -98,7 +98,7 @@
 		
 	</target>
 
-	<target name="installer_jar" depends="init, dist" description="Generate an installer .jar file using IzPack" if="is_izpack_available">
+	<target name="izpack_installer" depends="init, dist" description="Generate an installer .jar file using IzPack" if="is_izpack_available">
 		<!-- Use IzPack to create the installer jar -->
 			<!-- Defines IzPack Ant task -->
 		<taskdef name="izpack"
@@ -189,7 +189,7 @@
 		</izpack>
 	</target>
 		
-	<target name="installer_exe" depends="dist" description="Wrap installer in .exe file using JSmooth" if="is_jsmooth_available">
+	<target name="jsmooth_installer" depends="dist" description="Wrap installer in .exe file using JSmooth" if="is_jsmooth_available">
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<taskdef name="jsmoothgen"
 			classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar"
@@ -231,7 +231,7 @@
 		</javadoc>
 	</target>
 	
-	<target name="all" description="Build everything" depends="init, dist, doc, installer_jar, installer_exe" />
+	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer" />
 
 	<!-- Conditional stuff is set below -->
 
@@ -242,11 +242,11 @@
 	</target>
 	
 	<target name="check_izpack">
-		<available classname="com.izforge.izpack.ant.IzPackTask" property="is_izpack_available" />
+		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />
 	</target>
 	
 	<target name="check_jsmooth">
-		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" property="is_jsmooth_available" />
+		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
 	</target>
 	
 	<target name="check_os">
