@@ -13,8 +13,8 @@
 	<property name="distlib" location="${dist}/lib" />
 
 	<property file="jmrtd_installer.properties" />
-	<property name="app_title" value="${app_name} ${app_version}" />
 
+	<property name="app_title" value="${app_name} ${app_version}" />
 	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
 	<!-- sosshared class files will be included in main jar -->
@@ -25,8 +25,10 @@
 	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
-	
-	<target name="init" depends="check_os, check_providers, check_izpack, check_jsmooth" description="Initialize some variables">
+
+	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer" />
+
+	<target name="init" depends="check_conditional_properties" description="Initializes some variables">
 		<!-- Create the time stamp -->
 		<tstamp />
 
@@ -39,12 +41,12 @@
 		<mkdir dir="${distlib}/${arch}" />
 	</target>
 	
-	<target name="compile" depends="init" description="Compile the source ">
+	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
 		<javac srcdir="${src}:${sos-shared-src}" classpath="${bcprov_dir}/${bcprov_jar}" destdir="${build}" />
 	</target>
 
-	<target name="extensions" depends="init" description="Copy extensions into distribution directory">
+	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}/ext">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -61,7 +63,7 @@
 
 	</target>
 
-	<target name="dist" depends="extensions, compile" description="Generate the distribution .jar file">
+	<target name="dist" depends="extensions, compile" description="Generates the distribution .jar file">
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
 			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
@@ -98,7 +100,7 @@
 		
 	</target>
 
-	<target name="izpack_installer" depends="init, dist" description="Generate an installer .jar file using IzPack" if="is_izpack_available">
+	<target name="izpack_installer" depends="init, dist" description="Generates an installer .jar file using IzPack" if="is_izpack_available">
 		<!-- Use IzPack to create the installer jar -->
 			<!-- Defines IzPack Ant task -->
 		<taskdef name="izpack"
@@ -189,7 +191,7 @@
 		</izpack>
 	</target>
 		
-	<target name="jsmooth_installer" depends="dist" description="Wrap installer in .exe file using JSmooth" if="is_jsmooth_available">
+	<target name="jsmooth_installer" depends="dist" description="Wraps installer in .exe file using JSmooth" if="is_jsmooth_available">
 		<!-- Use JSmooth to create a Windows executable from the installer jar -->
 		<taskdef name="jsmoothgen"
 			classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar"
@@ -208,7 +210,7 @@
 		<delete file="jmrtd_installer.exe" />
 	</target>
 
-	<target name="doc" description="Generate API docs" if="build_java_doc">
+	<target name="doc" description="Generates API docs" if="build_java_doc">
 		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar}"
 				destdir="apidocs"
 				package="false"
@@ -231,25 +233,14 @@
 		</javadoc>
 	</target>
 	
-	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer" />
-
 	<!-- Conditional stuff is set below -->
 
-	<target name="check_providers">
+	<target name="check_conditional_properties" description="Sets some properties depending on build platform">
 		<available file="${acrprovider-build}" property="is_acr_available" />
 		<available file="${crefprovider-build}" property="is_cref_available" />
 		<available file="${jcopprovider-build}" property="is_jcop_available" />
-	</target>
-	
-	<target name="check_izpack">
 		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />
-	</target>
-	
-	<target name="check_jsmooth">
 		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
-	</target>
-	
-	<target name="check_os">
 		<condition property="is_os_windows">
 	  		<or>
 	  			<equals arg1="${os.name}" arg2="Windows 95" />
