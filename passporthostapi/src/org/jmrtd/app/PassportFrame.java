@@ -80,7 +80,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
-import javax.swing.ProgressMonitor;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -107,7 +106,6 @@ import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
@@ -246,23 +244,6 @@ public class PassportFrame extends JFrame
 		t = System.currentTimeMillis();
 		logger.info("inputstreams buffered t = " + ((double)(t - t0) / 1000) + "s");
 
-		(new Thread(new Runnable() {
-			public void run() {
-				try {
-					ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
-					while (estimateBytesRead() >  0) {
-						Thread.sleep(200);
-						int bytesRead = estimateBytesRead();
-						m.setProgress(bytesRead);
-						m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
-						progressBar.setValue(bytesRead * 100 / totalLength);
-					}
-				} catch (InterruptedException ie) {
-				} catch (Exception e) {
-				}
-			}
-		})).start();
-
 		displayInputStreams(service);
 		t = System.currentTimeMillis();
 		logger.info("finished displaying t = " + ((double)(t - t0) / 1000) + "s");
@@ -275,8 +256,8 @@ public class PassportFrame extends JFrame
 	private int estimateBytesRead() {
 		int bytesRead = 0;
 		for (short tag: fileStreams.keySet()) {
-			CardFileInputStream in = fileStreams.get(tag);
-			bytesRead += in.getFilePos();
+			CardFileInputStream cardIn = fileStreams.get(tag);
+			if (cardIn != null) { bytesRead += cardIn.getFilePos(); }
 		}
 		return bytesRead;
 	}
@@ -466,13 +447,34 @@ public class PassportFrame extends JFrame
 				}
 				in.reset();
 			}
+
+			(new Thread(new Runnable() {
+				public void run() {
+					try {
+						//						ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
+						progressBar.setMaximum(totalLength);
+						System.out.println("DEBUG: progressBar max set to " + totalLength);
+						while (estimateBytesRead() >  0) {
+							Thread.sleep(200);
+							int bytesRead = estimateBytesRead();
+							//							m.setProgress(bytesRead);
+							//							m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
+							progressBar.setValue(bytesRead);
+							System.out.println("DEBUG: progressBar value set to " + bytesRead);
+						}
+					} catch (InterruptedException ie) {
+					} catch (Exception e) {
+					}
+				}
+			})).start();
+
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	private void putFile(short fid, PassportService service, boolean doBuffer) throws CardServiceException, IOException {
-		if (!bufferedStreams.containsKey(fid)) {
+		if (!fileStreams.containsKey(fid)) {
 			CardFileInputStream in = service.readFile(fid);
 			int length = in.getFileLength();
 			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
@@ -490,6 +492,7 @@ public class PassportFrame extends JFrame
 		if (bytes != null) {
 			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 			bufferedStreams.put(fid, in);
+			totalLength += bytes.length;
 		}
 	}
 

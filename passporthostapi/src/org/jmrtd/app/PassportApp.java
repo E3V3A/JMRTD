@@ -42,7 +42,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
-import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -173,7 +172,7 @@ public class PassportApp  implements PassportListener
 			im.put(KeyStroke.getKeyStroke(c), actionMapKey);
 		}
 	}
-	
+
 	public void passportInserted(PassportEvent ce) {
 		try {
 			PassportService service = ce.getService();
@@ -186,11 +185,11 @@ public class PassportApp  implements PassportListener
 	public void passportRemoved(PassportEvent ce) {
 		/* Do nothing. */
 	}
-	
+
 	public void cardInserted(CardEvent ce) {
 		/* Ignore non-passport card. */
 	}
-	
+
 	public void cardRemoved(CardEvent ce) {
 		CardService service = ce.getService();
 		if (service != null) {
@@ -218,7 +217,7 @@ public class PassportApp  implements PassportListener
 		BACEntry bacEntry = null;
 		try {
 			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
-			COMFile com = new COMFile(comIn);
+			COMFile com = new COMFile(comIn); /* NOTE: EF.COM is read here to test if BAC is implemented */
 			isBACPassport = false;
 		} catch (CardServiceException cse) {
 			isBACPassport = true;
