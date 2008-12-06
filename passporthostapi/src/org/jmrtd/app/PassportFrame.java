@@ -453,14 +453,12 @@ public class PassportFrame extends JFrame
 					try {
 						//						ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
 						progressBar.setMaximum(totalLength);
-						System.out.println("DEBUG: progressBar max set to " + totalLength);
 						while (estimateBytesRead() >  0) {
 							Thread.sleep(200);
 							int bytesRead = estimateBytesRead();
 							//							m.setProgress(bytesRead);
 							//							m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
 							progressBar.setValue(bytesRead);
-							System.out.println("DEBUG: progressBar value set to " + bytesRead);
 						}
 					} catch (InterruptedException ie) {
 					} catch (Exception e) {
@@ -477,6 +475,7 @@ public class PassportFrame extends JFrame
 		if (!fileStreams.containsKey(fid)) {
 			CardFileInputStream in = service.readFile(fid);
 			int length = in.getFileLength();
+			in.mark(length + 1);
 			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
 			bufferedIn.mark(in.available() + 2);
 			fileStreams.put(fid, in);
@@ -491,6 +490,7 @@ public class PassportFrame extends JFrame
 		fileStreams.put(fid, null);
 		if (bytes != null) {
 			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+			in.mark(bytes.length + 1);
 			bufferedStreams.put(fid, in);
 			totalLength += bytes.length;
 		}
@@ -587,8 +587,7 @@ public class PassportFrame extends JFrame
 
 				digest.reset();
 
-				InputStream dgIn = bufferedStreams.get(dgFID);
-				dgIn.reset();
+				InputStream dgIn = getFile(dgFID);
 				byte[] buf = new byte[1024];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
