@@ -24,6 +24,7 @@ package org.jmrtd.app;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -78,6 +79,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.ProgressMonitor;
 
 import org.bouncycastle.asn1.x509.X509Name;
@@ -105,6 +107,7 @@ import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
+import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
@@ -148,10 +151,11 @@ public class PassportFrame extends JFrame
 	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
 	private Logger logger = Logger.getLogger(getClass().getName());
-	
+
 	private FacePreviewPanel facePreviewPanel;
 
-	private JPanel panel, centerPanel;
+	private JPanel panel, centerPanel, southPanel;
+	private JProgressBar progressBar;
 
 	private Map<Short, CardFileInputStream> fileStreams;
 	private Map<Short, InputStream> bufferedStreams;
@@ -188,8 +192,12 @@ public class PassportFrame extends JFrame
 		verificationPanel = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
+		southPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
-		panel.add(verificationPanel, BorderLayout.SOUTH);
+		southPanel.add(verificationPanel);
+		southPanel.add(progressBar);
+		panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
 		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 		bufferedStreams = new HashMap<Short, InputStream>();
@@ -220,12 +228,13 @@ public class PassportFrame extends JFrame
 		try {
 			this.bacEntry = bacEntry;
 			verificationPanel.setBACState(bacEntry != null ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
-			putFile(PassportService.EF_COM, service);
-			putFile(PassportService.EF_SOD, service);
+			putFile(PassportService.EF_COM, service, true);
+			putFile(PassportService.EF_SOD, service, true);
 			InputStream comIn = getFile(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
 			for (int dgTag: com.getTagList()) {
-				putFile(PassportFile.lookupFIDByTag(dgTag), service);
+				// EXPERIMENTAL, don't buffer dg2, read it from service while displaying...
+				putFile(PassportFile.lookupFIDByTag(dgTag), service, dgTag != PassportFile.EF_DG2_TAG);
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
@@ -246,6 +255,7 @@ public class PassportFrame extends JFrame
 						int bytesRead = estimateBytesRead();
 						m.setProgress(bytesRead);
 						m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
+						progressBar.setValue(bytesRead * 100 / totalLength);
 					}
 				} catch (InterruptedException ie) {
 				} catch (Exception e) {
@@ -253,7 +263,7 @@ public class PassportFrame extends JFrame
 			}
 		})).start();
 
-		displayInputStreams();
+		displayInputStreams(service);
 		t = System.currentTimeMillis();
 		logger.info("finished displaying t = " + ((double)(t - t0) / 1000) + "s");
 
@@ -376,15 +386,18 @@ public class PassportFrame extends JFrame
 	 * Assumes inputstreams in <code>passportFiles</code> are reset to beginning.
 	 */
 	private void displayInputStreams() {
+		displayInputStreams(null);	
+	}
+
+	private void displayInputStreams(PassportService service) {	
 		try {
-			InputStream in = null;
-			in = getFile(PassportService.EF_DG1);
-			dg1 = new DG1File(in);
+			InputStream dg1In = getFile(PassportService.EF_DG1);
+			dg1 = new DG1File(dg1In);
 			MRZInfo mrzInfo = dg1.getMRZInfo();
 			if (bacEntry != null &&
 					!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
-					mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
-					mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
+							mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
+							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
 				System.out.println("WARNING: MRZ used in BAC differs from MRZ in DG1!");
 			}
 			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
@@ -409,8 +422,7 @@ public class PassportFrame extends JFrame
 			});
 
 			for (short fid: bufferedStreams.keySet()) {
-				in = getFile(fid);
-				in.reset();
+				InputStream in = getFile(fid);
 				switch (fid) {
 				case PassportService.EF_COM:
 					/* NOTE: Already processed this one above. */
@@ -420,6 +432,7 @@ public class PassportFrame extends JFrame
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
+					System.out.println("DEBUG: displaying dg2, in is of type " + in.getClass().getSimpleName());
 					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
 				case PassportService.EF_DG3:
@@ -458,14 +471,16 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private void putFile(short fid, PassportService service) throws CardServiceException, IOException {
+	private void putFile(short fid, PassportService service, boolean doBuffer) throws CardServiceException, IOException {
 		if (!bufferedStreams.containsKey(fid)) {
 			CardFileInputStream in = service.readFile(fid);
 			int length = in.getFileLength();
 			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
 			bufferedIn.mark(in.available() + 2);
 			fileStreams.put(fid, in);
-			bufferedStreams.put(fid, bufferedIn);
+			if (doBuffer) {
+				bufferedStreams.put(fid, bufferedIn);
+			}
 			totalLength += length;
 		} 
 	}
@@ -487,7 +502,10 @@ public class PassportFrame extends JFrame
 	private InputStream getFile(short fid) {
 		try {
 			InputStream in = bufferedStreams.get(fid);
-			if (in != null) {
+			if (in == null) {
+				in = fileStreams.get(fid);
+			}
+			if (in != null && in.markSupported()) {
 				in.reset(); 
 			}
 			return in;
