@@ -372,6 +372,24 @@ public class PassportFrame extends JFrame
 
 	private void displayInputStreams(PassportService service) {	
 		try {
+			(new Thread(new Runnable() {
+				public void run() {
+					try {
+						//						ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
+						progressBar.setMaximum(totalLength);
+						while (estimateBytesRead() >  0) {
+							Thread.sleep(200);
+							int bytesRead = estimateBytesRead();
+							//							m.setProgress(bytesRead);
+							//							m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
+							progressBar.setValue(bytesRead);
+						}
+					} catch (InterruptedException ie) {
+					} catch (Exception e) {
+					}
+				}
+			})).start();
+			
 			InputStream dg1In = getFile(PassportService.EF_DG1);
 			dg1 = new DG1File(dg1In);
 			MRZInfo mrzInfo = dg1.getMRZInfo();
@@ -448,23 +466,7 @@ public class PassportFrame extends JFrame
 				in.reset();
 			}
 
-			(new Thread(new Runnable() {
-				public void run() {
-					try {
-						//						ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
-						progressBar.setMaximum(totalLength);
-						while (estimateBytesRead() >  0) {
-							Thread.sleep(200);
-							int bytesRead = estimateBytesRead();
-							//							m.setProgress(bytesRead);
-							//							m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
-							progressBar.setValue(bytesRead);
-						}
-					} catch (InterruptedException ie) {
-					} catch (Exception e) {
-					}
-				}
-			})).start();
+
 
 		} catch (Exception e) {
 			e.printStackTrace();
