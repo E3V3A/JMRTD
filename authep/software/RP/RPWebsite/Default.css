@@ -1,0 +1,24 @@
+﻿.banner
+{
+    text-align: center;
+    font-family: System;
+    font-size: xx-large;
+}
+.content
+{
+    position:absolute;
+    left:100px;
+    top:200px;
+}
+.applet
+{
+    position:absolute;
+    left:100px;
+    top:300px;
+}
+.booze
+{
+    position:absolute;
+    left:500px;
+    top:150px;
+}
