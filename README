@@ -7,27 +7,4 @@ JMRTD
    developed. The passport applet is written in Java Card. The host side API
    is written in Java.
 
-Authors
-
-   Cees-Bart Breunesse (ceesb@cs.ru.nl)
-   Engelbert Hubbers (hubbers@cs.ru.nl)
-   Wojciech Mostowski (woj@cs.ru.nl)
-   Martijn Oostdijk (martijno@cs.ru.nl)
-   Ronny Wichers Schreur (ronny@cs.ru.nl)
-
-Coffee & cold drinks
-
-   Arnout Engelen (arnouten@bzzt.net)
-
-License
-
-   See the LICENSE file.
-
-Files
-
-   README - this file
-   LICENSE - copy of the LGPL license
-   passportapplet/ - passport applet project files
-   passporthostapi/ - host side API project files
-
 See passporthostapi/README for more detailed notes.
