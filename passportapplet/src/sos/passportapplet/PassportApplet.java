@@ -34,6 +34,10 @@ import javacard.security.RandomData;
 import javacard.security.Signature;
 import javacardx.crypto.Cipher;
 
+// API for setATRHistBytes - requires Global Platform API gp211.jar
+// Comment out the following line if API not available.
+import org.globalplatform.GPSystem;
+
 /**
  * PassportApplet
  * 
@@ -96,10 +100,13 @@ public class PassportApplet extends Applet implements ISO7816 {
 
 	KeyStore keyStore;
 
+	//public ATRGlobal atrGlobal;
+
 	/**
 	 * Creates a new passport applet.
 	 */
 	public PassportApplet(byte mode) {
+
 		fileSystem = new FileSystem();
 
 		randomData = RandomData.getInstance(RandomData.ALG_PSEUDO_RANDOM);
@@ -155,6 +162,9 @@ public class PassportApplet extends Applet implements ISO7816 {
 
 		/* Ignore APDU that selects this applet... */
 		if (selectingApplet()) {
+			// Set ATR Historical Bytes (ATS).
+			// Requires gp211 API. Comment out the following line if API not available.
+			org.globalplatform.GPSystem.setATRHistBytes(ATRGlobal.ATR_HIST, (short) 0x00, ATRGlobal.ATR_HIST_LEN);
 			return;
 		}
 

@@ -19,8 +19,12 @@ JCAPI=$(JCPATH)/lib/api.jar
 # JCAPI=$(JCPATH)/lib/api.jar
 JCCONV=$(JCPATH)/lib/converter.jar
 JCVERIFIER=$(JCPATH)/lib/offcardverifier.jar
-EXPORTPATH=$(JCPATH)/api_export_files
+JCEXPORTPATH=$(JCPATH)/api_export_files
 # EXPORTPATH=$(JCPATH)/api_export_files
+
+# Global Platform API
+GPAPI=$(JAVA_HOME)/lib/gp211.jar
+GPEXPORTPATH=$(JAVA_HOME)/lib/api_export_files
 
 SCRIPTGEN=$(JCPATH)/bin/scriptgen
 APDUTOOL=$(JCPATH)/bin/apdutool
@@ -47,7 +51,7 @@ all: applet.cap
 classes: build
 	$(JAVAC)\
 	   -g\
-	   -classpath $(JCAPI):.\
+	   -classpath $(JCAPI):$(GPAPI):.\
 	   -d build\
 	   -sourcepath src \
 	   -source 1.2 \
@@ -68,7 +72,7 @@ applet.cap: classes
 	   -classpath $(JCCONV):$(JCVERIFIER)\
 	   com.sun.javacard.converter.Converter\
 	      -classdir build\
-	      -exportpath $(EXPORTPATH)\
+	      -exportpath $(JCEXPORTPATH):$(GPEXPORTPATH)\
 	      -applet $(APPLET_AID) $(APPLET_CLASS)\
 	      -d build\
 	      -out CAP\
