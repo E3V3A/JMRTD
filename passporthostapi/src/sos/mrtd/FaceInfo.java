@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -46,6 +47,7 @@ import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.event.IIOReadProgressListener;
+import javax.imageio.event.IIOReadUpdateListener;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -234,6 +236,7 @@ public class FaceInfo
     * @throws IOException if input cannot be read
     */
    FaceInfo(InputStream in) throws IOException {
+	   System.out.println("DEBUG: new FaceInfo(in) in of type " + in.getClass().getSimpleName());
       dataIn = new DataInputStream(in);
       
       /* Facial Information (20) */
@@ -293,7 +296,8 @@ public class FaceInfo
        * ISO 19794-5
        */
       image = null;
-      dataIn = new DataInputStream(new BufferedInputStream(in, (int)faceImageBlockLength + 1));
+      if (!in.markSupported()) { in = new BufferedInputStream(in, (int)faceImageBlockLength + 1); }
+      dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
       dataIn.mark((int)faceImageBlockLength);
    }
    
@@ -390,7 +394,59 @@ public class FaceInfo
 			   reader.setInput(iis);
 			   ImageReadParam pm = reader.getDefaultReadParam();
 			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-			   pm.setSourceProgressivePasses(2, 8);
+			   pm.setSourceProgressivePasses(1, 8);
+			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
+			   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
+
+				@Override
+				public void imageUpdate(ImageReader source,
+						BufferedImage theImage, int minX, int minY, int width,
+						int height, int periodX, int periodY, int[] bands) {
+					System.out.println("DEBUG: imageUpdate");
+					
+				}
+
+				@Override
+				public void passComplete(ImageReader source,
+						BufferedImage theImage) {
+					System.out.println("DEBUG: passCompleted");
+					
+				}
+
+				@Override
+				public void passStarted(ImageReader source,
+						BufferedImage theImage, int pass, int minPass,
+						int maxPass, int minX, int minY, int periodX,
+						int periodY, int[] bands) {
+					System.out.println("DEBUG: passStarted");
+					
+				}
+
+				@Override
+				public void thumbnailPassComplete(ImageReader source,
+						BufferedImage theThumbnail) {
+					System.out.println("DEBUG: thumbNailPassComplete");
+					
+				}
+
+				@Override
+				public void thumbnailPassStarted(ImageReader source,
+						BufferedImage theThumbnail, int pass, int minPass,
+						int maxPass, int minX, int minY, int periodX,
+						int periodY, int[] bands) {
+					System.out.println("DEBUG: thumbnailPassStarted");
+				}
+
+				@Override
+				public void thumbnailUpdate(ImageReader source,
+						BufferedImage theThumbnail, int minX, int minY,
+						int width, int height, int periodX, int periodY,
+						int[] bands) {
+					System.out.println("DEBUG: thumbnailUpdate");
+					
+				}
+				   
+			   });
 			   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
 
 				@Override
@@ -523,9 +579,8 @@ public class FaceInfo
     * keeping same aspect ratio.
     * 
     * @param image an image
-    * @param desiredWidth maximum width
-    * @param desiredHeight maximum height
-    * @return
+    * @param scale scaling factor
+    * @return scaled image
     */
    private BufferedImage scaleImage(BufferedImage image, double scale) {
 	   BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
