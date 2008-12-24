@@ -113,7 +113,6 @@ public class BERTLVInputStream extends InputStream
 		return skip(bytesLeft);
 	}
 
-
 	/**
 	 * Skips in this stream until a given tag is found (depth first).
 	 * The stream is positioned right after the first occurrence of the tag.
@@ -172,12 +171,11 @@ public class BERTLVInputStream extends InputStream
 
 	public synchronized void mark(int readLimit) {
 		in.mark(readLimit);
-		markedState = state; /* FIXME: need deep copy */
+		markedState = (State)state.clone();
 	}
 
-
 	public boolean markSupported() {
-		return false; // FIXME: see mark(), in.markSupported();
+		return in.markSupported();
 	}
 
 	public synchronized void reset() throws IOException {
@@ -186,6 +184,7 @@ public class BERTLVInputStream extends InputStream
 		}
 		in.reset();
 		state = markedState;
+		markedState = null;
 	}
 
 	public void close() throws IOException {
@@ -204,29 +203,52 @@ public class BERTLVInputStream extends InputStream
 	}
 
 	/**
-	 *
+	 * State keeps track of where we are in the TLV stream.
 	 */
-	private class State
+	private class State implements Cloneable
 	{
+		/** Which tags have we seen thus far? */
 		private Stack<TLStruct> state;
-		private boolean isAtStartOfTag;
+		
+		/** FIXME: These are probably redundant... */
+		private boolean isAtStartOfTag, isAtStartOfLength, isReadingValue;
 
+		/*
+		 * TFF: ^TLVVVVVV
+		 * FTF: T^LVVVVVV
+		 * FFT: TL^VVVVVV
+		 * FFT: TLVVVV^VV
+		 * TFF: ^
+		 */
+		
 		public State() {
 			state = new Stack<TLStruct>();
 			isAtStartOfTag = true;
+			isAtStartOfLength = false;
+			isReadingValue = false;
+		}
+		
+		private State(Stack<TLStruct> state, boolean isAtStartOfTag, boolean isAtStartOfLength, boolean isReadingValue) {
+			this.state = state;
+			this.isAtStartOfTag = isAtStartOfTag;
+			this.isAtStartOfLength = isAtStartOfLength;
+			this.isReadingValue = isReadingValue;
 		}
 
-		public boolean isAtStartOfTag() { /* FIXME: wrong */
+		public boolean isAtStartOfTag() {
 			return isAtStartOfTag;
-//			if (state.isEmpty()) { return true; }
-//			TLStruct currentObject = state.peek();
-//			return (currentObject.getLength() >= 0 && currentObject.getBytesRead() == 0);
 		}
 
 		public boolean isAtStartOfLength() {
-			if (state.isEmpty()) { return false; }
-			TLStruct currentObject = state.peek();
-			return currentObject.getLength() < 0;
+			return isAtStartOfLength;
+//			if (state.isEmpty()) { return false; }
+//			if (isAtStartOfTag()) { return false; }
+//			TLStruct currentObject = state.peek();
+//			return currentObject.getLength() < 0;
+		}
+		
+		public boolean isReadingValue() {
+			return isReadingValue;
 		}
 
 		public int getTag() {
@@ -258,18 +280,21 @@ public class BERTLVInputStream extends InputStream
 			if (currentLength < 0) {
 				throw new IllegalStateException("Not yet reading value.");
 			}
-			int currentBytesRead = currentObject.getBytesRead();
+			int currentBytesRead = currentObject.getValueBytesRead();
 			return currentLength - currentBytesRead;
 		}
 
 		public void setTagRead(int tag, int bytesRead) {
-			TLStruct obj = new TLStruct(tag, -1);
+			/* Length is set to -1, we will update it when we encounter it */
+			TLStruct obj = new TLStruct(tag, -1, 0);
 			if (!state.isEmpty()) {
 				TLStruct parent = state.peek();
 				parent.updateValueBytesRead(bytesRead);
 			}
 			state.push(obj);
 			isAtStartOfTag = false;
+			isAtStartOfLength = true;
+			isReadingValue = false;
 		}
 
 		public void setLengthRead(int length, int bytesRead) {
@@ -284,56 +309,60 @@ public class BERTLVInputStream extends InputStream
 			obj.setLength(length);
 			state.push(obj);
 			isAtStartOfTag = false;
+			isAtStartOfLength = false;
+			isReadingValue = true;
 		}
 
 		public void updateValueBytesRead(int n) {
 			if (state.isEmpty()) { return; }
 			TLStruct currentObject = state.peek();
-			int bytesLeft = currentObject.getLength() - currentObject.getBytesRead();
+			int bytesLeft = currentObject.getLength() - currentObject.getValueBytesRead();
 			if (n > bytesLeft) {
 				throw new IllegalArgumentException("Cannot read " + n + " bytes! Only " + bytesLeft + " bytes left in this TLV object " + currentObject);
 			}
 			currentObject.updateValueBytesRead(n);
 			int currentLength = currentObject.getLength();
-			if (currentObject.getBytesRead() == currentLength) {
+			if (currentObject.getValueBytesRead() == currentLength) {
 				state.pop();
-				/* Recursively update parent. */
+				/* Stand back! I'm going to try recursion! Update parent(s)... */
 				updateValueBytesRead(currentLength);
 				isAtStartOfTag = true;
+				isAtStartOfLength = false;
+				isReadingValue = false;
 			} else {
 				isAtStartOfTag = false;
+				isAtStartOfLength = false;
+				isReadingValue = true;
 			}
+		}
+		
+		public Object clone() {
+			return new State((Stack<TLStruct>)state.clone(), isAtStartOfTag, isAtStartOfLength, isReadingValue);
+		}
+		
+		public String toString() {
+			return state.toString();
 		}
 
 		private class TLStruct implements Cloneable
 		{
-			private int tag, length, bytesRead;
+			private int tag, length, valueBytesRead;
 
-			public TLStruct(int tag, int length) {
-				this.tag = tag; this.length = length; this.bytesRead = 0;
-			}
+			public TLStruct(int tag, int length, int valueBytesRead) { this.tag = tag; this.length = length; this.valueBytesRead = valueBytesRead; }
 
-			public void setLength(int length) {
-				this.length = length;
-			}
+			public void setLength(int length) { this.length = length; }
 
 			public int getTag() { return tag; }
 
 			public int getLength() { return length; }
 
-			public int getBytesRead() { return bytesRead; }
+			public int getValueBytesRead() { return valueBytesRead; }
 
-			public void updateValueBytesRead(int n) {
-				this.bytesRead += n;
-			}
+			public void updateValueBytesRead(int n) { this.valueBytesRead += n; }
 
-			public Object clone() {
-				TLStruct result = new TLStruct(tag, length);
-				result.bytesRead = bytesRead;
-				return result;
-			}
+			public Object clone() { return new TLStruct(tag, length, valueBytesRead); }
 
-			public String toString() { return "[TLStruct " + Integer.toHexString(tag) + ", " + length + ", " + bytesRead + "]"; }
+			public String toString() { return "[TLStruct " + Integer.toHexString(tag) + ", " + length + ", " + valueBytesRead + "]"; }
 		}
 	}
 }
