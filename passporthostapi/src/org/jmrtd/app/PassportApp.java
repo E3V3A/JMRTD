@@ -97,18 +97,12 @@ public class PassportApp  implements PassportListener
 		new File(new File(System.getProperty("user.home")), ".jmrtd");
 
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
-	private static final Icon NEW_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
-	private static final Icon NEW_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
-	private static final Icon OPEN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
-	private static final Icon OPEN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
-	private static final Icon EXIT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
-	private static final Icon EXIT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
-	private static final Icon TERMINAL_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
-	private static final Icon TERMINAL_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
-	private static final Icon TERMINAL_GO_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
-	private static final Icon TERMINAL_GO_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
-	private static final Icon INFORMATION_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-	private static final Icon INFORMATION_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
+	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
+	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
+	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
+	private static final Icon TERMINAL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
+	private static final Icon TERMINAL_GO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
+	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 
 	private static final String ABOUT_INFO = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 
@@ -315,8 +309,8 @@ public class PassportApp  implements PassportListener
 				passportFrame.setVisible(true);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, NEW_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, NEW_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, NEW_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, NEW_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Create new passport");
 		action.putValue(Action.NAME, "New");
 		return action;
@@ -347,8 +341,8 @@ public class PassportApp  implements PassportListener
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, OPEN_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, OPEN_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, OPEN_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Read passport from file");
 		action.putValue(Action.NAME, "Open File...");
 		return action;
@@ -360,8 +354,8 @@ public class PassportApp  implements PassportListener
 				System.exit(0);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, EXIT_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, EXIT_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, EXIT_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, EXIT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Exit application");
 		action.putValue(Action.NAME, "Exit");
 		return action;
@@ -383,8 +377,8 @@ public class PassportApp  implements PassportListener
 
 			}	
 		};
-		action.putValue(Action.SMALL_ICON, TERMINAL_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, TERMINAL_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Read card from " + terminal.getName());
 		action.putValue(Action.NAME, "Read from " + terminal.getName());
 		return action;
@@ -413,8 +407,8 @@ public class PassportApp  implements PassportListener
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, INFORMATION_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, INFORMATION_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "About this application");
 		action.putValue(Action.NAME, "About...");
 		return action;

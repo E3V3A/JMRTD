@@ -47,7 +47,7 @@ import sos.util.Icons;
  */
 public class FacePreviewPanel extends JPanel
 {	
-	private static final Icon IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
+	private static final Icon IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
 	private static final Component PLACE_HOLDER = new JLabel("No image", JLabel.CENTER);
 
 	private int width, height;
@@ -69,6 +69,7 @@ public class FacePreviewPanel extends JPanel
 
 	public void addFace(FaceInfo faceInfo) {
 		try {
+			System.out.println("DEBUG: addFace");
 			int tabCount = tabbedPane.getTabCount();
 			if (tabCount <= 0) {
 				remove(PLACE_HOLDER);
@@ -105,16 +106,10 @@ public class FacePreviewPanel extends JPanel
 		JPanel panel = new JPanel(new FlowLayout());
 		panel.add(new JLabel(new ImageIcon(image)));
 		int index = tabbedPane.getTabCount();
-		tabbedPane.addTab(Integer.toString(index), IMAGE_SMALL_ICON, panel);
+		tabbedPane.addTab(Integer.toString(index), IMAGE_ICON, panel);
 	}
-
-//	private void addDummyFace(int width, int height) {
-//		BufferedImage dummyImage = new BufferedImage(width - 10, height - 10, BufferedImage.TYPE_INT_ARGB);
-//		addImage(dummyImage);
-//	}
 
 	private void removeImage(int index) {
 		tabbedPane.removeTabAt(index);
 	}
 }
-

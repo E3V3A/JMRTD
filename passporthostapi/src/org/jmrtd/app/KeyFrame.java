@@ -55,10 +55,8 @@ public class KeyFrame extends JFrame
 {
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 
-	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
 	private KeyPanel keyPanel;
 
@@ -126,8 +124,8 @@ public class KeyFrame extends JFrame
 				}
 			}			
 		};
-		action.putValue(Action.SMALL_ICON, SAVE_AS_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save key to file");
 		action.putValue(Action.NAME, "Save As...");
 		return action;
@@ -139,8 +137,8 @@ public class KeyFrame extends JFrame
 				dispose();
 			}	
 		};
-		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, CLOSE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
 		return action;

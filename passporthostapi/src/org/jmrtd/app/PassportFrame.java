@@ -127,26 +127,16 @@ public class PassportFrame extends JFrame
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
 
-	private static final Icon CERTIFICATE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
-	private static final Icon CERTIFICATE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
-	private static final Icon KEY_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
-	private static final Icon KEY_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
-	private static final Icon MAGNIFIER_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
-	private static final Icon MAGNIFIER_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
-	private static final Icon SAVE_AS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon SAVE_AS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon LOAD_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
-	private static final Icon LOAD_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
-	private static final Icon DELETE_IMAGE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-	private static final Icon LOAD_CERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
-	private static final Icon LOAD_CERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
-	private static final Icon LOAD_KEY_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
-	private static final Icon LOAD_KEY_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
-	private static final Icon DELETE_IMAGE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-	private static final Icon UPLOAD_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-	private static final Icon UPLOAD_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
+	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
+	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon LOAD_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon DELETE_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
+	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
+	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
+	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
 	private Logger logger = Logger.getLogger(getClass().getName());
 
@@ -375,13 +365,10 @@ public class PassportFrame extends JFrame
 			(new Thread(new Runnable() {
 				public void run() {
 					try {
-						//						ProgressMonitor m = new ProgressMonitor(getContentPane(), "Reading ", "[" + 0 + "/" + (totalLength / 1024) + " kB]", 0, totalLength);
 						progressBar.setMaximum(totalLength);
 						while (estimateBytesRead() >  0) {
 							Thread.sleep(200);
 							int bytesRead = estimateBytesRead();
-							//							m.setProgress(bytesRead);
-							//							m.setNote("[" + (bytesRead / 1024) + "/" + (totalLength /1024) + " kB]");
 							progressBar.setValue(bytesRead);
 						}
 					} catch (InterruptedException ie) {
@@ -420,7 +407,7 @@ public class PassportFrame extends JFrame
 				}
 			});
 
-			for (short fid: bufferedStreams.keySet()) {
+			for (short fid: fileStreams.keySet()) {
 				InputStream in = getFile(fid);
 				switch (fid) {
 				case PassportService.EF_COM:
@@ -430,8 +417,9 @@ public class PassportFrame extends JFrame
 					/* NOTE: Already processed this one above. */
 					break;
 				case PassportService.EF_DG2:
+					System.out.println("DEBUG: displaying dg2 PRE, in is of type " + in.getClass().getSimpleName());
 					dg2 = new DG2File(in);
-					System.out.println("DEBUG: displaying dg2, in is of type " + in.getClass().getSimpleName());
+					System.out.println("DEBUG: displaying dg2 POST, in is of type " + in.getClass().getSimpleName());
 					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
 				case PassportService.EF_DG3:
@@ -743,8 +731,8 @@ public class PassportFrame extends JFrame
 				dispose();
 			}
 		};
-		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, CLOSE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
 		return action;
@@ -785,8 +773,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, SAVE_AS_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save passport to file");
 		action.putValue(Action.NAME, "Save As...");
 		return action;
@@ -806,8 +794,8 @@ public class PassportFrame extends JFrame
 				portraitFrame.pack();
 			}
 		};
-		action.putValue(Action.SMALL_ICON, MAGNIFIER_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, MAGNIFIER_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
 		action.putValue(Action.NAME, "Portrait at 100%...");
 		return action;
@@ -848,8 +836,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, LOAD_IMAGE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_IMAGE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, LOAD_IMAGE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_IMAGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Import (additional) portrait from file");
 		action.putValue(Action.NAME, "Import portrait...");
 		return action;
@@ -864,8 +852,8 @@ public class PassportFrame extends JFrame
 				facePreviewPanel.removeFace(index);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, DELETE_IMAGE_LARGE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, DELETE_IMAGE_SMALL_ICON);
+		action.putValue(Action.SMALL_ICON, DELETE_IMAGE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, DELETE_IMAGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Delete selected portrait");
 		action.putValue(Action.NAME, "Delete portrait");
 		return action;
@@ -891,8 +879,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, LOAD_CERT_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer Certificate from file");
 		action.putValue(Action.NAME, "Import Doc.Cert...");
 		return action;
@@ -919,8 +907,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, LOAD_KEY_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication public key from file");
 		action.putValue(Action.NAME, "Import AA Pub.Key...");
 		return action;
@@ -934,8 +922,8 @@ public class PassportFrame extends JFrame
 				certificateFrame.setVisible(true);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, CERTIFICATE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Document Signer Certificate");
 		action.putValue(Action.NAME, "Doc. Cert...");
 		return action;
@@ -953,8 +941,8 @@ public class PassportFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, CERTIFICATE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
 		action.putValue(Action.NAME, "CSCA Cert...");
 		return action;
@@ -971,8 +959,8 @@ public class PassportFrame extends JFrame
 				keyFrame.setVisible(true);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, KEY_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, KEY_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Public Key");
 		action.putValue(Action.NAME, "AA Pub. Key...");
 		return action;
@@ -1036,8 +1024,8 @@ public class PassportFrame extends JFrame
 				cm.start();
 			}			
 		};
-		action.putValue(Action.SMALL_ICON, UPLOAD_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, UPLOAD_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, UPLOAD_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, UPLOAD_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Upload this passport to a passport applet");
 		action.putValue(Action.NAME, "Upload passport...");
 		return action;

@@ -66,15 +66,10 @@ public class PortraitFrame extends JFrame
 {
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 
-	private static final Icon SAVE_AS_PNG_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon SAVE_AS_PNG_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon CLOSE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon IMAGE_INFO_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-	private static final Icon IMAGE_INFO_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-	private static final Icon FEATURE_POINTS_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
-	private static final Icon FEATURE_POINTS_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
-
+	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
+	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
 
 	private FaceInfo info;
 	private ImagePanel imagePanel;
@@ -162,8 +157,8 @@ public class PortraitFrame extends JFrame
 				}
 			}
 		};
-		action.putValue(Action.SMALL_ICON, SAVE_AS_PNG_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_PNG_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, SAVE_AS_PNG_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_PNG_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save image as bitmap");
 		action.putValue(Action.NAME, "Save As...");
 		return action;
@@ -177,8 +172,8 @@ public class PortraitFrame extends JFrame
 				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "Image information", JOptionPane.PLAIN_MESSAGE, null);
 			}
 		};
-		action.putValue(Action.SMALL_ICON, IMAGE_INFO_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, IMAGE_INFO_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, IMAGE_INFO_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, IMAGE_INFO_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Image Information");
 		action.putValue(Action.NAME, "Image Info...");
 		return action;
@@ -205,8 +200,8 @@ public class PortraitFrame extends JFrame
 				}
 			}			
 		};
-		action.putValue(Action.SMALL_ICON, FEATURE_POINTS_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, FEATURE_POINTS_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, FEATURE_POINTS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, FEATURE_POINTS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Feature Points");
 		action.putValue(Action.NAME, "Feature Points");
 		return action;
@@ -218,8 +213,8 @@ public class PortraitFrame extends JFrame
 				dispose();
 			}
 		};
-		action.putValue(Action.SMALL_ICON, CLOSE_SMALL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CLOSE_LARGE_ICON);
+		action.putValue(Action.SMALL_ICON, CLOSE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
 		return action;
