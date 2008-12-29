@@ -64,6 +64,8 @@ import sos.tlv.BERTLVObject;
  */
 public class FaceInfo
 {
+	private static boolean DEBUG = true;
+	
    /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
     /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
@@ -236,7 +238,7 @@ public class FaceInfo
     * @throws IOException if input cannot be read
     */
    FaceInfo(InputStream in) throws IOException {
-	   System.out.println("DEBUG: new FaceInfo(in) in of type " + in.getClass().getSimpleName());
+	   debug("new FaceInfo(in) in of type " + in.getClass().getSimpleName());
       dataIn = new DataInputStream(in);
       
       /* Facial Information (20) */
@@ -395,106 +397,90 @@ public class FaceInfo
 			   ImageReadParam pm = reader.getDefaultReadParam();
 			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
 			   pm.setSourceProgressivePasses(1, 8);
-			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
+			   // pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
 			   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
 
-				@Override
 				public void imageUpdate(ImageReader source,
 						BufferedImage theImage, int minX, int minY, int width,
 						int height, int periodX, int periodY, int[] bands) {
-					System.out.println("DEBUG: imageUpdate");
-					
+					debug("imageUpdate");					
 				}
 
-				@Override
 				public void passComplete(ImageReader source,
 						BufferedImage theImage) {
-					System.out.println("DEBUG: passCompleted");
+					debug("passCompleted");
 					
 				}
 
-				@Override
 				public void passStarted(ImageReader source,
 						BufferedImage theImage, int pass, int minPass,
 						int maxPass, int minX, int minY, int periodX,
 						int periodY, int[] bands) {
-					System.out.println("DEBUG: passStarted");
+					debug("passStarted");
 					
 				}
 
-				@Override
 				public void thumbnailPassComplete(ImageReader source,
 						BufferedImage theThumbnail) {
-					System.out.println("DEBUG: thumbNailPassComplete");
+					debug("thumbNailPassComplete");
 					
 				}
 
-				@Override
 				public void thumbnailPassStarted(ImageReader source,
 						BufferedImage theThumbnail, int pass, int minPass,
 						int maxPass, int minX, int minY, int periodX,
 						int periodY, int[] bands) {
-					System.out.println("DEBUG: thumbnailPassStarted");
+					debug("thumbnailPassStarted");
 				}
-
-				@Override
+				
 				public void thumbnailUpdate(ImageReader source,
 						BufferedImage theThumbnail, int minX, int minY,
 						int width, int height, int periodX, int periodY,
 						int[] bands) {
-					System.out.println("DEBUG: thumbnailUpdate");
+					debug("thumbnailUpdate");
 					
 				}
 				   
 			   });
 			   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
-
-				@Override
+				
 				public void imageComplete(ImageReader source) {
-					System.out.println("DEBUG: imageComplete");
+					debug("imageComplete");
 				}
-
-				@Override
+				
 				public void imageProgress(ImageReader source,
 						float percentageDone) {
-					System.out.println("DEBUG: imageProgress " + percentageDone);
+					debug("imageProgress " + percentageDone);
 				}
-
-				@Override
+				
 				public void imageStarted(ImageReader source, int imageIndex) {
-					System.out.println("DEBUG: imageStarted");
+					debug("imageStarted");
 				}
-
-				@Override
+				
 				public void readAborted(ImageReader source) {
-					System.out.println("DEBUG: readAborted");
+					debug("readAborted");
 				}
-
-				@Override
+				
 				public void sequenceComplete(ImageReader source) {
-					System.out.println("DEBUG: sequenceComplete");
+					debug("sequenceComplete");
 				}
-
-				@Override
+				
 				public void sequenceStarted(ImageReader source, int minIndex) {
-					System.out.println("DEBUG: sequenceStarted");
+					debug("sequenceStarted");
 				}
-
-				@Override
+				
 				public void thumbnailComplete(ImageReader source) {
-					System.out.println("DEBUG: thumbnailComplete");
+					debug("thumbnailComplete");
 				}
-
-				@Override
+				
 				public void thumbnailProgress(ImageReader source,
 						float percentageDone) {
-					System.out.println("DEBUG: thumbnailProgress");
+					debug("thumbnailProgress");
 				}
 
-				@Override
 				public void thumbnailStarted(ImageReader source,
 						int imageIndex, int thumbnailIndex) {
-					System.out.println("DEBUG: thumbnailStarted");
+					debug("thumbnailStarted");
 				}
 				   
 			   });
@@ -527,7 +513,7 @@ public class FaceInfo
 //	   if (desiredWidth > width) { desiredWidth = width; }
 //	   if (desiredHeight > height) { desiredHeight = height; }
 //
-//	   System.out.println("DEBUG: wwidth = " + width);
+//	   debug("wwidth = " + width);
 //	   
 //	   /* A scaling factor that respects aspect ratio. */
 //	   double xScale = (double)desiredWidth / (double)width;
@@ -592,7 +578,7 @@ public class FaceInfo
 
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
-	   System.out.println("DEBUG: writing mimeType = " + mimeType);
+	   debug("writing mimeType = " + mimeType);
       Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
       if (!writers.hasNext()) {
          throw new IOException("No writers for \"" + mimeType + "\"");
@@ -1120,6 +1106,10 @@ public class FaceInfo
          out.append(")");
          return out.toString();
       }
+   }
+   
+   private void debug(Object obj) {
+	   if (DEBUG) { System.out.println("DEBUG: " + obj.toString()); }
    }
    
    /* For testing... */
