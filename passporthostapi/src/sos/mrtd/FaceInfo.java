@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Rectangle;
