@@ -302,7 +302,7 @@ public class FaceInfo
       dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
       // dataIn.mark((int)faceImageBlockLength); // FIXME: better not... what if client code marks/resets in?
    }
-   
+
    public byte[] getEncoded() {
       try {
          ByteArrayOutputStream out = new ByteArrayOutputStream();
