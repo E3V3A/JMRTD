@@ -30,10 +30,12 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
+import org.omg.PortableInterceptor.SUCCESSFUL;
+
 import sos.util.Icons;
 
 /**
- * Component for showing the verification status.
+ * Component for displaying the verification status.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
@@ -48,10 +50,10 @@ public class VerificationIndicator extends Box
 	
 	public static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
 
-	public Image
+	public static final Image
 	VERIFICATION_SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
 	VERIFICATION_FAILED_ICON = Icons.getFamFamFamSilkIcon("cross"),
-	VERIFICATION_UNKNOWN_ICON = Icons.getFamFamFamSilkIcon("error");
+	VERIFICATION_NOT_CHECKED_ICON = Icons.getFamFamFamSilkIcon("error");
 
 	private static final int SPACING = 25;
 
@@ -60,17 +62,17 @@ public class VerificationIndicator extends Box
 
 	public VerificationIndicator() {
 		super(BoxLayout.X_AXIS);
-		bacIcon = new ImageIcon(VERIFICATION_UNKNOWN_ICON);
-		aaIcon = new ImageIcon(VERIFICATION_UNKNOWN_ICON);
-		dsIcon = new ImageIcon(VERIFICATION_UNKNOWN_ICON);
-		csIcon = new ImageIcon(VERIFICATION_UNKNOWN_ICON);
+		bacIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
+		aaIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
+		dsIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
+		csIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
 
 		bacLabel = new JLabel(bacIcon);
 		aaLabel = new JLabel(aaIcon);
 		dsLabel = new JLabel(dsIcon);
 		csLabel = new JLabel(csIcon);
 
-		setAAState(VERIFICATION_UNKNOWN);
+		setAANotChecked();
 
 		JLabel bacKeyLabel = new JLabel("BAC: ");
 		bacKeyLabel.setFont(KEY_FONT);
@@ -99,15 +101,57 @@ public class VerificationIndicator extends Box
 		add(csLabel);
 	}
 
-	public void setBACState(int state) { setState(BAC_INDICATOR, state); }
-
-	public void setAAState(int state) { setState(AA_INDICATOR, state);	}
-
-	public void setDSState(int state) { setState(DS_INDICATOR, state); }
+	public void setBACSucceeded() {
+		setState(BAC_INDICATOR, VERIFICATION_SUCCEEDED, "Succeeded");
+	}
 	
-	public void setCSState(int state) {	setState(CS_INDICATOR, state); }
+	public void setBACFailed(String reason) {
+		setState(BAC_INDICATOR, VERIFICATION_FAILED, reason);
+	}
 	
-	private void setState(int indicator, int result) {
+	public void setBACNotChecked() {
+		setState(BAC_INDICATOR, VERIFICATION_UNKNOWN, null);
+	}
+
+	public void setAASucceeded() {
+		setState(AA_INDICATOR, VERIFICATION_SUCCEEDED, null);
+	}
+
+	public void setAAFailed(String reason) {
+		setState(AA_INDICATOR, VERIFICATION_FAILED, reason);
+	}
+	
+	public void setAANotChecked() {
+		setState(AA_INDICATOR, VERIFICATION_UNKNOWN, null);
+	}
+
+	public void setDSSucceeded() {
+		setState(DS_INDICATOR, VERIFICATION_SUCCEEDED, null);
+	}
+
+	public void setDSFailed(String reason) {
+		setState(DS_INDICATOR, VERIFICATION_FAILED, reason);
+	}
+
+	public void setDSNotChecked() {
+		setState(DS_INDICATOR, VERIFICATION_UNKNOWN, null);
+	}
+
+	public void setCSSucceeded() {
+		setState(CS_INDICATOR, VERIFICATION_SUCCEEDED, null);
+	}
+
+	public void setCSFailed(String reason) {
+		setState(CS_INDICATOR, VERIFICATION_FAILED, reason);
+	}
+
+	public void setCSNotChecked(String reason) {
+		setState(CS_INDICATOR, VERIFICATION_UNKNOWN, reason);
+	}
+		
+//	private void setAAState(int state) { setState(AA_INDICATOR, state, null);	}
+	
+	private void setState(int indicator, int result, String reason) {
 		ImageIcon icon = null;
 		JLabel label = null;
 		switch (indicator) {
@@ -119,17 +163,18 @@ public class VerificationIndicator extends Box
 		switch (result) {
 		case VERIFICATION_SUCCEEDED:
 			icon.setImage(VERIFICATION_SUCCEEDED_ICON);
-			label.setToolTipText("Succeeded");
+			label.setToolTipText(reason == null ? "Succeeded" : reason);
 			break;
 		case VERIFICATION_FAILED:
 			icon.setImage(VERIFICATION_FAILED_ICON);
-			label.setToolTipText("Failed");
+			label.setToolTipText(reason == null ? "Failed" : reason);
 			break;
 		default:
-			icon.setImage(VERIFICATION_UNKNOWN_ICON);
-			label.setToolTipText("Not checked");
+			icon.setImage(VERIFICATION_NOT_CHECKED_ICON);
+			label.setToolTipText(reason == null ? "Not checked" : reason);
 			break;
 		}
+		revalidate();
 		repaint();
 	}
 }

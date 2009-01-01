@@ -167,7 +167,7 @@ public class PassportFrame extends JFrame
 
 	private X509Certificate docSigningCert, countrySigningCert;
 
-	private VerificationIndicator verificationPanel;
+	private VerificationIndicator verificationIndicator;
 	private boolean isAAVerified;
 	private boolean isDSVerified;
 	private Country issuingState;
@@ -177,13 +177,13 @@ public class PassportFrame extends JFrame
 	public PassportFrame() {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
-		verificationPanel = new VerificationIndicator();
+		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
 		southPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
-		southPanel.add(verificationPanel);
+		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
 		panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
@@ -215,7 +215,9 @@ public class PassportFrame extends JFrame
 		final PassportService s = service;
 		try {
 			this.bacEntry = bacEntry;
-			verificationPanel.setBACState(bacEntry != null ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_UNKNOWN);
+			if (bacEntry != null) {
+				verificationIndicator.setBACSucceeded();
+			}
 			putFile(PassportService.EF_COM, service, true);
 			putFile(PassportService.EF_SOD, service, true);
 			InputStream comIn = getFile(PassportService.EF_COM);
@@ -315,7 +317,7 @@ public class PassportFrame extends JFrame
 					}
 				}
 			})).start();
-			
+
 			InputStream dg1In = getFile(PassportService.EF_DG1);
 			dg1 = new DG1File(dg1In);
 			MRZInfo mrzInfo = dg1.getMRZInfo();
@@ -339,10 +341,10 @@ public class PassportFrame extends JFrame
 					dg1 = new DG1File(updatedMRZInfo);
 					putFile(PassportService.EF_DG1, dg1.getEncoded());
 					isAAVerified = false;
-					verificationPanel.setBACState(VerificationIndicator.VERIFICATION_UNKNOWN);
-					verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
-					verificationPanel.setDSState(VerificationIndicator.VERIFICATION_UNKNOWN);
-					verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+					verificationIndicator.setBACNotChecked();
+					verificationIndicator.setAANotChecked();
+					verificationIndicator.setDSNotChecked();
+					verificationIndicator.setCSNotChecked(null);
 				}
 			});
 
@@ -462,8 +464,17 @@ public class PassportFrame extends JFrame
 
 	private void verifySecurity(PassportService service) {
 
+		verificationIndicator.setBACNotChecked();
+		verificationIndicator.setAANotChecked();
+		verificationIndicator.setDSNotChecked();
+		verificationIndicator.setCSNotChecked(null);
+
 		/* Check whether BAC was used */
-		verificationPanel.setBACState(bacEntry != null ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
+		if (bacEntry != null) {
+			verificationIndicator.setBACSucceeded();
+		} else {
+			verificationIndicator.setBACFailed("BAC not used");
+		}
 
 		/* Check active authentication */
 		try {
@@ -471,38 +482,41 @@ public class PassportFrame extends JFrame
 			if (dg15In != null && service != null) {
 				dg15 = new DG15File(dg15In);
 				PublicKey pubKey = dg15.getPublicKey();
-				isAAVerified = service.doAA(pubKey);
+				if (service.doAA(pubKey)) {
+					verificationIndicator.setAASucceeded();
+				} else {
+					verificationIndicator.setAAFailed("Response to AA incorrect");
+				}
 			}
-			verificationPanel.setAAState(isAAVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 			docSigningCert = null;
 			countrySigningCert = null;
 		} catch (CardServiceException cse) {
-			verificationPanel.setAAState(VerificationIndicator.VERIFICATION_UNKNOWN);
+			verificationIndicator.setAAFailed(cse.getMessage());
 		}
 
 		/* Check hashes in the SOd correspond to hashes we compute. */
 		try {
 			InputStream comIn = getFile(PassportService.EF_COM);
-			COMFile comFile = new COMFile(comIn);
-			List<Integer> tagList = comFile.getTagList();
+			com = new COMFile(comIn);
+			List<Integer> tagList = com.getTagList();
 			Collections.sort(tagList);
 
 			InputStream sodIn = getFile(PassportService.EF_SOD);
-			SODFile sodFile = new SODFile(sodIn);
-			Map<Integer, byte[]> hashes = sodFile.getDataGroupHashes();
+			sod = new SODFile(sodIn);
+			Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
 
-			isDSVerified = true;
+			verificationIndicator.setDSNotChecked();
 
 			/* Jeroen van Beek sanity check */
 			List<Integer> tagsOfHashes = new ArrayList<Integer>();
 			tagsOfHashes.addAll(hashes.keySet());
 			Collections.sort(tagsOfHashes);
 			if (tagsOfHashes.equals(tagList)) {
-				System.err.println("WARNING: \"Jeroen van Beek sanity check\" failed!");
-				isDSVerified = false;
+				verificationIndicator.setDSFailed("\"Jeroen van Beek sanity check\" failed!");
+				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
 
-			String algorithm = sodFile.getDigestAlgorithm();
+			String algorithm = sod.getDigestAlgorithm();
 			MessageDigest digest = MessageDigest.getInstance(algorithm);
 
 			for (int dgNumber: hashes.keySet()) {
@@ -514,8 +528,7 @@ public class PassportFrame extends JFrame
 
 				InputStream dgIn = getFile(dgFID);
 				dgIn.reset();
-				System.out.println("DEBUG: dgIn for DG" + dgNumber + " of type " + dgIn.getClass().getSimpleName());
-				
+
 				byte[] buf = new byte[1024];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
@@ -524,30 +537,33 @@ public class PassportFrame extends JFrame
 				}
 				byte[] computedHash = digest.digest();
 				if (!Arrays.equals(storedHash, computedHash)) {
-					isDSVerified = false;
-					System.out.println("DEBUG: sh = " + Hex.bytesToHexString(storedHash));
-					System.out.println("DEBUG: ch = " + Hex.bytesToHexString(computedHash));
-
-					break;
+					verificationIndicator.setDSFailed("Authentication of DG" + dgNumber + " failed");
+					System.out.println("DEBUG: stored hash = " + Hex.bytesToHexString(storedHash));
+					System.out.println("DEBUG: computed hash = " + Hex.bytesToHexString(computedHash));
+					return; /* NOTE: Serious enough to not perform other checks, leave method. */
 				}
-				System.out.println("DEBUG: sh = " + Hex.bytesToHexString(storedHash));
-				System.out.println("DEBUG: ch = " + Hex.bytesToHexString(computedHash));
 			}
 
-			docSigningCert = sodFile.getDocSigningCertificate();
-			isDSVerified &= sodFile.checkDocSignature(docSigningCert);
+			docSigningCert = sod.getDocSigningCertificate();
+			if (sod.checkDocSignature(docSigningCert)) {
+				verificationIndicator.setDSSucceeded();
+			} else {
+				verificationIndicator.setDSFailed("DS Signature incorrect");
+			}
 		} catch (NoSuchAlgorithmException nsae) {
-			isDSVerified = false;
-			nsae.printStackTrace();
-		} catch (Exception ioe) {
-			isDSVerified = false;
-			ioe.printStackTrace();
+			verificationIndicator.setDSFailed(nsae.getMessage());
+			return; /* NOTE: Serious enough to not perform other checks, leave method. */
+		} catch (Exception e) {
+			verificationIndicator.setDSFailed(e.getMessage());
+			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
-		verificationPanel.setDSState(isDSVerified ? VerificationIndicator.VERIFICATION_SUCCEEDED : VerificationIndicator.VERIFICATION_FAILED);
 
 		/* Check country signer certificate, if known. */
+		if (docSigningCert == null) {
+			verificationIndicator.setCSFailed("Cannot check CSCA: missing DS certificate");
+			return; /* NOTE: Serious enough to not perform other checks, leave method. */
+		}
 		try {
-			if (docSigningCert == null) { throw new IllegalStateException("Cannot check CSCA if DS failed"); }
 			issuingState = null;
 			InputStream dg1In = getFile(PassportService.EF_DG1);
 			if (dg1In != null) {
@@ -562,28 +578,29 @@ public class PassportFrame extends JFrame
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			InputStream cscaIn = cscaFile.openStream();
 			if (cscaIn == null) {
-				throw new IllegalStateException("CSCA check failed");
+				verificationIndicator.setCSFailed("Cannot get CS certificate");
+				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
 			countrySigningCert = (X509Certificate)certFactory.generateCertificate(cscaIn);
 			docSigningCert.verify(countrySigningCert.getPublicKey());
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_SUCCEEDED);
-
+			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+			verificationIndicator.setCSFailed("Could not open CSCA certificate");
+			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		} catch (SignatureException se) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
-		} catch (CertificateException e) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+			verificationIndicator.setCSFailed(se.getMessage());
+		} catch (CertificateException ce) {
+			verificationIndicator.setCSFailed(ce.getMessage());
 		} catch (GeneralSecurityException gse) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+			verificationIndicator.setCSFailed(gse.getMessage());
 			gse.printStackTrace();
 		} catch (IOException ioe) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_UNKNOWN);
+			verificationIndicator.setCSFailed("Could not open CSCA certificate");
 		} catch (Exception e) {
-			verificationPanel.setCSState(VerificationIndicator.VERIFICATION_FAILED);
+			verificationIndicator.setCSFailed(e.getMessage());
 		}
 
-		verificationPanel.revalidate();
+//		verificationIndicator.revalidate();
 	}
 
 	public void createEmptyPassport() {
@@ -647,7 +664,7 @@ public class PassportFrame extends JFrame
 			e.printStackTrace();
 		}
 	}	
-	
+
 	/* Menu stuff below... */
 
 	private JMenu createFileMenu() {
