@@ -222,7 +222,8 @@ public class PassportFrame extends JFrame
 			COMFile com = new COMFile(comIn);
 			for (int dgTag: com.getTagList()) {
 				// EXPERIMENTAL, don't buffer dg2, read it from service while displaying...
-				putFile(PassportFile.lookupFIDByTag(dgTag), service, dgTag != PassportFile.EF_DG2_TAG);
+				// putFile(PassportFile.lookupFIDByTag(dgTag), service, dgTag != PassportFile.EF_DG2_TAG);
+				putFile(PassportFile.lookupFIDByTag(dgTag), service, true);
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
@@ -250,68 +251,6 @@ public class PassportFrame extends JFrame
 			if (cardIn != null) { bytesRead += cardIn.getFilePos(); }
 		}
 		return bytesRead;
-	}
-
-	public void createEmptyPassport() {
-		try {
-			/* EF.COM */
-			List<Integer> tagList = new ArrayList<Integer>();
-			tagList.add(PassportFile.EF_DG1_TAG);
-			tagList.add(PassportFile.EF_DG2_TAG);
-			COMFile com = new COMFile("01", "07", "04", "00", "00", tagList);
-			byte[] comBytes = com.getEncoded();
-
-			/* EF.DG1 */
-			Date today = Calendar.getInstance().getTime();
-			String primaryIdentifier = "";
-			String[] secondaryIdentifiers = { "" };
-			MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
-			DG1File dg1 = new DG1File(mrzInfo);
-			byte[] dg1Bytes = dg1.getEncoded();
-
-			/* EF.DG2 */
-			DG2File dg2 = new DG2File(); 
-			byte[] dg2Bytes = dg2.getEncoded();
-
-			/* EF.SOD */
-			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-			keyPairGenerator.initialize(1024);
-			KeyPair keyPair = keyPairGenerator.generateKeyPair();
-			PublicKey publicKey = keyPair.getPublic();
-			PrivateKey privateKey = keyPair.getPrivate();
-			Date dateOfIssuing = today;
-			Date dateOfExpiry = today;
-			String digestAlgorithm = "SHA256";
-			String signatureAlgorithm = "SHA256withRSA";
-			X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
-			certGenerator.setSerialNumber(new BigInteger("1"));
-			certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-			certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-			certGenerator.setNotBefore(dateOfIssuing);
-			certGenerator.setNotAfter(dateOfExpiry);
-			certGenerator.setPublicKey(publicKey);
-			certGenerator.setSignatureAlgorithm(signatureAlgorithm);
-			docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
-			// FIXME: docSigningCert == null, generate something here...
-			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
-			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
-			hashes.put(1, digest.digest(dg1Bytes));
-			hashes.put(2, digest.digest(dg2Bytes));
-			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Use a private key to generate a real signature?
-			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
-			byte[] sodBytes = sod.getEncoded();
-
-			putFile(PassportService.EF_COM, comBytes);
-			putFile(PassportService.EF_DG1, dg1Bytes);
-			putFile(PassportService.EF_DG2, dg2Bytes);
-			putFile(PassportService.EF_SOD, sodBytes);
-
-			displayInputStreams();
-
-			verifySecurity(null);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public void readFromZipFile(File file) throws IOException {
@@ -417,9 +356,7 @@ public class PassportFrame extends JFrame
 					/* NOTE: Already processed this one above. */
 					break;
 				case PassportService.EF_DG2:
-					System.out.println("DEBUG: displaying dg2 PRE, in is of type " + in.getClass().getSimpleName());
 					dg2 = new DG2File(in);
-					System.out.println("DEBUG: displaying dg2 POST, in is of type " + in.getClass().getSimpleName());
 					facePreviewPanel.addFaces(dg2.getFaces());
 					break;
 				case PassportService.EF_DG3:
@@ -447,14 +384,12 @@ public class PassportFrame extends JFrame
 					dg15 = new DG15File(in);
 					break;
 				case PassportService.EF_SOD:
-					/* NOTE: Alread processed this one above. */
+					/* NOTE: Already processed this one above. */
 					break;
 				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(fid));
 				}
 				in.reset();
 			}
-
-
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -465,11 +400,11 @@ public class PassportFrame extends JFrame
 		if (!fileStreams.containsKey(fid)) {
 			CardFileInputStream in = service.readFile(fid);
 			int length = in.getFileLength();
-			in.mark(length + 1);
-			InputStream bufferedIn = new BufferedInputStream(in, length + 1);
-			bufferedIn.mark(in.available() + 2);
+			in.mark(length + 1); // FIXME what if some other process also sets mark?
 			fileStreams.put(fid, in);
 			if (doBuffer) {
+				InputStream bufferedIn = new BufferedInputStream(in, length + 1);
+				bufferedIn.mark(in.available() + 2);
 				bufferedStreams.put(fid, bufferedIn);
 			}
 			totalLength += length;
@@ -578,6 +513,9 @@ public class PassportFrame extends JFrame
 				digest.reset();
 
 				InputStream dgIn = getFile(dgFID);
+				dgIn.reset();
+				System.out.println("DEBUG: dgIn for DG" + dgNumber + " of type " + dgIn.getClass().getSimpleName());
+				
 				byte[] buf = new byte[1024];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
@@ -587,8 +525,13 @@ public class PassportFrame extends JFrame
 				byte[] computedHash = digest.digest();
 				if (!Arrays.equals(storedHash, computedHash)) {
 					isDSVerified = false;
+					System.out.println("DEBUG: sh = " + Hex.bytesToHexString(storedHash));
+					System.out.println("DEBUG: ch = " + Hex.bytesToHexString(computedHash));
+
 					break;
 				}
+				System.out.println("DEBUG: sh = " + Hex.bytesToHexString(storedHash));
+				System.out.println("DEBUG: ch = " + Hex.bytesToHexString(computedHash));
 			}
 
 			docSigningCert = sodFile.getDocSigningCertificate();
@@ -643,6 +586,68 @@ public class PassportFrame extends JFrame
 		verificationPanel.revalidate();
 	}
 
+	public void createEmptyPassport() {
+		try {
+			/* EF.COM */
+			List<Integer> tagList = new ArrayList<Integer>();
+			tagList.add(PassportFile.EF_DG1_TAG);
+			tagList.add(PassportFile.EF_DG2_TAG);
+			COMFile com = new COMFile("01", "07", "04", "00", "00", tagList);
+			byte[] comBytes = com.getEncoded();
+
+			/* EF.DG1 */
+			Date today = Calendar.getInstance().getTime();
+			String primaryIdentifier = "";
+			String[] secondaryIdentifiers = { "" };
+			MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
+			DG1File dg1 = new DG1File(mrzInfo);
+			byte[] dg1Bytes = dg1.getEncoded();
+
+			/* EF.DG2 */
+			DG2File dg2 = new DG2File(); 
+			byte[] dg2Bytes = dg2.getEncoded();
+
+			/* EF.SOD */
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+			keyPairGenerator.initialize(1024);
+			KeyPair keyPair = keyPairGenerator.generateKeyPair();
+			PublicKey publicKey = keyPair.getPublic();
+			PrivateKey privateKey = keyPair.getPrivate();
+			Date dateOfIssuing = today;
+			Date dateOfExpiry = today;
+			String digestAlgorithm = "SHA256";
+			String signatureAlgorithm = "SHA256withRSA";
+			X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
+			certGenerator.setSerialNumber(new BigInteger("1"));
+			certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+			certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+			certGenerator.setNotBefore(dateOfIssuing);
+			certGenerator.setNotAfter(dateOfExpiry);
+			certGenerator.setPublicKey(publicKey);
+			certGenerator.setSignatureAlgorithm(signatureAlgorithm);
+			docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
+			// FIXME: docSigningCert == null, generate something here...
+			Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
+			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
+			hashes.put(1, digest.digest(dg1Bytes));
+			hashes.put(2, digest.digest(dg2Bytes));
+			byte[] encryptedDigest = new byte[128]; // Arbitrary value. Use a private key to generate a real signature?
+			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
+			byte[] sodBytes = sod.getEncoded();
+
+			putFile(PassportService.EF_COM, comBytes);
+			putFile(PassportService.EF_DG1, dg1Bytes);
+			putFile(PassportService.EF_DG2, dg2Bytes);
+			putFile(PassportService.EF_SOD, sodBytes);
+
+			displayInputStreams();
+
+			verifySecurity(null);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}	
+	
 	/* Menu stuff below... */
 
 	private JMenu createFileMenu() {

@@ -395,8 +395,8 @@ public class FaceInfo
 			   reader.setInput(iis);
 			   ImageReadParam pm = reader.getDefaultReadParam();
 			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-			   pm.setSourceProgressivePasses(1, 8);
-			   // pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
+//			   pm.setSourceProgressivePasses(1, 8);
+//			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
 			   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
 
 				public void imageUpdate(ImageReader source,
