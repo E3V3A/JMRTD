@@ -298,8 +298,9 @@ public class FaceInfo
        */
       image = null;
       if (!in.markSupported()) { in = new BufferedInputStream(in, (int)faceImageBlockLength + 1); }
+
       dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
-      dataIn.mark((int)faceImageBlockLength);
+      // dataIn.mark((int)faceImageBlockLength); // FIXME: better not... what if client code marks/resets in?
    }
    
    public byte[] getEncoded() {
@@ -385,7 +386,7 @@ public class FaceInfo
    
    private BufferedImage processImage(InputStream in, String mimeType)
    throws IOException {
-	   if (in.markSupported()) { in.reset(); }
+	   // if (in.markSupported()) { in.reset(); }
 	   /* If !in.markSupported() we assume the inputstream is at the beginning of the image block. */
 	   ImageInputStream iis = ImageIO.createImageInputStream(in);
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
@@ -594,7 +595,7 @@ public class FaceInfo
             return;
          } catch (Exception e) {
             e.printStackTrace();
-            ios.reset();
+            // ios.reset();
             continue;
          } finally {
             ios.flush();
