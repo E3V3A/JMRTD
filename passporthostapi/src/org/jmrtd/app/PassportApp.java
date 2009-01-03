@@ -51,6 +51,7 @@ import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.InputMap;
+import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -58,6 +59,7 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
@@ -100,6 +102,7 @@ public class PassportApp  implements PassportListener
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
+	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
 	private static final Icon TERMINAL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
 	private static final Icon TERMINAL_GO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
@@ -111,6 +114,7 @@ public class PassportApp  implements PassportListener
 
 	private Container contentPane;
 	private BACStore bacStore;
+	private PreferencesPanel preferencesPanel;
 
 	/**
 	 * Constructs the GUI.
@@ -126,6 +130,7 @@ public class PassportApp  implements PassportListener
 			cm.start();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
+			preferencesPanel = new PreferencesPanel(pm);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
@@ -136,7 +141,7 @@ public class PassportApp  implements PassportListener
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
 			menuBar.add(createFileMenu());
-			menuBar.add(createTerminalMenu());
+			menuBar.add(createToolsMenu());
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -257,46 +262,53 @@ public class PassportApp  implements PassportListener
 	}
 
 	private JMenu createFileMenu() {
-		JMenu fileMenu = new JMenu("File");
+		JMenu menu = new JMenu("File");
 
 		/* New... */
 		JMenuItem newItem = new JMenuItem();
-		fileMenu.add(newItem);
+		menu.add(newItem);
 		newItem.setAction(getNewAction());
 
 		/* Open... */
 		JMenuItem openItem = new JMenuItem();
-		fileMenu.add(openItem);
+		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-		fileMenu.addSeparator();
+		menu.addSeparator();
 
 		/* Exit */
 		JMenuItem closeItem = new JMenuItem();
-		fileMenu.add(closeItem);
+		menu.add(closeItem);
 		closeItem.setAction(getExitAction());
 
-		return fileMenu;
+		return menu;
 	}
 
-	private JMenu createTerminalMenu() {
-		JMenu terminalMenu = new JMenu("Tools");
+	private JMenu createToolsMenu() {
+		JMenu menu = new JMenu("Tools");
 		CardManager cm = CardManager.getInstance();
 
 		Collection<CardTerminal> terminals = cm.getTerminals();
 		for (CardTerminal terminal: terminals) {
 			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
-			terminalMenu.add(menuItem);
+			menu.add(menuItem);
 		}
-		return terminalMenu;
+		
+		menu.addSeparator();
+		
+		JMenuItem preferencesItem = new JMenuItem();
+		preferencesItem.setAction(getPreferencesAction());
+		menu.add(preferencesItem);
+		
+		return menu;
 	}
 
 	private JMenu createHelpMenu() {
-		JMenu helpMenu = new JMenu("Help");
+		JMenu menu = new JMenu("Help");
 		JMenuItem aboutItem = new JMenuItem();
 		aboutItem.setAction(getAboutAction());
-		helpMenu.add(aboutItem);
-		return helpMenu;
+		menu.add(aboutItem);
+		return menu;
 	}
 
 	private Action getNewAction() {
@@ -411,6 +423,19 @@ public class PassportApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "About this application");
 		action.putValue(Action.NAME, "About...");
+		return action;
+	}
+	
+	private Action getPreferencesAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, PREFERENCES_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, PREFERENCES_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Open the preferences dialog");
+		action.putValue(Action.NAME, "Preferences...");
 		return action;
 	}
 
