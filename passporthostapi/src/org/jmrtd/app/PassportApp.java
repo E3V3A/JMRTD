@@ -127,7 +127,6 @@ public class PassportApp  implements PassportListener
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			CardManager cm = CardManager.getInstance();
-			cm.start();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 			preferencesPanel = new PreferencesPanel(cm);
@@ -287,16 +286,6 @@ public class PassportApp  implements PassportListener
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
-//		CardManager cm = CardManager.getInstance();
-//
-//		Collection<CardTerminal> terminals = cm.getTerminals();
-//		for (CardTerminal terminal: terminals) {
-//			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
-//			menu.add(menuItem);
-//		}
-//		
-//		menu.addSeparator();
-
 		JMenuItem preferencesItem = new JMenuItem();
 		preferencesItem.setAction(getPreferencesAction());
 		menu.add(preferencesItem);
@@ -371,29 +360,6 @@ public class PassportApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, EXIT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Exit application");
 		action.putValue(Action.NAME, "Exit");
-		return action;
-	}
-
-	private Action getUseTerminalAction(final CardTerminal terminal) {
-		Action action = new AbstractAction() {
-			public void actionPerformed(ActionEvent e) {
-				new Thread(new Runnable() {
-					public void run() {
-						try {
-							PassportService service = new PassportService(new TerminalCardService(terminal));
-							readPassport(service);
-						} catch (CardServiceException cse) {
-							cse.printStackTrace();
-						}
-					}
-				}).start();
-
-			}	
-		};
-		action.putValue(Action.SMALL_ICON, TERMINAL_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, TERMINAL_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Read card from " + terminal.getName());
-		action.putValue(Action.NAME, "Read from " + terminal.getName());
 		return action;
 	}
 
