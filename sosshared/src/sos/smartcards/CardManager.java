@@ -23,7 +23,9 @@ package sos.smartcards;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -47,39 +49,56 @@ public class CardManager
 	private static final CardManager INSTANCE = new CardManager();
 	private static final int POLL_INTERVAL = 450;
 
-	private List<CardTerminal> terminals;
+	private Map<CardTerminal, TerminalPoller> terminals;
 	private Collection<CardTerminalListener> listeners;
-	private boolean isPolling;
 
 	private CardManager() {	   
 		try {
 			listeners = new ArrayList<CardTerminalListener>();
-			terminals = new ArrayList<CardTerminal>();
+			terminals = new HashMap<CardTerminal, TerminalPoller>();
 			addTerminals();
 		} catch (Exception ex) {
 			System.err.println("WARNING: exception while adding terminals");
 			ex.printStackTrace();
 		}
 	}
-
+	
 	/**
-	 * Starts polling.
+	 * @deprecated Use {@link #startPolling(CardTerminal)}.
 	 */
 	public synchronized void start() {
-		/* For each terminal start a polling thread. */
-		if (isPolling) { return; }
-		isPolling = true;
-		for (CardTerminal terminal: terminals) {
-			(new Thread(new TerminalPoller(terminal))).start();
+		for (CardTerminal terminal: terminals.keySet()) {
+			startPolling(terminal);
 		}
 	}
-
+	
 	/**
-	 * Stops polling.
+	 * @deprecated Use {@link #stopPolling(CardTerminal)}.
 	 */
 	public synchronized void stop() {
-		isPolling = false;
+		for (CardTerminal terminal: terminals.keySet()) {
+			stopPolling(terminal);
+		}
+	}
+	
+	public synchronized void startPolling(CardTerminal terminal) {
+		TerminalPoller poller = terminals.get(terminal);
+		if (poller == null) { poller = new TerminalPoller(terminal); }
+		poller.startPolling();
 		notifyAll();
+	}
+	
+	public synchronized void stopPolling(CardTerminal terminal) {
+		TerminalPoller poller = terminals.get(terminal);
+		if (poller == null) { return; }
+		poller.stopPolling();
+		notifyAll();
+	}
+	
+	public synchronized boolean isPolling(CardTerminal terminal) {
+		TerminalPoller poller = terminals.get(terminal);
+		if (poller == null) { return false; }
+		return poller.isPolling();
 	}
 
 	/**
@@ -88,14 +107,16 @@ public class CardManager
 	 * @return a boolean indicating whether the card manager is running.
 	 */
 	public boolean isPolling() {
+		boolean isPolling = false;
+		for (CardTerminal terminal: terminals.keySet()) {
+			TerminalPoller poller = terminals.get(terminal);
+			isPolling ^= poller.isPolling();
+		}
 		return isPolling;
 	}
 	
 	private void addTerminals() {
-		int n = addTerminals(TerminalFactory.getDefault());
-//		if (n == 0) {
-//			System.out.println("DEBUG: no PC/SC terminals found!");
-//		}
+		int n = addTerminals(TerminalFactory.getDefault(), true);
 	}
 
 	/**
@@ -104,18 +125,37 @@ public class CardManager
 	 * @param factory
 	 * @return the number of terminals added
 	 */
-	public synchronized int addTerminals(TerminalFactory factory) {
+	public synchronized int addTerminals(TerminalFactory factory, boolean isPolling) {
 		try {
-			CardTerminals newTerminals = factory.terminals();
-			if (newTerminals == null) { return 0; }
-			List<CardTerminal> newTerminalsList = newTerminals.list();
-			if (newTerminalsList == null) { return 0; }
-			terminals.addAll(newTerminalsList);
-			return newTerminalsList.size();
+			CardTerminals additionalTerminals = factory.terminals();
+			if (additionalTerminals == null) { return 0; }
+			List<CardTerminal> additionalTerminalsList = additionalTerminals.list();
+			if (additionalTerminalsList == null) { return 0; }
+			List<CardTerminal> terminalsList = new ArrayList();
+			terminalsList.addAll(terminals.keySet());
+			terminalsList.addAll(additionalTerminalsList);
+			for (CardTerminal terminal: terminalsList) {
+				addTerminal(terminal, isPolling);
+			}
+			return additionalTerminalsList.size();
 		} catch (CardException cde) {
 			/* NOTE: Listing of readers failed. Don't add anything. */
 		}
 		return 0;
+	}
+
+	public synchronized void addTerminal(CardTerminal terminal, boolean isPolling) {
+		TerminalPoller poller = terminals.get(terminal);
+		if (poller == null) {
+			poller = new TerminalPoller(terminal);
+			terminals.put(terminal, poller);
+		}
+		if (isPolling && !poller.isPolling()) {
+			poller.startPolling();
+		}
+		if (!isPolling && poller.isPolling()) {
+			poller.stopPolling();
+		}
 	}
 
 	/**
@@ -164,12 +204,15 @@ public class CardManager
 	 * @return a list of terminals
 	 */
 	public List<CardTerminal> getTerminals() {
-		return terminals;
+		List<CardTerminal> result = new ArrayList<CardTerminal>();
+		result.addAll(terminals.keySet());
+		return result;
 	}
 
 	/**
 	 * Gets the card manager.
-	 * By default only PC/SC terminals are added, use {@link #addTerminals(TerminalFactory)} to add additional terminals.
+	 * By default only PC/SC terminals are added,
+	 * use {@link #addTerminals(TerminalFactory)} to add additional terminals.
 	 * 
 	 * @return the card manager
 	 */
@@ -181,15 +224,32 @@ public class CardManager
 	{
 		private CardTerminal terminal;
 		private TerminalCardService service;
+		private boolean isPolling;
 
 		public TerminalPoller(CardTerminal terminal) {
 			this.terminal = terminal;
 			this.service = null;
+			this.isPolling = false;
+		}
+		
+		public boolean isPolling() {
+			return isPolling;
+		}
+		
+		public synchronized void startPolling() {
+			if (isPolling()) { return; }
+			isPolling = true;
+			(new Thread(this)).start();
+		}
+		
+		public synchronized void stopPolling() {
+			if (!isPolling()) { return; }
+			isPolling = false;
 		}
 
 		public void run() {
 			try {
-				while (isPolling) {
+				while (isPolling()) {
 					if (hasNoListeners()) {
 						/* No listeners, we go to sleep. */
 						synchronized(INSTANCE) {
@@ -244,7 +304,7 @@ public class CardManager
 						/* FIXME: what if reader no longer connected, should we remove it from list? */
 						// ce.printStackTrace(); // for debugging
 					} finally {
-						if (!isPolling && service != null) { service.close(); }
+						if (!isPolling() && service != null) { service.close(); }
 
 					}
 				}
@@ -254,4 +314,5 @@ public class CardManager
 
 		}
 	}
+
 }

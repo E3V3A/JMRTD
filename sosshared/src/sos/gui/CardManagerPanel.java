@@ -5,16 +5,12 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
 import javax.smartcardio.CardTerminal;
-import javax.swing.AbstractAction;
-import javax.swing.AbstractButton;
-import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBox;
@@ -37,6 +33,12 @@ import sos.smartcards.CardTerminalListener;
 import sos.smartcards.TerminalCardService;
 import sos.util.Icons;
 
+/**
+ * 
+ * @author martijn.oostdijk
+ *
+ * @deprecated Gone
+ */
 public class CardManagerPanel extends JPanel
 {
 	private static final Font UNSELECTED_FONT = new Font("Sans-serif", Font.PLAIN, 12);
@@ -60,7 +62,6 @@ public class CardManagerPanel extends JPanel
 		final CardManager cm = CardManager.getInstance();
 		JPanel northPanel = new JPanel(new FlowLayout());
 		JCheckBox cardManagerCheckBox = new JCheckBox();
-		cardManagerCheckBox.setAction(getUseCardManagerAction());
 		northPanel.add(cardManagerCheckBox);
 		add(northPanel, BorderLayout.NORTH);
 		terminalNodes = new ArrayList<TerminalNode>();
@@ -165,36 +166,6 @@ public class CardManagerPanel extends JPanel
 		JMenuItem guessCountryItem = new JMenuItem();
 		menu.add(guessCountryItem);
 		return menu;
-	}
-	
-	public Action getUseCardManagerAction() {
-		Action action = new AbstractAction() {
-			public void actionPerformed(ActionEvent e) {
-				Object src = e.getSource();
-				if (src instanceof AbstractButton) {
-					AbstractButton button = (AbstractButton)src;
-					CardManager cm = CardManager.getInstance();
-					if (button.isSelected()) {
-						for (TerminalNode node: terminalNodes) {
-							node.setIcon(TERMINAL_NO_CARD_ICON);
-						}
-						revalidate();
-						cm.start();
-					} else {
-						cm.stop();
-						for (TerminalNode node: terminalNodes) {
-							node.setIcon(TERMINAL_NOT_POLLING_ICON);
-						}
-						revalidate();
-					}
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, CM_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CM_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Poll all terminals using the card manager");
-		action.putValue(Action.NAME, "Use card manager");
-		return action;
 	}
 
 	private class TerminalNode extends DefaultMutableTreeNode
