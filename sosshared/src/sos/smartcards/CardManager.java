@@ -237,7 +237,6 @@ public class CardManager
 		}
 		
 		public synchronized void startPolling() {
-			System.out.println("DEBUG: " + this + "... started polling");
 			if (isPolling()) { return; }
 			isPolling = true;
 			if (myThread == null) { myThread = new Thread(this); }
@@ -245,13 +244,12 @@ public class CardManager
 		}
 		
 		public synchronized void stopPolling() {
-			System.out.println("DEBUG: stop polling " + this);
 			if (!isPolling()) { return; }
 			isPolling = false;
 		}
 		
 		public String toString() {
-			return "Poller for " + terminal.getName() + (isPolling ? " is polling " : " is not polling");
+			return "Poller for " + terminal.getName() + (isPolling ? " (polling)" : " (not polling)");
 		}
 
 		public void run() {
