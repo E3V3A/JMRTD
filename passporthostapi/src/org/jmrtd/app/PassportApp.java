@@ -130,7 +130,7 @@ public class PassportApp  implements PassportListener
 			cm.start();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
-			preferencesPanel = new PreferencesPanel(pm);
+			preferencesPanel = new PreferencesPanel(cm);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
@@ -286,16 +286,17 @@ public class PassportApp  implements PassportListener
 
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
-		CardManager cm = CardManager.getInstance();
 
-		Collection<CardTerminal> terminals = cm.getTerminals();
-		for (CardTerminal terminal: terminals) {
-			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
-			menu.add(menuItem);
-		}
-		
-		menu.addSeparator();
-		
+//		CardManager cm = CardManager.getInstance();
+//
+//		Collection<CardTerminal> terminals = cm.getTerminals();
+//		for (CardTerminal terminal: terminals) {
+//			JMenuItem menuItem = new JMenuItem(getUseTerminalAction(terminal));
+//			menu.add(menuItem);
+//		}
+//		
+//		menu.addSeparator();
+
 		JMenuItem preferencesItem = new JMenuItem();
 		preferencesItem.setAction(getPreferencesAction());
 		menu.add(preferencesItem);
@@ -429,7 +430,11 @@ public class PassportApp  implements PassportListener
 	private Action getPreferencesAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-				JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
+				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
+				switch (n) {
+				case JOptionPane.OK_OPTION: preferencesPanel.commit(); break;
+				default: preferencesPanel.abort();
+				}
 			}
 		};
 		action.putValue(Action.SMALL_ICON, PREFERENCES_ICON);

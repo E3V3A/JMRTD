@@ -63,7 +63,7 @@ public class PassportManager
 			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
-			cm.addTerminals(acrFactory);
+			cm.addTerminals(acrFactory, true);
 		} catch (Exception e) {
 			/* Ignore this provider */
 		}
@@ -71,7 +71,7 @@ public class PassportManager
 			Class<?> crefProviderClass = Class.forName("ds.smartcards.CREFTerminalProvider");
 			Provider crefProvider = (Provider)crefProviderClass.newInstance();
 			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
-			cm.addTerminals(crefFactory);
+			cm.addTerminals(crefFactory, false);
 		} catch (Exception e) {
 			/* Ignore this provider */
 			e.printStackTrace();
@@ -80,7 +80,7 @@ public class PassportManager
 			Class<?> jcopProviderClass = Class.forName("ds.smartcards.JCOPTerminalProvider");
 			Provider jcopProvider = (Provider)jcopProviderClass.newInstance();
 			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", jcopProvider);
-			cm.addTerminals(jcopFactory);
+			cm.addTerminals(jcopFactory, false);
 		} catch (Exception e) {
 			/* Ignore this provider */
 			e.printStackTrace();
