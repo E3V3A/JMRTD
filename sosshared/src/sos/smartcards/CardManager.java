@@ -132,7 +132,6 @@ public class CardManager
 			List<CardTerminal> additionalTerminalsList = additionalTerminals.list();
 			if (additionalTerminalsList == null) { return 0; }
 			List<CardTerminal> terminalsList = new ArrayList<CardTerminal>();
-			terminalsList.addAll(terminals.keySet());
 			terminalsList.addAll(additionalTerminalsList);
 			for (CardTerminal terminal: terminalsList) {
 				addTerminal(terminal, isPolling);
@@ -238,6 +237,7 @@ public class CardManager
 		}
 		
 		public synchronized void startPolling() {
+			System.out.println("DEBUG: " + this + "... started polling");
 			if (isPolling()) { return; }
 			isPolling = true;
 			if (myThread == null) { myThread = new Thread(this); }
@@ -245,8 +245,13 @@ public class CardManager
 		}
 		
 		public synchronized void stopPolling() {
+			System.out.println("DEBUG: stop polling " + this);
 			if (!isPolling()) { return; }
 			isPolling = false;
+		}
+		
+		public String toString() {
+			return "Poller for " + terminal.getName() + (isPolling ? " is polling " : " is not polling");
 		}
 
 		public void run() {
