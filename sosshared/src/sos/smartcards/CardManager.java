@@ -23,6 +23,8 @@ package sos.smartcards;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,11 @@ public class CardManager
 {
 	private static final CardManager INSTANCE = new CardManager();
 	private static final int POLL_INTERVAL = 450;
+	private static final Comparator<CardTerminal> TERMINAL_COMPARATOR = new Comparator<CardTerminal>() {
+		public int compare(CardTerminal o1, CardTerminal o2) {
+			return ((CardTerminal)o1).getName().compareToIgnoreCase(((CardTerminal)o2).getName());
+		}
+	};
 
 	private Map<CardTerminal, TerminalPoller> terminals;
 	private Collection<CardTerminalListener> listeners;
@@ -205,6 +212,7 @@ public class CardManager
 	public List<CardTerminal> getTerminals() {
 		List<CardTerminal> result = new ArrayList<CardTerminal>();
 		result.addAll(terminals.keySet());
+		Collections.sort(result, TERMINAL_COMPARATOR);
 		return result;
 	}
 
@@ -239,8 +247,9 @@ public class CardManager
 		public synchronized void startPolling() {
 			if (isPolling()) { return; }
 			isPolling = true;
-			if (myThread == null) { myThread = new Thread(this); }
-			if (!myThread.isAlive()) { myThread.start(); }
+			if (myThread != null && myThread.isAlive()) { return; }
+			myThread = new Thread(this);
+			myThread.start();
 		}
 		
 		public synchronized void stopPolling() {
