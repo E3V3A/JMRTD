@@ -4,11 +4,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -17,10 +17,8 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
-import javax.swing.JFileChooser;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
-import javax.swing.filechooser.FileFilter;
 
 import sos.smartcards.CardManager;
 
@@ -37,10 +35,11 @@ public class PreferencesPanel extends JPanel
 	public PreferencesPanel(CardManager cm) {
 		super(new BorderLayout());
 		this.cm = cm;
-		terminalsToStart = new ArrayList<CardTerminal>();
-		terminalsToStop = new ArrayList<CardTerminal>();
+		terminalsToStart = new HashSet<CardTerminal>();
+		terminalsToStop = new HashSet<CardTerminal>();
 		checkBoxMap = new HashMap<CardTerminal, JCheckBox>();
 		List<CardTerminal> terminalList = cm.getTerminals();
+		
 		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 2));
 		cmPanel.setBorder(CARD_MANAGER_BORDER);
 		for (CardTerminal terminal: terminalList){
