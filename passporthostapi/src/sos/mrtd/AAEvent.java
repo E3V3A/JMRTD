@@ -25,6 +25,8 @@ package sos.mrtd;
 import java.security.PublicKey;
 import java.util.EventObject;
 
+import sos.util.Hex;
+
 /**
  * Event to indicate AA protocol was executed.
  * 
@@ -91,5 +93,15 @@ public class AAEvent extends EventObject
 	 */
 	public boolean isSuccess() {
 		return success;
+	}
+	
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		result.append("AAEvent [");
+		result.append("m1 = " + Hex.bytesToHexString(m1) + ", ");
+		result.append("m2 = " + Hex.bytesToHexString(m2) + ", ");
+		result.append(success);
+		result.append("]");
+		return result.toString();
 	}
 }

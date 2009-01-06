@@ -306,7 +306,7 @@ public class PassportApp  implements PassportListener
 			public void actionPerformed(ActionEvent e) {
 				System.out.println("DEBUG: TODO: new action");
 				PassportFrame passportFrame = new PassportFrame();
-				passportFrame.createEmptyPassport();
+				passportFrame.readFromEmptyPassport();
 				passportFrame.pack();
 				passportFrame.setVisible(true);
 			}

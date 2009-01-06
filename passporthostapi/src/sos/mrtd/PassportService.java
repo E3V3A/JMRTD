@@ -268,6 +268,7 @@ public class PassportService extends PassportApduService
 			}
 			return success;
 		} catch (IllegalArgumentException iae) {
+			// iae.printStackTrace();
 			throw new CardServiceException(iae.toString());
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());

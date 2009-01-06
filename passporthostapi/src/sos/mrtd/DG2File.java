@@ -78,7 +78,7 @@ public class DG2File extends CBEFFDataGroup
 			System.out.println("DEBUG: WARNING: buffering in (" + in.getClass().getSimpleName() + ") in DG2File");
 			in = new BufferedInputStream(in, valueLength + 1);
 		}
-		DataInputStream dataIn = new DataInputStream(in);
+		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		/* Facial Record Header (14) */
 		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
 		int version = dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)

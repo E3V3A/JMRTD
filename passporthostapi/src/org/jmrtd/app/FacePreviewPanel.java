@@ -69,7 +69,7 @@ public class FacePreviewPanel extends JPanel
 
 	public void addFace(FaceInfo faceInfo) {
 		try {
-			System.out.println("DEBUG: addFace");
+			System.out.println("DEBUG: addFace called");
 			int tabCount = tabbedPane.getTabCount();
 			if (tabCount <= 0) {
 				remove(PLACE_HOLDER);

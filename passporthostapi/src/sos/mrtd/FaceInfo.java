@@ -27,12 +27,9 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -51,7 +48,6 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import sos.data.Gender;
-import sos.tlv.BERTLVObject;
 
 /**
  * Data structure for storing face information as found in DG2.
@@ -238,7 +234,7 @@ public class FaceInfo
     */
    FaceInfo(InputStream in) throws IOException {
 	   debug("new FaceInfo(in) in of type " + in.getClass().getSimpleName());
-      dataIn = new DataInputStream(in);
+	   dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
       
       /* Facial Information (20) */
       faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
@@ -297,10 +293,6 @@ public class FaceInfo
        * ISO 19794-5
        */
       image = null;
-      if (!in.markSupported()) { in = new BufferedInputStream(in, (int)faceImageBlockLength + 1); }
-
-      dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
-      // dataIn.mark((int)faceImageBlockLength); // FIXME: better not... what if client code marks/resets in?
    }
 
    public byte[] getEncoded() {
@@ -383,111 +375,20 @@ public class FaceInfo
          return null;
       }
    }
-   
+
    private BufferedImage processImage(InputStream in, String mimeType)
    throws IOException {
 	   // if (in.markSupported()) { in.reset(); }
 	   /* If !in.markSupported() we assume the inputstream is at the beginning of the image block. */
+	   System.out.println("DEBUG: processImage called");
 	   ImageInputStream iis = ImageIO.createImageInputStream(in);
+	   System.out.println("DEBUG: processImage after createImageInputStream");
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
 			   ImageReader reader = (ImageReader)readers.next();
-			   reader.setInput(iis);
-			   ImageReadParam pm = reader.getDefaultReadParam();
-			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-//			   pm.setSourceProgressivePasses(1, 8);
-//			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
-			   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
-
-				public void imageUpdate(ImageReader source,
-						BufferedImage theImage, int minX, int minY, int width,
-						int height, int periodX, int periodY, int[] bands) {
-					debug("imageUpdate");					
-				}
-
-				public void passComplete(ImageReader source,
-						BufferedImage theImage) {
-					debug("passCompleted");
-					
-				}
-
-				public void passStarted(ImageReader source,
-						BufferedImage theImage, int pass, int minPass,
-						int maxPass, int minX, int minY, int periodX,
-						int periodY, int[] bands) {
-					debug("passStarted");
-					
-				}
-
-				public void thumbnailPassComplete(ImageReader source,
-						BufferedImage theThumbnail) {
-					debug("thumbNailPassComplete");
-					
-				}
-
-				public void thumbnailPassStarted(ImageReader source,
-						BufferedImage theThumbnail, int pass, int minPass,
-						int maxPass, int minX, int minY, int periodX,
-						int periodY, int[] bands) {
-					debug("thumbnailPassStarted");
-				}
-				
-				public void thumbnailUpdate(ImageReader source,
-						BufferedImage theThumbnail, int minX, int minY,
-						int width, int height, int periodX, int periodY,
-						int[] bands) {
-					debug("thumbnailUpdate");
-					
-				}
-				   
-			   });
-			   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
-				
-				public void imageComplete(ImageReader source) {
-					debug("imageComplete");
-				}
-				
-				public void imageProgress(ImageReader source,
-						float percentageDone) {
-					debug("imageProgress " + percentageDone);
-				}
-				
-				public void imageStarted(ImageReader source, int imageIndex) {
-					debug("imageStarted");
-				}
-				
-				public void readAborted(ImageReader source) {
-					debug("readAborted");
-				}
-				
-				public void sequenceComplete(ImageReader source) {
-					debug("sequenceComplete");
-				}
-				
-				public void sequenceStarted(ImageReader source, int minIndex) {
-					debug("sequenceStarted");
-				}
-				
-				public void thumbnailComplete(ImageReader source) {
-					debug("thumbnailComplete");
-				}
-				
-				public void thumbnailProgress(ImageReader source,
-						float percentageDone) {
-					debug("thumbnailProgress");
-				}
-
-				public void thumbnailStarted(ImageReader source,
-						int imageIndex, int thumbnailIndex) {
-					debug("thumbnailStarted");
-				}
-				   
-			   });
-			   BufferedImage image = reader.read(0, pm);
-			   if (image != null) {
-				   return image;
-			   }
+			   BufferedImage image = processImage(iis, reader);
+			   if (image != null) { return image; }
 		   } catch (Exception e) {
 			   e.printStackTrace();
 			   continue;
@@ -495,7 +396,102 @@ public class FaceInfo
 	   }
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
-   
+
+   private BufferedImage processImage(ImageInputStream iis, ImageReader reader) throws IOException {
+	   reader.setInput(iis);
+	   ImageReadParam pm = reader.getDefaultReadParam();
+	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+	   //			   pm.setSourceProgressivePasses(1, 8);
+	   //			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
+	   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
+
+		   public void imageUpdate(ImageReader source,
+				   BufferedImage theImage, int minX, int minY, int width,
+				   int height, int periodX, int periodY, int[] bands) {
+			   debug("imageUpdate");					
+		   }
+
+		   public void passComplete(ImageReader source,
+				   BufferedImage theImage) {
+			   debug("passCompleted");
+
+		   }
+
+		   public void passStarted(ImageReader source,
+				   BufferedImage theImage, int pass, int minPass,
+				   int maxPass, int minX, int minY, int periodX,
+				   int periodY, int[] bands) {
+			   debug("passStarted");
+
+		   }
+
+		   public void thumbnailPassComplete(ImageReader source,
+				   BufferedImage theThumbnail) {
+			   debug("thumbNailPassComplete");
+
+		   }
+
+		   public void thumbnailPassStarted(ImageReader source,
+				   BufferedImage theThumbnail, int pass, int minPass,
+				   int maxPass, int minX, int minY, int periodX,
+				   int periodY, int[] bands) {
+			   debug("thumbnailPassStarted");
+		   }
+
+		   public void thumbnailUpdate(ImageReader source,
+				   BufferedImage theThumbnail, int minX, int minY,
+				   int width, int height, int periodX, int periodY,
+				   int[] bands) {
+			   debug("thumbnailUpdate");
+
+		   }
+
+	   });
+	   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
+
+		   public void imageComplete(ImageReader source) {
+			   debug("imageComplete");
+		   }
+
+		   public void imageProgress(ImageReader source,
+				   float percentageDone) {
+			   debug("imageProgress " + percentageDone);
+		   }
+
+		   public void imageStarted(ImageReader source, int imageIndex) {
+			   debug("imageStarted");
+		   }
+
+		   public void readAborted(ImageReader source) {
+			   debug("readAborted");
+		   }
+
+		   public void sequenceComplete(ImageReader source) {
+			   debug("sequenceComplete");
+		   }
+
+		   public void sequenceStarted(ImageReader source, int minIndex) {
+			   debug("sequenceStarted");
+		   }
+
+		   public void thumbnailComplete(ImageReader source) {
+			   debug("thumbnailComplete");
+		   }
+
+		   public void thumbnailProgress(ImageReader source,
+				   float percentageDone) {
+			   debug("thumbnailProgress");
+		   }
+
+		   public void thumbnailStarted(ImageReader source,
+				   int imageIndex, int thumbnailIndex) {
+			   debug("thumbnailStarted");
+		   }
+
+	   });
+	   return reader.read(0, pm);
+   }
+
    /**
     * A scaling factor resulting in at most desiredWidth and desiredHeight yet
     * that respects aspect ratio of original width and height.
@@ -561,8 +557,7 @@ public class FaceInfo
 //   }
    
    /**
-    * Scales image to an image of size at most the size indicated by parameters
-    * keeping same aspect ratio.
+    * Scales image.
     * 
     * @param image an image
     * @param scale scaling factor
@@ -576,6 +571,14 @@ public class FaceInfo
 	   return scaledImage;
    }
 
+   /**
+    * FIXME needs testing
+    * 
+    * @param image
+    * @param out
+    * @param mimeType
+    * @throws IOException
+    */
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
 	   debug("writing mimeType = " + mimeType);
@@ -586,7 +589,6 @@ public class FaceInfo
       ImageOutputStream ios = ImageIO.createImageOutputStream(out);
       while (writers.hasNext()) {
          try {
-            ios.mark();
             ImageWriter writer = (ImageWriter)writers.next();
             writer.setOutput(ios);
             ImageWriteParam pm = writer.getDefaultWriteParam();
@@ -595,7 +597,6 @@ public class FaceInfo
             return;
          } catch (Exception e) {
             e.printStackTrace();
-            // ios.reset();
             continue;
          } finally {
             ios.flush();
@@ -611,6 +612,7 @@ public class FaceInfo
     * @return image
     */
    public BufferedImage getThumbNail(int width, int height) throws IOException {
+	   System.out.println("DEBUG: getThumbNail called");
 	   String mimeType = null;
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
@@ -1110,68 +1112,5 @@ public class FaceInfo
    
    private void debug(Object obj) {
 	   if (DEBUG) { System.out.println("DEBUG: " + obj.toString()); }
-   }
-   
-   /* For testing... */
-   public static void main(String[] arg) {
-      try {
-         BufferedImage image = ImageIO.read(new File(arg[0]));
-         FaceInfo info = new FaceInfo(Gender.MALE,
-               EyeColor.BLUE, HAIR_COLOR_BLACK, EXPRESSION_FROWNING,
-               SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM, image);
-         byte[] zero0 = { 0x00 };
-         byte[] zero2 = { 0x02 };
-         byte[] zero101 = { 0x01, 0x01 };
-         byte[] zero008 = { 0x00, 0x08 };
-         
-         byte[] facialRecordData = info.getEncoded();
-         
-         /* facial record headert */
-         ByteArrayOutputStream out;
-         out = new ByteArrayOutputStream();
-         DataOutputStream dataOut;
-         dataOut = new DataOutputStream(out);
-         dataOut.writeBytes("FAC");
-         dataOut.writeByte(0);
-         dataOut.writeBytes("010");
-         dataOut.writeByte(0);
-         dataOut.flush();
-         byte[] headerData = out.toByteArray();
-         dataOut.close();
-         
-         int lengthOfRecord = headerData.length + 4 + 2 + facialRecordData.length;
-         short nrOfImages = 1;
-         out = new ByteArrayOutputStream();
-         dataOut = new DataOutputStream(out);
-         dataOut.write(headerData);
-         dataOut.writeInt(lengthOfRecord);
-         dataOut.writeShort(nrOfImages);
-         dataOut.write(facialRecordData);
-         dataOut.flush();
-         byte[] facialRecord = out.toByteArray();
-         
-         BERTLVObject objectA1 = new BERTLVObject(0xa1, new BERTLVObject(0x81, zero2));
-         objectA1.addSubObject(new BERTLVObject(0x82, zero0));
-         objectA1.addSubObject(new BERTLVObject(0x87, zero101));
-         objectA1.addSubObject(new BERTLVObject(0x88, zero008));
-         
-         BERTLVObject faceInfo = new BERTLVObject(0x5f2e, facialRecord);
-         
-         BERTLVObject object7f60 = new BERTLVObject(0x7f60, objectA1);
-         object7f60.addSubObject(faceInfo);
-         
-         BERTLVObject object7f61 = new BERTLVObject(0x7f61, new Integer(1));
-         object7f61.addSubObject(object7f60);
-   
-         BERTLVObject dg2 = new BERTLVObject(PassportFile.EF_DG2_TAG, object7f61);
-         
-         System.out.println(dg2);
-         
-         FileOutputStream fout = new FileOutputStream(arg[1]);
-         fout.write(dg2.getEncoded());
-         fout.close();
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
    }
 }
