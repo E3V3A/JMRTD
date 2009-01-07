@@ -63,9 +63,10 @@ import sos.smartcards.CardServiceException;
  * 
  * @version $Revision$
  */
-public class PersoPanel extends JPanel implements ActionListener,
-AuthListener
+public class PersoPanel extends JPanel implements ActionListener, AuthListener
 {
+	private static final long serialVersionUID = 2738509681612532188L;
+
 	private JButton createFileButton;
 	private JButton selectFileButton;
 	private JButton selectLocalFileButton;
