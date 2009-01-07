@@ -27,6 +27,8 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -42,8 +44,6 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.event.IIOReadProgressListener;
-import javax.imageio.event.IIOReadUpdateListener;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -53,7 +53,7 @@ import sos.data.Gender;
  * Data structure for storing face information as found in DG2.
  * Coding is based on ISO/IEC FCD 19794-5 (2004-03-22).
  *
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision$
  */
@@ -64,7 +64,7 @@ public class FaceInfo
    /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
     /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
-   public enum EyeColor { 
+   public enum EyeColor {
        UNSPECIFIED { int toInt() { return EYE_COLOR_UNSPECIFIED;} }, 
        BLACK { int toInt() { return EYE_COLOR_BLACK; } }, 
        BLUE { int toInt() { return EYE_COLOR_BLUE; } },
@@ -175,7 +175,7 @@ public class FaceInfo
    
    /** Indexes into poseAngle array. */
    private static final int YAW = 0, PITCH = 1, ROLL = 2;
-   
+
    private long faceImageBlockLength;
    private Gender gender;
    private EyeColor eyeColor;
@@ -194,8 +194,13 @@ public class FaceInfo
    private int deviceType;
    private int quality;
    private BufferedImage image;
-   
+   private Collection<ImageReadUpdateListener> imageReadUpdateListeners;
+
    private DataInputStream dataIn;
+
+   private FaceInfo() {
+	   imageReadUpdateListeners = new ArrayList<ImageReadUpdateListener>();
+   }
 
    /**
     * Constructs a new face information data structure instance.
@@ -208,21 +213,22 @@ public class FaceInfo
     * @param image image
     */
    public FaceInfo(Gender gender, EyeColor eyeColor, int hairColor, short expression,
-         int sourceType, BufferedImage image) {
-      this.faceImageBlockLength = 0L;
-      this.gender = gender;
-      this.eyeColor = eyeColor;
-      this.hairColor = hairColor;
-      this.expression = expression;
-      this.sourceType = sourceType;
-      this.deviceType = 0;
-      this.poseAngle = new int[3];
-      this.poseAngleUncertainty = new int[3];
-      this.image = image;
-      this.width = image.getWidth();
-      this.height = image.getHeight();
-      this.featurePoints = new FeaturePoint[0];
-      this.imageDataType = IMAGE_DATA_TYPE_JPEG2000;
+		   int sourceType, BufferedImage image) {
+	   this();
+	   this.faceImageBlockLength = 0L;
+	   this.gender = gender;
+	   this.eyeColor = eyeColor;
+	   this.hairColor = hairColor;
+	   this.expression = expression;
+	   this.sourceType = sourceType;
+	   this.deviceType = 0;
+	   this.poseAngle = new int[3];
+	   this.poseAngleUncertainty = new int[3];
+	   this.image = image;
+	   this.width = image.getWidth();
+	   this.height = image.getHeight();
+	   this.featurePoints = new FeaturePoint[0];
+	   this.imageDataType = IMAGE_DATA_TYPE_JPEG2000;
    }
 
    /**
@@ -233,66 +239,66 @@ public class FaceInfo
     * @throws IOException if input cannot be read
     */
    FaceInfo(InputStream in) throws IOException {
-	   debug("new FaceInfo(in) in of type " + in.getClass().getSimpleName());
+	   this();
 	   dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
-      
-      /* Facial Information (20) */
-      faceImageBlockLength = dataIn.readInt() & 0x00000000FFFFFFFFL;
-      int featurePointCount = dataIn.readUnsignedShort();
-      gender = Gender.getInstance(dataIn.readUnsignedByte());
-      eyeColor = EyeColor.toEyeColor(dataIn.readUnsignedByte());
-      hairColor = dataIn.readUnsignedByte();
-      featureMask = dataIn.readUnsignedByte();
-      featureMask = (featureMask << 16) | dataIn.readUnsignedShort();
-      expression = dataIn.readShort();
-      poseAngle = new int[3];
-      int by = dataIn.readUnsignedByte();
-      poseAngle[YAW] = 2 * ((by <= 91) ? (by - 1) : (by - 181));
-      int bp = dataIn.readUnsignedByte();
-      poseAngle[PITCH] = 2 * ((bp <= 91) ? (bp - 1) : (bp - 181));
-      int br = dataIn.readUnsignedByte();
-      poseAngle[ROLL] = 2 * ((br <= 91) ? (br - 1) : (br - 181));
-      poseAngleUncertainty = new int[3];
-      poseAngleUncertainty[YAW] = dataIn.readUnsignedByte();
-      poseAngleUncertainty[PITCH] = dataIn.readUnsignedByte();
-      poseAngleUncertainty[ROLL] = dataIn.readUnsignedByte();
-      
-      /* Feature Point(s) (optional) (8 * featurePointCount) */
-      featurePoints = new FeaturePoint[featurePointCount];
-      for (int i = 0; i < featurePointCount; i++) {
-         int featureType = dataIn.readUnsignedByte();
-         byte featurePoint = dataIn.readByte();
-         int x = dataIn.readUnsignedShort();
-         int y = dataIn.readUnsignedShort();
-         dataIn.skip(2); // 2 bytes reserved
-         featurePoints[i] = new FeaturePoint(featureType, featurePoint, x, y);
-      }
-      
-      /* Image Information */
-      faceImageType = dataIn.readUnsignedByte();
-      imageDataType = dataIn.readUnsignedByte();
-      width = dataIn.readUnsignedShort();
-      height = dataIn.readUnsignedShort();
-      imageColorSpace = dataIn.readUnsignedByte();
-      sourceType = dataIn.readUnsignedByte();
-      deviceType = dataIn.readUnsignedShort();
-      quality = dataIn.readUnsignedShort();
-      
-      /* Temporarily fix width and height if 0. */
-      if (width <= 0) {
-         System.err.println("WARNING: FaceInfo: width = " + width);
-         width = 800;
-      }
-      if (height <= 0) {
-         System.err.println("WARNING: FaceInfo: height = " + height);
-         height = 600;
-      }
 
-      /*
-       * Read image data, image data type code based on Section 5.8.1
-       * ISO 19794-5
-       */
-      image = null;
+	   /* Facial Information (20) */
+	   faceImageBlockLength = dataIn.readInt() & 0xFFFFFFFFL;
+	   int featurePointCount = dataIn.readUnsignedShort();
+	   gender = Gender.getInstance(dataIn.readUnsignedByte());
+	   eyeColor = EyeColor.toEyeColor(dataIn.readUnsignedByte());
+	   hairColor = dataIn.readUnsignedByte();
+	   featureMask = dataIn.readUnsignedByte();
+	   featureMask = (featureMask << 16) | dataIn.readUnsignedShort();
+	   expression = dataIn.readShort();
+	   poseAngle = new int[3];
+	   int by = dataIn.readUnsignedByte();
+	   poseAngle[YAW] = 2 * ((by <= 91) ? (by - 1) : (by - 181));
+	   int bp = dataIn.readUnsignedByte();
+	   poseAngle[PITCH] = 2 * ((bp <= 91) ? (bp - 1) : (bp - 181));
+	   int br = dataIn.readUnsignedByte();
+	   poseAngle[ROLL] = 2 * ((br <= 91) ? (br - 1) : (br - 181));
+	   poseAngleUncertainty = new int[3];
+	   poseAngleUncertainty[YAW] = dataIn.readUnsignedByte();
+	   poseAngleUncertainty[PITCH] = dataIn.readUnsignedByte();
+	   poseAngleUncertainty[ROLL] = dataIn.readUnsignedByte();
+
+	   /* Feature Point(s) (optional) (8 * featurePointCount) */
+	   featurePoints = new FeaturePoint[featurePointCount];
+	   for (int i = 0; i < featurePointCount; i++) {
+		   int featureType = dataIn.readUnsignedByte();
+		   byte featurePoint = dataIn.readByte();
+		   int x = dataIn.readUnsignedShort();
+		   int y = dataIn.readUnsignedShort();
+		   dataIn.skip(2); // 2 bytes reserved
+		   featurePoints[i] = new FeaturePoint(featureType, featurePoint, x, y);
+	   }
+
+	   /* Image Information */
+	   faceImageType = dataIn.readUnsignedByte();
+	   imageDataType = dataIn.readUnsignedByte();
+	   width = dataIn.readUnsignedShort();
+	   height = dataIn.readUnsignedShort();
+	   imageColorSpace = dataIn.readUnsignedByte();
+	   sourceType = dataIn.readUnsignedByte();
+	   deviceType = dataIn.readUnsignedShort();
+	   quality = dataIn.readUnsignedShort();
+
+	   /* Temporarily fix width and height if 0. */
+	   if (width <= 0) {
+		   System.err.println("WARNING: FaceInfo: width = " + width);
+		   width = 800;
+	   }
+	   if (height <= 0) {
+		   System.err.println("WARNING: FaceInfo: height = " + height);
+		   height = 600;
+	   }
+
+	   /*
+	    * Read image data, image data type code based on Section 5.8.1
+	    * ISO 19794-5
+	    */
+	   image = null;
    }
 
    public byte[] getEncoded() {
@@ -343,7 +349,7 @@ public class FaceInfo
           * Read image data, image data type code based on Section 5.8.1
           * ISO 19794-5
           */
-         if (image == null) { image = (BufferedImage)getImage(); }
+         if (image == null) { getImage(); }
          switch (imageDataType) {
          case IMAGE_DATA_TYPE_JPEG:
             writeImage(image, dataOut, "image/jpeg");
@@ -376,20 +382,16 @@ public class FaceInfo
       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType)
+   private BufferedImage processImage(InputStream in, String mimeType, double scale)
    throws IOException {
-	   // if (in.markSupported()) { in.reset(); }
-	   /* If !in.markSupported() we assume the inputstream is at the beginning of the image block. */
-	   System.out.println("DEBUG: processImage called");
-	   ImageInputStream iis = ImageIO.createImageInputStream(in);
-	   System.out.println("DEBUG: processImage after createImageInputStream");
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
 			   ImageReader reader = (ImageReader)readers.next();
-			   BufferedImage image = processImage(iis, reader);
+			   BufferedImage image = processImage(in, reader, scale);
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
+			   /* NOTE: this readers doesn't work? Try next one... */
 			   e.printStackTrace();
 			   continue;
 		   }
@@ -397,99 +399,34 @@ public class FaceInfo
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage processImage(ImageInputStream iis, ImageReader reader) throws IOException {
-	   reader.setInput(iis);
+   private BufferedImage processImage(InputStream in, ImageReader reader, double scale) throws IOException {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-	   //			   pm.setSourceProgressivePasses(1, 8);
-	   //			   pm.setSourceSubsampling(4, 4, 0, 0); // FIXME FIXME FIXME
-	   reader.addIIOReadUpdateListener(new IIOReadUpdateListener() {
-
-		   public void imageUpdate(ImageReader source,
-				   BufferedImage theImage, int minX, int minY, int width,
-				   int height, int periodX, int periodY, int[] bands) {
-			   debug("imageUpdate");					
+	   int passesCount = 10;
+	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
+	   int blockSize = totalLength / passesCount;
+	   InputStream partialIn = new BufferedInputStream(in, blockSize + 1);
+	   byte[] buf = new byte[0];
+	   BufferedImage resultImage = null;
+	   for (int i = 0; i < passesCount; i++) {
+		   try {
+			   byte[] newBuf = new byte[(i + 1) * blockSize];
+			   System.arraycopy(buf, 0, newBuf, 0, buf.length);
+			   partialIn.read(newBuf, buf.length, blockSize);
+			   buf = newBuf;
+			   ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(buf));
+			   reader.setInput(iis);
+		   } catch (IOException ioe) {
+			   /* NOTE: ignoring EOF... is bound to happen... */
 		   }
-
-		   public void passComplete(ImageReader source,
-				   BufferedImage theImage) {
-			   debug("passCompleted");
-
+		   resultImage = reader.read(0, pm);
+		   if (resultImage != null) {
+			   image = resultImage;
+			   resultImage = scaleImage(resultImage, scale);
+			   notifyImageReadUpdateListeners(resultImage);
 		   }
-
-		   public void passStarted(ImageReader source,
-				   BufferedImage theImage, int pass, int minPass,
-				   int maxPass, int minX, int minY, int periodX,
-				   int periodY, int[] bands) {
-			   debug("passStarted");
-
-		   }
-
-		   public void thumbnailPassComplete(ImageReader source,
-				   BufferedImage theThumbnail) {
-			   debug("thumbNailPassComplete");
-
-		   }
-
-		   public void thumbnailPassStarted(ImageReader source,
-				   BufferedImage theThumbnail, int pass, int minPass,
-				   int maxPass, int minX, int minY, int periodX,
-				   int periodY, int[] bands) {
-			   debug("thumbnailPassStarted");
-		   }
-
-		   public void thumbnailUpdate(ImageReader source,
-				   BufferedImage theThumbnail, int minX, int minY,
-				   int width, int height, int periodX, int periodY,
-				   int[] bands) {
-			   debug("thumbnailUpdate");
-
-		   }
-
-	   });
-	   reader.addIIOReadProgressListener(new IIOReadProgressListener() {
-
-		   public void imageComplete(ImageReader source) {
-			   debug("imageComplete");
-		   }
-
-		   public void imageProgress(ImageReader source,
-				   float percentageDone) {
-			   debug("imageProgress " + percentageDone);
-		   }
-
-		   public void imageStarted(ImageReader source, int imageIndex) {
-			   debug("imageStarted");
-		   }
-
-		   public void readAborted(ImageReader source) {
-			   debug("readAborted");
-		   }
-
-		   public void sequenceComplete(ImageReader source) {
-			   debug("sequenceComplete");
-		   }
-
-		   public void sequenceStarted(ImageReader source, int minIndex) {
-			   debug("sequenceStarted");
-		   }
-
-		   public void thumbnailComplete(ImageReader source) {
-			   debug("thumbnailComplete");
-		   }
-
-		   public void thumbnailProgress(ImageReader source,
-				   float percentageDone) {
-			   debug("thumbnailProgress");
-		   }
-
-		   public void thumbnailStarted(ImageReader source,
-				   int imageIndex, int thumbnailIndex) {
-			   debug("thumbnailStarted");
-		   }
-
-	   });
-	   return reader.read(0, pm);
+	   }	   
+	   return resultImage;
    }
 
    /**
@@ -502,59 +439,6 @@ public class FaceInfo
 	   double scale = xScale < yScale ? xScale : yScale;
 	   return scale;
    }
-   
-//   private BufferedImage readScaledImage(InputStream in, String mimeType, int desiredWidth, int desiredHeight)
-//   throws IOException {
-//	   /* The desired dimensions will be smaller than the actual image. */
-//	   if (desiredWidth > width) { desiredWidth = width; }
-//	   if (desiredHeight > height) { desiredHeight = height; }
-//
-//	   debug("wwidth = " + width);
-//	   
-//	   /* A scaling factor that respects aspect ratio. */
-//	   double xScale = (double)desiredWidth / (double)width;
-//	   double yScale = (double)desiredHeight / (double)height;
-//	   double scale = xScale < yScale ? xScale : yScale;
-//	   
-//	   if (image != null) {
-//		   /* Full image already read, we'll just scale it down... */
-//		   return scaleImage(image, scale);
-//	   }
-//
-//	   /* We'll read the preview image from the inputstream as efficiently as possible. */
-//	   if (in.markSupported()) { in.reset(); }
-//	   ImageInputStream iis = ImageIO.createImageInputStream(in);
-//	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-//	   while (readers.hasNext()) {
-//		   try {
-//			   ImageReader reader = (ImageReader)readers.next();
-//			   reader.setInput(iis);
-//			   ImageReadParam pm = reader.getDefaultReadParam();
-//			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-//			   if (pm.canSetSourceRenderSize()) {
-//				   pm.setSourceRenderSize(new Dimension((int)(width * scale), (int)(height * scale)));
-//				   BufferedImage image = reader.read(0, pm);
-//				   return image;
-//			   } else {
-//				   int xSubSampling = (int)(Math.round((double)width / (double)desiredWidth));
-//				   int ySubSampling = (int)(Math.round((double)height / (double)desiredHeight));
-//				   pm.setSourceSubsampling(xSubSampling, ySubSampling, 0, 0);
-//				   BufferedImage image = reader.read(0, pm);
-//				   if (image != null) {
-//					   /* Rescale, just in case. */
-//					   xScale = (double)desiredWidth / (double)image.getWidth();
-//					   yScale = (double)desiredHeight / (double)image.getHeight();
-//					   scale = xScale < yScale ? xScale : yScale;
-//					   return scaleImage(image, scale);
-//				   }
-//			   }
-//		   } catch (Exception e) {
-//			   e.printStackTrace();
-//			   continue;
-//		   }
-//	   }
-//	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
-//   }
    
    /**
     * Scales image.
@@ -623,8 +507,12 @@ public class FaceInfo
 		   throw new IOException("Unknown image data type!");
 	   }
 	   try {
-		   if (image == null) {  image = processImage(dataIn, mimeType); }
-		   return scaleImage(image, calculateScale(width, height));
+		   double scale = calculateScale(width, height);
+		   return processImage(dataIn, mimeType, scale);
+		   /*
+		    * NOTE: As a side effect, processImage will write unscaledImage
+		    * to be used by subsequent calls to getImage().
+		    */
 	   } catch (IOException ioe) {
 		   throw new IllegalStateException(ioe.toString());
 	   }
@@ -636,26 +524,27 @@ public class FaceInfo
     * @return image
     */
    public Image getImage() {
+	   BufferedImage resultImage = null;
 	   if (image != null) { return image; }
 	   try {
 		   switch (imageDataType) {
 		   case IMAGE_DATA_TYPE_JPEG:
-			   image = processImage(dataIn, "image/jpeg");
+			   resultImage = processImage(dataIn, "image/jpeg", 1.0);
 			   break;
 		   case IMAGE_DATA_TYPE_JPEG2000:
-			   image = processImage(dataIn, "image/jpeg2000");
+			   resultImage = processImage(dataIn, "image/jpeg2000", 1.0);
 			   break;
 		   default:
 			   throw new IOException("Unknown image data type!");
 		   }
 
 		   /* Set width and height for real. */
-		   width = image.getWidth();
-		   height = image.getHeight();
+		   width = resultImage.getWidth();
+		   height = resultImage.getHeight();
 	   } catch (IOException ioe) {
 		   ioe.printStackTrace();
 	   }
-	   return image;
+	   return resultImage;
    }
    
    /**
@@ -1002,9 +891,31 @@ public class FaceInfo
    }
    
    /**
+    * Adds a listener which will be notified when new image data is available.
+    *
+    * @param l the listener
+    */
+   public void addImageReadUpdateListener(ImageReadUpdateListener l) {
+	   imageReadUpdateListeners.add(l);
+   }
+
+   /**
+    * Removes a listener.
+    *
+    * @param l the listener
+    */
+   public void removeImageReadUpdateListener(ImageReadUpdateListener l) {
+	   imageReadUpdateListeners.remove(l);
+   }
+
+   private void notifyImageReadUpdateListeners(BufferedImage image) {
+	   for (ImageReadUpdateListener l: imageReadUpdateListeners) { l.passComplete(image); }
+   }
+
+   /**
     * Feature points as described in Section 5.6.3 of ISO/IEC FCD 19794-5.
     * 
-    * @author Martijn Oostdijk (martijno@cs.ru.nl)
+    * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
     * 
     * @version $Revision$
     */
@@ -1109,6 +1020,8 @@ public class FaceInfo
          return out.toString();
       }
    }
+
+   /* DEBUGGING STUFF BELOW */
    
    private void debug(Object obj) {
 	   if (DEBUG) { System.out.println("DEBUG: " + obj.toString()); }

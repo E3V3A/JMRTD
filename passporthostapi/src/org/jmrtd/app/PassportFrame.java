@@ -33,7 +33,6 @@ import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -87,13 +86,8 @@ import javax.swing.JProgressBar;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 
-import com.sun.corba.se.impl.ior.ByteBuffer;
-
 import sos.data.Country;
 import sos.data.Gender;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
 import sos.mrtd.COMFile;
 import sos.mrtd.DG11File;
 import sos.mrtd.DG12File;

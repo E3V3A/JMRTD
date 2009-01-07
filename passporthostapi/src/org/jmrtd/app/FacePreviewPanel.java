@@ -26,6 +26,7 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -36,6 +37,7 @@ import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
 import sos.mrtd.FaceInfo;
+import sos.mrtd.ImageReadUpdateListener;
 import sos.util.Icons;
 
 /**
@@ -58,9 +60,7 @@ public class FacePreviewPanel extends JPanel
 		this.width = width;
 		this.height = height;
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-		// add(tabbedPane);
-		PLACE_HOLDER.setPreferredSize(new Dimension(width + 40, height + 10));
-		add(PLACE_HOLDER);
+		add(tabbedPane);
 	}
 
 	public int getSelectedIndex() {
@@ -69,14 +69,21 @@ public class FacePreviewPanel extends JPanel
 
 	public void addFace(FaceInfo faceInfo) {
 		try {
-			System.out.println("DEBUG: addFace called");
-			int tabCount = tabbedPane.getTabCount();
-			if (tabCount <= 0) {
-				remove(PLACE_HOLDER);
-				add(tabbedPane);
-			}
-			Image image = faceInfo.getThumbNail(width - 10, height - 10);
-			addImage(image);
+			final int index = tabbedPane.getTabCount();
+			BufferedImage image = (BufferedImage)createImage(width - 10, height - 10);
+			final JLabel label = new JLabel(new ImageIcon(image));
+			final JPanel panel = new JPanel(new FlowLayout());
+			panel.add(label);
+			tabbedPane.addTab(Integer.toString(index), IMAGE_ICON, panel);
+			revalidate(); repaint();
+			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
+				public void passComplete(BufferedImage image) {
+					label.setIcon(new ImageIcon(image));
+					revalidate(); repaint();
+				}
+			});
+			image = faceInfo.getThumbNail(width - 10, height - 10);
+			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
 		} catch (IOException ioe) {
 			/* We'll just skip this image then. */
@@ -87,12 +94,6 @@ public class FacePreviewPanel extends JPanel
 	public void removeFace(int index) {
 		Dimension size = tabbedPane.getSize();
 		removeImage(index);
-		int tabCount = tabbedPane.getTabCount();
-		if (tabCount <= 0) {
-			remove(tabbedPane);
-			PLACE_HOLDER.setPreferredSize(size);
-			add(PLACE_HOLDER);
-		}
 		revalidate(); repaint();
 	}
 	
@@ -100,13 +101,6 @@ public class FacePreviewPanel extends JPanel
 		for (FaceInfo faceInfo: faces) {
 			addFace(faceInfo);
 		}
-	}
-
-	private void addImage(Image image) {
-		JPanel panel = new JPanel(new FlowLayout());
-		panel.add(new JLabel(new ImageIcon(image)));
-		int index = tabbedPane.getTabCount();
-		tabbedPane.addTab(Integer.toString(index), IMAGE_ICON, panel);
 	}
 
 	private void removeImage(int index) {
