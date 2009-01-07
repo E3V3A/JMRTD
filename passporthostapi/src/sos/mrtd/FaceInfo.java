@@ -466,26 +466,26 @@ public class FaceInfo
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
 	   debug("writing mimeType = " + mimeType);
-      Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
-      if (!writers.hasNext()) {
-         throw new IOException("No writers for \"" + mimeType + "\"");
-      }
-      ImageOutputStream ios = ImageIO.createImageOutputStream(out);
-      while (writers.hasNext()) {
-         try {
-            ImageWriter writer = (ImageWriter)writers.next();
-            writer.setOutput(ios);
-            ImageWriteParam pm = writer.getDefaultWriteParam();
-            pm.setSourceRegion(new Rectangle(0, 0, width, height));
-            writer.write(image);
-            return;
-         } catch (Exception e) {
-            e.printStackTrace();
-            continue;
-         } finally {
-            ios.flush();
-         }
-      }
+	   Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
+	   if (!writers.hasNext()) {
+		   throw new IOException("No writers for \"" + mimeType + "\"");
+	   }
+	   ImageOutputStream ios = ImageIO.createImageOutputStream(out);
+	   while (writers.hasNext()) {
+		   try {
+			   ImageWriter writer = (ImageWriter)writers.next();
+			   writer.setOutput(ios);
+			   ImageWriteParam pm = writer.getDefaultWriteParam();
+			   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+			   writer.write(image);
+			   return;
+		   } catch (Exception e) {
+			   e.printStackTrace();
+			   continue;
+		   } finally {
+			   ios.flush();
+		   }
+	   }
    }
    
    /**
@@ -496,7 +496,6 @@ public class FaceInfo
     * @return image
     */
    public BufferedImage getThumbNail(int width, int height) throws IOException {
-	   System.out.println("DEBUG: getThumbNail called");
 	   String mimeType = null;
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
@@ -517,7 +516,7 @@ public class FaceInfo
 		   throw new IllegalStateException(ioe.toString());
 	   }
    }
-   
+
    /**
     * Gets the image.
     * 
@@ -546,14 +545,14 @@ public class FaceInfo
 	   }
 	   return resultImage;
    }
-   
+
    /**
     * Gets the available feature points of this face.
     * 
     * @return feature points
     */
    public FeaturePoint[] getFeaturePoints() {
-      return featurePoints;
+	   return featurePoints;
    }
 
    /**
@@ -564,27 +563,27 @@ public class FaceInfo
     * @see java.lang.Object#toString()
     */
    public String toString() {
-      StringBuffer out = new StringBuffer();
-      out.append("Image size: "); out.append(width + " x " + height); out.append("\n");
-      out.append("Gender: "); out.append(gender); out.append("\n");
-      out.append("Eye color: "); out.append(eyeColor); out.append("\n");
-      out.append("Hair color: "); out.append(hairColorToString()); out.append("\n");
-      out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
-      out.append("Expression: "); out.append(expressionToString()); out.append("\n");
-      out.append("Pose angle: "); out.append(poseAngleToString()); out.append("\n");
-      out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
-      out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
-      out.append("Feature points: "); out.append("\n");
-      if (featurePoints == null || featurePoints.length == 0) {
-         out.append("   (none)\n");
-      } else {
-         for (int i = 0; i < featurePoints.length; i++) {
-            out.append("   ");
-            out.append(featurePoints[i].toString());
-            out.append("\n");
-         }
-      }
-      return out.toString();
+	   StringBuffer out = new StringBuffer();
+	   out.append("Image size: "); out.append(width + " x " + height); out.append("\n");
+	   out.append("Gender: "); out.append(gender); out.append("\n");
+	   out.append("Eye color: "); out.append(eyeColor); out.append("\n");
+	   out.append("Hair color: "); out.append(hairColorToString()); out.append("\n");
+	   out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
+	   out.append("Expression: "); out.append(expressionToString()); out.append("\n");
+	   out.append("Pose angle: "); out.append(poseAngleToString()); out.append("\n");
+	   out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
+	   out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
+	   out.append("Feature points: "); out.append("\n");
+	   if (featurePoints == null || featurePoints.length == 0) {
+		   out.append("   (none)\n");
+	   } else {
+		   for (int i = 0; i < featurePoints.length; i++) {
+			   out.append("   ");
+			   out.append(featurePoints[i].toString());
+			   out.append("\n");
+		   }
+	   }
+	   return out.toString();
    }
    
 //   private String genderToString() {
@@ -611,140 +610,140 @@ public class FaceInfo
 //   }
    
    private String hairColorToString() {
-      switch(hairColor) {
-      case HAIR_COLOR_UNSPECIFIED: return "unspecified";
-      case HAIR_COLOR_BALD: return "bald";
-      case HAIR_COLOR_BLACK: return "black";
-      case HAIR_COLOR_BLONDE: return "blonde";
-      case HAIR_COLOR_BROWN: return "brown";
-      case HAIR_COLOR_GRAY: return "gray";
-      case HAIR_COLOR_WHITE: return "white";
-      case HAIR_COLOR_RED: return "red";
-      case HAIR_COLOR_GREEN: return "green";
-      case HAIR_COLOR_BLUE: return "blue";
-      }
-      return "unknown";
+	   switch(hairColor) {
+	   case HAIR_COLOR_UNSPECIFIED: return "unspecified";
+	   case HAIR_COLOR_BALD: return "bald";
+	   case HAIR_COLOR_BLACK: return "black";
+	   case HAIR_COLOR_BLONDE: return "blonde";
+	   case HAIR_COLOR_BROWN: return "brown";
+	   case HAIR_COLOR_GRAY: return "gray";
+	   case HAIR_COLOR_WHITE: return "white";
+	   case HAIR_COLOR_RED: return "red";
+	   case HAIR_COLOR_GREEN: return "green";
+	   case HAIR_COLOR_BLUE: return "blue";
+	   }
+	   return "unknown";
    }
-   
+
    private String featureMaskToString() {
-      if ((featureMask & FEATURE_FEATURES_ARE_SPECIFIED_FLAG) == 0) { return ""; }
-      Collection<String> features = new ArrayList<String>();
-      if ((featureMask & FEATURE_GLASSES_FLAG) != 0) {
-         features.add("glasses");
-      }
-      if ((featureMask & FEATURE_MOUSTACHE_FLAG) != 0) {
-         features.add("moustache");
-      }
-      if ((featureMask & FEATURE_BEARD_FLAG) != 0) {
-         features.add("beard");
-      }
-      if ((featureMask & FEATURE_TEETH_VISIBLE_FLAG) != 0) {
-         features.add("teeth visible");
-      }
-      if ((featureMask & FEATURE_BLINK_FLAG) != 0) {
-         features.add("blink");
-      }
-      if ((featureMask & FEATURE_MOUTH_OPEN_FLAG) != 0) {
-         features.add("mouth open");
-      }
-      if ((featureMask & FEATURE_LEFT_EYE_PATCH_FLAG) != 0) {
-         features.add("left eye patch");
-      }
-      if ((featureMask & FEATURE_RIGHT_EYE_PATCH) != 0) {
-         features.add("right eye patch");
-      }
-      if ((featureMask & FEATURE_DARK_GLASSES) != 0) {
-         features.add("dark glasses");
-      }
-      if ((featureMask & FEATURE_DISTORTING_MEDICAL_CONDITION) != 0) {
-         features
-               .add("distorting medical condition (which could impact feature point detection)");
-      }
-      StringBuffer out = new StringBuffer();
-      for (Iterator<String> it = features.iterator(); it.hasNext();) {
-         out.append(it.next().toString());
-         if (it.hasNext()) {
-            out.append(", ");
-         }
-      }
-      return out.toString();
+	   if ((featureMask & FEATURE_FEATURES_ARE_SPECIFIED_FLAG) == 0) { return ""; }
+	   Collection<String> features = new ArrayList<String>();
+	   if ((featureMask & FEATURE_GLASSES_FLAG) != 0) {
+		   features.add("glasses");
+	   }
+	   if ((featureMask & FEATURE_MOUSTACHE_FLAG) != 0) {
+		   features.add("moustache");
+	   }
+	   if ((featureMask & FEATURE_BEARD_FLAG) != 0) {
+		   features.add("beard");
+	   }
+	   if ((featureMask & FEATURE_TEETH_VISIBLE_FLAG) != 0) {
+		   features.add("teeth visible");
+	   }
+	   if ((featureMask & FEATURE_BLINK_FLAG) != 0) {
+		   features.add("blink");
+	   }
+	   if ((featureMask & FEATURE_MOUTH_OPEN_FLAG) != 0) {
+		   features.add("mouth open");
+	   }
+	   if ((featureMask & FEATURE_LEFT_EYE_PATCH_FLAG) != 0) {
+		   features.add("left eye patch");
+	   }
+	   if ((featureMask & FEATURE_RIGHT_EYE_PATCH) != 0) {
+		   features.add("right eye patch");
+	   }
+	   if ((featureMask & FEATURE_DARK_GLASSES) != 0) {
+		   features.add("dark glasses");
+	   }
+	   if ((featureMask & FEATURE_DISTORTING_MEDICAL_CONDITION) != 0) {
+		   features
+		   .add("distorting medical condition (which could impact feature point detection)");
+	   }
+	   StringBuffer out = new StringBuffer();
+	   for (Iterator<String> it = features.iterator(); it.hasNext();) {
+		   out.append(it.next().toString());
+		   if (it.hasNext()) {
+			   out.append(", ");
+		   }
+	   }
+	   return out.toString();
    }
-   
+
    private String expressionToString() {
-      switch (expression) {
-      case EXPRESSION_UNSPECIFIED:
-         return "unspecified";
-      case EXPRESSION_NEUTRAL:
-         return "neutral (non-smiling) with both eyes open and mouth closed";
-      case EXPRESSION_SMILE_CLOSED:
-         return "a smile where the inside of the mouth and/or teeth is not exposed (closed jaw)";
-      case EXPRESSION_SMILE_OPEN:
-         return "a smile where the inside of the mouth and/or teeth is exposed";
-      case EXPRESSION_RAISED_EYEBROWS:
-         return "raised eyebrows";
-      case EXPRESSION_EYES_LOOKING_AWAY:
-         return "eyes looking away from the camera";
-      case EXPRESSION_SQUINTING:
-         return "squinting";
-      case EXPRESSION_FROWNING:
-         return "frowning";
-      }
-      return "unknown";
+	   switch (expression) {
+	   case EXPRESSION_UNSPECIFIED:
+		   return "unspecified";
+	   case EXPRESSION_NEUTRAL:
+		   return "neutral (non-smiling) with both eyes open and mouth closed";
+	   case EXPRESSION_SMILE_CLOSED:
+		   return "a smile where the inside of the mouth and/or teeth is not exposed (closed jaw)";
+	   case EXPRESSION_SMILE_OPEN:
+		   return "a smile where the inside of the mouth and/or teeth is exposed";
+	   case EXPRESSION_RAISED_EYEBROWS:
+		   return "raised eyebrows";
+	   case EXPRESSION_EYES_LOOKING_AWAY:
+		   return "eyes looking away from the camera";
+	   case EXPRESSION_SQUINTING:
+		   return "squinting";
+	   case EXPRESSION_FROWNING:
+		   return "frowning";
+	   }
+	   return "unknown";
    }
-   
+
    private String poseAngleToString() {
-      StringBuffer out = new StringBuffer();
-      out.append("(");
-      out.append("y: "); out.append(poseAngle[YAW]);
-      if (poseAngleUncertainty[YAW] != 0) {
-         out.append(" ("); out.append(poseAngleUncertainty[YAW]); out.append(")");
-      }
-      out.append(", ");
-      out.append("p:"); out.append(poseAngle[PITCH]);
-      if (poseAngleUncertainty[PITCH] != 0) {
-         out.append(" ("); out.append(poseAngleUncertainty[PITCH]); out.append(")");
-      }
-      out.append(", ");
-      out.append("r: "); out.append(poseAngle[ROLL]);
-      if (poseAngleUncertainty[ROLL] != 0) {
-         out.append(" ("); out.append(poseAngleUncertainty[ROLL]); out.append(")");
-      }
-      out.append(")");
-      return out.toString();
+	   StringBuffer out = new StringBuffer();
+	   out.append("(");
+	   out.append("y: "); out.append(poseAngle[YAW]);
+	   if (poseAngleUncertainty[YAW] != 0) {
+		   out.append(" ("); out.append(poseAngleUncertainty[YAW]); out.append(")");
+	   }
+	   out.append(", ");
+	   out.append("p:"); out.append(poseAngle[PITCH]);
+	   if (poseAngleUncertainty[PITCH] != 0) {
+		   out.append(" ("); out.append(poseAngleUncertainty[PITCH]); out.append(")");
+	   }
+	   out.append(", ");
+	   out.append("r: "); out.append(poseAngle[ROLL]);
+	   if (poseAngleUncertainty[ROLL] != 0) {
+		   out.append(" ("); out.append(poseAngleUncertainty[ROLL]); out.append(")");
+	   }
+	   out.append(")");
+	   return out.toString();
    }
-   
+
    private String faceImageTypeToString() {
-      switch (faceImageType) {
-      case FACE_IMAGE_TYPE_UNSPECIFIED: return "unspecified (basic)";
-      case FACE_IMAGE_TYPE_BASIC: return "basic";
-      case FACE_IMAGE_TYPE_FULL_FRONTAL: return "full frontal";
-      case FACE_IMAGE_TYPE_TOKEN_FRONTAL: return "token frontal";
-      case FACE_IMAGE_TYPE_OTHER: return "other";
-      }
-      return "unknown";
+	   switch (faceImageType) {
+	   case FACE_IMAGE_TYPE_UNSPECIFIED: return "unspecified (basic)";
+	   case FACE_IMAGE_TYPE_BASIC: return "basic";
+	   case FACE_IMAGE_TYPE_FULL_FRONTAL: return "full frontal";
+	   case FACE_IMAGE_TYPE_TOKEN_FRONTAL: return "token frontal";
+	   case FACE_IMAGE_TYPE_OTHER: return "other";
+	   }
+	   return "unknown";
    }
-   
+
    private String sourceTypeToString() {
-      switch (sourceType) {
-      case SOURCE_TYPE_UNSPECIFIED:
-         return "unspecified";
-      case SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE:
-         return "static photograph from an unknown source";
-      case SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM:
-         return "static photograph from a digital still-image camera";
-      case SOURCE_TYPE_STATIC_PHOTO_SCANNER:
-         return "static photograph fram a scanner";
-      case SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE:
-         return "single video frame from an unknown source";
-      case SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM:
-         return "single video frame from an analogue camera";
-      case SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM:
-         return "single video frame from a digital camera";
-      }
-      return "unknown";
+	   switch (sourceType) {
+	   case SOURCE_TYPE_UNSPECIFIED:
+		   return "unspecified";
+	   case SOURCE_TYPE_STATIC_PHOTO_UNKNOWN_SOURCE:
+		   return "static photograph from an unknown source";
+	   case SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM:
+		   return "static photograph from a digital still-image camera";
+	   case SOURCE_TYPE_STATIC_PHOTO_SCANNER:
+		   return "static photograph fram a scanner";
+	   case SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE:
+		   return "single video frame from an unknown source";
+	   case SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM:
+		   return "single video frame from an analogue camera";
+	   case SOURCE_TYPE_VIDEO_FRAME_DIGITAL_CAM:
+		   return "single video frame from a digital camera";
+	   }
+	   return "unknown";
    }
-   
-/*
+
+   /*
    private String imageColorSpaceToString() {
       switch(imageColorSpace) {
       case IMAGE_COLOR_SPACE_UNSPECIFIED: return "unspecified";
@@ -758,8 +757,8 @@ public class FaceInfo
       }
       return "unknown";
    }
-*/
-   
+    */
+
    /**
     * Gets the width of this face.
     * 
@@ -768,7 +767,7 @@ public class FaceInfo
    public int getWidth() {
 	   return width;
    }
-   
+
    /**
     * Gets the height of this face.
     * 
@@ -777,7 +776,7 @@ public class FaceInfo
    public int getHeight() {
 	   return height;
    }
-   
+
    /**
     * Gets the expression
     * (neutral, smiling, eyebrow raised, etc).
@@ -785,7 +784,7 @@ public class FaceInfo
     * @return expression
     */
    public short getExpression() {
-      return expression;
+	   return expression;
    }
 
    /**
@@ -795,7 +794,7 @@ public class FaceInfo
     * @return eye color
     */
    public EyeColor getEyeColor() {
-      return eyeColor;
+	   return eyeColor;
    }
 
    /**
@@ -805,7 +804,7 @@ public class FaceInfo
     * @return gender
     */
    public Gender getGender() {
-      return gender;
+	   return gender;
    }
 
    /**
@@ -815,7 +814,7 @@ public class FaceInfo
     * @return hair color
     */
    public int getHairColor() {
-      return hairColor;
+	   return hairColor;
    }
 
    /**
@@ -825,7 +824,7 @@ public class FaceInfo
     * @return face image type
     */
    public int getFaceImageType() {
-      return faceImageType;
+	   return faceImageType;
    }
 
    /**
@@ -834,7 +833,7 @@ public class FaceInfo
     * @return quality
     */
    public int getQuality() {
-      return quality;
+	   return quality;
    }
 
    /**
@@ -844,9 +843,9 @@ public class FaceInfo
     * @return source type
     */
    public int getSourceType() {
-      return sourceType;
+	   return sourceType;
    }
-   
+
    /**
     * Gets the image color space
     * (rgb, grayscale, etc).
@@ -854,7 +853,7 @@ public class FaceInfo
     * @return image color space
     */
    public int getImageColorSpace() {
-      return imageColorSpace;
+	   return imageColorSpace;
    }
 
    /**
@@ -863,9 +862,9 @@ public class FaceInfo
     * @return device type
     */
    public int getDeviceType() {
-      return deviceType;
+	   return deviceType;
    }
-   
+
    /**
     * Gets the pose angle as an integer array of length 3,
     * containing yaw, pitch, and roll angle in degrees.
@@ -873,11 +872,11 @@ public class FaceInfo
     * @return an integer array of length 3
     */
    public int[] getPoseAngle() {
-      int[] result = new int[3];
-      System.arraycopy(poseAngle, 0, result, 0, result.length);
-      return result;
+	   int[] result = new int[3];
+	   System.arraycopy(poseAngle, 0, result, 0, result.length);
+	   return result;
    }
-   
+
    /**
     * Gets the pose angle uncertainty as an integer array of length 3,
     * containing yaw, pitch, and roll angle uncertainty in degrees.
@@ -885,11 +884,11 @@ public class FaceInfo
     * @return an integer array of length 3
     */
    public int[] getPoseAngleUncertainty() {
-      int[] result = new int[3];
-      System.arraycopy(poseAngleUncertainty, 0, result, 0, result.length);
-      return result;
+	   int[] result = new int[3];
+	   System.arraycopy(poseAngleUncertainty, 0, result, 0, result.length);
+	   return result;
    }
-   
+
    /**
     * Adds a listener which will be notified when new image data is available.
     *
@@ -921,108 +920,108 @@ public class FaceInfo
     */
    public class FeaturePoint
    {
-      private int type;
-      private int majorCode;
-      private int minorCode;
-      private int x;
-      private int y;
-      
-      /**
-       * Constructs a new feature point.
-       * 
-       * @param type feature point type
-       * @param majorCode major code
-       * @param minorCode minor code
-       * @param x X-coordinate
-       * @param y Y-coordinate
-       */
-      public FeaturePoint(int type, int majorCode, int minorCode,
-            int x, int y) {
-         this.type = type;
-         this.majorCode = majorCode;
-         this.minorCode = minorCode;
-         this.x = x;
-         this.y = y;
-      }
-      
-      /**
-       * Constructs a new feature point.
-       * 
-       * @param type feature point type
-       * @param code combined major and minor code
-       * @param x X-coordinate
-       * @param y Y-coordinate
-       */
-      FeaturePoint(int type, byte code, int x, int y) {
-         this(type, (int)((code & 0xF0) >> 4), (int)(code & 0x0F), x ,y);
-      }
-      
-      /**
-       * Gets the major code of this point.
-       * 
-       * @return major code
-       */
-      public int getMajorCode() {
-         return majorCode;
-      }
-      
-      /**
-       * Gets the minor code of this point.
-       * 
-       * @return minor code
-       */
-      public int getMinorCode() {
-         return minorCode;
-      }
+	   private int type;
+	   private int majorCode;
+	   private int minorCode;
+	   private int x;
+	   private int y;
 
-      /**
-       * Gets the type of this point.
-       * 
-       * @return type
-       */
-      public int getType() {
-         return type;
-      }
+	   /**
+	    * Constructs a new feature point.
+	    * 
+	    * @param type feature point type
+	    * @param majorCode major code
+	    * @param minorCode minor code
+	    * @param x X-coordinate
+	    * @param y Y-coordinate
+	    */
+	   public FeaturePoint(int type, int majorCode, int minorCode,
+			   int x, int y) {
+		   this.type = type;
+		   this.majorCode = majorCode;
+		   this.minorCode = minorCode;
+		   this.x = x;
+		   this.y = y;
+	   }
 
-      /**
-       * Gets the X-coordinate of this point.
-       * 
-       * @return X-coordinate
-       */
-      public int getX() {
-         return x;
-      }
+	   /**
+	    * Constructs a new feature point.
+	    * 
+	    * @param type feature point type
+	    * @param code combined major and minor code
+	    * @param x X-coordinate
+	    * @param y Y-coordinate
+	    */
+	   FeaturePoint(int type, byte code, int x, int y) {
+		   this(type, (int)((code & 0xF0) >> 4), (int)(code & 0x0F), x ,y);
+	   }
 
-      /**
-       * Gets the Y-coordinate of this point.
-       * 
-       * @return Y-coordinate
-       */
-      public int getY() {
-         return y;
-      }
-      
-      /**
-       * Generates a textual representation of this point.
-       * 
-       * @return a textual representation of this point
-       * 
-       * @see java.lang.Object#toString()
-       */
-      public String toString() {
-         StringBuffer out = new StringBuffer();
-         out.append("( point: "); out.append(getMajorCode()); out.append("."); out.append(getMinorCode());
-         out.append(", ");
-         out.append("type: "); out.append(Integer.toHexString(type)); out.append(", ");
-         out.append("("); out.append(x); out.append(", ");
-         out.append(y); out.append(")");
-         out.append(")");
-         return out.toString();
-      }
+	   /**
+	    * Gets the major code of this point.
+	    * 
+	    * @return major code
+	    */
+	   public int getMajorCode() {
+		   return majorCode;
+	   }
+
+	   /**
+	    * Gets the minor code of this point.
+	    * 
+	    * @return minor code
+	    */
+	   public int getMinorCode() {
+		   return minorCode;
+	   }
+
+	   /**
+	    * Gets the type of this point.
+	    * 
+	    * @return type
+	    */
+	   public int getType() {
+		   return type;
+	   }
+
+	   /**
+	    * Gets the X-coordinate of this point.
+	    * 
+	    * @return X-coordinate
+	    */
+	   public int getX() {
+		   return x;
+	   }
+
+	   /**
+	    * Gets the Y-coordinate of this point.
+	    * 
+	    * @return Y-coordinate
+	    */
+	   public int getY() {
+		   return y;
+	   }
+
+	   /**
+	    * Generates a textual representation of this point.
+	    * 
+	    * @return a textual representation of this point
+	    * 
+	    * @see java.lang.Object#toString()
+	    */
+	   public String toString() {
+		   StringBuffer out = new StringBuffer();
+		   out.append("( point: "); out.append(getMajorCode()); out.append("."); out.append(getMinorCode());
+		   out.append(", ");
+		   out.append("type: "); out.append(Integer.toHexString(type)); out.append(", ");
+		   out.append("("); out.append(x); out.append(", ");
+		   out.append(y); out.append(")");
+		   out.append(")");
+		   return out.toString();
+	   }
    }
 
    /* DEBUGGING STUFF BELOW */
-   
+
    private void debug(Object obj) {
 	   if (DEBUG) { System.out.println("DEBUG: " + obj.toString()); }
    }
