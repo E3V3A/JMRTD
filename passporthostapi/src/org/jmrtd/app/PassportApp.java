@@ -41,6 +41,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
@@ -73,6 +75,7 @@ import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
+import sos.smartcards.TerminalCardService;
 import sos.util.Files;
 import sos.util.Hex;
 import sos.util.Icons;
@@ -97,6 +100,7 @@ public class PassportApp  implements PassportListener
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
+	private static final Icon RELOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
 	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
 	private static final Icon TERMINAL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
 	private static final Icon TERMINAL_GO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
@@ -109,6 +113,7 @@ public class PassportApp  implements PassportListener
 
 	private Container contentPane;
 	private BACStore bacStore;
+	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
 
 	/**
@@ -121,10 +126,10 @@ public class PassportApp  implements PassportListener
 			Security.insertProviderAt(PROVIDER, 4);
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
-			CardManager cm = CardManager.getInstance();
+			cardManager = CardManager.getInstance();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
-			preferencesPanel = new PreferencesPanel(cm);
+			preferencesPanel = new PreferencesPanel(cardManager);
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
@@ -210,7 +215,7 @@ public class PassportApp  implements PassportListener
 		BACEntry bacEntry = null;
 		try {
 			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
-			COMFile com = new COMFile(comIn); /* NOTE: EF.COM is read here to test if BAC is implemented */
+			new COMFile(comIn); /* NOTE: EF.COM is read here to test if BAC is implemented */
 			isBACPassport = false;
 		} catch (CardServiceException cse) {
 			isBACPassport = true;
@@ -281,6 +286,10 @@ public class PassportApp  implements PassportListener
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
+		JMenuItem reloadItem = new JMenuItem();
+		reloadItem.setAction(getReloadAction());
+		menu.add(reloadItem);
+		
 		JMenuItem preferencesItem = new JMenuItem();
 		preferencesItem.setAction(getPreferencesAction());
 		menu.add(preferencesItem);
@@ -358,6 +367,51 @@ public class PassportApp  implements PassportListener
 		return action;
 	}
 
+	private Action getReloadAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				List<CardTerminal> terminals = cardManager.getTerminals();
+				for (final CardTerminal terminal: terminals) {
+					(new Thread(new Runnable() {
+						public void run() {	
+							try {
+								if (cardManager.isPolling(terminal) && terminal.isCardPresent()) {
+									readPassport(new PassportService(new TerminalCardService(terminal)));
+								}
+							} catch (CardException ce) {
+								/* NOTE: skip this terminal */
+							} catch (CardServiceException cse) {
+								/* NOTE: skip this terminal */
+							}
+						}
+					})).start();
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, RELOAD_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, RELOAD_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Reload any connected cards");
+		action.putValue(Action.NAME, "Reload cards");
+		return action;
+	}
+	
+	private Action getPreferencesAction() {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
+				switch (n) {
+				case JOptionPane.OK_OPTION: preferencesPanel.commit(); break;
+				default: preferencesPanel.abort();
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, PREFERENCES_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, PREFERENCES_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Open the preferences dialog");
+		action.putValue(Action.NAME, "Preferences...");
+		return action;
+	}
+	
 	private Action getAboutAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
@@ -383,25 +437,8 @@ public class PassportApp  implements PassportListener
 		};
 		action.putValue(Action.SMALL_ICON, INFORMATION_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "About this application");
+		action.putValue(Action.SHORT_DESCRIPTION, "Display information about this application");
 		action.putValue(Action.NAME, "About...");
-		return action;
-	}
-	
-	private Action getPreferencesAction() {
-		Action action = new AbstractAction() {
-			public void actionPerformed(ActionEvent e) {
-				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
-				switch (n) {
-				case JOptionPane.OK_OPTION: preferencesPanel.commit(); break;
-				default: preferencesPanel.abort();
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, PREFERENCES_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, PREFERENCES_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Open the preferences dialog");
-		action.putValue(Action.NAME, "Preferences...");
 		return action;
 	}
 

@@ -175,7 +175,6 @@ AuthListener
 			} else if (butt == lockButton) {
 				pressedLockButton();
 			}
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -195,15 +194,16 @@ AuthListener
 
 	private void pressedUploadPublicKey() throws IOException {
 
-		final InputStream DG15 = new ByteArrayInputStream(new DG15File(keyPair.getPublic()).getEncoded());
+		final byte[] keyBytes = new DG15File(keyPair.getPublic()).getEncoded();
+		final InputStream dg15In = new ByteArrayInputStream(keyBytes);
 
 		new Thread(new Runnable() {
 			public void run() {
 				try {
 					service.createFile(PassportService.EF_DG15,
-							(short) DG15.available());
+							(short)keyBytes.length);
 					service.selectFile(PassportService.EF_DG15);
-					service.writeFile(PassportService.EF_DG15, DG15);
+					service.writeFile(PassportService.EF_DG15, dg15In);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
