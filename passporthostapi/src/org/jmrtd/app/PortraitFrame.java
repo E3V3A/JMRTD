@@ -25,6 +25,7 @@ package org.jmrtd.app;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
@@ -46,6 +47,7 @@ import javax.swing.JTextArea;
 
 import sos.gui.ImagePanel;
 import sos.mrtd.FaceInfo;
+import sos.mrtd.ImageReadUpdateListener;
 import sos.util.Files;
 import sos.util.Icons;
 import sos.util.Images;
@@ -64,6 +66,8 @@ import sos.util.Images;
  */
 public class PortraitFrame extends JFrame
 {
+	private static final long serialVersionUID = -3718372037784854010L;
+
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 
 	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
@@ -82,6 +86,13 @@ public class PortraitFrame extends JFrame
 		super(title);
 		this.info = info;
 		setIconImage(JMRTD_ICON);
+		
+		info.addImageReadUpdateListener(new ImageReadUpdateListener() {
+			public void passComplete(BufferedImage image) {
+				imagePanel.setImage(image);
+				imagePanel.revalidate(); repaint();
+			}
+		}, 1.0);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
@@ -95,6 +106,7 @@ public class PortraitFrame extends JFrame
 		imagePanel.setImage(image);
 		Container cp = getContentPane();
 		cp.add(imagePanel);
+		imagePanel.revalidate(); repaint();
 	}
 
 	private JMenu createFileMenu() {

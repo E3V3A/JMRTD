@@ -27,7 +27,6 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -35,10 +34,11 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -195,12 +195,12 @@ public class FaceInfo
    private int deviceType;
    private int quality;
    private BufferedImage image;
-   private Collection<ImageReadUpdateListener> imageReadUpdateListeners;
+   private Map<ImageReadUpdateListener, Double> imageReadUpdateListeners;
 
    private DataInputStream dataIn;
 
    private FaceInfo() {
-	   imageReadUpdateListeners = new ArrayList<ImageReadUpdateListener>();
+	   imageReadUpdateListeners = new HashMap<ImageReadUpdateListener, Double>();
    }
 
    /**
@@ -383,13 +383,13 @@ public class FaceInfo
       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType, double scale)
+   private BufferedImage processImage(InputStream in, String mimeType)
    throws IOException {
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
 			   ImageReader reader = (ImageReader)readers.next();
-			   BufferedImage image = processImage(in, reader, scale);
+			   BufferedImage image = processImage(in, reader);
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
 			   /* NOTE: this readers doesn't work? Try next one... */
@@ -400,7 +400,7 @@ public class FaceInfo
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage processImage(InputStream in, ImageReader reader, double scale) {
+   private BufferedImage processImage(InputStream in, ImageReader reader) {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
 	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
@@ -435,7 +435,6 @@ public class FaceInfo
 		   }
 		   if (resultImage != null) {
 			   image = resultImage;
-			   resultImage = scaleImage(resultImage, scale);
 			   notifyImageReadUpdateListeners(resultImage);
 		   }
 	   }	   
@@ -519,8 +518,8 @@ public class FaceInfo
 		   throw new IOException("Unknown image data type!");
 	   }
 	   try {
-		   double scale = calculateScale(width, height);
-		   return processImage(dataIn, mimeType, scale);
+		   BufferedImage image = processImage(dataIn, mimeType);
+		   return scaleImage(image, calculateScale(width, height));
 		   /*
 		    * NOTE: As a side effect, processImage will write unscaledImage
 		    * to be used by subsequent calls to getImage().
@@ -541,10 +540,10 @@ public class FaceInfo
 	   try {
 		   switch (imageDataType) {
 		   case IMAGE_DATA_TYPE_JPEG:
-			   resultImage = processImage(dataIn, "image/jpeg", 1.0);
+			   resultImage = processImage(dataIn, "image/jpeg");
 			   break;
 		   case IMAGE_DATA_TYPE_JPEG2000:
-			   resultImage = processImage(dataIn, "image/jpeg2000", 1.0);
+			   resultImage = processImage(dataIn, "image/jpeg2000");
 			   break;
 		   default:
 			   throw new IOException("Unknown image data type!");
@@ -907,8 +906,17 @@ public class FaceInfo
     *
     * @param l the listener
     */
-   public void addImageReadUpdateListener(ImageReadUpdateListener l) {
-	   imageReadUpdateListeners.add(l);
+   public void addImageReadUpdateListener(ImageReadUpdateListener l, double scale) {
+	   imageReadUpdateListeners.put(l, scale);
+   }
+   
+   /**
+    * Adds a listener which will be notified when new image data is available.
+    *
+    * @param l the listener
+    */
+   public void addImageReadUpdateListener(ImageReadUpdateListener l, int width, int height) {
+	   imageReadUpdateListeners.put(l, calculateScale(width, height));
    }
 
    /**
@@ -921,7 +929,11 @@ public class FaceInfo
    }
 
    private void notifyImageReadUpdateListeners(BufferedImage image) {
-	   for (ImageReadUpdateListener l: imageReadUpdateListeners) { l.passComplete(image); }
+	   for (ImageReadUpdateListener l: imageReadUpdateListeners.keySet()) {
+		   double scale = imageReadUpdateListeners.get(l);
+		   BufferedImage scaledImage = scaleImage(image, scale);
+		   l.passComplete(scaledImage);
+	   }
    }
 
    /**

@@ -22,10 +22,7 @@
 
 package org.jmrtd.app;
 
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Collection;
@@ -49,8 +46,9 @@ import sos.util.Icons;
  */
 public class FacePreviewPanel extends JPanel
 {	
+	private static final long serialVersionUID = 9113961215076977525L;
+
 	private static final Icon IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
-	private static final Component PLACE_HOLDER = new JLabel("No image", JLabel.CENTER);
 
 	private int width, height;
 	private JTabbedPane tabbedPane;
@@ -81,7 +79,7 @@ public class FacePreviewPanel extends JPanel
 					label.setIcon(new ImageIcon(image));
 					revalidate(); repaint();
 				}
-			});
+			}, width - 10, height - 10);
 			image = faceInfo.getThumbNail(width - 10, height - 10);
 			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
@@ -92,8 +90,7 @@ public class FacePreviewPanel extends JPanel
 	}
 	
 	public void removeFace(int index) {
-		Dimension size = tabbedPane.getSize();
-		removeImage(index);
+		tabbedPane.removeTabAt(index);
 		revalidate(); repaint();
 	}
 	
@@ -101,9 +98,5 @@ public class FacePreviewPanel extends JPanel
 		for (FaceInfo faceInfo: faces) {
 			addFace(faceInfo);
 		}
-	}
-
-	private void removeImage(int index) {
-		tabbedPane.removeTabAt(index);
 	}
 }

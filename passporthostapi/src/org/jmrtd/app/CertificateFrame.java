@@ -53,6 +53,8 @@ import sos.util.Icons;
  */
 public class CertificateFrame extends JFrame
 {
+	private static final long serialVersionUID = 8218341538613049952L;
+
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));

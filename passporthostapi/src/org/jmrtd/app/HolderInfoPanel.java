@@ -52,6 +52,8 @@ import sos.mrtd.MRZInfo;
  */
 public class HolderInfoPanel extends JPanel
 {
+	private static final long serialVersionUID = -6169487570387029561L;
+
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 

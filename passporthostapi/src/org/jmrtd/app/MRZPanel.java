@@ -24,13 +24,11 @@ package org.jmrtd.app;
 
 import java.awt.FlowLayout;
 import java.awt.Font;
-import java.io.File;
 
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
 import sos.mrtd.MRZInfo;
-import sos.util.Files;
 import sos.util.Fonts;
 
 /**
@@ -42,6 +40,8 @@ import sos.util.Fonts;
  */
 public class MRZPanel extends JPanel
 {
+	private static final long serialVersionUID = -8078528859489283298L;
+
 	private static final String MRZ_FONT_NAME = "OCR-B_10_BT.ttf";
 
 	private Font mrzFont;

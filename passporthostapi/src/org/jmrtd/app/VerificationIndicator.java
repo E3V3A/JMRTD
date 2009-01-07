@@ -30,8 +30,6 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import org.omg.PortableInterceptor.SUCCESSFUL;
-
 import sos.util.Icons;
 
 /**
