@@ -399,10 +399,10 @@ public class FaceInfo
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage processImage(InputStream in, ImageReader reader, double scale) throws IOException {
+   private BufferedImage processImage(InputStream in, ImageReader reader, double scale) {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-	   int passesCount = 10;
+	   int passesCount = 11;
 	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
 	   int blockSize = totalLength / passesCount;
 	   InputStream partialIn = new BufferedInputStream(in, blockSize + 1);
@@ -417,9 +417,13 @@ public class FaceInfo
 			   ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(buf));
 			   reader.setInput(iis);
 		   } catch (IOException ioe) {
-			   /* NOTE: ignoring EOF... is bound to happen... */
+			   debug("ignoring " + ioe.getMessage());
 		   }
-		   resultImage = reader.read(0, pm);
+		   try {
+			   resultImage = reader.read(0, pm);
+		   } catch (Exception e) {
+			   debug("ignoring " + e.getMessage());
+		   }
 		   if (resultImage != null) {
 			   image = resultImage;
 			   resultImage = scaleImage(resultImage, scale);

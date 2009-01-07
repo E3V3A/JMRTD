@@ -392,7 +392,7 @@ public class PassportFrame extends JFrame
 			countrySigningCert = null;
 		} catch (CardServiceException cse) {
 			// cse.printStackTrace();
-			verificationIndicator.setAAFailed("AA failed\n(" + cse.getMessage() + ")");
+			verificationIndicator.setAAFailed("AA failed (" + cse.getMessage() + ")");
 		}
 
 		/* Check hashes in the SOd correspond to hashes we compute. */
