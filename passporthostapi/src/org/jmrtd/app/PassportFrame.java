@@ -134,7 +134,7 @@ public class PassportFrame extends JFrame
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
-	private static final int BUFFER_SIZE = 1024;
+	private static final int BUFFER_SIZE = 243;
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
@@ -224,9 +224,12 @@ public class PassportFrame extends JFrame
 			if (bacEntry != null) {
 				verificationIndicator.setBACSucceeded();
 			}
+			long t = System.currentTimeMillis();
+			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 			setupFilesFromServicePassportSource(service);
 			displayInputStreams(service);
 			verifySecurity(service);
+			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dispose();
@@ -365,92 +368,6 @@ public class PassportFrame extends JFrame
 		}
 	}
 
-	private void putFile(short fid, byte[] bytes) {
-		if (bytes != null) {
-			fileContents.put(fid, bytes);
-			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-			in.mark(bytes.length + 1);
-			bufferedStreams.put(fid, in);
-			totalLength += bytes.length;
-		}
-	}
-
-	/**
-	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
-	 * 
-	 * @param fid
-	 * @return
-	 */
-	private synchronized InputStream getFile(final short fid) {
-		try {
-			InputStream in = null;
-			byte[] file = fileContents.get(fid);
-			if (file != null) {
-				/* Already completely read this file. */
-				in = new ByteArrayInputStream(file);
-				in.mark(file.length + 1);
-			} else {
-				/* Maybe partially read? Use the buffered stream. */
-				in = bufferedStreams.get(fid);
-				if (in != null && in.markSupported()) { in.reset(); }
-			}
-			if (in == null) {
-				/* Not read yet. Start reading it. */
-				final PassportFrame frame = this;
-				final InputStream unBufferedIn = files.get(fid);
-				unBufferedIn.reset();
-				final PipedInputStream pipedIn = new PipedInputStream(BUFFER_SIZE);
-				final PipedOutputStream out = new PipedOutputStream(pipedIn);
-				final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
-				bufferedStreams.put(fid, pipedIn);
-				(new Thread(new Runnable() {
-					public void run() {
-						byte[] buf = new byte[BUFFER_SIZE];
-						try {
-							while (true) {
-								int bytesRead = unBufferedIn.read(buf);
-								if (bytesRead < 0) { break; }
-								out.write(buf, 0, bytesRead);
-								copyOut.write(buf, 0, bytesRead);
-								frame.bytesRead += bytesRead;
-							}
-							out.flush(); out.close();
-							copyOut.flush();
-							byte[] copyOutBytes = copyOut.toByteArray();
-							fileContents.put(fid, copyOutBytes);
-							copyOut.close();
-						} catch (IOException ioe) {
-							ioe.printStackTrace();
-							/* FIXME: what if something goes wrong inside this thread? */
-						}
-					}
-				})).start();
-				in = new BufferedInputStream(pipedIn, BUFFER_SIZE);
-				in.mark(BUFFER_SIZE + 1);
-			}
-			return in;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IllegalStateException("ERROR: " + ioe.toString());
-		}
-	}
-
-	private byte[] getFileBytes(short fid) {
-		InputStream in = getFile(fid);
-		if (in == null) { return null; }
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		byte[] buf = new byte[256];
-		while (true)
-			try {
-				int bytesRead = in.read(buf);
-				if (bytesRead < 0) { break; }
-				out.write(buf, 0, bytesRead);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-			return out.toByteArray();
-	}
-
 	private void verifySecurity(PassportService service) {
 
 		verificationIndicator.setBACNotChecked();
@@ -481,7 +398,7 @@ public class PassportFrame extends JFrame
 			countrySigningCert = null;
 		} catch (CardServiceException cse) {
 			// cse.printStackTrace();
-			verificationIndicator.setAAFailed(cse.getMessage());
+			verificationIndicator.setAAFailed("AA failed\n(" + cse.getMessage() + ")");
 		}
 
 		/* Check hashes in the SOd correspond to hashes we compute. */
@@ -518,7 +435,7 @@ public class PassportFrame extends JFrame
 
 				InputStream dgIn = getFile(dgFID);
 
-				byte[] buf = new byte[BUFFER_SIZE];
+				byte[] buf = new byte[4096];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
 					if (bytesRead < 0) { break; }
@@ -590,8 +507,6 @@ public class PassportFrame extends JFrame
 			verificationIndicator.setCSFailed(e.getMessage());
 		}
 	}
-
-
 
 	/* Menu stuff below... */
 
@@ -981,28 +896,34 @@ public class PassportFrame extends JFrame
 	}
 
 	private void setupFilesFromServicePassportSource(PassportService service) throws IOException, CardServiceException {
+		bytesRead = 0;
 		totalLength = 0;
 		files.clear();
 
 		CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
-		comIn.mark(comIn.getFileLength() + 1);
-		totalLength += comIn.getFileLength();
-		files.put(PassportService.EF_COM, comIn);
-		COMFile com = new COMFile(comIn);
+		int comLength = comIn.getFileLength();
+		BufferedInputStream bufferedComIn = new BufferedInputStream(comIn, comLength + 1);
+		totalLength += comLength;
+		bufferedComIn.mark(comLength + 1);
+		files.put(PassportService.EF_COM, bufferedComIn);
+		COMFile com = new COMFile(bufferedComIn);
 		for (int tag: com.getTagList()) {
 			CardFileInputStream in = service.readDataGroup(tag);
 			in.mark(in.getFileLength() + 1);
 			files.put(PassportFile.lookupFIDByTag(tag), in);
 			totalLength += in.getFileLength();
 		}
-		comIn.reset();
+		bufferedComIn.reset();
 		CardFileInputStream sodIn = service.readFile(PassportService.EF_SOD);
-		sodIn.mark(sodIn.getFileLength() + 1);
-		totalLength += sodIn.getFileLength();
-		files.put(PassportService.EF_SOD, sodIn);
+		int sodLength = sodIn.getFileLength();
+		BufferedInputStream bufferedSodIn = new BufferedInputStream(sodIn, sodLength + 1);
+		bufferedSodIn.mark(sodLength + 1);
+		totalLength += sodLength;
+		files.put(PassportService.EF_SOD, bufferedSodIn);
 	}
 
 	private void setupFilesFromZipPassportSource(File file) throws IOException {
+		bytesRead = 0;
 		totalLength = 0;
 		files.clear();
 
@@ -1027,6 +948,7 @@ public class PassportFrame extends JFrame
 	}
 
 	private void setupFilesFromEmptyPassportSource() throws GeneralSecurityException {
+		bytesRead = 0;
 		totalLength = 0;
 		files.clear();
 
@@ -1084,5 +1006,91 @@ public class PassportFrame extends JFrame
 		byte[] sodBytes = sod.getEncoded();
 		totalLength += sodBytes.length;
 		files.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
+	}
+	
+	private void putFile(short fid, byte[] bytes) {
+		if (bytes != null) {
+			fileContents.put(fid, bytes);
+			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+			in.mark(bytes.length + 1);
+			bufferedStreams.put(fid, in);
+			totalLength += bytes.length;
+		}
+	}
+
+	/**
+	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
+	 * 
+	 * @param fid
+	 * @return
+	 */
+	private synchronized InputStream getFile(final short fid) {
+		try {
+			InputStream in = null;
+			byte[] file = fileContents.get(fid);
+			if (file != null) {
+				/* Already completely read this file. */
+				in = new ByteArrayInputStream(file);
+				in.mark(file.length + 1);
+			} else {
+				/* Maybe partially read? Use the buffered stream. */
+				in = bufferedStreams.get(fid);
+				if (in != null && in.markSupported()) { in.reset(); }
+			}
+			if (in == null) {
+				/* Not read yet. Start reading it. */
+				final PassportFrame frame = this;
+				final InputStream unBufferedIn = files.get(fid);
+				unBufferedIn.reset();
+				final PipedInputStream pipedIn = new PipedInputStream(BUFFER_SIZE);
+				final PipedOutputStream out = new PipedOutputStream(pipedIn);
+				final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
+				bufferedStreams.put(fid, pipedIn);
+				(new Thread(new Runnable() {
+					public void run() {
+						byte[] buf = new byte[BUFFER_SIZE];
+						try {
+							while (true) {
+								int bytesRead = unBufferedIn.read(buf);
+								if (bytesRead < 0) { break; }
+								out.write(buf, 0, bytesRead);
+								copyOut.write(buf, 0, bytesRead);
+								frame.bytesRead += bytesRead;
+							}
+							out.flush(); out.close();
+							copyOut.flush();
+							byte[] copyOutBytes = copyOut.toByteArray();
+							fileContents.put(fid, copyOutBytes);
+							copyOut.close();
+						} catch (IOException ioe) {
+							ioe.printStackTrace();
+							/* FIXME: what if something goes wrong inside this thread? */
+						}
+					}
+				})).start();
+				in = new BufferedInputStream(pipedIn, BUFFER_SIZE);
+				in.mark(BUFFER_SIZE + 1);
+			}
+			return in;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalStateException("ERROR: " + ioe.toString());
+		}
+	}
+
+	private byte[] getFileBytes(short fid) {
+		InputStream in = getFile(fid);
+		if (in == null) { return null; }
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		byte[] buf = new byte[256];
+		while (true)
+			try {
+				int bytesRead = in.read(buf);
+				if (bytesRead < 0) { break; }
+				out.write(buf, 0, bytesRead);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+			}
+			return out.toByteArray();
 	}
 }
