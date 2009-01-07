@@ -141,7 +141,7 @@ public class PassportFrame extends JFrame
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
-	private Logger logger = Logger.getLogger(getClass().getName());
+	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	private FacePreviewPanel facePreviewPanel;
 

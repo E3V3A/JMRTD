@@ -35,6 +35,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -402,20 +403,29 @@ public class FaceInfo
    private BufferedImage processImage(InputStream in, ImageReader reader, double scale) {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
-	   int passesCount = 11;
 	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
-	   int blockSize = totalLength / passesCount;
-	   InputStream partialIn = new BufferedInputStream(in, blockSize + 1);
-	   byte[] buf = new byte[0];
+	   int leadSize = 977;
+	   int stepSize = 19; // initialy
+	   double base = 1.56;
+	   byte[] buf = new byte[totalLength];
+	   int offset = 0;
+	   try {
+		   int bytesRead = in.read(buf, offset, Math.min(leadSize, buf.length - offset));
+		   offset += bytesRead;
+	   } catch (IOException ioe) {
+		   ioe.printStackTrace();
+	   }
 	   BufferedImage resultImage = null;
-	   for (int i = 0; i < passesCount; i++) {
+	   while (offset < totalLength) {
 		   try {
-			   byte[] newBuf = new byte[(i + 1) * blockSize];
-			   System.arraycopy(buf, 0, newBuf, 0, buf.length);
-			   partialIn.read(newBuf, buf.length, blockSize);
-			   buf = newBuf;
-			   ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(buf));
+			   debug("blocksize = " + stepSize);
+			   int bytesRead = in.read(buf, offset, Math.min(stepSize, buf.length - offset));
+			   if (bytesRead < 0) { break; }
+			   ByteArrayInputStream approxIn = new ByteArrayInputStream(buf, 0, offset + bytesRead);
+			   ImageInputStream iis = ImageIO.createImageInputStream(approxIn);
 			   reader.setInput(iis);
+			   offset += bytesRead;
+			   stepSize = (int)(base * (double)stepSize);
 		   } catch (IOException ioe) {
 			   debug("ignoring " + ioe.getMessage());
 		   }
