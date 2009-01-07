@@ -65,7 +65,7 @@ public class CardFileInputStream extends InputStream
 	}
 
 	public synchronized int available() {
-		return fileLength - (offsetBufferInFile + offsetInBuffer);
+		return bufferLength - offsetInBuffer;
 	}
 
 	public void mark(int readLimit) {
