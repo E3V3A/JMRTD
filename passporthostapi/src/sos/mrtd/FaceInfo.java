@@ -418,7 +418,6 @@ public class FaceInfo
 	   BufferedImage resultImage = null;
 	   while (offset < totalLength) {
 		   try {
-			   debug("blocksize = " + stepSize);
 			   int bytesRead = in.read(buf, offset, Math.min(stepSize, buf.length - offset));
 			   if (bytesRead < 0) { break; }
 			   ByteArrayInputStream approxIn = new ByteArrayInputStream(buf, 0, offset + bytesRead);
