@@ -438,8 +438,6 @@ public class PassportFrame extends JFrame
 				byte[] computedHash = digest.digest();
 				if (!Arrays.equals(storedHash, computedHash)) {
 					verificationIndicator.setDSFailed("Authentication of DG" + dgNumber + " failed");
-					System.out.println("DEBUG: stored hash = " + Hex.bytesToHexString(storedHash));
-					System.out.println("DEBUG: computed hash = " + Hex.bytesToHexString(computedHash));
 					return; /* NOTE: Serious enough to not perform other checks, leave method. */
 				}
 			}
@@ -1003,13 +1001,12 @@ public class PassportFrame extends JFrame
 	}
 	
 	private void putFile(short fid, byte[] bytes) {
-		if (bytes != null) {
-			fileContents.put(fid, bytes);
-			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
-			in.mark(bytes.length + 1);
-			bufferedStreams.put(fid, in);
-			totalLength += bytes.length;
-		}
+		if (bytes == null) { return; }
+		fileContents.put(fid, bytes);
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		in.mark(bytes.length + 1);
+		bufferedStreams.put(fid, in);
+		totalLength += bytes.length;
 	}
 
 	/**
@@ -1073,11 +1070,13 @@ public class PassportFrame extends JFrame
 	}
 
 	private byte[] getFileBytes(short fid) {
+		byte[] result = fileContents.get(fid);
+		if (result != null) { return result; }
 		InputStream in = getFile(fid);
 		if (in == null) { return null; }
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		byte[] buf = new byte[256];
-		while (true)
+		while (true) {
 			try {
 				int bytesRead = in.read(buf);
 				if (bytesRead < 0) { break; }
@@ -1085,6 +1084,7 @@ public class PassportFrame extends JFrame
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
-			return out.toByteArray();
+		}
+		return out.toByteArray();
 	}
 }
