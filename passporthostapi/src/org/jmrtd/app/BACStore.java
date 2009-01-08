@@ -60,11 +60,6 @@ public class BACStore
 		return entries;
 	}
 
-//	public void addEntry(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-//		BACEntry entry = new BACEntry(documentNumber.trim(), dateOfBirth.trim(), dateOfExpiry.trim());
-//		addEntry(entry);
-//	}
-
 	public void addEntry(BACEntry entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);

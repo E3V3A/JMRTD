@@ -55,7 +55,7 @@ import sos.util.Icons;
  * @version $Revision: 308 $
  */
 public class BACStorePanel extends JPanel
-{  
+{
 	private static final long serialVersionUID = 8209327475448864084L;
 	
 	private static final int DOCUMENT_NUMBER_COLUMN = 0;
