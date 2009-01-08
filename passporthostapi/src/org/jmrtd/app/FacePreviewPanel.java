@@ -23,8 +23,9 @@
 package org.jmrtd.app;
 
 import java.awt.FlowLayout;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.Collection;
 
 import javax.swing.Icon;
@@ -76,27 +77,55 @@ public class FacePreviewPanel extends JPanel
 			revalidate(); repaint();
 			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
 				public void passComplete(BufferedImage image) {
-					label.setIcon(new ImageIcon(image));
+					BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+					label.setIcon(new ImageIcon(scaledImage));
 					revalidate(); repaint();
 				}
-			}, width - 10, height - 10);
-			image = faceInfo.getThumbNail(width - 10, height - 10);
+			});
+			image = faceInfo.getImage();
+			image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
-		} catch (IOException ioe) {
+		} catch (Exception ioe) {
 			/* We'll just skip this image then. */
 			ioe.printStackTrace();
 		}	
 	}
-	
+
 	public void removeFace(int index) {
 		tabbedPane.removeTabAt(index);
 		revalidate(); repaint();
 	}
-	
+
 	public void addFaces(Collection<FaceInfo> faces) {
 		for (FaceInfo faceInfo: faces) {
 			addFace(faceInfo);
 		}
+	}
+
+	/**
+	 * A scaling factor resulting in at most desiredWidth and desiredHeight yet
+	 * that respects aspect ratio of original width and height.
+	 */
+	private double calculateScale(int desiredWidth, int desiredHeight, int actualWidth, int actualHeight) {
+		double xScale = (double)desiredWidth / (double)actualWidth;
+		double yScale = (double)desiredHeight / (double)actualHeight;
+		double scale = xScale < yScale ? xScale : yScale;
+		return scale;
+	}
+
+	/**
+	 * Scales image.
+	 * 
+	 * @param image an image
+	 * @param scale scaling factor
+	 * @return scaled image
+	 */
+	private BufferedImage scaleImage(BufferedImage image, double scale) {
+		BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g2 = scaledImage.createGraphics();
+		AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
+		g2.drawImage(image, at, null); 
+		return scaledImage;
 	}
 }

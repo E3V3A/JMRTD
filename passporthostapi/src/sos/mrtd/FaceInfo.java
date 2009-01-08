@@ -22,10 +22,7 @@
 
 package sos.mrtd;
 
-import java.awt.Graphics2D;
-import java.awt.Image;
 import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,9 +33,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
@@ -195,12 +190,12 @@ public class FaceInfo
    private int deviceType;
    private int quality;
    private BufferedImage image;
-   private Map<ImageReadUpdateListener, Double> imageReadUpdateListeners;
+   private Collection<ImageReadUpdateListener> imageReadUpdateListeners;
 
    private DataInputStream dataIn;
 
    private FaceInfo() {
-	   imageReadUpdateListeners = new HashMap<ImageReadUpdateListener, Double>();
+	   imageReadUpdateListeners = new ArrayList<ImageReadUpdateListener>();
    }
 
    /**
@@ -442,32 +437,6 @@ public class FaceInfo
    }
 
    /**
-    * A scaling factor resulting in at most desiredWidth and desiredHeight yet
-    * that respects aspect ratio of original width and height.
-    */
-   private double calculateScale(int desiredWidth, int desiredHeight) {
-	   double xScale = (double)desiredWidth / (double)width;
-	   double yScale = (double)desiredHeight / (double)height;
-	   double scale = xScale < yScale ? xScale : yScale;
-	   return scale;
-   }
-   
-   /**
-    * Scales image.
-    * 
-    * @param image an image
-    * @param scale scaling factor
-    * @return scaled image
-    */
-   private BufferedImage scaleImage(BufferedImage image, double scale) {
-	   BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
-	   Graphics2D g2 = scaledImage.createGraphics();
-	   AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
-	   g2.drawImage(image, at, null); 
-	   return scaledImage;
-   }
-
-   /**
     * FIXME needs testing
     * 
     * @param image
@@ -499,42 +468,13 @@ public class FaceInfo
 		   }
 	   }
    }
-   
-   /**
-    * Gets a preview image of desired width and height.
-    * 
-    * @param width integer
-    * @param height integer
-    * @return image
-    */
-   public BufferedImage getThumbNail(int width, int height) throws IOException {
-	   String mimeType = null;
-	   switch (imageDataType) {
-	   case IMAGE_DATA_TYPE_JPEG:
-		   mimeType = "image/jpeg"; break;
-	   case IMAGE_DATA_TYPE_JPEG2000:
-		   mimeType = "image/jpeg2000"; break;
-	   default:
-		   throw new IOException("Unknown image data type!");
-	   }
-	   try {
-		   BufferedImage image = processImage(dataIn, mimeType);
-		   return scaleImage(image, calculateScale(width, height));
-		   /*
-		    * NOTE: As a side effect, processImage will write unscaledImage
-		    * to be used by subsequent calls to getImage().
-		    */
-	   } catch (IOException ioe) {
-		   throw new IllegalStateException(ioe.toString());
-	   }
-   }
 
    /**
     * Gets the image.
     * 
     * @return image
     */
-   public Image getImage() {
+   public BufferedImage getImage() {
 	   BufferedImage resultImage = null;
 	   if (image != null) { return image; }
 	   try {
@@ -906,17 +846,8 @@ public class FaceInfo
     *
     * @param l the listener
     */
-   public void addImageReadUpdateListener(ImageReadUpdateListener l, double scale) {
-	   imageReadUpdateListeners.put(l, scale);
-   }
-   
-   /**
-    * Adds a listener which will be notified when new image data is available.
-    *
-    * @param l the listener
-    */
-   public void addImageReadUpdateListener(ImageReadUpdateListener l, int width, int height) {
-	   imageReadUpdateListeners.put(l, calculateScale(width, height));
+   public void addImageReadUpdateListener(ImageReadUpdateListener l) {
+	   imageReadUpdateListeners.add(l);
    }
 
    /**
@@ -929,10 +860,8 @@ public class FaceInfo
    }
 
    private void notifyImageReadUpdateListeners(BufferedImage image) {
-	   for (ImageReadUpdateListener l: imageReadUpdateListeners.keySet()) {
-		   double scale = imageReadUpdateListeners.get(l);
-		   BufferedImage scaledImage = scaleImage(image, scale);
-		   l.passComplete(scaledImage);
+	   for (ImageReadUpdateListener l: imageReadUpdateListeners) {
+		   l.passComplete(image);
 	   }
    }
 

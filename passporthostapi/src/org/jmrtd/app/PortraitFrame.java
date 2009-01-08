@@ -92,7 +92,7 @@ public class PortraitFrame extends JFrame
 				imagePanel.setImage(image);
 				imagePanel.revalidate(); repaint();
 			}
-		}, 1.0);
+		});
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
