@@ -107,6 +107,13 @@ public class CardManager
 		if (poller == null) { return false; }
 		return poller.isPolling();
 	}
+	
+	public synchronized CardService getService(CardTerminal terminal) {
+		TerminalPoller poller = terminals.get(terminal);
+		if (poller == null) { return null; }
+		CardService service = poller.getService();
+		return service;
+	}
 
 	/**
 	 * Whether the card manager is running.
@@ -255,6 +262,10 @@ public class CardManager
 		public synchronized void stopPolling() {
 			if (!isPolling()) { return; }
 			isPolling = false;
+		}
+		
+		public CardService getService() {
+			return service;
 		}
 		
 		public String toString() {
