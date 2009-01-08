@@ -378,8 +378,7 @@ public class FaceInfo
       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType)
-   throws IOException {
+   private BufferedImage processImage(InputStream in, String mimeType) throws IOException {
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
@@ -388,7 +387,7 @@ public class FaceInfo
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
 			   /* NOTE: this readers doesn't work? Try next one... */
-			   e.printStackTrace();
+			   debug("ignoring " + e);
 			   continue;
 		   }
 	   }
@@ -474,27 +473,24 @@ public class FaceInfo
     * 
     * @return image
     */
-   public BufferedImage getImage() {
+   public BufferedImage getImage() throws IOException {
 	   BufferedImage resultImage = null;
 	   if (image != null) { return image; }
-	   try {
-		   switch (imageDataType) {
-		   case IMAGE_DATA_TYPE_JPEG:
-			   resultImage = processImage(dataIn, "image/jpeg");
-			   break;
-		   case IMAGE_DATA_TYPE_JPEG2000:
-			   resultImage = processImage(dataIn, "image/jpeg2000");
-			   break;
-		   default:
-			   throw new IOException("Unknown image data type!");
-		   }
-
-		   /* Set width and height for real. */
-		   width = resultImage.getWidth();
-		   height = resultImage.getHeight();
-	   } catch (IOException ioe) {
-		   ioe.printStackTrace();
+	   switch (imageDataType) {
+	   case IMAGE_DATA_TYPE_JPEG:
+		   resultImage = processImage(dataIn, "image/jpeg");
+		   break;
+	   case IMAGE_DATA_TYPE_JPEG2000:
+		   resultImage = processImage(dataIn, "image/jpeg2000");
+		   break;
+	   default:
+		   throw new IOException("Unknown image data type!");
 	   }
+
+	   /* Set width and height for real. */
+	   width = resultImage.getWidth();
+	   height = resultImage.getHeight();
+
 	   return resultImage;
    }
 

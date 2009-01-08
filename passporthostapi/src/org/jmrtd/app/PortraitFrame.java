@@ -101,12 +101,16 @@ public class PortraitFrame extends JFrame
 		setJMenuBar(menuBar);
 
 		/* Frame content */
-		Image image = info.getImage();
-		imagePanel = new ImagePanel();
-		imagePanel.setImage(image);
-		Container cp = getContentPane();
-		cp.add(imagePanel);
-		imagePanel.revalidate(); repaint();
+		try {
+			Image image = info.getImage();
+			imagePanel = new ImagePanel();
+			imagePanel.setImage(image);
+			Container cp = getContentPane();
+			cp.add(imagePanel);
+			imagePanel.revalidate(); repaint();
+		} catch (Exception e) {
+			System.out.println("DEBUG: ignoring " + e);
+		}
 	}
 
 	private JMenu createFileMenu() {

@@ -26,6 +26,7 @@ import java.awt.FlowLayout;
 import java.awt.Graphics2D;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.IOException;
 import java.util.Collection;
 
 import javax.swing.Icon;
@@ -77,6 +78,7 @@ public class FacePreviewPanel extends JPanel
 			revalidate(); repaint();
 			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
 				public void passComplete(BufferedImage image) {
+					if (image == null) { return; }
 					BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 					label.setIcon(new ImageIcon(scaledImage));
 					revalidate(); repaint();
@@ -86,9 +88,9 @@ public class FacePreviewPanel extends JPanel
 			image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
-		} catch (Exception ioe) {
+		} catch (IOException ioe) {
 			/* We'll just skip this image then. */
-			ioe.printStackTrace();
+			System.out.println("DEBUG: ignoring " + ioe);
 		}	
 	}
 
