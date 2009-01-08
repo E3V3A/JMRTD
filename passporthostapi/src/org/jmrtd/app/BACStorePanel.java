@@ -25,6 +25,7 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -40,7 +41,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
+import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableCellEditor;
 
 import sos.util.Icons;
 
@@ -54,6 +57,10 @@ import sos.util.Icons;
 public class BACStorePanel extends JPanel
 {  
 	private static final long serialVersionUID = 8209327475448864084L;
+	
+	private static final int DOCUMENT_NUMBER_COLUMN = 0;
+	private static final int DATE_OF_BIRTH_COLUMN = 1;
+	private static final int DATE_OF_EXPIRY_COLUMN = 2;
 
 	private static final Icon DOWN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
 	private static final Icon DOWN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
@@ -124,15 +131,49 @@ public class BACStorePanel extends JPanel
 
 	private class BACStoreTable extends JTable
 	{
+		private static final long serialVersionUID = -6213600681715225467L;
+
 		public BACStoreTable() {
 			super();
 			setModel(new BACStoreTableModel());
 			setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		}
+
+		public void editingStopped(ChangeEvent e) {
+			try {
+				/* Old value */
+				String documentNumber = (String)getValueAt(editingRow, DOCUMENT_NUMBER_COLUMN);
+				Date dateOfBirth = SDF.parse((String)getValueAt(editingRow, DATE_OF_BIRTH_COLUMN));
+				Date dateOfExpiry = SDF.parse((String)getValueAt(editingRow, DATE_OF_EXPIRY_COLUMN));
+
+				/* New value */
+				TableCellEditor editor = (TableCellEditor)e.getSource();
+				String changedValue = (String)editor.getCellEditorValue();
+				switch (editingColumn) {
+				case DOCUMENT_NUMBER_COLUMN: documentNumber = changedValue.trim().toUpperCase(); break;
+				case DATE_OF_BIRTH_COLUMN: dateOfBirth = SDF.parse(changedValue); break;
+				case DATE_OF_EXPIRY_COLUMN: dateOfExpiry = SDF.parse(changedValue); break;
+				}
+
+				BACEntry entry = new BACEntry(documentNumber, dateOfBirth, dateOfExpiry);
+
+				store.removeEntry(editingRow);
+				store.addEntry(editingRow, entry);
+			} catch (NumberFormatException nfe) {
+				nfe.printStackTrace();
+			} catch (ParseException pe) {
+				pe.printStackTrace();
+			} finally {
+				validate(); repaint();
+				super.editingStopped(e);
+			}
+		}
 	}
 
 	private class BACStoreTableModel extends AbstractTableModel
 	{
+		private static final long serialVersionUID = 2891824258471617L;
+
 		public BACStoreTableModel() { }
 
 		public int getColumnCount() {
@@ -141,9 +182,9 @@ public class BACStorePanel extends JPanel
 
 		public String getColumnName(int columnIndex) {
 			switch(columnIndex) {
-			case 0: return "Document Nr.";
-			case 1: return "Date of Birth";
-			case 2: return "Date of Expiry";
+			case DOCUMENT_NUMBER_COLUMN: return "Document Nr.";
+			case DATE_OF_BIRTH_COLUMN: return "Date of Birth";
+			case DATE_OF_EXPIRY_COLUMN: return "Date of Expiry";
 			default: return null;
 			}
 		}
@@ -164,7 +205,7 @@ public class BACStorePanel extends JPanel
 		}
 
 		public boolean isCellEditable(int rowIndex, int columnIndex) {
-			return false;
+			return true;
 		}
 	}
 

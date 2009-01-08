@@ -1,9 +1,31 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006 - 2008  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id: $
+ */
+
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.io.File;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -20,6 +42,11 @@ import javax.swing.border.Border;
 
 import sos.smartcards.CardManager;
 
+/**
+ * Preferences panel.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class PreferencesPanel extends JPanel
 {
 	private static final long serialVersionUID = 5429621553165149988L;
@@ -30,7 +57,13 @@ public class PreferencesPanel extends JPanel
 	private Collection<CardTerminal> terminalsToStart, terminalsToStop;
 	private Map<CardTerminal, JCheckBox> checkBoxMap;
 
-	public PreferencesPanel(CardManager cm) {
+	/**
+	 * Creates the preferences panel.
+	 *
+	 * @param cm the card manager
+	 * @param preferencesFile file for storing preferences
+	 */
+	public PreferencesPanel(CardManager cm, File preferencesFile) {
 		super(new BorderLayout());
 		this.cm = cm;
 		terminalsToStart = new HashSet<CardTerminal>();
@@ -70,7 +103,6 @@ public class PreferencesPanel extends JPanel
 	}
 
 	public Action getSetTerminalAction(final CardTerminal terminal, final JCheckBox checkBox) {
-		final Component parent = this;
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
 				if (checkBox.isSelected()) {
