@@ -268,52 +268,18 @@ public class PassportFrame extends JFrame
 		displayInputStreams(null);	
 	}
 
-	private void displayInputStreams(PassportService service) {	
+	private void displayInputStreams(PassportService service) {
+		displayProgressBar();
+
 		try {
-			(new Thread(new Runnable() {
-				public void run() {
-					try {
-						progressBar.setMaximum(totalLength);
-						while (bytesRead <= totalLength) {
-							Thread.sleep(200);
-							progressBar.setValue(bytesRead);
-						}
-					} catch (InterruptedException ie) {
-					} catch (Exception e) {
-					}
-				}
-			})).start();
+			displayHolderInfo();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return;
+		}
 
-			InputStream dg1In = getFile(PassportService.EF_DG1);
-			dg1 = new DG1File(dg1In);
-			MRZInfo mrzInfo = dg1.getMRZInfo();
-			if (bacEntry != null &&
-					!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
-							mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
-							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
-				System.out.println("WARNING: MRZ used in BAC differs from MRZ in DG1!");
-			}
-			final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
-			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
-			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
-			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
-			centerPanel.revalidate();
-			centerPanel.repaint();
-			holderInfoPanel.addActionListener(new ActionListener() {
-				/* User changes DG1 info in GUI. */
-				public void actionPerformed(ActionEvent e) {
-					MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
-					mrzPanel.setMRZ(updatedMRZInfo);
-					dg1 = new DG1File(updatedMRZInfo);
-					putFile(PassportService.EF_DG1, dg1.getEncoded());
-					verificationIndicator.setBACNotChecked();
-					verificationIndicator.setAANotChecked();
-					verificationIndicator.setDSNotChecked();
-					verificationIndicator.setCSNotChecked(null);
-				}
-			});
-
-			for (short fid: files.keySet()) {
+		for (short fid: files.keySet()) {
+			try {
 				InputStream in = getFile(fid);
 				switch (fid) {
 				case PassportService.EF_COM:
@@ -355,11 +321,57 @@ public class PassportFrame extends JFrame
 					break;
 				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(fid));
 				}
+			} catch (Exception e) {
+				continue;
 			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
+	}
+	
+	private void displayHolderInfo() throws IOException {
+		InputStream dg1In = getFile(PassportService.EF_DG1);
+		dg1 = new DG1File(dg1In);
+		MRZInfo mrzInfo = dg1.getMRZInfo();
+		if (bacEntry != null &&
+				!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
+						mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
+						mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
+			System.out.println("WARNING: MRZ used in BAC differs from MRZ in DG1!");
+		}
+		final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
+		final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
+		centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
+		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
+		centerPanel.revalidate();
+		centerPanel.repaint();
+		holderInfoPanel.addActionListener(new ActionListener() {
+			/* User changes DG1 info in GUI. */
+			public void actionPerformed(ActionEvent e) {
+				MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
+				mrzPanel.setMRZ(updatedMRZInfo);
+				dg1 = new DG1File(updatedMRZInfo);
+				putFile(PassportService.EF_DG1, dg1.getEncoded());
+				verificationIndicator.setBACNotChecked();
+				verificationIndicator.setAANotChecked();
+				verificationIndicator.setDSNotChecked();
+				verificationIndicator.setCSNotChecked(null);
+			}
+		});
+	}
+
+	private void displayProgressBar() {
+		(new Thread(new Runnable() {
+			public void run() {
+				try {
+					progressBar.setMaximum(totalLength);
+					while (bytesRead <= totalLength) {
+						Thread.sleep(200);
+						progressBar.setValue(bytesRead);
+					}
+				} catch (InterruptedException ie) {
+				} catch (Exception e) {
+				}
+			}
+		})).start();
 	}
 
 	private void verifySecurity(PassportService service) {
@@ -999,7 +1011,7 @@ public class PassportFrame extends JFrame
 		totalLength += sodBytes.length;
 		files.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
-	
+
 	private void putFile(short fid, byte[] bytes) {
 		if (bytes == null) { return; }
 		fileContents.put(fid, bytes);
