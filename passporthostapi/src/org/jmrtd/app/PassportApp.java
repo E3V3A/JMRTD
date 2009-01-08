@@ -375,8 +375,13 @@ public class PassportApp  implements PassportListener
 					(new Thread(new Runnable() {
 						public void run() {	
 							try {
-								if (cardManager.isPolling(terminal) && terminal.isCardPresent()) {
+								if (/* cardManager.isPolling(terminal) && */ terminal.isCardPresent()) {
+									boolean isPolling = cardManager.isPolling(terminal);
+									if (isPolling) { cardManager.stopPolling(terminal); }
+									CardService service = cardManager.getService(terminal);
+									if (service != null) { service.close(); }
 									readPassport(new PassportService(new TerminalCardService(terminal)));
+									if (isPolling) { cardManager.startPolling(terminal); }
 								}
 							} catch (CardException ce) {
 								/* NOTE: skip this terminal */
