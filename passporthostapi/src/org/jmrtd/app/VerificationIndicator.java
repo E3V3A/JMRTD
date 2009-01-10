@@ -49,9 +49,9 @@ public class VerificationIndicator extends Box
 	private static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
 
 	private static final Image
-	VERIFICATION_SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
-	VERIFICATION_FAILED_ICON = Icons.getFamFamFamSilkIcon("cross"),
-	VERIFICATION_NOT_CHECKED_ICON = Icons.getFamFamFamSilkIcon("error");
+	SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
+	FAILED_ICON = Icons.getFamFamFamSilkIcon("cross"),
+	NOT_CHECKED_ICON = Icons.getFamFamFamSilkIcon("error");
 
 	private static final int SPACING = 25;
 
@@ -60,10 +60,10 @@ public class VerificationIndicator extends Box
 
 	public VerificationIndicator() {
 		super(BoxLayout.X_AXIS);
-		bacIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
-		aaIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
-		dsIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
-		csIcon = new ImageIcon(VERIFICATION_NOT_CHECKED_ICON);
+		bacIcon = new ImageIcon(NOT_CHECKED_ICON);
+		aaIcon = new ImageIcon(NOT_CHECKED_ICON);
+		dsIcon = new ImageIcon(NOT_CHECKED_ICON);
+		csIcon = new ImageIcon(NOT_CHECKED_ICON);
 
 		bacLabel = new JLabel(bacIcon);
 		aaLabel = new JLabel(aaIcon);
@@ -158,15 +158,15 @@ public class VerificationIndicator extends Box
 		}
 		switch (result) {
 		case VERIFICATION_SUCCEEDED:
-			icon.setImage(VERIFICATION_SUCCEEDED_ICON);
+			icon.setImage(SUCCEEDED_ICON);
 			label.setToolTipText(reason == null ? "Succeeded" : reason);
 			break;
 		case VERIFICATION_FAILED:
-			icon.setImage(VERIFICATION_FAILED_ICON);
+			icon.setImage(FAILED_ICON);
 			label.setToolTipText(reason == null ? "Failed" : reason);
 			break;
 		default:
-			icon.setImage(VERIFICATION_NOT_CHECKED_ICON);
+			icon.setImage(NOT_CHECKED_ICON);
 			label.setToolTipText(reason == null ? "Not checked" : reason);
 			break;
 		}
