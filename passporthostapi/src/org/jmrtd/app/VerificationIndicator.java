@@ -46,9 +46,9 @@ public class VerificationIndicator extends Box
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
 	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, DS_INDICATOR = 2, CS_INDICATOR = 3;
 	
-	public static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
+	private static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
 
-	public static final Image
+	private static final Image
 	VERIFICATION_SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
 	VERIFICATION_FAILED_ICON = Icons.getFamFamFamSilkIcon("cross"),
 	VERIFICATION_NOT_CHECKED_ICON = Icons.getFamFamFamSilkIcon("error");
@@ -146,8 +146,6 @@ public class VerificationIndicator extends Box
 	public void setCSNotChecked(String reason) {
 		setState(CS_INDICATOR, VERIFICATION_UNKNOWN, reason);
 	}
-		
-//	private void setAAState(int state) { setState(AA_INDICATOR, state, null);	}
 	
 	private void setState(int indicator, int result, String reason) {
 		ImageIcon icon = null;
@@ -172,7 +170,6 @@ public class VerificationIndicator extends Box
 			label.setToolTipText(reason == null ? "Not checked" : reason);
 			break;
 		}
-		revalidate();
-		repaint();
+		revalidate(); repaint();
 	}
 }
