@@ -51,7 +51,7 @@ public class PreferencesPanel extends JPanel
 {
 	private static final long serialVersionUID = 5429621553165149988L;
 
-	private static Border CARD_MANAGER_BORDER = BorderFactory.createTitledBorder("Card Manager");
+	private static Border CARD_TERMINALS_BORDER = BorderFactory.createTitledBorder("Card Terminals");
 
 	private CardManager cm;
 	private Collection<CardTerminal> terminalsToStart, terminalsToStop;
@@ -72,7 +72,7 @@ public class PreferencesPanel extends JPanel
 		List<CardTerminal> terminalList = cm.getTerminals();
 		
 		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 2));
-		cmPanel.setBorder(CARD_MANAGER_BORDER);
+		cmPanel.setBorder(CARD_TERMINALS_BORDER);
 		for (CardTerminal terminal: terminalList){
 			JCheckBox checkBox = new JCheckBox(terminal.getName(), cm.isPolling(terminal));
 			checkBoxMap.put(terminal, checkBox);
