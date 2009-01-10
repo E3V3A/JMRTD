@@ -36,7 +36,7 @@ import javacardx.crypto.Cipher;
 
 // API for setATRHistBytes - requires Global Platform API gp211.jar
 // Comment out the following line if API not available.
-import org.globalplatform.GPSystem;
+// import org.globalplatform.GPSystem;
 
 /**
  * PassportApplet
@@ -164,7 +164,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 		if (selectingApplet()) {
 			// Set ATR Historical Bytes (ATS).
 			// Requires gp211 API. Comment out the following line if API not available.
-			org.globalplatform.GPSystem.setATRHistBytes(ATRGlobal.ATR_HIST, (short) 0x00, ATRGlobal.ATR_HIST_LEN);
+			// org.globalplatform.GPSystem.setATRHistBytes(ATRGlobal.ATR_HIST, (short) 0x00, ATRGlobal.ATR_HIST_LEN);
 			return;
 		}
 
@@ -570,9 +570,9 @@ public class PassportApplet extends Applet implements ISO7816 {
 	 * @return length of the return APDU
 	 */
 	private short processReadBinary(APDU apdu, short le, boolean protectedApdu) {
-		if (!hasFileSelected() || !hasMutuallyAuthenticated()) {
-			ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED);
-		}
+		if(!hasMutuallyAuthenticated()) { ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED); }
+
+		if (!hasFileSelected()) { ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED); }
 
 		byte[] buffer = apdu.getBuffer();
 		byte p1 = buffer[OFFSET_P1];
