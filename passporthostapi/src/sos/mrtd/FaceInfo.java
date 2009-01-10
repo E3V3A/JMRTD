@@ -391,6 +391,7 @@ public class FaceInfo
 			   continue;
 		   }
 	   }
+	   /* Tried all readers */
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 

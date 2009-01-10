@@ -85,7 +85,8 @@ public class DG2File extends CBEFFDataGroup
 		long length = dataIn.readInt() & 0x000000FFFFFFFFL;
 		int faceCount = dataIn.readUnsignedShort();
 		for (int i = 0; i < faceCount; i++) {
-			addFaceInfo(new FaceInfo(dataIn));
+			FaceInfo faceInfo = new FaceInfo(dataIn);
+			addFaceInfo(faceInfo);
 		}
 	}
 

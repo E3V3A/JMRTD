@@ -148,9 +148,9 @@ public class PassportFrame extends JFrame
 	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 
-	private Map<Short, InputStream> files;
+	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
-	private Map<Short, byte[]> fileContents;
+	private Map<Short, byte[]> filesBytes;
 	private int bytesRead;
 	private int totalLength;
 
@@ -191,9 +191,9 @@ public class PassportFrame extends JFrame
 		panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
 		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
-		fileContents = new HashMap<Short, byte[]>();
+		filesBytes = new HashMap<Short, byte[]>();
 		bufferedStreams = new HashMap<Short, InputStream>();
-		files = new HashMap<Short, InputStream>();
+		rawStreams = new HashMap<Short, InputStream>();
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
@@ -278,7 +278,7 @@ public class PassportFrame extends JFrame
 			return;
 		}
 
-		for (short fid: files.keySet()) {
+		for (short fid: rawStreams.keySet()) {
 			try {
 				InputStream in = getFile(fid);
 				switch (fid) {
@@ -375,20 +375,28 @@ public class PassportFrame extends JFrame
 	}
 
 	private void verifySecurity(PassportService service) {
-
 		verificationIndicator.setBACNotChecked();
 		verificationIndicator.setAANotChecked();
 		verificationIndicator.setDSNotChecked();
 		verificationIndicator.setCSNotChecked(null);
+		verifyBAC(service);
+		verifyAA(service);
+		verifyDS(service);
+		verifyCS(service);
+	}
 
-		/* Check whether BAC was used */
+	/** Checks whether BAC was used. */
+	private void verifyBAC(PassportService service) {
+		
 		if (bacEntry != null) {
 			verificationIndicator.setBACSucceeded();
 		} else {
 			verificationIndicator.setBACFailed("BAC not used");
 		}
+	}
 
-		/* Check active authentication */
+	/** Check active authentication. */
+	private void verifyAA(PassportService service) {
 		try {
 			InputStream dg15In = getFile(PassportService.EF_DG15);
 			if (dg15In != null && service != null) {
@@ -400,14 +408,16 @@ public class PassportFrame extends JFrame
 					verificationIndicator.setAAFailed("Response to AA incorrect");
 				}
 			}
-			docSigningCert = null;
-			countrySigningCert = null;
 		} catch (CardServiceException cse) {
 			// cse.printStackTrace();
 			verificationIndicator.setAAFailed("AA failed (" + cse.getMessage() + ")");
 		}
+	}
 
-		/* Check hashes in the SOd correspond to hashes we compute. */
+	/** Checks hashes in the SOd correspond to hashes we compute. */
+	private void verifyDS(PassportService service) {
+		docSigningCert = null;
+		countrySigningCert = null;
 		try {
 			InputStream comIn = getFile(PassportService.EF_COM);
 			com = new COMFile(comIn);
@@ -429,17 +439,19 @@ public class PassportFrame extends JFrame
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
 
-			String algorithm = sod.getDigestAlgorithm();
-			MessageDigest digest = MessageDigest.getInstance(algorithm);
+			String digestAlgorithm = sod.getDigestAlgorithm();
+			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 
 			for (int dgNumber: hashes.keySet()) {
-				int dgTag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
-				short dgFID = PassportFile.lookupFIDByTag(dgTag);
+				int tag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
+				short fid = PassportFile.lookupFIDByTag(tag);
 				byte[] storedHash = hashes.get(dgNumber);
 
 				digest.reset();
 
-				InputStream dgIn = getFile(dgFID);
+				InputStream dgIn = getFile(fid);
+				System.out.println("DEBUG: dgIn for " + Integer.toHexString(fid) + " is " + dgIn.getClass().getSimpleName());
+				System.out.println("DEBUG: dgIn has markSupported? " + dgIn.markSupported());
 
 				byte[] buf = new byte[4096];
 				while (true) {
@@ -468,8 +480,11 @@ public class PassportFrame extends JFrame
 			verificationIndicator.setDSFailed(e.getMessage());
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
+	}
 
-		/* Check country signer certificate, if known. */
+	/** Checks country signer certificate, if known. */
+	private void verifyCS(PassportService service) {
+		
 		if (docSigningCert == null) {
 			verificationIndicator.setCSFailed("Cannot check CSCA: missing DS certificate");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
@@ -902,19 +917,19 @@ public class PassportFrame extends JFrame
 	private void setupFilesFromServicePassportSource(PassportService service) throws IOException, CardServiceException {
 		bytesRead = 0;
 		totalLength = 0;
-		files.clear();
+		rawStreams.clear();
 
 		CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
 		int comLength = comIn.getFileLength();
 		BufferedInputStream bufferedComIn = new BufferedInputStream(comIn, comLength + 1);
 		totalLength += comLength;
 		bufferedComIn.mark(comLength + 1);
-		files.put(PassportService.EF_COM, bufferedComIn);
+		rawStreams.put(PassportService.EF_COM, bufferedComIn);
 		COMFile com = new COMFile(bufferedComIn);
 		for (int tag: com.getTagList()) {
 			CardFileInputStream in = service.readDataGroup(tag);
 			in.mark(in.getFileLength() + 1);
-			files.put(PassportFile.lookupFIDByTag(tag), in);
+			rawStreams.put(PassportFile.lookupFIDByTag(tag), in);
 			totalLength += in.getFileLength();
 		}
 		bufferedComIn.reset();
@@ -923,13 +938,13 @@ public class PassportFrame extends JFrame
 		BufferedInputStream bufferedSodIn = new BufferedInputStream(sodIn, sodLength + 1);
 		bufferedSodIn.mark(sodLength + 1);
 		totalLength += sodLength;
-		files.put(PassportService.EF_SOD, bufferedSodIn);
+		rawStreams.put(PassportService.EF_SOD, bufferedSodIn);
 	}
 
 	private void setupFilesFromZipPassportSource(File file) throws IOException {
 		bytesRead = 0;
 		totalLength = 0;
-		files.clear();
+		rawStreams.clear();
 
 		ZipFile zipIn = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipIn.entries();
@@ -943,7 +958,7 @@ public class PassportFrame extends JFrame
 				byte[] bytes = new byte[size];
 				DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
 				dataIn.readFully(bytes);
-				files.put(fid, new ByteArrayInputStream(bytes));
+				rawStreams.put(fid, new ByteArrayInputStream(bytes));
 				totalLength += bytes.length;
 			} catch (NumberFormatException nfe) {
 				/* NOTE: ignore this file */
@@ -954,7 +969,7 @@ public class PassportFrame extends JFrame
 	private void setupFilesFromEmptyPassportSource() throws GeneralSecurityException {
 		bytesRead = 0;
 		totalLength = 0;
-		files.clear();
+		rawStreams.clear();
 
 		/* EF.COM */
 		List<Integer> tagList = new ArrayList<Integer>();
@@ -963,7 +978,7 @@ public class PassportFrame extends JFrame
 		COMFile com = new COMFile("01", "07", "04", "00", "00", tagList);
 		byte[] comBytes = com.getEncoded();
 		totalLength += comBytes.length;
-		files.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
+		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
 
 		/* EF.DG1 */
 		Date today = Calendar.getInstance().getTime();
@@ -973,13 +988,13 @@ public class PassportFrame extends JFrame
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		totalLength += dg1Bytes.length;
-		files.put(PassportService.EF_DG1, new ByteArrayInputStream(dg1Bytes));
+		rawStreams.put(PassportService.EF_DG1, new ByteArrayInputStream(dg1Bytes));
 
 		/* EF.DG2 */
 		DG2File dg2 = new DG2File(); 
 		byte[] dg2Bytes = dg2.getEncoded();
 		totalLength += dg2Bytes.length;
-		files.put(PassportService.EF_DG2, new ByteArrayInputStream(dg2Bytes));
+		rawStreams.put(PassportService.EF_DG2, new ByteArrayInputStream(dg2Bytes));
 
 		/* EF.SOD */
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -1009,12 +1024,12 @@ public class PassportFrame extends JFrame
 		SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
 		byte[] sodBytes = sod.getEncoded();
 		totalLength += sodBytes.length;
-		files.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
+		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
 	private void putFile(short fid, byte[] bytes) {
 		if (bytes == null) { return; }
-		fileContents.put(fid, bytes);
+		filesBytes.put(fid, bytes);
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		in.mark(bytes.length + 1);
 		bufferedStreams.put(fid, in);
@@ -1030,9 +1045,10 @@ public class PassportFrame extends JFrame
 	private synchronized InputStream getFile(final short fid) {
 		try {
 			InputStream in = null;
-			byte[] file = fileContents.get(fid);
+			byte[] file = filesBytes.get(fid);
 			if (file != null) {
 				/* Already completely read this file. */
+				System.out.println("DEBUG: found " + Integer.toHexString(fid) + ": " + file.length + " bytes");
 				in = new ByteArrayInputStream(file);
 				in.mark(file.length + 1);
 			} else {
@@ -1043,12 +1059,14 @@ public class PassportFrame extends JFrame
 			if (in == null) {
 				/* Not read yet. Start reading it. */
 				final PassportFrame frame = this;
-				final InputStream unBufferedIn = files.get(fid);
+				final InputStream unBufferedIn = rawStreams.get(fid);
 				unBufferedIn.reset();
 				final PipedInputStream pipedIn = new PipedInputStream(BUFFER_SIZE);
 				final PipedOutputStream out = new PipedOutputStream(pipedIn);
 				final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
-				bufferedStreams.put(fid, pipedIn);
+				in = new BufferedInputStream(pipedIn, BUFFER_SIZE);
+				in.mark(BUFFER_SIZE + 1);
+				bufferedStreams.put(fid, in);
 				(new Thread(new Runnable() {
 					public void run() {
 						byte[] buf = new byte[BUFFER_SIZE];
@@ -1063,7 +1081,7 @@ public class PassportFrame extends JFrame
 							out.flush(); out.close();
 							copyOut.flush();
 							byte[] copyOutBytes = copyOut.toByteArray();
-							fileContents.put(fid, copyOutBytes);
+							filesBytes.put(fid, copyOutBytes);
 							copyOut.close();
 						} catch (IOException ioe) {
 							ioe.printStackTrace();
@@ -1071,8 +1089,7 @@ public class PassportFrame extends JFrame
 						}
 					}
 				})).start();
-				in = new BufferedInputStream(pipedIn, BUFFER_SIZE);
-				in.mark(BUFFER_SIZE + 1);
+				
 			}
 			return in;
 		} catch (IOException ioe) {
@@ -1082,7 +1099,7 @@ public class PassportFrame extends JFrame
 	}
 
 	private byte[] getFileBytes(short fid) {
-		byte[] result = fileContents.get(fid);
+		byte[] result = filesBytes.get(fid);
 		if (result != null) { return result; }
 		InputStream in = getFile(fid);
 		if (in == null) { return null; }
