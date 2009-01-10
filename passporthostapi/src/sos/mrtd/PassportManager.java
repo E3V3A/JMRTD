@@ -64,6 +64,8 @@ public class PassportManager
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
 			cm.addTerminals(acrFactory, true);
+		} catch (ClassNotFoundException cnfe) {
+			/* Ignore this provider... not installed */ 
 		} catch (Exception e) {
 			/* Ignore this provider */
 		}
@@ -72,6 +74,8 @@ public class PassportManager
 			Provider crefProvider = (Provider)crefProviderClass.newInstance();
 			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
 			cm.addTerminals(crefFactory, false);
+		} catch (ClassNotFoundException cnfe) {
+			/* Ignore this provider... not installed */ 
 		} catch (Exception e) {
 			/* Ignore this provider */
 			e.printStackTrace();
@@ -81,6 +85,8 @@ public class PassportManager
 			Provider jcopProvider = (Provider)jcopProviderClass.newInstance();
 			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", jcopProvider);
 			cm.addTerminals(jcopFactory, false);
+		} catch (ClassNotFoundException cnfe) {
+			/* Ignore this provider... not installed */ 
 		} catch (Exception e) {
 			/* Ignore this provider */
 			e.printStackTrace();
