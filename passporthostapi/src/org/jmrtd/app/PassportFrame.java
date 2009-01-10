@@ -1037,7 +1037,7 @@ public class PassportFrame extends JFrame
 	}
 
 	/**
-	 * Gets an inputstream that is ready for reading. Makes sure it is reset.
+	 * Gets an inputstream that is ready for reading.
 	 * 
 	 * @param fid
 	 * @return
@@ -1053,7 +1053,7 @@ public class PassportFrame extends JFrame
 				in.mark(file.length + 1);
 			} else {
 				/* Maybe partially read? Use the buffered stream. */
-				in = bufferedStreams.get(fid);
+				in = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
 				if (in != null && in.markSupported()) { in.reset(); }
 			}
 			if (in == null) {
