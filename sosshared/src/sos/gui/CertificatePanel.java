@@ -39,6 +39,7 @@ public class CertificatePanel extends JPanel
 
 	private static String certificateToString(Certificate certificate) {
 		String certText = null;
+		if (certificate == null) { return null; }
 		if (certificate instanceof X509Certificate) {
 			StringBuffer result = new StringBuffer();
 			X509Certificate x509Cert = (X509Certificate)certificate;
