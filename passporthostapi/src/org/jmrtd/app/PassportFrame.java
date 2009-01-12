@@ -962,6 +962,7 @@ public class PassportFrame extends JFrame
 				short fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
 				byte[] bytes = new byte[size];
 				int fileLength = bytes.length;
+				fileLengths.put(fid, fileLength);
 				DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
 				dataIn.readFully(bytes);
 				rawStreams.put(fid, new ByteArrayInputStream(bytes));
@@ -1092,6 +1093,7 @@ public class PassportFrame extends JFrame
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
 		final PassportFrame frame = this;
 		final InputStream unBufferedIn = rawStreams.get(fid);
+		if (unBufferedIn == null) { throw new IOException("No raw inputstream to copy " + Integer.toHexString(fid)); }
 		final int fileLength = fileLengths.get(fid);
 		unBufferedIn.reset();
 		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
