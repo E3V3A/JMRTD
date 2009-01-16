@@ -70,6 +70,19 @@ public class PassportManager
 			/* Ignore this provider */
 		}
 		try {
+			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr120.ACR120UProvider");
+			Provider acrProvider = (Provider)acrProviderClass.newInstance();
+			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR120U", null, acrProvider);
+			System.out.println("DEBUG: acrFactory = " + acrFactory);
+			cm.addTerminals(acrFactory, false);
+		} catch (ClassNotFoundException cnfe) {
+			/* Ignore this provider... not installed */
+			cnfe.printStackTrace();
+		} catch (Exception e) {
+			/* Ignore this provider */
+			e.printStackTrace();
+		}
+		try {
 			Class<?> crefProviderClass = Class.forName("ds.smartcards.CREFTerminalProvider");
 			Provider crefProvider = (Provider)crefProviderClass.newInstance();
 			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
