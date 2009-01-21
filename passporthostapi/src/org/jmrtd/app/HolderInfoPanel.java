@@ -22,16 +22,14 @@
 
 package org.jmrtd.app;
 
-import java.awt.Component;
-import java.awt.Font;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.swing.JLabel;
-import javax.swing.JPanel;
+import javax.swing.*;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -71,10 +69,11 @@ public class HolderInfoPanel extends JPanel
 	private Collection<ActionListener> listeners;
 
 	public HolderInfoPanel(MRZInfo nfo) {
-		super(new GridLayout2(9, 2, 3, 3));
+		super(new GridLayout2(9, 2, 3, 3)); // FIXME: Use SpringLayout here?
+
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
-	
+
 		StringBuffer nameStr = new StringBuffer();
 		String[] firstNames = nfo.getSecondaryIdentifiers();
 		for (int i = 0; i < firstNames.length; i++) {
@@ -178,7 +177,7 @@ public class HolderInfoPanel extends JPanel
 	private MRZEntryField makeMRZEntryField(String value) {
 		return makeMRZEntryField(value, 20);
 	}
-	
+
 	private MRZEntryField makeMRZEntryField(String value, int width) {
 		value = value.trim();
 		int textSize = Math.max(value.length(), width);
@@ -203,7 +202,7 @@ public class HolderInfoPanel extends JPanel
 	public void addActionListener(ActionListener l) {
 		listeners.add(l);
 	}
-	
+
 	private void notifyActionPerformed(ActionEvent e) {
 		for (ActionListener l: listeners) { l.actionPerformed(e); }
 	}

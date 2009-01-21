@@ -23,6 +23,8 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.ComponentOrientation;
+import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
@@ -38,9 +40,11 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.border.Border;
 
 import sos.smartcards.CardManager;
+
 
 /**
  * Preferences panel.
@@ -49,10 +53,18 @@ import sos.smartcards.CardManager;
  */
 public class PreferencesPanel extends JPanel
 {
+	private enum ReadingMode {
+		SAFE_MODE, // completely read files, check their signature, then display only if valid
+		PROGRESSIVE_MODE; // display files while still reading, then check their signature
+	};
+	
 	private static final long serialVersionUID = 5429621553165149988L;
 
+	private static Border READING_MODE_BORDER = BorderFactory.createTitledBorder("Reading Mode");
 	private static Border CARD_TERMINALS_BORDER = BorderFactory.createTitledBorder("Card Terminals");
 
+
+	private ReadingMode readingMode;
 	private CardManager cm;
 	private Collection<CardTerminal> terminalsToStart, terminalsToStop;
 	private Map<CardTerminal, JCheckBox> checkBoxMap;
@@ -64,14 +76,14 @@ public class PreferencesPanel extends JPanel
 	 * @param preferencesFile file for storing preferences
 	 */
 	public PreferencesPanel(CardManager cm, File preferencesFile) {
-		super(new BorderLayout());
+		super(new FlowLayout());
 		this.cm = cm;
 		terminalsToStart = new HashSet<CardTerminal>();
 		terminalsToStop = new HashSet<CardTerminal>();
 		checkBoxMap = new HashMap<CardTerminal, JCheckBox>();
 		List<CardTerminal> terminalList = cm.getTerminals();
 		
-		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 2));
+		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cmPanel.setBorder(CARD_TERMINALS_BORDER);
 		for (CardTerminal terminal: terminalList){
 			JCheckBox checkBox = new JCheckBox(terminal.getName(), cm.isPolling(terminal));
@@ -79,7 +91,18 @@ public class PreferencesPanel extends JPanel
 			checkBox.setAction(getSetTerminalAction(terminal, checkBox));
 			cmPanel.add(checkBox);
 		}
-		add(cmPanel, BorderLayout.CENTER);
+
+		readingMode = ReadingMode.PROGRESSIVE_MODE;
+		ReadingMode[] modes = ReadingMode.values();
+		JPanel rmPanel = new JPanel(new GridLayout(modes.length, 1));
+		rmPanel.setBorder(READING_MODE_BORDER);
+		for (ReadingMode mode: modes) {
+			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == readingMode);
+			rmPanel.add(radioButton);
+		}
+		
+		add(rmPanel);
+		add(cmPanel);
 	}
 
 	public String getName() {
