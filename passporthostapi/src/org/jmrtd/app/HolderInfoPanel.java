@@ -32,6 +32,7 @@ import java.util.Date;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.Spring;
 import javax.swing.SpringLayout;
 import javax.swing.SpringLayout.Constraints;
 
@@ -75,7 +76,7 @@ public class HolderInfoPanel extends JPanel
 		}
 	};
 
-	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
+	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 10);
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private MRZInfo info;
@@ -83,20 +84,35 @@ public class HolderInfoPanel extends JPanel
 	private Collection<ActionListener> listeners;
 	
 	public HolderInfoPanel(MRZInfo nfo) {
-		super(new GridLayout2(9, 2, 3, 3)); // FIXME: Use SpringLayout here?
+		// super(new GridLayout2(9, 2, 3, 3)); // FIXME: Use SpringLayout here?
 
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
 
-
 		SpringLayout layout = new SpringLayout();
-//		setLayout(layout);
+		setLayout(layout);
+		Component prevComp = null;
 		for (Field field: Field.values()) {
-			Component keyComp = makeKey(field.toString());
-			Component valueComp = makeFieldComponent(field, nfo);
-			Constraints constraints = layout.getConstraints(keyComp);
+			Component keyComp = makeKeyComp(field.toString());
+			Component valueComp = makeValueComp(field, nfo);
+			Constraints keyConstraints = layout.getConstraints(keyComp);
+			Constraints valueConstraints = layout.getConstraints(valueComp);
+			if (prevComp == null) {
+				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.NORTH, this);
+				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.NORTH, this);
+			} else {
+				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.SOUTH, prevComp);
+				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.SOUTH, prevComp);
+			}
+			layout.putConstraint(SpringLayout.WEST, keyComp, 5, SpringLayout.WEST, this);
+			layout.putConstraint(SpringLayout.WEST, valueComp, 5, SpringLayout.EAST, keyComp);
 			add(keyComp);
 			add(valueComp);
+			if (keyComp.getHeight() > valueComp.getHeight()) {
+				prevComp = keyComp;
+			} else {
+				prevComp = valueComp;
+			}
 		}
 	}
 
@@ -104,14 +120,14 @@ public class HolderInfoPanel extends JPanel
 		return info;
 	}
 
-	private Component makeKey(String key) {
+	private Component makeKeyComp(String key) {
 		key = key.trim();
 		JLabel c = new JLabel(key + ": ");
 		c.setFont(KEY_FONT);
 		return c;
 	}
 	
-	private Component makeFieldComponent(Field field, MRZInfo nfo) {
+	private Component makeValueComp(Field field, MRZInfo nfo) {
 		switch(field) {
 		case SURNAME: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPrimaryIdentifier());
