@@ -4,6 +4,7 @@
 
 package sos.gui;
 
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -163,5 +164,16 @@ public class DateEntryField extends Box
 		for (ActionListener l: listeners) {
 			l.actionPerformed(e);
 		}
+	}
+
+	public Dimension getPreferredSize() {
+		double wm = monthComboBox.getPreferredSize().getWidth(),
+		wd = dayNumField.getPreferredSize().getWidth(),
+		wy = yearNumField.getPreferredSize().getWidth(),
+		hm = monthComboBox.getPreferredSize().getHeight(),
+		hd = dayNumField.getPreferredSize().getHeight(),
+		hy = yearNumField.getPreferredSize().getHeight();
+
+		return new Dimension((int)(wd + wm + wy), (int)Math.max(Math.max(hd, hm), hy));
 	}
 }
