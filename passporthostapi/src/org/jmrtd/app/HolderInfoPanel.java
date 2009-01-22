@@ -22,14 +22,18 @@
 
 package org.jmrtd.app;
 
-import java.awt.*;
+import java.awt.Component;
+import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 
-import javax.swing.*;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.SpringLayout;
+import javax.swing.SpringLayout.Constraints;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -51,110 +55,49 @@ import sos.mrtd.MRZInfo;
 public class HolderInfoPanel extends JPanel
 {
 	private static final long serialVersionUID = -6169487570387029561L;
+	
+	private enum Field {
+		SURNAME,
+		GIVEN_NAMES,
+		DOCUMENT_NUMBER,
+		PERSONAL_NUMBER,
+		NATIONALITY,
+		ISSUING_STATE,
+		DATE_OF_BIRTH,
+		DATE_OF_EXPIRY,
+		GENDER;
+		
+		public String toString() {
+			String s = super.toString();
+			s = s.replace('_', ' ');
+			s = s.substring(0, 1) + s.substring(1).toLowerCase();
+			return s;
+		}
+	};
 
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private MRZInfo info;
-	private MRZEntryField surNameTF;
-	private MRZEntryField givenNamesTF;
-	private MRZEntryField documentNumberTF;
-	private MRZEntryField personalNumberTF;
-	private CountryEntryField nationalityTF;
-	private CountryEntryField issuingStateTF;
-	private DateEntryField dateOfBirthTF;
-	private DateEntryField dateOfExpiryTF;
-	private GenderEntryField genderTF;
-
+	
 	private Collection<ActionListener> listeners;
-
+	
 	public HolderInfoPanel(MRZInfo nfo) {
 		super(new GridLayout2(9, 2, 3, 3)); // FIXME: Use SpringLayout here?
 
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
 
-		StringBuffer nameStr = new StringBuffer();
-		String[] firstNames = nfo.getSecondaryIdentifiers();
-		for (int i = 0; i < firstNames.length; i++) {
-			nameStr.append(firstNames[i]);
-			if (i < (firstNames.length - 1)) { nameStr.append(" "); }
+
+		SpringLayout layout = new SpringLayout();
+//		setLayout(layout);
+		for (Field field: Field.values()) {
+			Component keyComp = makeKey(field.toString());
+			Component valueComp = makeFieldComponent(field, nfo);
+			Constraints constraints = layout.getConstraints(keyComp);
+			add(keyComp);
+			add(valueComp);
 		}
-
-		surNameTF = makeMRZEntryField(nfo.getPrimaryIdentifier());
-		givenNamesTF = makeMRZEntryField(nameStr.toString());
-		documentNumberTF = makeMRZEntryField(nfo.getDocumentNumber(), 9);
-		personalNumberTF = makeMRZEntryField(nfo.getPersonalNumber(), 14);
-		nationalityTF = makeCountryField(nfo.getNationality());
-		issuingStateTF = makeCountryField(nfo.getIssuingState());
-		dateOfBirthTF = makeDateEntryField(nfo.getDateOfBirth());
-		dateOfExpiryTF = makeDateEntryField(nfo.getDateOfExpiry());
-		genderTF = makeGenderEntryField(nfo.getGender());
-
-		surNameTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setPrimaryIdentifier(surNameTF.getText());
-				notifyActionPerformed(new ActionEvent(this, 0, "Primary identifier changed"));
-			}
-		});
-		givenNamesTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setSecondaryIdentifiers(givenNamesTF.getText());
-				notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
-			}
-		});
-		documentNumberTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setDocumentNumber(documentNumberTF.getText());
-				notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
-			}
-		});
-		personalNumberTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setPersonalNumber(personalNumberTF.getText());
-				notifyActionPerformed(new ActionEvent(this, 0, "Personal number changed"));
-			}
-		});
-		nationalityTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setNationality(nationalityTF.getCountry());
-				notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
-			}
-		});
-		issuingStateTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setIssuingState(issuingStateTF.getCountry());
-				notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
-			}
-		});
-		dateOfBirthTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setDateOfBirth(dateOfBirthTF.getDate());
-				notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
-			}
-		});
-		dateOfExpiryTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setDateOfExpiry(dateOfExpiryTF.getDate());
-				notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
-			}
-		});
-		genderTF.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				info.setGender(genderTF.getGender());
-				notifyActionPerformed(new ActionEvent(this, 0, "Gender changed"));
-			}
-		});
-
-		add(makeKey("Surname")); add(surNameTF);
-		add(makeKey("Given names")); add(givenNamesTF);
-		add(makeKey("Document number")); add(documentNumberTF);
-		add(makeKey("Personal number")); add(personalNumberTF);
-		add(makeKey("Nationality")); add(nationalityTF);
-		add(makeKey("Issuing state")); add(issuingStateTF);
-		add(makeKey("Date of birth")); add(dateOfBirthTF);
-		add(makeKey("Date of expiry")); add(dateOfExpiryTF);
-		add(makeKey("Gender")); add(genderTF);
 	}
 
 	public MRZInfo getMRZ() {
@@ -166,6 +109,108 @@ public class HolderInfoPanel extends JPanel
 		JLabel c = new JLabel(key + ": ");
 		c.setFont(KEY_FONT);
 		return c;
+	}
+	
+	private Component makeFieldComponent(Field field, MRZInfo nfo) {
+		switch(field) {
+		case SURNAME: {
+			final MRZEntryField tf = makeMRZEntryField(nfo.getPrimaryIdentifier());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setPrimaryIdentifier(tf.getText());
+					notifyActionPerformed(new ActionEvent(this, 0, "Primary identifier changed"));
+				}
+			});
+			return tf;
+		}
+		case GIVEN_NAMES: {
+			StringBuffer nameStr = new StringBuffer();
+			String[] firstNames = nfo.getSecondaryIdentifiers();
+			for (int i = 0; i < firstNames.length; i++) {
+				nameStr.append(firstNames[i]);
+				if (i < (firstNames.length - 1)) { nameStr.append(" "); }
+			}
+			final MRZEntryField tf = makeMRZEntryField(nameStr.toString());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setSecondaryIdentifiers(tf.getText());
+					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
+				}
+			});
+			return tf;
+		}
+		case DOCUMENT_NUMBER: {
+			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentNumber(), 9);
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setDocumentNumber(tf.getText());
+					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
+				}
+			});
+			return tf;
+		}
+		case PERSONAL_NUMBER: {
+			final MRZEntryField tf = makeMRZEntryField(nfo.getPersonalNumber(), 14);
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setPersonalNumber(tf.getText());
+					notifyActionPerformed(new ActionEvent(this, 0, "Personal number changed"));
+				}
+			});
+			return tf;
+		}
+		case NATIONALITY: {
+			final CountryEntryField tf = makeCountryField(nfo.getNationality());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setNationality(tf.getCountry());
+					notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
+				}
+			});
+			return tf;
+		}
+		case ISSUING_STATE: {
+			final CountryEntryField tf = makeCountryField(nfo.getIssuingState());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setIssuingState(tf.getCountry());
+					notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
+				}
+			});
+			return tf;
+		}
+		case DATE_OF_BIRTH: {
+			final DateEntryField tf = makeDateEntryField(nfo.getDateOfBirth());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setDateOfBirth(tf.getDate());
+					notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
+				}
+			});
+			return tf;
+		}
+		case DATE_OF_EXPIRY: {
+			final DateEntryField tf = makeDateEntryField(nfo.getDateOfExpiry());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setDateOfExpiry(tf.getDate());
+					notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
+				}
+			});
+			return tf;
+		}
+		case GENDER: {
+			final GenderEntryField tf = makeGenderEntryField(nfo.getGender());
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setGender(tf.getGender());
+					notifyActionPerformed(new ActionEvent(this, 0, "Gender changed"));
+				}
+			});
+			return tf;
+		}
+		}
+		return null;
 	}
 
 	private DateEntryField makeDateEntryField(Date date) {
