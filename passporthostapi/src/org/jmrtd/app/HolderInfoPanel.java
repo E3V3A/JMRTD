@@ -32,16 +32,13 @@ import java.util.Date;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.Spring;
 import javax.swing.SpringLayout;
-import javax.swing.SpringLayout.Constraints;
 
 import sos.data.Country;
 import sos.data.Gender;
 import sos.gui.CountryEntryField;
 import sos.gui.DateEntryField;
 import sos.gui.GenderEntryField;
-import sos.gui.GridLayout2;
 import sos.gui.MRZEntryField;
 import sos.mrtd.MRZInfo;
 
@@ -95,8 +92,6 @@ public class HolderInfoPanel extends JPanel
 		for (Field field: Field.values()) {
 			Component keyComp = makeKeyComp(field.toString());
 			Component valueComp = makeValueComp(field, nfo);
-			Constraints keyConstraints = layout.getConstraints(keyComp);
-			Constraints valueConstraints = layout.getConstraints(valueComp);
 			if (prevComp == null) {
 				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.NORTH, this);
 				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.NORTH, this);
