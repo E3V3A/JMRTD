@@ -56,6 +56,13 @@ public class PreferencesPanel extends JPanel
 	private enum ReadingMode {
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
+		
+		public String toString() {
+			String s = super.toString();
+			s = s.replace('_', ' ');
+			s = s.substring(0, 1) + s.substring(1).toLowerCase();
+			return s;
+		}
 	};
 	
 	private static final long serialVersionUID = 5429621553165149988L;

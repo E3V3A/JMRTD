@@ -81,11 +81,8 @@ public class HolderInfoPanel extends JPanel
 	private Collection<ActionListener> listeners;
 	
 	public HolderInfoPanel(MRZInfo nfo) {
-		// super(new GridLayout2(9, 2, 3, 3)); // FIXME: Use SpringLayout here?
-
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
-
 		SpringLayout layout = new SpringLayout();
 		setLayout(layout);
 		Component prevComp = null;
