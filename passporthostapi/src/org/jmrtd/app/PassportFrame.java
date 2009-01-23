@@ -82,6 +82,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.SpringLayout;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -127,7 +128,7 @@ public class PassportFrame extends JFrame
 
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
-	private static final Dimension PREFERRED_SIZE = new Dimension(520, 420);
+	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 	private static final int BUFFER_SIZE = 243;
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
@@ -184,12 +185,18 @@ public class PassportFrame extends JFrame
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
-		southPanel = new JPanel(new FlowLayout(FlowLayout.LEADING));
+		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
+      SpringLayout southLayout = new SpringLayout();
+		southPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
+//		southLayout.putConstraint(SpringLayout.NORTH, verificationIndicator, 2, SpringLayout.NORTH, southPanel);
+//		southLayout.putConstraint(SpringLayout.WEST, verificationIndicator, 2, SpringLayout.WEST, southPanel);
+//		southLayout.putConstraint(SpringLayout.NORTH, progressBar, 2, SpringLayout.NORTH, southPanel);
+//		southLayout.putConstraint(SpringLayout.EAST, progressBar, 2, SpringLayout.EAST, southPanel);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
-		panel.add(southPanel, BorderLayout.SOUTH);
+      panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
 		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 		filesBytes = new HashMap<Short, byte[]>();

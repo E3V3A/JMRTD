@@ -40,6 +40,7 @@ import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
@@ -93,6 +94,9 @@ public class PreferencesPanel extends JPanel
 		
 		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cmPanel.setBorder(CARD_TERMINALS_BORDER);
+		if (terminalList.size() == 0) {
+		   cmPanel.add(new JLabel("No card terminals!"));
+		}
 		for (CardTerminal terminal: terminalList){
 			JCheckBox checkBox = new JCheckBox(terminal.getName(), cm.isPolling(terminal));
 			checkBoxMap.put(terminal, checkBox);
@@ -107,6 +111,7 @@ public class PreferencesPanel extends JPanel
 		ButtonGroup buttonGroup = new ButtonGroup();
 		for (ReadingMode mode: modes) {
 			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == readingMode);
+			radioButton.setAction(getSetModeAction(mode));
 			buttonGroup.add(radioButton);
 			rmPanel.add(radioButton);
 		}
@@ -149,4 +154,23 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.NAME, terminal.getName());
 		return action;
 	}
+	
+	  public Action getSetModeAction(final ReadingMode mode) {
+	      Action action = new AbstractAction() {
+	         public void actionPerformed(ActionEvent e) {
+	            readingMode = mode;
+	         }
+	      };
+	      StringBuffer shortDescription = new StringBuffer();
+	      shortDescription.append("Set reading mode to ");
+	      shortDescription.append(mode.toString());
+	      shortDescription.append(": ");
+	      switch (mode) {
+	         case SAFE_MODE: shortDescription.append("Completely read files, check their signature, then display only if valid."); break;
+	         case PROGRESSIVE_MODE: shortDescription.append("Display files while still reading, then check their signature."); break;
+	      }
+	      action.putValue(Action.SHORT_DESCRIPTION, shortDescription.toString());
+	      action.putValue(Action.NAME, mode.toString());
+	      return action;
+	   }
 }
