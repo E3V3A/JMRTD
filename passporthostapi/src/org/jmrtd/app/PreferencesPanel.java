@@ -38,6 +38,7 @@ import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -103,8 +104,10 @@ public class PreferencesPanel extends JPanel
 		ReadingMode[] modes = ReadingMode.values();
 		JPanel rmPanel = new JPanel(new GridLayout(modes.length, 1));
 		rmPanel.setBorder(READING_MODE_BORDER);
+		ButtonGroup buttonGroup = new ButtonGroup();
 		for (ReadingMode mode: modes) {
 			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == readingMode);
+			buttonGroup.add(radioButton);
 			rmPanel.add(radioButton);
 		}
 		
