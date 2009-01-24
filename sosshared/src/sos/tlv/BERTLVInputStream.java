@@ -33,6 +33,13 @@ public class BERTLVInputStream extends InputStream
 		markedState = null;
 	}
 
+	/**
+	 * Reads a tag.
+	 *
+	 * @return the tag just read
+	 *
+	 * @throws IOException if reading goes wrong
+	 */
 	public int readTag() throws IOException {
 		int tag = -1;
 		int bytesRead = 0;
@@ -68,6 +75,13 @@ public class BERTLVInputStream extends InputStream
 		}
 	}
 
+	/**
+	 * Reads a length.
+	 *
+	 * @return the length just read
+	 *
+	 * @throws IOException if reading goes wrong
+	 */
 	public int readLength() throws IOException {
 		try {
 			if (!state.isAtStartOfLength()) { throw new IllegalStateException("Not at start of length"); }
@@ -94,6 +108,13 @@ public class BERTLVInputStream extends InputStream
 		}
 	}
 
+	/**
+	 * Reads a value.
+	 *
+	 * @return the value just read
+	 *
+	 * @throws IOException if reading goes wrong
+	 */
 	public byte[] readValue() throws IOException {
 		try {
 			int length = state.getLength();
@@ -151,10 +172,26 @@ public class BERTLVInputStream extends InputStream
 		}
 	}
 
+	/**
+	 * Returns an estimate of the number of bytes that can be read (or 
+	 * skipped over) from this input stream without blocking by the next
+	 * invocation of a method for this input stream.
+	 * 
+	 * @return a number of bytes
+	 * 
+	 * @throws IOException if something goes wrong
+	 */
 	public int available() throws IOException {
 		return in.available();
 	}
 
+	/**
+	 * Reads the next byte of data from the input stream.
+	 * 
+	 * @return a byte
+	 * 
+	 * @throw IOException if reading goes wrong
+	 */
 	public int read() throws IOException {
 		int result = in.read();
 		if (result < 0) { return -1; }
@@ -162,6 +199,13 @@ public class BERTLVInputStream extends InputStream
 		return result;
 	}
 
+	/**
+	 * Attempts to skip over <code>n</code> bytes.
+	 * 
+	 * @return the actual number of bytes skipped
+	 * 
+	 * @throws IOException if something goes wrong
+	 */
 	public long skip(long n) throws IOException {
 		if (n <= 0) { return 0; }
 		long result = in.skip(n);
@@ -169,15 +213,30 @@ public class BERTLVInputStream extends InputStream
 		return result;
 	}
 
+	/**
+	 * Marks the underlying input stream if supported.
+	 * 
+	 * @param readLimit limit for marking
+	 */
 	public synchronized void mark(int readLimit) {
 		in.mark(readLimit);
 		markedState = (State)state.clone();
 	}
 
+	/**
+	 * Whether marking and resetting are supported.
+	 * 
+	 * @return whether mark and reset are supported
+	 */
 	public boolean markSupported() {
 		return in.markSupported();
 	}
 
+	/**
+	 * Resets the underlying input stream if supported.
+	 * 
+	 * @throws IOException if something goes wrong
+	 */
 	public synchronized void reset() throws IOException {
 		if (!markSupported()) {
 			throw new IOException("mark/reset not supported");
@@ -187,6 +246,11 @@ public class BERTLVInputStream extends InputStream
 		markedState = null;
 	}
 
+	/**
+	 * Closes this input stream.
+	 * 
+	 * @throws IOException if something goes wrong
+	 */
 	public void close() throws IOException {
 		in.close();
 	}
