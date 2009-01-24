@@ -1,6 +1,7 @@
 package sos.smartcards;
 
 /**
+ * Interface for minimal ISO file systems.
  * Implement this interface to tell {@link CardFileInputStream}
  * how to deal with card files.
  * 

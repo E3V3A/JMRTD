@@ -88,6 +88,11 @@ public class CardManager
 		}
 	}
 	
+	/**
+	 * Starts polling <code>terminal</code> (if not already doing so).
+	 * 
+	 * @param terminal a card terminal
+	 */
 	public synchronized void startPolling(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { poller = new TerminalPoller(terminal); }
@@ -95,6 +100,11 @@ public class CardManager
 		notifyAll();
 	}
 	
+	/**
+	 * Stops polling <code>terminal</code>.
+	 * 
+	 * @param terminal a card terminal
+	 */
 	public synchronized void stopPolling(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { return; }
@@ -102,12 +112,27 @@ public class CardManager
 		notifyAll();
 	}
 	
+	/**
+	 * Whether we are polling <code>terminal</code>.
+	 *
+	 * @param terminal a card terminal
+	 *
+	 * @return a boolean
+	 */
 	public synchronized boolean isPolling(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { return false; }
 		return poller.isPolling();
 	}
-	
+
+	/**
+	 * Gets the service associated with <code>terminal</code> (or <code>null</code> if
+	 * we are not polling <code>terminal</code>).
+	 *
+	 * @param terminal a card terminal
+	 *
+	 * @return a card service or <code>null</code>
+	 */
 	public synchronized CardService getService(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { return null; }
@@ -119,6 +144,8 @@ public class CardManager
 	 * Whether the card manager is running.
 	 * 
 	 * @return a boolean indicating whether the card manager is running.
+	 * 
+	 * @deprecated Use {@link #isPolling(CardTerminal)}.
 	 */
 	public boolean isPolling() {
 		boolean isPolling = false;
@@ -157,6 +184,12 @@ public class CardManager
 		return 0;
 	}
 
+	/**
+	 * Adds a terminal.
+	 *
+	 * @param terminal the card terminal to add
+	 * @param isPolling whether we should immediately start polling this terminal
+	 */
 	public synchronized void addTerminal(CardTerminal terminal, boolean isPolling) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) {
@@ -339,5 +372,4 @@ public class CardManager
 
 		}
 	}
-
 }
