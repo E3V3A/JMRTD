@@ -935,10 +935,10 @@ public class PassportFrame extends JFrame
 		rawStreams.put(PassportService.EF_COM, bufferedComIn);
 		COMFile com = new COMFile(bufferedComIn);
 		for (int tag: com.getTagList()) {
-			CardFileInputStream in = service.readDataGroup(tag);
+			short fid = PassportFile.lookupFIDByTag(tag);
+			CardFileInputStream in = service.readFile(fid);
 			int fileLength = in.getFileLength();
 			in.mark(fileLength + 1);
-			short fid = PassportFile.lookupFIDByTag(tag);
 			rawStreams.put(fid, in);
 			totalLength += fileLength;
 			fileLengths.put(fid, fileLength);

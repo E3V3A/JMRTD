@@ -131,7 +131,8 @@ public class PAPanel extends JPanel implements AuthListener
 							for (int i = 0; i < tagList.size(); i++) {
 								int dgTag = tagList.get(i);
 								int dgNumber = PassportFile.lookupDataGroupNumberByTag(dgTag);
-								BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readDataGroup(dgTag));
+								short dgFID = PassportFile.lookupFIDByTag(dgTag);
+								BERTLVInputStream tlvIn = new BERTLVInputStream(passportService.readFile(dgFID));
 								int tag = tlvIn.readTag();
 								tlvIn.readLength();
 								byte[] valueBytes = tlvIn.readValue();

@@ -134,80 +134,128 @@ public abstract class PassportFile
    public abstract byte[] getEncoded();
 
    /**
+    * Finds a file identifier for an ICAO tag.
+    *
     * Corresponds to Table A1 in ICAO-TR-LDS_1.7_2004-05-18.
     *
-    * @param tag the first byte of the EF.
+    * @param tag an ICAO tag (the first byte of the EF)
     *
-    * @return the file identifier.
+    * @return a file identifier.
     */
    public static short lookupFIDByTag(int tag) {
-      switch(tag) {
-         case EF_COM_TAG: return PassportService.EF_COM;
-         case EF_DG1_TAG: return PassportService.EF_DG1;
-         case EF_DG2_TAG: return PassportService.EF_DG2;
-         case EF_DG3_TAG: return PassportService.EF_DG3;
-         case EF_DG4_TAG: return PassportService.EF_DG4;
-         case EF_DG5_TAG: return PassportService.EF_DG5;
-         case EF_DG6_TAG: return PassportService.EF_DG6;
-         case EF_DG7_TAG: return PassportService.EF_DG7;
-         case EF_DG8_TAG: return PassportService.EF_DG8;
-         case EF_DG9_TAG: return PassportService.EF_DG9;
-         case EF_DG10_TAG: return PassportService.EF_DG10;
-         case EF_DG11_TAG: return PassportService.EF_DG11;
-         case EF_DG12_TAG: return PassportService.EF_DG12;
-         case EF_DG13_TAG: return PassportService.EF_DG13;
-         case EF_DG14_TAG: return PassportService.EF_DG14;
-         case EF_DG15_TAG: return PassportService.EF_DG15;
-         case EF_DG16_TAG: return PassportService.EF_DG16;
-         case EF_SOD_TAG: return PassportService.EF_SOD;
-         default:
-            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));
-      }
-   }
-   
-   public static int lookupDataGroupNumberByTag(int tag) {
-      switch (tag) {
-         case EF_DG1_TAG: return 1;
-         case EF_DG2_TAG: return 2;
-         case EF_DG3_TAG: return 3;
-         case EF_DG4_TAG: return 4;
-         case EF_DG5_TAG: return 5;
-         case EF_DG6_TAG: return 6;
-         case EF_DG7_TAG: return 7;
-         case EF_DG8_TAG: return 8;
-         case EF_DG9_TAG: return 9;
-         case EF_DG10_TAG: return 10;
-         case EF_DG11_TAG: return 11;
-         case EF_DG12_TAG: return 12;
-         case EF_DG13_TAG: return 13;
-         case EF_DG14_TAG: return 14;
-         case EF_DG15_TAG: return 15;
-         case EF_DG16_TAG: return 16;
-         default:
-            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
-      }
-   }
-   
-   public static int lookupTagByDataGroupNumber(int tag) {
-	      switch (tag) {
-	         case 1: return EF_DG1_TAG;
-	         case 2: return EF_DG2_TAG;
-	         case 3: return EF_DG3_TAG;
-	         case 4: return EF_DG4_TAG;
-	         case 5: return EF_DG5_TAG;
-	         case 6: return EF_DG6_TAG;
-	         case 7: return EF_DG7_TAG;
-	         case 8: return EF_DG8_TAG;
-	         case 9: return EF_DG9_TAG;
-	         case 10: return EF_DG10_TAG;
-	         case 11: return EF_DG11_TAG;
-	         case 12: return EF_DG12_TAG;
-	         case 13: return EF_DG13_TAG;
-	         case 14: return EF_DG14_TAG;
-	         case 15: return EF_DG15_TAG;
-	         case 16: return EF_DG16_TAG;
-	         default:
-	            throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
-	      }
+	   switch(tag) {
+	   case EF_COM_TAG: return PassportService.EF_COM;
+	   case EF_DG1_TAG: return PassportService.EF_DG1;
+	   case EF_DG2_TAG: return PassportService.EF_DG2;
+	   case EF_DG3_TAG: return PassportService.EF_DG3;
+	   case EF_DG4_TAG: return PassportService.EF_DG4;
+	   case EF_DG5_TAG: return PassportService.EF_DG5;
+	   case EF_DG6_TAG: return PassportService.EF_DG6;
+	   case EF_DG7_TAG: return PassportService.EF_DG7;
+	   case EF_DG8_TAG: return PassportService.EF_DG8;
+	   case EF_DG9_TAG: return PassportService.EF_DG9;
+	   case EF_DG10_TAG: return PassportService.EF_DG10;
+	   case EF_DG11_TAG: return PassportService.EF_DG11;
+	   case EF_DG12_TAG: return PassportService.EF_DG12;
+	   case EF_DG13_TAG: return PassportService.EF_DG13;
+	   case EF_DG14_TAG: return PassportService.EF_DG14;
+	   case EF_DG15_TAG: return PassportService.EF_DG15;
+	   case EF_DG16_TAG: return PassportService.EF_DG16;
+	   case EF_SOD_TAG: return PassportService.EF_SOD;
+	   default:
+		   throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));
 	   }
+   }
+
+   /**
+    * Finds a data group number for an ICAO tag.
+    * 
+    * @param tag an ICAO tag (the first byte of the EF)
+    * 
+    * @return a data group number (1-16)
+    */
+   public static int lookupDataGroupNumberByTag(int tag) {
+	   switch (tag) {
+	   case EF_DG1_TAG: return 1;
+	   case EF_DG2_TAG: return 2;
+	   case EF_DG3_TAG: return 3;
+	   case EF_DG4_TAG: return 4;
+	   case EF_DG5_TAG: return 5;
+	   case EF_DG6_TAG: return 6;
+	   case EF_DG7_TAG: return 7;
+	   case EF_DG8_TAG: return 8;
+	   case EF_DG9_TAG: return 9;
+	   case EF_DG10_TAG: return 10;
+	   case EF_DG11_TAG: return 11;
+	   case EF_DG12_TAG: return 12;
+	   case EF_DG13_TAG: return 13;
+	   case EF_DG14_TAG: return 14;
+	   case EF_DG15_TAG: return 15;
+	   case EF_DG16_TAG: return 16;
+	   default:
+		   throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+	   }
+   }
+
+   /**
+    * Finds an ICAO tag for a data group number.
+    * 
+    * 
+    * @param number a data group number (1-16)
+    *
+    * @return an ICAO tag (the first byte of the EF)
+    */
+   public static int lookupTagByDataGroupNumber(int number) {
+	   switch (number) {
+	   case 1: return EF_DG1_TAG;
+	   case 2: return EF_DG2_TAG;
+	   case 3: return EF_DG3_TAG;
+	   case 4: return EF_DG4_TAG;
+	   case 5: return EF_DG5_TAG;
+	   case 6: return EF_DG6_TAG;
+	   case 7: return EF_DG7_TAG;
+	   case 8: return EF_DG8_TAG;
+	   case 9: return EF_DG9_TAG;
+	   case 10: return EF_DG10_TAG;
+	   case 11: return EF_DG11_TAG;
+	   case 12: return EF_DG12_TAG;
+	   case 13: return EF_DG13_TAG;
+	   case 14: return EF_DG14_TAG;
+	   case 15: return EF_DG15_TAG;
+	   case 16: return EF_DG16_TAG;
+	   default:
+		   throw new NumberFormatException("Unknown number " + number);   
+	   }
+   }
+   
+   /**
+    * Finds an ICAO tag for a data group number.
+    * 
+    * 
+    * @param number a data group number (1-16)
+    *
+    * @return a file identifier
+    */
+   public static short lookupFIDByDataGroupNumber(int number) {
+	   switch (number) {
+	   case 1: return PassportService.EF_DG1;
+	   case 2: return PassportService.EF_DG2;
+	   case 3: return PassportService.EF_DG3;
+	   case 4: return PassportService.EF_DG4;
+	   case 5: return PassportService.EF_DG5;
+	   case 6: return PassportService.EF_DG6;
+	   case 7: return PassportService.EF_DG7;
+	   case 8: return PassportService.EF_DG8;
+	   case 9: return PassportService.EF_DG9;
+	   case 10: return PassportService.EF_DG10;
+	   case 11: return PassportService.EF_DG11;
+	   case 12: return PassportService.EF_DG12;
+	   case 13: return PassportService.EF_DG13;
+	   case 14: return PassportService.EF_DG14;
+	   case 15: return PassportService.EF_DG15;
+	   case 16: return PassportService.EF_DG16;
+	   default:
+		   throw new NumberFormatException("Unknown number " + number);   
+	   }
+   }
 }

@@ -46,7 +46,7 @@ import sos.smartcards.FileSystemStructured;
 import sos.tlv.BERTLVInputStream;
 
 /**
- * Card service for reading datagroups and using the BAC and AA protocols
+ * Card service for reading data groups and using the BAC and AA protocols
  * on the passport.
  * Defines secure messaging.
  * Defines active authentication.
@@ -55,10 +55,15 @@ import sos.tlv.BERTLVInputStream;
  * 
  * Usage:
  *    <pre>
- *       &lt;&lt;create&gt;&gt; ==&gt; open() ==&gt; doBAC(...) ==&gt; doAA() ==&gt; close()
+ *       &lt;&lt;create&gt;&gt; ==&gt;<br />
+ *       open() ==&gt;<br />
+ *       doBAC(...) ==&gt;<br />
+ *       doAA() ==&gt;<br />
+ *       readFile(...)<sup>*</sup> ==&gt;<br />
+ *       close()
  *    </pre> 
  *
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision:352 $
  */
@@ -349,11 +354,6 @@ public class PassportService extends PassportApduService
 	 */
 	public CardFileInputStream readFile(short fid) throws CardServiceException {
 		return new CardFileInputStream(fid, maxBlockSize, fs);
-	}
-
-	public CardFileInputStream readDataGroup(int tag) throws CardServiceException {
-		short fid = PassportFile.lookupFIDByTag(tag);
-		return readFile(fid);
 	}
 
 	private class PassportFileSystem implements FileSystemStructured
