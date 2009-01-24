@@ -46,8 +46,8 @@ import sos.smartcards.FileSystemStructured;
 import sos.tlv.BERTLVInputStream;
 
 /**
- * Card service for reading data groups and using the BAC and AA protocols
- * on the passport.
+ * Card service for reading files (such as data groups) and
+ * using the BAC and AA protocols on the passport.
  * Defines secure messaging.
  * Defines active authentication.
  * 
@@ -170,6 +170,11 @@ public class PassportService extends PassportApduService
 		state = SESSION_STARTED_STATE;
 	}
 
+	/**
+	 * Whether this service is open.
+	 * 
+	 * @return a boolean
+	 */
 	public boolean isOpen() {
 		return (state != SESSION_STOPPED_STATE);
 	}
@@ -314,6 +319,9 @@ public class PassportService extends PassportApduService
 		}
 	}
 
+	/**
+	 * Closes this service.
+	 */
 	public void close() {
 		try {
 			wrapper = null;

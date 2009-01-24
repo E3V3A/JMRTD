@@ -28,6 +28,13 @@ import java.io.InputStream;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 
+/**
+ * Super class for data group files.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
+ */
 public abstract class DataGroup extends PassportFile
 {
 	private int dataGroupTag;
@@ -68,6 +75,11 @@ public abstract class DataGroup extends PassportFile
 		return null;
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		if (isSourceConsistent) {
 			return sourceObject.toString();

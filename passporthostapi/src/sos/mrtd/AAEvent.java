@@ -36,33 +36,35 @@ import sos.util.Hex;
  */
 public class AAEvent extends EventObject
 {	
-   private PublicKey pubkey;
-   private byte[] m1;
-   private byte[] m2;
-   private boolean success;
-   
-   /**
-    * Constructs a new event.
-    * 
-    * @param src event source
-    * @param pubkey public key
-    * @param m1 recoverable part
-    * @param m2 nonce sent by host
-    * @param success resulting status of authentication protocol
-    */
-   public AAEvent(Object src, PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
-	  super(src);
-	  this.pubkey = pubkey;
-	  this.m1 = m1;
-	  this.m2 = m2;
-	  this.success = success;
-   }
+	private static final long serialVersionUID = 3597146485237004531L;
 
-   /**
-    * Gets the public key used in the protocol.
-    * 
-    * @return a public key
-    */
+	private PublicKey pubkey;
+	private byte[] m1;
+	private byte[] m2;
+	private boolean success;
+
+	/**
+	 * Constructs a new event.
+	 * 
+	 * @param src event source
+	 * @param pubkey public key
+	 * @param m1 recoverable part
+	 * @param m2 nonce sent by host
+	 * @param success resulting status of authentication protocol
+	 */
+	public AAEvent(Object src, PublicKey pubkey, byte[] m1, byte[] m2, boolean success) {
+		super(src);
+		this.pubkey = pubkey;
+		this.m1 = m1;
+		this.m2 = m2;
+		this.success = success;
+	}
+
+	/**
+	 * Gets the public key used in the protocol.
+	 * 
+	 * @return a public key
+	 */
 	public PublicKey getPubkey() {
 		return pubkey;
 	}
@@ -79,7 +81,7 @@ public class AAEvent extends EventObject
 	/**
 	 * Gets m2.
 	 * 
-	 * @return m2.
+	 * @return m2
 	 */
 	public byte[] getM2() {
 		return m2;
@@ -94,7 +96,12 @@ public class AAEvent extends EventObject
 	public boolean isSuccess() {
 		return success;
 	}
-	
+
+	/**
+	 * Gets a textual representation of this event.
+	 * 
+	 * @return a textual representation of this event
+	 */
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("AAEvent [");

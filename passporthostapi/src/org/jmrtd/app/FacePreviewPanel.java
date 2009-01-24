@@ -77,7 +77,7 @@ public class FacePreviewPanel extends JPanel
 			tabbedPane.addTab(Integer.toString(index), IMAGE_ICON, panel);
 			revalidate(); repaint();
 			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
-				public void passComplete(BufferedImage image) {
+				public void passComplete(BufferedImage image, double percentage) {
 					if (image == null) { return; }
 					BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 					label.setIcon(new ImageIcon(scaledImage));

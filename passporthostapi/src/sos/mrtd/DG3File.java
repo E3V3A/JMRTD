@@ -25,8 +25,20 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * File structure for the EF_DG3 file.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
+ */
 public class DG3File extends CBEFFDataGroup
 {
+	/**
+	 * Creates a new file based on an input stream.
+	 *
+	 * @param in an input stream
+	 */
 	public DG3File(InputStream in) {
 		super(in);
 	}
@@ -40,6 +52,11 @@ public class DG3File extends CBEFFDataGroup
 		return EF_DG3_TAG;
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		return "DG3File";
 	}

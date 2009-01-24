@@ -112,6 +112,11 @@ public class PassportApduService extends CardService
       sendSelectApplet();
    }
 
+   /**
+    * Whether this service is open.
+    * 
+    * @return a boolean
+    */
    public synchronized boolean isOpen() {
       return service.isOpen();
    }
@@ -441,9 +446,5 @@ public class PassportApduService extends CardService
       } catch (GeneralSecurityException gse) {
          throw new CardServiceException(gse.toString());
       }
-   }
-   
-   public CardService getService() {
-	   return service;
    }
 }

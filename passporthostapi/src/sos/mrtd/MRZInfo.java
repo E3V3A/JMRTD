@@ -42,7 +42,7 @@ import sos.data.Gender;
  * Data structure for storing the MRZ information
  * as found in DG1. Based on ICAO Doc 9303 part 1 and 3.
  * 
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
@@ -80,7 +80,7 @@ public class MRZInfo
 	private String optionalData2; // FIXME: Last field on line 2 of ID3 MRZ.
 
 	/**
-	 * Constructs a new MRZ.
+	 * Creates a new MRZ.
 	 * 
 	 * @param documentType document type
 	 * @param issuingState issuing state
@@ -113,10 +113,8 @@ public class MRZInfo
 		checkDigit();
 	}
 
-
-
 	/**
-	 * Constructs a new MRZ.
+	 * Creates a new MRZ based on an input stream.
 	 * 
 	 * @param in contains the contents of DG1 (without the tag and length)
 	 */
@@ -196,6 +194,11 @@ public class MRZInfo
 		return (new String(chars)).trim();
 	}
 
+	/**
+	 * Gets this MRZ info as byte array.
+	 *
+	 * @return an encoded version of this MRZ info
+	 */
 	public byte[] getEncoded() {
 		try {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -305,7 +308,6 @@ public class MRZInfo
 		}
 		return mrzFormat(name.toString(), width);
 	}
-
 
 	/**
 	 * Reads the type of document.
@@ -474,6 +476,11 @@ public class MRZInfo
 		return dateOfBirth;
 	}
 
+	/**
+	 * Sets the date of birth.
+	 *
+	 * @param dateOfBirth new date of birth
+	 */
 	public void setDateOfBirth(Date dateOfBirth) {
 		this.dateOfBirth = dateOfBirth;
 		checkDigit();
@@ -488,6 +495,11 @@ public class MRZInfo
 		return dateOfExpiry;
 	}
 
+	/**
+	 * Sets the date of expiry.
+	 *
+	 * @param dateOfExpiry new date of expiry
+	 */
 	public void setDateOfExpiry(Date dateOfExpiry) {
 		this.dateOfExpiry = dateOfExpiry;
 		checkDigit();
@@ -502,7 +514,11 @@ public class MRZInfo
 		return documentNumber;
 	}
 
-
+	/**
+	 * Sets the document number.
+	 *
+	 * @param documentNumber new document number
+	 */
 	public void setDocumentNumber(String documentNumber) {
 		this.documentNumber = documentNumber.trim();
 		checkDigit();
@@ -526,6 +542,11 @@ public class MRZInfo
 		return issuingState;
 	}
 
+	/**
+	 * Sets the issuing state.
+	 *
+	 * @param issuingState new issuing state
+	 */
 	public void setIssuingState(Country issuingState) {
 		this.issuingState = issuingState;
 		checkDigit();
@@ -540,6 +561,11 @@ public class MRZInfo
 		return primaryIdentifier;
 	}
 
+	/**
+	 * Sets the passport holder's last name.
+	 *
+	 * @param primaryIdentifier new primary identifier
+	 */
 	public void setPrimaryIdentifier(String primaryIdentifier) {
 		this.primaryIdentifier = primaryIdentifier.trim();
 		checkDigit();
@@ -554,6 +580,11 @@ public class MRZInfo
 		return secondaryIdentifiers;
 	}
 
+	/**
+	 * Sets the passport holder's first names.
+	 *
+	 * @param secondaryIdentifiers new secondary identifiers
+	 */
 	public void setSecondaryIdentifiers(String[] secondaryIdentifiers) {
 		if (secondaryIdentifiers == null) {
 			this.secondaryIdentifiers = null;
@@ -564,6 +595,11 @@ public class MRZInfo
 		checkDigit();
 	}
 
+	/**
+	 * Sets the passport holder's first names.
+	 *
+	 * @param secondaryIdentifiers new secondary identifiers
+	 */
 	public void setSecondaryIdentifiers(String secondaryIdentifiers) {
 		processSecondaryIdentifiers(secondaryIdentifiers.trim());
 		checkDigit();
@@ -578,6 +614,11 @@ public class MRZInfo
 		return nationality;
 	}
 
+	/**
+	 * Sets the passport holder's nationality.
+	 *
+	 * @param nationality new nationality
+	 */
 	public void setNationality(Country nationality) {
 		this.nationality = nationality;
 		checkDigit();
@@ -592,6 +633,11 @@ public class MRZInfo
 		return personalNumber;
 	}
 
+	/**
+	 * Sets the personal number.
+	 *
+	 * @param personalNumber new personal number
+	 */
 	public void setPersonalNumber(String personalNumber) {
 		this.personalNumber = trimFillerChars(personalNumber);
 		checkDigit();
@@ -606,6 +652,11 @@ public class MRZInfo
 		return gender;
 	}
 
+	/**
+	 * Sets the gender.
+	 *
+	 * @param gender new gender
+	 */
 	public void setGender(Gender gender) {
 		this.gender = gender;
 		checkDigit();
@@ -668,7 +719,21 @@ public class MRZInfo
 		}
 		return out.toString();
 	}
+	
+	/**
+	 * Gets a hash code for this MRZ info.
+	 * 
+	 * @return a hash code
+	 */
+	public int hashCode() {
+		return toString().hashCode() + 55;
+	}
 
+	/**
+	 * Whether this MRZ info is identical to the other one.
+	 * 
+	 * @return a boolean
+	 */
 	public boolean equals(Object obj) {
 		if (obj == this) { return true; }
 		if (obj == null) { return false; }
@@ -724,6 +789,7 @@ public class MRZInfo
 	 * 
 	 * @param str the input string
 	 * @param width the (minimal) width of the result
+	 *
 	 * @return the reformatted string
 	 */
 	private static String mrzFormat(String str, int width) {

@@ -25,6 +25,13 @@ package sos.mrtd;
 import java.awt.image.BufferedImage;
 import java.io.InputStream;
 
+/**
+ * File structure for the EF_DG7 file.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
+ */
 public class DG7File extends DisplayedImageDataGroup
 {
 	public DG7File(BufferedImage image) {

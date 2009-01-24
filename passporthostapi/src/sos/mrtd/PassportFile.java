@@ -25,7 +25,7 @@ package sos.mrtd;
 import sos.tlv.BERTLVObject;
 
 /**
- * Passport file structure.
+ * Super class for passport files (EF_COM, EF_SOD, and data groups).
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijno@cs.ru.nl)

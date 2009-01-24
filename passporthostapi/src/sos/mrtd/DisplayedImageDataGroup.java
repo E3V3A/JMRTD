@@ -100,6 +100,11 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		images.add(image);
 	}
 
+	/**
+	 * Gets the images.
+	 *
+	 * @return images
+	 */
 	public List<BufferedImage> getImages() {
 		return images;
 	}

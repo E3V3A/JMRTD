@@ -81,7 +81,6 @@ import sos.tlv.BERTLVObject;
  */
 public class SODFile extends PassportFile
 {
-
 //	private static final DERObjectIdentifier SHA1_HASH_ALG_OID = new DERObjectIdentifier("1.3.14.3.2.26");
 //	private static final DERObjectIdentifier SHA1_WITH_RSA_ENC_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
 //	private static final DERObjectIdentifier SHA256_HASH_ALG_OID = new DERObjectIdentifier("2.16.840.1.101.3.4.2.1");
@@ -168,6 +167,11 @@ public class SODFile extends PassportFile
 		return sodFile.getEncoded();
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		try {
 			X509Certificate cert = getDocSigningCertificate();

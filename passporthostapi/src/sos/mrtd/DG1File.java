@@ -44,7 +44,7 @@ public class DG1File extends DataGroup
 	private MRZInfo mrz;
 
 	/**
-	 * Constructs a new file.
+	 * Creates a new file based on MRZ information.
 	 * 
 	 * @param mrz the MRZ information to store in this file
 	 */
@@ -52,6 +52,13 @@ public class DG1File extends DataGroup
 		this.mrz = mrz;
 	}
 
+	/**
+	 * Creates a new file based on an input stream.
+	 *
+	 * @param in an input stream
+	 *
+	 * @throws IOException if something goes wrong
+	 */
 	public DG1File(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 		int tag = tlvIn.readTag();
@@ -74,7 +81,12 @@ public class DG1File extends DataGroup
 	public MRZInfo getMRZInfo() {
 		return mrz;
 	}
-	
+
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		return "DG1File " + mrz.toString().replaceAll("\n", "").trim();
 	}

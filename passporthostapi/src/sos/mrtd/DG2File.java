@@ -61,13 +61,18 @@ public class DG2File extends CBEFFDataGroup
 	private List<FaceInfo> faces;
 
 	/**
-	 * Constructs a new file.
+	 * Creates a new file with zero images.
 	 */
 	public DG2File() {
 		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
 		isSourceConsistent = false;
 	}
 
+	/**
+	 * Creates a new file based on an input stream.
+	 *
+	 * @param in an input stream
+	 */
 	public DG2File(InputStream in) {
 		super(in);
 		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
@@ -94,12 +99,22 @@ public class DG2File extends CBEFFDataGroup
 		return EF_DG2_TAG;
 	}
 
+	/**
+	 * Adds an image to this file.
+	 *
+	 * @param fi the image to add
+	 */
 	public void addFaceInfo(FaceInfo fi) {
 		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
 		faces.add(fi);
 		isSourceConsistent = false;
 	}
-	
+
+	/**
+	 * Removes an image from this file.
+	 *
+	 * @param index the index of the image to remove
+	 */
 	public void removeFaceInfo(int index) {
 		faces.remove(index);
 		isSourceConsistent = false;
@@ -127,9 +142,9 @@ public class DG2File extends CBEFFDataGroup
 			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
 							(byte)faces.size()));
-			
+
 			group.reconstructLength();
-			
+
 			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
 			for (FaceInfo info: faces) {
 				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
@@ -165,6 +180,11 @@ public class DG2File extends CBEFFDataGroup
 		}
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("DG2File");
@@ -178,9 +198,14 @@ public class DG2File extends CBEFFDataGroup
 		}
 		result.append("]");
 		return result.toString();
-		
+
 	}
 
+	/**
+	 * Gets the images in this file.
+	 *
+	 * @return the images
+	 */
 	public List<FaceInfo> getFaces() {
 		return faces;
 	}

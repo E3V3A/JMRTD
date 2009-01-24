@@ -197,6 +197,11 @@ public class COMFile extends PassportFile
 		}
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("COMFile ");
@@ -214,5 +219,32 @@ public class COMFile extends PassportFile
 		}
 		result.append("]");
 		return result.toString();
+	}
+	
+	/**
+	 * Whether other is equal to this file.
+	 * 
+	 * @return a boolean
+	 */
+	public boolean equals(Object other) {
+		if (other == null) { return false; }
+		if (other == this) { return true; }
+		if (!other.getClass().equals(getClass())) { return false; }
+		COMFile otherCOMFile = (COMFile)other;
+		return versionLDS.equals(otherCOMFile.versionLDS) &&
+			updateLevelLDS.equals(otherCOMFile.updateLevelLDS) &&
+			majorVersionUnicode.equals(otherCOMFile.majorVersionUnicode) &&
+			minorVersionUnicode.equals(otherCOMFile.minorVersionUnicode) &&
+			releaseLevelUnicode.equals(otherCOMFile.releaseLevelUnicode) &&
+			tagList.equals(otherCOMFile.tagList);
+	}
+	
+	public int hashCode() {
+		return 3 * versionLDS.hashCode() +
+			5 * updateLevelLDS.hashCode() +
+			7 * majorVersionUnicode.hashCode() +
+			11 * minorVersionUnicode.hashCode() +
+			13 * releaseLevelUnicode.hashCode() +
+			17 * tagList.hashCode();
 	}
 }

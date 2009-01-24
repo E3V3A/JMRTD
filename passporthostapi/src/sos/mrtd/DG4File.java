@@ -25,8 +25,20 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * File structure for the EF_DG4 file.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
+ */
 public class DG4File extends CBEFFDataGroup
 {
+	/**
+	 * Constructs a new file based on an input stream.
+	 * 
+	 * @param in an input stream
+	 */
 	public DG4File(InputStream in) {
 		super(in);
 	}
@@ -44,6 +56,11 @@ public class DG4File extends CBEFFDataGroup
 	throws IOException {
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		return "DG4File";
 	}

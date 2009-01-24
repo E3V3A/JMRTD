@@ -430,7 +430,7 @@ public class FaceInfo
 		   }
 		   if (resultImage != null) {
 			   image = resultImage;
-			   notifyImageReadUpdateListeners(resultImage);
+			   notifyImageReadUpdateListeners(resultImage, offset / totalLength);
 		   }
 	   }	   
 	   return resultImage;
@@ -856,9 +856,9 @@ public class FaceInfo
 	   imageReadUpdateListeners.remove(l);
    }
 
-   private void notifyImageReadUpdateListeners(BufferedImage image) {
+   private void notifyImageReadUpdateListeners(BufferedImage image, double percentage) {
 	   for (ImageReadUpdateListener l: imageReadUpdateListeners) {
-		   l.passComplete(image);
+		   l.passComplete(image, percentage);
 	   }
    }
 

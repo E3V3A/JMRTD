@@ -43,6 +43,8 @@ import sos.smartcards.CardTerminalListener;
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * @author Wojciech Mostowski (woj@cs.ru.nl)
+ * 
+ * @version $Revision: $
  */
 public class PassportManager
 {
@@ -134,18 +136,33 @@ public class PassportManager
 		});
 	}
 
+	/**
+	 * Adds a listener to this manager.
+	 *
+	 * @param l a passport event listener
+	 */
 	public synchronized void addPassportListener(PassportListener l) {
 		listeners.add(l);
 	}
 
+	/**
+	 * Removes a listener from this manager.
+	 *
+	 * @param l a passport event listener
+	 */
 	public synchronized void removePassportListener(PassportListener l) {
 		listeners.remove(l);
 	}
 
+	/**
+	 * Gets an instance of the passport manager.
+	 *
+	 * @return the passport manager
+	 */
 	public static PassportManager getInstance() {
 		return INSTANCE;
 	}
-	
+
 	private void notifyCardEvent(final CardEvent ce) {
 		for (final CardTerminalListener l : listeners) { 
 			(new Thread(new Runnable() {

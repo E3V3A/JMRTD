@@ -24,9 +24,26 @@ package sos.mrtd;
 
 import sos.smartcards.CardTerminalListener;
 
+/**
+ * Interface for passport insertion and removal observers.
+ *
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Id: $
+ */
 public interface PassportListener extends CardTerminalListener
 {
-   void passportInserted(PassportEvent pe);
+	/**
+	 * Called when a passport is inserted.
+	 *
+	 * @param pe the insertion event
+	 */
+	void passportInserted(PassportEvent pe);
 
-   void passportRemoved(PassportEvent pe);
+	/**
+	 * Called when a passport is removed.
+	 *
+	 * @param pe the removal event
+	 */
+	void passportRemoved(PassportEvent pe);
 }

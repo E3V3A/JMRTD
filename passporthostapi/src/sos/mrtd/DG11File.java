@@ -352,6 +352,11 @@ public class DG11File extends DataGroup
 		return custodyInformation;
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
 		return "DG11File";
 	}

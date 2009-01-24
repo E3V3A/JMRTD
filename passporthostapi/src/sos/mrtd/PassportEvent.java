@@ -24,40 +24,85 @@ package sos.mrtd;
 
 import java.util.EventObject;
 
+/**
+ * Event for passport insertion and removal.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Id: $
+ */
 public class PassportEvent extends EventObject
 {
-   public static final int REMOVED = 0, INSERTED = 1;
+	private static final long serialVersionUID = 3400137567708197350L;
 
-   private int type;
-   private PassportService service;
-   
-   public PassportEvent(int type, PassportService service) {
-      super(service);
-      this.type = type;
-      this.service = service;
-   }
-   
-   public int getType() {
-      return type;
-   }
+	/** Event type constant. */
+	public static final int REMOVED = 0, INSERTED = 1;
 
-   public PassportService getService() {
-      return service;
-   }
+	private int type;
+	private PassportService service;
 
-   public String toString() {
-      switch (type) {
-         case REMOVED: return "Passport removed from " + service;
-         case INSERTED: return "Passport inserted in " + service;
-      }
-      return "CardEvent " + service;
-   }
-   
-   public boolean equals(Object other) {
-      if (other == null) { return false; }
-      if (other == this) { return true; }
-      if (other.getClass() != PassportEvent.class) { return false; }
-      PassportEvent otherCardEvent = (PassportEvent)other;
-      return type == otherCardEvent.type && service.equals(otherCardEvent.service);
-   }
+	/**
+	 * Creates an event.
+	 *
+	 * @param type event type
+	 * @param service event source
+	 */
+	public PassportEvent(int type, PassportService service) {
+		super(service);
+		this.type = type;
+		this.service = service;
+	}
+
+	/**
+	 * Gets the event type.
+	 *
+	 * @return event type
+	 */
+	public int getType() {
+		return type;
+	}
+
+	/**
+	 * Gets the event source.
+	 *
+	 * @return a passport service
+	 */
+	public PassportService getService() {
+		return service;
+	}
+
+	/**
+	 * Gets a textual description of this event.
+	 * 
+	 * @return a textual description of this event
+	 */
+	public String toString() {
+		switch (type) {
+		case REMOVED: return "Passport removed from " + service;
+		case INSERTED: return "Passport inserted in " + service;
+		}
+		return "CardEvent " + service;
+	}
+
+	/**
+	 * Whether this event is equal to the event in <code>other</code>.
+	 * 
+	 * @return a boolean
+	 */
+	public boolean equals(Object other) {
+		if (other == null) { return false; }
+		if (other == this) { return true; }
+		if (other.getClass() != PassportEvent.class) { return false; }
+		PassportEvent otherCardEvent = (PassportEvent)other;
+		return type == otherCardEvent.type && service.equals(otherCardEvent.service);
+	}
+	
+	/**
+	 * Gets a hash code for this event.
+	 * 
+	 * @return a hash code for this event
+	 */
+	public int hashCode() {
+		return 3 * service.hashCode() + 5 * type;
+	}
 }

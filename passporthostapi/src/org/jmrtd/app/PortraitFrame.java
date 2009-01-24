@@ -88,7 +88,7 @@ public class PortraitFrame extends JFrame
 		setIconImage(JMRTD_ICON);
 		
 		info.addImageReadUpdateListener(new ImageReadUpdateListener() {
-			public void passComplete(BufferedImage image) {
+			public void passComplete(BufferedImage image, double percentage) {
 				imagePanel.setImage(image);
 				imagePanel.revalidate(); repaint();
 			}
