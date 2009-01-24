@@ -139,6 +139,7 @@ public class BERTLVInputStream extends InputStream
 	 * The stream is positioned right after the first occurrence of the tag.
 	 * 
 	 * @param searchTag the tag to search for
+	 *
 	 * @throws IOException
 	 */
 	public void skipToTag(int searchTag) throws IOException {
@@ -190,7 +191,7 @@ public class BERTLVInputStream extends InputStream
 	 * 
 	 * @return a byte
 	 * 
-	 * @throw IOException if reading goes wrong
+	 * @throws IOException if reading goes wrong
 	 */
 	public int read() throws IOException {
 		int result = in.read();
