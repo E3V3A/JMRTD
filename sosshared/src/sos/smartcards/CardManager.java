@@ -226,7 +226,7 @@ public class CardManager
 	/**
 	 * Gets the card manager.
 	 * By default only PC/SC terminals are added,
-	 * use {@link #addTerminals(TerminalFactory)} to add additional terminals.
+	 * use {@link #addTerminals(TerminalFactory,boolean)} to add additional terminals.
 	 * 
 	 * @return the card manager
 	 */
