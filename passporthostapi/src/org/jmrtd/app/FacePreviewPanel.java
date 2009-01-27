@@ -67,7 +67,7 @@ public class FacePreviewPanel extends JPanel
 		return tabbedPane.getSelectedIndex();
 	}
 
-	public void addFace(FaceInfo faceInfo) {
+	public void addFace(FaceInfo faceInfo,boolean isProgressiveMode) {
 		try {
 			final int index = tabbedPane.getTabCount();
 			BufferedImage image = (BufferedImage)createImage(width - 10, height - 10);
@@ -84,7 +84,7 @@ public class FacePreviewPanel extends JPanel
 					revalidate(); repaint();
 				}
 			});
-			image = faceInfo.getImage();
+			image = faceInfo.getImage(isProgressiveMode);
 			image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
@@ -99,9 +99,9 @@ public class FacePreviewPanel extends JPanel
 		revalidate(); repaint();
 	}
 
-	public void addFaces(Collection<FaceInfo> faces) {
+	public void addFaces(Collection<FaceInfo> faces, boolean isProgressiveMode) {
 		for (FaceInfo faceInfo: faces) {
-			addFace(faceInfo);
+			addFace(faceInfo, isProgressiveMode);
 		}
 	}
 

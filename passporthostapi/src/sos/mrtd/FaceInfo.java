@@ -378,15 +378,15 @@ public class FaceInfo
       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType) throws IOException {
+   private BufferedImage processImage(InputStream in, String mimeType, boolean isProgressiveMode) throws IOException {
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
 			   ImageReader reader = (ImageReader)readers.next();
-			   BufferedImage image = processImage(in, reader);
+			   BufferedImage image = processImage(in, reader, isProgressiveMode);
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
-			   /* NOTE: this readers doesn't work? Try next one... */
+			   /* NOTE: this reader doesn't work? Try next one... */
 			   debug("ignoring " + e);
 			   continue;
 		   }
@@ -395,9 +395,22 @@ public class FaceInfo
 	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage processImage(InputStream in, ImageReader reader) {
+   private BufferedImage processImage(InputStream in, ImageReader reader, boolean isProgressiveMode) {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
+
+	   if (!isProgressiveMode) {
+		   try {
+			   ImageInputStream iis = ImageIO.createImageInputStream(in);
+			   reader.setInput(iis);
+			   return reader.read(0, pm);
+		   } catch (IOException ioe) {
+			   ioe.printStackTrace();
+			   return null;
+		   }
+	   }
+	   
+	   /* Approximations... */
 	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
 	   int leadSize = 977;
 	   int stepSize = 19; // initialy
@@ -474,15 +487,15 @@ public class FaceInfo
     * 
     * @return image
     */
-   public BufferedImage getImage() throws IOException {
+   public BufferedImage getImage(boolean isProgressiveMode) throws IOException {
 	   BufferedImage resultImage = null;
 	   if (image != null) { return image; }
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
-		   resultImage = processImage(dataIn, "image/jpeg");
+		   resultImage = processImage(dataIn, "image/jpeg", isProgressiveMode);
 		   break;
 	   case IMAGE_DATA_TYPE_JPEG2000:
-		   resultImage = processImage(dataIn, "image/jpeg2000");
+		   resultImage = processImage(dataIn, "image/jpeg2000", isProgressiveMode);
 		   break;
 	   default:
 		   throw new IOException("Unknown image data type!");
@@ -493,6 +506,10 @@ public class FaceInfo
 	   height = resultImage.getHeight();
 
 	   return resultImage;
+   }
+   
+   public BufferedImage getImage() throws IOException {
+	   return getImage(false);
    }
 
    /**

@@ -231,14 +231,15 @@ public class PassportFrame extends JFrame
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 			setupFilesFromServicePassportSource(service);
+			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
 				verifySecurity(service);
-				displayInputStreams(service);
+				displayInputStreams(service, false);
 				verifySecurity(service);
 				break;
 			case PROGRESSIVE_MODE:
-				displayInputStreams(service);
+				displayInputStreams(service, true);
 				verifySecurity(service);
 				break;
 			}
@@ -284,12 +285,10 @@ public class PassportFrame extends JFrame
 	 * Assumes inputstreams in <code>passportFiles</code> are reset to beginning.
 	 */
 	private void displayInputStreams() {
-		displayInputStreams(null);	
+		displayInputStreams(null, false);	
 	}
 
-	private void displayInputStreams(PassportService service) {
-		displayProgressBar();
-
+	private void displayInputStreams(PassportService service, boolean isProgressiveMode) {
 		try {
 			displayHolderInfo();
 		} catch (Exception e) {
@@ -309,7 +308,7 @@ public class PassportFrame extends JFrame
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
-					facePreviewPanel.addFaces(dg2.getFaces());
+					facePreviewPanel.addFaces(dg2.getFaces(), isProgressiveMode);
 					break;
 				case PassportService.EF_DG3:
 					dg3 = new DG3File(in);
@@ -727,7 +726,7 @@ public class PassportFrame extends JFrame
 						}
 						dg2.addFaceInfo(faceInfo);
 						putFile(PassportService.EF_DG2, dg2.getEncoded());
-						facePreviewPanel.addFace(faceInfo);
+						facePreviewPanel.addFace(faceInfo, false);
 					} catch (IOException ioe) {
 						/* NOTE: Do nothing. */
 					}
