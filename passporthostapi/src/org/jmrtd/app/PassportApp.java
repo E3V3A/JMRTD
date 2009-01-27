@@ -248,7 +248,7 @@ public class PassportApp  implements PassportListener
 		}
 		if (!isBACPassport || bacEntry != null) {
 			PassportFrame passportFrame = new PassportFrame();
-			passportFrame.readFromService(service, bacEntry);
+			passportFrame.readFromService(service, bacEntry, preferencesPanel.getReadingMode());
 		} else {
 			/* Passport requires BAC, but we failed to authenticate. */
 			APDUFingerprint fp = new APDUFingerprint(service);

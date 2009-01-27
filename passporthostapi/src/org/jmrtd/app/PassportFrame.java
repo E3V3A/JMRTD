@@ -86,6 +86,7 @@ import javax.swing.SpringLayout;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
 import sos.data.Country;
 import sos.data.Gender;
@@ -188,15 +189,15 @@ public class PassportFrame extends JFrame
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
-      SpringLayout southLayout = new SpringLayout();
+		SpringLayout southLayout = new SpringLayout();
 		southPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
-//		southLayout.putConstraint(SpringLayout.NORTH, verificationIndicator, 2, SpringLayout.NORTH, southPanel);
-//		southLayout.putConstraint(SpringLayout.WEST, verificationIndicator, 2, SpringLayout.WEST, southPanel);
-//		southLayout.putConstraint(SpringLayout.NORTH, progressBar, 2, SpringLayout.NORTH, southPanel);
-//		southLayout.putConstraint(SpringLayout.EAST, progressBar, 2, SpringLayout.EAST, southPanel);
+		//		southLayout.putConstraint(SpringLayout.NORTH, verificationIndicator, 2, SpringLayout.NORTH, southPanel);
+		//		southLayout.putConstraint(SpringLayout.WEST, verificationIndicator, 2, SpringLayout.WEST, southPanel);
+		//		southLayout.putConstraint(SpringLayout.NORTH, progressBar, 2, SpringLayout.NORTH, southPanel);
+		//		southLayout.putConstraint(SpringLayout.EAST, progressBar, 2, SpringLayout.EAST, southPanel);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
-      panel.add(southPanel, BorderLayout.SOUTH);
+		panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
 		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 		filesBytes = new HashMap<Short, byte[]>();
@@ -221,7 +222,7 @@ public class PassportFrame extends JFrame
 	 * 
 	 * @return a passport frame.
 	 */
-	public void readFromService(PassportService service, BACEntry bacEntry) throws CardServiceException {
+	public void readFromService(PassportService service, BACEntry bacEntry, ReadingMode readingMode) throws CardServiceException {
 		try {
 			this.bacEntry = bacEntry;
 			if (bacEntry != null) {
@@ -230,8 +231,17 @@ public class PassportFrame extends JFrame
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 			setupFilesFromServicePassportSource(service);
-			displayInputStreams(service);
-			verifySecurity(service);
+			switch (readingMode) {
+			case SAFE_MODE:
+				verifySecurity(service);
+				displayInputStreams(service);
+				verifySecurity(service);
+				break;
+			case PROGRESSIVE_MODE:
+				displayInputStreams(service);
+				verifySecurity(service);
+				break;
+			}
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();

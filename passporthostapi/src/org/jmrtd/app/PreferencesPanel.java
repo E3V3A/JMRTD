@@ -22,13 +22,12 @@
 
 package org.jmrtd.app;
 
-import java.awt.BorderLayout;
-import java.awt.ComponentOrientation;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +35,7 @@ import java.util.Map;
 
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
+import javax.swing.AbstractButton;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
@@ -47,7 +47,6 @@ import javax.swing.border.Border;
 
 import sos.smartcards.CardManager;
 
-
 /**
  * Preferences panel.
  *
@@ -55,7 +54,7 @@ import sos.smartcards.CardManager;
  */
 public class PreferencesPanel extends JPanel
 {
-	private enum ReadingMode {
+	public enum ReadingMode {
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
 		
@@ -72,7 +71,8 @@ public class PreferencesPanel extends JPanel
 	private static Border READING_MODE_BORDER = BorderFactory.createTitledBorder("Reading Mode");
 	private static Border CARD_TERMINALS_BORDER = BorderFactory.createTitledBorder("Card Terminals");
 
-
+	private ButtonGroup buttonGroup;
+	private ReadingMode changedReadingMode;
 	private ReadingMode readingMode;
 	private CardManager cm;
 	private Collection<CardTerminal> terminalsToStart, terminalsToStop;
@@ -108,7 +108,7 @@ public class PreferencesPanel extends JPanel
 		ReadingMode[] modes = ReadingMode.values();
 		JPanel rmPanel = new JPanel(new GridLayout(modes.length, 1));
 		rmPanel.setBorder(READING_MODE_BORDER);
-		ButtonGroup buttonGroup = new ButtonGroup();
+		buttonGroup = new ButtonGroup();
 		for (ReadingMode mode: modes) {
 			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == readingMode);
 			radioButton.setAction(getSetModeAction(mode));
@@ -123,12 +123,17 @@ public class PreferencesPanel extends JPanel
 	public String getName() {
 		return "Preferences";
 	}
+	
+	public ReadingMode getReadingMode() {
+		return readingMode;
+	}
 
 	public void commit() {
 		for (CardTerminal terminal: terminalsToStart) { cm.startPolling(terminal); }
 		for (CardTerminal terminal: terminalsToStop) { cm.stopPolling(terminal); }
 		terminalsToStart.clear();
 		terminalsToStop.clear();
+		readingMode = changedReadingMode;
 	}
 
 	public void abort() {
@@ -137,6 +142,13 @@ public class PreferencesPanel extends JPanel
 		for (CardTerminal terminal: checkBoxMap.keySet()) {
 			JCheckBox checkBox = checkBoxMap.get(terminal);
 			checkBox.setSelected(cm.isPolling(terminal));
+		}
+		Enumeration<AbstractButton> radioButtons = buttonGroup.getElements();
+		while (radioButtons.hasMoreElements()) {
+			AbstractButton radioButton = radioButtons.nextElement();
+			if (radioButton.getText().equals(readingMode.toString())) {
+				radioButton.setSelected(true);
+			}
 		}
 	}
 
@@ -158,7 +170,7 @@ public class PreferencesPanel extends JPanel
 	  public Action getSetModeAction(final ReadingMode mode) {
 	      Action action = new AbstractAction() {
 	         public void actionPerformed(ActionEvent e) {
-	            readingMode = mode;
+	            changedReadingMode = mode;
 	         }
 	      };
 	      StringBuffer shortDescription = new StringBuffer();
