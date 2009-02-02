@@ -109,7 +109,8 @@ public class PortraitFrame extends JFrame
 			cp.add(imagePanel);
 			imagePanel.revalidate(); repaint();
 		} catch (Exception e) {
-			System.out.println("DEBUG: ignoring " + e);
+			e.printStackTrace();
+//			System.out.println("DEBUG: ignoring " + e);
 		}
 	}
 

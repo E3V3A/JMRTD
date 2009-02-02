@@ -403,7 +403,9 @@ public class FaceInfo
 		   try {
 			   ImageInputStream iis = ImageIO.createImageInputStream(in);
 			   reader.setInput(iis);
-			   return reader.read(0, pm);
+			   BufferedImage resultImage = reader.read(0, pm);
+			   image = resultImage;
+			   return resultImage;
 		   } catch (IOException ioe) {
 			   ioe.printStackTrace();
 			   return null;
