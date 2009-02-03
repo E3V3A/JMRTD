@@ -40,6 +40,8 @@ import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.event.IIOReadProgressListener;
+import javax.imageio.event.IIOReadUpdateListener;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
@@ -411,7 +413,7 @@ public class FaceInfo
 			   return null;
 		   }
 	   }
-	   
+
 	   /* Approximations... */
 	   int totalLength = (int)(faceImageBlockLength & 0xFFFFFFFF);
 	   int leadSize = 977;
@@ -436,12 +438,12 @@ public class FaceInfo
 			   offset += bytesRead;
 			   stepSize = (int)(base * (double)stepSize);
 		   } catch (IOException ioe) {
-			   debug("ignoring " + ioe.getMessage());
+			   debug("ignoring IOException " + ioe.getClass());
 		   }
 		   try {
 			   resultImage = reader.read(0, pm);
-		   } catch (Exception e) {
-			   debug("ignoring " + e.getMessage());
+		   } catch (Throwable e) {
+			   debug("ignoring Throwable " + e.getClass());
 		   }
 		   if (resultImage != null) {
 			   image = resultImage;

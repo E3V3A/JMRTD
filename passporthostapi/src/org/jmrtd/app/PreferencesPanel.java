@@ -48,6 +48,7 @@ import sos.smartcards.CardManager;
  * Preferences panel.
  *
  * FIXME: Can probably be done more generically...
+ * TODO: Perhaps a blanket mode, where reader can continue at own risk...
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
@@ -58,7 +59,7 @@ public class PreferencesPanel extends JPanel
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
 	};
 	
-	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.PROGRESSIVE_MODE;
+	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.SAFE_MODE;
 	
 	private static final String READING_MODE_KEY = "mode.reading";
 	private static final String TERMINAL_KEY_PREFIX = "terminal.";
