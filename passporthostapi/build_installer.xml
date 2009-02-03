@@ -37,8 +37,6 @@
 
 		<!-- Create the distribution directory structure -->
 		<mkdir dir="${distlib}" />
-		<mkdir dir="${distlib}/ext" />
-		<mkdir dir="${distlib}/${arch}" />
 	</target>
 	
 	<target name="compile" depends="init" description="Compiles the source ">
@@ -48,17 +46,17 @@
 
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
 		<!-- Copy bouncy castle -->
-		<copy todir="${distlib}/ext">
+		<copy todir="${distlib}">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
 		</copy>
 
 		<!-- Copy jai imageio -->
-		<copy todir="${distlib}/ext">
-			<fileset dir="${java.home}/lib/ext" includes="${jai_imageio_jar}" />
-			<fileset dir="${java.home}/lib/ext" includes="${clibwrapper_jiio_jar}" />
+		<copy todir="${distlib}">
+			<fileset dir="${jai_imageio_jar_dir}" includes="${jai_imageio_jar}" />
+			<fileset dir="${jai_imageio_jar_dir}" includes="${clibwrapper_jiio_jar}" />
 		</copy>
-		<copy todir="${distlib}/${arch}">
-			<fileset dir="${java.home}/lib/${arch}" includes="${libclib_jiio}" />
+		<copy todir="${distlib}">
+			<fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" />
 		</copy>
 
 	</target>
@@ -82,7 +80,7 @@
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="ext/${bcprov_jar} ext/${jai_imageio_jar}" />
+				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar}" />
 				<attribute name="Built-By" value="${user.name}"/>
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
 				<attribute name="Implementation-Title" value="${app_name}"/>
