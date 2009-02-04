@@ -75,7 +75,7 @@ import sos.tlv.BERTLVObject;
  * This file contains the security object.
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */

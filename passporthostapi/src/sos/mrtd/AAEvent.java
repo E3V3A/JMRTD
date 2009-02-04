@@ -30,7 +30,7 @@ import sos.util.Hex;
 /**
  * Event to indicate AA protocol was executed.
  * 
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision$
  */

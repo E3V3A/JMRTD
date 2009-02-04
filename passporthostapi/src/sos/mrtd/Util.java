@@ -59,7 +59,7 @@ import sos.util.Hex;
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * @author Ronny Wichers Schreur (ronny@cs.ru.nl)
  * 
  * @version $Revision$

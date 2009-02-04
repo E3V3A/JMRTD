@@ -37,7 +37,7 @@ import sos.tlv.BERTLVObject;
  * data group presence table) information.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */

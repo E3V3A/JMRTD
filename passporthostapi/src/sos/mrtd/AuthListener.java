@@ -25,7 +25,7 @@ package sos.mrtd;
 /**
  * Interface for authentication event observers.
  * 
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */

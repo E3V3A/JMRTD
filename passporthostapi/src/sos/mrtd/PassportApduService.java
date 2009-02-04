@@ -54,7 +54,7 @@ import sos.util.Hex;
  * </ul>
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision$
  */
