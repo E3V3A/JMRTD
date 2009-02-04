@@ -7,7 +7,7 @@ import java.awt.image.BufferedImage;
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Id: $
+ * @version $Id$
  */
 public interface ImageReadUpdateListener
 {
