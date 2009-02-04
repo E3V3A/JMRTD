@@ -34,7 +34,7 @@ import sos.util.Fonts;
 /**
  * Panel for displaying the MRZ datagroup on the passport.
  *
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: $
  */

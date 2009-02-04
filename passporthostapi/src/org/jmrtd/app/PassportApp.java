@@ -308,7 +308,6 @@ public class PassportApp  implements PassportListener
 	private Action getNewAction() {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
-				System.out.println("DEBUG: TODO: new action");
 				PassportFrame passportFrame = new PassportFrame();
 				passportFrame.readFromEmptyPassport();
 				passportFrame.pack();

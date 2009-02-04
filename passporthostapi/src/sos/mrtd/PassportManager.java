@@ -75,7 +75,6 @@ public class PassportManager
 			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr120.ACR120UProvider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR120U", null, acrProvider);
-			System.out.println("DEBUG: acrFactory = " + acrFactory);
 			cm.addTerminals(acrFactory, false);
 		} catch (ClassNotFoundException cnfe) {
 			/* Ignore this provider... not installed */

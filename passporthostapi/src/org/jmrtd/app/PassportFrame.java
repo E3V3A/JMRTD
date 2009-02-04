@@ -344,7 +344,7 @@ public class PassportFrame extends JFrame
 			}
 		}
 	}
-	
+
 	private void displayHolderInfo() throws IOException {
 		InputStream dg1In = getInputStream(PassportService.EF_DG1);
 		dg1 = new DG1File(dg1In);
@@ -405,7 +405,7 @@ public class PassportFrame extends JFrame
 
 	/** Checks whether BAC was used. */
 	private void verifyBAC(PassportService service) {
-		
+
 		if (bacEntry != null) {
 			verificationIndicator.setBACSucceeded();
 		} else {
@@ -500,7 +500,7 @@ public class PassportFrame extends JFrame
 
 	/** Checks country signer certificate, if known. */
 	private void verifyCS(PassportService service) {
-		
+
 		if (docSigningCert == null) {
 			verificationIndicator.setCSFailed("Cannot check CSCA: missing DS certificate");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
@@ -897,13 +897,8 @@ public class PassportFrame extends JFrame
 						}
 						for (short fid: bufferedStreams.keySet()) {
 							byte[] fileBytes = getFileBytes(fid);
-							System.out.println("DEBUG: createFile " + Integer.toHexString(fid));
 							persoService.createFile(fid, (short)fileBytes.length);
-
-							System.out.println("DEBUG: selectFile " + Integer.toHexString(fid));
 							persoService.selectFile(fid);
-
-							System.out.println("DEBUG: writeFile " + Integer.toHexString(fid) + " " + fileBytes.length);
 							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));
 						}
 						persoService.lockApplet();
@@ -1099,7 +1094,7 @@ public class PassportFrame extends JFrame
 			throw new IllegalStateException("ERROR: " + ioe.toString());
 		}
 	}
-	
+
 	/**
 	 * Starts a thread to read the raw inputstream.
 	 *

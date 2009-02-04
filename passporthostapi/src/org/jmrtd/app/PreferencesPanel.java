@@ -139,7 +139,6 @@ public class PreferencesPanel extends JPanel
 	}
 	
 	private void updateGUIFromState(PreferencesState state) {
-		System.out.println("DEBUG: updating gui from state = " + state);
 		for (CardTerminal terminal: checkBoxMap.keySet()) {
 			JCheckBox checkBox = checkBoxMap.get(terminal);
 			checkBox.setSelected(state.isTerminalChecked(terminal));

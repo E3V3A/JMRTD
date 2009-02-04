@@ -28,7 +28,7 @@ import sos.tlv.BERTLVObject;
  * Super class for passport files (EF_COM, EF_SOD, and data groups).
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
- * @author Martijn Oostdijk (martijno@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision: $
  */
@@ -70,57 +70,6 @@ public abstract class PassportFile
     */
    PassportFile() {
    }
-   
-   /**
-    * Gets the passportfile encoded in <code>in</code>.
-    * 
-    * @param in the object we want converted
-    * 
-    * @return a passport file structure
-    * 
-    * @throws IllegalArgumentException if the input object cannot be converted
-    */
-//    public static PassportFile getInstance(Object in) {
-//      try {
-//         BERTLVObject obj = null;
-//         if (in instanceof BERTLVObject) {
-//            obj = (BERTLVObject)in;
-//         } else if (in instanceof InputStream) {
-//            obj = BERTLVObject.getInstance((InputStream)in);
-//         } else if (in instanceof byte[]) {
-//            obj = BERTLVObject.getInstance(new ByteArrayInputStream((byte[])in));
-//         } else {
-//            throw new IllegalArgumentException("Could not decode input source");
-//         }
-//         int tag = obj.getTag();
-//         switch(tag) {
-//         case EF_COM_TAG: return new COMFile(obj);
-//         case EF_DG1_TAG: return new DG1File(obj);
-//         case EF_DG2_TAG: return new DG2File(obj);
-//         case EF_DG3_TAG: return new DataGroup(obj);
-//         case EF_DG4_TAG: return new DataGroup(obj);
-//         case EF_DG5_TAG: return new DataGroup(obj);
-//         case EF_DG6_TAG: return new DataGroup(obj);
-//         case EF_DG7_TAG: return new DataGroup(obj);
-//         case EF_DG8_TAG: return new DataGroup(obj);
-//         case EF_DG9_TAG: return new DataGroup(obj);
-//         case EF_DG10_TAG: return new DataGroup(obj);
-//         case EF_DG11_TAG: return new DataGroup(obj);
-//         case EF_DG12_TAG: return new DataGroup(obj);
-//         case EF_DG13_TAG: return new DataGroup(obj);
-//         case EF_DG14_TAG: return new DataGroup(obj);
-//         case EF_DG15_TAG: System.out.println("DEBUG: hier");
-//            return new DG15File(new ByteArrayInputStream(obj.getEncoded()));
-//         case EF_DG16_TAG: return new DataGroup(obj);
-//         case EF_SOD_TAG: return new SODFile(obj);
-//         default: throw new IllegalArgumentException("Unknown file tag "
-//               + Integer.toHexString(tag));
-//         }
-//      } catch (Exception e) {
-//         e.printStackTrace();
-//         return null;
-//      }
-//   }
 
    /**
     * Gets the contents of this file as byte array,
