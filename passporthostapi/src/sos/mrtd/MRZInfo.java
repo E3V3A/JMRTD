@@ -118,7 +118,7 @@ public class MRZInfo
 	 * 
 	 * @param in contains the contents of DG1 (without the tag and length)
 	 */
-	MRZInfo(InputStream in) {
+	public MRZInfo(InputStream in) {
 		try {
 			DataInputStream dataIn = new DataInputStream(in);
 			this.documentType = readDocumentType(dataIn);
@@ -739,17 +739,7 @@ public class MRZInfo
 		if (obj == null) { return false; }
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		MRZInfo other = (MRZInfo)obj;
-		if (documentType != other.documentType) { return false; }
-		if (!issuingState.equals(other.issuingState)) { return false; }
-		if (!primaryIdentifier.equals(other.primaryIdentifier)) { return false; }
-		if (!Arrays.equals(secondaryIdentifiers, other.secondaryIdentifiers)) { return false; }
-		if (!nationality.equals(other.nationality)) { return false; }
-		if (!documentNumber.equals(other.documentNumber)) { return false; }
-		if (!personalNumber.equals(other.personalNumber)) { return false; }
-		if (!dateOfBirth.equals(other.dateOfBirth)) { return false; }
-		if (gender != other.gender) { return false; }
-		if (!dateOfExpiry.equals(other.dateOfExpiry)) { return false; }
-		return true;
+		return toString().equals(other.toString());
 	}
 	
 	private void checkDigit() {
