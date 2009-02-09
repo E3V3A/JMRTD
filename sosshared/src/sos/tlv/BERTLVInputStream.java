@@ -401,6 +401,7 @@ public class BERTLVInputStream extends InputStream
 			}
 		}
 		
+		@SuppressWarnings("unchecked")
 		public Object clone() {
 			return new State((Stack<TLStruct>)state.clone(), isAtStartOfTag, isAtStartOfLength, isReadingValue);
 		}
