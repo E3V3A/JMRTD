@@ -1,3 +1,22 @@
+/*
+ *  AuthEP - Interfacer.
+ *
+ *  Copyright (C) 2009  Telematica Instituut
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package nl.telin.authep;
 
 import java.io.IOException;
@@ -14,7 +33,6 @@ import java.util.Vector;
 import javax.smartcardio.CardTerminal;
 
 import sos.mrtd.DG15File;
-import sos.mrtd.DG1File;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardFileInputStream;
@@ -27,8 +45,8 @@ import sos.smartcards.TerminalCardService;
  * PassportLink handles communication between the chip on the passport
  * and the program. It's able to e.g. retrieve data files from the passport
  * or let the passport sign a message.
- * @author Dirk-jan.vanDijk
  *
+ * @author Dirk-jan.vanDijk
  */
 public class PassportLink {
 
@@ -70,7 +88,7 @@ public class PassportLink {
 			}
 			Interfacer.getLogger().log("terminal name: "+cardTerminalLoop.getName());
 		}
-		
+
 		for (CardTerminal removeTerminal : terminalsToRemove)
 			_cardManager.getTerminals().remove(removeTerminal);
 	}
@@ -127,7 +145,7 @@ public class PassportLink {
 				Interfacer.getLogger().log("INSERT CARD (s)");
 				Thread.sleep(1000);
 			}
-			
+
 			if(_activePassportService == null)
 			{
 				_activeCardService = new TerminalCardService(_activeCardTerminal);
@@ -139,12 +157,12 @@ public class PassportLink {
 		} catch (Exception e) {
 			e.printStackTrace();
 		} 
-		
+
 		// something went wrong if we reached this point, clear the selected terminal
 		Interfacer.getLogger().log("NO TERMINAL COULD BE ACTIVATED");
 		return false;
 	}
-	
+
 	/**
 	 * Close the session with the current card and cardreader.
 	 */
@@ -158,7 +176,7 @@ public class PassportLink {
 			_activeCardTerminal = null;
 		}
 	}
-	
+
 	/**
 	 * Performs the Basic Access Control protocol.
 	 * @param docNumber the document number
@@ -174,7 +192,7 @@ public class PassportLink {
 			_activePassportService.doBAC(docNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry));
 		}
 	}
-	
+
 	/**
 	 * Retrieve a DG file from the passport.
 	 * @param dgTag Tag of the DG file to retrieve.
@@ -195,7 +213,7 @@ public class PassportLink {
 		}
 		return new byte[0];
 	}
-	
+
 	/**
 	 * Let the passport sign a message using the passports own private key.
 	 * @param message The message to sign (can be any size)
@@ -216,20 +234,20 @@ public class PassportLink {
 		}
 		return new byte[0];
 	}
-	
+
 	public synchronized String getStatus() {
 		if (activateTerminal()) {
 			try {
-				 if(_activeCardTerminal.isCardPresent())
-					 return "Card present";
-				 else
-					 return "No card present";
+				if(_activeCardTerminal.isCardPresent())
+					return "Card present";
+				else
+					return "No card present";
 			} catch (Exception e) {
 				return e.toString();
 			}
 		}
 		else
 			return "Not connected";
-		
+
 	}
 }
