@@ -34,13 +34,16 @@ import sos.smartcards.TerminalCardService;
 import sos.util.Icons;
 
 /**
+ * A generic card manager GUI component. Will probably be removed soon.
  * 
- * @author martijn.oostdijk
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @deprecated Gone
  */
 public class CardManagerPanel extends JPanel
 {
+	private static final long serialVersionUID = 8988528742159123032L;
+
 	private static final Font UNSELECTED_FONT = new Font("Sans-serif", Font.PLAIN, 12);
 	private static final Font SELECTED_FONT = new Font("Sans-serif", Font.PLAIN, 12);
 
@@ -72,6 +75,9 @@ public class CardManagerPanel extends JPanel
 		}
 		tree = new JTree(buildTree(cm));
 		TreeCellRenderer renderer = new DefaultTreeCellRenderer() {
+
+			private static final long serialVersionUID = 131460608635144777L;
+
 			public Component getTreeCellRendererComponent(JTree tree,
 					Object value, boolean selected, boolean expanded,
 					boolean leaf, int row, boolean hasFocus) {
@@ -148,6 +154,8 @@ public class CardManagerPanel extends JPanel
 
 	private TreeNode buildTree(CardManager cm) {
 		return new DefaultMutableTreeNode("Card Manager", true) {
+
+			private static final long serialVersionUID = 193297024953497869L;
 
 			public int getChildCount() {
 				return terminalNodes.size();
