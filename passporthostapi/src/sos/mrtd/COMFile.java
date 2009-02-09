@@ -36,6 +36,8 @@ import sos.tlv.BERTLVObject;
  * This file contains the common data (version and
  * data group presence table) information.
  * 
+ * FIXME: get rid of all those BERTLVObjects in favor of BERTLVInputStreams. -- MO
+ * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
@@ -189,7 +191,6 @@ public class COMFile extends PassportFile
 			BERTLVObject ef011E =
 				new BERTLVObject(EF_COM_TAG, value);
 			ef011E.reconstructLength();
-			System.out.println("DEBUG: ef011E = " + ef011E);
 			return ef011E.getEncoded();
 		} catch (Exception e) {
 			e.printStackTrace();
