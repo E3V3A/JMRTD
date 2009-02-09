@@ -41,15 +41,15 @@ import sos.tlv.BERTLVObject;
 public class DG1File extends DataGroup
 {
 	private static final short MRZ_INFO_TAG = 0x5F1F;
-	private MRZInfo mrz;
+	private MRZInfo mrzInfo;
 
 	/**
 	 * Creates a new file based on MRZ information.
 	 * 
-	 * @param mrz the MRZ information to store in this file
+	 * @param mrzInfo the MRZ information to store in this file
 	 */
-	public DG1File(MRZInfo mrz) {
-		this.mrz = mrz;
+	public DG1File(MRZInfo mrzInfo) {
+		this.mrzInfo = mrzInfo;
 	}
 
 	/**
@@ -66,7 +66,7 @@ public class DG1File extends DataGroup
 		tlvIn.skipToTag(MRZ_INFO_TAG);
 		tlvIn.readLength();
 		isSourceConsistent = false;
-		this.mrz = new MRZInfo(tlvIn);
+		this.mrzInfo = new MRZInfo(tlvIn);
 	}
 
 	public int getTag() {
@@ -79,7 +79,7 @@ public class DG1File extends DataGroup
 	 * @return the MRZ information
 	 */
 	public MRZInfo getMRZInfo() {
-		return mrz;
+		return mrzInfo;
 	}
 
 	/**
@@ -88,7 +88,18 @@ public class DG1File extends DataGroup
 	 * @return a textual representation of this file
 	 */
 	public String toString() {
-		return "DG1File " + mrz.toString().replaceAll("\n", "").trim();
+		return "DG1File " + mrzInfo.toString().replaceAll("\n", "").trim();
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (!(obj.getClass().equals(this.getClass()))) { return false; }
+		DG1File other = (DG1File)obj;
+		return mrzInfo.equals(other.mrzInfo);
+	}
+	
+	public int hashCode() {
+		return 3 * mrzInfo.hashCode() + 57;
 	}
 
 	public byte[] getEncoded() {
@@ -98,7 +109,7 @@ public class DG1File extends DataGroup
 		try {
 			BERTLVObject ef0101 =
 				new BERTLVObject(EF_DG1_TAG,
-						new BERTLVObject(0x5F1F, mrz.getEncoded()));
+						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
 			sourceObject = ef0101;
 			ef0101.reconstructLength();
 			isSourceConsistent = true;

@@ -95,4 +95,19 @@ public class DG15File extends DataGroup
 	public PublicKey getPublicKey() {
 		return publicKey;
 	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (obj.getClass() != DG15File.class) { return false; }
+		DG15File other = (DG15File)obj;
+		return publicKey.equals(other.publicKey);
+	}
+	
+	public int hashCode() {
+		return 5 * publicKey.hashCode() + 61;
+	}
+	
+	public String toString() {
+		return "DG15File [" + publicKey.toString() + "]";
+	}
 }

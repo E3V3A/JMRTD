@@ -726,7 +726,7 @@ public class MRZInfo
 	 * @return a hash code
 	 */
 	public int hashCode() {
-		return toString().hashCode() + 55;
+		return toString().hashCode() + 53;
 	}
 
 	/**
@@ -735,7 +735,6 @@ public class MRZInfo
 	 * @return a boolean
 	 */
 	public boolean equals(Object obj) {
-		if (obj == this) { return true; }
 		if (obj == null) { return false; }
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		MRZInfo other = (MRZInfo)obj;

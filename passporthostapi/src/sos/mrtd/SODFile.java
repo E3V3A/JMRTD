@@ -168,20 +168,6 @@ public class SODFile extends PassportFile
 	}
 
 	/**
-	 * Gets a textual representation of this file.
-	 * 
-	 * @return a textual representation of this file
-	 */
-	public String toString() {
-		try {
-			X509Certificate cert = getDocSigningCertificate();
-			return "SODFile " + cert.getIssuerX500Principal();
-		} catch (Exception e) {
-			return "SODFile";
-		}
-	}
-
-	/**
 	 * Gets the stored data group hashes.
 	 *
 	 * @return data group hashes indexed by data group numbers (1 to 16)
@@ -331,6 +317,32 @@ public class SODFile extends PassportFile
 		}
         String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
 		 */
+	}
+	
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
+	public String toString() {
+		try {
+			X509Certificate cert = getDocSigningCertificate();
+			return "SODFile " + cert.getIssuerX500Principal();
+		} catch (Exception e) {
+			return "SODFile";
+		}
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (obj == this) { return true; }
+		if (obj.getClass() != SODFile.class) { return false; }
+		SODFile other = (SODFile)obj;
+		return Arrays.equals(getEncoded(), other.getEncoded());
+	}
+	
+	public int hashCode() {
+		return 11 * Arrays.hashCode(getEncoded()) + 111;
 	}
 
 	/* ONLY PRIVATE METHODS BELOW */

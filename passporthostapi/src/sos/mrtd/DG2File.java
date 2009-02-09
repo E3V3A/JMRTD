@@ -200,6 +200,20 @@ public class DG2File extends CBEFFDataGroup
 		return result.toString();
 
 	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (obj == this) { return true; }
+		if (obj.getClass() != DG2File.class) { return false; }
+		DG2File other = (DG2File)obj;
+		if (faces == null) { return other.faces == null; }
+		return faces.equals(other.faces);
+	}
+	
+	public int hashCode() {
+		if (faces == null) { return 7 * 0x000FACE5 + 17; } /* FIXME: never happens :) */
+		return 7 * faces.hashCode() + 17;
+	}
 
 	/**
 	 * Gets the images in this file.
