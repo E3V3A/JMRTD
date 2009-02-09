@@ -50,7 +50,7 @@ public class InterfacerApplet extends Applet implements CardTerminalListener, Ke
 	private DebugFrame debugFrame;
 	private boolean debug = false;
 	private boolean cardPresent = false;
-	private Thread cardCheckThread;
+//	private Thread cardCheckThread;
 
 	public InterfacerApplet() {
 		try {
