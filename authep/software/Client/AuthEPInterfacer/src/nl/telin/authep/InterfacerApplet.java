@@ -117,29 +117,24 @@ public class InterfacerApplet extends Applet implements CardTerminalListener, Ke
 		debugFrame.log(msg);
 	}
 
-	@Override
 	public void cardInserted(CardEvent ce) {
 		cardPresent = true;
 		log("CARD INSERTED");
 		this.repaint();
 	}
 
-	@Override
 	public void cardRemoved(CardEvent ce) {
 		cardPresent = false;
 		log("CARD REMOVED");
 		this.repaint();
 	}
 
-	@Override
 	public void keyPressed(KeyEvent e) {
 	}
 
-	@Override
 	public void keyReleased(KeyEvent e) {
 	}
 
-	@Override
 	public void keyTyped(KeyEvent e) {
 		if(e.getKeyChar() == 'D')
 		{
@@ -147,10 +142,8 @@ public class InterfacerApplet extends Applet implements CardTerminalListener, Ke
 			debugFrame.setVisible(debug);
 			log("DEBUG ON");
 		}
-
 	}
 
-	@Override
 	public void run() {
 		try {
 			while(isRunning)
@@ -160,7 +153,6 @@ public class InterfacerApplet extends Applet implements CardTerminalListener, Ke
 				this.repaint();
 			}
 		} catch (InterruptedException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
