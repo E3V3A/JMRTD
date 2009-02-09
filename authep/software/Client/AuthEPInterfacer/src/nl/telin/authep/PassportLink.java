@@ -186,7 +186,8 @@ public class PassportLink {
 	{
 		if(activateTerminal())
 		{
-			CardFileInputStream dgStream = _activePassportService.readDataGroup(dgTag);
+			short dgFID = PassportFile.lookupFIDByTag(dgTag);
+			CardFileInputStream dgStream = _activePassportService.readFile(dgFID);
 			byte[] data = new byte[dgStream.getFileLength()];
 			int read = dgStream.read(data, 0, data.length);
 			if(read == data.length) 
@@ -205,7 +206,7 @@ public class PassportLink {
 	public byte[] signWithAA(byte[] message) throws CardServiceException, NoSuchAlgorithmException {
 		if(activateTerminal())
 		{
-			DG15File dg15 = new DG15File(_activePassportService.readDataGroup(PassportFile.EF_DG15_TAG));
+			DG15File dg15 = new DG15File(_activePassportService.readFile(PassportService.EF_DG15));
 			PublicKey publicKey = dg15.getPublicKey();
 			MessageDigest digest = MessageDigest.getInstance("SHA1");
 			byte[] digestedMessage = digest.digest(message);
