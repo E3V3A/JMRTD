@@ -11,11 +11,20 @@
 	<property name="distlib" location="${dist}/lib" />
 	<property name="lib" location="lib" />
     <property name="arch" value="${os.arch}" />
+	
+	<property name="passporthostapi-src" location="${basedir}/../passporthostapi/src" />
+	<property name="sosshared-src" location="${basedir}/../sosshared/src" />
 
+	<property name="bcprov_dir" location="${basedir}/../passporthostapi/dist/lib" />
+	<property name="bcprov_jar" location="bcprov-jdk16-141.jar" />
+	
+	<property name="jmrtd_dir" location="${basedir}/../passporthostapi/dist/lib" />
+	
 	<mkdir dir="${distlib}" />
 	<path id="classpath">
-		<fileset dir="${lib}">
-	        <include name="**/*.jar"/>
+		<fileset dir="${jmrtd_dir}">
+	        <include name="**/jmrtd.jar"/>
+			<include name="**/bcprov*.jar"/>
 		</fileset>
 	</path>
 		
