@@ -105,6 +105,8 @@ public class CertificateFrame extends JFrame
 	 */
 	private class SaveAsAction extends AbstractAction
 	{
+		private static final long serialVersionUID = -7143003047380922518L;
+
 		public SaveAsAction() {
 			putValue(SMALL_ICON, SAVE_AS_ICON);
 			putValue(LARGE_ICON_KEY, SAVE_AS_ICON);
@@ -146,6 +148,8 @@ public class CertificateFrame extends JFrame
 
 	private class CloseAction extends AbstractAction
 	{
+		private static final long serialVersionUID = 5279413086163111656L;
+
 		public CloseAction() {
 			putValue(SMALL_ICON, CLOSE_ICON);
 			putValue(LARGE_ICON_KEY, CLOSE_ICON);

@@ -148,6 +148,9 @@ public class PortraitFrame extends JFrame
 
 	private Action getSaveAsAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -4810689890241792533L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
@@ -183,6 +186,9 @@ public class PortraitFrame extends JFrame
 
 	private Action getViewImageInfoAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 5741460721594325551L;
+
 			public void actionPerformed(ActionEvent e) {
 				JTextArea area = new JTextArea();
 				area.append(info.toString());
@@ -198,6 +204,9 @@ public class PortraitFrame extends JFrame
 
 	private Action getViewFeaturePointsAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -5878482281301204061L;
+
 			public void actionPerformed(ActionEvent e) {
 				Object src = e.getSource();
 				if (src instanceof AbstractButton) {
@@ -226,6 +235,9 @@ public class PortraitFrame extends JFrame
 
 	private Action getCloseAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 893441969514204179L;
+
 			public void actionPerformed(ActionEvent e) {
 				dispose();
 			}

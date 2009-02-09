@@ -102,8 +102,6 @@ public class PassportApp  implements PassportListener
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
 	private static final Icon RELOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
 	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
-	private static final Icon TERMINAL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive"));
-	private static final Icon TERMINAL_GO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_go"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 
 	private static final String ABOUT_INFO = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
@@ -162,6 +160,9 @@ public class PassportApp  implements PassportListener
 			final char c = mrzChars.charAt(i);
 			String actionMapKey = "KeyActionFor_" + Character.toString(c);
 			am.put(actionMapKey, new AbstractAction() {
+				
+				private static final long serialVersionUID = 2298695182878423540L;
+
 				public void actionPerformed(ActionEvent e) {
 					KeyEvent ke = new KeyEvent(component, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, Character.toUpperCase(c));
 					keyListener.keyTyped(ke);
@@ -307,6 +308,9 @@ public class PassportApp  implements PassportListener
 
 	private Action getNewAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 2866114377708028964L;
+
 			public void actionPerformed(ActionEvent e) {
 				PassportFrame passportFrame = new PassportFrame();
 				passportFrame.readFromEmptyPassport();
@@ -323,6 +327,9 @@ public class PassportApp  implements PassportListener
 
 	private Action getOpenAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -9209238098024027906L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(new FileFilter() {
@@ -355,6 +362,9 @@ public class PassportApp  implements PassportListener
 
 	private Action getExitAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -6229877165532173683L;
+
 			public void actionPerformed(ActionEvent e) {
 				System.exit(0);
 			}
@@ -368,6 +378,9 @@ public class PassportApp  implements PassportListener
 
 	private Action getReloadAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 7099324456389820159L;
+
 			public void actionPerformed(ActionEvent e) {
 				List<CardTerminal> terminals = cardManager.getTerminals();
 				for (final CardTerminal terminal: terminals) {
@@ -401,6 +414,9 @@ public class PassportApp  implements PassportListener
 	
 	private Action getPreferencesAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 11962156923823504L;
+
 			public void actionPerformed(ActionEvent e) {
 				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
 				switch (n) {
@@ -418,6 +434,9 @@ public class PassportApp  implements PassportListener
 	
 	private Action getAboutAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 1528395261878587434L;
+
 			public void actionPerformed(ActionEvent e) {
 				try {
 					JTextArea area = new JTextArea(20, 35);

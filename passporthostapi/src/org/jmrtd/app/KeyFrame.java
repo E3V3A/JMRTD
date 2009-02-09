@@ -105,6 +105,9 @@ public class KeyFrame extends JFrame
 	 */
 	private Action getSaveAsAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -7264665364705062205L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
@@ -135,6 +138,9 @@ public class KeyFrame extends JFrame
 
 	private Action getCloseAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 8216910949055330269L;
+
 			public void actionPerformed(ActionEvent e) {
 				dispose();
 			}	

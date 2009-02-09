@@ -627,6 +627,9 @@ public class PassportFrame extends JFrame
 
 	private Action getCloseAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -4351062033708816679L;
+
 			public void actionPerformed(ActionEvent e) {
 				dispose();
 			}
@@ -640,6 +643,9 @@ public class PassportFrame extends JFrame
 
 	private Action getSaveAsAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 9113082315691234764L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
@@ -682,6 +688,9 @@ public class PassportFrame extends JFrame
 
 	private Action getViewPortraitAtOriginalSizeAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -7141975907898754026L;
+
 			public void actionPerformed(ActionEvent e) {
 				int index = facePreviewPanel.getSelectedIndex();
 				if (dg2 == null) {
@@ -703,6 +712,9 @@ public class PassportFrame extends JFrame
 
 	private Action getAddPortraitAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 9003244936310622991L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
@@ -745,6 +757,9 @@ public class PassportFrame extends JFrame
 
 	private Action getRemovePortraitAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -6635439106858528541L;
+
 			public void actionPerformed(ActionEvent e) {
 				int index = facePreviewPanel.getSelectedIndex();
 				dg2.removeFaceInfo(index);
@@ -761,6 +776,9 @@ public class PassportFrame extends JFrame
 
 	private Action getLoadDocSignCertAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -2441362506867899044L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.CERTIFICATE_FILE_FILTER);
@@ -789,6 +807,9 @@ public class PassportFrame extends JFrame
 
 	private Action getLoadAAPublicKeyAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -8265676252065941094L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
 				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
@@ -816,6 +837,9 @@ public class PassportFrame extends JFrame
 
 	private Action getViewDocumentSignerCertificateAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 3937090454142759317L;
+
 			public void actionPerformed(ActionEvent e) {
 				JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", docSigningCert);
 				certificateFrame.pack();
@@ -831,6 +855,9 @@ public class PassportFrame extends JFrame
 
 	private Action getViewCountrySignerCertificateAction() {
 		Action action = new AbstractAction() {	
+
+			private static final long serialVersionUID = -7115158536366060439L;
+
 			public void actionPerformed(ActionEvent e) {
 				if (countrySigningCert == null) {
 					JOptionPane.showMessageDialog(getContentPane(), "CSCA for " + issuingState.getName() + " not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
@@ -850,6 +877,9 @@ public class PassportFrame extends JFrame
 
 	private Action getViewAAPublicKeyAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -3064369119565468811L;
+
 			public void actionPerformed(ActionEvent e) {
 				InputStream in = getInputStream(PassportService.EF_DG15);
 				dg15 = new DG15File(in);
@@ -868,6 +898,9 @@ public class PassportFrame extends JFrame
 
 	private Action getUploadAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -1281934051651404839L;
+
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
 				BACEntry bacEntry = null;

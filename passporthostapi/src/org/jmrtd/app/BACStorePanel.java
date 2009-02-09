@@ -214,6 +214,9 @@ public class BACStorePanel extends JPanel
 	 */
 	private Action getAddAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -7053795260898666446L;
+
 			public void actionPerformed(ActionEvent e) {
 				int choice = JOptionPane.showOptionDialog(table, entryField, "Enter BAC",
 						JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
@@ -238,6 +241,9 @@ public class BACStorePanel extends JPanel
 	 */
 	private Action getDeleteAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 8299630020852663643L;
+
 			public void actionPerformed(ActionEvent e) {
 				try {
 					int entryRowIndex = table.getSelectedRow();
@@ -260,6 +266,9 @@ public class BACStorePanel extends JPanel
 	 */
 	private Action getMoveUpAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -4661297725569163924L;
+
 			public void actionPerformed(ActionEvent e) {
 				try {
 					int entryRowIndex = table.getSelectedRow();
@@ -283,6 +292,9 @@ public class BACStorePanel extends JPanel
 
 	private Action getMoveDownAction() {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -4995808660508497602L;
+
 			public void actionPerformed(ActionEvent e) {
 				try {
 					int entryRowIndex = table.getSelectedRow();
