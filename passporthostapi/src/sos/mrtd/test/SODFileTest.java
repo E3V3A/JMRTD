@@ -92,8 +92,8 @@ public class SODFileTest extends TestCase {
 			String signatureAlgorithm = "SHA256withRSA";
 			X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
 			certGenerator.setSerialNumber(new BigInteger("1"));
-			certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-			certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+			certGenerator.setIssuerDN(new X509Name("C=NL, O=State of the Netherlands, OU=Ministry of the Interior and Kingdom Relations, CN=CSCA NL"));
+			certGenerator.setSubjectDN(new X509Name("C=NL, O=State of the Netherlands, OU=Ministry of the Interior and Kingdom Relations, CN=DS-01 NL, OID.2.5.4.5=1"));
 			certGenerator.setNotBefore(dateOfIssuing);
 			certGenerator.setNotAfter(dateOfExpiry);
 			certGenerator.setPublicKey(publicKey);
