@@ -27,7 +27,6 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import sos.mrtd.COMFile;
-import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportFile;
 import sos.util.Hex;
 
