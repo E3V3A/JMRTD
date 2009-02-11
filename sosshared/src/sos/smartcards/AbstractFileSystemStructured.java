@@ -14,7 +14,7 @@ import sos.util.Hex;
  * @author woj
  *
  */
-public abstract class FileSystemStructuredAbstract implements
+public abstract class AbstractFileSystemStructured implements
         FileSystemStructured {
     
     public static short MF_ID = 0x3F00;
@@ -26,11 +26,11 @@ public abstract class FileSystemStructuredAbstract implements
     private int selectLe = 256;
     private FileInfo fileInfo = null;
     
-    public FileSystemStructuredAbstract(CardService service) {
+    public AbstractFileSystemStructured(CardService service) {
         this.service = service;
     }
 
-    public FileSystemStructuredAbstract(CardService service, boolean fileInfo) {
+    public AbstractFileSystemStructured(CardService service, boolean fileInfo) {
         this.service = service;
         this.p2 = fileInfo ? 0x00 : 0x0C;
         this.selectLe = fileInfo ? 256 : 0;
