@@ -96,34 +96,48 @@ public class BERTLVObject
     * @throws IOException if something goes wrong.
     */
    public BERTLVObject(int tag, Object value) {
-      try {
-         this.tag = tag;
-         this.value = value;
-         if (value instanceof byte[]) {
-            this.length = ((byte[])value).length;
-         } else if (value instanceof BERTLVObject) {
-            this.value = new BERTLVObject[1];
-            ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
-         } else if (value instanceof BERTLVObject[]) {
-            this.value = value;
-         } else if (value instanceof Byte) {
-        	 this.length = 1;
-        	 this.value = new byte[1];
-        	 ((byte[])this.value)[0] = ((Byte)value).byteValue();
-         } else if (value instanceof Integer) {
-            this.value = new BERTLVObject[1];
-            ((BERTLVObject[])this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
-         } else {
-            throw new IllegalArgumentException("Cannot encode value of type: " + value.getClass());
-         }
-         if (value instanceof byte[]) {
-            this.value = interpretValue(tag, (byte[])value);
-         }
-         // reconstructLength();
-      } catch (Exception e) {
-         e.printStackTrace();
-      }
+      this(tag, value, true);
    }
+
+   /**
+    * Constructs a new TLV object with tag <code>tag</code> containing data
+    * <code>value</code>.
+    * 
+    * @param tag tag of TLV object
+    * @param value data of TLV object
+    * @param interpretValue whether the embedded byte[] values should be
+    *                        interpreted/parsed. Some ASN1 streams don't like that :( 
+    * @throws IOException if something goes wrong.
+    */
+   public BERTLVObject(int tag, Object value, boolean interpretValue) {
+       try {
+          this.tag = tag;
+          this.value = value;
+          if (value instanceof byte[]) {
+             this.length = ((byte[])value).length;
+          } else if (value instanceof BERTLVObject) {
+             this.value = new BERTLVObject[1];
+             ((BERTLVObject[])this.value)[0] = (BERTLVObject)value;
+          } else if (value instanceof BERTLVObject[]) {
+             this.value = value;
+          } else if (value instanceof Byte) {
+             this.length = 1;
+             this.value = new byte[1];
+             ((byte[])this.value)[0] = ((Byte)value).byteValue();
+          } else if (value instanceof Integer) {
+             this.value = new BERTLVObject[1];
+             ((BERTLVObject[])this.value)[0] = new BERTLVObject(INTEGER_TYPE_TAG, value);
+          } else {
+             throw new IllegalArgumentException("Cannot encode value of type: " + value.getClass());
+          }
+          if (value instanceof byte[] && interpretValue) {
+             this.value = interpretValue(tag, (byte[])value);
+          }
+          // reconstructLength();
+       } catch (Exception e) {
+          e.printStackTrace();
+       }
+    }
 
    private static Object interpretValue(int tag, byte[] valueBytes) {
       if (isPrimitive(tag)) {

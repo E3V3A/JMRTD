@@ -1,6 +1,8 @@
 package sos.util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
 
@@ -81,4 +83,5 @@ public class Files
 		}
 		return new File(baseDirURL.getPath().replace("%20", " "));
 	}
+
 }

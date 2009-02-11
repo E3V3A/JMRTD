@@ -79,6 +79,8 @@ public interface ISO7816
    static final byte INS_CREATE_FILE = (byte)0xE0;
    static final byte INS_APPEND_RECORD = (byte)0xE2;
    static final byte INS_DELETE_FILE = (byte)0xE4;
+   static final byte INS_PSO = (byte)0x2A;
+   static final byte INS_MSE = (byte)0x22;
 
    static final short SW_BYTES_REMAINING_00 = (short)0x6100;
    static final short SW_END_OF_FILE = (short)0x6282;

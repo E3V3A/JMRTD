@@ -77,6 +77,9 @@ public final class Hex {
                     + ((n < 0x00000100) ? "0" : "")
                     + ((n < 0x00000010) ? "0" : "")
                     + Integer.toHexString(s);
+      if(result.length() > 4) {
+          result = result.substring(result.length()-4, result.length()); 
+      }
       return result.toUpperCase();
    }
 
@@ -113,9 +116,16 @@ public final class Hex {
     *    <code>text</code>.
     */
    public static String bytesToHexString(byte[] text) {
-      return bytesToHexString(text,0,text.length);
+      return bytesToHexString(text, 1000);
    }
 
+   public static String bytesToHexString(byte[] text, int numRow) {
+       if(text == null) {
+           return "NULL";
+       }
+       return bytesToHexString(text,0,text.length, numRow);
+    }
+   
    /**
     * Converts a byte array to capitalized hexadecimal text.
     * The length of the resulting string will be twice the length of
@@ -128,8 +138,13 @@ public final class Hex {
     *    <code>text</code>.
     */
    public static String toHexString(byte[] text) {
-      return bytesToHexString(text,0,text.length);
+      return bytesToHexString(text,0,text.length, 1000);
    }
+
+   
+   public static String toHexString(byte[] text, int numRow) {
+       return bytesToHexString(text,0,text.length, numRow);
+    }
 
    /**
     * Converts part of a byte array to capitalized hexadecimal text.
@@ -142,18 +157,26 @@ public final class Hex {
     * @param text the byte array to convert.
     * @param offset where to start.
     * @param length how many bytes to convert.
+    * @param numRow number of bytes to be put one in one row of output
     *
     * @return capitalized hexadecimal text representation of
     *    <code>text</code>.
     */
-   public static String bytesToHexString(byte[] text, int offset, int length) {
+   public static String bytesToHexString(byte[] text, int offset, int length, int numRow) {
+      if(text == null) return "NULL";
       String result = "";
       for (int i = 0; i < length; i++) {
+         if(i != 0 && i % numRow == 0) result += "\n";
          result += byteToHexString(text[offset + i]);
       }
       return result;
    }
 
+   public static String bytesToHexString(byte[] text, int offset, int length) {
+       return bytesToHexString(text, offset, length, 1000);
+    }
+
+   
    /**
     * Converts the hexadecimal string in <code>text</code> to 
     * a byte.

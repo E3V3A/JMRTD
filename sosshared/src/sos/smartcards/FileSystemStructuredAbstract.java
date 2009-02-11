@@ -1,7 +1,5 @@
 package sos.smartcards;
 
-import java.util.LinkedList;
-
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
@@ -23,10 +21,10 @@ public abstract class FileSystemStructuredAbstract implements
     
     private CardService service = null;
     private short selectedFID = 0;
-    // private byte[] selectedPath = null; 
+    private int length = -1;
     private int p2 = 0;
     private int selectLe = 256;
-    LinkedList<Integer> selectedPath = new LinkedList<Integer>();
+    private FileInfo fileInfo = null;
     
     public FileSystemStructuredAbstract(CardService service) {
         this.service = service;
@@ -39,25 +37,20 @@ public abstract class FileSystemStructuredAbstract implements
     }
 
     public int getFileLength() throws CardServiceException {
-        // TODO Auto-generated method stub
-        return 0;
+        return length;
     }
 
     public short getSelectedFID() {
-        // TODO Auto-generated method stub
-        return 0;
+        return selectedFID;
     }
 
     public byte[] readBinary(int offset, int length)
             throws CardServiceException {
-        // TODO Auto-generated method stub
+        byte[] p1p2 = Hex.hexStringToBytes(Hex.shortToHexString((short)offset));        
+        new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, p1p2[0], p1p2[1], length);
         return null;
     }
 
-    private void parseFileInfo(byte[] fileInfo) {
-        
-    }
-    
     private void selectFile(byte[] data, int p1) throws CardServiceException {
         CommandAPDU command = createSelectFileAPDU(p1, p2, data, selectLe);
         ResponseAPDU response = service.transmit(command);
@@ -68,7 +61,13 @@ public abstract class FileSystemStructuredAbstract implements
         // 0, 4, 8 absolute
         // 1, 2, 9, relative
         // 3 parent
-        parseFileInfo(response.getData());
+        this.fileInfo = new FileInfo(response.getData());
+        if(this.fileInfo.fid != -1) {
+            selectedFID = this.fileInfo.fid;
+        }
+        if(this.fileInfo.fileLength != -1) {
+            length = this.fileInfo.fileLength;
+        }
     }
 
     private void selectFile(short fid, int p1) throws CardServiceException {
@@ -78,29 +77,22 @@ public abstract class FileSystemStructuredAbstract implements
     
     public void selectFile(short fid) throws CardServiceException {
         selectFile(fid, 0x00);
-        selectedPath.clear();
-        selectedPath.add(new Integer(fid));
     }
 
     public void selectMF() throws CardServiceException {
         selectFile((short)0, 0);
-        selectedPath.clear();
-        selectedPath.add(new Integer(MF_ID));
     }
 
     public void selectParent() throws CardServiceException {
         selectFile((short)0, 0x03);
-        selectedPath.removeLast();
     }
     
     public void selectEFRelative(short fid) throws CardServiceException {
         selectFile(fid, 0x02);
-        selectedPath.addLast(new Integer(fid));
     }
     
     public void selectDFRelative(short fid) throws CardServiceException {
         selectFile(fid, 0x01);        
-        selectedPath.addLast(new Integer(fid));
     }
 
     public void selectAID(byte[] aid) throws CardServiceException {
