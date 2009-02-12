@@ -272,7 +272,7 @@ public class DG12File extends DataGroup
 	 */
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+			return sourceObject;
 		}
 		return null;
 	}

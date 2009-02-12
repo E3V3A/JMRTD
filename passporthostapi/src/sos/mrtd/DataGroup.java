@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
 
 /**
  * Super class for data group files.
@@ -63,17 +62,12 @@ public abstract class DataGroup extends PassportFile
 	 * 
 	 * @param object datagroup contents.
 	 */
-	DataGroup(BERTLVObject object) {
-		sourceObject = object;
-		isSourceConsistent = true;
-	}
+//	DataGroup(BERTLVObject object) {
+//		sourceObject = object;
+//		isSourceConsistent = true;
+//	}
 
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
-		}
-		return null;
-	}
+	public abstract byte[] getEncoded();
 
 	/**
 	 * Gets a textual representation of this file.

@@ -134,7 +134,8 @@ public class DG2File extends CBEFFDataGroup
 
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+//			return sourceObject.getEncoded();
+			return sourceObject;
 		}
 		try {
 			/* FIXME: some of this should be moved to CBEFFDataGroup! */
@@ -171,7 +172,8 @@ public class DG2File extends CBEFFDataGroup
 			}
 			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
 			dg2.reconstructLength();
-			sourceObject = dg2;
+			byte[] dg2bytes = dg2.getEncoded();
+			sourceObject = dg2bytes; // FIXME: WAS: dg2
 			isSourceConsistent = true;
 			return dg2.getEncoded();
 		} catch (Exception ioe) {

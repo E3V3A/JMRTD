@@ -147,6 +147,7 @@ public class DG11File extends DataGroup
 			tag = ((hi & 0xFF) << 8) | (lo & 0xFF);
 			tagList[i] = tag;
 		}
+		System.out.println("DEBUG: tagCount = " + tagCount);
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);
 		}
@@ -271,7 +272,7 @@ public class DG11File extends DataGroup
 	/**
 	 * @return the fullNamesecondaryIdentifiers
 	 */
-	public List<String> getFullNamesecondaryIdentifiers() {
+	public List<String> getFullNameSecondaryIdentifiers() {
 		return fullNameSecondaryIdentifiers;
 	}
 
@@ -358,15 +359,56 @@ public class DG11File extends DataGroup
 	 * @return a textual representation of this file
 	 */
 	public String toString() {
-		return "DG11File";
+		StringBuffer result = new StringBuffer();
+		result.append("DG11File [");
+		result.append(fullNamePrimaryIdentifier); result.append(", ");
+		result.append(fullNameSecondaryIdentifiers == null ? "" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
+		result.append(personalNumber); result.append(", ");
+		result.append(SDF.format(fullDateOfBirth)); result.append(", ");
+		result.append(placeOfBirth == null ? "" : placeOfBirth.toString()); result.append(", ");
+		result.append(permanentAddress == null ? "" : permanentAddress.toString()); result.append(", ");
+		result.append(telephone); result.append(", ");
+		result.append(profession); result.append(", ");
+		result.append(title); result.append(", ");
+		result.append(personalSummary); result.append(", ");
+		result.append(proofOfCitizenship == null ? "" : proofOfCitizenship.getWidth() + "x" + proofOfCitizenship.getHeight()); result.append(", ");
+		result.append(otherValidTDNumbers == null ? "" : otherValidTDNumbers.toString()); result.append(", ");
+		result.append(custodyInformation);
+		result.append("]");
+		return result.toString();
 	}
 
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (obj == this) { return true; }
+		if (!obj.getClass().equals(DG11File.class)) { return false; }
+		DG11File other = (DG11File)obj;
+		return
+			other.fullNamePrimaryIdentifier.equals(fullNamePrimaryIdentifier) &&
+			other.fullNameSecondaryIdentifiers.equals(fullNameSecondaryIdentifiers) &&
+			other.personalNumber.equals(personalNumber) &&
+			other.fullDateOfBirth.equals(fullDateOfBirth) &&
+			other.placeOfBirth.equals(placeOfBirth) &&
+			other.permanentAddress.equals(permanentAddress) &&
+			other.telephone.equals(telephone) &&
+			other.profession.equals(profession) &&
+			other.title.equals(title) &&
+			other.personalSummary.equals(personalSummary) &&
+			other.proofOfCitizenship.equals(proofOfCitizenship) &&
+			other.otherValidTDNumbers.equals(otherValidTDNumbers) &&
+			other.custodyInformation.equals(custodyInformation);
+	}
+	
+	public int hashCode() {
+		return 13 * toString().hashCode() + 111;
+	}
+	
 	/**
 	 * TODO: in progress.
 	 */
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+			return sourceObject;
 		}
 		return null;
 	}

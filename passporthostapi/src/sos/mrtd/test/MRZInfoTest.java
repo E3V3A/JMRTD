@@ -25,11 +25,11 @@ import java.io.ByteArrayInputStream;
 import java.util.Calendar;
 import java.util.Date;
 
+import junit.framework.TestCase;
 import sos.data.Country;
 import sos.data.Gender;
 import sos.mrtd.MRZInfo;
 import sos.util.Hex;
-import junit.framework.TestCase;
 
 public class MRZInfoTest extends TestCase
 {

@@ -22,7 +22,6 @@
 
 package sos.mrtd;
 
-import sos.tlv.BERTLVObject;
 
 /**
  * Super class for passport files (EF_COM, EF_SOD, and data groups).
@@ -53,7 +52,7 @@ public abstract class PassportFile
                            EF_DG15_TAG = 0x6F,
                            EF_DG16_TAG = 0x70,
                            EF_SOD_TAG = 0x77;
-   
+
    /* 
     * We're using a dual representation with a "dirty-bit": When the DG is
     * read from a passport we need to store the binary information as-is
@@ -61,7 +60,8 @@ public abstract class PassportFile
     * the same byte[] (messing up any cryptographic hash computations needed
     * to validate the security object). -- MO
     */
-   BERTLVObject sourceObject;
+//   BERTLVObject sourceObject;
+   byte[] sourceObject; /* FIXME: always a byte[]? */
    boolean isSourceConsistent;
    
    /**

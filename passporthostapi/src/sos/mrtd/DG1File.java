@@ -24,6 +24,7 @@ package sos.mrtd;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
@@ -38,8 +39,10 @@ import sos.tlv.BERTLVObject;
  * 
  * @version $Revision$
  */
-public class DG1File extends DataGroup
+public class DG1File extends DataGroup implements Serializable
 {
+	private static final long serialVersionUID = 5091606125728809058L;
+
 	private static final short MRZ_INFO_TAG = 0x5F1F;
 	private MRZInfo mrzInfo;
 
@@ -60,13 +63,7 @@ public class DG1File extends DataGroup
 	 * @throws IOException if something goes wrong
 	 */
 	public DG1File(InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-		int tag = tlvIn.readTag();
-		if (tag != PassportFile.EF_DG1_TAG) { throw new IllegalArgumentException("Expected EF_DG1_TAG"); }
-		tlvIn.skipToTag(MRZ_INFO_TAG);
-		tlvIn.readLength();
-		isSourceConsistent = false;
-		this.mrzInfo = new MRZInfo(tlvIn);
+		readFromInputStream(in);
 	}
 
 	public int getTag() {
@@ -90,30 +87,52 @@ public class DG1File extends DataGroup
 	public String toString() {
 		return "DG1File " + mrzInfo.toString().replaceAll("\n", "").trim();
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == null) { return false; }
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG1File other = (DG1File)obj;
 		return mrzInfo.equals(other.mrzInfo);
 	}
-	
+
 	public int hashCode() {
 		return 3 * mrzInfo.hashCode() + 57;
 	}
 
+	private void writeObject(java.io.ObjectOutputStream out)
+	throws IOException {
+		out.write(getEncoded());
+	}
+
+	private void readObject(java.io.ObjectInputStream in)
+	throws IOException, ClassNotFoundException {
+		readFromInputStream(in);
+	}
+	
+	private void readFromInputStream(InputStream in) throws IOException {
+		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+		int tag = tlvIn.readTag();
+		if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
+		tlvIn.skipToTag(MRZ_INFO_TAG);
+		tlvIn.readLength();
+		isSourceConsistent = false;
+		this.mrzInfo = new MRZInfo(tlvIn);
+	}
+
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
 		}
 		try {
 			BERTLVObject ef0101 =
 				new BERTLVObject(EF_DG1_TAG,
 						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
-			sourceObject = ef0101;
+			
 			ef0101.reconstructLength();
+			byte[] ef0101bytes = ef0101.getEncoded();
+			sourceObject = ef0101bytes; // FIXME: WAS: ef0101;
 			isSourceConsistent = true;
-			return ef0101.getEncoded();
+			return ef0101bytes;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

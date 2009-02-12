@@ -68,15 +68,16 @@ public class DG15File extends DataGroup
 
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
 		}
 		try {
 			BERTLVObject ef010F =
 				new BERTLVObject(PassportFile.EF_DG15_TAG,
 						publicKey.getEncoded());
-			sourceObject = ef010F;
+			byte[] ef010Fbytes = ef010F.getEncoded();
+			sourceObject = ef010Fbytes; // FIXME: WAS: ef010F;
 			isSourceConsistent = true;
-			return ef010F.getEncoded();
+			return ef010Fbytes;
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;

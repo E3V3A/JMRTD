@@ -157,7 +157,7 @@ public class SODFile extends PassportFile
 
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-			return sourceObject.getEncoded();
+			return sourceObject;
 		}
 
 		/* TODO: where is that DERTaggedObject specified? */
