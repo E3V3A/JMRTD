@@ -47,7 +47,7 @@ public class PassportFileTest extends TestCase {
 	 * zipped collections of these.
 	 */
 	private static final String[] TEST_FILES = {
-		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
+//		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
 	};
 
 	private COMFileTest comFileTest;
@@ -78,7 +78,8 @@ public class PassportFileTest extends TestCase {
 		}
 	}
 
-	private void testFile(File file) {
+	public void testFile(File file) {
+		String name = file.getName();
 		ZipFile zipFile = null;
 
 		try {
@@ -90,7 +91,7 @@ public class PassportFileTest extends TestCase {
 
 		if (zipFile == null) {
 			try {
-				testPassportFile(new FileInputStream(file));
+				testInputStream(name, new FileInputStream(file));
 				return;
 			} catch (Exception e) {
 				fail(e.toString());
@@ -101,7 +102,7 @@ public class PassportFileTest extends TestCase {
 				ZipEntry entry = entries.nextElement();
 				if (entry == null) { break; } // FIXME: fail in this case?
 				try {
-					testPassportFile(zipFile.getInputStream(entry));
+					testInputStream(name, zipFile.getInputStream(entry));
 				} catch (Exception e) {
 					fail(e.toString());
 				}
@@ -109,15 +110,15 @@ public class PassportFileTest extends TestCase {
 		}
 	}
 
-	private void testPassportFile(InputStream in) throws IOException {
+	private void testInputStream(String name, InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 256));
 		tlvIn.mark(128);
 		int tag = tlvIn.readTag();
 		tlvIn.reset(); /* NOTE: Unread the tag... */
 		switch (tag) {
-		case PassportFile.EF_COM_TAG: log("COM"); comFileTest.testFile(tlvIn); break;
-		case PassportFile.EF_DG1_TAG: log("DG1"); dg1FileTest.testFile(tlvIn); break;
-		case PassportFile.EF_DG2_TAG: log("DG2"); dg2FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_COM_TAG: log(name + " -> COM"); comFileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG1_TAG: log(name + " -> DG1"); dg1FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG2_TAG: log(name + " -> DG2"); dg2FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG3_TAG: break;
 		case PassportFile.EF_DG4_TAG: break;
 		case PassportFile.EF_DG5_TAG: break;
@@ -126,13 +127,13 @@ public class PassportFileTest extends TestCase {
 		case PassportFile.EF_DG8_TAG: break;
 		case PassportFile.EF_DG9_TAG: break;
 		case PassportFile.EF_DG10_TAG: break;
-		case PassportFile.EF_DG11_TAG: log("DG11"); dg11FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG11_TAG: log(name + " -> DG11"); dg11FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG12_TAG: break;
 		case PassportFile.EF_DG13_TAG: break;
 		case PassportFile.EF_DG14_TAG: break;
-		case PassportFile.EF_DG15_TAG: log("DG15"); dg15FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG15_TAG: log(name + " -> DG15"); dg15FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG16_TAG: break;
-		case PassportFile.EF_SOD_TAG: log("SOD"); sodFileTest.testFile(tlvIn); break;
+		case PassportFile.EF_SOD_TAG: log(name + " -> SOD"); sodFileTest.testFile(tlvIn); break;
 		}
 	}
 	
