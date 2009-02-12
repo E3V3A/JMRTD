@@ -306,10 +306,6 @@ public class BERTLVInputStream extends InputStream
 
 		public boolean isAtStartOfLength() {
 			return isAtStartOfLength;
-//			if (state.isEmpty()) { return false; }
-//			if (isAtStartOfTag()) { return false; }
-//			TLStruct currentObject = state.peek();
-//			return currentObject.getLength() < 0;
 		}
 		
 		public boolean isReadingValue() {
