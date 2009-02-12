@@ -34,6 +34,12 @@ import junit.framework.TestCase;
 import sos.mrtd.PassportFile;
 import sos.tlv.BERTLVInputStream;
 
+/**
+ * You can throw files containing MRTD content at this test case and
+ * it will call the relevant tests.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class PassportFileTest extends TestCase {
 
 	/**
@@ -41,16 +47,16 @@ public class PassportFileTest extends TestCase {
 	 * zipped collections of these.
 	 */
 	private static final String[] TEST_FILES = {
-		// "/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
+		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
 	};
-	
+
 	private COMFileTest comFileTest;
 	private DG1FileTest dg1FileTest;
 	private DG2FileTest dg2FileTest;
 	private DG11FileTest dg11FileTest;
 	private DG15FileTest dg15FileTest;
 	private SODFileTest sodFileTest;
-	
+
 	public PassportFileTest(String name) {
 		super(name);
 		comFileTest = new COMFileTest(name);
@@ -60,7 +66,7 @@ public class PassportFileTest extends TestCase {
 		dg15FileTest = new DG15FileTest(name);
 		sodFileTest = new SODFileTest(name);
 	}
-	
+
 	public void testFiles() {
 		for (String fileName: TEST_FILES) {
 			try {
@@ -71,10 +77,10 @@ public class PassportFileTest extends TestCase {
 			}
 		}
 	}
-	
+
 	private void testFile(File file) {
 		ZipFile zipFile = null;
-	
+
 		try {
 			zipFile = new ZipFile(file);
 		} catch (Exception e) {
@@ -102,16 +108,16 @@ public class PassportFileTest extends TestCase {
 			}
 		}
 	}
-	
+
 	private void testPassportFile(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 256));
 		tlvIn.mark(128);
 		int tag = tlvIn.readTag();
 		tlvIn.reset(); /* NOTE: Unread the tag... */
 		switch (tag) {
-		case PassportFile.EF_COM_TAG: comFileTest.testFile(tlvIn); break;
-		case PassportFile.EF_DG1_TAG: dg1FileTest.testFile(tlvIn); break;
-		case PassportFile.EF_DG2_TAG: dg2FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_COM_TAG: log("COM"); comFileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG1_TAG: log("DG1"); dg1FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG2_TAG: log("DG2"); dg2FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG3_TAG: break;
 		case PassportFile.EF_DG4_TAG: break;
 		case PassportFile.EF_DG5_TAG: break;
@@ -120,13 +126,17 @@ public class PassportFileTest extends TestCase {
 		case PassportFile.EF_DG8_TAG: break;
 		case PassportFile.EF_DG9_TAG: break;
 		case PassportFile.EF_DG10_TAG: break;
-		case PassportFile.EF_DG11_TAG: dg11FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG11_TAG: log("DG11"); dg11FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG12_TAG: break;
 		case PassportFile.EF_DG13_TAG: break;
 		case PassportFile.EF_DG14_TAG: break;
-		case PassportFile.EF_DG15_TAG: dg15FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG15_TAG: log("DG15"); dg15FileTest.testFile(tlvIn); break;
 		case PassportFile.EF_DG16_TAG: break;
-		case PassportFile.EF_SOD_TAG: sodFileTest.testFile(tlvIn); break;
+		case PassportFile.EF_SOD_TAG: log("SOD"); sodFileTest.testFile(tlvIn); break;
 		}
+	}
+	
+	private void log(String txt) {
+		System.out.println("DEBUG: Testing: " + txt);
 	}
 }
