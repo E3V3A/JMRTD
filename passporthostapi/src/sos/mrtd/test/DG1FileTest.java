@@ -22,6 +22,7 @@
 package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 
 import junit.framework.TestCase;
 import sos.mrtd.DG1File;
@@ -33,13 +34,13 @@ public class DG1FileTest extends TestCase
 	public DG1FileTest(String name) {
 		super(name);
 	}
-	
+
 	public void testToString() {
 		DG1File dg1File = createTestObject();
 		String expectedResult = "DG1File P<NLDMEULENDIJK<<LOES<ALBERTINE<<<<<<<<<<<<<XX00000000NLD7110195F1108280123456782<<<<<02";
 		assertEquals(dg1File.toString(), expectedResult);
 	}
-	
+
 	public void testReflexive() {
 		try {
 			DG1File dg1File = createTestObject();
@@ -52,7 +53,35 @@ public class DG1FileTest extends TestCase
 			fail(e.toString());
 		}
 	}
-	
+
+	public void testSpecSample() {
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] smithHeader = { 0x61, 0x5B, 0x5F, 0x1F, 0x58 };
+			String smithInfo = "P<ATASMITH<<JOHN<T<<<<<<<<<<<<<<<<<<<<<<<<<<123456789<HMD7406222M10123130121<<<<<<<<<<54";
+			out.write(smithHeader);
+			out.write(smithInfo.getBytes("UTF-8"));
+			out.flush();
+			byte[] bytes = out.toByteArray();
+			ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+			DG1File file = new DG1File(in);
+			assertEquals(file.getMRZInfo().toString().replace("\n", "").trim(), smithInfo);
+			
+			out = new ByteArrayOutputStream();
+			byte[] loesHeader = { 0x61, 0x5B, 0x5F, 0x1F, 0x58 };
+			String loesInfo = "P<NLDMEULENDIJK<<LOES<ALBERTINE<<<<<<<<<<<<<XA00277324NLD7110195F0610010123456782<<<<<08";
+			out.write(loesHeader);
+			out.write(loesInfo.getBytes("UTF-8"));
+			out.flush();
+			bytes = out.toByteArray();
+			in = new ByteArrayInputStream(bytes);
+			file = new DG1File(in);
+			assertEquals(file.getMRZInfo().toString().replace("\n", "").trim(), loesInfo);			
+		} catch (Exception e) {
+			fail(e.toString());
+		}
+	}
+
 	public static DG1File createTestObject() {
 		MRZInfo mrzInfo = MRZInfoTest.createTestObject();
 		return new DG1File(mrzInfo);

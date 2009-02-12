@@ -55,6 +55,30 @@ public class COMFileTest extends TestCase
 		}
 	}
 	
+	public void testSpecSample() {
+		byte[] bytes = { 0x60, /* L */ 0x16,
+							0x5F, 0x01, /* L */ 0x04,
+								'0', '1', '0', '7',
+							0x5F, 0x36, /* L */ 0x06,
+								'0', '4', '0', '0', '0', '0',
+							0x5C, /* L */ 0x04,
+								0x61, 0x75, 0x76, 0x6C };
+		
+		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		try {
+			COMFile file = new COMFile(in);
+			assertEquals(file.getLDSVersion(), "01.07");
+			assertEquals(file.getUnicodeVersion(), "04.00.00");
+			assertEquals(file.getTagList().size(), 4);
+			assertEquals((int)file.getTagList().get(0), COMFile.EF_DG1_TAG);
+			assertEquals((int)file.getTagList().get(1), COMFile.EF_DG2_TAG);
+			assertEquals((int)file.getTagList().get(2), COMFile.EF_DG4_TAG);
+			assertEquals((int)file.getTagList().get(3), COMFile.EF_DG12_TAG);
+		} catch (Exception e) {
+			fail(e.toString());
+		}
+	}
+	
 	public static COMFile createTestObject() {
 		List<Integer> tagList = new ArrayList<Integer>();
 		tagList.add(PassportFile.EF_DG1_TAG);
