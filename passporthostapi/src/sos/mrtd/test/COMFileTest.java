@@ -22,6 +22,7 @@
 package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,8 +44,11 @@ public class COMFileTest extends TestCase
 	}
 	
 	public void testReflexive() {
+		testReflexive(createTestObject());
+	}
+	
+	private void testReflexive(COMFile comFile) {
 		try {
-			COMFile comFile = createTestObject();
 			byte[] encoded = comFile.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			COMFile copy = new COMFile(in);
@@ -85,5 +89,13 @@ public class COMFileTest extends TestCase
 		tagList.add(PassportFile.EF_DG2_TAG);
 		tagList.add(PassportFile.EF_DG15_TAG);
 		return new COMFile("01", "07", "04", "00", "00", tagList);
+	}
+
+	public void testFile(InputStream in) {
+		try {
+			testReflexive(new COMFile(in));
+		} catch (Exception e) {
+			fail(e.toString());
+		}
 	}
 }

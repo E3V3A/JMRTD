@@ -93,21 +93,22 @@ public class DG11File extends DataGroup
 	private String custodyInformation;
 
 	/**
-	 * Constructs a new file.
+	 * Constructs a new file. Use <code>null</code> if data element is not present.
+	 * Use space rather than <code>'<'</code> as separator.
 	 *
-	 * @param fullNamePrimaryIdentifier
-	 * @param fullNamesecondaryIdentifiers
-	 * @param personalNumber
-	 * @param fullDateOfBirth
-	 * @param placeOfBirth
-	 * @param permanentAddress
-	 * @param telephone
-	 * @param profession
-	 * @param title
-	 * @param personalSummary
-	 * @param proofOfCitizenship
-	 * @param otherValidTDNumbers
-	 * @param custodyInformation
+	 * @param fullNamePrimaryIdentifier data element
+	 * @param fullNamesecondaryIdentifiers data element
+	 * @param personalNumber data element
+	 * @param fullDateOfBirth data element
+	 * @param placeOfBirth data element
+	 * @param permanentAddress data element
+	 * @param telephone data element
+	 * @param profession data element
+	 * @param title data element
+	 * @param personalSummary data element
+	 * @param proofOfCitizenship data element
+	 * @param otherValidTDNumbers data element
+	 * @param custodyInformation data element
 	 */
 	public DG11File(String fullNamePrimaryIdentifier,
 			List<String> fullNamesecondaryIdentifiers, String personalNumber,

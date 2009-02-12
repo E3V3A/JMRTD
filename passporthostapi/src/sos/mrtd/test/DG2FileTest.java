@@ -22,6 +22,7 @@
 package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import junit.framework.TestCase;
 import sos.mrtd.DG2File;
@@ -34,8 +35,11 @@ public class DG2FileTest extends TestCase
 	}
 
 	public void testReflexive() {
+		testReflexive(createTestObject());
+	}
+	
+	public void testReflexive(DG2File dg2File) {
 		try {
-			DG2File dg2File = createTestObject();
 			byte[] encoded = dg2File.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG2File copy = new DG2File(in);
@@ -49,5 +53,9 @@ public class DG2FileTest extends TestCase
 	public static DG2File createTestObject() {
 		DG2File result = new DG2File();
 		return result;
+	}
+
+	public void testFile(InputStream in) {
+		testReflexive(new DG2File(in));
 	}
 }

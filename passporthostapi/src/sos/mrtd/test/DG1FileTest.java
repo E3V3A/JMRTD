@@ -23,6 +23,8 @@ package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 
 import junit.framework.TestCase;
 import sos.mrtd.DG1File;
@@ -42,8 +44,11 @@ public class DG1FileTest extends TestCase
 	}
 
 	public void testReflexive() {
+		testReflexive(createTestObject());
+	}
+	
+	public void testReflexive(DG1File dg1File) {
 		try {
-			DG1File dg1File = createTestObject();
 			byte[] encoded = dg1File.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG1File copy = new DG1File(in);
@@ -85,5 +90,13 @@ public class DG1FileTest extends TestCase
 	public static DG1File createTestObject() {
 		MRZInfo mrzInfo = MRZInfoTest.createTestObject();
 		return new DG1File(mrzInfo);
+	}
+
+	public void testFile(InputStream in) {
+		try {
+			testReflexive(new DG1File(in));
+		} catch (IOException e) {
+			fail(e.toString());
+		}
 	}
 }

@@ -30,6 +30,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import sos.tlv.BERTLVObject;
@@ -95,6 +96,11 @@ public class DG2File extends CBEFFDataGroup
 		}
 	}
 
+	/**
+	 * The data group tag.
+	 * 
+	 * @return the tag of the data group
+	 */
 	public int getTag() {
 		return EF_DG2_TAG;
 	}
@@ -209,7 +215,7 @@ public class DG2File extends CBEFFDataGroup
 		if (obj.getClass() != DG2File.class) { return false; }
 		DG2File other = (DG2File)obj;
 		if (faces == null) { return other.faces == null; }
-		return faces.equals(other.faces);
+		return Arrays.equals(getEncoded(), other.getEncoded());
 	}
 	
 	public int hashCode() {

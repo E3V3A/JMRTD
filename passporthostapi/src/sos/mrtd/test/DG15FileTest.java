@@ -22,6 +22,7 @@
 package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
@@ -38,14 +39,17 @@ public class DG15FileTest extends TestCase
 	}
 
 	public void testReflexive() {
-		DG15File dg15File = createTestObject();
+		testReflexive(createTestObject());
+	}
+
+	public void testReflexive(DG15File dg15File) {
 		byte[] encoded = dg15File.getEncoded();
 		ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 		DG15File copy = new DG15File(in);
 		assertEquals(dg15File, copy);
 		assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 	}
-	
+
 	public void testGetPublic() {
 		try {
 			KeyPair keyPair = createTestKeyPair();
@@ -71,5 +75,9 @@ public class DG15FileTest extends TestCase
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
 		keyPairGenerator.initialize(1024);
 		return keyPairGenerator.generateKeyPair();
+	}
+
+	public void testFile(InputStream in) {
+		testReflexive(new DG15File(in));
 	}
 }

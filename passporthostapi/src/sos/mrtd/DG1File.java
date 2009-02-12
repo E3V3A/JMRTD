@@ -22,8 +22,10 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 
 import sos.tlv.BERTLVInputStream;
@@ -44,6 +46,7 @@ public class DG1File extends DataGroup implements Serializable
 	private static final long serialVersionUID = 5091606125728809058L;
 
 	private static final short MRZ_INFO_TAG = 0x5F1F;
+	
 	private MRZInfo mrzInfo;
 
 	/**
@@ -63,9 +66,14 @@ public class DG1File extends DataGroup implements Serializable
 	 * @throws IOException if something goes wrong
 	 */
 	public DG1File(InputStream in) throws IOException {
-		readFromInputStream(in);
+		read(in);
 	}
 
+	/**
+	 * The data group tag.
+	 * 
+	 * @return the tag of the data group
+	 */
 	public int getTag() {
 		return EF_DG1_TAG;
 	}
@@ -99,17 +107,7 @@ public class DG1File extends DataGroup implements Serializable
 		return 3 * mrzInfo.hashCode() + 57;
 	}
 
-	private void writeObject(java.io.ObjectOutputStream out)
-	throws IOException {
-		out.write(getEncoded());
-	}
-
-	private void readObject(java.io.ObjectInputStream in)
-	throws IOException, ClassNotFoundException {
-		readFromInputStream(in);
-	}
-	
-	private void readFromInputStream(InputStream in) throws IOException {
+	private void read(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
@@ -119,23 +117,41 @@ public class DG1File extends DataGroup implements Serializable
 		this.mrzInfo = new MRZInfo(tlvIn);
 	}
 
-	public byte[] getEncoded() {
+	private void write(OutputStream out) throws IOException {
 		if (isSourceConsistent) {
-			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
+			out.write(sourceObject);
+			out.flush();
 		}
+
 		try {
 			BERTLVObject ef0101 =
 				new BERTLVObject(EF_DG1_TAG,
 						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
-			
+
 			ef0101.reconstructLength();
 			byte[] ef0101bytes = ef0101.getEncoded();
-			sourceObject = ef0101bytes; // FIXME: WAS: ef0101;
+			sourceObject = ef0101bytes;
 			isSourceConsistent = true;
-			return ef0101bytes;
+			out.write(ef0101bytes);
 		} catch (Exception e) {
 			e.printStackTrace();
-			return null;
 		}
+	}
+
+	/**
+	 * Gets the contents of this file as byte array,
+	 * includes the ICAO tag and length.
+	 * 
+	 * @return a byte array containing the file
+	 */
+	public byte[] getEncoded() {
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			write(out);
+			out.flush();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
+		return out.toByteArray();
 	}
 }

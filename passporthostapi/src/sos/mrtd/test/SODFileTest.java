@@ -22,6 +22,7 @@
 package sos.mrtd.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -53,14 +54,17 @@ public class SODFileTest extends TestCase {
 	/** We need this for SHA256 (and probably more). */
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
-	
+
 	public SODFileTest(String name) {
 		super(name);
 	}
-	
+
 	public void testReflexive() {
+		testReflexive(createTestObject());
+	}
+
+	public void testReflexive(SODFile sodFile) {
 		try {
-			SODFile sodFile = createTestObject();
 			byte[] encoded = sodFile.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			SODFile copy = new SODFile(in);
@@ -70,11 +74,11 @@ public class SODFileTest extends TestCase {
 			fail(e.toString());
 		}
 	}
-	
+
 	public static SODFile createTestObject() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
-			
+
 			Date today = Calendar.getInstance().getTime();
 			DG1File dg1File = DG1FileTest.createTestObject();
 			byte[] dg1Bytes = dg1File.getEncoded();
@@ -116,5 +120,13 @@ public class SODFileTest extends TestCase {
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
 		keyPairGenerator.initialize(1024);
 		return keyPairGenerator.generateKeyPair();
+	}
+
+	public void testFile(InputStream in) {
+		try {
+			testReflexive(new SODFile(in));
+		} catch (Exception e) {
+			fail(e.toString());
+		}
 	}
 }

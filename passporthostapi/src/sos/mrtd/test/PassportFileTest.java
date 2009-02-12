@@ -1,0 +1,132 @@
+/*
+ *  JMRTD Tests.
+ *
+ *  Copyright (C) 2009  The JMRTD team
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *  
+ *  $Id: $
+ */
+
+package sos.mrtd.test;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+
+import junit.framework.TestCase;
+import sos.mrtd.PassportFile;
+import sos.tlv.BERTLVInputStream;
+
+public class PassportFileTest extends TestCase {
+
+	/**
+	 * Files containing individual MRTD files (such as COM, DG1, ..., SOd) or
+	 * zipped collections of these.
+	 */
+	private static final String[] TEST_FILES = {
+		// "/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
+	};
+	
+	private COMFileTest comFileTest;
+	private DG1FileTest dg1FileTest;
+	private DG2FileTest dg2FileTest;
+	private DG11FileTest dg11FileTest;
+	private DG15FileTest dg15FileTest;
+	private SODFileTest sodFileTest;
+	
+	public PassportFileTest(String name) {
+		super(name);
+		comFileTest = new COMFileTest(name);
+		dg1FileTest = new DG1FileTest(name);
+		dg2FileTest = new DG2FileTest(name);
+		dg11FileTest = new DG11FileTest(name);
+		dg15FileTest = new DG15FileTest(name);
+		sodFileTest = new SODFileTest(name);
+	}
+	
+	public void testFiles() {
+		for (String fileName: TEST_FILES) {
+			try {
+				File file = new File(fileName);
+				testFile(file);
+			} catch (Exception e) {
+				fail(e.toString());
+			}
+		}
+	}
+	
+	private void testFile(File file) {
+		ZipFile zipFile = null;
+	
+		try {
+			zipFile = new ZipFile(file);
+		} catch (Exception e) {
+			/* So, it's not a zip file. */
+			zipFile = null;
+		}
+
+		if (zipFile == null) {
+			try {
+				testPassportFile(new FileInputStream(file));
+				return;
+			} catch (Exception e) {
+				fail(e.toString());
+			}
+		} else {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				if (entry == null) { break; } // FIXME: fail in this case?
+				try {
+					testPassportFile(zipFile.getInputStream(entry));
+				} catch (Exception e) {
+					fail(e.toString());
+				}
+			}
+		}
+	}
+	
+	private void testPassportFile(InputStream in) throws IOException {
+		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 256));
+		tlvIn.mark(128);
+		int tag = tlvIn.readTag();
+		tlvIn.reset(); /* NOTE: Unread the tag... */
+		switch (tag) {
+		case PassportFile.EF_COM_TAG: comFileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG1_TAG: dg1FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG2_TAG: dg2FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG3_TAG: break;
+		case PassportFile.EF_DG4_TAG: break;
+		case PassportFile.EF_DG5_TAG: break;
+		case PassportFile.EF_DG6_TAG: break;
+		case PassportFile.EF_DG7_TAG: break;
+		case PassportFile.EF_DG8_TAG: break;
+		case PassportFile.EF_DG9_TAG: break;
+		case PassportFile.EF_DG10_TAG: break;
+		case PassportFile.EF_DG11_TAG: dg11FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG12_TAG: break;
+		case PassportFile.EF_DG13_TAG: break;
+		case PassportFile.EF_DG14_TAG: break;
+		case PassportFile.EF_DG15_TAG: dg15FileTest.testFile(tlvIn); break;
+		case PassportFile.EF_DG16_TAG: break;
+		case PassportFile.EF_SOD_TAG: sodFileTest.testFile(tlvIn); break;
+		}
+	}
+}

@@ -56,17 +56,6 @@ public abstract class DataGroup extends PassportFile
 		}
 	}
 
-	/**
-	 * Constructor only visible to the other
-	 * classes in this package.
-	 * 
-	 * @param object datagroup contents.
-	 */
-//	DataGroup(BERTLVObject object) {
-//		sourceObject = object;
-//		isSourceConsistent = true;
-//	}
-
 	public abstract byte[] getEncoded();
 
 	/**

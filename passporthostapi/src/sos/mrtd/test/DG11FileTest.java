@@ -23,6 +23,8 @@ package sos.mrtd.test;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -37,16 +39,20 @@ public class DG11FileTest extends TestCase
 	public DG11FileTest(String name) {
 		super(name);
 	}
-	
+
 	public void testToString() {
 		DG11File dg1File = createTestObject();
 		String expectedResult = "DG11File";
 		assertEquals(dg1File.toString(), expectedResult);
 	}
-	
+
 	public void testReflexive() {
+		testReflexive(createTestObject());
+	}
+
+	public void testReflexive(DG11File dg11File) {
 		try {
-			DG11File dg11File = createTestObject();
+
 			byte[] encoded = dg11File.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG11File copy = new DG11File(in);
@@ -56,22 +62,20 @@ public class DG11FileTest extends TestCase
 			fail(e.toString());
 		}
 	}
-	
+
+	/**
+	 * Ronny is a fictional character.
+	 * Any resemblance to living persons is pure coincidence.
+	 */
 	public void testRonny() {
 		byte[] bytes = {
-			0x6b,
-				/* L = 47 */ 0x2f,
-				/* Tag list tag */ 0x5c,
-				/* L = 2 (i.e., 1 tag) */ 02,
-					0x5f, 0x0E,
-				/* Full name tag */ 0x5f, 0x0E,
-				/* L = 40 */ 0x28,
-				/* ASCII, full name, 40 chars, "WICHERS<SCHREUR<<RONALUS<JOHANNES<MARIA" */
-				0x57, 0x49, 0x43, 0x48, 0x45, 0x52, 0x53, 0x3c,
-				0x53, 0x43, 0x48, 0x52, 0x45, 0x55, 0x52, 0x3c,
-				0x3c, 0x52, 0x4f, 0x4e, 0x41, 0x4c, 0x44, 0x55,
-				0x53, 0x3c, 0x4a, 0x4f, 0x48, 0x41, 0x4e, 0x4e,
-				0x45, 0x53, 0x3c, 0x4d, 0x41, 0x52, 0x49, 0x41
+				0x6B, 0x2F, 0x5C, 0x02, 0x5F, 0x0E, 0x5F, 0x0E,
+				0x28, 0x57, 0x49, 0x43, 0x48, 0x45, 0x52, 0x53,
+				0x3C, 0x53, 0x43, 0x48, 0x52, 0x45, 0x55, 0x52,
+				0x3C, 0x3C, 0x52, 0x4F, 0x4E, 0x41, 0x4C, 0x44,
+				0x55, 0x53, 0x3C, 0x4A, 0x4F, 0x48, 0x41, 0x4E,
+				0x4E, 0x45, 0x53, 0x3C, 0x4D, 0x41, 0x52, 0x49,
+				0x41
 		};
 
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
@@ -87,26 +91,26 @@ public class DG11FileTest extends TestCase
 			fail(e.toString());
 		}
 	}
-	
+
 	public void testSpecSample() {
 		byte[] bytes = {
-			0x6B, /* L */ 0x63,
+				0x6B, /* L */ 0x63,
 				0x5C, /* L = 10, i.e. 5 tags */ 0x0A,
-					0x5F, 0x0E,
-					0x5F, 0x11,
-					0x5F, 0x42,
-					0x5F, 0x12,
-					0x5F, 0x13,
+				0x5F, 0x0E,
+				0x5F, 0x11,
+				0x5F, 0x42,
+				0x5F, 0x12,
+				0x5F, 0x13,
 				0x5F, 0x0E, /* L */ 0x0D,
-					'S', 'M', 'I', 'T', 'H', '<', '<', 'J', 'O', 'H', 'N', '<', 'J',
+				'S', 'M', 'I', 'T', 'H', '<', '<', 'J', 'O', 'H', 'N', '<', 'J',
 				0x5F, 0x11, /* L */ 0x0A,
-					'A', 'N', 'Y', 'T', 'O', 'W', 'N', '<', 'M', 'N',
+				'A', 'N', 'Y', 'T', 'O', 'W', 'N', '<', 'M', 'N',
 				0x5F, 0x42, /* L */ 0x17,
-					'1', '2', '3', ' ', 'M', 'A', 'P', 'L', 'E', ' ', 'R', 'D', '<', 'A', 'N', 'Y', 'T', 'O', 'W', 'N', '<', 'M', 'N',
+				'1', '2', '3', ' ', 'M', 'A', 'P', 'L', 'E', ' ', 'R', 'D', '<', 'A', 'N', 'Y', 'T', 'O', 'W', 'N', '<', 'M', 'N',
 				0x5F, 0x12, /* L */ 0x0E,
-					'1', '-', '6', '1', '2', '-', '5', '5', '5', '-', '1', '2', '1', '2',
+				'1', '-', '6', '1', '2', '-', '5', '5', '5', '-', '1', '2', '1', '2',
 				0x5F, 0x13, /* L */ 0x0C,
-					'T', 'R', 'A', 'V', 'E', 'L', '<', 'A', 'G', 'E', 'N', 'T'
+				'T', 'R', 'A', 'V', 'E', 'L', '<', 'A', 'G', 'E', 'N', 'T'
 		};
 
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
@@ -130,7 +134,7 @@ public class DG11FileTest extends TestCase
 			fail(e.toString());
 		}
 	}
-	
+
 	public static DG11File createTestObject() {
 		String fullNamePrimaryIdentifier = "";
 		List<String> fullNamesecondaryIdentifiers = new ArrayList<String>();
@@ -148,10 +152,18 @@ public class DG11FileTest extends TestCase
 		List<String> otherValidTDNumbers = new ArrayList<String>();
 		String custodyInformation = "";
 		return new DG11File(fullNamePrimaryIdentifier,
-				 fullNamesecondaryIdentifiers,  personalNumber,
-				 fullDateOfBirth,  placeOfBirth,  permanentAddress,
-				 telephone,  profession,  title,
-				 personalSummary,  proofOfCitizenship,
-				 otherValidTDNumbers,  custodyInformation);
+				fullNamesecondaryIdentifiers,  personalNumber,
+				fullDateOfBirth,  placeOfBirth,  permanentAddress,
+				telephone,  profession,  title,
+				personalSummary,  proofOfCitizenship,
+				otherValidTDNumbers,  custodyInformation);
+	}
+
+	public void testFile(InputStream in) {
+		try {
+			testReflexive(new DG11File(in));
+		} catch (IOException ioe) {
+			fail(ioe.toString());
+		}
 	}
 }
