@@ -248,6 +248,8 @@
 			<!-- package name="sos.util" / --> <!-- Not used in public interface -->
 			
 		</javadoc>
+	
+		<zip destfile="jmrtd-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
 	</target>
 	
 	<!-- Conditional stuff is set below -->
