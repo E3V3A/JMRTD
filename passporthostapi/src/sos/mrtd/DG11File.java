@@ -147,7 +147,6 @@ public class DG11File extends DataGroup
 			tag = ((hi & 0xFF) << 8) | (lo & 0xFF);
 			tagList[i] = tag;
 		}
-		System.out.println("DEBUG: tagCount = " + tagCount);
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);
 		}
@@ -156,7 +155,7 @@ public class DG11File extends DataGroup
 	private void readField(int fieldTag, BERTLVInputStream tlvIn) throws IOException {
 		int tag = tlvIn.readTag();
 		if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
-		int length = tlvIn.readLength();
+		tlvIn.readLength();
 		byte[] value = tlvIn.readValue();
 		switch (tag) {
 		case FULL_NAME_TAG: parseFullName(new String(value)); break;
