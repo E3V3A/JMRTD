@@ -42,7 +42,7 @@ public class DG11FileTest extends TestCase
 
 	public void testToString() {
 		DG11File dg1File = createTestObject();
-		String expectedResult = "DG11File";
+		String expectedResult = "DG11File [, [], , 711019, [], [], , , , , , [], ]";
 		assertEquals(dg1File.toString(), expectedResult);
 	}
 
@@ -52,13 +52,14 @@ public class DG11FileTest extends TestCase
 
 	public void testReflexive(DG11File dg11File) {
 		try {
-
 			byte[] encoded = dg11File.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG11File copy = new DG11File(in);
+			System.out.println("DEBUG: copy = " + copy);
 			assertEquals(dg11File, copy);
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}
