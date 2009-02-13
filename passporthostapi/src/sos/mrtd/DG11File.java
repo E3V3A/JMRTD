@@ -23,7 +23,6 @@
 package sos.mrtd;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -34,17 +33,14 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
 
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
-import sos.util.Hex;
 
 /**
  * File structure for the EF_DG11 file.

@@ -106,27 +106,38 @@ public class COMFile extends PassportFile
 				throw new IOException("Wrong tag!");
 			}
 			int length = tlvIn.readLength();
-			byte[] valueBytes = tlvIn.readValue();
 
-			BERTLVObject object = new BERTLVObject(tag, valueBytes);
-
-			BERTLVObject versionLDSObject = object.getSubObject(VERSION_LDS_TAG);
-			BERTLVObject versionUnicodeObject = object.getSubObject(VERSION_UNICODE_TAG);
-			BERTLVObject tagListObject = object.getSubObject(TAG_LIST_TAG);
-			byte[] versionLDSBytes = (byte[])versionLDSObject.getValue();
-			if (versionLDSBytes.length != 4) {
+			int versionLDSTag = tlvIn.readTag();
+			if (versionLDSTag != VERSION_LDS_TAG) {
+				throw new IllegalArgumentException("Excepected VERSION_LDS_TAG (" + Integer.toHexString(VERSION_LDS_TAG) + "), found " + Integer.toHexString(versionLDSTag));
+			}
+			int versionLDSLength = tlvIn.readLength();
+			if (versionLDSLength != 4) {
 				throw new IllegalArgumentException("Wrong length of LDS version object");
 			}
+			byte[] versionLDSBytes = tlvIn.readValue();
 			versionLDS = new String(versionLDSBytes, 0, 2);
 			updateLevelLDS = new String(versionLDSBytes, 2, 2);
-			byte[] versionUnicodeBytes = (byte[])versionUnicodeObject.getValue();
-			if (versionUnicodeBytes.length != 6) {
-				throw new IllegalArgumentException("Wrong length of unicode version object");
+
+			int versionUnicodeTag = tlvIn.readTag();
+			if (versionUnicodeTag != VERSION_UNICODE_TAG) {
+				throw new IllegalArgumentException("Expected VERSION_UNICODE_TAG (" + Integer.toHexString(VERSION_UNICODE_TAG) + "), found " + Integer.toHexString(versionUnicodeTag));
 			}
+			int versionUnicodeLength = tlvIn.readLength();
+			if (versionUnicodeLength != 6) {
+				throw new IllegalArgumentException("Wrong length of LDS version object");
+			}
+			byte[] versionUnicodeBytes = tlvIn.readValue();
 			majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
 			minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
 			releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
-			byte[] tagBytes = (byte[])tagListObject.getValue();
+	
+			int tagListTag = tlvIn.readTag();
+			if (tagListTag != TAG_LIST_TAG) {
+				throw new IllegalArgumentException("Expected TAG_LIST_TAG (" + Integer.toHexString(TAG_LIST_TAG) + "), found " + Integer.toHexString(tagListTag));
+			}
+			int tagListLength = tlvIn.readLength();
+			byte[] tagBytes = tlvIn.readValue();
 			tagList = new ArrayList<Integer>();
 			for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }
 		} catch (IOException ioe) {

@@ -55,7 +55,6 @@ public class DG11FileTest extends TestCase
 			byte[] encoded = dg11File.getEncoded();
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG11File copy = new DG11File(in);
-			System.out.println("DEBUG: copy = " + copy);
 			assertEquals(dg11File, copy);
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 		} catch (Exception e) {
