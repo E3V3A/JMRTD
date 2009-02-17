@@ -337,9 +337,11 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
 					break;
-				default: System.out.println("WARNING: datagroup not yet supported " + Hex.shortToHexString(fid));
+				default:
+					JOptionPane.showMessageDialog(getContentPane(), "File not supported", "File " + Integer.toHexString(fid) + " not supported!", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (Exception e) {
+				JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "Exception reading file " + Integer.toHexString(fid) + ": " + e.toString(), JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 		}
@@ -353,7 +355,7 @@ public class PassportFrame extends JFrame
 				!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
 						mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
 						mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
-			System.out.println("WARNING: MRZ used in BAC differs from MRZ in DG1!");
+			JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "MRZ used in BAC differs from MRZ in DG1!", JOptionPane.WARNING_MESSAGE);
 		}
 		final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
 		final MRZPanel mrzPanel = new MRZPanel(mrzInfo);

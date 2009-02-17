@@ -55,8 +55,6 @@ import sos.data.Gender;
  */
 public class FaceInfo
 {
-	private static boolean DEBUG = true;
-	
    /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
     /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
@@ -282,11 +280,9 @@ public class FaceInfo
 
 	   /* Temporarily fix width and height if 0. */
 	   if (width <= 0) {
-		   System.err.println("WARNING: FaceInfo: width = " + width);
 		   width = 800;
 	   }
 	   if (height <= 0) {
-		   System.err.println("WARNING: FaceInfo: height = " + height);
 		   height = 600;
 	   }
 
@@ -387,7 +383,6 @@ public class FaceInfo
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
 			   /* NOTE: this reader doesn't work? Try next one... */
-			   debug("ignoring " + e);
 			   continue;
 		   }
 	   }
@@ -436,12 +431,12 @@ public class FaceInfo
 			   offset += bytesRead;
 			   stepSize = (int)(base * (double)stepSize);
 		   } catch (IOException ioe) {
-			   debug("ignoring IOException " + ioe.getClass());
+			   /* NOTE: ignoring expected exception in image decoding... */
 		   }
 		   try {
 			   resultImage = reader.read(0, pm);
 		   } catch (Throwable e) {
-			   debug("ignoring Throwable " + e.getClass());
+			   /* NOTE: ignoring expected exception in image decoding... */
 		   }
 		   if (resultImage != null) {
 			   image = resultImage;
@@ -452,8 +447,8 @@ public class FaceInfo
    }
 
    /**
-    * FIXME needs testing
-    * 
+    * Writes image to output stream.
+    *
     * @param image
     * @param out
     * @param mimeType
@@ -461,7 +456,6 @@ public class FaceInfo
     */
    private void writeImage(BufferedImage image, OutputStream out, String mimeType)
    throws IOException {
-	   debug("writing mimeType = " + mimeType);
 	   Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
 	   if (!writers.hasNext()) {
 		   throw new IOException("No writers for \"" + mimeType + "\"");
@@ -553,29 +547,6 @@ public class FaceInfo
 	   }
 	   return out.toString();
    }
-   
-//   private String genderToString() {
-//      switch(gender) {
-//      case GENDER_UNSPECIFIED: return "unspecified";
-//      case GENDER_MALE: return "male";
-//      case GENDER_FEMALE: return "female";
-//      }
-//      return "unknown";
-//   }
-   
-//   private String eyeColorToString() {
-//      switch(eyeColor) {
-//      case EYE_COLOR_UNSPECIFIED: return "unspecified";
-//      case EYE_COLOR_BLACK: return "black";
-//      case EYE_COLOR_BLUE: return "blue";
-//      case EYE_COLOR_BROWN: return "brown";
-//      case EYE_COLOR_GRAY: return "gray";
-//      case EYE_COLOR_GREEN: return "green";
-//      case EYE_COLOR_MULTI_COLORED: return "multi-colored";
-//      case EYE_COLOR_PINK: return "pink";
-//      }
-//      return "unknown";
-//   }
    
    private String hairColorToString() {
 	   switch(hairColor) {
@@ -988,11 +959,5 @@ public class FaceInfo
 		   out.append(")");
 		   return out.toString();
 	   }
-   }
-
-   /* DEBUGGING STUFF BELOW */
-
-   private void debug(Object obj) {
-	   if (DEBUG) { System.out.println("DEBUG: " + obj.toString()); }
    }
 }

@@ -63,12 +63,12 @@ abstract class CBEFFDataGroup extends DataGroup
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
 			int bioInfoGroupTemplateTag = tlvIn.readTag();
 			if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
-				throw new IllegalArgumentException("Expected tag 0x7F61 in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
+				throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
 			}
 			tlvIn.readLength();
 			int bioInfoCountTag = tlvIn.readTag();
 			if (bioInfoCountTag != BIOMETRIC_INFO_COUNT_TAG) { /* 02 */
-				throw new IllegalArgumentException("Expected tag 0x02 in CBEFF structure, found " + Integer.toHexString(bioInfoCountTag));
+				throw new IllegalArgumentException("Expected tag BIOMETRIC_INFO_COUNT_TAG (" + Integer.toHexString(BIOMETRIC_INFO_COUNT_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoCountTag));
 			}
 			int tlvBioInfoCountLength = tlvIn.readLength();
 			if (tlvBioInfoCountLength != 1) {
@@ -76,7 +76,7 @@ abstract class CBEFFDataGroup extends DataGroup
 			}
 			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
 			for (int i = 0; i < bioInfoCount; i++) {
-				readBiometricInformationTemplate(tlvIn);
+				readBiometricInformationTemplate(tlvIn, i);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -85,15 +85,19 @@ abstract class CBEFFDataGroup extends DataGroup
 		isSourceConsistent = false;
 	}
 
-	private void readBiometricInformationTemplate(BERTLVInputStream tlvIn) throws IOException {
+	private void readBiometricInformationTemplate(BERTLVInputStream tlvIn, int templateIndex) throws IOException {
 		int bioInfoTemplateTag = tlvIn.readTag();
 		if (bioInfoTemplateTag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
-			throw new IllegalArgumentException("Expected tag 7F60, found " + Integer.toHexString(bioInfoTemplateTag));
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(bioInfoTemplateTag));
 		}
 		tlvIn.readLength();
 		
 		/* We'll just skip this header for now. */
 		int bioHeaderTemplateTag = tlvIn.readTag(); /* A1, A2, ... */
+		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
+		if (bioHeaderTemplateTag != expectedBioHeaderTemplateTag) {
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(bioHeaderTemplateTag));
+		}
 		int bioHeaderTemplateLength = tlvIn.readLength();
 		tlvIn.skip(bioHeaderTemplateLength);
 		
@@ -105,7 +109,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		int bioDataBlockTag = tlvIn.readTag();
 		if (bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */ &&
 				bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT /* 7F2E */) {
-			throw new IllegalArgumentException("Expected tag 0x5F2E or 0x7F2E, found " + Integer.toHexString(bioDataBlockTag));
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_DATA_BLOCK_TAG (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG) + ") or BIOMETRIC_DATA_BLOCK_TAG_ALT (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG_ALT) + "), found " + Integer.toHexString(bioDataBlockTag));
 		}
 		int length = tlvIn.readLength();
 		readBiometricData(tlvIn, length);
@@ -113,7 +117,8 @@ abstract class CBEFFDataGroup extends DataGroup
 
 	/**
 	 * Reads the biometric data block. This method should be implemented by concrete
-	 * subclasses. The 5F2E or 7F2E tag and the length are already read.
+	 * subclasses (DG2 - DG4 structures). The biometric data block tag (5F2E or 7F2E)
+	 * and the length are already read.
 	 * 
 	 * @param in the input stream positioned so that biometric data block tag and length are already read
 	 * @param length the length

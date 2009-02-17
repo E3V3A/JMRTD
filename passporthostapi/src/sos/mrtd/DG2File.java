@@ -81,7 +81,6 @@ public class DG2File extends CBEFFDataGroup
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
 		if (!in.markSupported()) {
-			System.out.println("DEBUG: WARNING: buffering in (" + in.getClass().getSimpleName() + ") in DG2File");
 			in = new BufferedInputStream(in, valueLength + 1);
 		}
 		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
@@ -140,12 +139,10 @@ public class DG2File extends CBEFFDataGroup
 
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
-//			return sourceObject.getEncoded();
 			return sourceObject;
 		}
 		try {
 			/* FIXME: some of this should be moved to CBEFFDataGroup! */
-			/* FIXME: Consider using a BERTLVOutputStream instead of BERTLVObject here? */
 			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
 							(byte)faces.size()));
@@ -179,7 +176,7 @@ public class DG2File extends CBEFFDataGroup
 			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
 			dg2.reconstructLength();
 			byte[] dg2bytes = dg2.getEncoded();
-			sourceObject = dg2bytes; // FIXME: WAS: dg2
+			sourceObject = dg2bytes;
 			isSourceConsistent = true;
 			return dg2.getEncoded();
 		} catch (Exception ioe) {
@@ -217,7 +214,7 @@ public class DG2File extends CBEFFDataGroup
 		if (faces == null) { return other.faces == null; }
 		return Arrays.equals(getEncoded(), other.getEncoded());
 	}
-	
+
 	public int hashCode() {
 		if (faces == null) { return 7 * 0x000FACE5 + 17; } /* FIXME: never happens :) */
 		return 7 * faces.hashCode() + 17;

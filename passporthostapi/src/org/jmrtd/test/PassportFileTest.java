@@ -136,7 +136,7 @@ public class PassportFileTest extends TestCase {
 		case PassportFile.EF_SOD_TAG: log(name + " -> SOD"); sodFileTest.testFile(tlvIn); break;
 		}
 	}
-	
+
 	private void log(String txt) {
 		System.out.println("DEBUG: Testing: " + txt);
 	}

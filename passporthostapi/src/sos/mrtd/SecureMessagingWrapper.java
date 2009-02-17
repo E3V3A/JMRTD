@@ -343,7 +343,6 @@ public class SecureMessagingWrapper implements APDUWrapper
       byte[] ciphertext = new byte[length];
       in.read(ciphertext, 0, length);
       byte[] paddedData = cipher.doFinal(ciphertext);
-      // System.out.println("DEBUG: paddedData = " + Hex.bytesToHexString(paddedData));
       byte[] data = Util.unpad(paddedData);
       return data;
    }

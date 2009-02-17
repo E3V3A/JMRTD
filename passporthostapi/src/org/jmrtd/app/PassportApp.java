@@ -43,8 +43,6 @@ import java.util.Properties;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -69,7 +67,6 @@ import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.smartcards.APDUFingerprint;
-import sos.smartcards.APDUListener;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
@@ -77,7 +74,6 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
-import sos.util.Hex;
 import sos.util.Icons;
 
 /**
@@ -90,7 +86,6 @@ import sos.util.Icons;
  */
 public class PassportApp  implements PassportListener
 {
-	private static final boolean APDU_DEBUG = false;
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
 	public static final File JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd");
@@ -197,14 +192,6 @@ public class PassportApp  implements PassportListener
 	}
 
 	private void readPassport(PassportService service) throws CardServiceException {
-		if (APDU_DEBUG) {
-			service.addAPDUListener(new APDUListener() {
-				public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-					System.out.println("DEBUG: capdu = " + Hex.bytesToHexString(capdu.getBytes()));
-					System.out.println("DEBUG: rapdu = " + Hex.bytesToHexString(rapdu.getBytes()));
-				}
-			});
-		}
 		try {
 			service.open();
 		} catch (Exception e) {

@@ -90,7 +90,6 @@ public class FacePreviewPanel extends JPanel
 			revalidate(); repaint();
 		} catch (IOException ioe) {
 			/* We'll just skip this image then. */
-			System.out.println("DEBUG: ignoring " + ioe);
 		}	
 	}
 
