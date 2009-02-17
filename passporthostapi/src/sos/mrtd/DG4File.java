@@ -22,6 +22,7 @@
 
 package sos.mrtd;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -44,7 +45,9 @@ public class DG4File extends CBEFFDataGroup
 	}
 
 	public byte[] getEncoded() {
-		// TODO Auto-generated method stub
+		if (isSourceConsistent) {
+			return sourceObject;
+		}
 		return null;
 	}
 
@@ -52,8 +55,11 @@ public class DG4File extends CBEFFDataGroup
 		return EF_DG4_TAG;
 	}
 
-	protected void readBiometricData(InputStream in, int length)
-	throws IOException {
+	protected void readBiometricData(InputStream in, int length) throws IOException {
+		DataInputStream dataIn = new DataInputStream(in);
+		sourceObject = new byte[length];
+		dataIn.readFully(sourceObject);
+		isSourceConsistent = true;
 	}
 
 	/**
@@ -64,6 +70,4 @@ public class DG4File extends CBEFFDataGroup
 	public String toString() {
 		return "DG4File";
 	}
-
-
 }
