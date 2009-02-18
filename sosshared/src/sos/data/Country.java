@@ -6,1032 +6,340 @@ package sos.data;
 
 /**
  * ISO 3166 country codes.
- * Tables based on Wikipedia information.
+ * Table based on Wikipedia information.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public enum Country
+public class Country
 {
-	AW { int toInt() { return 0x533; } },
-	AF { int toInt() { return 0x004; } },
-	AO { int toInt() { return 0x024; } },
-	AI { int toInt() { return 0x660; } },
-	AX { int toInt() { return 0x248; } },
-	AL { int toInt() { return 0x008; } },
-	AD { int toInt() { return 0x020; } },
-	AN { int toInt() { return 0x530; } },
-	AE { int toInt() { return 0x784; } },
-	AR { int toInt() { return 0x032; } },
-	AM { int toInt() { return 0x051; } },
-	AS { int toInt() { return 0x016; } },
-	AQ { int toInt() { return 0x010; } },
-	TF { int toInt() { return 0x260; } },
-	AG { int toInt() { return 0x028; } },
-	AU { int toInt() { return 0x036; } },
-	AT { int toInt() { return 0x040; } },
-	AZ { int toInt() { return 0x031; } },
-	BI { int toInt() { return 0x108; } },
-	BE { int toInt() { return 0x056; } },
-	BJ { int toInt() { return 0x204; } },
-	BF { int toInt() { return 0x854; } },
-	BD { int toInt() { return 0x050; } },
-	BG { int toInt() { return 0x100; } },
-	BH { int toInt() { return 0x048; } },
-	BS { int toInt() { return 0x044; } },
-	BA { int toInt() { return 0x070; } },
-	BL { int toInt() { return 0x652; } },
-	BY { int toInt() { return 0x112; } },
-	BZ { int toInt() { return 0x084; } },
-	BM { int toInt() { return 0x060; } },
-	BO { int toInt() { return 0x068; } },
-	BR { int toInt() { return 0x076; } },
-	BB { int toInt() { return 0x052; } },
-	BN { int toInt() { return 0x096; } },
-	BT { int toInt() { return 0x064; } },
-	BV { int toInt() { return 0x074; } },
-	BW { int toInt() { return 0x072; } },
-	CF { int toInt() { return 0x140; } },
-	CA { int toInt() { return 0x124; } },
-	CC { int toInt() { return 0x166; } },
-	CH { int toInt() { return 0x756; } },
-	CL { int toInt() { return 0x152; } },
-	CN { int toInt() { return 0x156; } },
-	CI { int toInt() { return 0x384; } },
-	CM { int toInt() { return 0x120; } },
-	CD { int toInt() { return 0x180; } },
-	CG { int toInt() { return 0x178; } },
-	CK { int toInt() { return 0x184; } },
-	CO { int toInt() { return 0x170; } },
-	KM { int toInt() { return 0x174; } },
-	CV { int toInt() { return 0x132; } },
-	CR { int toInt() { return 0x188; } },
-	CU { int toInt() { return 0x192; } },
-	CX { int toInt() { return 0x162; } },
-	KY { int toInt() { return 0x136; } },
-	CY { int toInt() { return 0x196; } },
-	CZ { int toInt() { return 0x203; } },
-	DE { int toInt() { return 0x276; } },
-	DJ { int toInt() { return 0x262; } },
-	DM { int toInt() { return 0x212; } },
-	DK { int toInt() { return 0x208; } },
-	DO { int toInt() { return 0x214; } },
-	DZ { int toInt() { return 0x012; } },
-	EC { int toInt() { return 0x218; } },
-	EG { int toInt() { return 0x818; } },
-	ER { int toInt() { return 0x232; } },
-	EH { int toInt() { return 0x732; } },
-	ES { int toInt() { return 0x724; } },
-	EE { int toInt() { return 0x233; } },
-	ET { int toInt() { return 0x231; } },
-	FI { int toInt() { return 0x246; } },
-	FJ { int toInt() { return 0x242; } },
-	FK { int toInt() { return 0x238; } },
-	FR { int toInt() { return 0x250; } },
-	FO { int toInt() { return 0x234; } },
-	FM { int toInt() { return 0x583; } },
-	GA { int toInt() { return 0x266; } },
-	GB { int toInt() { return 0x826; } },
-	GE { int toInt() { return 0x268; } },
-	GG { int toInt() { return 0x831; } },
-	GH { int toInt() { return 0x288; } },
-	GN { int toInt() { return 0x324; } },
-	GI { int toInt() { return 0x292; } },
-	GP { int toInt() { return 0x312; } },
-	GM { int toInt() { return 0x270; } },
-	GW { int toInt() { return 0x624; } },
-	GQ { int toInt() { return 0x226; } },
-	GR { int toInt() { return 0x300; } },
-	GD { int toInt() { return 0x308; } },
-	GL { int toInt() { return 0x304; } },
-	GT { int toInt() { return 0x320; } },
-	GF { int toInt() { return 0x254; } },
-	GU { int toInt() { return 0x316; } },
-	GY { int toInt() { return 0x328; } },
-	HK { int toInt() { return 0x344; } },
-	HM { int toInt() { return 0x334; } },
-	HN { int toInt() { return 0x340; } },
-	HR { int toInt() { return 0x191; } },
-	HT { int toInt() { return 0x332; } },
-	HU { int toInt() { return 0x348; } },
-	ID { int toInt() { return 0x360; } },
-	IM { int toInt() { return 0x833; } },
-	IN { int toInt() { return 0x356; } },
-	IO { int toInt() { return 0x086; } },
-	IE { int toInt() { return 0x372; } },
-	IR { int toInt() { return 0x364; } },
-	IQ { int toInt() { return 0x368; } },
-	IS { int toInt() { return 0x352; } },
-	IL { int toInt() { return 0x376; } },
-	IT { int toInt() { return 0x380; } },
-	JM { int toInt() { return 0x388; } },
-	JE { int toInt() { return 0x832; } },
-	JO { int toInt() { return 0x400; } },
-	JP { int toInt() { return 0x392; } },
-	KZ { int toInt() { return 0x398; } },
-	KE { int toInt() { return 0x404; } },
-	KG { int toInt() { return 0x417; } },
-	KH { int toInt() { return 0x116; } },
-	KI { int toInt() { return 0x296; } },
-	KN { int toInt() { return 0x659; } },
-	KR { int toInt() { return 0x410; } },
-	KW { int toInt() { return 0x414; } },
-	LA { int toInt() { return 0x418; } },
-	LB { int toInt() { return 0x422; } },
-	LR { int toInt() { return 0x430; } },
-	LY { int toInt() { return 0x434; } },
-	LC { int toInt() { return 0x662; } },
-	LI { int toInt() { return 0x438; } },
-	LK { int toInt() { return 0x144; } },
-	LS { int toInt() { return 0x426; } },
-	LT { int toInt() { return 0x440; } },
-	LU { int toInt() { return 0x442; } },
-	LV { int toInt() { return 0x428; } },
-	MO { int toInt() { return 0x446; } },
-	MF { int toInt() { return 0x663; } },
-	MA { int toInt() { return 0x504; } },
-	MC { int toInt() { return 0x492; } },
-	MD { int toInt() { return 0x498; } },
-	MG { int toInt() { return 0x450; } },
-	MV { int toInt() { return 0x462; } },
-	MX { int toInt() { return 0x484; } },
-	MH { int toInt() { return 0x584; } },
-	MK { int toInt() { return 0x807; } },
-	ML { int toInt() { return 0x466; } },
-	MT { int toInt() { return 0x470; } },
-	MM { int toInt() { return 0x104; } },
-	ME { int toInt() { return 0x499; } },
-	MN { int toInt() { return 0x496; } },
-	MP { int toInt() { return 0x580; } },
-	MZ { int toInt() { return 0x508; } },
-	MR { int toInt() { return 0x478; } },
-	MS { int toInt() { return 0x500; } },
-	MQ { int toInt() { return 0x474; } },
-	MU { int toInt() { return 0x480; } },
-	MW { int toInt() { return 0x454; } },
-	MY { int toInt() { return 0x458; } },
-	YT { int toInt() { return 0x175; } },
-	NA { int toInt() { return 0x516; } },
-	NC { int toInt() { return 0x540; } },
-	NE { int toInt() { return 0x562; } },
-	NF { int toInt() { return 0x574; } },
-	NG { int toInt() { return 0x566; } },
-	NI { int toInt() { return 0x558; } },
-	NO { int toInt() { return 0x578; } },
-	NU { int toInt() { return 0x570; } },
-	NL { int toInt() { return 0x528; } },
-	NP { int toInt() { return 0x524; } },
-	NR { int toInt() { return 0x520; } },
-	NZ { int toInt() { return 0x554; } },
-	OM { int toInt() { return 0x512; } },
-	PK { int toInt() { return 0x586; } },
-	PA { int toInt() { return 0x591; } },
-	PN { int toInt() { return 0x612; } },
-	PE { int toInt() { return 0x604; } },
-	PH { int toInt() { return 0x608; } },
-	PW { int toInt() { return 0x585; } },
-	PG { int toInt() { return 0x598; } },
-	PL { int toInt() { return 0x616; } },
-	PR { int toInt() { return 0x630; } },
-	KP { int toInt() { return 0x408; } },
-	PT { int toInt() { return 0x620; } },
-	PY { int toInt() { return 0x600; } },
-	PS { int toInt() { return 0x275; } },
-	PF { int toInt() { return 0x258; } },
-	QA { int toInt() { return 0x634; } },
-	RE { int toInt() { return 0x638; } },
-	RO { int toInt() { return 0x642; } },
-	RU { int toInt() { return 0x643; } },
-	RW { int toInt() { return 0x646; } },
-	SA { int toInt() { return 0x682; } },
-	SD { int toInt() { return 0x736; } },
-	SN { int toInt() { return 0x686; } },
-	SG { int toInt() { return 0x702; } },
-	GS { int toInt() { return 0x239; } },
-	SH { int toInt() { return 0x654; } },
-	SJ { int toInt() { return 0x744; } },
-	SB { int toInt() { return 0x090; } },
-	SL { int toInt() { return 0x694; } },
-	SV { int toInt() { return 0x222; } },
-	SM { int toInt() { return 0x674; } },
-	SO { int toInt() { return 0x706; } },
-	PM { int toInt() { return 0x666; } },
-	RS { int toInt() { return 0x688; } },
-	ST { int toInt() { return 0x678; } },
-	SR { int toInt() { return 0x740; } },
-	SK { int toInt() { return 0x703; } },
-	SI { int toInt() { return 0x705; } },
-	SE { int toInt() { return 0x752; } },
-	SZ { int toInt() { return 0x748; } },
-	SC { int toInt() { return 0x690; } },
-	SY { int toInt() { return 0x760; } },
-	TC { int toInt() { return 0x796; } },
-	TD { int toInt() { return 0x148; } },
-	TG { int toInt() { return 0x768; } },
-	TH { int toInt() { return 0x764; } },
-	TJ { int toInt() { return 0x762; } },
-	TK { int toInt() { return 0x772; } },
-	TM { int toInt() { return 0x795; } },
-	TL { int toInt() { return 0x626; } },
-	TO { int toInt() { return 0x776; } },
-	TT { int toInt() { return 0x780; } },
-	TN { int toInt() { return 0x788; } },
-	TR { int toInt() { return 0x792; } },
-	TV { int toInt() { return 0x798; } },
-	TW { int toInt() { return 0x158; } },
-	TZ { int toInt() { return 0x834; } },
-	UG { int toInt() { return 0x800; } },
-	UA { int toInt() { return 0x804; } },
-	UM { int toInt() { return 0x581; } },
-	UY { int toInt() { return 0x858; } },
-	US { int toInt() { return 0x840; } },
-	UZ { int toInt() { return 0x860; } },
-	VA { int toInt() { return 0x336; } },
-	VC { int toInt() { return 0x670; } },
-	VE { int toInt() { return 0x862; } },
-	VG { int toInt() { return 0x092; } },
-	VI { int toInt() { return 0x850; } },
-	VN { int toInt() { return 0x704; } },
-	VU { int toInt() { return 0x548; } },
-	WF { int toInt() { return 0x876; } },
-	WS { int toInt() { return 0x882; } },
-	YE { int toInt() { return 0x887; } },
-	ZA { int toInt() { return 0x710; } },
-	ZM { int toInt() { return 0x894; } },
-	ZW { int toInt() { return 0x716; } };
+	public static final Country
+	AD = new Country(0x020, "AD", "AND", "Andorra"),
+	AE = new Country(0x784, "AE", "ARE", "United Arab Emirates"),
+	AF = new Country(0x004, "AF", "AFG", "Afghanistan"),
+	AG = new Country(0x028, "AG", "ATG", "Antigua and Barbuda"),
+	AI = new Country(0x660, "AI", "AIA", "Anguilla"),
+	AL = new Country(0x008, "AL", "ALB", "Albania"),
+	AM = new Country(0x051, "AM", "ARM", "Armenia"),
+	AN = new Country(0x530, "AN", "ANT", "Netherlands Antilles"),
+	AO = new Country(0x024, "AO", "AGO", "Angola"),
+	AQ = new Country(0x010, "AQ", "ATA", "Antarctica"),
+	AR = new Country(0x032, "AR", "ARG", "Argentina"),
+	AS = new Country(0x016, "AS", "ASM", "American Samoa"),
+	AT = new Country(0x040, "AT", "AUT", "Austria"),
+	AU = new Country(0x036, "AU", "AUS", "Australia"),
+	AW = new Country(0x533, "AW", "ABW", "Aruba"),
+	AX = new Country(0x248, "AX", "ALA", "Aland Islands"),
+	AZ = new Country(0x031, "AZ", "AZE", "Azerbaijan"),
+	BA = new Country(0x070, "BA", "BIH", "Bosnia and Herzegovina"),
+	BB = new Country(0x052, "BB", "BRB", "Barbados"),
+	BD = new Country(0x050, "BD", "BGD", "Bangladesh"),
+	BE = new Country(0x056, "BE", "BEL", "Belgium"),
+	BF = new Country(0x854, "BF", "BFA", "Burkina Faso"),
+	BG = new Country(0x100, "BG", "BGR", "Bulgaria"),
+	BH = new Country(0x048, "BH", "BHR", "Bahrain"),
+	BI = new Country(0x108, "BI", "BDI", "Burundi"),
+	BJ = new Country(0x204, "BJ", "BEN", "Benin"),
+	BL = new Country(0x652, "BL", "BLM", "Saint Barthlemy"),
+	BM = new Country(0x060, "BM", "BMU", "Bermuda"),
+	BN = new Country(0x096, "BN", "BRN", "Brunei Darussalam"),
+	BO = new Country(0x068, "BO", "BOL", "Bolivia"),
+	BR = new Country(0x076, "BR", "BRA", "Brazil"),
+	BS = new Country(0x044, "BS", "BHS", "Bahamas"),
+	BT = new Country(0x064, "BT", "BTN", "Bhutan"),
+	BV = new Country(0x074, "BV", "BVT", "Bouvet Island"),
+	BW = new Country(0x072, "BW", "BWA", "Botswana"),
+	BY = new Country(0x112, "BY", "BLR", "Belarus"),
+	BZ = new Country(0x084, "BZ", "BLZ", "Belize"),
+	CA = new Country(0x124, "CA", "CAN", "Canada"),
+	CC = new Country(0x166, "CC", "CCK", "Cocos (Keeling) Islands"),
+	CD = new Country(0x180, "CD", "COD", "Congo the Democratic Republic of the"),
+	CF = new Country(0x140, "CF", "CAF", "Central African Republic"),
+	CG = new Country(0x178, "CG", "COG", "Congo"),
+	CH = new Country(0x756, "CH", "CHE", "Switzerland"),
+	CI = new Country(0x384, "CI", "CIV", "Cote d'Ivoire"),
+	CK = new Country(0x184, "CK", "COK", "Cook Islands"),
+	CL = new Country(0x152, "CL", "CHL", "Chile"),
+	CM = new Country(0x120, "CM", "CMR", "Cameroon"),
+	CN = new Country(0x156, "CN", "CHN", "China"),
+	CO = new Country(0x170, "CO", "COL", "Colombia"),
+	CR = new Country(0x188, "CR", "CRI", "Costa Rica"),
+	CU = new Country(0x192, "CU", "CUB", "Cuba"),
+	CV = new Country(0x132, "CV", "CPV", "Cape Verde"),
+	CX = new Country(0x162, "CX", "CXR", "Christmas Island"),
+	CY = new Country(0x196, "CY", "CYP", "Cyprus"),
+	CZ = new Country(0x203, "CZ", "CZE", "Czech Republic"),
+	DE = new Country(0x276, "DE", "DEU", "Germany"),
+	DJ = new Country(0x262, "DJ", "DJI", "Djibouti"),
+	DK = new Country(0x208, "DK", "DNK", "Denmark"),
+	DM = new Country(0x212, "DM", "DMA", "Dominica"),
+	DO = new Country(0x214, "DO", "DOM", "Dominican Republic"),
+	DZ = new Country(0x012, "DZ", "DZA", "Algeria"),
+	EC = new Country(0x218, "EC", "ECU", "Ecuador"),
+	EE = new Country(0x233, "EE", "EST", "Estonia"),
+	EG = new Country(0x818, "EG", "EGY", "Egypt"),
+	EH = new Country(0x732, "EH", "ESH", "Western Sahara"),
+	ER = new Country(0x232, "ER", "ERI", "Eritrea"),
+	ES = new Country(0x724, "ES", "ESP", "Spain"),
+	ET = new Country(0x231, "ET", "ETH", "Ethiopia"),
+	FI = new Country(0x246, "FI", "FIN", "Finland"),
+	FJ = new Country(0x242, "FJ", "FJI", "Fiji"),
+	FK = new Country(0x238, "FK", "FLK", "Falkland Islands (Malvinas)"),
+	FM = new Country(0x583, "FM", "FSM", "Micronesia Federated States of"),
+	FO = new Country(0x234, "FO", "FRO", "Faroe Islands"),
+	FR = new Country(0x250, "FR", "FRA", "France"),
+	GA = new Country(0x266, "GA", "GAB", "Gabon"),
+	GB = new Country(0x826, "GB", "GBR", "United Kingdom"),
+	GD = new Country(0x308, "GD", "GRD", "Grenada"),
+	GE = new Country(0x268, "GE", "GEO", "Georgia"),
+	GF = new Country(0x254, "GF", "GUF", "French Guiana"),
+	GG = new Country(0x831, "GG", "GGY", "Guernsey"),
+	GH = new Country(0x288, "GH", "GHA", "Ghana"),
+	GI = new Country(0x292, "GI", "GIB", "Gibraltar"),
+	GL = new Country(0x304, "GL", "GRL", "Greenland"),
+	GM = new Country(0x270, "GM", "GMB", "Gambia"),
+	GN = new Country(0x324, "GN", "GIN", "Guinea"),
+	GP = new Country(0x312, "GP", "GLP", "Guadeloupe"),
+	GQ = new Country(0x226, "GQ", "GNQ", "Equatorial Guinea"),
+	GR = new Country(0x300, "GR", "GRC", "Greece"),
+	GS = new Country(0x239, "GS", "SGS", "South Georgia and the South Sandwich Islands"),
+	GT = new Country(0x320, "GT", "GTM", "Guatemala"),
+	GU = new Country(0x316, "GU", "GUM", "Guam"),
+	GW = new Country(0x624, "GW", "GNB", "Guinea-Bissau"),
+	GY = new Country(0x328, "GY", "GUY", "Guyana"),
+	HK = new Country(0x344, "HK", "HKG", "Hong Kong"),
+	HM = new Country(0x334, "HM", "HMD", "Heard Island and McDonald Islands"),
+	HN = new Country(0x340, "HN", "HND", "Honduras"),
+	HR = new Country(0x191, "HR", "HRV", "Croatia"),
+	HT = new Country(0x332, "HT", "HTI", "Haiti"),
+	HU = new Country(0x348, "HU", "HUN", "Hungary"),
+	ID = new Country(0x360, "ID", "IDN", "Indonesia"),
+	IE = new Country(0x372, "IE", "IRL", "Ireland"),
+	IL = new Country(0x376, "IL", "ISR", "Israel"),
+	IM = new Country(0x833, "IM", "IMN", "Isle of Man"),
+	IN = new Country(0x356, "IN", "IND", "India"),
+	IO = new Country(0x086, "IO", "IOT", "British Indian Ocean Territory"),
+	IQ = new Country(0x368, "IQ", "IRQ", "Iraq"),
+	IR = new Country(0x364, "IR", "IRN", "Iran Islamic Republic of"),
+	IS = new Country(0x352, "IS", "ISL", "Iceland"),
+	IT = new Country(0x380, "IT", "ITA", "Italy"),
+	JE = new Country(0x832, "JE", "JEY", "Jersey"),
+	JM = new Country(0x388, "JM", "JAM", "Jamaica"),
+	JO = new Country(0x400, "JO", "JOR", "Jordan"),
+	JP = new Country(0x392, "JP", "JPN", "Japan"),
+	KE = new Country(0x404, "KE", "KEN", "Kenya"),
+	KG = new Country(0x417, "KG", "KGZ", "Kyrgyzstan"),
+	KH = new Country(0x116, "KH", "KHM", "Cambodia"),
+	KI = new Country(0x296, "KI", "KIR", "Kiribati"),
+	KM = new Country(0x174, "KM", "COM", "Comoros"),
+	KN = new Country(0x659, "KN", "KNA", "Saint Kitts and Nevis"),
+	KP = new Country(0x408, "KP", "PRK", "Korea Democratic People's Republic of"),
+	KR = new Country(0x410, "KR", "KOR", "Korea Republic of"),
+	KW = new Country(0x414, "KW", "KWT", "Kuwait"),
+	KY = new Country(0x136, "KY", "CYM", "Cayman Islands"),
+	KZ = new Country(0x398, "KZ", "KAZ", "Kazakhstan"),
+	LA = new Country(0x418, "LA", "LAO", "Lao People's Democratic Republic"),
+	LB = new Country(0x422, "LB", "LBN", "Lebanon"),
+	LC = new Country(0x662, "LC", "LCA", "Saint Lucia"),
+	LI = new Country(0x438, "LI", "LIE", "Liechtenstein"),
+	LK = new Country(0x144, "LK", "LKA", "Sri Lanka"),
+	LR = new Country(0x430, "LR", "LBR", "Liberia"),
+	LS = new Country(0x426, "LS", "LSO", "Lesotho"),
+	LT = new Country(0x440, "LT", "LTU", "Lithuania"),
+	LU = new Country(0x442, "LU", "LUX", "Luxembourg"),
+	LV = new Country(0x428, "LV", "LVA", "Latvia"),
+	LY = new Country(0x434, "LY", "LBY", "Libyan Arab Jamahiriya"),
+	MA = new Country(0x504, "MA", "MAR", "Morocco"),
+	MC = new Country(0x492, "MC", "MCO", "Monaco"),
+	MD = new Country(0x498, "MD", "MDA", "Moldova"),
+	ME = new Country(0x499, "ME", "MNE", "Montenegro"),
+	MF = new Country(0x663, "MF", "MAF", "Saint Martin (French part)"),
+	MG = new Country(0x450, "MG", "MDG", "Madagascar"),
+	MH = new Country(0x584, "MH", "MHL", "Marshall Islands"),
+	MK = new Country(0x807, "MK", "MKD", "Macedonia the former Yugoslav Republic of"),
+	ML = new Country(0x466, "ML", "MLI", "Mali"),
+	MM = new Country(0x104, "MM", "MMR", "Myanmar"),
+	MN = new Country(0x496, "MN", "MNG", "Mongolia"),
+	MO = new Country(0x446, "MO", "MAC", "Macao"),
+	MP = new Country(0x580, "MP", "MNP", "Northern Mariana Islands"),
+	MQ = new Country(0x474, "MQ", "MTQ", "Martinique"),
+	MR = new Country(0x478, "MR", "MRT", "Mauritania"),
+	MS = new Country(0x500, "MS", "MSR", "Montserrat"),
+	MT = new Country(0x470, "MT", "MLT", "Malta"),
+	MU = new Country(0x480, "MU", "MUS", "Mauritius"),
+	MV = new Country(0x462, "MV", "MDV", "Maldives"),
+	MW = new Country(0x454, "MW", "MWI", "Malawi"),
+	MX = new Country(0x484, "MX", "MEX", "Mexico"),
+	MY = new Country(0x458, "MY", "MYS", "Malaysia"),
+	MZ = new Country(0x508, "MZ", "MOZ", "Mozambique"),
+	NA = new Country(0x516, "NA", "NAM", "Namibia"),
+	NC = new Country(0x540, "NC", "NCL", "New Caledonia"),
+	NE = new Country(0x562, "NE", "NER", "Niger"),
+	NF = new Country(0x574, "NF", "NFK", "Norfolk Island"),
+	NG = new Country(0x566, "NG", "NGA", "Nigeria"),
+	NI = new Country(0x558, "NI", "NIC", "Nicaragua"),
+	NL = new Country(0x528, "NL", "NLD", "Netherlands"),
+	NO = new Country(0x578, "NO", "NOR", "Norway"),
+	NP = new Country(0x524, "NP", "NPL", "Nepal"),
+	NR = new Country(0x520, "NR", "NRU", "Nauru"),
+	NU = new Country(0x570, "NU", "NIU", "Niue"),
+	NZ = new Country(0x554, "NZ", "NZL", "New Zealand"),
+	OM = new Country(0x512, "OM", "OMN", "Oman"),
+	PA = new Country(0x591, "PA", "PAN", "Panama"),
+	PE = new Country(0x604, "PE", "PER", "Peru"),
+	PF = new Country(0x258, "PF", "PYF", "French Polynesia"),
+	PG = new Country(0x598, "PG", "PNG", "Papua New Guinea"),
+	PH = new Country(0x608, "PH", "PHL", "Philippines"),
+	PK = new Country(0x586, "PK", "PAK", "Pakistan"),
+	PL = new Country(0x616, "PL", "POL", "Poland"),
+	PM = new Country(0x666, "PM", "SPM", "Saint Pierre and Miquelon"),
+	PN = new Country(0x612, "PN", "PCN", "Pitcairn"),
+	PR = new Country(0x630, "PR", "PRI", "Puerto Rico"),
+	PS = new Country(0x275, "PS", "PSE", "Palestinian Territory Occupied"),
+	PT = new Country(0x620, "PT", "PRT", "Portugal"),
+	PW = new Country(0x585, "PW", "PLW", "Palau"),
+	PY = new Country(0x600, "PY", "PRY", "Paraguay"),
+	QA = new Country(0x634, "QA", "QAT", "Qatar"),
+	RE = new Country(0x638, "RE", "REU", "Reunion"),
+	RO = new Country(0x642, "RO", "ROU", "Romania"),
+	RS = new Country(0x688, "RS", "SRB", "Serbia"),
+	RU = new Country(0x643, "RU", "RUS", "Russian Federation"),
+	RW = new Country(0x646, "RW", "RWA", "Rwanda"),
+	SA = new Country(0x682, "SA", "SAU", "Saudi Arabia"),
+	SB = new Country(0x090, "SB", "SLB", "Solomon Islands"),
+	SC = new Country(0x690, "SC", "SYC", "Seychelles"),
+	SD = new Country(0x736, "SD", "SDN", "Sudan"),
+	SE = new Country(0x752, "SE", "SWE", "Sweden"),
+	SG = new Country(0x702, "SG", "SGP", "Singapore"),
+	SH = new Country(0x654, "SH", "SHN", "Saint Helena"),
+	SI = new Country(0x705, "SI", "SVN", "Slovenia"),
+	SJ = new Country(0x744, "SJ", "SJM", "Svalbard and Jan Mayen"),
+	SK = new Country(0x703, "SK", "SVK", "Slovakia"),
+	SL = new Country(0x694, "SL", "SLE", "Sierra Leone"),
+	SM = new Country(0x674, "SM", "SMR", "San Marino"),
+	SN = new Country(0x686, "SN", "SEN", "Senegal"),
+	SO = new Country(0x706, "SO", "SOM", "Somalia"),
+	SR = new Country(0x740, "SR", "SUR", "Suriname"),
+	ST = new Country(0x678, "ST", "STP", "Sao Tome and Principe"),
+	SV = new Country(0x222, "SV", "SLV", "El Salvador"),
+	SY = new Country(0x760, "SY", "SYR", "Syrian Arab Republic"),
+	SZ = new Country(0x748, "SZ", "SWZ", "Swaziland"),
+	TC = new Country(0x796, "TC", "TCA", "Turks and Caicos Islands"),
+	TD = new Country(0x148, "TD", "TCD", "Chad"),
+	TF = new Country(0x260, "TF", "ATF", "French Southern Territories"),
+	TG = new Country(0x768, "TG", "TGO", "Togo"),
+	TH = new Country(0x764, "TH", "THA", "Thailand"),
+	TJ = new Country(0x762, "TJ", "TJK", "Tajikistan"),
+	TK = new Country(0x772, "TK", "TKL", "Tokelau"),
+	TL = new Country(0x626, "TL", "TLS", "Timor-Leste"),
+	TM = new Country(0x795, "TM", "TKM", "Turkmenistan"),
+	TN = new Country(0x788, "TN", "TUN", "Tunisia"),
+	TO = new Country(0x776, "TO", "TON", "Tonga"),
+	TR = new Country(0x792, "TR", "TUR", "Turkey"),
+	TT = new Country(0x780, "TT", "TTO", "Trinidad and Tobago"),
+	TV = new Country(0x798, "TV", "TUV", "Tuvalu"),
+	TW = new Country(0x158, "TW", "TWN", "Taiwan Province of China"),
+	TZ = new Country(0x834, "TZ", "TZA", "Tanzania United Republic of"),
+	UA = new Country(0x804, "UA", "UKR", "Ukraine"),
+	UG = new Country(0x800, "UG", "UGA", "Uganda"),
+	UM = new Country(0x581, "UM", "UMI", "United States Minor Outlying Islands"),
+	US = new Country(0x840, "US", "USA", "United States"),
+	UY = new Country(0x858, "UY", "URY", "Uruguay"),
+	UZ = new Country(0x860, "UZ", "UZB", "Uzbekistan"),
+	VA = new Country(0x336, "VA", "VAT", "Holy See (Vatican City State)"),
+	VC = new Country(0x670, "VC", "VCT", "Saint Vincent and the Grenadines"),
+	VE = new Country(0x862, "VE", "VEN", "Venezuela"),
+	VG = new Country(0x092, "VG", "VGB", "Virgin Islands British"),
+	VI = new Country(0x850, "VI", "VIR", "Virgin Islands U.S."),
+	VN = new Country(0x704, "VN", "VNM", "Viet Nam"),
+	VU = new Country(0x548, "VU", "VUT", "Vanuatu"),
+	WF = new Country(0x876, "WF", "WLF", "Wallis and Futuna"),
+	WS = new Country(0x882, "WS", "WSM", "Samoa"),
+	YE = new Country(0x887, "YE", "YEM", "Yemen"),
+	YT = new Country(0x175, "YT", "MYT", "Mayotte"),
+	ZA = new Country(0x710, "ZA", "ZAF", "South Africa"),
+	ZM = new Country(0x894, "ZM", "ZMB", "Zambia"),
+	ZW = new Country(0x716, "ZW", "ZWE", "Zimbabwe");
 
-	abstract int toInt();
+	private static final Country[] VALUES =
+	{
+		AW, AF, AO, AI, AX, AL, AD, AN, AE, AR, AM, AS, AQ, TF, AG, AU,
+		AT, AZ, BI, BE, BJ, BF, BD, BG, BH, BS, BA, BL, BY, BZ, BM, BO,
+		BR, BB, BN, BT, BV, BW, CF, CA, CC, CH, CL, CN, CI, CM, CD, CG,
+		CK, CO, KM, CV, CR, CU, CX, KY, CY, CZ, DE, DJ, DM, DK, DO, DZ,
+		EC, EG, ER, EH, ES, EE, ET, FI, FJ, FK, FR, FO, FM, GA, GB, GE,
+		GG, GH, GI, GN, GP, GM, GW, GQ, GR, GD, GL, GT, GF, GU, GY, HK,
+		HM, HN, HR, HT, HU, ID, IM, IN, IO, IE, IR, IQ, IS, IL, IT, JM,
+		JE, JO, JP, KZ, KE, KG, KH, KI, KN, KR, KW, LA, LB, LR, LY, LC,
+		LI, LK, LS, LT, LU, LV, MO, MF, MA, MC, MD, MG, MV, MX, MH, MK,
+		ML, MT, MM, ME, MN, MP, MZ, MR, MS, MQ, MU, MW, MY, YT, NA, NC,
+		NE, NF, NG, NI, NU, NL, NO, NP, NR, NZ, OM, PK, PA, PN, PE, PH,
+		PW, PG, PL, PR, KP, PT, PY, PS, PF, QA, RE, RO, RU, RW, SA, SD,
+		SN, SG, GS, SH, SJ, SB, SL, SV, SM, SO, PM, RS, ST, SR, SK, SI,
+		SE, SZ, SC, SY, TC, TD, TG, TH, TJ, TK, TM, TL, TO, TT, TN, TR,
+		TV, TW, TZ, UG, UA, UM, UY, US, UZ, VA, VC, VE, VG, VI, VN, VU,
+		WF, WS, YE, ZA, ZM, ZW
+	};
 
-	static Country getInstance(int code) {
-		for(Country country: Country.values()) {
-			if (country.toInt() == code) {
-				return country;
-			}
+	private int code;
+	private String alpha2Code;
+	private String alpha3Code;
+	private String name;
+
+	private Country(int code, String alpha2Code, String alpha3Code, String name) {
+		this.code = code;
+		this.alpha2Code = alpha2Code;
+		this.alpha3Code = alpha3Code;
+		this.name = name;
+	}
+
+	public static Country getInstance(int code) {
+		for (Country country: VALUES) {
+			if (country.code == code) { return country; }
 		}
-		return null;
+		throw new IllegalArgumentException("Illegal country code" + Integer.toHexString(code));
 	}
 
 	public static Country getInstance(String code) {
-		if (code == null) { throw new IllegalArgumentException("Illegal country code"); }
+		if (code == null) { throw new IllegalArgumentException("Illegal country code " + code); }
 		code = code.trim();
 		switch (code.length()) {
-		case 2: return Country.valueOf(code);
+		case 2: return fromAlpha2(code);
 		case 3: return fromAlpha3(code);
-		default: throw new IllegalArgumentException("Illegal country code");
+		default: throw new IllegalArgumentException("Illegal country code " + code);
 		}
+	}
+
+	public static Country[] values() {
+		return VALUES;
+	}
+
+	public int valueOf() {
+		return code;
+	}
+
+	private static Country fromAlpha2(String code) {
+		for (Country country: VALUES) {
+			if (country.alpha2Code.equals(code)) { return country; }
+		}
+		throw new IllegalArgumentException("Illegal country code " + code);
 	}
 
 	private static Country fromAlpha3(String code) {
-		if (code.equals("ABW")) { return AW; }
-		if (code.equals("AFG")) { return AF; }
-		if (code.equals("AGO")) { return AO; }
-		if (code.equals("AIA")) { return AI; }
-		if (code.equals("ALA")) { return AX; }
-		if (code.equals("ALB")) { return AL; }
-		if (code.equals("AND")) { return AD; }
-		if (code.equals("ANT")) { return AN; }
-		if (code.equals("ARE")) { return AE; }
-		if (code.equals("ARG")) { return AR; }
-		if (code.equals("ARM")) { return AM; }
-		if (code.equals("ASM")) { return AS; }
-		if (code.equals("ATA")) { return AQ; }
-		if (code.equals("ATF")) { return TF; }
-		if (code.equals("ATG")) { return AG; }
-		if (code.equals("AUS")) { return AU; }
-		if (code.equals("AUT")) { return AT; }
-		if (code.equals("AZE")) { return AZ; }
-		if (code.equals("BDI")) { return BI; }
-		if (code.equals("BEL")) { return BE; }
-		if (code.equals("BEN")) { return BJ; }
-		if (code.equals("BFA")) { return BF; }
-		if (code.equals("BGD")) { return BD; }
-		if (code.equals("BGR")) { return BG; }
-		if (code.equals("BHR")) { return BH; }
-		if (code.equals("BHS")) { return BS; }
-		if (code.equals("BIH")) { return BA; }
-		if (code.equals("BLM")) { return BL; }
-		if (code.equals("BLR")) { return BY; }
-		if (code.equals("BLZ")) { return BZ; }
-		if (code.equals("BMU")) { return BM; }
-		if (code.equals("BOL")) { return BO; }
-		if (code.equals("BRA")) { return BR; }
-		if (code.equals("BRB")) { return BB; }
-		if (code.equals("BRN")) { return BN; }
-		if (code.equals("BTN")) { return BT; }
-		if (code.equals("BVT")) { return BV; }
-		if (code.equals("BWA")) { return BW; }
-		if (code.equals("CAF")) { return CF; }
-		if (code.equals("CAN")) { return CA; }
-		if (code.equals("CCK")) { return CC; }
-		if (code.equals("CHE")) { return CH; }
-		if (code.equals("CHL")) { return CL; }
-		if (code.equals("CHN")) { return CN; }
-		if (code.equals("CIV")) { return CI; }
-		if (code.equals("CMR")) { return CM; }
-		if (code.equals("COD")) { return CD; }
-		if (code.equals("COG")) { return CG; }
-		if (code.equals("COK")) { return CK; }
-		if (code.equals("COL")) { return CO; }
-		if (code.equals("COM")) { return KM; }
-		if (code.equals("CPV")) { return CV; }
-		if (code.equals("CRI")) { return CR; }
-		if (code.equals("CUB")) { return CU; }
-		if (code.equals("CXR")) { return CX; }
-		if (code.equals("CYM")) { return KY; }
-		if (code.equals("CYP")) { return CY; }
-		if (code.equals("CZE")) { return CZ; }
-		if (code.equals("DEU")) { return DE; }
-		if (code.equals("DJI")) { return DJ; }
-		if (code.equals("DMA")) { return DM; }
-		if (code.equals("DNK")) { return DK; }
-		if (code.equals("DOM")) { return DO; }
-		if (code.equals("DZA")) { return DZ; }
-		if (code.equals("ECU")) { return EC; }
-		if (code.equals("EGY")) { return EG; }
-		if (code.equals("ERI")) { return ER; }
-		if (code.equals("ESH")) { return EH; }
-		if (code.equals("ESP")) { return ES; }
-		if (code.equals("EST")) { return EE; }
-		if (code.equals("ETH")) { return ET; }
-		if (code.equals("FIN")) { return FI; }
-		if (code.equals("FJI")) { return FJ; }
-		if (code.equals("FLK")) { return FK; }
-		if (code.equals("FRA")) { return FR; }
-		if (code.equals("FRO")) { return FO; }
-		if (code.equals("FSM")) { return FM; }
-		if (code.equals("GAB")) { return GA; }
-		if (code.equals("GBR")) { return GB; }
-		if (code.equals("GEO")) { return GE; }
-		if (code.equals("GGY")) { return GG; }
-		if (code.equals("GHA")) { return GH; }
-		if (code.equals("GIB")) { return GI; }
-		if (code.equals("GIN")) { return GN; }
-		if (code.equals("GLP")) { return GP; }
-		if (code.equals("GMB")) { return GM; }
-		if (code.equals("GNB")) { return GW; }
-		if (code.equals("GNQ")) { return GQ; }
-		if (code.equals("GRC")) { return GR; }
-		if (code.equals("GRD")) { return GD; }
-		if (code.equals("GRL")) { return GL; }
-		if (code.equals("GTM")) { return GT; }
-		if (code.equals("GUF")) { return GF; }
-		if (code.equals("GUM")) { return GU; }
-		if (code.equals("GUY")) { return GY; }
-		if (code.equals("HKG")) { return HK; }
-		if (code.equals("HMD")) { return HM; }
-		if (code.equals("HND")) { return HN; }
-		if (code.equals("HRV")) { return HR; }
-		if (code.equals("HTI")) { return HT; }
-		if (code.equals("HUN")) { return HU; }
-		if (code.equals("IDN")) { return ID; }
-		if (code.equals("IMN")) { return IM; }
-		if (code.equals("IND")) { return IN; }
-		if (code.equals("IOT")) { return IO; }
-		if (code.equals("IRL")) { return IE; }
-		if (code.equals("IRN")) { return IR; }
-		if (code.equals("IRQ")) { return IQ; }
-		if (code.equals("ISL")) { return IS; }
-		if (code.equals("ISR")) { return IL; }
-		if (code.equals("ITA")) { return IT; }
-		if (code.equals("JAM")) { return JM; }
-		if (code.equals("JEY")) { return JE; }
-		if (code.equals("JOR")) { return JO; }
-		if (code.equals("JPN")) { return JP; }
-		if (code.equals("KAZ")) { return KZ; }
-		if (code.equals("KEN")) { return KE; }
-		if (code.equals("KGZ")) { return KG; }
-		if (code.equals("KHM")) { return KH; }
-		if (code.equals("KIR")) { return KI; }
-		if (code.equals("KNA")) { return KN; }
-		if (code.equals("KOR")) { return KR; }
-		if (code.equals("KWT")) { return KW; }
-		if (code.equals("LAO")) { return LA; }
-		if (code.equals("LBN")) { return LB; }
-		if (code.equals("LBR")) { return LR; }
-		if (code.equals("LBY")) { return LY; }
-		if (code.equals("LCA")) { return LC; }
-		if (code.equals("LIE")) { return LI; }
-		if (code.equals("LKA")) { return LK; }
-		if (code.equals("LSO")) { return LS; }
-		if (code.equals("LTU")) { return LT; }
-		if (code.equals("LUX")) { return LU; }
-		if (code.equals("LVA")) { return LV; }
-		if (code.equals("MAC")) { return MO; }
-		if (code.equals("MAF")) { return MF; }
-		if (code.equals("MAR")) { return MA; }
-		if (code.equals("MCO")) { return MC; }
-		if (code.equals("MDA")) { return MD; }
-		if (code.equals("MDG")) { return MG; }
-		if (code.equals("MDV")) { return MV; }
-		if (code.equals("MEX")) { return MX; }
-		if (code.equals("MHL")) { return MH; }
-		if (code.equals("MKD")) { return MK; }
-		if (code.equals("MLI")) { return ML; }
-		if (code.equals("MLT")) { return MT; }
-		if (code.equals("MMR")) { return MM; }
-		if (code.equals("MNE")) { return ME; }
-		if (code.equals("MNG")) { return MN; }
-		if (code.equals("MNP")) { return MP; }
-		if (code.equals("MOZ")) { return MZ; }
-		if (code.equals("MRT")) { return MR; }
-		if (code.equals("MSR")) { return MS; }
-		if (code.equals("MTQ")) { return MQ; }
-		if (code.equals("MUS")) { return MU; }
-		if (code.equals("MWI")) { return MW; }
-		if (code.equals("MYS")) { return MY; }
-		if (code.equals("MYT")) { return YT; }
-		if (code.equals("NAM")) { return NA; }
-		if (code.equals("NCL")) { return NC; }
-		if (code.equals("NER")) { return NE; }
-		if (code.equals("NFK")) { return NF; }
-		if (code.equals("NGA")) { return NG; }
-		if (code.equals("NIC")) { return NI; }
-		if (code.equals("NIU")) { return NU; }
-		if (code.equals("NLD")) { return NL; }
-		if (code.equals("NOR")) { return NO; }
-		if (code.equals("NPL")) { return NP; }
-		if (code.equals("NRU")) { return NR; }
-		if (code.equals("NZL")) { return NZ; }
-		if (code.equals("OMN")) { return OM; }
-		if (code.equals("PAK")) { return PK; }
-		if (code.equals("PAN")) { return PA; }
-		if (code.equals("PCN")) { return PN; }
-		if (code.equals("PER")) { return PE; }
-		if (code.equals("PHL")) { return PH; }
-		if (code.equals("PLW")) { return PW; }
-		if (code.equals("PNG")) { return PG; }
-		if (code.equals("POL")) { return PL; }
-		if (code.equals("PRI")) { return PR; }
-		if (code.equals("PRK")) { return KP; }
-		if (code.equals("PRT")) { return PT; }
-		if (code.equals("PRY")) { return PY; }
-		if (code.equals("PSE")) { return PS; }
-		if (code.equals("PYF")) { return PF; }
-		if (code.equals("QAT")) { return QA; }
-		if (code.equals("REU")) { return RE; }
-		if (code.equals("ROU")) { return RO; }
-		if (code.equals("RUS")) { return RU; }
-		if (code.equals("RWA")) { return RW; }
-		if (code.equals("SAU")) { return SA; }
-		if (code.equals("SDN")) { return SD; }
-		if (code.equals("SEN")) { return SN; }
-		if (code.equals("SGP")) { return SG; }
-		if (code.equals("SGS")) { return GS; }
-		if (code.equals("SHN")) { return SH; }
-		if (code.equals("SJM")) { return SJ; }
-		if (code.equals("SLB")) { return SB; }
-		if (code.equals("SLE")) { return SL; }
-		if (code.equals("SLV")) { return SV; }
-		if (code.equals("SMR")) { return SM; }
-		if (code.equals("SOM")) { return SO; }
-		if (code.equals("SPM")) { return PM; }
-		if (code.equals("SRB")) { return RS; }
-		if (code.equals("STP")) { return ST; }
-		if (code.equals("SUR")) { return SR; }
-		if (code.equals("SVK")) { return SK; }
-		if (code.equals("SVN")) { return SI; }
-		if (code.equals("SWE")) { return SE; }
-		if (code.equals("SWZ")) { return SZ; }
-		if (code.equals("SYC")) { return SC; }
-		if (code.equals("SYR")) { return SY; }
-		if (code.equals("TCA")) { return TC; }
-		if (code.equals("TCD")) { return TD; }
-		if (code.equals("TGO")) { return TG; }
-		if (code.equals("THA")) { return TH; }
-		if (code.equals("TJK")) { return TJ; }
-		if (code.equals("TKL")) { return TK; }
-		if (code.equals("TKM")) { return TM; }
-		if (code.equals("TLS")) { return TL; }
-		if (code.equals("TON")) { return TO; }
-		if (code.equals("TTO")) { return TT; }
-		if (code.equals("TUN")) { return TN; }
-		if (code.equals("TUR")) { return TR; }
-		if (code.equals("TUV")) { return TV; }
-		if (code.equals("TWN")) { return TW; }
-		if (code.equals("TZA")) { return TZ; }
-		if (code.equals("UGA")) { return UG; }
-		if (code.equals("UKR")) { return UA; }
-		if (code.equals("UMI")) { return UM; }
-		if (code.equals("URY")) { return UY; }
-		if (code.equals("USA")) { return US; }
-		if (code.equals("UZB")) { return UZ; }
-		if (code.equals("VAT")) { return VA; }
-		if (code.equals("VCT")) { return VC; }
-		if (code.equals("VEN")) { return VE; }
-		if (code.equals("VGB")) { return VG; }
-		if (code.equals("VIR")) { return VI; }
-		if (code.equals("VNM")) { return VN; }
-		if (code.equals("VUT")) { return VU; }
-		if (code.equals("WLF")) { return WF; }
-		if (code.equals("WSM")) { return WS; }
-		if (code.equals("YEM")) { return YE; }
-		if (code.equals("ZAF")) { return ZA; }
-		if (code.equals("ZMB")) { return ZM; }
-		if (code.equals("ZWE")) { return ZW; }
-		throw new IllegalArgumentException("Illegal country code");
+		for (Country country: VALUES) {
+			if (country.alpha3Code.equals(code)) { return country; }
+		}
+		throw new IllegalArgumentException("Illegal country code " + code);
 	}
 
-
-	public String toAlpha3Code() {
-		switch (this) {
-		case AD: return "AND";
-		case AE: return "ARE";
-		case AF: return "AFG";
-		case AG: return "ATG";
-		case AI: return "AIA";
-		case AL: return "ALB";
-		case AM: return "ARM";
-		case AN: return "ANT";
-		case AO: return "AGO";
-		case AQ: return "ATA";
-		case AR: return "ARG";
-		case AS: return "ASM";
-		case AT: return "AUT";
-		case AU: return "AUS";
-		case AW: return "ABW";
-		case AX: return "ALA";
-		case AZ: return "AZE";
-		case BA: return "BIH";
-		case BB: return "BRB";
-		case BD: return "BGD";
-		case BE: return "BEL";
-		case BF: return "BFA";
-		case BG: return "BGR";
-		case BH: return "BHR";
-		case BI: return "BDI";
-		case BJ: return "BEN";
-		case BL: return "BLM";
-		case BM: return "BMU";
-		case BN: return "BRN";
-		case BO: return "BOL";
-		case BR: return "BRA";
-		case BS: return "BHS";
-		case BT: return "BTN";
-		case BV: return "BVT";
-		case BW: return "BWA";
-		case BY: return "BLR";
-		case BZ: return "BLZ";
-		case CA: return "CAN";
-		case CC: return "CCK";
-		case CD: return "COD";
-		case CF: return "CAF";
-		case CG: return "COG";
-		case CH: return "CHE";
-		case CI: return "CIV";
-		case CK: return "COK";
-		case CL: return "CHL";
-		case CM: return "CMR";
-		case CN: return "CHN";
-		case CO: return "COL";
-		case CR: return "CRI";
-		case CU: return "CUB";
-		case CV: return "CPV";
-		case CX: return "CXR";
-		case CY: return "CYP";
-		case CZ: return "CZE";
-		case DE: return "DEU";
-		case DJ: return "DJI";
-		case DK: return "DNK";
-		case DM: return "DMA";
-		case DO: return "DOM";
-		case DZ: return "DZA";
-		case EC: return "ECU";
-		case EE: return "EST";
-		case EG: return "EGY";
-		case EH: return "ESH";
-		case ER: return "ERI";
-		case ES: return "ESP";
-		case ET: return "ETH";
-		case FI: return "FIN";
-		case FJ: return "FJI";
-		case FK: return "FLK";
-		case FM: return "FSM";
-		case FO: return "FRO";
-		case FR: return "FRA";
-		case GA: return "GAB";
-		case GB: return "GBR";
-		case GD: return "GRD";
-		case GE: return "GEO";
-		case GF: return "GUF";
-		case GG: return "GGY";
-		case GH: return "GHA";
-		case GI: return "GIB";
-		case GL: return "GRL";
-		case GM: return "GMB";
-		case GN: return "GIN";
-		case GP: return "GLP";
-		case GQ: return "GNQ";
-		case GR: return "GRC";
-		case GS: return "SGS";
-		case GT: return "GTM";
-		case GU: return "GUM";
-		case GW: return "GNB";
-		case GY: return "GUY";
-		case HK: return "HKG";
-		case HM: return "HMD";
-		case HN: return "HND";
-		case HR: return "HRV";
-		case HT: return "HTI";
-		case HU: return "HUN";
-		case ID: return "IDN";
-		case IE: return "IRL";
-		case IL: return "ISR";
-		case IM: return "IMN";
-		case IN: return "IND";
-		case IO: return "IOT";
-		case IQ: return "IRQ";
-		case IR: return "IRN";
-		case IS: return "ISL";
-		case IT: return "ITA";
-		case JE: return "JEY";
-		case JM: return "JAM";
-		case JO: return "JOR";
-		case JP: return "JPN";
-		case KE: return "KEN";
-		case KG: return "KGZ";
-		case KH: return "KHM";
-		case KI: return "KIR";
-		case KM: return "COM";
-		case KN: return "KNA";
-		case KP: return "PRK";
-		case KR: return "KOR";
-		case KW: return "KWT";
-		case KY: return "CYM";
-		case KZ: return "KAZ";
-		case LA: return "LAO";
-		case LB: return "LBN";
-		case LC: return "LCA";
-		case LI: return "LIE";
-		case LK: return "LKA";
-		case LR: return "LBR";
-		case LS: return "LSO";
-		case LT: return "LTU";
-		case LU: return "LUX";
-		case LV: return "LVA";
-		case LY: return "LBY";
-		case MA: return "MAR";
-		case MC: return "MCO";
-		case MD: return "MDA";
-		case ME: return "MNE";
-		case MF: return "MAF";
-		case MG: return "MDG";
-		case MH: return "MHL";
-		case MK: return "MKD";
-		case ML: return "MLI";
-		case MM: return "MMR";
-		case MN: return "MNG";
-		case MO: return "MAC";
-		case MP: return "MNP";
-		case MQ: return "MTQ";
-		case MR: return "MRT";
-		case MS: return "MSR";
-		case MT: return "MLT";
-		case MU: return "MUS";
-		case MV: return "MDV";
-		case MW: return "MWI";
-		case MX: return "MEX";
-		case MY: return "MYS";
-		case MZ: return "MOZ";
-		case NA: return "NAM";
-		case NC: return "NCL";
-		case NE: return "NER";
-		case NF: return "NFK";
-		case NG: return "NGA";
-		case NI: return "NIC";
-		case NL: return "NLD";
-		case NO: return "NOR";
-		case NP: return "NPL";
-		case NR: return "NRU";
-		case NU: return "NIU";
-		case NZ: return "NZL";
-		case OM: return "OMN";
-		case PA: return "PAN";
-		case PE: return "PER";
-		case PF: return "PYF";
-		case PG: return "PNG";
-		case PH: return "PHL";
-		case PK: return "PAK";
-		case PL: return "POL";
-		case PM: return "SPM";
-		case PN: return "PCN";
-		case PR: return "PRI";
-		case PS: return "PSE";
-		case PT: return "PRT";
-		case PW: return "PLW";
-		case PY: return "PRY";
-		case QA: return "QAT";
-		case RE: return "REU";
-		case RO: return "ROU";
-		case RS: return "SRB";
-		case RU: return "RUS";
-		case RW: return "RWA";
-		case SA: return "SAU";
-		case SB: return "SLB";
-		case SC: return "SYC";
-		case SD: return "SDN";
-		case SE: return "SWE";
-		case SG: return "SGP";
-		case SH: return "SHN";
-		case SI: return "SVN";
-		case SJ: return "SJM";
-		case SK: return "SVK";
-		case SL: return "SLE";
-		case SM: return "SMR";
-		case SN: return "SEN";
-		case SO: return "SOM";
-		case SR: return "SUR";
-		case ST: return "STP";
-		case SV: return "SLV";
-		case SY: return "SYR";
-		case SZ: return "SWZ";
-		case TC: return "TCA";
-		case TD: return "TCD";
-		case TF: return "ATF";
-		case TG: return "TGO";
-		case TH: return "THA";
-		case TJ: return "TJK";
-		case TK: return "TKL";
-		case TL: return "TLS";
-		case TM: return "TKM";
-		case TN: return "TUN";
-		case TO: return "TON";
-		case TR: return "TUR";
-		case TT: return "TTO";
-		case TV: return "TUV";
-		case TW: return "TWN";
-		case TZ: return "TZA";
-		case UA: return "UKR";
-		case UG: return "UGA";
-		case UM: return "UMI";
-		case US: return "USA";
-		case UY: return "URY";
-		case UZ: return "UZB";
-		case VA: return "VAT";
-		case VC: return "VCT";
-		case VE: return "VEN";
-		case VG: return "VGB";
-		case VI: return "VIR";
-		case VN: return "VNM";
-		case VU: return "VUT";
-		case WF: return "WLF";
-		case WS: return "WSM";
-		case YE: return "YEM";
-		case YT: return "MYT";
-		case ZA: return "ZAF";
-		case ZM: return "ZMB";
-		case ZW: return "ZWE";
-		default: throw new IllegalStateException("Unknown country");
-		}
+	public String getName() {
+		return name;
 	}
 	
-	public String getName() {
-		switch (this) {
-		case AD: return "Andorra";
-		case AE: return "United Arab Emirates";
-		case AF: return "Afghanistan";
-		case AG: return "Antigua and Barbuda";
-		case AI: return "Anguilla";
-		case AL: return "Albania";
-		case AM: return "Armenia";
-		case AN: return "Netherlands Antilles";
-		case AO: return "Angola";
-		case AQ: return "Antarctica";
-		case AR: return "Argentina";
-		case AS: return "American Samoa";
-		case AT: return "Austria";
-		case AU: return "Australia";
-		case AW: return "Aruba";
-		case AX: return "Aland Islands";
-		case AZ: return "Azerbaijan";
-		case BA: return "Bosnia and Herzegovina";
-		case BB: return "Barbados";
-		case BD: return "Bangladesh";
-		case BE: return "Belgium";
-		case BF: return "Burkina Faso";
-		case BG: return "Bulgaria";
-		case BH: return "Bahrain";
-		case BI: return "Burundi";
-		case BJ: return "Benin";
-		case BL: return "Saint Barthlemy";
-		case BM: return "Bermuda";
-		case BN: return "Brunei Darussalam";
-		case BO: return "Bolivia";
-		case BR: return "Brazil";
-		case BS: return "Bahamas";
-		case BT: return "Bhutan";
-		case BV: return "Bouvet Island";
-		case BW: return "Botswana";
-		case BY: return "Belarus";
-		case BZ: return "Belize";
-		case CA: return "Canada";
-		case CC: return "Cocos (Keeling) Islands";
-		case CD: return "Congo, the Democratic Republic of the";
-		case CF: return "Central African Republic";
-		case CG: return "Congo";
-		case CH: return "Switzerland";
-		case CI: return "Cote d'Ivoire";
-		case CK: return "Cook Islands";
-		case CL: return "Chile";
-		case CM: return "Cameroon";
-		case CN: return "China";
-		case CO: return "Colombia";
-		case CR: return "Costa Rica";
-		case CU: return "Cuba";
-		case CV: return "Cape Verde";
-		case CX: return "Christmas Island";
-		case CY: return "Cyprus";
-		case CZ: return "Czech Republic";
-		case DE: return "Germany";
-		case DJ: return "Djibouti";
-		case DK: return "Denmark";
-		case DM: return "Dominica";
-		case DO: return "Dominican Republic";
-		case DZ: return "Algeria";
-		case EC: return "Ecuador";
-		case EE: return "Estonia";
-		case EG: return "Egypt";
-		case EH: return "Western Sahara";
-		case ER: return "Eritrea";
-		case ES: return "Spain";
-		case ET: return "Ethiopia";
-		case FI: return "Finland";
-		case FJ: return "Fiji";
-		case FK: return "Falkland Islands (Malvinas)";
-		case FM: return "Micronesia, Federated States of";
-		case FO: return "Faroe Islands";
-		case FR: return "France";
-		case GA: return "Gabon";
-		case GB: return "United Kingdom";
-		case GD: return "Grenada";
-		case GE: return "Georgia";
-		case GF: return "French Guiana";
-		case GG: return "Guernsey";
-		case GH: return "Ghana";
-		case GI: return "Gibraltar";
-		case GL: return "Greenland";
-		case GM: return "Gambia";
-		case GN: return "Guinea";
-		case GP: return "Guadeloupe";
-		case GQ: return "Equatorial Guinea";
-		case GR: return "Greece";
-		case GS: return "South Georgia and the South Sandwich Islands";
-		case GT: return "Guatemala";
-		case GU: return "Guam";
-		case GW: return "Guinea-Bissau";
-		case GY: return "Guyana";
-		case HK: return "Hong Kong";
-		case HM: return "Heard Island and McDonald Islands";
-		case HN: return "Honduras";
-		case HR: return "Croatia";
-		case HT: return "Haiti";
-		case HU: return "Hungary";
-		case ID: return "Indonesia";
-		case IE: return "Ireland";
-		case IL: return "Israel";
-		case IM: return "Isle of Man";
-		case IN: return "India";
-		case IO: return "British Indian Ocean Territory";
-		case IQ: return "Iraq";
-		case IR: return "Iran, Islamic Republic of";
-		case IS: return "Iceland";
-		case IT: return "Italy";
-		case JE: return "Jersey";
-		case JM: return "Jamaica";
-		case JO: return "Jordan";
-		case JP: return "Japan";
-		case KE: return "Kenya";
-		case KG: return "Kyrgyzstan";
-		case KH: return "Cambodia";
-		case KI: return "Kiribati";
-		case KM: return "Comoros";
-		case KN: return "Saint Kitts and Nevis";
-		case KP: return "Korea, Democratic People's Republic of";
-		case KR: return "Korea, Republic of";
-		case KW: return "Kuwait";
-		case KY: return "Cayman Islands";
-		case KZ: return "Kazakhstan";
-		case LA: return "Lao People's Democratic Republic";
-		case LB: return "Lebanon";
-		case LC: return "Saint Lucia";
-		case LI: return "Liechtenstein";
-		case LK: return "Sri Lanka";
-		case LR: return "Liberia";
-		case LS: return "Lesotho";
-		case LT: return "Lithuania";
-		case LU: return "Luxembourg";
-		case LV: return "Latvia";
-		case LY: return "Libyan Arab Jamahiriya";
-		case MA: return "Morocco";
-		case MC: return "Monaco";
-		case MD: return "Moldova";
-		case ME: return "Montenegro";
-		case MF: return "Saint Martin (French part)";
-		case MG: return "Madagascar";
-		case MH: return "Marshall Islands";
-		case MK: return "Macedonia, the former Yugoslav Republic of";
-		case ML: return "Mali";
-		case MM: return "Myanmar";
-		case MN: return "Mongolia";
-		case MO: return "Macao";
-		case MP: return "Northern Mariana Islands";
-		case MQ: return "Martinique";
-		case MR: return "Mauritania";
-		case MS: return "Montserrat";
-		case MT: return "Malta";
-		case MU: return "Mauritius";
-		case MV: return "Maldives";
-		case MW: return "Malawi";
-		case MX: return "Mexico";
-		case MY: return "Malaysia";
-		case MZ: return "Mozambique";
-		case NA: return "Namibia";
-		case NC: return "New Caledonia";
-		case NE: return "Niger";
-		case NF: return "Norfolk Island";
-		case NG: return "Nigeria";
-		case NI: return "Nicaragua";
-		case NL: return "Netherlands";
-		case NO: return "Norway";
-		case NP: return "Nepal";
-		case NR: return "Nauru";
-		case NU: return "Niue";
-		case NZ: return "New Zealand";
-		case OM: return "Oman";
-		case PA: return "Panama";
-		case PE: return "Peru";
-		case PF: return "French Polynesia";
-		case PG: return "Papua New Guinea";
-		case PH: return "Philippines";
-		case PK: return "Pakistan";
-		case PL: return "Poland";
-		case PM: return "Saint Pierre and Miquelon";
-		case PN: return "Pitcairn";
-		case PR: return "Puerto Rico";
-		case PS: return "Palestinian Territory, Occupied";
-		case PT: return "Portugal";
-		case PW: return "Palau";
-		case PY: return "Paraguay";
-		case QA: return "Qatar";
-		case RE: return "Reunion";
-		case RO: return "Romania";
-		case RS: return "Serbia";
-		case RU: return "Russian Federation";
-		case RW: return "Rwanda";
-		case SA: return "Saudi Arabia";
-		case SB: return "Solomon Islands";
-		case SC: return "Seychelles";
-		case SD: return "Sudan";
-		case SE: return "Sweden";
-		case SG: return "Singapore";
-		case SH: return "Saint Helena";
-		case SI: return "Slovenia";
-		case SJ: return "Svalbard and Jan Mayen";
-		case SK: return "Slovakia";
-		case SL: return "Sierra Leone";
-		case SM: return "San Marino";
-		case SN: return "Senegal";
-		case SO: return "Somalia";
-		case SR: return "Suriname";
-		case ST: return "Sao Tome and Principe";
-		case SV: return "El Salvador";
-		case SY: return "Syrian Arab Republic";
-		case SZ: return "Swaziland";
-		case TC: return "Turks and Caicos Islands";
-		case TD: return "Chad";
-		case TF: return "French Southern Territories";
-		case TG: return "Togo";
-		case TH: return "Thailand";
-		case TJ: return "Tajikistan";
-		case TK: return "Tokelau";
-		case TL: return "Timor-Leste";
-		case TM: return "Turkmenistan";
-		case TN: return "Tunisia";
-		case TO: return "Tonga";
-		case TR: return "Turkey";
-		case TT: return "Trinidad and Tobago";
-		case TV: return "Tuvalu";
-		case TW: return "Taiwan, Province of China";
-		case TZ: return "Tanzania, United Republic of";
-		case UA: return "Ukraine";
-		case UG: return "Uganda";
-		case UM: return "United States Minor Outlying Islands";
-		case US: return "United States";
-		case UY: return "Uruguay";
-		case UZ: return "Uzbekistan";
-		case VA: return "Holy See (Vatican City State)";
-		case VC: return "Saint Vincent and the Grenadines";
-		case VE: return "Venezuela";
-		case VG: return "Virgin Islands, British";
-		case VI: return "Virgin Islands, U.S.";
-		case VN: return "Viet Nam";
-		case VU: return "Vanuatu";
-		case WF: return "Wallis and Futuna";
-		case WS: return "Samoa";
-		case YE: return "Yemen";
-		case YT: return "Mayotte";
-		case ZA: return "South Africa";
-		case ZM: return "Zambia";
-		case ZW: return "Zimbabwe";
-		default: throw new IllegalStateException("Unknown country");
-		}
+	public String toString() {
+		return alpha2Code;
+	}
+
+	public String toAlpha3Code() {
+		return alpha3Code;
 	}
 }
