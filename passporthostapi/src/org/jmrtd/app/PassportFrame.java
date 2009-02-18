@@ -82,6 +82,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
 
 import org.bouncycastle.asn1.x509.X509Name;
@@ -338,10 +340,13 @@ public class PassportFrame extends JFrame
 					/* NOTE: Already processed this one above. */
 					break;
 				default:
-					JOptionPane.showMessageDialog(getContentPane(), "File not supported", "File " + Integer.toHexString(fid) + " not supported!", JOptionPane.WARNING_MESSAGE);
+					String message = "File " + Integer.toHexString(fid) + " not supported!";
+					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (Exception e) {
-				JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "Exception reading file " + Integer.toHexString(fid) + ": " + e.toString(), JOptionPane.WARNING_MESSAGE);
+				JTextArea message = new JTextArea(5, 15);
+				message.append("Exception reading file " + Integer.toHexString(fid) + ": \n" + e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n");
+				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(message), "Problem reading file", JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 		}
