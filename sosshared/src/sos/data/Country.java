@@ -342,4 +342,15 @@ public class Country
 	public String toAlpha3Code() {
 		return alpha3Code;
 	}
+	
+	public int hashCode() {
+		return code;
+	}
+	
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (!obj.getClass().equals(Country.class)) { return false; }
+		Country other = (Country)obj;
+		return other.code == code;
+	}
 }
