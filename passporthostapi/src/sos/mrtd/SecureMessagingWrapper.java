@@ -39,7 +39,7 @@ import javax.smartcardio.ResponseAPDU;
 
 import sos.smartcards.APDUWrapper;
 import sos.smartcards.ISO7816;
-import sos.util.ASN1Utils;
+import sos.tlv.BERTLVObject;
 import sos.util.Hex;
 
 /**
@@ -215,7 +215,7 @@ public class SecureMessagingWrapper implements APDUWrapper
 
          out.reset();
          out.write((byte)0x87);
-         out.write(ASN1Utils.lengthId(ciphertext.length + 1));
+         out.write(BERTLVObject.getLengthAsBytes(ciphertext.length + 1));
          out.write(0x01);
          out.write(ciphertext, 0, ciphertext.length);
          do87 = out.toByteArray();

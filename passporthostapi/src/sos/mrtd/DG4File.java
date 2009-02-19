@@ -55,13 +55,6 @@ public class DG4File extends CBEFFDataGroup
 		return EF_DG4_TAG;
 	}
 
-	protected void readBiometricData(InputStream in, int length) throws IOException {
-		DataInputStream dataIn = new DataInputStream(in);
-		sourceObject = new byte[length];
-		dataIn.readFully(sourceObject);
-		isSourceConsistent = true;
-	}
-
 	/**
 	 * Gets a textual representation of this file.
 	 * 

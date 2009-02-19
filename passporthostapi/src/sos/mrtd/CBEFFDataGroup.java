@@ -22,14 +22,20 @@
 
 package sos.mrtd;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import sos.tlv.BERTLVInputStream;
 
 /**
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
  * Abstract super class for DG2 - DG4.
+ * 
+ * Some information based on ISO/IEC 7816-11:2004(E).
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -48,6 +54,16 @@ abstract class CBEFFDataGroup extends DataGroup
 
 	static final int FORMAT_OWNER_TAG = 0x87;
 	static final int FORMAT_TYPE_TAG = 0x88;
+
+	/** From ISO7816-11: Secure Messaging Template tags. */
+	static final int
+	SMT_TAG = 0x7D,
+	SMT_DO_PV = 0x81,
+	SMT_DO_CG = 0x85,
+	SMT_DO_CC = 0x8E,
+	SMT_DO_DS = 0x9E;
+	
+	protected List<byte[]> templates;
 
 	protected CBEFFDataGroup() {
 	}
@@ -72,11 +88,11 @@ abstract class CBEFFDataGroup extends DataGroup
 			}
 			int tlvBioInfoCountLength = tlvIn.readLength();
 			if (tlvBioInfoCountLength != 1) {
-				throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1");
+				throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1, found length " + tlvBioInfoCountLength);
 			}
 			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
 			for (int i = 0; i < bioInfoCount; i++) {
-				readBiometricInformationTemplate(tlvIn, i);
+				readBIT(tlvIn, i);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -85,24 +101,80 @@ abstract class CBEFFDataGroup extends DataGroup
 		isSourceConsistent = false;
 	}
 
-	private void readBiometricInformationTemplate(BERTLVInputStream tlvIn, int templateIndex) throws IOException {
+	private void readBIT(BERTLVInputStream tlvIn, int templateIndex) throws IOException {
 		int bioInfoTemplateTag = tlvIn.readTag();
 		if (bioInfoTemplateTag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
 			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(bioInfoTemplateTag));
 		}
 		tlvIn.readLength();
-		
-		/* We'll just skip this header for now. */
-		int bioHeaderTemplateTag = tlvIn.readTag(); /* A1, A2, ... */
-		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
-		if (bioHeaderTemplateTag != expectedBioHeaderTemplateTag) {
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(bioHeaderTemplateTag));
+
+		int headerTemplateTag = tlvIn.readTag();
+		int headerTemplateLength = tlvIn.readLength();
+
+		if ((headerTemplateTag == SMT_TAG)) {
+			/* The BIT is protected... */
+			readStaticallyProtectedBIT(headerTemplateTag, headerTemplateLength, templateIndex, tlvIn);
+		} else if ((headerTemplateTag & 0xA0) == 0xA0) {
+			readBHT(headerTemplateTag, headerTemplateLength, templateIndex, tlvIn);
+			readBiometricDataBlock(tlvIn);
+		} else {
+			throw new IllegalArgumentException("Unsupported template tag: " + Integer.toHexString(headerTemplateTag));
 		}
-		int bioHeaderTemplateLength = tlvIn.readLength();
-		tlvIn.skip(bioHeaderTemplateLength);
-		
-		/* And go straight to the data. */
-		readBiometricDataBlock(tlvIn);
+	}
+	
+	/**
+	 *  A1, A2, ...
+	 *  Will contain DOs as described in ISO 7816-11 Annex C.
+	 */
+	private void readBHT(int headerTemplateTag, int headerTemplateLength, int templateIndex, BERTLVInputStream tlvIn) throws IOException {
+		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
+		if (headerTemplateTag != expectedBioHeaderTemplateTag) {
+			String warning = "Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(headerTemplateTag);
+			System.out.println(warning);
+			// throw new IllegalArgumentException(warning);
+		}
+		/* We'll just skip this header for now. */
+		tlvIn.skip(headerTemplateLength);		
+	}
+
+	/**
+	 * Reads a biometric information template protected with secure messaging.
+	 * Described in ISO7816-11 Annex D.
+	 *
+	 * @param tag should be <code>0x7D</code>
+	 * @param length the length of the BIT
+	 * @param templateIndex index of the template
+	 * @param tlvIn source to read from
+	 *
+	 * @throws IOException on failure
+	 */
+	private void readStaticallyProtectedBIT(int tag, int length, int templateIndex, BERTLVInputStream tlvIn) throws IOException {
+		BERTLVInputStream tlvBHTIn = new BERTLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
+		int headerTemplateTag = tlvBHTIn.readTag();
+		int headerTemplateLength = tlvBHTIn.readLength();
+		readBHT(headerTemplateTag, headerTemplateLength, templateIndex, tlvBHTIn);
+		BERTLVInputStream tlvBiometricDataBlockIn = new BERTLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
+		readBiometricDataBlock(tlvBiometricDataBlockIn);
+	}
+
+	private byte[] decodeSMTValue(BERTLVInputStream tlvIn) throws IOException {
+		int doTag = tlvIn.readTag();
+		int doLength = tlvIn.readLength();
+		switch (doTag) {
+		case SMT_DO_PV /* 0x81 */:
+			/* NOTE: Plain value, just return whatever is in the payload */
+			return tlvIn.readValue();
+		case SMT_DO_CG /* 0x85 */:
+			/* NOTE: content of payload is encrypted */
+			return tlvIn.readValue();
+		case SMT_DO_CC /* 0x8E */:
+			/* NOTE: payload contains a MAC */
+			tlvIn.skip(doLength);
+		case SMT_DO_DS /* 0x9E */:
+			/* NOTE: payload contains a signature */
+			tlvIn.skip(doLength);
+		}
+		return null;
 	}
 
 	private void readBiometricDataBlock(BERTLVInputStream tlvIn) throws IOException {
@@ -124,8 +196,16 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */
-	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
+//	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
 
+	protected void readBiometricData(InputStream in, int length) throws IOException {
+		DataInputStream dataIn = new DataInputStream(in);
+		byte[] data = new byte[length];
+		dataIn.readFully(data);
+		if (templates == null) { templates = new ArrayList<byte[]>(); }
+		templates.add(data);
+	}
+	
 	public abstract byte[] getEncoded();
 
 	public abstract String toString();

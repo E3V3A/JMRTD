@@ -22,9 +22,8 @@
 
 package sos.mrtd;
 
-import java.io.DataInputStream;
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * File structure for the EF_DG3 file.
@@ -43,7 +42,7 @@ public class DG3File extends CBEFFDataGroup
 	public DG3File(InputStream in) {
 		super(in);
 	}
-	
+
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
 			return sourceObject;
@@ -55,6 +54,10 @@ public class DG3File extends CBEFFDataGroup
 		return EF_DG3_TAG;
 	}
 
+	public List<byte[]> getFingerPrints() {
+		return templates;
+	}
+
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -64,10 +67,12 @@ public class DG3File extends CBEFFDataGroup
 		return "DG3File";
 	}
 
-	protected void readBiometricData(InputStream in, int length) throws IOException {
-		DataInputStream dataIn = new DataInputStream(in);
-		sourceObject = new byte[length];
-		dataIn.readFully(sourceObject);
-		isSourceConsistent = true;
-	}
+	/**
+	 * Reads biometric data block.
+	 * 
+	 * TODO: actually interpret the finger prints...
+	 */
+//	protected void readBiometricData(InputStream in, int length) throws IOException {
+//
+//	}
 }
