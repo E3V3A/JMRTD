@@ -226,6 +226,7 @@ public class BERTLVInputStream extends InputStream
 
 	/**
 	 * Whether marking and resetting are supported.
+	 * We support this whenever the underlying input stream supports it.
 	 * 
 	 * @return whether mark and reset are supported
 	 */
