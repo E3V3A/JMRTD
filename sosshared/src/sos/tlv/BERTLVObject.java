@@ -512,7 +512,7 @@ public class BERTLVObject
 			/* short form */
 			out.write(length);
 		} else {
-			int byteCount = (int)(Math.log(length) / Math.log(256)) + 1;
+			int byteCount = log(length, 256);
 			out.write(0x80 | byteCount);
 			for (int i = 0; i < byteCount; i++) {
 				int pos = 8 * (byteCount - i - 1);
@@ -520,6 +520,15 @@ public class BERTLVObject
 			}
 		}
 		return out.toByteArray();
+	}
+	
+	private static int log(int n, int base) {
+		int result = 0;
+		while (n > 0) {
+			n = n / base;
+			result ++;
+		}
+		return result;
 	}
 
 	/**
