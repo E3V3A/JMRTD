@@ -106,6 +106,27 @@ public class PassportService extends PassportApduService
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
 
+    /** Short file identifiers for the DGs */
+    
+    public static final byte SF_DG1 = 0x01;
+    public static final byte SF_DG2 = 0x02;
+    public static final byte SF_DG3 = 0x03;
+    public static final byte SF_DG4 = 0x04;
+    public static final byte SF_DG5 = 0x05;
+    public static final byte SF_DG6 = 0x06;
+    public static final byte SF_DG7 = 0x07;
+    public static final byte SF_DG8 = 0x08;
+    public static final byte SF_DG9 = 0x09;
+    public static final byte SF_DG10 = 0x0a;
+    public static final byte SF_DG11 = 0x0b;
+    public static final byte SF_DG12 = 0x0c;
+    public static final byte SF_DG13 = 0x0d;
+    public static final byte SF_DG14 = 0x0e;
+    public static final byte SF_DG15 = 0x0f;
+    public static final byte SF_DG16 = 0x10;
+    public static final byte SF_COM = 0x1E;
+    public static final byte SF_SOD = 0x1D;
+    
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/**

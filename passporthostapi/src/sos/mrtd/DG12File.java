@@ -107,10 +107,10 @@ public class DG12File extends DataGroup
 	public DG12File(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 		int tag = tlvIn.readTag();
-		if (tag != PassportFile.EF_DG12_TAG) { throw new IllegalArgumentException("Expected EF_DG11_TAG"); }
+		if (tag != PassportFile.EF_DG12_TAG) { throw new IllegalArgumentException("Expected EF_DG12_TAG"); }
 		int length = tlvIn.readLength();
 		tag = tlvIn.readTag();
-		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
+		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
 		length = tlvIn.readLength();
 		int tagCount = length / 2;
 		int[] tagList = new int[tagCount];
