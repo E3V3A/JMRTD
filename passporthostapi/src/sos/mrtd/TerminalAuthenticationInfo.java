@@ -15,6 +15,10 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 
     public static final int VERSION_NUM = 1;
     
+    public TerminalAuthenticationInfo(SecurityInfo si) {
+        super(si);
+    }
+    
     public TerminalAuthenticationInfo(InputStream in) throws IOException {
         super(in);
     }

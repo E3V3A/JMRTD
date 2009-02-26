@@ -10,6 +10,10 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 
     public static final int VERSION_NUM = 1;
     
+    public ChipAuthenticationInfo(SecurityInfo si) {
+        super(si);
+    }
+    
     public ChipAuthenticationInfo(InputStream in) throws IOException {
         super(in);
     }

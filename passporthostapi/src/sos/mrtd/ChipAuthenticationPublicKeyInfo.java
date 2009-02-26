@@ -10,6 +10,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
+    public ChipAuthenticationPublicKeyInfo(SecurityInfo si) {
+        super(si);
+    }
+    
     public ChipAuthenticationPublicKeyInfo(InputStream in) throws IOException {
         super(in);
     }
