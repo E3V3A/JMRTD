@@ -6,6 +6,7 @@ import java.io.InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
@@ -53,7 +54,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
      }
     
      public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-         return id.equals(EACObjectIdentifiers.OID_ID_PK_DH) || id.equals(EACObjectIdentifiers.OID_ID_PK_ECDH);         
+         return id.equals(EACObjectIdentifiers.id_PK_DH) || id.equals(EACObjectIdentifiers.id_PK_ECDH);         
      }
 
 }

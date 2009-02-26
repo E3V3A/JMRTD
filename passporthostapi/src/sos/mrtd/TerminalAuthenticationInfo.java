@@ -3,6 +3,7 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
@@ -29,6 +30,12 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 
     public TerminalAuthenticationInfo(DERObjectIdentifier identifier, Integer version) {
         this(identifier, version, null);
+    }
+
+    public TerminalAuthenticationInfo(Integer fileId, Integer shortFileId) {
+        this(EACObjectIdentifiers.id_TA, VERSION_NUM, shortFileId.byteValue() != -1 ? 
+                new DERSequence(new ASN1Encodable[] {new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue()))), new DEROctetString(Hex.hexStringToBytes(Hex.byteToHexString(shortFileId.byteValue())))}) :
+                    new DERSequence(new ASN1Encodable[] {new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue()))) }));
     }
     
     protected void checkFields() {

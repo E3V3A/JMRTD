@@ -5,6 +5,7 @@ import java.io.InputStream;
 
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 
 public class ChipAuthenticationInfo extends SecurityInfo {
 
@@ -51,7 +52,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
     }
     
     public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-        return id.equals(EACObjectIdentifiers.OID_ID_CA_DH_3DES_CBC_CBC) || id.equals(EACObjectIdentifiers.OID_ID_CA_ECDH_3DES_CBC_CBC);
+        return id.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC) || id.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
     }
     
 }
