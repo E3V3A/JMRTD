@@ -423,6 +423,13 @@ public class PassportFrame extends JFrame
 	/** Check active authentication. */
 	private void verifyAA(PassportService service) {
 		try {
+			if (sod == null) {
+				InputStream sodIn = getInputStream(PassportService.EF_COM);
+				sod = new SODFile(sodIn);
+			}
+			if (sod.getDataGroupHashes().get(15) == null) {
+				verificationIndicator.setAAFailed("AA not supported (no DG15 hash in EF.SOd)");
+			}
 			InputStream dg15In = getInputStream(PassportService.EF_DG15);
 			if (dg15In != null && service != null) {
 				dg15 = new DG15File(dg15In);
@@ -1079,7 +1086,6 @@ public class PassportFrame extends JFrame
 		certGenerator.setPublicKey(publicKey);
 		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
 		docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
-		// FIXME: docSigningCert == null, generate something here...
 		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 		hashes.put(1, digest.digest(dg1Bytes));
@@ -1126,7 +1132,7 @@ public class PassportFrame extends JFrame
 			if (in == null) {
 				/* Not read yet. Start reading it. */
 				startCopyingRawInputStream(fid);
-				in = bufferedStreams.get(fid);
+				in = bufferedStreams.get(fid);				
 			}
 			return in;
 		} catch (IOException ioe) {
