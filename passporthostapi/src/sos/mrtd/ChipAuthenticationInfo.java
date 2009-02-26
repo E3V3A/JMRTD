@@ -77,10 +77,10 @@ public class ChipAuthenticationInfo extends SecurityInfo {
     }
 
     /**
-     * Returns a key identifier stored in this ChipAuthenticationStructure, null
+     * Returns a key identifier stored in this ChipAuthenticationInfo structure, null
      * if not present
      * 
-     * @return key identifier stored in this ChipAuthenticationStructure
+     * @return key identifier stored in this ChipAuthenticationInfo structure
      */
     public Integer getKeyId() {
         if (optionalData == null) {
