@@ -41,6 +41,7 @@ import sos.gui.HexViewPanel;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.EACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
@@ -184,6 +185,10 @@ implements AuthListener
 	public void performedBAC(BACEvent be) {
 		this.wrapper = be.getWrapper();
 	}
+
+    public void performedEAC(EACEvent ee) {
+        this.wrapper = ee.getWrapper();
+    }
 
 	public void performedAA(AAEvent ae) {
 	}

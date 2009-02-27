@@ -21,6 +21,7 @@ import javax.swing.border.EtchedBorder;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.EACEvent;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardServiceException;
@@ -174,5 +175,10 @@ public class CopyAndBurnPanel extends JPanel implements Runnable, ActionListener
 		// TODO Auto-generated method stub
 
 	}
+
+    public void performedEAC(EACEvent ee) {
+        // TODO Auto-generated method stub
+
+    }
 
 }

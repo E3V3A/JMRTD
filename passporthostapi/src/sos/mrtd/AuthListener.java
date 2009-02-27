@@ -37,7 +37,14 @@ public interface AuthListener {
     * @param be contains the resulting wrapper
     */
    void performedBAC(BACEvent be);
-   
+
+   /**
+    * Called when an attempt was made to perform the EAC protocol.
+    *
+    * @param ee contains the resulting wrapper and other EAC data
+    */
+   void performedEAC(EACEvent ee);
+
    /**
     * Called when an attempt was made to perform the AA protocol.
     *

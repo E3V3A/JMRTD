@@ -24,6 +24,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG1File;
+import sos.mrtd.EACEvent;
 import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportPersoService;
@@ -237,6 +238,10 @@ public class ClonePanel extends JPanel implements Runnable, ActionListener, Auth
 
     public void performedBAC(BACEvent be) {
         wrapper = be.getWrapper();        
+    }
+
+    public void performedEAC(EACEvent ee) {
+        wrapper = ee.getWrapper();        
     }
 
     private class ProgressThread extends Thread {

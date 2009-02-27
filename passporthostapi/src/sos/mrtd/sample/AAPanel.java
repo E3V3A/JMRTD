@@ -40,6 +40,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG15File;
+import sos.mrtd.EACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
@@ -115,7 +116,7 @@ implements AuthListener
 	   this.passportService = new PassportService(apduService);	
    }
 
-public void performedBAC(BACEvent be) {
+   public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper();
       passportService.setWrapper(wrapper);
    }
@@ -124,6 +125,11 @@ public void performedBAC(BACEvent be) {
       area.append("pubkey = " + ae.getPubkey());
       area.append("m1 = " + Hex.bytesToHexString(ae.getM1()));
       area.append("m2 = " + Hex.bytesToHexString(ae.getM2()));
+   }
+
+   public void performedEAC(EACEvent ee) {
+       this.wrapper = ee.getWrapper();
+       passportService.setWrapper(wrapper);
    }
 }
 

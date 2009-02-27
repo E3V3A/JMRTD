@@ -49,6 +49,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.DG15File;
+import sos.mrtd.EACEvent;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.smartcards.CardService;
@@ -337,6 +338,9 @@ public class PersoPanel extends JPanel implements ActionListener, AuthListener
 
 	public void performedBAC(BACEvent be) {		
 	}
+
+    public void performedEAC(EACEvent ee) {     
+    }
 
 	public void performedAA(AAEvent ae) {
 	}

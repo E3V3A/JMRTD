@@ -49,6 +49,7 @@ import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
 import sos.mrtd.COMFile;
+import sos.mrtd.EACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
@@ -242,6 +243,11 @@ public class PAPanel extends JPanel implements AuthListener
 		this.wrapper = be.getWrapper();
 		passportService.setWrapper(wrapper);
 	}
+
+    public void performedEAC(EACEvent ee) {
+        this.wrapper = ee.getWrapper();
+        passportService.setWrapper(wrapper);
+    }
 
 	public void performedAA(AAEvent ae) {
 	}

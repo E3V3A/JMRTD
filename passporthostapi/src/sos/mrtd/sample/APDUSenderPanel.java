@@ -40,6 +40,7 @@ import javax.swing.border.EtchedBorder;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
+import sos.mrtd.EACEvent;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
@@ -196,6 +197,10 @@ public class APDUSenderPanel extends JPanel implements ActionListener, Runnable,
    public void performedBAC(BACEvent be) {
       this.wrapper = be.getWrapper(); 
    }
+
+   public void performedEAC(EACEvent ee) {
+       this.wrapper = ee.getWrapper(); 
+    }
 
    public void performedAA(AAEvent ae) {
    }

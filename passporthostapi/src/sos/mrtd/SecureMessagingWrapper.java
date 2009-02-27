@@ -193,7 +193,8 @@ public class SecureMessagingWrapper implements APDUWrapper
 
       byte[] maskedHeader = new byte[4];
       System.arraycopy(capdu, 0, maskedHeader, 0, 4);
-      maskedHeader[ISO7816.OFFSET_CLA] = (byte)0x0C;
+      // TODO: test this with a real passport if it supports chaining
+      maskedHeader[ISO7816.OFFSET_CLA] = (byte)(capdu[0] | (byte)0x0C);
       byte[] paddedHeader = Util.pad(maskedHeader);
 
       byte[] do87 = new byte[0];
