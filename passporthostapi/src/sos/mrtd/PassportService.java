@@ -105,6 +105,11 @@ public class PassportService extends PassportApduService
 	public static final short EF_SOD = 0x011D;
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
+    /** File with the EAC CVCA references. Note: this can be overridden
+     *  by a file identifier in the DG14 file (TerminalAuthenticationInfo).
+     *  So check that one first. Also, this file does not have a header tag, like the others.
+     */
+    public static final short EF_CVCA = 0x011C;
 
     /** Short file identifiers for the DGs */
     
@@ -126,6 +131,7 @@ public class PassportService extends PassportApduService
     public static final byte SF_DG16 = 0x10;
     public static final byte SF_COM = 0x1E;
     public static final byte SF_SOD = 0x1D;
+    public static final byte SF_CVCA = 0x1C;
     
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 

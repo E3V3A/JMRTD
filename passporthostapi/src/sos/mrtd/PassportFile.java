@@ -33,7 +33,7 @@ package sos.mrtd;
  */
 public abstract class PassportFile
 {
-   /** ICAO specific datagroup tag. */
+   /** ICAO specific datagroup tag. There is also the CVCA file that has no tag! */
    public static final int EF_COM_TAG = 0x60,
                            EF_DG1_TAG = 0x61,
                            EF_DG2_TAG = 0x75,
