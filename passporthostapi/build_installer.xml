@@ -48,7 +48,7 @@
 	</target>
 
 	<!-- Convert to 1.3 classes -->
-	<target name="weave" depends="compile" if="is_retroweaver_available">
+	<!-- target name="weave" depends="compile" if="is_retroweaver_available">
 		<taskdef name="retroweaver"
 			classpath="${retroweaver_dir}/${retroweaver_jar}"
 			classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" />
@@ -62,7 +62,7 @@
 		<copy todir="${distlib}">
 			<fileset dir="${retroweaver_dir}" includes="${retroweaver_rt_jar}" />
 		</copy>
-	</target>
+	</target -->
 
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
 		<!-- Copy bouncy castle -->
@@ -85,7 +85,7 @@
 		</copy>
 	</target>
 
-	<target name="dist" depends="extensions, weave, compile" description="Generates the distribution .jar file">
+	<target name="dist" depends="extensions, compile" description="Generates the distribution .jar file">
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
 			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
