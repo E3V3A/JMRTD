@@ -424,7 +424,7 @@ public class PassportFrame extends JFrame
 	private void verifyAA(PassportService service) {
 		try {
 			if (sod == null) {
-				InputStream sodIn = getInputStream(PassportService.EF_COM);
+				InputStream sodIn = getInputStream(PassportService.EF_SOD);
 				sod = new SODFile(sodIn);
 			}
 			if (sod.getDataGroupHashes().get(15) == null) {
