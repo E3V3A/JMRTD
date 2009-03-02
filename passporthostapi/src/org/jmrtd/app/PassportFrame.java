@@ -34,6 +34,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.io.PipedOutputStream;
 import java.math.BigInteger;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -53,6 +55,7 @@ import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -62,6 +65,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -72,8 +76,10 @@ import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -88,6 +94,7 @@ import javax.swing.SpringLayout;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
 import sos.data.Country;
@@ -144,6 +151,7 @@ public class PassportFrame extends JFrame
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+    private static final Icon EAC_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -176,6 +184,13 @@ public class PassportFrame extends JFrame
 	private SODFile sod;
 
 	private X509Certificate docSigningCert, countrySigningCert;
+    
+    /** EAC related fields */
+    private PublicKey eacPassportPubKey = null;
+    private int eacPassportKeyId = -1;
+    private String eacCAReference = null;
+    private PrivateKey terminalPrivateKey = null;
+    private List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
 
 	private VerificationIndicator verificationIndicator;
 	private Country issuingState;
@@ -212,6 +227,24 @@ public class PassportFrame extends JFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());
+        boolean testEACMenu = false;
+        if(testEACMenu) {
+          List<String> caRefs = new ArrayList<String>();
+          caRefs.add("CA REF 1");
+          caRefs.add("CA REF 2");
+          Map<Integer,PublicKey> keys = new TreeMap<Integer,PublicKey>();
+          try {
+            KeyPairGenerator k = KeyPairGenerator.getInstance("EC");
+            k.initialize(192);
+            KeyPair kp1 = k.generateKeyPair();
+            KeyPair kp2 = k.generateKeyPair();
+            keys.put(1, kp1.getPublic());
+            keys.put(2, kp2.getPublic());
+          }catch(Exception e) {
+            e.printStackTrace();
+          }
+          menuBar.add(createEACMenu(keys, caRefs));
+        }
 		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
@@ -468,6 +501,7 @@ public class PassportFrame extends JFrame
 			Collections.sort(tagsOfHashes);
 			if (tagsOfHashes.equals(tagList)) {
 				verificationIndicator.setDSFailed("\"Jeroen van Beek sanity check\" failed!");
+                // TODO: Woj: this will also fail for EAC passports before EAC is done!
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
 
@@ -603,6 +637,63 @@ public class PassportFrame extends JFrame
 		return menu;
 	}
 
+    private JMenu createEACMenu(Map<Integer,PublicKey> passportKeys, List<String> caCertReferences) {
+        JMenu menu = new JMenu("EAC");
+        JMenu chooseKeyMenu = new JMenu("Passport pub. key");
+        if(passportKeys.size() == 1 && passportKeys.keySet().contains(-1)) {
+            JCheckBoxMenuItem oneKey = new JCheckBoxMenuItem();
+            chooseKeyMenu.add(oneKey);
+            oneKey.setAction(getOneKeyAction(passportKeys.get(-1)));
+        }else{
+            boolean first = true;
+            ButtonGroup bg = new ButtonGroup();
+            for(Integer i : passportKeys.keySet()) {
+                PublicKey key = passportKeys.get(i);
+                JCheckBoxMenuItem oneKey = new JCheckBoxMenuItem();
+                bg.add(oneKey);
+                chooseKeyMenu.add(oneKey);
+                oneKey.setAction(getKeyAction(i, key, first));
+                first = false;
+            }
+        }
+        menu.add(chooseKeyMenu);
+        if(caCertReferences.size() > 1) {
+            JMenu chooseCACertMenu = new JMenu("CA Cert Ref");
+            boolean first = true;
+            ButtonGroup bg = new ButtonGroup();
+            for(String s : caCertReferences) {
+                JCheckBoxMenuItem caRef = new JCheckBoxMenuItem();
+                bg.add(caRef);
+                chooseCACertMenu.add(caRef);
+                caRef.setAction(getCACertAction(s, first));
+                first = false;
+            }
+            menu.add(chooseCACertMenu);
+        }
+        JMenuItem loadTerminalCertificateMenu = new JMenuItem();
+        menu.add(loadTerminalCertificateMenu);
+        loadTerminalCertificateMenu.setAction(getLoadTerminalCertificateAction(this));
+        JMenuItem loadTerminalKeyMenu = new JMenuItem();
+        menu.add(loadTerminalKeyMenu);
+        loadTerminalKeyMenu.setAction(getLoadTerminalKeyAction());
+        JMenuItem performEACItem = new JMenuItem();
+        menu.add(performEACItem);
+        performEACItem.setAction(getPerformEACAction());
+        menu.addSeparator();
+        JMenu viewMenu = new JMenu("View");
+        JMenuItem viewPassportKeyItem = new JMenuItem();
+        viewMenu.add(viewPassportKeyItem);
+        viewPassportKeyItem.setAction(getViewPassportKeyAction());
+        JMenuItem viewTerminalKeyItem = new JMenuItem();
+        viewMenu.add(viewTerminalKeyItem);
+        viewTerminalKeyItem.setAction(getViewTerminalKeyAction());
+        JMenuItem viewTerminalCertificateItem = new JMenuItem();
+        viewMenu.add(viewTerminalCertificateItem);
+        viewTerminalCertificateItem.setAction(getViewTerminalCertificateAction(this));
+        menu.add(viewMenu);
+        return menu;
+    }
+    
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
@@ -636,9 +727,194 @@ public class PassportFrame extends JFrame
 
 		return menu;
 	}
+    
+    /* Menu item actions below... */
 
-	/* Menu item actions below... */
+    private Action getOneKeyAction(PublicKey key) {
+        Action action = new AbstractAction() {
 
+            private static final long serialVersionUID = -4351067833708816679L;
+
+            public void actionPerformed(ActionEvent e) {
+            }
+        };
+        eacPassportPubKey = key;
+        action.putValue(Action.SELECTED_KEY, true);
+        action.putValue(Action.SHORT_DESCRIPTION, "Passport EAC Key");
+        action.putValue(Action.NAME, key.getAlgorithm()+" "+key.getFormat());
+        return action;        
+    }
+
+    private Action getKeyAction(final Integer i, final PublicKey key, boolean enabled) {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -4351067833708123679L;
+
+            public void actionPerformed(ActionEvent e) {
+                JCheckBoxMenuItem cb = (JCheckBoxMenuItem)e.getSource();
+                if(cb.isSelected()) {
+                    eacPassportPubKey = key;
+                    eacPassportKeyId = i;
+                }
+            }
+        };
+        if(enabled) {
+            eacPassportPubKey = key;
+            eacPassportKeyId = i;
+        }
+        action.putValue(Action.SELECTED_KEY, enabled);
+        action.putValue(Action.SHORT_DESCRIPTION, "Passport EAC Key");
+        action.putValue(Action.NAME, i +": "+key.getAlgorithm()+" "+key.getFormat());
+        return action;        
+    }
+
+    private Action getCACertAction(final String caRef, boolean enabled) {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2151067833708123679L;
+
+            public void actionPerformed(ActionEvent e) {
+                JCheckBoxMenuItem cb = (JCheckBoxMenuItem)e.getSource();
+                if(cb.isSelected()) {
+                    eacCAReference = caRef;                    
+                }
+            }
+        };
+        if(enabled) {
+            eacCAReference = caRef;
+        }
+        action.putValue(Action.SELECTED_KEY, enabled);
+        action.putValue(Action.SHORT_DESCRIPTION, "CA Certificate reference");
+        action.putValue(Action.NAME, caRef);
+        return action;        
+    }
+
+    private Action getLoadTerminalCertificateAction(final JFrame frame) {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2671362506867899044L;
+
+            public void actionPerformed(ActionEvent e) {
+                new TerminalCertificatesDialog(frame, terminalCertificates, true);
+            }
+        };
+        action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Load/Add/Remove Terminal CV Certificate");
+        action.putValue(Action.NAME, "Manage Terminal Certs.");
+        return action;
+    }
+
+    private Action getViewTerminalCertificateAction(final JFrame frame) {
+        Action action = new AbstractAction() {
+            private static final long serialVersionUID = -2671362506812399044L;
+
+            public void actionPerformed(ActionEvent e) {
+                new TerminalCertificatesDialog(frame, terminalCertificates, false);
+            }
+        };
+        action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "View Terminal CV Certificates");
+        action.putValue(Action.NAME, "Terminal Certs.");
+        return action;
+    }
+
+    private Action getLoadTerminalKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2671362506867123044L;
+
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+                int choice = fileChooser.showOpenDialog(getContentPane());
+                switch (choice) {
+                case JFileChooser.APPROVE_OPTION:
+                    try {
+                        File file = fileChooser.getSelectedFile();
+                        DataInputStream fileIn = new DataInputStream(new FileInputStream(file));
+                        byte[] privateKeyBytes = new byte[(int)file.length()];
+                        fileIn.readFully(privateKeyBytes);
+                        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
+                        KeyFactory factory = KeyFactory.getInstance("RSA");
+                        terminalPrivateKey = factory.generatePrivate(privateKeySpec);
+                    } catch (Exception ex) {
+                        /* NOTE: Do nothing. */
+                        // TODO: Handle this somehow...
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Load terminal private key from file");
+        action.putValue(Action.NAME, "Load Terminal Key");
+        return action;
+
+    }
+
+    private Action getPerformEACAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2671902506867123044L;
+
+            public void actionPerformed(ActionEvent e) {
+                // TODO: do EAC
+            }
+        };
+        action.putValue(Action.SMALL_ICON, EAC_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, EAC_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Perform the EAC protocol with the passport");
+        action.putValue(Action.NAME, "Perform EAC");
+        return action;
+
+    }
+
+    private Action getViewPassportKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -4351062035608816679L;
+
+            public void actionPerformed(ActionEvent e) {
+                    KeyFrame keyFrame = new KeyFrame("EAC Passport Public Key", eacPassportPubKey);
+                    keyFrame.pack();
+                    keyFrame.setVisible(true);
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "View passport public EAC key");
+        action.putValue(Action.NAME, "Passport EAC key");
+        return action;
+    }
+
+    private Action getViewTerminalKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -4351062035608816679L;
+
+            public void actionPerformed(ActionEvent e) {
+                if(terminalPrivateKey != null) {
+                    KeyFrame keyFrame = new KeyFrame("Terminal Private Key", terminalPrivateKey);
+                    keyFrame.pack();
+                    keyFrame.setVisible(true);
+                }else{
+                    // TODO: handle this somehow...
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "View terminal private key");
+        action.putValue(Action.NAME, "Terminal key");
+        return action;
+    }
+
+    
 	private Action getCloseAction() {
 		Action action = new AbstractAction() {
 

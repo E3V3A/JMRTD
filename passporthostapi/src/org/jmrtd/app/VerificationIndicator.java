@@ -44,7 +44,7 @@ public class VerificationIndicator extends Box
 	private static final long serialVersionUID = -1458554034529575752L;
 
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
-	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, DS_INDICATOR = 2, CS_INDICATOR = 3;
+	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, EAC_INDICATOR = 2, DS_INDICATOR = 3, CS_INDICATOR = 4;
 	
 	private static final int VERIFICATION_UNKNOWN = 0, VERIFICATION_SUCCEEDED = 1, VERIFICATION_FAILED = -1;
 
@@ -55,8 +55,8 @@ public class VerificationIndicator extends Box
 
 	private static final int SPACING = 25;
 
-	private JLabel bacLabel, dsLabel, csLabel, aaLabel;
-	private ImageIcon bacIcon, dsIcon, csIcon, aaIcon;
+	private JLabel bacLabel, dsLabel, csLabel, aaLabel, eacLabel;
+	private ImageIcon bacIcon, dsIcon, csIcon, aaIcon, eacIcon;
 
 	public VerificationIndicator() {
 		super(BoxLayout.X_AXIS);
@@ -64,11 +64,13 @@ public class VerificationIndicator extends Box
 		aaIcon = new ImageIcon(NOT_CHECKED_ICON);
 		dsIcon = new ImageIcon(NOT_CHECKED_ICON);
 		csIcon = new ImageIcon(NOT_CHECKED_ICON);
+        eacIcon = new ImageIcon(NOT_CHECKED_ICON);
 
 		bacLabel = new JLabel(bacIcon);
 		aaLabel = new JLabel(aaIcon);
 		dsLabel = new JLabel(dsIcon);
 		csLabel = new JLabel(csIcon);
+        eacLabel = new JLabel(eacIcon);
 
 		setAANotChecked();
 
@@ -86,7 +88,14 @@ public class VerificationIndicator extends Box
 
 		add(Box.createHorizontalStrut(SPACING));
 
-		JLabel dsKeyLabel = new JLabel("DS: ");
+        JLabel eacKeyLabel = new JLabel("EAC: ");
+        eacKeyLabel.setFont(KEY_FONT);
+        add(eacKeyLabel);
+        add(eacLabel);
+
+        add(Box.createHorizontalStrut(SPACING));
+
+        JLabel dsKeyLabel = new JLabel("DS: ");
 		dsKeyLabel.setFont(KEY_FONT);
 		add(dsKeyLabel);
 		add(dsLabel);
@@ -123,6 +132,18 @@ public class VerificationIndicator extends Box
 		setState(AA_INDICATOR, VERIFICATION_UNKNOWN, null);
 	}
 
+    public void setEACSucceeded() {
+        setState(EAC_INDICATOR, VERIFICATION_SUCCEEDED, "Succeeded");
+    }
+    
+    public void setEACFailed(String reason) {
+        setState(EAC_INDICATOR, VERIFICATION_FAILED, reason);
+    }
+    
+    public void setEACNotChecked() {
+        setState(EAC_INDICATOR, VERIFICATION_UNKNOWN, null);
+    }
+
 	public void setDSSucceeded() {
 		setState(DS_INDICATOR, VERIFICATION_SUCCEEDED, null);
 	}
@@ -153,6 +174,7 @@ public class VerificationIndicator extends Box
 		switch (indicator) {
 		case BAC_INDICATOR: label= bacLabel; icon = bacIcon; break;
 		case AA_INDICATOR: label = aaLabel; icon = aaIcon; break;
+        case EAC_INDICATOR: label = eacLabel; icon = eacIcon; break;
 		case DS_INDICATOR: label = dsLabel; icon = dsIcon; break;
 		case CS_INDICATOR: label = csLabel; icon = csIcon; break;
 		}
