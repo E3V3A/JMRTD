@@ -130,7 +130,7 @@ public class TerminalCertificatesDialog extends JDialog implements
 
         this.add(listScroller, BorderLayout.CENTER);
         this.add(buttonPanel, BorderLayout.SOUTH);
-        setModal(true);
+        setModal(false);
         setSize(new Dimension(450, 200));
         setLocationRelativeTo(parent);
         setVisible(true);
