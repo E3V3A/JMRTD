@@ -26,7 +26,10 @@
 	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
 
-	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer" />
+	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
+		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
+		<move failonerror="false" file="jmrtd_installer.exe" tofile="jmrtd_installer-${app_version}.exe" />
+	</target>
 
 	<target name="init" depends="check_conditional_properties" description="Initializes some variables">
 		<!-- Create the time stamp -->
@@ -41,7 +44,7 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${sos-shared-src}" classpath="${bcprov_dir}/${bcprov_jar}" destdir="${build}" />
+		<javac srcdir="${src}:${sos-shared-src}" includes="**/*.java" excludes="org/jmrtd/test/**" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
 	</target>
 
 	<!-- Convert to 1.3 classes -->
@@ -75,7 +78,11 @@
 		<copy todir="${distlib}">
 			<fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" />
 		</copy>
-
+		
+		<!-- Copy cert-cvc -->
+		<copy todir="${distlib}">
+			<fileset file="${certcvc_dir}/${certcvc_jar}" />
+		</copy>
 	</target>
 
 	<target name="dist" depends="extensions, weave, compile" description="Generates the distribution .jar file">
@@ -97,7 +104,7 @@
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${retroweaver_rt_jar}" />
+				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar} ${retroweaver_rt_jar}" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
@@ -112,8 +119,7 @@
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
-		</jar>
-		
+		</jar>	
 	</target>
 
 	<target name="izpack_installer" depends="init, dist" description="Generates an installer .jar file using IzPack" if="is_izpack_available">
@@ -220,14 +226,16 @@
 
 	<target name="clean" description="clean up">
 		<!-- Delete the ${build} and ${dist} directory trees -->
-		<delete dir="${build}" />
-		<delete dir="${dist}" />
-		<delete file="jmrtd_installer.jar" />
-		<delete file="jmrtd_installer.exe" />
+		<delete failonerror="false" dir="${build}" />
+		<delete failonerror="false" dir="${dist}" />
+		<delete failonerror="false" file="jmrtd_installer.jar" />
+		<delete failonerror="false" file="jmrtd_installer.exe" />
+		<delete failonerror="false" file="jmrtd_installer-${app_version}.jar" />
+		<delete failonerror="false" file="jmrtd_installer-${app_version}.exe" />
 	</target>
 
 	<target name="doc" description="Generates API docs" if="build_java_doc">
-		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar}"
+		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
 				destdir="apidocs"
 				package="false"
 				doctitle="${app_title}"
@@ -246,7 +254,6 @@
 			<package name="sos.tlv" />
 			<!-- package name="sos.gui" / --> <!-- Not used in public interface -->
 			<!-- package name="sos.util" / --> <!-- Not used in public interface -->
-			
 		</javadoc>
 	
 		<zip destfile="jmrtd-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
