@@ -18,6 +18,12 @@ public class Files
 		public String getDescription() { return "Certificate files"; }				
 	};
 
+    public static final FileFilter CV_CERTIFICATE_FILE_FILTER = new FileFilter() {
+        public boolean accept(File f) { return f.isDirectory()
+            || f.getName().endsWith("cvcert") || f.getName().endsWith("CVCERT"); }
+        public String getDescription() { return "CV Certificate files"; }              
+    };
+
 	public static final FileFilter KEY_FILE_FILTER = new FileFilter() {
 		public boolean accept(File f) { return f.isDirectory()
 			|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
