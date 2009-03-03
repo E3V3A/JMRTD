@@ -5,6 +5,7 @@ import java.io.InputStream;
 public class CVCAFile extends PassportFile {
 
     public static final byte CAR_TAG = 0x42;
+    public static final int LENGTH = 36;
 
     private String caReference = null;
 
@@ -18,7 +19,7 @@ public class CVCAFile extends PassportFile {
      */
     public CVCAFile(InputStream in) {
         try {
-            if (in.available() != 36) {
+            if (in.available() != LENGTH) {
                 throw new IllegalArgumentException("Wrong data size.");
             }
             int tag = in.read();
@@ -85,7 +86,7 @@ public class CVCAFile extends PassportFile {
     }
 
     public byte[] getEncoded() {
-        byte[] result = new byte[36];
+        byte[] result = new byte[LENGTH];
         result[0] = CAR_TAG;
         result[1] = (byte) caReference.length();
         System.arraycopy(caReference.getBytes(), 0, result, 2, result[1]);

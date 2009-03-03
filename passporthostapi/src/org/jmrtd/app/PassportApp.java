@@ -66,6 +66,7 @@ import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
+import sos.mrtd.TerminalCVCertificateDirectory;
 import sos.smartcards.APDUFingerprint;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardFileInputStream;
@@ -261,6 +262,11 @@ public class PassportApp  implements PassportListener
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
+        /* Terminal Certs... */
+        JMenuItem loadItem = new JMenuItem();
+        menu.add(loadItem);
+        loadItem.setAction(getLoadAction());
+
 		menu.addSeparator();
 
 		/* Exit */
@@ -346,6 +352,41 @@ public class PassportApp  implements PassportListener
 		action.putValue(Action.NAME, "Open File...");
 		return action;
 	}
+
+    private Action getLoadAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -3009238098024027906L;
+
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setAcceptAllFileFilterUsed(false);
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                fileChooser.setFileFilter(new FileFilter() {
+                    public boolean accept(File f) { return f.isDirectory(); }
+                    public String getDescription() { return "Directories"; }               
+                });
+                int choice = fileChooser.showOpenDialog(contentPane);
+                switch (choice) {
+                case JFileChooser.APPROVE_OPTION:
+                    try {
+                        File file = fileChooser.getSelectedFile();
+                        TerminalCVCertificateDirectory.getInstance().scanDirectory(file);
+                    } catch (IOException ioe) {
+                        /* NOTE: Do nothing. */
+                        ioe.printStackTrace();
+                    }
+                    break;
+                default: break;
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, OPEN_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Load terminals certificate & key information");
+        action.putValue(Action.NAME, "Terminal Certs...");
+        return action;
+    }
 
 	private Action getExitAction() {
 		Action action = new AbstractAction() {

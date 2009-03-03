@@ -615,10 +615,14 @@ public class PassportService extends PassportApduService
 		public synchronized int getFileLength() throws CardServiceException {
 			try {
 				/* Each passport file consists of a TLV structure. */
+                /* Woj: no, not each, CVCA does not */
 				byte[] prefix = readBinary(0, 8);
 				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
 				BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
-				tlvIn.readTag();
+				int tag = tlvIn.readTag();
+                if(tag == CVCAFile.CAR_TAG) {
+                    return CVCAFile.LENGTH;
+                }
 				int vLength = tlvIn.readLength();
 				int tlLength = prefix.length - baIn.available();
 				return tlLength + vLength;

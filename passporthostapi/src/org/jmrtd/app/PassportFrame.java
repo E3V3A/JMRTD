@@ -63,8 +63,10 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -80,6 +82,7 @@ import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -100,8 +103,10 @@ import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import sos.data.Country;
 import sos.data.Gender;
 import sos.mrtd.COMFile;
+import sos.mrtd.CVCAFile;
 import sos.mrtd.DG11File;
 import sos.mrtd.DG12File;
+import sos.mrtd.DG14File;
 import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
@@ -117,6 +122,7 @@ import sos.mrtd.PassportFile;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
+import sos.mrtd.TerminalCVCertificateDirectory;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
 import sos.smartcards.CardServiceException;
@@ -178,20 +184,22 @@ public class PassportFrame extends JFrame
 	private DataGroup dg8, dg9, dg10;
 	private DG11File dg11;
 	private DG12File dg12;
-	private DataGroup dg13, dg14;
+	private DataGroup dg13;
+    private DG14File dg14;
 	private DG15File dg15;
 	private DataGroup dg16;
 	private SODFile sod;
+    private CVCAFile cvca;
 
 	private X509Certificate docSigningCert, countrySigningCert;
     
     /** EAC related fields */
     private PublicKey eacPassportPubKey = null;
-    private int eacPassportKeyId = -1;
-    private String eacCAReference = null;
     private PrivateKey terminalPrivateKey = null;
     private List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
 
+    private Set<JComponent> eacComponents = new HashSet<JComponent>();
+    
 	private VerificationIndicator verificationIndicator;
 	private Country issuingState;
 
@@ -227,24 +235,6 @@ public class PassportFrame extends JFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());
-        boolean testEACMenu = false;
-        if(testEACMenu) {
-          List<String> caRefs = new ArrayList<String>();
-          caRefs.add("CA REF 1");
-          caRefs.add("CA REF 2");
-          Map<Integer,PublicKey> keys = new TreeMap<Integer,PublicKey>();
-          try {
-            KeyPairGenerator k = KeyPairGenerator.getInstance("EC");
-            k.initialize(192);
-            KeyPair kp1 = k.generateKeyPair();
-            KeyPair kp2 = k.generateKeyPair();
-            keys.put(1, kp1.getPublic());
-            keys.put(2, kp2.getPublic());
-          }catch(Exception e) {
-            e.printStackTrace();
-          }
-          menuBar.add(createEACMenu(keys, caRefs));
-        }
 		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
@@ -366,12 +356,19 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_DG12:
 					dg12 = new DG12File(in);
 					break;
+                case PassportService.EF_DG14:
+                    dg14 = new DG14File(in);
+                    break;
 				case PassportService.EF_DG15:
 					dg15 = new DG15File(in);
 					break;
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
 					break;
+                case PassportService.EF_CVCA:
+                    cvca = new CVCAFile(in);
+                    break;
+
 				default:
 					String message = "File " + Integer.toHexString(fid) + " not supported!";
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
@@ -420,9 +417,9 @@ public class PassportFrame extends JFrame
 		(new Thread(new Runnable() {
 			public void run() {
 				try {
-					progressBar.setMaximum(totalLength);
 					while (bytesRead <= totalLength) {
-						Thread.sleep(200);
+                        Thread.sleep(200);
+                        progressBar.setMaximum(totalLength);
 						progressBar.setValue(bytesRead);
 					}
 				} catch (InterruptedException ie) {
@@ -501,7 +498,6 @@ public class PassportFrame extends JFrame
 			Collections.sort(tagsOfHashes);
 			if (tagsOfHashes.equals(tagList)) {
 				verificationIndicator.setDSFailed("\"Jeroen van Beek sanity check\" failed!");
-                // TODO: Woj: this will also fail for EAC passports before EAC is done!
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
 
@@ -634,64 +630,32 @@ public class PassportFrame extends JFrame
 		menu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
 
+        menu.addSeparator();
+        
+        for(JMenuItem item : createEACMenus()) {
+            menu.add(item);
+            enableEACItems(false);
+        }
 		return menu;
 	}
 
-    private JMenu createEACMenu(Map<Integer,PublicKey> passportKeys, List<String> caCertReferences) {
-        JMenu menu = new JMenu("EAC");
-        JMenu chooseKeyMenu = new JMenu("Passport pub. key");
-        if(passportKeys.size() == 1 && passportKeys.keySet().contains(-1)) {
-            JCheckBoxMenuItem oneKey = new JCheckBoxMenuItem();
-            chooseKeyMenu.add(oneKey);
-            oneKey.setAction(getOneKeyAction(passportKeys.get(-1)));
-        }else{
-            boolean first = true;
-            ButtonGroup bg = new ButtonGroup();
-            for(Integer i : passportKeys.keySet()) {
-                PublicKey key = passportKeys.get(i);
-                JCheckBoxMenuItem oneKey = new JCheckBoxMenuItem();
-                bg.add(oneKey);
-                chooseKeyMenu.add(oneKey);
-                oneKey.setAction(getKeyAction(i, key, first));
-                first = false;
-            }
-        }
-        menu.add(chooseKeyMenu);
-        if(caCertReferences.size() > 1) {
-            JMenu chooseCACertMenu = new JMenu("CA Cert Ref");
-            boolean first = true;
-            ButtonGroup bg = new ButtonGroup();
-            for(String s : caCertReferences) {
-                JCheckBoxMenuItem caRef = new JCheckBoxMenuItem();
-                bg.add(caRef);
-                chooseCACertMenu.add(caRef);
-                caRef.setAction(getCACertAction(s, first));
-                first = false;
-            }
-            menu.add(chooseCACertMenu);
-        }
-        JMenuItem loadTerminalCertificateMenu = new JMenuItem();
-        menu.add(loadTerminalCertificateMenu);
-        loadTerminalCertificateMenu.setAction(getLoadTerminalCertificateAction(this));
-        JMenuItem loadTerminalKeyMenu = new JMenuItem();
-        menu.add(loadTerminalKeyMenu);
-        loadTerminalKeyMenu.setAction(getLoadTerminalKeyAction());
-        JMenuItem performEACItem = new JMenuItem();
-        menu.add(performEACItem);
-        performEACItem.setAction(getPerformEACAction());
-        menu.addSeparator();
-        JMenu viewMenu = new JMenu("View");
+    private JMenuItem[] createEACMenus() {
         JMenuItem viewPassportKeyItem = new JMenuItem();
-        viewMenu.add(viewPassportKeyItem);
+        eacComponents.add(viewPassportKeyItem);
         viewPassportKeyItem.setAction(getViewPassportKeyAction());
         JMenuItem viewTerminalKeyItem = new JMenuItem();
-        viewMenu.add(viewTerminalKeyItem);
+        eacComponents.add(viewTerminalKeyItem);
         viewTerminalKeyItem.setAction(getViewTerminalKeyAction());
         JMenuItem viewTerminalCertificateItem = new JMenuItem();
-        viewMenu.add(viewTerminalCertificateItem);
+        eacComponents.add(viewTerminalCertificateItem);
         viewTerminalCertificateItem.setAction(getViewTerminalCertificateAction(this));
-        menu.add(viewMenu);
-        return menu;
+        return new JMenuItem[] { viewPassportKeyItem, viewTerminalKeyItem, viewTerminalCertificateItem};
+    }
+    
+    private void enableEACItems(boolean enabled) {
+        for(JComponent c : eacComponents) {
+            c.setEnabled(enabled);
+        }
     }
     
 	private JMenu createToolsMenu() {
@@ -745,66 +709,6 @@ public class PassportFrame extends JFrame
         return action;        
     }
 
-    private Action getKeyAction(final Integer i, final PublicKey key, boolean enabled) {
-        Action action = new AbstractAction() {
-
-            private static final long serialVersionUID = -4351067833708123679L;
-
-            public void actionPerformed(ActionEvent e) {
-                JCheckBoxMenuItem cb = (JCheckBoxMenuItem)e.getSource();
-                if(cb.isSelected()) {
-                    eacPassportPubKey = key;
-                    eacPassportKeyId = i;
-                }
-            }
-        };
-        if(enabled) {
-            eacPassportPubKey = key;
-            eacPassportKeyId = i;
-        }
-        action.putValue(Action.SELECTED_KEY, enabled);
-        action.putValue(Action.SHORT_DESCRIPTION, "Passport EAC Key");
-        action.putValue(Action.NAME, i +": "+key.getAlgorithm()+" "+key.getFormat());
-        return action;        
-    }
-
-    private Action getCACertAction(final String caRef, boolean enabled) {
-        Action action = new AbstractAction() {
-
-            private static final long serialVersionUID = -2151067833708123679L;
-
-            public void actionPerformed(ActionEvent e) {
-                JCheckBoxMenuItem cb = (JCheckBoxMenuItem)e.getSource();
-                if(cb.isSelected()) {
-                    eacCAReference = caRef;                    
-                }
-            }
-        };
-        if(enabled) {
-            eacCAReference = caRef;
-        }
-        action.putValue(Action.SELECTED_KEY, enabled);
-        action.putValue(Action.SHORT_DESCRIPTION, "CA Certificate reference");
-        action.putValue(Action.NAME, caRef);
-        return action;        
-    }
-
-    private Action getLoadTerminalCertificateAction(final JFrame frame) {
-        Action action = new AbstractAction() {
-
-            private static final long serialVersionUID = -2671362506867899044L;
-
-            public void actionPerformed(ActionEvent e) {
-                new TerminalCertificatesDialog(frame, terminalCertificates, true);
-            }
-        };
-        action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Load/Add/Remove Terminal CV Certificate");
-        action.putValue(Action.NAME, "Manage Terminal Certs.");
-        return action;
-    }
-
     private Action getViewTerminalCertificateAction(final JFrame frame) {
         Action action = new AbstractAction() {
             private static final long serialVersionUID = -2671362506812399044L;
@@ -816,62 +720,8 @@ public class PassportFrame extends JFrame
         action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
         action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
         action.putValue(Action.SHORT_DESCRIPTION, "View Terminal CV Certificates");
-        action.putValue(Action.NAME, "Terminal Certs.");
+        action.putValue(Action.NAME, "Terminal EAC Certs.");
         return action;
-    }
-
-    private Action getLoadTerminalKeyAction() {
-        Action action = new AbstractAction() {
-
-            private static final long serialVersionUID = -2671362506867123044L;
-
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-                int choice = fileChooser.showOpenDialog(getContentPane());
-                switch (choice) {
-                case JFileChooser.APPROVE_OPTION:
-                    try {
-                        File file = fileChooser.getSelectedFile();
-                        DataInputStream fileIn = new DataInputStream(new FileInputStream(file));
-                        byte[] privateKeyBytes = new byte[(int)file.length()];
-                        fileIn.readFully(privateKeyBytes);
-                        PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
-                        KeyFactory factory = KeyFactory.getInstance("RSA");
-                        terminalPrivateKey = factory.generatePrivate(privateKeySpec);
-                    } catch (Exception ex) {
-                        /* NOTE: Do nothing. */
-                        // TODO: Handle this somehow...
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Load terminal private key from file");
-        action.putValue(Action.NAME, "Load Terminal Key");
-        return action;
-
-    }
-
-    private Action getPerformEACAction() {
-        Action action = new AbstractAction() {
-
-            private static final long serialVersionUID = -2671902506867123044L;
-
-            public void actionPerformed(ActionEvent e) {
-                // TODO: do EAC
-            }
-        };
-        action.putValue(Action.SMALL_ICON, EAC_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, EAC_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Perform the EAC protocol with the passport");
-        action.putValue(Action.NAME, "Perform EAC");
-        return action;
-
     }
 
     private Action getViewPassportKeyAction() {
@@ -910,7 +760,7 @@ public class PassportFrame extends JFrame
         action.putValue(Action.SMALL_ICON, KEY_ICON);
         action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
         action.putValue(Action.SHORT_DESCRIPTION, "View terminal private key");
-        action.putValue(Action.NAME, "Terminal key");
+        action.putValue(Action.NAME, "Terminal EAC key");
         return action;
     }
 
@@ -1261,8 +1111,13 @@ public class PassportFrame extends JFrame
 		bufferedComIn.mark(comLength + 1);
 		rawStreams.put(PassportService.EF_COM, bufferedComIn);
 		COMFile com = new COMFile(bufferedComIn);
+        List<Integer> eacFids = new ArrayList<Integer>();
 		for (int tag: com.getTagList()) {
 			short fid = PassportFile.lookupFIDByTag(tag);
+            if(fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) {
+                eacFids.add(new Integer(fid));
+                continue;
+            }
 			CardFileInputStream in = service.readFile(fid);
 			int fileLength = in.getFileLength();
 			in.mark(fileLength + 1);
@@ -1278,6 +1133,97 @@ public class PassportFrame extends JFrame
 		totalLength += sodLength;
 		fileLengths.put(PassportService.EF_SOD, sodLength);
 		rawStreams.put(PassportService.EF_SOD, bufferedSodIn);
+        // Deal with EAC files 
+        if(rawStreams.containsKey(PassportService.EF_DG14)) {
+            InputStream in = getInputStream(PassportService.EF_DG14);
+            DG14File dg14file = new DG14File(in);
+            in.reset();
+            List<Integer> fids = dg14file.getCVCAFileIds();
+            short fid = PassportService.EF_CVCA;
+            if(fids != null) {
+                if(fids.size() > 1) {
+                    System.err.println("Warning: more than one CVCA file id present in DG14.");
+                }
+                fid = fids.get(0).shortValue();
+            }
+            CardFileInputStream cvcaIn = service.readFile(fid);
+            int fileLength = cvcaIn.getFileLength();
+            cvcaIn.mark(fileLength + 1);
+            rawStreams.put(fid, cvcaIn);
+            totalLength += fileLength;
+            fileLengths.put(fid, fileLength);
+            // Attempt EAC, need docNumber, keys from DG14, carefs from CVCA, terminal certs, terminal key
+            in = getInputStream(fid);
+            CVCAFile cvcaFile = new CVCAFile(in);
+            in.reset();
+            List<List<CVCertificate>> termCerts = new ArrayList<List<CVCertificate>>();
+            List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
+            List<String> caRefs = new ArrayList<String>();
+            TerminalCVCertificateDirectory d = TerminalCVCertificateDirectory.getInstance();
+            List<CVCertificate> t = null;
+            String s = cvcaFile.getCAReference();
+            try {
+            t = d.getCertificates(s);
+            if(t != null) {
+                termCerts.add(t);
+                termKeys.add(d.getPrivateKey(s));
+                caRefs.add(s);
+            }
+            }catch(Exception e) {
+                
+            }
+            s = cvcaFile.getAltCAReference();
+            if(s != null) {
+            try {
+            t = d.getCertificates(s);
+            if(t != null) {
+                termCerts.add(t);
+                termKeys.add(d.getPrivateKey(s));
+                caRefs.add(s);
+            }
+            }catch(Exception e) {
+            }
+            }
+            if(termCerts.size() == 0) {
+               // no luck, passport has EAC, but we don't have the certificates
+               // set the hash check flag
+               return;
+            }
+            // Try eac
+            in = getInputStream(PassportService.EF_DG1);
+            DG1File dg1File = new DG1File(in);
+            in.reset();
+            String docNumber = dg1File.getMRZInfo().getDocumentNumber();
+            Map<Integer, PublicKey> cardKeys = dg14file.getPublicKeys();
+            Set<Integer> keyIds = cardKeys.keySet();
+            boolean eacDone = false;
+            for(int i : keyIds) {
+                if(eacDone) {
+                    break;
+                }
+                for(int j=0; j<termCerts.size();j++) {
+                    try {
+                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(j), termCerts.get(j), termKeys.get(j), docNumber)){
+                           eacPassportPubKey = cardKeys.get(i);
+                           terminalCertificates = termCerts.get(j);
+                           terminalPrivateKey = termKeys.get(j);
+                           eacDone = true;
+                           break;
+                       }
+                        
+                    }catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+            if(!eacDone) {
+                // no luck, passport has EAC, but it was not successfull
+                // set the hash check flag
+                return;
+            }
+            enableEACItems(true);
+            // setup DG3 and DG4 for reading            
+        }
 	}
 
 	private void setupFilesFromZipPassportSource(File file) throws IOException {
