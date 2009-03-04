@@ -25,6 +25,7 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import sos.smartcards.CardServiceException;
@@ -184,6 +185,17 @@ public class COMFile extends PassportFile
 	public List<Integer> getTagList() {
 		return tagList;
 	}
+
+    /**
+     * Inserts a tag in a proper place if not already present
+     * @param tag
+     */
+    public void insertTag(Integer tag) {
+        if(tagList.contains(tag)) { return; }
+        tagList.add(tag);
+        Collections.sort(tagList);
+
+    }
 
 	public byte[] getEncoded() {
 		try {

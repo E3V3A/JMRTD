@@ -29,11 +29,13 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -120,6 +122,30 @@ public class SODFile extends PassportFile
 				encryptedDigest,
 				docSigningCertificate);
 	}
+
+    /**
+     * Constructs a Security Object data structure.
+     *
+     * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+     * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
+     * @param dataGroupHashes maps datagroupnumbers (1 to 16) to hashes of the data groups
+     * @param privateKey private key to sign the data
+     * @param docSigningCertificate the document signing certificate
+     * 
+     * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
+     * @throws CertificateException if the document signing certificate cannot be used
+     */
+    public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
+            Map<Integer, byte[]> dataGroupHashes,
+            PrivateKey privateKey,
+            X509Certificate docSigningCertificate)
+    throws NoSuchAlgorithmException, CertificateException {
+        signedData = createSignedData(digestAlgorithm,
+                digestEncryptionAlgorithm,
+                dataGroupHashes,
+                privateKey,
+                docSigningCertificate);
+    }
 
 	/**
 	 * Constructs a Security Object data structure.
@@ -477,6 +503,38 @@ public class SODFile extends PassportFile
 		ASN1Set signerInfos = createSingletonSet(createSignerInfo(digestAlgorithm, digestEncryptionAlgorithm, content, encryptedDigest, docSigningCertificate).toASN1Object());
 		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
 	}
+
+    private static SignedData createSignedData(String digestAlgorithm,
+            String digestEncryptionAlgorithm,
+            Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
+            X509Certificate docSigningCertificate)
+            throws NoSuchAlgorithmException, CertificateException {
+        ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
+        ContentInfo contentInfo = createContentInfo(digestAlgorithm,
+                dataGroupHashes);
+        byte[] content = ((DEROctetString) contentInfo.getContent())
+                .getOctets();
+
+        byte[] encryptedDigest = null;
+        try {
+            byte[] dataToBeSigned = createAuthenticatedAttributes(
+                    digestAlgorithm, content).getDEREncoded();
+            Signature s = Signature.getInstance(digestEncryptionAlgorithm);
+            s.initSign(privateKey);
+            s.update(dataToBeSigned);
+            encryptedDigest = s.sign();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));
+        ASN1Set crls = null;
+        ASN1Set signerInfos = createSingletonSet(createSignerInfo(
+                digestAlgorithm, digestEncryptionAlgorithm, content,
+                encryptedDigest, docSigningCertificate).toASN1Object());
+        return new SignedData(digestAlgorithmsSet, contentInfo, certificates,
+                crls, signerInfos);
+    }
 
 	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
 		DERObjectIdentifier algorithmIdentifier = lookupOIDByMnemonic(digestAlgorithm);

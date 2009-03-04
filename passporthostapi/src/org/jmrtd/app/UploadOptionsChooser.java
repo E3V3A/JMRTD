@@ -179,7 +179,7 @@ public class UploadOptionsChooser // extends JComponent
 			});
 
 			centerPanel.add(bacPanel, BorderLayout.NORTH);
-			centerPanel.add(aaPanel, BorderLayout.SOUTH);
+//			centerPanel.add(aaPanel, BorderLayout.SOUTH);
 
 			add(northPanel, BorderLayout.NORTH);
 			add(centerPanel, BorderLayout.CENTER);

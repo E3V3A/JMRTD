@@ -56,6 +56,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -79,10 +80,8 @@ import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
-import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
@@ -193,11 +192,14 @@ public class PassportFrame extends JFrame
     private CVCAFile cvca;
 
 	private X509Certificate docSigningCert, countrySigningCert;
+    private PrivateKey docSigningKey;
+    private PrivateKey aaPrivateKey;
     
     /** EAC related fields */
     private PublicKey eacPassportPubKey = null;
     private PrivateKey terminalPrivateKey = null;
     private List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
+    private short cvcaFid = PassportService.EF_CVCA;
 
     private Set<JComponent> eacComponents = new HashSet<JComponent>();
     
@@ -366,13 +368,11 @@ public class PassportFrame extends JFrame
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
 					break;
-                case PassportService.EF_CVCA:
-                    /* NOTE: skip, this should have been read in already. */
-                    break;
-
 				default:
-					String message = "File " + Integer.toHexString(fid) + " not supported!";
-					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
+                    if(fid != cvcaFid) {
+					  String message = "File " + Integer.toHexString(fid) + " not supported!";
+					  JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
+                    }
 				}
 			} catch (Exception e) {
 				JTextArea message = new JTextArea(5, 15);
@@ -621,6 +621,11 @@ public class PassportFrame extends JFrame
 		menu.add(viewDocumentSignerCertificate);
 		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
+        /* View DS key, if any... */
+        JMenuItem viewDocumentSignerKey = new JMenuItem();
+        menu.add(viewDocumentSignerKey);
+        viewDocumentSignerKey.setAction(getViewDocumentSignerKeyAction());
+
 		/* View CS Certificate... */
 		JMenuItem viewCountrySignerCertificate = new JMenuItem();
 		menu.add(viewCountrySignerCertificate);
@@ -630,6 +635,11 @@ public class PassportFrame extends JFrame
 		JMenuItem viewAAPublicKey = new JMenuItem();
 		menu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
+
+        /* View AA private key */
+        JMenuItem viewAAPrivateKey = new JMenuItem();
+        menu.add(viewAAPrivateKey);
+        viewAAPrivateKey.setAction(getViewAAPrivateKeyAction());
 
         menu.addSeparator();
         
@@ -679,10 +689,25 @@ public class PassportFrame extends JFrame
 		menu.add(loadDocSignCertFromFile);
 		loadDocSignCertFromFile.setAction(getLoadDocSignCertAction());
 
-		/* Replace AA key with another key from file... */
-		JMenuItem loadAAKeyFromFile = new JMenuItem();
-		menu.add(loadAAKeyFromFile);
-		loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
+        /* Replace DS key with another key from file... */
+        JMenuItem loadDocSignKeyFromFile = new JMenuItem();
+        menu.add(loadDocSignKeyFromFile);
+        loadDocSignKeyFromFile.setAction(getLoadDocSignKeyAction());
+
+        /* Replace AA key with another key from file... */
+        JMenuItem loadAAKeyFromFile = new JMenuItem();
+        menu.add(loadAAKeyFromFile);
+        loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
+
+        /* Replace AA private key with another key from file... */
+        JMenuItem loadAAPrivateKeyFromFile = new JMenuItem();
+        menu.add(loadAAPrivateKeyFromFile);
+        loadAAPrivateKeyFromFile.setAction(getLoadAAPrivateKeyAction());
+
+        /* Generate new AA key pair */
+        JMenuItem generateAAKeys = new JMenuItem();
+        menu.add(generateAAKeys);
+        generateAAKeys.setAction(getAAGenerateAction());
 
 		menu.addSeparator();
 
@@ -926,12 +951,9 @@ public class PassportFrame extends JFrame
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-					try {
-						File file = fileChooser.getSelectedFile();
-						throw new IOException("TODO: do something with " + file);
-					} catch (IOException ioe) {
-						/* NOTE: Do nothing. */
-					}
+    				File file = fileChooser.getSelectedFile();
+                    docSigningCert = readCertFromFile(file);
+                    updateCOMSODFile();
 					break;
 				default:
 					break;
@@ -946,6 +968,34 @@ public class PassportFrame extends JFrame
 
 	}
 
+    private Action getLoadDocSignKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -1001362506867899044L;
+
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+                int choice = fileChooser.showOpenDialog(getContentPane());
+                switch (choice) {
+                case JFileChooser.APPROVE_OPTION:
+                    File file = fileChooser.getSelectedFile();
+                    docSigningKey = readPrivateRSAKeyFromFile(file);
+                    updateCOMSODFile();
+                    break;
+                default:
+                    break;
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer private key from file");
+        action.putValue(Action.NAME, "Import Doc.Key...");
+        return action;
+
+    }
+
 	private Action getLoadAAPublicKeyAction() {
 		Action action = new AbstractAction() {
 
@@ -957,12 +1007,12 @@ public class PassportFrame extends JFrame
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-					try {
 						File file = fileChooser.getSelectedFile();
-						throw new IOException("TODO: do something with " + file);
-					} catch (IOException ioe) {
-						/* NOTE: Do nothing. */
-					}
+						PublicKey pubKey = readPublicRSAKeyFromFile(file);
+                        if(pubKey != null) {
+                            dg15 = new DG15File(pubKey);
+                            putFile(PassportService.EF_DG15, dg15.getEncoded());
+                        }
 					break;
 				default:
 					break;
@@ -975,6 +1025,60 @@ public class PassportFrame extends JFrame
 		action.putValue(Action.NAME, "Import AA Pub.Key...");
 		return action;
 	}
+
+    private Action getAAGenerateAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2065676252065941094L;
+
+            public void actionPerformed(ActionEvent e) {
+                try {
+                KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+                KeyPair p = gen.generateKeyPair();
+                
+                        if(p.getPublic() != null) {
+                            dg15 = new DG15File(p.getPublic());
+                            putFile(PassportService.EF_DG15, dg15.getEncoded());
+                        }
+                        aaPrivateKey = p.getPrivate();
+                }catch(Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Generate a new pair of Active Authentication keys");
+        action.putValue(Action.NAME, "Generate AA keys");
+        return action;
+    }
+
+    
+    private Action getLoadAAPrivateKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -1265676252065941094L;
+
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+                int choice = fileChooser.showOpenDialog(getContentPane());
+                switch (choice) {
+                case JFileChooser.APPROVE_OPTION:
+                        File file = fileChooser.getSelectedFile();
+                        aaPrivateKey = readPrivateRSAKeyFromFile(file);
+                    break;
+                default:
+                    break;
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication private key from file");
+        action.putValue(Action.NAME, "Import AA Priv.Key...");
+        return action;
+    }
 
 	private Action getViewDocumentSignerCertificateAction() {
 		Action action = new AbstractAction() {
@@ -1037,6 +1141,46 @@ public class PassportFrame extends JFrame
 		return action;
 	}
 
+    private Action getViewAAPrivateKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -1064369119565468811L;
+
+            public void actionPerformed(ActionEvent e) {
+                if(aaPrivateKey != null) {
+                KeyFrame keyFrame = new KeyFrame("Active Authentication Private Key", aaPrivateKey);
+                keyFrame.pack();
+                keyFrame.setVisible(true);
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Private Key");
+        action.putValue(Action.NAME, "AA Priv. Key...");
+        return action;
+    }
+
+    private Action getViewDocumentSignerKeyAction() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -2064369119565468811L;
+
+            public void actionPerformed(ActionEvent e) {
+                if(docSigningKey != null) {
+                KeyFrame keyFrame = new KeyFrame("Doc Signing Private Key", docSigningKey);
+                keyFrame.pack();
+                keyFrame.setVisible(true);
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "View Doc Signing Private Key");
+        action.putValue(Action.NAME, "Doc Key...");
+        return action;
+    }
+
 	private Action getUploadAction() {
 		Action action = new AbstractAction() {
 
@@ -1066,8 +1210,8 @@ public class PassportFrame extends JFrame
 						if (chooser.isBACSelected()) {
 							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
 						}
-						if (chooser.isAASelected()) {
-							persoService.putPrivateKey(chooser.getAAPrivateKey());
+						if (aaPublicKey != null && aaPrivateKey != null) {
+							persoService.putPrivateKey(aaPrivateKey);
 						}
 						for (short fid: bufferedStreams.keySet()) {
 							byte[] fileBytes = getFileBytes(fid);
@@ -1077,12 +1221,12 @@ public class PassportFrame extends JFrame
 						}
 						persoService.lockApplet();
 						persoService.close();
-					} catch (IOException ioe) {
-						/* NOTE: Do nothing. */
+//					} catch (IOException ioe) {
+//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
 						cse.printStackTrace();
-					} catch (GeneralSecurityException gse) {
-						gse.printStackTrace();
+//					} catch (GeneralSecurityException gse) {
+//						gse.printStackTrace();
 					} finally {
 						if (wasPolling) { cm.startPolling(terminal); }
 					}
@@ -1133,7 +1277,7 @@ public class PassportFrame extends JFrame
               bufferedDG14in.reset();
               // Now try to deal with EF.CVCA
               List<Integer> cvcafids = dg14.getCVCAFileIds();
-              fid = PassportService.EF_CVCA;
+              fid = cvcaFid;
               if(cvcafids != null) {
                   if(cvcafids.size() > 1) {
                       System.err.println("Warning: more than one CVCA file id present in DG14.");
@@ -1148,6 +1292,7 @@ public class PassportFrame extends JFrame
               bufferedCVCAin.mark(fileLength + 1);
               rawStreams.put(fid, bufferedCVCAin);
               cvca = new CVCAFile(bufferedCVCAin);
+              cvcaFid = fid;
               bufferedCVCAin.reset();
             }else{
 			  CardFileInputStream in = service.readFile(fid);
@@ -1272,6 +1417,7 @@ public class PassportFrame extends JFrame
 		totalLength += fileLength;
 		fileLengths.put(PassportService.EF_COM, fileLength);
 		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
+        this.com = com;
 
 		/* EF.DG1 */
 		Date today = Calendar.getInstance().getTime();
@@ -1312,17 +1458,20 @@ public class PassportFrame extends JFrame
 		certGenerator.setPublicKey(publicKey);
 		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
 		docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
+        docSigningKey = privateKey;
 		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 		hashes.put(1, digest.digest(dg1Bytes));
 		hashes.put(2, digest.digest(dg2Bytes));
-		byte[] encryptedDigest = new byte[128]; // Arbitrary value. Use a private key to generate a real signature?
-		SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, encryptedDigest, docSigningCert);
+        // Arbitrary value. Use a private key to generate a real signature?
+		// byte[] encryptedDigest = new byte[128];
+		SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 		byte[] sodBytes = sod.getEncoded();
 		fileLength = sodBytes.length;
 		totalLength += fileLength;
 		fileLengths.put(PassportService.EF_SOD, fileLength);
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
+        this.sod = sod;
 	}
 
 	private void putFile(short fid, byte[] bytes) {
@@ -1334,8 +1483,42 @@ public class PassportFrame extends JFrame
 		bufferedStreams.put(fid, in);
 		fileLengths.put(fid, fileLength);
 		totalLength += fileLength;
+        if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFid) {
+            updateCOMSODFile();
+        }
 	}
 
+    private void updateCOMSODFile() {
+        try {
+        String digestAlg = sod.getDigestAlgorithm();
+        String signatureAlg = sod.getDigestEncryptionAlgorithm();
+        X509Certificate cert = sod.getDocSigningCertificate();
+        byte[] signature = sod.getEncryptedDigest();
+        Map<Integer, byte[]> dgHashes = new TreeMap<Integer, byte[]>();
+        List<Short> dgFids = new ArrayList<Short>();
+        dgFids.addAll(filesBytes.keySet());
+        Collections.sort(dgFids);
+        MessageDigest digest = MessageDigest.getInstance(digestAlg);
+        for(Short fid : dgFids) {
+            if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFid) {
+                byte[] data = filesBytes.get(fid);
+                byte tag = data[0];
+                dgHashes.put(PassportFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
+                com.insertTag(new Integer(tag));
+            }
+        }
+        if(docSigningKey != null && docSigningCert != null) {
+            sod = new SODFile(digestAlg, signatureAlg, dgHashes, docSigningKey, docSigningCert);
+        }else{
+            sod = new SODFile(digestAlg, signatureAlg, dgHashes, signature, cert);            
+        }
+        putFile(PassportService.EF_SOD, sod.getEncoded());
+        putFile(PassportService.EF_COM, com.getEncoded());
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+    
 	/**
 	 * Gets an inputstream that is ready for reading.
 	 * 
@@ -1427,4 +1610,54 @@ public class PassportFrame extends JFrame
 		}
 		return out.toByteArray();
 	}
+    
+       public static PrivateKey readPrivateRSAKeyFromFile(File file) {
+            try {
+                InputStream fl = fullStream(file);
+                byte[] key = new byte[fl.available()];
+                KeyFactory kf = KeyFactory.getInstance("RSA");
+                fl.read(key, 0, fl.available());
+                fl.close();
+                PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
+                return kf.generatePrivate(keysp);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+       public static PublicKey readPublicRSAKeyFromFile(File file) {
+           try {
+               InputStream fl = fullStream(file);
+               byte[] key = new byte[fl.available()];
+               KeyFactory kf = KeyFactory.getInstance("RSA");
+               fl.read(key, 0, fl.available());
+               fl.close();
+               X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
+               return kf.generatePublic(keysp);
+           } catch (Exception e) {
+               e.printStackTrace();
+               return null;
+           }
+       }
+
+        public static X509Certificate readCertFromFile(File file) {
+            try {
+                CertificateFactory cf = CertificateFactory.getInstance("X509");
+                InputStream certstream = fullStream(file);
+                return (X509Certificate) cf.generateCertificate(certstream);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return null;
+            }
+        }
+
+        private static InputStream fullStream(File f) throws IOException {
+            DataInputStream dis = new DataInputStream(new FileInputStream(f));
+            byte[] bytes = new byte[dis.available()];
+            dis.readFully(bytes);
+            ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+            return bais;
+        }
+
 }

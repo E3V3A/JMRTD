@@ -112,7 +112,7 @@ public class TerminalCVCertificateDirectory {
         certFiles = sortFiles(certFiles);
         List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
         for (File file : certFiles) {
-            System.out.println("File: "+file);
+            System.out.println("Certificate file: "+file);
             CVCertificate c = readCVCertificateFromFile(file);
             if (c == null) {
                 throw new IOException();
@@ -122,6 +122,7 @@ public class TerminalCVCertificateDirectory {
         if (keyFiles.length != 1) {
             throw new IOException();
         }
+        System.out.println("Key file: "+keyFiles[0]);
         PrivateKey k = readKeyFromFile(keyFiles[0]);
         if (k == null) {
             throw new IOException();
