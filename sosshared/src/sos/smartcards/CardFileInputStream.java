@@ -6,8 +6,6 @@ import java.io.InputStream;
 /**
  * Inputstream for reading ISO 7816 file system cards.
  * 
- * FIXME: have available() return only what is available in buffer, not in file.
- * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class CardFileInputStream extends InputStream
