@@ -694,6 +694,8 @@ public class PassportFrame extends JFrame
         menu.add(loadDocSignKeyFromFile);
         loadDocSignKeyFromFile.setAction(getLoadDocSignKeyAction());
 
+        menu.addSeparator();
+        
         /* Replace AA key with another key from file... */
         JMenuItem loadAAKeyFromFile = new JMenuItem();
         menu.add(loadAAKeyFromFile);
@@ -1205,6 +1207,7 @@ public class PassportFrame extends JFrame
 					boolean wasPolling = cm.isPolling(terminal);
 					try {
 						cm.stopPolling(terminal);
+                        try{ Thread.sleep(2000); }catch(Exception ex) { }
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
 						if (chooser.isBACSelected()) {
