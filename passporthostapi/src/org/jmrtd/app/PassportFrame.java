@@ -66,6 +66,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
@@ -357,7 +358,7 @@ public class PassportFrame extends JFrame
 					dg12 = new DG12File(in);
 					break;
                 case PassportService.EF_DG14:
-                    dg14 = new DG14File(in);
+                    /* NOTE: skip, this should have been read in already. */
                     break;
 				case PassportService.EF_DG15:
 					dg15 = new DG15File(in);
@@ -366,7 +367,7 @@ public class PassportFrame extends JFrame
 					/* NOTE: Already processed this one above. */
 					break;
                 case PassportService.EF_CVCA:
-                    cvca = new CVCAFile(in);
+                    /* NOTE: skip, this should have been read in already. */
                     break;
 
 				default:
@@ -1111,6 +1112,8 @@ public class PassportFrame extends JFrame
 		bufferedComIn.mark(comLength + 1);
 		rawStreams.put(PassportService.EF_COM, bufferedComIn);
 		COMFile com = new COMFile(bufferedComIn);
+        // For now save the EAC fids (DG3/DG4) and deal with them later
+        // Also, deal with DG14 in a special way, like with COM/SOD
         List<Integer> eacFids = new ArrayList<Integer>();
 		for (int tag: com.getTagList()) {
 			short fid = PassportFile.lookupFIDByTag(tag);
@@ -1118,12 +1121,42 @@ public class PassportFrame extends JFrame
                 eacFids.add(new Integer(fid));
                 continue;
             }
-			CardFileInputStream in = service.readFile(fid);
-			int fileLength = in.getFileLength();
-			in.mark(fileLength + 1);
-			rawStreams.put(fid, in);
-			totalLength += fileLength;
-			fileLengths.put(fid, fileLength);
+            if(fid == PassportService.EF_DG14) {
+              CardFileInputStream in = service.readFile(fid);
+              int fileLength = in.getFileLength();
+              BufferedInputStream bufferedDG14in = new BufferedInputStream(in, fileLength + 1);
+              totalLength += fileLength;
+              fileLengths.put(fid, fileLength);
+              bufferedDG14in.mark(fileLength + 1);
+              rawStreams.put(fid, bufferedDG14in);
+              dg14 = new DG14File(bufferedDG14in);
+              bufferedDG14in.reset();
+              // Now try to deal with EF.CVCA
+              List<Integer> cvcafids = dg14.getCVCAFileIds();
+              fid = PassportService.EF_CVCA;
+              if(cvcafids != null) {
+                  if(cvcafids.size() > 1) {
+                      System.err.println("Warning: more than one CVCA file id present in DG14.");
+                  }
+                  fid = cvcafids.get(0).shortValue();
+              }
+              in = service.readFile(fid);
+              fileLength = in.getFileLength();
+              BufferedInputStream bufferedCVCAin = new BufferedInputStream(in, fileLength + 1);
+              totalLength += fileLength;
+              fileLengths.put(fid, fileLength);
+              bufferedCVCAin.mark(fileLength + 1);
+              rawStreams.put(fid, bufferedCVCAin);
+              cvca = new CVCAFile(bufferedCVCAin);
+              bufferedCVCAin.reset();
+            }else{
+			  CardFileInputStream in = service.readFile(fid);
+			  int fileLength = in.getFileLength();
+			  in.mark(fileLength + 1);
+			  rawStreams.put(fid, in);
+			  totalLength += fileLength;
+			  fileLengths.put(fid, fileLength);
+            }
 		}
 		bufferedComIn.reset();
 		CardFileInputStream sodIn = service.readFile(PassportService.EF_SOD);
@@ -1133,56 +1166,21 @@ public class PassportFrame extends JFrame
 		totalLength += sodLength;
 		fileLengths.put(PassportService.EF_SOD, sodLength);
 		rawStreams.put(PassportService.EF_SOD, bufferedSodIn);
-        // Deal with EAC files 
-        if(rawStreams.containsKey(PassportService.EF_DG14)) {
-            InputStream in = getInputStream(PassportService.EF_DG14);
-            DG14File dg14file = new DG14File(in);
-            in.reset();
-            List<Integer> fids = dg14file.getCVCAFileIds();
-            short fid = PassportService.EF_CVCA;
-            if(fids != null) {
-                if(fids.size() > 1) {
-                    System.err.println("Warning: more than one CVCA file id present in DG14.");
-                }
-                fid = fids.get(0).shortValue();
-            }
-            CardFileInputStream cvcaIn = service.readFile(fid);
-            int fileLength = cvcaIn.getFileLength();
-            cvcaIn.mark(fileLength + 1);
-            rawStreams.put(fid, cvcaIn);
-            totalLength += fileLength;
-            fileLengths.put(fid, fileLength);
-            // Attempt EAC, need docNumber, keys from DG14, carefs from CVCA, terminal certs, terminal key
-            in = getInputStream(fid);
-            CVCAFile cvcaFile = new CVCAFile(in);
-            in.reset();
+        // Try to do EAC, if DG14File present 
+        if(dg14 != null) {
             List<List<CVCertificate>> termCerts = new ArrayList<List<CVCertificate>>();
             List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
             List<String> caRefs = new ArrayList<String>();
             TerminalCVCertificateDirectory d = TerminalCVCertificateDirectory.getInstance();
-            List<CVCertificate> t = null;
-            String s = cvcaFile.getCAReference();
-            try {
-            t = d.getCertificates(s);
-            if(t != null) {
-                termCerts.add(t);
-                termKeys.add(d.getPrivateKey(s));
-                caRefs.add(s);
-            }
-            }catch(Exception e) {
-                
-            }
-            s = cvcaFile.getAltCAReference();
-            if(s != null) {
-            try {
-            t = d.getCertificates(s);
-            if(t != null) {
-                termCerts.add(t);
-                termKeys.add(d.getPrivateKey(s));
-                caRefs.add(s);
-            }
-            }catch(Exception e) {
-            }
+            for(String caRef : new String[]{ cvca.getCAReference(), cvca.getAltCAReference() }) {
+                if(caRef != null) {
+                    try {
+                        List<CVCertificate> t = d.getCertificates(caRef);
+                        termCerts.add(t);
+                        termKeys.add(d.getPrivateKey(caRef));
+                        caRefs.add(caRef);                            
+                    }catch(NoSuchElementException nsee) {}
+                }
             }
             if(termCerts.size() == 0) {
                // no luck, passport has EAC, but we don't have the certificates
@@ -1190,29 +1188,26 @@ public class PassportFrame extends JFrame
                return;
             }
             // Try eac
-            in = getInputStream(PassportService.EF_DG1);
+            InputStream in = getInputStream(PassportService.EF_DG1);
             DG1File dg1File = new DG1File(in);
             in.reset();
             String docNumber = dg1File.getMRZInfo().getDocumentNumber();
-            Map<Integer, PublicKey> cardKeys = dg14file.getPublicKeys();
+            Map<Integer, PublicKey> cardKeys = dg14.getPublicKeys();
             Set<Integer> keyIds = cardKeys.keySet();
             boolean eacDone = false;
             for(int i : keyIds) {
-                if(eacDone) {
-                    break;
-                }
-                for(int j=0; j<termCerts.size();j++) {
+                if(eacDone) { break; }
+                for(int termIndex=0; termIndex<termCerts.size(); termIndex++) {
                     try {
-                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(j), termCerts.get(j), termKeys.get(j), docNumber)){
+                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), docNumber)){
                            eacPassportPubKey = cardKeys.get(i);
-                           terminalCertificates = termCerts.get(j);
-                           terminalPrivateKey = termKeys.get(j);
+                           terminalCertificates = termCerts.get(termIndex);
+                           terminalPrivateKey = termKeys.get(termIndex);
                            eacDone = true;
                            break;
                        }
-                        
-                    }catch(Exception e) {
-                        e.printStackTrace();
+                    }catch(CardServiceException cse) {
+                        cse.printStackTrace();
                     }
                 }
             }
@@ -1222,7 +1217,16 @@ public class PassportFrame extends JFrame
                 return;
             }
             enableEACItems(true);
-            // setup DG3 and DG4 for reading            
+            // setup DG3 and DG4 for reading
+            for (Integer i : eacFids) {
+                short fid = i.shortValue();
+                CardFileInputStream cin = service.readFile(fid);
+                int fileLength = cin.getFileLength();
+                cin.mark(fileLength + 1);
+                rawStreams.put(fid, cin);
+                totalLength += fileLength;
+                fileLengths.put(fid, fileLength);                
+            }
         }
 	}
 
