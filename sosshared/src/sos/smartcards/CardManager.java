@@ -299,7 +299,11 @@ public class CardManager
 		public synchronized void stopPolling() throws InterruptedException {
 			if (!isPolling()) { return; }
 			isPolling = false;
-			wait();
+            try{
+			  this.wait();
+            }catch(InterruptedException ie) {
+                
+            }
 		}
 		
 		public CardService getService() {
@@ -374,7 +378,9 @@ public class CardManager
 			} catch (InterruptedException ie) {
 				/* NOTE: This ends thread when interrupted. */
 			}
-			notifyAll(); /* NOTE: we just stopped polling, stopPolling may be waiting on us. */
+            synchronized (this) {
+                notify(); /* NOTE: we just stopped polling, stopPolling may be waiting on us. */
+            }
 		}
 	}
 }
