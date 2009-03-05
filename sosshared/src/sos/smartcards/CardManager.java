@@ -108,7 +108,11 @@ public class CardManager
 	public synchronized void stopPolling(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { return; }
-		poller.stopPolling();
+		try {
+			poller.stopPolling();
+		} catch (InterruptedException ie) {
+			/* NOTE: if thread interrupted we just quit. */
+		}
 		notifyAll();
 	}
 	
@@ -196,11 +200,11 @@ public class CardManager
 			poller = new TerminalPoller(terminal);
 			terminals.put(terminal, poller);
 		}
-		if (isPolling && !poller.isPolling()) {
-			poller.startPolling();
+		if (isPolling && !isPolling(terminal)) {
+			startPolling(terminal);
 		}
-		if (!isPolling && poller.isPolling()) {
-			poller.stopPolling();
+		if (!isPolling && isPolling(terminal)) {
+			stopPolling(terminal);
 		}
 	}
 
@@ -292,9 +296,10 @@ public class CardManager
 			myThread.start();
 		}
 		
-		public synchronized void stopPolling() {
+		public synchronized void stopPolling() throws InterruptedException {
 			if (!isPolling()) { return; }
 			isPolling = false;
+			wait();
 		}
 		
 		public CardService getService() {
@@ -369,7 +374,7 @@ public class CardManager
 			} catch (InterruptedException ie) {
 				/* NOTE: This ends thread when interrupted. */
 			}
-
+			notifyAll(); /* NOTE: we just stopped polling, stopPolling may be waiting on us. */
 		}
 	}
 }
