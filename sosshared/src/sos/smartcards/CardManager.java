@@ -275,7 +275,7 @@ public class CardManager
 	{
 		private CardTerminal terminal;
 		private TerminalCardService service;
-		private boolean isPolling;
+		private boolean isPolling, hasStoppedPolling;
 		private Thread myThread;
 
 		public TerminalPoller(CardTerminal terminal) {
@@ -299,8 +299,8 @@ public class CardManager
 		public synchronized void stopPolling() throws InterruptedException {
 			if (!isPolling()) { return; }
 			isPolling = false;
-			synchronized(myThread) {
-				myThread.wait();
+			while (!isPolling && !hasStoppedPolling) {
+				wait();
 			}
 		}
 		
@@ -314,6 +314,7 @@ public class CardManager
 
 		public void run() {
 			try {
+				hasStoppedPolling = false;
 				while (isPolling()) {
 					if (hasNoListeners()) {
 						/* No listeners, we go to sleep. */
@@ -377,6 +378,7 @@ public class CardManager
 				/* NOTE: This ends thread when interrupted. */
 			}
             synchronized (this) {
+            	hasStoppedPolling = true;
                 notifyAll(); /* NOTE: we just stopped polling, stopPolling may be waiting on us. */
             }
 		}
