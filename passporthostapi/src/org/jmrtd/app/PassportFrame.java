@@ -1175,7 +1175,7 @@ public class PassportFrame extends JFrame
 					boolean wasPolling = cm.isPolling(terminal);
 					try {
 						cm.stopPolling(terminal);
-                        try{ Thread.sleep(2000); }catch(Exception ex) { }
+//                        try{ Thread.sleep(2000); }catch(Exception ex) { }
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
 						if (chooser.isBACSelected()) {
@@ -1188,10 +1188,14 @@ public class PassportFrame extends JFrame
 							byte[] fileBytes = passport.getFileBytes(fid);
 							persoService.createFile(fid, (short)fileBytes.length);
 							persoService.selectFile(fid);
-							persoService.writeFile(fid, new ByteArrayInputStream(fileBytes));
+                            ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
+							persoService.writeFile(fid, in);
 						}
 						persoService.lockApplet();
 						persoService.close();
+                        // TODO: to see when it is done
+                        // Proper progress bar should be implemented
+                        System.out.println("Passport uploaded.");
 //					} catch (IOException ioe) {
 //						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
