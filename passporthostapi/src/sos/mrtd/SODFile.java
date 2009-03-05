@@ -151,10 +151,9 @@ public class SODFile extends PassportFile
 	 * Constructs a Security Object data structure.
 	 *
 	 * @param in some inputstream
-	 * @throws CardServiceException if something goes wrong
+	 * @throws IOException if something goes wrong
 	 */
-	public SODFile(InputStream in) throws CardServiceException {
-		try {
+	public SODFile(InputStream in) throws IOException {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 			tlvIn.readTag();
 			tlvIn.readLength();
@@ -167,9 +166,6 @@ public class SODFile extends PassportFile
 			int tagNo = o.getTagNo();
 			DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
 			this.signedData = new SignedData(s2);
-		} catch (IOException e) {
-			throw new CardServiceException(e.toString());
-		}
 	}
 
 	/**

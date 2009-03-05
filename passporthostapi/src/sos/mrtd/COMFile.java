@@ -99,8 +99,7 @@ public class COMFile extends PassportFile
 	 * 
 	 * @throws IOException if the input could not be decoded
 	 */
-	public COMFile(InputStream in) throws CardServiceException {
-		try {
+	public COMFile(InputStream in) throws IOException {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 			int tag = tlvIn.readTag();
 			if (tag != EF_COM_TAG) {
@@ -141,9 +140,6 @@ public class COMFile extends PassportFile
 			byte[] tagBytes = tlvIn.readValue();
 			tagList = new ArrayList<Integer>();
 			for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }
-		} catch (IOException ioe) {
-			throw new CardServiceException(ioe.toString());
-		}
 	}
 
 	/**

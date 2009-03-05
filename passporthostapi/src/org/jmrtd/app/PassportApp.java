@@ -208,7 +208,10 @@ public class PassportApp  implements PassportListener
 			isBACPassport = false;
 		} catch (CardServiceException cse) {
 			isBACPassport = true;
-		}
+		} catch (IOException e) {
+          e.printStackTrace();
+          // FIXME: now what?
+        }
 		if (isBACPassport) {
 			int tries = 10;
 			List<BACEntry> triedBACEntries = new ArrayList<BACEntry>();

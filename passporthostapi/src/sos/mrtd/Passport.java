@@ -202,6 +202,11 @@ public class Passport {
                 dataIn.readFully(bytes);
                 rawStreams.put(fid, new ByteArrayInputStream(bytes));
                 totalLength += fileLength;
+                if(fid == PassportService.EF_COM) {
+                    comFile = new COMFile(new ByteArrayInputStream(bytes));
+                }else if(fid == PassportService.EF_SOD) {
+                    sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
+                }
             } catch (NumberFormatException nfe) {
                 /* NOTE: ignore this file */
             }

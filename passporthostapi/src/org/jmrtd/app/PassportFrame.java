@@ -451,7 +451,10 @@ public class PassportFrame extends JFrame
 		} catch (CardServiceException cse) {
 			// cse.printStackTrace();
 			verificationIndicator.setAAFailed("AA failed (" + cse.getMessage() + ")");
-		}
+		} catch (IOException ioe) {
+           ioe.printStackTrace();
+            verificationIndicator.setAAFailed("AA failed, IOException.");           
+        }
 	}
 
 	/** Checks hashes in the SOd correspond to hashes we compute. */
