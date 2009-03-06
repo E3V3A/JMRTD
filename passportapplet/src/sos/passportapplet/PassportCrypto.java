@@ -25,10 +25,13 @@ package sos.passportapplet;
 import javacard.framework.APDU;
 import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
+import javacard.framework.JCSystem;
 import javacard.framework.Util;
 import javacard.security.CryptoException;
 import javacard.security.DESKey;
+import javacard.security.KeyAgreement;
 import javacard.security.MessageDigest;
+import javacard.security.RSAPublicKey;
 import javacard.security.Signature;
 import javacardx.crypto.Cipher;
 
@@ -50,7 +53,11 @@ public class PassportCrypto {
     Signature sig;
     Cipher ciph;
     KeyStore keyStore;
-    
+
+    Signature rsaSig;
+    KeyAgreement keyAgreement;
+    boolean[] eacChangeKeys;
+
     public static byte[] PAD_DATA = { (byte) 0x80, 0, 0, 0, 0, 0, 0, 0 };
 
     protected void init() {
@@ -66,8 +73,21 @@ public class PassportCrypto {
         init();
         
         shaDigest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
+        rsaSig = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+        keyAgreement = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH,
+                false);
+        eacChangeKeys = JCSystem.makeTransientBooleanArray((short) 1,
+                JCSystem.CLEAR_ON_DESELECT);
+
     }
-    
+
+    boolean eacVerifySignature(RSAPublicKey key, byte[] rnd, 
+            byte[] docNr, byte[] buffer, short offset, short length) {
+        rsaSig.init(key, Signature.MODE_VERIFY);
+        rsaSig.update(docNr, (short) 0, (short) docNr.length);
+        return rsaSig.verify(rnd, (short) 0, PassportApplet.RND_LENGTH, buffer, offset, length);
+    }
+
     public void createMacFinal(byte[] msg, short msg_offset, short msg_len,
             byte[] mac, short mac_offset) {
         sig.sign(msg, msg_offset, msg_len, mac, mac_offset);
@@ -440,6 +460,15 @@ public class PassportCrypto {
         apdu[apdu_p++] = (byte) 0x8e;
         apdu[apdu_p++] = 0x08;
         apdu_p += 8; // for mac written earlier
+        if (eacChangeKeys[0]) {
+            eacChangeKeys[0] = false;
+            keyStore.setSecureMessagingKeys(keyStore.tmpKeys, (short) 0,
+                    keyStore.tmpKeys, (short) 16);
+            Util.arrayFillNonAtomic(keyStore.tmpKeys, (short) 0, (short) 32,
+                    (byte) 0x00);
+            Util.arrayFillNonAtomic(ssc, (short) 0, (short) ssc.length,
+                    (byte) 0x00);
+        }
 
         return apdu_p;
     }
@@ -531,4 +560,53 @@ public class PassportCrypto {
         }
 
     }
+    
+    /**
+     * Chip authentication part of EAP.
+     *
+     * @param pubData
+     *            the other parties public key data
+     * @param offset
+     *            offset to the public key data
+     * @param length
+     *            public key data length
+     *
+     * @return true when authentication successful
+     */
+    public boolean authenticateChip(byte[] pubData, short offset, short length) {
+        try {
+            // Verify public key first. i.e. see if the data is correct and
+            // makes up a valid
+            // EC public key.
+            keyStore.ecPublicKey.setW(pubData, offset, length);
+            if (!keyStore.ecPublicKey.isInitialized()) {
+                CryptoException.throwIt(CryptoException.ILLEGAL_VALUE);
+            }
+            // Do the key agreement and derive new session keys based on the
+            // outcome:
+            keyAgreement.init(keyStore.ecPrivateKey);
+            short secOffset = (short) (offset + length);
+            short secLength = keyAgreement.generateSecret(pubData, offset,
+                    length, pubData, secOffset);
+            short keysOffset = (short) (secOffset + secLength);
+            deriveKey(pubData, secOffset, MAC_MODE, keysOffset);
+            short macKeyOffset = keysOffset;
+            keysOffset += 16;
+            deriveKey(pubData, secOffset, ENC_MODE, keysOffset);
+            short encKeyOffset = keysOffset;
+            Util.arrayCopyNonAtomic(pubData, macKeyOffset, keyStore.tmpKeys,
+                    (short) 0, (short) 16);
+            Util.arrayCopyNonAtomic(pubData, encKeyOffset, keyStore.tmpKeys,
+                    (short) 16, (short) 16);
+            // The secure messaging keys should be replaced with the freshly
+            // computed ones
+            // just after the current APDU is completely processed.
+            eacChangeKeys[0] = true;
+            return true;
+        } catch (Exception e) {
+            eacChangeKeys[0] = false;
+            return false;
+        }
+    }
+
 }

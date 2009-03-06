@@ -22,6 +22,8 @@
 package sos.passportapplet;
 
 import javacard.security.DESKey;
+import javacard.security.ECPrivateKey;
+import javacard.security.ECPublicKey;
 import javacard.security.KeyBuilder;
 import javacard.security.RSAPrivateKey;
 import javacard.security.RSAPublicKey;
@@ -42,7 +44,11 @@ public class KeyStore {
     private byte mode;
     RSAPrivateKey rsaPrivateKey;
     RSAPublicKey rsaPublicKey;
-    
+
+    byte[] tmpKeys;
+    ECPrivateKey ecPrivateKey;
+    ECPublicKey ecPublicKey;
+
     KeyStore(byte mode) {
         this.mode = mode;
         sm_kEnc = (DESKey) KeyBuilder.buildKey(KeyBuilder.TYPE_DES_TRANSIENT_RESET,
@@ -57,7 +63,9 @@ public class KeyStore {
         case PassportCrypto.PERFECTWORLD_MODE:
             rsaPrivateKey = (RSAPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PRIVATE, KeyBuilder.LENGTH_RSA_1024,  false);
             rsaPublicKey =  (RSAPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_RSA_PUBLIC, KeyBuilder.LENGTH_RSA_1024,  false);
-            break;
+            ecPrivateKey = (ECPrivateKey)KeyBuilder.buildKey(KeyBuilder.TYPE_EC_F2M_PRIVATE, KeyBuilder.LENGTH_EC_F2M_163, false);
+            ecPublicKey = (ECPublicKey)KeyBuilder.buildKey(KeyBuilder.TYPE_EC_F2M_PUBLIC, KeyBuilder.LENGTH_EC_F2M_163, false);
+           break;
         }
 
         switch(mode) {

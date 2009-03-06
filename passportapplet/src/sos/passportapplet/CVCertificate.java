@@ -66,11 +66,11 @@ public class CVCertificate {
     short[] data;
     Object[] source;
 
-    RSAPublicKey currentCertPublicKey; // init
-    byte[] currentCertSubjectId; // init
-    byte[] effectiveCertAuthorization; // init
-    byte[] currentCertEffDate; // init
-    byte[] currentCertExpDate; // init
+    RSAPublicKey currentCertPublicKey;
+    byte[] currentCertSubjectId;
+    byte[] effectiveCertAuthorization;
+    byte[] currentCertEffDate;
+    byte[] currentCertExpDate;
     byte[] accessFlag;
 
     byte[] currentDate = { 0x00, 0x09, 0x00, 0x01, 0x00, 0x01 }; // 2009-01-01
