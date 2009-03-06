@@ -123,7 +123,7 @@ public class CVCertificate {
      *            offset to data
      * @param length
      *            length of the data
-     * @return true if subjects match
+     * @return true if the current subject match or it was possible to select one of the root ones 
      */
     boolean selectSubjectId(byte[] data, short offset, short length) {
         if(currentCertSubjectId[0] == 0) {
@@ -144,6 +144,8 @@ public class CVCertificate {
                 length) == 0;
     }
     
+    // Sets up the current certificate data from the certificate contained in one
+    // of the cvca certificate stored in this object
     private void setupCurrentKey(byte[] certHolderReference, byte[] certPublicKeyData, byte certAuthorization, byte[] certEffDate, byte[] certExpDate) {
         Util.arrayCopyNonAtomic(certHolderReference, (short)0, currentCertSubjectId, (short)0, (short)certHolderReference.length);
         currentCertPublicKey.setExponent(certPublicKeyData, (short)0, (short)3);
@@ -153,6 +155,7 @@ public class CVCertificate {
         Util.arrayCopyNonAtomic(certExpDate, (short)0, currentCertExpDate, (short)0, (short)6);
     }
 
+    // Sets up the current certificate data from the certificate contained in source and data.
     private void setupCurrentKeyFromCurrentCertificate() {
         byte[] certData = (byte[])source[0];
         short certHolderReferenceOffset = data[OFFSET_SUB_ID_OFFSET];
@@ -172,6 +175,7 @@ public class CVCertificate {
         Util.arrayCopyNonAtomic(certData, effDateOffset, currentCertEffDate, (short)0, (short)6);
         Util.arrayCopyNonAtomic(certData, expDateOffset, currentCertExpDate, (short)0, (short)6);
     }
+
     /**
      * Cleans up the current certificate information.
      * 
@@ -200,7 +204,7 @@ public class CVCertificate {
     /**
      * Verify the current certificate (ie. the data in source) using the current
      * state of certificate verification data (publicKey, subject id, etc.) The
-     * verification procedure is described in ISO18013-3 Section C.4.4.2.
+     * verification procedure is described in EAC 1.11 spec in various places.
      * 
      * @return true if certificate verification succeeds
      */
@@ -288,6 +292,7 @@ public class CVCertificate {
         return result;
     }
 
+    // Updates the cvcaFile contents with the new CVCA reference
     private short setupCVCA(short index, byte[] reference) {
         short len = reference[0];
         cvcaFileReference[index++] = CAR_TAG;
@@ -298,7 +303,9 @@ public class CVCertificate {
     }
     
     /**
-     * Sets the root certificate data
+     * Sets the root certificate data stored in this object from the data recoreded in
+     * <code>source</code> and <code>data</code>. This is only used during applet
+     * personalisation.
      * 
      * @param num certificate number, 1 or 2.
      */
@@ -346,9 +353,9 @@ public class CVCertificate {
     /**
      * Parse the current certificate. The data in source/in is analyzed and
      * offsets and lengths of particular elements of the certificate are stored
-     * in the data array. For the root certificate (root == true) we do not
+     * in the <code>data</code> array. For the root certificate (root == true) we do not
      * parse the signature (we have chosen not to provide it). The format of the
-     * certificate is described in ISO18013-3, Section C.2.
+     * certificate is described in EAC spec version 1.11 App A & C.
      * 
      * @param in
      *            the array with the certificate to be parsed
