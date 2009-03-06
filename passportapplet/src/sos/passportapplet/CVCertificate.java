@@ -16,10 +16,12 @@ import javacard.security.Signature;
  */
 public class CVCertificate {
 
-    private static final byte ROLE_CVCA = (byte)0xC0;
     private static final byte ROLE_DV_DOMESTIC = (byte)0x80;
     private static final byte ROLE_DV_FOREIGN = (byte)0x40;
-    private static final byte ROLE_IS = (byte)0x00;
+    private static final byte ACCESS_DG3 = 0x01;  
+    private static final byte ACCESS_DG4 = 0x02;  
+    private static final byte CAR_TAG = 0x42;
+
     
     /**
      * Offsets to where the particular data (offsets & lengths) of the current
@@ -221,8 +223,6 @@ public class CVCertificate {
                 currentDate, (short) 0) > 0)
                 && result;
 
-        // If succeeded make the just verified certificate the current one,
-        // otherwise reset.
         short subjectIdOffset = data[OFFSET_SUB_ID_OFFSET];
         short subjectIdLength = data[OFFSET_SUB_ID_LENGTH];
         if((cert1HolderReference != null && (byte)subjectIdLength == cert1HolderReference[0] && 
@@ -233,16 +233,70 @@ public class CVCertificate {
                     result = false;
                 }
         if (result) {
+            boolean preDomestic = (byte)(effectiveCertAuthorization[0] & ROLE_DV_DOMESTIC) == ROLE_DV_DOMESTIC;
             setupCurrentKeyFromCurrentCertificate();
-            // check if permanent import, update CVCA file, dates, keys, etc.
-            // also clear current selection
-            
+            boolean bit1 = (byte)(effectiveCertAuthorization[0] & ROLE_DV_DOMESTIC) == ROLE_DV_DOMESTIC;
+            boolean bit2 = (byte)(effectiveCertAuthorization[0] & ROLE_DV_FOREIGN) == ROLE_DV_FOREIGN;
+            boolean setTime = bit1 || bit2 || preDomestic;
+            boolean setCert = bit1 && bit2;
+            boolean grantAccess = !bit1 && !bit2;
+            if(setTime && compareDate(currentDate, (short)0, currentCertEffDate, (short)0) >= 0) {
+                setTime = false;
+            }
+            if(setCert || setTime) {
+                byte num = currentCertNum[0];
+                byte[] certHolderReference = num == 1 ? cert1HolderReference : cert2HolderReference;
+                byte[] certPublicKeyData = num == 1 ? cert1PublicKeyData : cert2PublicKeyData;
+                byte[] certEffDate = num == 1 ? cert1EffDate : cert2EffDate;
+                byte[] certExpDate = num == 1 ? cert1ExpDate : cert2ExpDate;
+                JCSystem.beginTransaction();
+                if(setCert) {
+                    if(num == 1) {
+                        cert1Authorization = effectiveCertAuthorization[0];
+                    }else{
+                        cert2Authorization = effectiveCertAuthorization[0];                        
+                    }
+                    Util.arrayCopy(currentCertSubjectId, (short)0, certHolderReference, (short)0, (short)17);
+                    Util.arrayCopy(currentCertEffDate, (short)0, certEffDate, (short)0, (short)6);
+                    Util.arrayCopy(currentCertExpDate, (short)0, certExpDate, (short)0, (short)6);
+                    currentCertPublicKey.getExponent(certPublicKeyData, (short)0);
+                    currentCertPublicKey.getModulus(certPublicKeyData, (short)3);
+                    short index = 0;
+                    if(cert1HolderReference != null) {
+                        index = setupCVCA(index, cert1HolderReference);
+                    }
+                    if(cert2HolderReference != null) {
+                        index = setupCVCA(index, cert2HolderReference);                        
+                    }
+                    while(index < 36) cvcaFileReference[index++] = 0;
+                }
+                if(setTime) {
+                    Util.arrayCopy(currentCertEffDate, (short)0, currentDate, (short)0, (short)6);
+                }
+                JCSystem.commitTransaction();
+            }
+            if(setCert) {
+                clear();
+            }
+            if(grantAccess) {
+                accessFlag[0] = effectiveCertAuthorization[0];
+                // FIXME: clear() ?
+            }
         } else {
             clear();
         }
         return result;
     }
 
+    private short setupCVCA(short index, byte[] reference) {
+        short len = reference[0];
+        cvcaFileReference[index++] = CAR_TAG;
+        cvcaFileReference[index++] = (byte)len;
+        Util.arrayCopy(reference, (short)1, cvcaFileReference, index, len);
+        index += len;
+        return index;
+    }
+    
     /**
      * Sets the root certificate data
      * 
@@ -286,6 +340,7 @@ public class CVCertificate {
             cert2EffDate = certEffDate;
             cert2ExpDate = certExpDate;
         }
+        clear();
     }
 
     /**
@@ -399,7 +454,7 @@ public class CVCertificate {
             data[OFFSET_AUTHORIZATION_OFFSET] = BERTLVScanner.readLength(in,
                     offset);
             if (BERTLVScanner.tag != TAG_AUTHORIZATION
-                    || BERTLVScanner.valueLength != (short) 4) {
+                    || BERTLVScanner.valueLength != (short) 1) {
                 ISOException.throwIt(ISO7816.SW_WRONG_DATA);
             }
             offset = BERTLVScanner.skipValue();
