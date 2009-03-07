@@ -42,6 +42,7 @@ import javacardx.crypto.Cipher;
  * PassportApplet
  * 
  * @author ceesb (ceeesb@gmail.com)
+ * @author woj (woj@cs.ru.nl)
  * @author martijno (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
