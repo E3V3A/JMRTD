@@ -57,7 +57,7 @@ public class CVCertificate {
 
     /** The ASN1 OID of the only algorithm our certificates support */
     private static final byte[] RSA_SHA1_OID = { 0x04, 0x00,
-            0x7F, 0x00, 0x07, 0x02, 0x02, 0x02, 0x01, 0x02 };
+            0x7F, 0x00, 0x07, 0x02, 0x02, 0x02, 0x01, 0x01 };
 
     /** The EAC OID, see EAC 1.11, D.2.1.3 */
     private static final byte[] EAC_OID = { 0x04, 0x00,
@@ -309,11 +309,10 @@ public class CVCertificate {
      * 
      * @param num certificate number, 1 or 2.
      */
-    void setRootCertificate(short num) {
+    void setRootCertificate(byte[] in, short num) {
         if((num == 1 && cert1HolderReference != null) || (num == 2 && cert2HolderReference != null) || (num != 1 && num != 2)) {
             return;
         }
-        byte[] certData = (byte[])source[0];
         short certHolderReferenceOffset = data[OFFSET_SUB_ID_OFFSET];
         short certHolderReferenceLength = data[OFFSET_SUB_ID_LENGTH];
         short pubKeyExpOffset = data[OFFSET_PUB_KEY_EXPONENT_OFFSET];
@@ -324,16 +323,16 @@ public class CVCertificate {
         short effDateOffset = data[OFFSET_EFF_DATE_OFFSET];
         short expDateOffset = data[OFFSET_EXP_DATE_OFFSET];
         byte[] holderReference = new byte[17];
-        Util.arrayCopyNonAtomic(certData, certHolderReferenceOffset, holderReference, (short)1, certHolderReferenceLength);
+        Util.arrayCopyNonAtomic(in, certHolderReferenceOffset, holderReference, (short)1, certHolderReferenceLength);
         holderReference[0] = (byte)certHolderReferenceLength;
         byte[] certPubKeyData = new byte[(short)(pubKeyExpLength + pubKeyModLength)];
-        Util.arrayCopyNonAtomic(certData, pubKeyExpOffset, certPubKeyData, (short)0, pubKeyExpLength);
-        Util.arrayCopyNonAtomic(certData, pubKeyModOffset, certPubKeyData, pubKeyExpLength, pubKeyModLength);
-        byte certAuthorization = certData[authorizationOffset];
+        Util.arrayCopyNonAtomic(in, pubKeyExpOffset, certPubKeyData, (short)0, pubKeyExpLength);
+        Util.arrayCopyNonAtomic(in, pubKeyModOffset, certPubKeyData, pubKeyExpLength, pubKeyModLength);
+        byte certAuthorization = in[authorizationOffset];
         byte[] certEffDate = new byte[6];
-        Util.arrayCopyNonAtomic(certData, effDateOffset, certEffDate, (short)0, (short)6);
+        Util.arrayCopyNonAtomic(in, effDateOffset, certEffDate, (short)0, (short)6);
         byte[] certExpDate = new byte[6];
-        Util.arrayCopyNonAtomic(certData, expDateOffset, certExpDate, (short)0, (short)6);
+        Util.arrayCopyNonAtomic(in, expDateOffset, certExpDate, (short)0, (short)6);
         if(num == 1) {
             cert1HolderReference = holderReference;
             cert1PublicKeyData = certPubKeyData;
@@ -366,7 +365,7 @@ public class CVCertificate {
      * @param root
      *            whether we are parsing a root certificate (no signature)
      */
-    void parseCertificate(byte[] in, short offset, short length, boolean root) {
+    short parseCertificate(byte[] in, short offset, short length, boolean root) {
 
         try {
             offset = BERTLVScanner.readTag(in, offset);
@@ -444,7 +443,7 @@ public class CVCertificate {
             offset = BERTLVScanner.readTag(in, offset);
             offset = BERTLVScanner.readLength(in, offset);
             if (BERTLVScanner.tag != TAG_SUBJECT_AUTH
-                    || BERTLVScanner.valueLength != (short) 15) {
+                    || BERTLVScanner.valueLength != (short) 14) {
                 ISOException.throwIt(ISO7816.SW_WRONG_DATA);
             }
             offset = BERTLVScanner.readTag(in, offset);
@@ -490,11 +489,18 @@ public class CVCertificate {
                 data[OFFSET_SIGNATURE_OFFSET] = BERTLVScanner.readLength(in,
                         offset);
                 data[OFFSET_SIGNATURE_LENGTH] = BERTLVScanner.valueLength;
+                source[0] = in;
             }
-            source[0] = in;
-        } catch (Exception e) {
+            return 0;
+        } catch (Exception e){
+            short bOffset = 0;
+            Util.setShort(in, bOffset, offset);
+            Util.setShort(in, (short)(bOffset + 2), BERTLVScanner.tag);
+            Util.setShort(in, (short)(bOffset + 4), BERTLVScanner.valueLength);
+            Util.setShort(in, (short)(bOffset + 6), BERTLVScanner.valueOffset);
             clear();
-            ISOException.throwIt((short) (ISO7816.SW_WRONG_DATA));
+            return (short)8;
+//            ISOException.throwIt((short) (ISO7816.SW_WRONG_DATA));
         }
 
     }

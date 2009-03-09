@@ -95,7 +95,7 @@ public class FileSystem {
         if (files[idx] == null)
             files[idx] = new byte[size];
 
-        if(fid == EF_CVCA_FID && certObject != null) {
+        if(certObject != null) {
             certObject.cvcaFileReference = (byte[])files[idx];
         }
         
@@ -172,6 +172,8 @@ public class FileSystem {
             return EF_SOD_INDEX;
         case EF_COM_FID:
             return EF_COM_INDEX;
+        case EF_CVCA_FID:
+            return EF_CVCA_INDEX;
         case SOS_LOG_FID:
             return SOS_LOG_INDEX;
         default:
