@@ -66,6 +66,11 @@ public class PassportPersoService extends CardService {
 	private static final byte PRIVEXPONENT_TAG = 0x61;
 	private static final byte MRZ_TAG = 0x62;
 	
+    /**
+     * The name of the EC curve for DH key pair generation (this is the only one
+     * that our passport applet supports. 
+     */
+    public static final String EC_CURVE_NAME = "c2pnb163v1";
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 

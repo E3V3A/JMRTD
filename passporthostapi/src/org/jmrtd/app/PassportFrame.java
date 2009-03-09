@@ -45,11 +45,14 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -83,7 +86,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
 
+import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
+import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
 import sos.data.Country;
@@ -141,8 +146,7 @@ public class PassportFrame extends JFrame
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-    private static final Icon EAC_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
-
+    
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	private FacePreviewPanel facePreviewPanel;
@@ -692,6 +696,18 @@ public class PassportFrame extends JFrame
 
 		menu.addSeparator();
 
+        /* Generate new EAC key pair */
+        JMenuItem generateEACKeys = new JMenuItem();
+        menu.add(generateEACKeys);
+        generateEACKeys.setAction(getGenerateEACKeys());
+
+        /* Generate load CVCA Certificate */
+        JMenuItem loadCVCA = new JMenuItem();
+        menu.add(loadCVCA);
+        loadCVCA.setAction(getLoadCVCACertificate());
+        
+        menu.addSeparator();
+
 		JMenuItem upload = new JMenuItem();
 		menu.add(upload);
 		upload.setAction(getUploadAction());
@@ -936,6 +952,65 @@ public class PassportFrame extends JFrame
 
 	}
 
+    private Action getLoadCVCACertificate() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -1231362506867899044L;
+
+            public void actionPerformed(ActionEvent e) {
+                JFileChooser fileChooser = new JFileChooser();
+                fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+                int choice = fileChooser.showOpenDialog(getContentPane());
+                switch (choice) {
+                case JFileChooser.APPROVE_OPTION:
+                    File file = fileChooser.getSelectedFile();
+                    CVCertificate cert = readCVCertFromFile(file);
+                    if(cert != null) {
+                      passport.setCVCertificate(cert);
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) EAC Terminal Root Certificate (CVCA) from file");
+        action.putValue(Action.NAME, "Import CVCA Cert...");
+        return action;
+
+    }
+
+    private Action getGenerateEACKeys() {
+        Action action = new AbstractAction() {
+
+            private static final long serialVersionUID = -3333362506867899044L;
+
+            public void actionPerformed(ActionEvent e) {
+                try {
+                String preferredProvider = "BC";
+                Provider provider = Security.getProvider(preferredProvider);
+                KeyPairGenerator generator = KeyPairGenerator.getInstance(
+                        "ECDH", provider);
+                generator.initialize(new ECGenParameterSpec(
+                        PassportPersoService.EC_CURVE_NAME));
+                KeyPair keyPair = generator.generateKeyPair();
+
+                passport.setEACKeys(keyPair);
+                }catch(Exception ex) {
+                    
+                }
+            }
+        };
+        action.putValue(Action.SMALL_ICON, KEY_ICON);
+        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+        action.putValue(Action.SHORT_DESCRIPTION, "Generate and set a pair of EAC keys");
+        action.putValue(Action.NAME, "Generate EAC keys");
+        return action;
+    }
+
+    
     private Action getLoadDocSignKeyAction() {
         Action action = new AbstractAction() {
 
@@ -1262,6 +1337,20 @@ public class PassportFrame extends JFrame
             }
         }
 
+        public static CVCertificate readCVCertFromFile(File f) {
+            try {
+                InputStream fl = fullStream(f);
+                byte[] data = new byte[fl.available()];
+                CVCObject parsedObject = CertificateParser.parseCertificate(data);
+                CVCertificate c = (CVCertificate) parsedObject;
+                return c;
+            } catch (Exception e) {
+                return null;
+            }
+
+        }
+
+        
         private static InputStream fullStream(File f) throws IOException {
             DataInputStream dis = new DataInputStream(new FileInputStream(f));
             byte[] bytes = new byte[(int)f.length()];

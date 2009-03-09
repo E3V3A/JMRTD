@@ -62,6 +62,8 @@ public class Passport {
     private boolean eacSuccess = false;
 
     private PrivateKey docSigningPrivateKey = null;
+    private CVCertificate cvcaCertificate = null;
+    private PrivateKey eacPrivateKey = null;
     
     private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
         BufferedInputStream bufferedIn = null;
@@ -423,9 +425,34 @@ public class Passport {
     public void setDocSigningCertificate(X509Certificate newCertificate) {
         updateCOMSODFile(newCertificate);
     }
+    
+    public void setCVCertificate(CVCertificate cert) {
+        this.cvcaCertificate = cert;
+        try {
+          CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getCertificateBody().getHolderReference().getConcatenated());
+          putFile(CVCA_FID, cvcaFile.getEncoded());
+        }catch(NoSuchFieldException ex) {
+        }
+    }
+    
+    public CVCertificate getCVCertificate() {
+        return cvcaCertificate;
+    }
 
     public PrivateKey getDocSigningPrivateKey() {
         return docSigningPrivateKey;
+    }
+    
+    public void setEACKeys(KeyPair keyPair) {
+        this.eacPrivateKey = keyPair.getPrivate();
+        Map<Integer,PublicKey> key = new TreeMap<Integer, PublicKey>();
+        key.put(-1, keyPair.getPublic());
+        DG14File dg14file = new DG14File(key, null, null, null);
+        putFile(PassportService.EF_DG14, dg14file.getEncoded());
+    }
+    
+    public PrivateKey getEACPrivateKey() {
+        return eacPrivateKey;
     }
 
     public boolean hasEAC() {
