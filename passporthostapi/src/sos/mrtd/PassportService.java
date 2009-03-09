@@ -392,7 +392,7 @@ public class PassportService extends PassportApduService
 
             EACEvent event = new EACEvent(this, keyId, key, keyPair, caReference,
                     terminalCertificates, terminalKey, documentNumber, rpicc, true);
-            notifyEAPPerformed(event);
+            notifyEACPerformed(event);
             state = EAC_AUTHENTICATED_STATE;
             return true;
         } catch (GeneralSecurityException gse) {
@@ -473,7 +473,7 @@ public class PassportService extends PassportApduService
      * @param event
      *            EAC event.
      */
-    protected void notifyEAPPerformed(EACEvent event) {
+    protected void notifyEACPerformed(EACEvent event) {
         for (AuthListener l : authListeners) {
             l.performedEAC(event);
         }

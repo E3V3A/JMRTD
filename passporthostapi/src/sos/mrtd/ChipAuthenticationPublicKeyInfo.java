@@ -85,7 +85,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
      */
     public Integer getKeyId() {
         if (optionalData == null) {
-            return null;
+            return -1;
         }
         return ((DERInteger) optionalData).getValue().intValue();
     }

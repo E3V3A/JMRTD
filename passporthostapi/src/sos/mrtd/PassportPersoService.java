@@ -283,7 +283,7 @@ public class PassportPersoService extends CardService {
     public void putCVCertificate(CVCertificate certificate)
             throws CardServiceException {
         try {
-            putData((byte) 0, CVCERTIFICATE_TAG, certificate
+            putData((byte) 1, CVCERTIFICATE_TAG, certificate
                     .getCertificateBody().getDEREncoded());
         } catch (Exception e) {
             throw new CardServiceException(e.toString());

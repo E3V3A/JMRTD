@@ -133,7 +133,10 @@ public class PassportApduService extends CardService {
 
     public synchronized ResponseAPDU transmit(CommandAPDU capdu)
             throws CardServiceException {
-        return service.transmit(capdu);
+        ResponseAPDU r = service.transmit(capdu);
+        System.out.println("C: "+Hex.bytesToHexString(capdu.getBytes()));
+        System.out.println("R: "+Hex.bytesToHexString(r.getBytes()));
+        return r;
     }
 
     public void close() {

@@ -19,9 +19,6 @@ public class CVCAFile extends PassportFile {
      */
     public CVCAFile(InputStream in) {
         try {
-            if (in.available() != LENGTH) {
-                throw new IllegalArgumentException("Wrong data size.");
-            }
             int tag = in.read();
             if (tag != CAR_TAG) {
                 throw new IllegalArgumentException("Wrong tag.");
@@ -54,6 +51,7 @@ public class CVCAFile extends PassportFile {
                 tag = in.read();
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalArgumentException("Malformed input data");
         }
     }
