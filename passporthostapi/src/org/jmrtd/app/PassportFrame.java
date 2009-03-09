@@ -1341,10 +1341,12 @@ public class PassportFrame extends JFrame
             try {
                 InputStream fl = fullStream(f);
                 byte[] data = new byte[fl.available()];
+                fl.read(data);
                 CVCObject parsedObject = CertificateParser.parseCertificate(data);
                 CVCertificate c = (CVCertificate) parsedObject;
                 return c;
             } catch (Exception e) {
+                e.printStackTrace();
                 return null;
             }
 
