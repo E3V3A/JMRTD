@@ -222,7 +222,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
+        (new PassportApplet(PassportCrypto.PERFECTWORLD_MODE)).register();
     }
 
     /**

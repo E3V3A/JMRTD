@@ -21,6 +21,7 @@
  */
 package sos.passportapplet;
 
+import javacard.framework.JCSystem;
 import javacard.security.DESKey;
 import javacard.security.ECPrivateKey;
 import javacard.security.ECPublicKey;
@@ -93,6 +94,7 @@ public class KeyStore {
                                                      false);
             break;
         }
+        tmpKeys = JCSystem.makeTransientByteArray((short)32, JCSystem.CLEAR_ON_DESELECT);
     }
     
 
