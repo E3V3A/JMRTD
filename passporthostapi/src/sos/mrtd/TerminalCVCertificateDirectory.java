@@ -111,6 +111,7 @@ public class TerminalCVCertificateDirectory {
         });
         certFiles = sortFiles(certFiles);
         List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
+        String keyAlgName = "RSA";
         for (File file : certFiles) {
             System.out.println("Certificate file: "+file);
             CVCertificate c = readCVCertificateFromFile(file);
@@ -118,12 +119,16 @@ public class TerminalCVCertificateDirectory {
                 throw new IOException();
             }
             terminalCertificates.add(c);
+            try {
+              keyAlgName = c.getCertificateBody().getPublicKey().getAlgorithm();
+            }catch(NoSuchFieldException nsfe) {
+            }
         }
         if (keyFiles.length != 1) {
             throw new IOException();
         }
         System.out.println("Key file: "+keyFiles[0]);
-        PrivateKey k = readKeyFromFile(keyFiles[0]);
+        PrivateKey k = readKeyFromFile(keyFiles[0], keyAlgName);
         if (k == null) {
             throw new IOException();
         }
@@ -223,12 +228,11 @@ public class TerminalCVCertificateDirectory {
 
     }
 
-    private static PrivateKey readKeyFromFile(File f) {
+    private static PrivateKey readKeyFromFile(File f, String algName) {
         try {
             byte[] data = loadFile(f);
             PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(data);
-            // This can also be DSA ?
-            KeyFactory gen = KeyFactory.getInstance("RSA");
+            KeyFactory gen = KeyFactory.getInstance(algName);
             return gen.generatePrivate(spec);
         } catch (Exception e) {
             return null;

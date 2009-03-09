@@ -1264,7 +1264,7 @@ public class PassportFrame extends JFrame
 
         private static InputStream fullStream(File f) throws IOException {
             DataInputStream dis = new DataInputStream(new FileInputStream(f));
-            byte[] bytes = new byte[dis.available()];
+            byte[] bytes = new byte[(int)f.length()];
             dis.readFully(bytes);
             ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
             return bais;
