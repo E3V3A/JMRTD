@@ -34,6 +34,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.Security;
+import java.security.interfaces.ECPrivateKey;
+import java.security.spec.ECFieldF2m;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -44,6 +46,8 @@ import java.util.zip.ZipOutputStream;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+
+import org.ejbca.cvc.CVCertificate;
 
 import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
@@ -65,7 +69,9 @@ public class PassportPersoService extends CardService {
 	private static final byte PRIVMODULUS_TAG = 0x60;
 	private static final byte PRIVEXPONENT_TAG = 0x61;
 	private static final byte MRZ_TAG = 0x62;
-	
+    private static final byte ECPRIVATE_TAG = 0x63;
+    private static final byte CVCERTIFICATE_TAG = 0x64;
+
     /**
      * The name of the EC curve for DH key pair generation (this is the only one
      * that our passport applet supports. 
@@ -179,6 +185,110 @@ public class PassportPersoService extends CardService {
 			throw new CardServiceException(ioe.toString());
 		}
 	}
+
+       /**
+     * Sends a PUT_DATA command to the card to set the private key used for
+     * Extended Access Control.
+     * 
+     * @param privateKey
+     *            holding the private key data.
+     * @throws CardServiceException
+     *             on error.
+     */
+    public void putPrivateEACKey(PrivateKey privKey)
+            throws CardServiceException {
+
+        ECPrivateKey privateKey = (ECPrivateKey)privKey;
+        byte[] aArray = privateKey.getParams().getCurve().getA().toByteArray();
+        byte[] bArray = privateKey.getParams().getCurve().getB().toByteArray();
+
+        byte[] rArray = privateKey.getParams().getOrder().toByteArray();
+        short k = (short) privateKey.getParams().getCofactor();
+
+        byte[] kArray = new byte[2];
+        kArray[0] = (byte) ((k & 0xFF00) >> 8);
+        kArray[1] = (byte) (k & 0xFF);
+
+        ECFieldF2m fm = (ECFieldF2m) privateKey.getParams().getCurve()
+                .getField();
+        byte[] pArray = null;
+        if (fm.getMidTermsOfReductionPolynomial() == null) {
+            int m = fm.getM();
+            pArray = new byte[2];
+            pArray[0] = (byte) ((m & 0xFF00) >> 8);
+            pArray[1] = (byte) (m & 0xFF);
+        } else {
+            int[] ms = fm.getMidTermsOfReductionPolynomial();
+            int off = 0;
+            pArray = new byte[ms.length * 2];
+            for (int i = 0; i < ms.length; i++) {
+                int m = ms[i];
+                pArray[off + 0] = (byte) ((m & 0xFF00) >> 8);
+                pArray[off + 1] = (byte) (m & 0xFF);
+                off += 2;
+            }
+        }
+
+        org.bouncycastle.jce.interfaces.ECPrivateKey ktmp = (org.bouncycastle.jce.interfaces.ECPrivateKey) privateKey;
+        org.bouncycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
+        byte[] gArray = point.getEncoded();
+        byte[] sArray = privateKey.getS().toByteArray();
+        pArray = tagData((byte) 0x81, pArray);
+        aArray = tagData((byte) 0x82, aArray);
+        bArray = tagData((byte) 0x83, bArray);
+        gArray = tagData((byte) 0x84, gArray);
+        rArray = tagData((byte) 0x85, rArray);
+        sArray = tagData((byte) 0x86, sArray);
+        kArray = tagData((byte) 0x87, kArray);
+
+        int offset = 0;
+        byte[] all = new byte[pArray.length + aArray.length + bArray.length
+                + gArray.length + rArray.length + sArray.length + kArray.length];
+        System.arraycopy(pArray, 0, all, offset, pArray.length);
+        offset += pArray.length;
+        System.arraycopy(aArray, 0, all, offset, aArray.length);
+        offset += aArray.length;
+        System.arraycopy(bArray, 0, all, offset, bArray.length);
+        offset += bArray.length;
+        System.arraycopy(gArray, 0, all, offset, gArray.length);
+        offset += gArray.length;
+        System.arraycopy(rArray, 0, all, offset, rArray.length);
+        offset += rArray.length;
+        System.arraycopy(sArray, 0, all, offset, sArray.length);
+        offset += sArray.length;
+        System.arraycopy(kArray, 0, all, offset, kArray.length);
+        offset += kArray.length;
+
+        putData((byte) 0, ECPRIVATE_TAG, all);
+    }
+
+    // For quick and dirty tagging of data
+    private static byte[] tagData(byte tag, byte[] data) {
+        byte[] result = new byte[data.length + 2];
+        System.arraycopy(data, 0, result, 2, data.length);
+        result[0] = tag;
+        result[1] = (byte) data.length;
+        return result;
+    }
+
+    /**
+     * Sends a PUT_DATA command to the card to set the root cv certificate for
+     * Extended Access Control.
+     * 
+     * @param certificate
+     *            card verifiable certificate
+     * @throws CardServiceException
+     *             on error.
+     */
+    public void putCVCertificate(CVCertificate certificate)
+            throws CardServiceException {
+        try {
+            putData((byte) 0, CVCERTIFICATE_TAG, certificate
+                    .getCertificateBody().getDEREncoded());
+        } catch (Exception e) {
+            throw new CardServiceException(e.toString());
+        }
+    }
 
 	/***************************************************************************
 	 * Sends a CREATE_FILE APDU to the card.

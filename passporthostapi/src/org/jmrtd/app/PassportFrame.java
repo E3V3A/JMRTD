@@ -1253,7 +1253,8 @@ public class PassportFrame extends JFrame
 					boolean wasPolling = cm.isPolling(terminal);
 					try {
 						cm.stopPolling(terminal);
-//                        try{ Thread.sleep(2000); }catch(Exception ex) { }
+                        // FIXME: have to wait for the poller?
+                        try{ Thread.sleep(2000); }catch(Exception ex) { }
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
 						if (chooser.isBACSelected()) {
@@ -1262,6 +1263,12 @@ public class PassportFrame extends JFrame
 						if (aaPublicKey != null && aaPrivateKey != null) {
 							persoService.putPrivateKey(aaPrivateKey);
 						}
+                        if(passport.getCVCertificate() != null) {
+                            persoService.putCVCertificate(passport.getCVCertificate());
+                        }
+                        if(passport.getEACPrivateKey() != null) {
+                            persoService.putPrivateEACKey(passport.getEACPrivateKey());
+                        }
 						for (short fid: passport.getFileList()) {
 							byte[] fileBytes = passport.getFileBytes(fid);
 							persoService.createFile(fid, (short)fileBytes.length);
