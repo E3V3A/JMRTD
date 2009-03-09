@@ -52,6 +52,7 @@ public class FileSystem {
     static final short EF_DG15_FID = (short) 0x010F;
     static final short EF_SOD_FID = (short) 0x011D;
     static final short EF_COM_FID = (short) 0x011E;
+    static final short EF_CVCA_FID = (short) 0x011C;
     static final short SOS_LOG_FID = (short) 0xdead;
 
     private static final short EF_DG1_INDEX = (short) 0;
@@ -71,22 +72,32 @@ public class FileSystem {
     private static final short EF_DG15_INDEX = (short) 14;
     private static final short EF_SOD_INDEX = (short) 15;
     private static final short EF_COM_INDEX = (short) 16;
-    private static final short SOS_LOG_INDEX = (short) 17;
+    private static final short EF_CVCA_INDEX = (short) 17;
+    private static final short SOS_LOG_INDEX = (short) 18;
 
     private Object[] files;
     private short[] fileSizes;
 
     public FileSystem() {
-        files = new Object[18];
-        fileSizes = new short[18];
+        short size = (short)(SOS_LOG_INDEX + 1);
+        files = new Object[size];
+        fileSizes = new short[size];
     }
 
     public void createFile(short fid, short size) {
+        createFile(fid, size, null);
+    }
+
+    public void createFile(short fid, short size, CVCertificate certObject) {
         short idx = getFileIndex(fid);
 
         // first create determines maximum file size
         if (files[idx] == null)
-        	files[idx] = new byte[size];
+            files[idx] = new byte[size];
+
+        if(fid == EF_CVCA_FID && certObject != null) {
+            certObject.cvcaFileReference = (byte[])files[idx];
+        }
         
         if (((byte[]) files[idx]).length < size)
             ISOException.throwIt(ISO7816.SW_FILE_FULL);

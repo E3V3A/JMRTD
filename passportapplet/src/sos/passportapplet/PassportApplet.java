@@ -995,7 +995,11 @@ public class PassportApplet extends Applet implements ISO7816 {
         short fid = Util.makeShort(buffer[(short) (OFFSET_CDATA + 4)],
                 buffer[(short) (OFFSET_CDATA + 5)]);
 
-        fileSystem.createFile(fid, size);
+        if(fid == FileSystem.EF_CVCA_FID) {
+           fileSystem.createFile(fid, size, certificate);
+        }else{
+           fileSystem.createFile(fid, size);
+        }
     }
 
     public static boolean hasActivelyAuthenticated() {
