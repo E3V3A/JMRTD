@@ -365,7 +365,7 @@ public class CVCertificate {
      * @param root
      *            whether we are parsing a root certificate (no signature)
      */
-    short parseCertificate(byte[] in, short offset, short length, boolean root) {
+    void parseCertificate(byte[] in, short offset, short length, boolean root) {
 
         try {
             offset = BERTLVScanner.readTag(in, offset);
@@ -491,16 +491,9 @@ public class CVCertificate {
                 data[OFFSET_SIGNATURE_LENGTH] = BERTLVScanner.valueLength;
                 source[0] = in;
             }
-            return 0;
         } catch (Exception e){
-            short bOffset = 0;
-            Util.setShort(in, bOffset, offset);
-            Util.setShort(in, (short)(bOffset + 2), BERTLVScanner.tag);
-            Util.setShort(in, (short)(bOffset + 4), BERTLVScanner.valueLength);
-            Util.setShort(in, (short)(bOffset + 6), BERTLVScanner.valueOffset);
             clear();
-            return (short)8;
-//            ISOException.throwIt((short) (ISO7816.SW_WRONG_DATA));
+            ISOException.throwIt((short) (ISO7816.SW_WRONG_DATA));
         }
 
     }

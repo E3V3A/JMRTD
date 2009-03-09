@@ -366,7 +366,7 @@ public class PassportCrypto {
      * @param plaintextLength length of plaintext in which this offset depends.
      * @return
      */
-    public static short getApduBufferOffset(short plaintextLength) {
+    public short getApduBufferOffset(short plaintextLength) {
         short do87Bytes = 2; // 0x87 len data 0x01
         // smallest multiple of 8 strictly larger than plaintextLen + 1
         // byte is probably the length of the ciphertext (including do87 0x01)
@@ -607,6 +607,7 @@ public class PassportCrypto {
         } catch (Exception e) {
             eacChangeKeys[0] = false;
             return false;
+            
         }
     }
 

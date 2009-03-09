@@ -331,7 +331,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             processCreateFile(apdu);
             break;
         case INS_PUT_DATA:
-            responseLength = processPutData(apdu);
+            processPutData(apdu);
             break;
         default:
             ISOException.throwIt(SW_INS_NOT_SUPPORTED);
@@ -418,7 +418,7 @@ public class PassportApplet extends Applet implements ISO7816 {
                 // ignore the key id, we don't use it for now
             }
             if (!crypto.authenticateChip(buffer, pubKeyOffset, pubKeyLen)) {
-                ISOException.throwIt(SW_WRONG_DATA);
+                ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED);
             }
             volatileState[0] |= CHIP_AUTHENTICATED;
             return 0;
@@ -446,7 +446,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         return 0;
     }
 
-    private short processPutData(APDU apdu) {
+    private void processPutData(APDU apdu) {
         if (isLocked()) {
             ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED);
         }
@@ -599,16 +599,12 @@ public class PassportApplet extends Applet implements ISO7816 {
             // We already have the certificate initialized
             ISOException.throwIt(SW_CONDITIONS_NOT_SATISFIED);
         }
-        short r = certificate.parseCertificate(buffer, buffer_p, lc, true);
-        if(r > 0) {
-            return r;
-        }
+        certificate.parseCertificate(buffer, buffer_p, lc, true);
         certificate.setRootCertificate(buffer, p1);
         persistentState |= HAS_CVCERTIFICATE;
     } else {
         ISOException.throwIt(SW_INCORRECT_P1P2);
     }
-     return 0;
     }
 
     /**
