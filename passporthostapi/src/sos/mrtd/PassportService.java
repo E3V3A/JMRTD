@@ -368,7 +368,7 @@ public class PassportService extends PassportApduService
                     // true means do not do chaining, send all in one APDU
                     // the actual passport may require chaining (when the certificate
                     // is too big to fit into one APDU).
-                    sendPSO(wrapper, body, sig, true);
+                    sendPSO(wrapper, body, sig);
                     sigAlg = AlgorithmUtil.getAlgorithmName(cert.getCertificateBody().getPublicKey().getObjectIdentifier());
                     certRef = wrapDO((byte)0x83,cert.getCertificateBody().getHolderReference().getConcatenated().getBytes());
                 } catch (Exception e) {
