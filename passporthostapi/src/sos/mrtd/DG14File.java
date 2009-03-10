@@ -55,7 +55,7 @@ import sos.tlv.BERTLVObject;
  * keys, the map of protocol identifiers which should match the key's map (not
  * checked here!), and the file identifier of the efCVCA file.
  * 
- * @author Wociech Mostowski <woj@cs.ru.nl>
+ * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
  */
 public class DG14File extends DataGroup {
