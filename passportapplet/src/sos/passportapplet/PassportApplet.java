@@ -430,7 +430,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             if (buffer_p > (short) (lastOffset - 2)) {
                 ISOException.throwIt(SW_WRONG_LENGTH);
             }
-            if (buffer[buffer_p++] != (byte) 0x93) {
+            if (buffer[buffer_p++] != (byte) 0x83) {
                 ISOException.throwIt(SW_WRONG_DATA);
             }
             short subIdLen = (short) (buffer[buffer_p++] & 0xFF);

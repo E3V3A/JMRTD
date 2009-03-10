@@ -127,16 +127,18 @@ public class CVCertificate {
      */
     boolean selectSubjectId(byte[] data, short offset, short length) {
         if(currentCertSubjectId[0] == 0) {
-            if(cert1HolderReference != null && cert1HolderReference.length == length) {
-                if(Util.arrayCompare(cert1HolderReference, (short)0, data, offset, length) == 0) {
+            if(cert1HolderReference != null && cert1HolderReference[0] == (byte)length) {
+                if(Util.arrayCompare(cert1HolderReference, (short)1, data, offset, length) == 0) {
                     setupCurrentKey(cert1HolderReference, cert1PublicKeyData, cert1Authorization, cert1EffDate, cert1ExpDate);
                     currentCertNum[0] = 1;
                     return true;
                 }
-            }else if(cert2HolderReference != null && cert2HolderReference.length == length) {
-                setupCurrentKey(cert2HolderReference, cert2PublicKeyData, cert2Authorization, cert2EffDate, cert2ExpDate);
-                currentCertNum[0] = 2;
-                return true;
+            }else if(cert2HolderReference != null && cert2HolderReference[0] == (byte)length) {
+                if(Util.arrayCompare(cert2HolderReference, (short)1, data, offset, length) == 0) {
+                  setupCurrentKey(cert2HolderReference, cert2PublicKeyData, cert2Authorization, cert2EffDate, cert2ExpDate);
+                  currentCertNum[0] = 2;
+                  return true;
+                }
             }
             return false;
         }
