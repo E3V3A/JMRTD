@@ -344,6 +344,10 @@ public class PassportService extends PassportApduService
                 return false;
             }
             
+            byte[] s = new byte[16];
+            System.arraycopy(secret, 0, s, 0, 16);
+            secret = s;
+            
             // Replace the secure messaging keys with the new generated ones:
             SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
             SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
@@ -357,6 +361,7 @@ public class PassportService extends PassportApduService
             
             for (CVCertificate cert : terminalCertificates) {
                 try {
+                    System.out.println("caReference: "+ Hex.bytesToHexString(certRef));                    
                     sendMSEDST(wrapper, certRef);
                     byte[] body = getCertBodyData(cert);
                     byte[] sig = getCertSignatureData(cert);
