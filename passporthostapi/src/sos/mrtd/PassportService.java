@@ -338,6 +338,8 @@ public class PassportService extends PassportApduService
                 idData = wrapDO((byte)0x84,Hex.hexStringToBytes(kId));
             }
             try {
+                System.out.println("keyDataO: "+Hex.bytesToHexString(keyData));
+                System.out.println("keyDataX: "+Hex.bytesToHexString(keyHash));
                 sendMSEKAT(wrapper, keyData, idData);
             } catch (CardServiceException cse) {
                 cse.printStackTrace();
@@ -382,10 +384,16 @@ public class PassportService extends PassportApduService
             System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
             idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
             
+            /*
             byte[] dtbs = new byte[idpic.length + rpicc.length + keyHash.length];
             System.arraycopy(idpic, 0, dtbs, 0, idpic.length);
             System.arraycopy(rpicc, 0, dtbs, idpic.length, rpicc.length);
             System.arraycopy(keyHash, 0, dtbs, idpic.length + rpicc.length, keyHash.length);
+*/
+
+            byte[] dtbs = keyHash;
+
+            System.out.println("dtbs: "+Hex.bytesToHexString(dtbs));
 
             Signature sig = Signature.getInstance(sigAlg);
             sig.initSign(terminalKey);

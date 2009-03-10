@@ -1084,8 +1084,8 @@ public class PassportFrame extends JFrame
                         if(p.getPublic() != null) {
                             dg15 = new DG15File(p.getPublic());
                             passport.putFile(PassportService.EF_DG15, dg15.getEncoded());
+                            aaPrivateKey = p.getPrivate();
                         }
-                        aaPrivateKey = p.getPrivate();
                 }catch(Exception ex) {
                     ex.printStackTrace();
                 }
