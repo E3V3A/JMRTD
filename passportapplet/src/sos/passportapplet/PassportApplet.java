@@ -236,7 +236,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         byte cla = buffer[OFFSET_CLA];
         byte ins = buffer[OFFSET_INS];
         short sw1sw2 = SW_OK;
-        boolean protectedApdu = cla == CLA_PROTECTED_APDU;
+        boolean protectedApdu = (byte)(cla & CLA_PROTECTED_APDU)  == CLA_PROTECTED_APDU;
         short responseLength = 0;
         short le = 0;
 
