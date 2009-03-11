@@ -419,7 +419,6 @@ public class PassportPersoService extends CardService {
 					BERTLVObject.OCTET_STRING_TYPE_TAG, dob));
 			mrzObject.addSubObject(new BERTLVObject(
 					BERTLVObject.OCTET_STRING_TYPE_TAG, doe));
-
 			putData((byte) 0, MRZ_TAG, mrzObject.getEncoded());
 		} catch (Exception ioe) {
 			throw new CardServiceException(ioe.toString());
