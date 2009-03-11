@@ -517,6 +517,11 @@ public class PassportApplet extends Applet implements ISO7816 {
             short doeLength = BERTLVScanner.valueLength;
             buffer_p = BERTLVScanner.skipValue();
 
+            documentNumber = new byte[(short)(docNrLength+1)];
+            Util.arrayCopyNonAtomic(buffer, docNrOffset, documentNumber,
+                    (short) 0, docNrLength);
+            documentNumber[docNrLength] = PassportInit.checkDigit(documentNumber,(short)0, docNrLength);
+
             short keySeed_offset = init.computeKeySeed(buffer, docNrOffset,
                     docNrLength, dobOffset, dobLength, doeOffset, doeLength);
 
@@ -528,11 +533,6 @@ public class PassportApplet extends Applet implements ISO7816 {
                     encKey_p);
             keyStore.setMutualAuthenticationKeys(buffer, macKey_p, buffer,
                     encKey_p);
-            documentNumber = new byte[(short)(docNrLength+1)];
-            Util.arrayCopyNonAtomic(buffer, docNrOffset, documentNumber,
-                    (short) 0, docNrLength);
-            // FIXME: this is broken, why?
-            documentNumber[docNrLength] = PassportInit.checkDigit(documentNumber,(short)0, docNrLength);
             persistentState |= HAS_MUTUALAUTHENTICATION_KEYS;
         } else if (p1 == 0 && p2 == ECPRIVATEKEY_TAG) {
             short finish = (short) (buffer_p + lc);
