@@ -50,26 +50,26 @@ public class PassportInit {
      */
     private static byte decodeMRZDigit(byte ch) {
         switch (ch) {
-        case '<':
-        case '0':
+        case (byte)'<':
+        case (byte)'0':
             return 0;
-        case '1':
+        case (byte)'1':
             return 1;
-        case '2':
+        case (byte)'2':
             return 2;
-        case '3':
+        case (byte)'3':
             return 3;
-        case '4':
+        case (byte)'4':
             return 4;
-        case '5':
+        case (byte)'5':
             return 5;
-        case '6':
+        case (byte)'6':
             return 6;
-        case '7':
+        case (byte)'7':
             return 7;
-        case '8':
+        case (byte)'8':
             return 8;
-        case '9':
+        case (byte)'9':
             return 9;
         case 'a':
         case 'A':
@@ -161,7 +161,7 @@ public class PassportInit {
      *            a part of the MRZ.
      * @return the resulting check digit.
      */
-    private static byte checkDigit(byte[] chars, short offset, short length) {
+    static byte checkDigit(byte[] chars, short offset, short length) {
         byte[] weights = { 7, 3, 1 };
         byte result = 0;
         for (short i = 0; i < length; i++) {

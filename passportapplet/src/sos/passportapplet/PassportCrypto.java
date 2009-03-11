@@ -580,7 +580,7 @@ public class PassportCrypto {
             }
 
             // Compute the key hash: simply the X coordinate
-            Util.arrayCopyNonAtomic(pubData, (short)1, eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length);
+            Util.arrayCopyNonAtomic(pubData, (short)(offset+1), eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length);
 
             // Do the key agreement and derive new session keys based on the
             // outcome:
@@ -613,14 +613,12 @@ public class PassportCrypto {
     boolean eacVerifySignature(RSAPublicKey key, byte[] rnd, 
             byte[] docNr, byte[] buffer, short offset, short length) {
         rsaSig.init(key, Signature.MODE_VERIFY);
-//        rsaSig.update(docNr, (short) 0, (short) docNr.length);
-//        rsaSig.update(rnd, (short) 0, PassportApplet.RND_LENGTH);
-//        boolean result = rsaSig.verify(eacTerminalKeyHash, (short) 0, (short)eacTerminalKeyHash.length, buffer, offset, length);
-//        rsaSig.update(rnd, (short) 0, PassportApplet.RND_LENGTH);
+        rsaSig.update(docNr, (short) 0, (short) docNr.length);
+        rsaSig.update(rnd, (short) 0, PassportApplet.RND_LENGTH);
         boolean result = rsaSig.verify(eacTerminalKeyHash, (short) 0, (short)eacTerminalKeyHash.length, buffer, offset, length);
-//        if(result) {
-//            Util.arrayFillNonAtomic(eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length, (byte)0x00);
-//        }
+        if(result) {
+            Util.arrayFillNonAtomic(eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length, (byte)0x00);
+        }
         return result;
     }
 
