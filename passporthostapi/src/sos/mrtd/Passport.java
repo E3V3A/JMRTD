@@ -64,7 +64,9 @@ public class Passport {
     private PrivateKey docSigningPrivateKey = null;
     private CVCertificate cvcaCertificate = null;
     private PrivateKey eacPrivateKey = null;
-    
+
+    private PrivateKey aaPrivateKey = null;
+
     private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
         BufferedInputStream bufferedIn = null;
         if(rawStreams.containsKey(fid)) {
@@ -460,10 +462,31 @@ public class Passport {
         DG14File dg14file = new DG14File(key, null, null, null);
         putFile(PassportService.EF_DG14, dg14file.getEncoded());
     }
+
+    public void setAAKeys(KeyPair keyPair) {
+        this.aaPrivateKey = keyPair.getPrivate();
+        DG15File dg15file = new DG15File(keyPair.getPublic());
+        putFile(PassportService.EF_DG15, dg15file.getEncoded());
+    }
+
+    public PrivateKey getAAPrivateKey() {
+        return eacPrivateKey;
+    }
+
+    public void setAAPrivateKey(PrivateKey key) {
+        aaPrivateKey = key;
+    }
+
+    public void setAAPublicKey(PublicKey key) {
+        DG15File dg15file = new DG15File(key);
+        putFile(PassportService.EF_DG15, dg15file.getEncoded());
+    }
+
     
     public PrivateKey getEACPrivateKey() {
         return eacPrivateKey;
     }
+
 
     public boolean hasEAC() {
         return eacSupport;

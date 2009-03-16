@@ -158,10 +158,10 @@ public class CVCertificateFrame extends JFrame {
         if (certificate instanceof CVCertificate) {
             StringBuffer result = new StringBuffer();
             CVCertificate cert = (CVCertificate)certificate;
-            result.append("subject:\n" );
+            result.append("subject: " );
             result.append(cert.getCertificateBody().getHolderReference().getConcatenated());
             result.append('\n');
-            result.append("issuer:\n");
+            result.append("issuer: ");
             result.append(cert.getCertificateBody().getAuthorityReference().getConcatenated());
             result.append('\n');
             result.append("Not before: " + cert.getCertificateBody().getValidFrom() + "\n");
