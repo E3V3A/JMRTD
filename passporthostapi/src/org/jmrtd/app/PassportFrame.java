@@ -1266,9 +1266,11 @@ public class PassportFrame extends JFrame implements AuthListener
 					bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 				}
 				PublicKey aaPublicKey = null;
-				if (dg15 != null) {
-					aaPublicKey = dg15.getPublicKey();
-				}
+                InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
+                if (dg15In != null) {
+                    dg15 = new DG15File(dg15In);
+                    aaPublicKey = dg15.getPublicKey();
+                }
 				UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
 				int choice = chooser.showOptionsDialog(getContentPane());
 				switch (choice) {
@@ -1278,7 +1280,6 @@ public class PassportFrame extends JFrame implements AuthListener
 					try {
 						cm.stopPolling(terminal);
                         // FIXME: have to wait for the poller?
-                        try{ Thread.sleep(2000); }catch(Exception ex) { }
 						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						persoService.open();
 						if (chooser.isBACSelected()) {

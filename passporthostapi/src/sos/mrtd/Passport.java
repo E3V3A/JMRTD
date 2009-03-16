@@ -470,7 +470,7 @@ public class Passport {
     }
 
     public PrivateKey getAAPrivateKey() {
-        return eacPrivateKey;
+        return aaPrivateKey;
     }
 
     public void setAAPrivateKey(PrivateKey key) {
