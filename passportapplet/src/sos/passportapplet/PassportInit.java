@@ -37,6 +37,8 @@ public class PassportInit {
 
     private PassportCrypto crypto;
 
+    private static byte[] weights = { 7, 3, 1 };
+
     PassportInit(PassportCrypto crypto) {
         this.crypto = crypto;
     }
@@ -162,7 +164,6 @@ public class PassportInit {
      * @return the resulting check digit.
      */
     static byte checkDigit(byte[] chars, short offset, short length) {
-        byte[] weights = { 7, 3, 1 };
         byte result = 0;
         for (short i = 0; i < length; i++) {
             result = (byte) ((short) ((result + weights[i % 3]

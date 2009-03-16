@@ -483,11 +483,11 @@ public class PassportCrypto {
      */
     static byte[] c = { 0x00, 0x00, 0x00, 0x00 };
 
-    public void deriveKey(byte[] buffer, short keySeed_offset, byte mode, short key_offset)
+    public void deriveKey(byte[] buffer, short keySeed_offset, short keySeed_length, byte mode, short key_offset)
             throws CryptoException {
         // only key_offset is a write pointer
         // sanity checks
-        if ((short)buffer.length < (short)(key_offset + 20)) {
+        if ((short)buffer.length < (short)((short)(key_offset + keySeed_length) + c.length)) {
             ISOException.throwIt((short)0x6d66);
         }
         if(keySeed_offset > key_offset) {
@@ -497,11 +497,11 @@ public class PassportCrypto {
         c[(short)(c.length-1)] = mode;
 
         // copy seed || c to key_offset
-        Util.arrayCopy(buffer, keySeed_offset, buffer, key_offset, PassportApplet.KEYMATERIAL_LENGTH);
-        Util.arrayCopy(c, (short) 0, buffer, (short)(key_offset + PassportApplet.KEYMATERIAL_LENGTH), (short)c.length);
+        Util.arrayCopy(buffer, keySeed_offset, buffer, key_offset, keySeed_length);
+        Util.arrayCopy(c, (short) 0, buffer, (short)(key_offset + keySeed_length), (short)c.length);
 
         // compute hash on key_offset (+seed len +c len)
-        shaDigest.doFinal(buffer, key_offset, (short)(PassportApplet.KEYMATERIAL_LENGTH + c.length), buffer, key_offset);
+        shaDigest.doFinal(buffer, key_offset, (short)(keySeed_length + c.length), buffer, key_offset);
         shaDigest.reset();
 
         // parity bits
@@ -587,16 +587,18 @@ public class PassportCrypto {
             short secOffset = (short) (offset + length);
             short secLength = keyAgreement.generateSecret(pubData, offset,
                     length, pubData, secOffset);
+            // use only first 16 bytes?
+            // secLength = 16;
             short keysOffset = (short) (secOffset + secLength);
-            deriveKey(pubData, secOffset, MAC_MODE, keysOffset);
+            deriveKey(pubData, secOffset, secLength, MAC_MODE, keysOffset);
             short macKeyOffset = keysOffset;
-            keysOffset += 16;
-            deriveKey(pubData, secOffset, ENC_MODE, keysOffset);
+            keysOffset += PassportApplet.KEY_LENGTH;
+            deriveKey(pubData, secOffset, secLength, ENC_MODE, keysOffset);
             short encKeyOffset = keysOffset;
             Util.arrayCopyNonAtomic(pubData, macKeyOffset, keyStore.tmpKeys,
-                    (short) 0, (short) 16);
+                    (short) 0, PassportApplet.KEY_LENGTH);
             Util.arrayCopyNonAtomic(pubData, encKeyOffset, keyStore.tmpKeys,
-                    (short) 16, (short) 16);
+                    PassportApplet.KEY_LENGTH, PassportApplet.KEY_LENGTH);
             // The secure messaging keys should be replaced with the freshly
             // computed ones
             // just after the current APDU is completely processed.

@@ -214,7 +214,8 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Installs an instance of the applet.
+     * Installs an instance of the applet. The default crypto mode is now
+     * PERFECTWORLD_MODE as the new JCOP41 cards support all required crypto.
      * 
      * @param buffer
      * @param offset
@@ -527,9 +528,9 @@ public class PassportApplet extends Applet implements ISO7816 {
 
             short macKey_p = (short) (keySeed_offset + KEYMATERIAL_LENGTH);
             short encKey_p = (short) (keySeed_offset + KEYMATERIAL_LENGTH + KEY_LENGTH);
-            crypto.deriveKey(buffer, keySeed_offset, PassportCrypto.MAC_MODE,
+            crypto.deriveKey(buffer, keySeed_offset, KEYMATERIAL_LENGTH, PassportCrypto.MAC_MODE,
                     macKey_p);
-            crypto.deriveKey(buffer, keySeed_offset, PassportCrypto.ENC_MODE,
+            crypto.deriveKey(buffer, keySeed_offset, KEYMATERIAL_LENGTH, PassportCrypto.ENC_MODE,
                     encKey_p);
             keyStore.setMutualAuthenticationKeys(buffer, macKey_p, buffer,
                     encKey_p);
@@ -809,10 +810,10 @@ public class PassportApplet extends Applet implements ISO7816 {
                 KEYMATERIAL_LENGTH);
 
         // calculate session keys
-        crypto.deriveKey(buffer, keySeed_p, PassportCrypto.MAC_MODE, keys_p);
+        crypto.deriveKey(buffer, keySeed_p, KEYMATERIAL_LENGTH, PassportCrypto.MAC_MODE, keys_p);
         short macKey_p = keys_p;
         keys_p += KEY_LENGTH;
-        crypto.deriveKey(buffer, keySeed_p, PassportCrypto.ENC_MODE, keys_p);
+        crypto.deriveKey(buffer, keySeed_p, KEYMATERIAL_LENGTH, PassportCrypto.ENC_MODE, keys_p);
         short encKey_p = keys_p;
         keys_p += KEY_LENGTH;
         keyStore.setSecureMessagingKeys(buffer, macKey_p, buffer, encKey_p);
