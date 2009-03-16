@@ -653,10 +653,9 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
 
         // calculate SHA1 hash over m1 and m2
-        MessageDigest digest = MessageDigest.getInstance(MessageDigest.ALG_SHA,
-                false);
-        digest.doFinal(buffer, m1_offset, (short) (m1_len + m2_len), buffer,
+        crypto.shaDigest.doFinal(buffer, m1_offset, (short) (m1_len + m2_len), buffer,
                 m1m2hash_offset);
+        crypto.shaDigest.reset();
 
         // write trailer
         buffer[trailer_offset] = (byte) 0xbc;
@@ -670,9 +669,8 @@ public class PassportApplet extends Applet implements ISO7816 {
         if (plaintext_len != 128) {
             ISOException.throwIt(SW_INTERNAL_ERROR);
         }
-        Cipher rsaCiph = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
-        rsaCiph.init(keyStore.rsaPrivateKey, Cipher.MODE_ENCRYPT);
-        short ciphertext_len = rsaCiph.doFinal(buffer, hdr_offset,
+        crypto.rsaCiph.init(keyStore.rsaPrivateKey, Cipher.MODE_ENCRYPT);
+        short ciphertext_len = crypto.rsaCiph.doFinal(buffer, hdr_offset,
                 plaintext_len, buffer, hdr_offset);
         // sanity check
         if (ciphertext_len != 128) {

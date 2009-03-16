@@ -30,6 +30,7 @@ import javacard.framework.Util;
 import javacard.security.CryptoException;
 import javacard.security.DESKey;
 import javacard.security.KeyAgreement;
+import javacard.security.KeyBuilder;
 import javacard.security.MessageDigest;
 import javacard.security.RSAPublicKey;
 import javacard.security.Signature;
@@ -52,12 +53,14 @@ public class PassportCrypto {
     MessageDigest shaDigest;
     Signature sig;
     Cipher ciph;
+    Cipher rsaCiph;
     KeyStore keyStore;
 
     Signature rsaSig;
     KeyAgreement keyAgreement;
     boolean[] eacChangeKeys;
-    byte[] eacTerminalKeyHash;
+//    byte[] eacTerminalKeyHash;
+    private static final short EC_X_LENGTH = (short)((short)(KeyBuilder.LENGTH_EC_F2M_163 / 8)+1); 
 
     public static byte[] PAD_DATA = { (byte) 0x80, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -75,11 +78,10 @@ public class PassportCrypto {
         
         shaDigest = MessageDigest.getInstance(MessageDigest.ALG_SHA, false);
         rsaSig = Signature.getInstance(Signature.ALG_RSA_SHA_PKCS1, false);
+        rsaCiph = Cipher.getInstance(Cipher.ALG_RSA_NOPAD, false);
         keyAgreement = KeyAgreement.getInstance(KeyAgreement.ALG_EC_SVDP_DH,
                 false);
         eacChangeKeys = JCSystem.makeTransientBooleanArray((short) 1,
-                JCSystem.CLEAR_ON_DESELECT);
-        eacTerminalKeyHash = JCSystem.makeTransientByteArray((short) 21,
                 JCSystem.CLEAR_ON_DESELECT);
 
     }
@@ -579,9 +581,6 @@ public class PassportCrypto {
                 CryptoException.throwIt(CryptoException.ILLEGAL_VALUE);
             }
 
-            // Compute the key hash: simply the X coordinate
-            Util.arrayCopyNonAtomic(pubData, (short)(offset+1), eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length);
-
             // Do the key agreement and derive new session keys based on the
             // outcome:
             keyAgreement.init(keyStore.ecPrivateKey);
@@ -612,14 +611,12 @@ public class PassportCrypto {
 
     boolean eacVerifySignature(RSAPublicKey key, byte[] rnd, 
             byte[] docNr, byte[] buffer, short offset, short length) {
+        short x_offset = (short)(offset+length);
+        keyStore.ecPublicKey.getW(buffer, x_offset++);
         rsaSig.init(key, Signature.MODE_VERIFY);
         rsaSig.update(docNr, (short) 0, (short) docNr.length);
         rsaSig.update(rnd, (short) 0, PassportApplet.RND_LENGTH);
-        boolean result = rsaSig.verify(eacTerminalKeyHash, (short) 0, (short)eacTerminalKeyHash.length, buffer, offset, length);
-        if(result) {
-            Util.arrayFillNonAtomic(eacTerminalKeyHash, (short)0, (short)eacTerminalKeyHash.length, (byte)0x00);
-        }
-        return result;
+        return rsaSig.verify(buffer, x_offset, EC_X_LENGTH, buffer, offset, length);
     }
 
 
