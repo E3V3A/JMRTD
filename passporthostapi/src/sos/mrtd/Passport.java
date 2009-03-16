@@ -151,9 +151,11 @@ public class Passport {
                 if(caRef != null) {
                     try {
                         List<CVCertificate> t = d.getCertificates(caRef);
-                        termCerts.add(t);
-                        termKeys.add(d.getPrivateKey(caRef));
-                        caRefs.add(caRef);                            
+                        if(t != null) {
+                          termCerts.add(t);
+                          termKeys.add(d.getPrivateKey(caRef));
+                          caRefs.add(caRef);
+                        }
                     }catch(NoSuchElementException nsee) {}
                 }
             }

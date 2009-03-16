@@ -292,6 +292,9 @@ public class PassportService extends PassportApduService
             String documentNumber) throws CardServiceException {
         try {
 
+            if(key == null || caReference == null || terminalCertificates == null || terminalKey == null || documentNumber == null) {
+                throw new IllegalArgumentException();
+            }
             String algName = (key instanceof ECPublicKey)? "ECDH" : "DH";
             KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
             AlgorithmParameterSpec spec = null;
