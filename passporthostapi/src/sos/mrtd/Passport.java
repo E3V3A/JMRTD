@@ -95,6 +95,10 @@ public class Passport {
     }
     
     public Passport(PassportService service) throws IOException, CardServiceException {
+        this(service, null);
+    }
+    
+    public Passport(PassportService service, String documentNumber) throws IOException, CardServiceException {
 
         BufferedInputStream bufferedIn = null;
         
@@ -158,16 +162,20 @@ public class Passport {
                return;
             }
             // Try EAC
-            bufferedIn = preReadFile(service, PassportService.EF_DG1);
-            String docNumber = new DG1File(bufferedIn).getMRZInfo().getDocumentNumber();;
-            bufferedIn.reset();
+            if(documentNumber == null) {
+              // Try DG1 if document number was not supplied
+              bufferedIn = preReadFile(service, PassportService.EF_DG1);
+              documentNumber = new DG1File(bufferedIn).getMRZInfo().getDocumentNumber();
+              bufferedIn.reset();
+            }
+            
             Map<Integer, PublicKey> cardKeys = dg14file.getPublicKeys();
             Set<Integer> keyIds = cardKeys.keySet();
             for(int i : keyIds) {
                 if(eacSuccess) { break; }
                 for(int termIndex=0; termIndex<termCerts.size(); termIndex++) {
                     try {
-                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), docNumber)){
+                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber)){
                            eacSuccess = true;
                            break;
                        }

@@ -236,7 +236,7 @@ public class PassportFrame extends JFrame
 			}
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
-            passport = new Passport(service);
+            passport = new Passport(service, bacEntry != null ? bacEntry.getDocumentNumber() : null);
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -419,6 +419,7 @@ public class PassportFrame extends JFrame
 		verificationIndicator.setDSNotChecked();
 		verificationIndicator.setCSNotChecked(null);
 		verifyBAC(service);
+        verifyEAC(service);
 		verifyAA(service);
 		verifyDS(service);
 		verifyCS(service);
@@ -433,6 +434,20 @@ public class PassportFrame extends JFrame
 			verificationIndicator.setBACFailed("BAC not used");
 		}
 	}
+
+    
+    /** Checks whether EAC was used. */
+    private void verifyEAC(PassportService service) {
+        if (passport.hasEAC()) {
+            if(passport.wasEACPerformed()) {
+              verificationIndicator.setEACSucceeded();
+            }else{
+              verificationIndicator.setEACFailed("EAC not performed");
+            }
+        }else{
+            verificationIndicator.setEACNotChecked();
+        }
+    }
 
 	/** Check active authentication. */
 	private void verifyAA(PassportService service) {

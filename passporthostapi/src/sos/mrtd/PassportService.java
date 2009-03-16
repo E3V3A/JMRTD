@@ -338,8 +338,6 @@ public class PassportService extends PassportApduService
                 idData = wrapDO((byte)0x84,Hex.hexStringToBytes(kId));
             }
             try {
-                System.out.println("keyDataO: "+Hex.bytesToHexString(keyData));
-                System.out.println("keyDataX: "+Hex.bytesToHexString(keyHash));
                 sendMSEKAT(wrapper, keyData, idData);
             } catch (CardServiceException cse) {
                 cse.printStackTrace();
@@ -363,7 +361,6 @@ public class PassportService extends PassportApduService
             
             for (CVCertificate cert : terminalCertificates) {
                 try {
-                    System.out.println("caReference: "+ Hex.bytesToHexString(certRef));                    
                     sendMSEDST(wrapper, certRef);
                     byte[] body = getCertBodyData(cert);
                     byte[] sig = getCertSignatureData(cert);
