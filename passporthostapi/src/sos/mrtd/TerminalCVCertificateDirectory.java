@@ -113,7 +113,7 @@ public class TerminalCVCertificateDirectory {
         List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
         String keyAlgName = "RSA";
         for (File file : certFiles) {
-            System.out.println("Certificate file: "+file);
+            System.out.println("Found certificate file: "+file);
             CVCertificate c = readCVCertificateFromFile(file);
             if (c == null) {
                 throw new IOException();
@@ -127,7 +127,7 @@ public class TerminalCVCertificateDirectory {
         if (keyFiles.length != 1) {
             throw new IOException();
         }
-        System.out.println("Key file: "+keyFiles[0]);
+        System.out.println("Found key file: "+keyFiles[0]);
         PrivateKey k = readKeyFromFile(keyFiles[0], keyAlgName);
         if (k == null) {
             throw new IOException();

@@ -343,10 +343,11 @@ public class PassportService extends PassportApduService
                 cse.printStackTrace();
                 return false;
             }
-            
-            byte[] s = new byte[16];
-            System.arraycopy(secret, 0, s, 0, 16);
-            secret = s;
+           
+            // Use only the first 16 bytes?
+            // byte[] s = new byte[16];
+            // System.arraycopy(secret, 0, s, 0, 16);
+            // secret = s;
             
             // Replace the secure messaging keys with the new generated ones:
             SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
