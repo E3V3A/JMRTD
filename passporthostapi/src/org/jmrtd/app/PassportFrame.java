@@ -488,8 +488,11 @@ public class PassportFrame extends JFrame implements AuthListener
 		try {
 			InputStream comIn = passport.getInputStream(PassportService.EF_COM);
 			com = new COMFile(comIn);
-			List<Integer> tagList = com.getTagList();
-			Collections.sort(tagList);
+			List<Integer> comDGList = new ArrayList<Integer>();
+            for(Integer tag : com.getTagList()) {
+                comDGList.add(PassportFile.lookupDataGroupNumberByTag(tag));
+            }
+			Collections.sort(comDGList);
 
 			InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 			sod = new SODFile(sodIn);
@@ -501,7 +504,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			List<Integer> tagsOfHashes = new ArrayList<Integer>();
 			tagsOfHashes.addAll(hashes.keySet());
 			Collections.sort(tagsOfHashes);
-			if (tagsOfHashes.equals(tagList)) {
+			if (!tagsOfHashes.equals(comDGList)) {
 				verificationIndicator.setDSFailed("\"Jeroen van Beek sanity check\" failed!");
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
@@ -510,14 +513,18 @@ public class PassportFrame extends JFrame implements AuthListener
 			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
 
 			for (int dgNumber: hashes.keySet()) {
-				int tag = PassportFile.lookupTagByDataGroupNumber(dgNumber);
-				short fid = PassportFile.lookupFIDByTag(tag);
+				short fid = PassportFile.lookupFIDByTag(PassportFile.lookupTagByDataGroupNumber(dgNumber));
 				byte[] storedHash = hashes.get(dgNumber);
 
 				digest.reset();
 
 				InputStream dgIn = passport.getInputStream(fid);
 
+                if(dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
+                        (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+                    continue;
+                }
+                
 				byte[] buf = new byte[4096];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
