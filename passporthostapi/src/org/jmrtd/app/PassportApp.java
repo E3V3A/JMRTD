@@ -25,6 +25,7 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -43,6 +44,8 @@ import java.util.Properties;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -68,6 +71,7 @@ import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.TerminalCVCertificateDirectory;
 import sos.smartcards.APDUFingerprint;
+import sos.smartcards.APDUListener;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
@@ -75,6 +79,7 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
+import sos.util.Hex;
 import sos.util.Icons;
 
 /**
@@ -129,7 +134,14 @@ public class PassportApp  implements PassportListener
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
-
+			
+			/* START DEBUGGING CODE */
+			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
+			traceFrame.pack();
+			traceFrame.setVisible(true);
+			cardManager.addAPDUListener(traceFrame);
+			/* END DEBUGGING CODE */
+			
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
@@ -423,7 +435,17 @@ public class PassportApp  implements PassportListener
 									if (isPolling) { cardManager.stopPolling(terminal); }
 									CardService service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
-									readPassport(new PassportService(new TerminalCardService(terminal)));
+									PassportService passportService = new PassportService(new TerminalCardService(terminal));
+									
+									/* START DEBUGGING CODE */
+									APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (explicit reload)");
+									traceFrame.pack();
+									traceFrame.setVisible(true);
+									passportService.addAPDUListener(traceFrame);
+									/* END DEBUGGING CODE */
+
+									readPassport(passportService);
+									
 									if (isPolling) { cardManager.startPolling(terminal); }
 								}
 							} catch (CardException ce) {

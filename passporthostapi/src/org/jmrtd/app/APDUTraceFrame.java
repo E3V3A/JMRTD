@@ -11,15 +11,17 @@ import sos.util.Hex;
 
 public class APDUTraceFrame extends JFrame implements APDUListener
 {
+	private static final long serialVersionUID = -584060710792989841L;
+
 	private JTextArea traceArea;
-	
+
 	public APDUTraceFrame(String title) {
 		super(title);
 		traceArea = new JTextArea(40, 80);
 		traceArea.setFont(new Font("Monospaced", Font.PLAIN, 9));
 		getContentPane().add(new JScrollPane(traceArea));
 	}
-	
+
 	public APDUTraceFrame() {
 		this("APDU trace");
 	}
