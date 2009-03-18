@@ -315,6 +315,11 @@ public class CardManager
 			if (myThread != null && myThread.isAlive()) { return; }
 			myThread = new Thread(this);
 			myThread.start();
+			/*
+			 * FIXME: should block until thread has actually started
+			 * (service object created if card present on this reader, etc.)
+			 * Similar to stopPolling().
+			 */
 		}
 		
 		public synchronized void stopPolling() throws InterruptedException {
