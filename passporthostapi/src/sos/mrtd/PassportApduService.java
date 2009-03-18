@@ -162,9 +162,11 @@ public class PassportApduService extends CardService {
 
     CommandAPDU createSelectAppletAPDU(byte[] aid) {
         byte[] data = aid;
+//        CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+//                ISO7816.INS_SELECT_FILE, (byte) 0x04, (byte) 0x0C, data,
+//                (byte) 0x01);
         CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-                ISO7816.INS_SELECT_FILE, (byte) 0x04, (byte) 0x0C, data,
-                (byte) 0x01);
+                ISO7816.INS_SELECT_FILE, (byte) 0x04, (byte) 0x0C, data);
         return apdu;
     }
 
