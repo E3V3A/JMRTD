@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -57,11 +58,13 @@ public class CardManager
 	};
 
 	private Map<CardTerminal, TerminalPoller> terminals;
-	private Collection<CardTerminalListener> listeners;
+	private Collection<CardTerminalListener> cardTerminalListeners;
+	private Collection<APDUListener> apduListeners;
 
 	private CardManager() {	   
 		try {
-			listeners = new ArrayList<CardTerminalListener>();
+			cardTerminalListeners = new HashSet<CardTerminalListener>();
+			apduListeners = new HashSet<APDUListener>();
 			terminals = new HashMap<CardTerminal, TerminalPoller>();
 			addTerminals();
 		} catch (Exception ex) {
@@ -215,7 +218,7 @@ public class CardManager
 	 */
 	public void addCardTerminalListener(CardTerminalListener l) {
 		synchronized(INSTANCE) {
-			listeners.add(l);
+			cardTerminalListeners.add(l);
 			notifyAll();
 		}
 	}
@@ -227,12 +230,30 @@ public class CardManager
 	 */
 	public void removeCardTerminalListener(CardTerminalListener l) {
 		synchronized(INSTANCE) {
-			listeners.remove(l);
+			cardTerminalListeners.remove(l);
 		}
+	}
+	
+	/**
+	 * Adds a listener.
+	 * 
+	 * @param l the listener to add
+	 */
+	public void addAPDUListener(APDUListener l) {
+		apduListeners.add(l);
+	}
+
+	/**
+	 * Removes a listener.
+	 * 
+	 * @param l the listener to remove
+	 */
+	public void removeAPDUListener(APDUListener l) {
+		apduListeners.remove(l);
 	}
 
 	private void notifyCardEvent(final CardEvent ce) {
-		for (final CardTerminalListener l : listeners) { 
+		for (final CardTerminalListener l : cardTerminalListeners) { 
 			(new Thread(new Runnable() {
 				public void run() {
 					switch (ce.getType()) {
@@ -245,7 +266,7 @@ public class CardManager
 	}
 
 	private synchronized boolean hasNoListeners() {
-		return listeners.isEmpty();
+		return cardTerminalListeners.isEmpty();
 	}
 
 	/**
@@ -334,6 +355,7 @@ public class CardManager
 							try {
 								if (terminal.isCardPresent()) {
 									service = new TerminalCardService(terminal);
+									for (APDUListener l: apduListeners) { service.addAPDUListener(l); }
 								}
 							} catch (Exception e) {
 								if (service != null) { service.close(); }

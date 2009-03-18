@@ -22,8 +22,8 @@
 
 package sos.smartcards;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -57,7 +57,7 @@ public abstract class CardService
     * Creates a new service.
     */
    public CardService() {
-      apduListeners = new ArrayList<APDUListener>();
+      apduListeners = new HashSet<APDUListener>();
       state = SESSION_STOPPED_STATE;
    }
 
