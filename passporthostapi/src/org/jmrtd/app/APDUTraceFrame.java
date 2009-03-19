@@ -13,13 +13,13 @@ public class APDUTraceFrame extends JFrame implements APDUListener
 {
 	private static final long serialVersionUID = -584060710792989841L;
 
-	private JTextArea traceArea;
+	private JTextArea area;
 
 	public APDUTraceFrame(String title) {
 		super(title);
-		traceArea = new JTextArea(40, 80);
-		traceArea.setFont(new Font("Monospaced", Font.PLAIN, 9));
-		getContentPane().add(new JScrollPane(traceArea));
+		area = new JTextArea(40, 80);
+		area.setFont(new Font("Monospaced", Font.PLAIN, 9));
+		getContentPane().add(new JScrollPane(area));
 	}
 
 	public APDUTraceFrame() {
@@ -27,7 +27,8 @@ public class APDUTraceFrame extends JFrame implements APDUListener
 	}
 
 	public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
-		traceArea.append("C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
-		traceArea.append("R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
+		area.append("C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
+		area.append("R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
+		area.setCaretPosition(area.getDocument().getLength() - 1);
 	}	
 }
