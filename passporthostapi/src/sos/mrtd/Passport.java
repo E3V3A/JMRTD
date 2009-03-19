@@ -207,6 +207,11 @@ public class Passport {
             String fileName = entry.getName();
             int size = (int)(entry.getSize() & 0x00000000FFFFFFFFL);
             try {
+            	int delimIndex = fileName.indexOf('.');
+            	if (delimIndex != 4) {
+            		System.out.println("DEBUG: skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
+            		continue;
+            	}
                 short fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
                 byte[] bytes = new byte[size];
                 int fileLength = bytes.length;
