@@ -99,7 +99,11 @@ public class CardManager
 	public synchronized void startPolling(CardTerminal terminal) {
 		TerminalPoller poller = terminals.get(terminal);
 		if (poller == null) { poller = new TerminalPoller(terminal); }
-		poller.startPolling();
+		try {
+			poller.startPolling();
+		} catch (InterruptedException ie) {
+			/* NOTE: if thread interrupted we just quit. */
+		}
 		notifyAll();
 	}
 	
@@ -240,7 +244,17 @@ public class CardManager
 	 * @param l the listener to add
 	 */
 	public void addAPDUListener(APDUListener l) {
+		System.out.println("DEBUG: adding " + l);
 		apduListeners.add(l);
+		for (CardTerminal terminal: terminals.keySet()) {
+			TerminalPoller poller = terminals.get(terminal);
+			if (poller != null) {
+				CardService service = poller.getService();
+				if (service != null) {
+					service.addAPDUListener(l);
+				}
+			}
+		}
 	}
 
 	/**
@@ -250,6 +264,15 @@ public class CardManager
 	 */
 	public void removeAPDUListener(APDUListener l) {
 		apduListeners.remove(l);
+		for (CardTerminal terminal: terminals.keySet()) {
+			TerminalPoller poller = terminals.get(terminal);
+			if (poller != null) {
+				CardService service = poller.getService();
+				if (service != null) {
+					service.removeAPDUListener(l);
+				}
+			}
+		}
 	}
 
 	private void notifyCardEvent(final CardEvent ce) {
@@ -296,7 +319,7 @@ public class CardManager
 	{
 		private CardTerminal terminal;
 		private TerminalCardService service;
-		private boolean isPolling, hasStoppedPolling;
+		private boolean isPolling, isOutsidePollingLoop;
 		private Thread myThread;
 
 		public TerminalPoller(CardTerminal terminal) {
@@ -309,23 +332,21 @@ public class CardManager
 			return isPolling;
 		}
 		
-		public synchronized void startPolling() {
+		public synchronized void startPolling() throws InterruptedException {
 			if (isPolling()) { return; }
 			isPolling = true;
 			if (myThread != null && myThread.isAlive()) { return; }
 			myThread = new Thread(this);
 			myThread.start();
-			/*
-			 * FIXME: should block until thread has actually started
-			 * (service object created if card present on this reader, etc.)
-			 * Similar to stopPolling().
-			 */
+			while (isPolling && isOutsidePollingLoop) {
+				wait();
+			}
 		}
 		
 		public synchronized void stopPolling() throws InterruptedException {
 			if (!isPolling()) { return; }
 			isPolling = false;
-			while (!isPolling && !hasStoppedPolling) {
+			while (!isPolling && !isOutsidePollingLoop) {
 				wait();
 			}
 		}
@@ -340,7 +361,10 @@ public class CardManager
 
 		public void run() {
 			try {
-				hasStoppedPolling = false;
+				synchronized(this) {
+					isOutsidePollingLoop = false;
+					notifyAll(); /* NOTE: startPolling() may be waiting on us. */
+				}
 				while (isPolling()) {
 					if (hasNoListeners()) {
 						/* No listeners, we go to sleep. */
@@ -398,14 +422,13 @@ public class CardManager
 						// ce.printStackTrace(); // for debugging
 					} finally {
 						if (!isPolling() && service != null) { service.close(); }
-
 					}
 				}
 			} catch (InterruptedException ie) {
 				/* NOTE: This ends thread when interrupted. */
 			}
             synchronized (this) {
-            	hasStoppedPolling = true;
+            	isOutsidePollingLoop = true;
                 notifyAll(); /* NOTE: we just stopped polling, stopPolling may be waiting on us. */
             }
 		}
