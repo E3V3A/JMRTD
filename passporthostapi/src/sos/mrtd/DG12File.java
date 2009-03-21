@@ -30,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import sos.tlv.BERTLVInputStream;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_DG12 file.
@@ -132,13 +133,13 @@ public class DG12File extends DataGroup
 		byte[] value = tlvIn.readValue();
 		switch (tag) {	
 		case ISSUING_AUTHORITY_TAG: parseIssuingAuthority(new String(value)); break;
-		case DATE_OF_ISSUE_TAG: parseDateOfIssue(new String(value)); break;
+		case DATE_OF_ISSUE_TAG: parseDateOfIssue(Hex.bytesToHexString(value)); break;
 		case NAME_OF_OTHER_PERSON_TAG: parseNameOfOtherPerson(new String(value)); break; 
 		case ENDORSEMENTS_AND_OBSERVATIONS_TAG: parseEndorsementsAndObservations(new String(value)); break;
 		case TAX_OR_EXIT_REQUIREMENTS_TAG: parseTaxOrExitRequirements(new String(value)); break;
 		case IMAGE_OF_FRONT_TAG: parseImageOfFront(value); break;
 		case IMAGE_OF_REAR_TAG: parseImageOfRear(value); break;
-		case DATE_AND_TIME_OF_PERSONALIZATION: parseDateAndTimeOfPersonalization(new String(value)); break;
+		case DATE_AND_TIME_OF_PERSONALIZATION: parseDateAndTimeOfPersonalization(Hex.bytesToHexString(value)); break;
 		case PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG: parsePersonalizationSystemSerialNumber(new String(value)); break;
 		// case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value)); break;
 		default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));

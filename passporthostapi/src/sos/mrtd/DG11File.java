@@ -41,6 +41,7 @@ import javax.imageio.ImageIO;
 
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
+import sos.util.Hex;
 
 /**
  * File structure for the EF_DG11 file.
@@ -84,7 +85,7 @@ public class DG11File extends DataGroup
 	private static final int OTHER_VALID_TD_NUMBERS_TAG = 0x5F17; // Separated by ‘<’
 	private static final int CUSTODY_INFORMATION_TAG = 0x5F18;
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
 	private String fullNamePrimaryIdentifier;
 	private List<String> fullNameSecondaryIdentifiers;
@@ -167,18 +168,18 @@ public class DG11File extends DataGroup
 		tlvIn.readLength();
 		byte[] value = tlvIn.readValue();
 		switch (tag) {
-		case FULL_NAME_TAG: parseFullName(new String(value)); break;
-		case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value)); break;
-		case FULL_DATE_OF_BIRTH_TAG: parseFullDateOfBirth(new String(value)); break;
-		case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value)); break;
-		case PERMANENT_ADDRESS_TAG: parsePermanentAddress(new String(value)); break;
-		case TELEPHONE_TAG: parseTelephone(new String(value)); break;
-		case PROFESSION_TAG: parseProfession(new String(value)); break;
-		case TITLE_TAG: parseTitle(new String(value)); break;
-		case PERSONAL_SUMMARY_TAG: parsePersonalSummary(new String(value)); break;
+		case FULL_NAME_TAG: parseFullName(new String(value, "UTF-8")); break;
+		case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
+		case FULL_DATE_OF_BIRTH_TAG: parseFullDateOfBirth(Hex.bytesToHexString(value)); break;
+		case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
+		case PERMANENT_ADDRESS_TAG: parsePermanentAddress(new String(value, "UTF-8")); break;
+		case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
+		case PROFESSION_TAG: parseProfession(new String(value, "UTF-8")); break;
+		case TITLE_TAG: parseTitle(new String(value, "UTF-8")); break;
+		case PERSONAL_SUMMARY_TAG: parsePersonalSummary(new String(value, "UTF-8")); break;
 		case PROOF_OF_CITIZENSHIP_TAG: parseProofOfCitizenShip(value); break;
-		case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(new String(value)); break;
-		case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value)); break;
+		case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(new String(value, "UTF-8")); break;
+		case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value, "UTF-8")); break;
 		default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));
 		}
 	}
@@ -243,7 +244,8 @@ public class DG11File extends DataGroup
 
 	private void parseFullDateOfBirth(String in) {
 		try {
-			fullDateOfBirth = SDF.parse(in.replace("<", " ").trim());
+			in = in.replace("<", " ").trim();
+			fullDateOfBirth = SDF.parse(in);
 		} catch (ParseException pe) {
 			throw new IllegalArgumentException(pe.toString());
 		}
