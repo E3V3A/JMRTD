@@ -244,7 +244,6 @@ public class CardManager
 	 * @param l the listener to add
 	 */
 	public void addAPDUListener(APDUListener l) {
-		System.out.println("DEBUG: adding " + l);
 		apduListeners.add(l);
 		for (CardTerminal terminal: terminals.keySet()) {
 			TerminalPoller poller = terminals.get(terminal);
