@@ -35,7 +35,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.interfaces.RSAPrivateKey;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -68,7 +67,6 @@ import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 
-import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 

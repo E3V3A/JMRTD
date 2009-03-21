@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import sos.smartcards.CardServiceException;
 import sos.tlv.BERTLVInputStream;
 import sos.tlv.BERTLVObject;
 

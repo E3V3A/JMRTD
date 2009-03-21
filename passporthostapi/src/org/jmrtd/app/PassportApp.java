@@ -25,7 +25,6 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Font;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -44,8 +43,6 @@ import java.util.Properties;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -71,7 +68,6 @@ import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.TerminalCVCertificateDirectory;
 import sos.smartcards.APDUFingerprint;
-import sos.smartcards.APDUListener;
 import sos.smartcards.CardEvent;
 import sos.smartcards.CardFileInputStream;
 import sos.smartcards.CardManager;
@@ -79,7 +75,6 @@ import sos.smartcards.CardService;
 import sos.smartcards.CardServiceException;
 import sos.smartcards.TerminalCardService;
 import sos.util.Files;
-import sos.util.Hex;
 import sos.util.Icons;
 
 /**

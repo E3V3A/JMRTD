@@ -346,13 +346,14 @@ public class PassportFrame extends JFrame implements AuthListener
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
 					break;
+				case PassportService.EF_CVCA:
+					cvca = new CVCAFile(in);
+					break;
 				default:
-                    if(fid == passport.CVCA_FID) {
-                        cvca = new CVCAFile(in);
-                    }else{
-                      String message = "File " + Integer.toHexString(fid) + " not supported!";
-                      JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
-                    }
+					String message = "File " + Integer.toHexString(fid) + " not supported!";
+//					BERTLVObject o = BERTLVObject.getInstance(in);
+//					System.out.println(o);
+					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (Exception e) {
 				JTextArea message = new JTextArea(5, 15);

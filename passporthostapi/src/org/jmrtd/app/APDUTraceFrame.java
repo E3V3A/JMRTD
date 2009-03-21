@@ -4,7 +4,9 @@ import java.awt.Font;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
-import javax.swing.*;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
 
 import sos.smartcards.APDUListener;
 import sos.util.Hex;
