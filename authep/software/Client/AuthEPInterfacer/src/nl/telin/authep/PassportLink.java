@@ -32,14 +32,14 @@ import java.util.Vector;
 
 import javax.smartcardio.CardTerminal;
 
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
 import sos.mrtd.DG15File;
 import sos.mrtd.PassportFile;
 import sos.mrtd.PassportService;
-import sos.smartcards.CardFileInputStream;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.TerminalCardService;
 
 /**
  * PassportLink handles communication between the chip on the passport

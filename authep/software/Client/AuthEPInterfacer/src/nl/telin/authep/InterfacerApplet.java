@@ -29,9 +29,9 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.geom.Ellipse2D;
 
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardTerminalListener;
+import net.sourceforge.scuba.smartcards.CardEvent;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardTerminalListener;
 
 /**
  * May require adding the following lines to your local <code>.java.policy</code> file.
