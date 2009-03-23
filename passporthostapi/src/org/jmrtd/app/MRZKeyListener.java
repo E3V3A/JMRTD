@@ -28,7 +28,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import sos.mrtd.MRZInfo;
+import org.jmrtd.MRZInfo;
+
 
 /**
  * A key listener that will recognize relevant parts of MRZ

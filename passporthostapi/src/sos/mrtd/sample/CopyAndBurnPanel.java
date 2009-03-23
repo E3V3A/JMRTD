@@ -18,13 +18,14 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.jmrtd.AAEvent;
+import org.jmrtd.AuthListener;
+import org.jmrtd.BACEvent;
+import org.jmrtd.EACEvent;
+import org.jmrtd.PassportPersoService;
+import org.jmrtd.PassportService;
+
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
-import sos.mrtd.EACEvent;
-import sos.mrtd.PassportPersoService;
-import sos.mrtd.PassportService;
 
 /**
  * Class for copying and burning passports

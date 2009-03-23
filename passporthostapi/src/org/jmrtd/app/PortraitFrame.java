@@ -45,12 +45,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import org.jmrtd.FaceInfo;
+import org.jmrtd.ImageReadUpdateListener;
+
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 import net.sourceforge.scuba.util.Images;
 import sos.gui.ImagePanel;
-import sos.mrtd.FaceInfo;
-import sos.mrtd.ImageReadUpdateListener;
 
 /**
  * Frame for displaying and manipulating one portrait image.

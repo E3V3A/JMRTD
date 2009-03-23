@@ -34,10 +34,11 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.jmrtd.PassportApduService;
+
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.PassportApduService;
 import sos.mrtd.sample.CommandAPDUField;
 
 /**

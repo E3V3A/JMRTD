@@ -40,17 +40,18 @@ import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.jmrtd.AAEvent;
+import org.jmrtd.AuthListener;
+import org.jmrtd.BACEvent;
+import org.jmrtd.DG2File;
+import org.jmrtd.EACEvent;
+import org.jmrtd.FaceInfo;
+import org.jmrtd.PassportApduService;
+import org.jmrtd.PassportService;
+import org.jmrtd.SecureMessagingWrapper;
+
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.gui.ImagePanel;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
-import sos.mrtd.DG2File;
-import sos.mrtd.EACEvent;
-import sos.mrtd.FaceInfo;
-import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportService;
-import sos.mrtd.SecureMessagingWrapper;
 
 /**
  * GUI component for accessing the face image on the passport.

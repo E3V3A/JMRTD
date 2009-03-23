@@ -37,14 +37,15 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import org.jmrtd.AAEvent;
+import org.jmrtd.AuthListener;
+import org.jmrtd.BACEvent;
+import org.jmrtd.EACEvent;
+import org.jmrtd.SecureMessagingWrapper;
+
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
-import sos.mrtd.EACEvent;
-import sos.mrtd.SecureMessagingWrapper;
 
 /**
  * Convenient GUI component for sending ranges of APDUs to the passport.

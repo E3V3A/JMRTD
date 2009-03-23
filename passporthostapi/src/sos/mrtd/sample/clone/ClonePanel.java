@@ -20,20 +20,21 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 
+import org.jmrtd.AAEvent;
+import org.jmrtd.AuthListener;
+import org.jmrtd.BACEvent;
+import org.jmrtd.DG1File;
+import org.jmrtd.EACEvent;
+import org.jmrtd.MRZInfo;
+import org.jmrtd.PassportManager;
+import org.jmrtd.PassportPersoService;
+import org.jmrtd.PassportService;
+import org.jmrtd.SecureMessagingWrapper;
+
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
-import sos.mrtd.DG1File;
-import sos.mrtd.EACEvent;
-import sos.mrtd.MRZInfo;
-import sos.mrtd.PassportManager;
-import sos.mrtd.PassportPersoService;
-import sos.mrtd.PassportService;
-import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.sample.PassportGUI;
 
 public class ClonePanel extends JPanel implements Runnable, ActionListener, AuthListener {

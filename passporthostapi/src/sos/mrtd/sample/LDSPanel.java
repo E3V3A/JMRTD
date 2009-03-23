@@ -36,16 +36,17 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import org.jmrtd.AAEvent;
+import org.jmrtd.AuthListener;
+import org.jmrtd.BACEvent;
+import org.jmrtd.EACEvent;
+import org.jmrtd.PassportApduService;
+import org.jmrtd.PassportService;
+import org.jmrtd.SecureMessagingWrapper;
+
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.gui.HexField;
 import sos.gui.HexViewPanel;
-import sos.mrtd.AAEvent;
-import sos.mrtd.AuthListener;
-import sos.mrtd.BACEvent;
-import sos.mrtd.EACEvent;
-import sos.mrtd.PassportApduService;
-import sos.mrtd.PassportService;
-import sos.mrtd.SecureMessagingWrapper;
 
 /**
  * Convenient GUI component for accessing the LDS.
