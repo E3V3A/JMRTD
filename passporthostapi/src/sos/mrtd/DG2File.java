@@ -33,7 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import sos.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG2 file.

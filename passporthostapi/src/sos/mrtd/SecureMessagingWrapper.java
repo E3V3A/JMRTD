@@ -37,10 +37,10 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import sos.smartcards.APDUWrapper;
-import sos.smartcards.ISO7816;
-import sos.tlv.BERTLVObject;
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.APDUWrapper;
+import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Secure messaging wrapper for apdus.

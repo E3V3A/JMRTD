@@ -41,10 +41,10 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import net.sourceforge.scuba.util.Files;
+
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
-
-import sos.util.Files;
 
 public class TerminalCertificatesDialog extends JDialog implements
         ActionListener {

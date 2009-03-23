@@ -25,7 +25,7 @@ package sos.mrtd;
 import java.security.PublicKey;
 import java.util.EventObject;
 
-import sos.util.Hex;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Event to indicate AA protocol was executed.

@@ -31,11 +31,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import sos.smartcards.APDUListener;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.ISO7816;
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Low level card service for sending apdus to the passport. This service is not

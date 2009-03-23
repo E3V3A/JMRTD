@@ -45,7 +45,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
-import sos.util.Icons;
+import net.sourceforge.scuba.util.Icons;
 
 /**
  * Panel for managing the BAC store.

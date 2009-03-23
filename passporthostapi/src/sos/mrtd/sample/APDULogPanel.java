@@ -33,11 +33,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import sos.smartcards.APDUListener;
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardTerminalListener;
-import sos.smartcards.ISO7816;
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.CardEvent;
+import net.sourceforge.scuba.smartcards.CardTerminalListener;
+import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Simple APDU-logging GUI component.

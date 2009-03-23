@@ -24,14 +24,14 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
+import net.sourceforge.scuba.util.Hex;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
-
-import sos.util.Hex;
 
 /**
  * A specialised SecurityInfo structure that stores terminal authentication

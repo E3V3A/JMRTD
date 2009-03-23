@@ -38,9 +38,9 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.ISO7816;
 import sos.gui.HexArrayField;
 import sos.gui.HexField;
-import sos.smartcards.ISO7816;
 
 /**
  * A GUI component for entering a CommandAPDU.

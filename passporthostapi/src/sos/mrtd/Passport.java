@@ -31,15 +31,15 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.util.Hex;
+
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.ejbca.cvc.CVCertificate;
-
-import sos.data.Country;
-import sos.data.Gender;
-import sos.smartcards.CardFileInputStream;
-import sos.smartcards.CardServiceException;
-import sos.util.Hex;
 
 public class Passport {
 

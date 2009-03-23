@@ -86,13 +86,20 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
 
+import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
+import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.Hex;
+import net.sourceforge.scuba.util.Icons;
+
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
-import sos.data.Country;
-import sos.data.Gender;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
@@ -118,12 +125,6 @@ import sos.mrtd.PassportFile;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SODFile;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.TerminalCardService;
-import sos.util.Files;
-import sos.util.Hex;
-import sos.util.Icons;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.

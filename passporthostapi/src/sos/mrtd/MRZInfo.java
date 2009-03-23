@@ -34,8 +34,8 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
-import sos.data.Country;
-import sos.data.Gender;
+import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.Gender;
 
 /**
  * Data structure for storing the MRZ information

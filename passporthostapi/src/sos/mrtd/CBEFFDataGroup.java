@@ -29,7 +29,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import sos.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
 /**
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.

@@ -52,7 +52,7 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.filechooser.FileFilter;
 
-import sos.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardManager;
 
 /**
  * Options component for uploading to applet.

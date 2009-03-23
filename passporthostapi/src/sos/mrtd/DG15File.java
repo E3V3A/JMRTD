@@ -27,8 +27,8 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
-import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG15 file.

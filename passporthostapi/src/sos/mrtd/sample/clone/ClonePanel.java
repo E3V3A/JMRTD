@@ -20,6 +20,10 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.ProgressMonitor;
 
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
@@ -31,10 +35,6 @@ import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
 import sos.mrtd.sample.PassportGUI;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.TerminalCardService;
 
 public class ClonePanel extends JPanel implements Runnable, ActionListener, AuthListener {
 

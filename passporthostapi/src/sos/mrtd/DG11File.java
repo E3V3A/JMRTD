@@ -39,9 +39,9 @@ import java.util.StringTokenizer;
 
 import javax.imageio.ImageIO;
 
-import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
-import sos.util.Hex;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * File structure for the EF_DG11 file.

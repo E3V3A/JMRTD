@@ -36,6 +36,8 @@ import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
@@ -44,8 +46,6 @@ import sos.mrtd.EACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardServiceException;
-import sos.util.Hex;
 
 /**
  * Convenient GUI component for doing AA.

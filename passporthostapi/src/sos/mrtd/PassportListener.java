@@ -22,7 +22,7 @@
 
 package sos.mrtd;
 
-import sos.smartcards.CardTerminalListener;
+import net.sourceforge.scuba.smartcards.CardTerminalListener;
 
 /**
  * Interface for passport insertion and removal observers.

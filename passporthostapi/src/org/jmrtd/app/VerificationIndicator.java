@@ -30,7 +30,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import sos.util.Icons;
+import net.sourceforge.scuba.util.Icons;
 
 /**
  * Component for displaying the verification status.

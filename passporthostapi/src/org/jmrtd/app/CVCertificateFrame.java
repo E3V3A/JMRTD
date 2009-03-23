@@ -41,11 +41,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.Icons;
+
 import org.ejbca.cvc.CVCertificate;
 
 import sos.gui.KeyPanel;
-import sos.util.Files;
-import sos.util.Icons;
 
 /**
  * Frame for displaying (and saving to file) a public card verifiable certificate.

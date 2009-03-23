@@ -30,11 +30,11 @@ import java.util.Map;
 
 import javax.smartcardio.TerminalFactory;
 
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.CardTerminalListener;
+import net.sourceforge.scuba.smartcards.CardEvent;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CardTerminalListener;
 
 /**
  * Manages passport insertion and removal events.

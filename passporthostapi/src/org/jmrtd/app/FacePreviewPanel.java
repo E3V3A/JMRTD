@@ -35,9 +35,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
+import net.sourceforge.scuba.util.Icons;
 import sos.mrtd.FaceInfo;
 import sos.mrtd.ImageReadUpdateListener;
-import sos.util.Icons;
 
 /**
  * Component for displaying a preview of the portrait(s).

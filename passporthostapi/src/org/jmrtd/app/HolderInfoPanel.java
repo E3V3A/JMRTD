@@ -34,8 +34,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SpringLayout;
 
-import sos.data.Country;
-import sos.data.Gender;
+import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.Gender;
 import sos.gui.CountryEntryField;
 import sos.gui.DateEntryField;
 import sos.gui.GenderEntryField;

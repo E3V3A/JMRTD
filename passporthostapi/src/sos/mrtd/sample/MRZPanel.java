@@ -38,6 +38,7 @@ import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
 import sos.mrtd.BACEvent;
@@ -46,7 +47,6 @@ import sos.mrtd.EACEvent;
 import sos.mrtd.MRZInfo;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardServiceException;
 
 /**
  * GUI component for accessing the MRZ datagroup on the passport.

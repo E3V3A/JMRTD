@@ -42,6 +42,9 @@ import java.util.Map;
 
 import javax.security.auth.x500.X500Principal;
 
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -66,9 +69,6 @@ import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
-
-import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_SOD file.

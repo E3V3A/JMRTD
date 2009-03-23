@@ -34,6 +34,9 @@ import java.util.TreeMap;
 
 import javax.crypto.interfaces.DHPublicKey;
 
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERObject;
@@ -45,9 +48,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
-
-import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see

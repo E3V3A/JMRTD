@@ -32,9 +32,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.evil.EvilService;
-import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for doing AA.

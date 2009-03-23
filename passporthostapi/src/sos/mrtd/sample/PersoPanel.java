@@ -42,6 +42,8 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.gui.DateEntryField;
 import sos.gui.HexField;
 import sos.gui.MRZEntryField;
@@ -52,8 +54,6 @@ import sos.mrtd.DG15File;
 import sos.mrtd.EACEvent;
 import sos.mrtd.PassportPersoService;
 import sos.mrtd.PassportService;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
 
 /**
  * GUI component for sending initialization commands to the passport.

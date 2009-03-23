@@ -47,13 +47,13 @@ import java.util.zip.ZipOutputStream;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
-import org.ejbca.cvc.CVCertificate;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.util.Hex;
 
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.ISO7816;
-import sos.tlv.BERTLVObject;
-import sos.util.Hex;
+import org.ejbca.cvc.CVCertificate;
 
 /**
  * Service for initializing blank passport reference applets.
@@ -146,17 +146,11 @@ public class PassportPersoService extends CardService {
 	throws CardServiceException {
 		try {
 			byte[] encodedPriv = key.getEncoded();
-			BERTLVObject encodedPrivObject = BERTLVObject
-			.getInstance(new ByteArrayInputStream(encodedPriv));
-			byte[] privKeyData = (byte[]) encodedPrivObject.getChildByIndex(2)
-			.getValue();
-			BERTLVObject privKeyDataObject = BERTLVObject
-			.getInstance(new ByteArrayInputStream(privKeyData));
-			byte[] privModulus = (byte[]) privKeyDataObject.getChildByIndex(1)
-			.getValue();
-			byte[] privExponent = (byte[]) privKeyDataObject.getChildByIndex(3)
-			.getValue();
-
+			BERTLVObject encodedPrivObject = BERTLVObject.getInstance(new ByteArrayInputStream(encodedPriv));
+			byte[] privKeyData = (byte[]) encodedPrivObject.getChildByIndex(2).getValue();
+			BERTLVObject privKeyDataObject = BERTLVObject.getInstance(new ByteArrayInputStream(privKeyData));
+			byte[] privModulus = (byte[]) privKeyDataObject.getChildByIndex(1).getValue();
+			byte[] privExponent = (byte[]) privKeyDataObject.getChildByIndex(3).getValue();
 			putPrivateKey(privModulus, privExponent);
 		} catch (IOException ioe) {
 			throw new CardServiceException(ioe.toString());

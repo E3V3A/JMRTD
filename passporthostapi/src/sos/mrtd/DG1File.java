@@ -28,8 +28,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
-import sos.tlv.BERTLVInputStream;
-import sos.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
  * File structure for the EF_DG1 file.

@@ -28,8 +28,8 @@ import java.awt.Font;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.util.Fonts;
 import sos.mrtd.MRZInfo;
-import sos.util.Fonts;
 
 /**
  * Panel for displaying the MRZ datagroup on the passport.

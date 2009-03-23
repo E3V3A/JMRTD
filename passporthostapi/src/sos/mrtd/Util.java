@@ -33,6 +33,8 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESedeKeySpec;
 
+import net.sourceforge.scuba.util.Hex;
+
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERApplicationSpecific;
 import org.bouncycastle.asn1.DERBoolean;
@@ -49,8 +51,6 @@ import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUnknownTag;
-
-import sos.util.Hex;
 
 /**
  * Some static helper functions. Mostly dealing with low-level crypto.

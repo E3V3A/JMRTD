@@ -47,15 +47,15 @@ import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPublicKey;
 
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.FileSystemStructured;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.util.Hex;
+
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.CVCertificate;
-
-import sos.smartcards.CardFileInputStream;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.FileSystemStructured;
-import sos.tlv.BERTLVInputStream;
-import sos.util.Hex;
 
 /**
  * Card service for reading files (such as data groups) and

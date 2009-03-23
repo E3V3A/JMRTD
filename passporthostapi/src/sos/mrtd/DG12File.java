@@ -29,8 +29,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import sos.tlv.BERTLVInputStream;
-import sos.util.Hex;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * File structure for the EF_DG12 file.

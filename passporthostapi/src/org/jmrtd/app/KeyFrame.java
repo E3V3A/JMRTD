@@ -40,9 +40,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
+import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.Icons;
 import sos.gui.KeyPanel;
-import sos.util.Files;
-import sos.util.Icons;
 
 /**
  * Frame for displaying (and saving to file) keys.

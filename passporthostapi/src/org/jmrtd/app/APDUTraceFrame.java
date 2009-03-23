@@ -8,8 +8,8 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import sos.smartcards.APDUListener;
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.util.Hex;
 
 public class APDUTraceFrame extends JFrame implements APDUListener
 {

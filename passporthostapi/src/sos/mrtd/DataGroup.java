@@ -25,7 +25,7 @@ package sos.mrtd;
 import java.io.IOException;
 import java.io.InputStream;
 
-import sos.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
 /**
  * Super class for data group files.

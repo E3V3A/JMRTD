@@ -27,10 +27,10 @@ import java.security.GeneralSecurityException;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
 
 /**
  * Card service for using the filesystem on the passport.

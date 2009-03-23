@@ -61,21 +61,21 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
+import net.sourceforge.scuba.smartcards.APDUFingerprint;
+import net.sourceforge.scuba.smartcards.CardEvent;
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
+import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.Icons;
 import sos.mrtd.COMFile;
 import sos.mrtd.PassportEvent;
 import sos.mrtd.PassportListener;
 import sos.mrtd.PassportManager;
 import sos.mrtd.PassportService;
 import sos.mrtd.TerminalCVCertificateDirectory;
-import sos.smartcards.APDUFingerprint;
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardFileInputStream;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
-import sos.smartcards.CardServiceException;
-import sos.smartcards.TerminalCardService;
-import sos.util.Files;
-import sos.util.Icons;
 
 /**
  * Simple graphical application to demonstrate the

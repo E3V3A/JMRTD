@@ -40,6 +40,7 @@ import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.gui.ImagePanel;
 import sos.mrtd.AAEvent;
 import sos.mrtd.AuthListener;
@@ -50,7 +51,6 @@ import sos.mrtd.FaceInfo;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardServiceException;
 
 /**
  * GUI component for accessing the face image on the passport.

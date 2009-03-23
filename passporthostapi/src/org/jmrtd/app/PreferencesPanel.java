@@ -42,7 +42,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.border.Border;
 
-import sos.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardManager;
 
 /**
  * Preferences panel.

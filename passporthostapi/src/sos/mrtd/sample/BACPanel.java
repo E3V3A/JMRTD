@@ -33,9 +33,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.mrtd.AuthListener;
 import sos.mrtd.PassportService;
-import sos.smartcards.CardServiceException;
 
 /**
  * GUI component for step-by-step execution of the

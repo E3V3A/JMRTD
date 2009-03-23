@@ -36,6 +36,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.gui.HexField;
 import sos.gui.HexViewPanel;
 import sos.mrtd.AAEvent;
@@ -45,7 +46,6 @@ import sos.mrtd.EACEvent;
 import sos.mrtd.PassportApduService;
 import sos.mrtd.PassportService;
 import sos.mrtd.SecureMessagingWrapper;
-import sos.smartcards.CardServiceException;
 
 /**
  * Convenient GUI component for accessing the LDS.
