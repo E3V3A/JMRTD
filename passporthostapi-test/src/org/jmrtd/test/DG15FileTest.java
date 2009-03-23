@@ -28,9 +28,10 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
+import org.jmrtd.DG15File;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.DG15File;
 
 public class DG15FileTest extends TestCase
 {

@@ -26,10 +26,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.jmrtd.DG1File;
+import org.jmrtd.MRZInfo;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.DG1File;
-import sos.mrtd.MRZInfo;
 
 public class DG1FileTest extends TestCase
 {

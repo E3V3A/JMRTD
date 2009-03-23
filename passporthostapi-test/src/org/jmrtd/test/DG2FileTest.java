@@ -24,9 +24,10 @@ package org.jmrtd.test;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+import org.jmrtd.DG2File;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.DG2File;
 
 public class DG2FileTest extends TestCase
 {

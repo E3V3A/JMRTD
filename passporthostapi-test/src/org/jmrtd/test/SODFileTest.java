@@ -43,11 +43,11 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.jmrtd.DG15File;
+import org.jmrtd.DG1File;
+import org.jmrtd.DG2File;
+import org.jmrtd.SODFile;
 
-import sos.mrtd.DG15File;
-import sos.mrtd.DG1File;
-import sos.mrtd.DG2File;
-import sos.mrtd.SODFile;
 
 public class SODFileTest extends TestCase {
 

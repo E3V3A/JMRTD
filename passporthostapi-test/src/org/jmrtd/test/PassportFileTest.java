@@ -30,9 +30,10 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.jmrtd.PassportFile;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
-import sos.mrtd.PassportFile;
 
 /**
  * You can throw files containing MRTD content at this test case and

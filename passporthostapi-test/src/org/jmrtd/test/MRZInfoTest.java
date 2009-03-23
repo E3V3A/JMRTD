@@ -25,11 +25,12 @@ import java.io.ByteArrayInputStream;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.jmrtd.MRZInfo;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.MRZInfo;
 
 public class MRZInfoTest extends TestCase
 {

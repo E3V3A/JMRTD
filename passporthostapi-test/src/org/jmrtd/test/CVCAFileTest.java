@@ -25,8 +25,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
+import org.jmrtd.CVCAFile;
+
 import junit.framework.TestCase;
-import sos.mrtd.CVCAFile;
 
 public class CVCAFileTest extends TestCase {
 

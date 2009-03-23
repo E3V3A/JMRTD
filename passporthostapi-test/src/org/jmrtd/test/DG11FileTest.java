@@ -30,9 +30,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import org.jmrtd.DG11File;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.DG11File;
 
 public class DG11FileTest extends TestCase
 {

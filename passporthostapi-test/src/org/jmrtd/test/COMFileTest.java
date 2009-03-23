@@ -26,10 +26,11 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jmrtd.COMFile;
+import org.jmrtd.PassportFile;
+
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import sos.mrtd.COMFile;
-import sos.mrtd.PassportFile;
 
 public class COMFileTest extends TestCase
 {
