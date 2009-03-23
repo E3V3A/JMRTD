@@ -41,8 +41,8 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
+import net.sourceforge.scuba.swing.CertificatePanel;
 import net.sourceforge.scuba.util.Icons;
-import sos.gui.CertificatePanel;
 
 /**
  * Frame for displaying (and saving to file) a public key certificate.

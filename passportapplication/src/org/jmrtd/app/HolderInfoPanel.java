@@ -34,14 +34,14 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SpringLayout;
 
-import org.jmrtd.MRZInfo;
-
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
-import sos.gui.CountryEntryField;
-import sos.gui.DateEntryField;
-import sos.gui.GenderEntryField;
-import sos.gui.MRZEntryField;
+import net.sourceforge.scuba.swing.CountryEntryField;
+import net.sourceforge.scuba.swing.DateEntryField;
+import net.sourceforge.scuba.swing.GenderEntryField;
+import net.sourceforge.scuba.swing.MRZEntryField;
+
+import org.jmrtd.MRZInfo;
 
 /**
  * Panel for displaying and editing DG1.

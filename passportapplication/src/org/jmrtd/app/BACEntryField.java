@@ -28,8 +28,8 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 
-import sos.gui.DateEntryField;
-import sos.gui.MRZEntryField;
+import net.sourceforge.scuba.swing.DateEntryField;
+import net.sourceforge.scuba.swing.MRZEntryField;
 
 /**
  * Text field for entering BAC entries.
