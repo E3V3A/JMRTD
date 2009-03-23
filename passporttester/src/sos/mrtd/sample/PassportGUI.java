@@ -37,14 +37,15 @@ import javax.swing.JTextField;
 import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 
+import net.sourceforge.scuba.smartcards.CardEvent;
+import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
+
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 
-import net.sourceforge.scuba.smartcards.CardEvent;
-import net.sourceforge.scuba.smartcards.CardManager;
-import net.sourceforge.scuba.smartcards.CardService;
 import sos.mrtd.sample.apdutest.APDUTestPanel;
 
 /**

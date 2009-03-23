@@ -38,11 +38,11 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import org.jmrtd.PassportApduService;
-
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
+
+import org.jmrtd.PassportApduService;
 
 /**
  * The original simple graphical application for experimenting

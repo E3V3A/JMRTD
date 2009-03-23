@@ -32,9 +32,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+
 import org.jmrtd.PassportApduService;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
 import sos.mrtd.evil.EvilService;
 
 /**

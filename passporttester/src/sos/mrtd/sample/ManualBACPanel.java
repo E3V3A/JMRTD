@@ -38,15 +38,15 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.swing.HexField;
+
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.PassportApduService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
-
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import sos.gui.HexField;
 
 /**
  * Convenient GUI component for step-by-step execution of the

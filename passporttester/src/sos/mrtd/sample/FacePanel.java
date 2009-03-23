@@ -40,6 +40,9 @@ import javax.swing.ProgressMonitor;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.swing.ImagePanel;
+
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
@@ -49,9 +52,6 @@ import org.jmrtd.FaceInfo;
 import org.jmrtd.PassportApduService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
-
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import sos.gui.ImagePanel;
 
 /**
  * GUI component for accessing the face image on the passport.

@@ -45,6 +45,11 @@ import javax.swing.JTextArea;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.util.Hex;
+
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
@@ -55,11 +60,6 @@ import org.jmrtd.PassportFile;
 import org.jmrtd.PassportService;
 import org.jmrtd.SODFile;
 import org.jmrtd.SecureMessagingWrapper;
-
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
-import net.sourceforge.scuba.util.Hex;
 
 /**
  * Convenient GUI component examining the security object.

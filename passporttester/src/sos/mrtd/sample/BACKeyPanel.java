@@ -15,9 +15,9 @@ import javax.swing.JTextField;
 import javax.swing.border.Border;
 import javax.swing.border.EtchedBorder;
 
-import org.jmrtd.Util;
+import net.sourceforge.scuba.swing.HexField;
 
-import sos.gui.HexField;
+import org.jmrtd.Util;
 
 public class BACKeyPanel extends JPanel
 {
