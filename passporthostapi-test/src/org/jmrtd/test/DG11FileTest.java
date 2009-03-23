@@ -31,8 +31,8 @@ import java.util.Date;
 import java.util.List;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.DG11File;
-import sos.util.Hex;
 
 public class DG11FileTest extends TestCase
 {

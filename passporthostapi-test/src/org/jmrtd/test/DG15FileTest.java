@@ -29,8 +29,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.DG15File;
-import sos.util.Hex;
 
 public class DG15FileTest extends TestCase
 {

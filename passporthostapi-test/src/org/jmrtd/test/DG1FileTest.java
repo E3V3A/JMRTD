@@ -27,9 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.DG1File;
 import sos.mrtd.MRZInfo;
-import sos.util.Hex;
 
 public class DG1FileTest extends TestCase
 {

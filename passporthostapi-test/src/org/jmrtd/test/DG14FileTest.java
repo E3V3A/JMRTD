@@ -28,12 +28,13 @@ import java.security.Security;
 import java.util.Map;
 import java.util.TreeMap;
 
+import junit.framework.TestCase;
+
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import sos.mrtd.DG14File;
-import junit.framework.TestCase;
 
 public class DG14FileTest extends TestCase {
 

@@ -26,10 +26,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 import junit.framework.TestCase;
-import sos.data.Country;
-import sos.data.Gender;
+import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.MRZInfo;
-import sos.util.Hex;
 
 public class MRZInfoTest extends TestCase
 {

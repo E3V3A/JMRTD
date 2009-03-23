@@ -25,8 +25,8 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 import sos.mrtd.DG2File;
-import sos.util.Hex;
 
 public class DG2FileTest extends TestCase
 {

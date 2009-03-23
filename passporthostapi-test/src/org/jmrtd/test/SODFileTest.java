@@ -39,6 +39,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -47,7 +48,6 @@ import sos.mrtd.DG15File;
 import sos.mrtd.DG1File;
 import sos.mrtd.DG2File;
 import sos.mrtd.SODFile;
-import sos.util.Hex;
 
 public class SODFileTest extends TestCase {
 
