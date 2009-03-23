@@ -31,7 +31,10 @@ import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
 
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.*;
+import net.sourceforge.scuba.tlv.*;
+import net.sourceforge.scuba.util.*;
+import net.sourceforge.scuba.data.*;
 
 /**
  * Component for showing byte arrays.

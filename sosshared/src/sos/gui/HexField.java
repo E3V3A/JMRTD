@@ -19,7 +19,10 @@ import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
 
-import sos.util.Hex;
+import net.sourceforge.scuba.smartcards.*;
+import net.sourceforge.scuba.tlv.*;
+import net.sourceforge.scuba.util.*;
+import net.sourceforge.scuba.data.*;
 
 /**
  * GUI text field component that only accepts hexadecimal representations

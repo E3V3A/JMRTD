@@ -26,12 +26,10 @@ import javax.swing.tree.TreeCellRenderer;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
-import sos.smartcards.CardEvent;
-import sos.smartcards.CardManager;
-import sos.smartcards.CardService;
-import sos.smartcards.CardTerminalListener;
-import sos.smartcards.TerminalCardService;
-import sos.util.Icons;
+import net.sourceforge.scuba.smartcards.*;
+import net.sourceforge.scuba.tlv.*;
+import net.sourceforge.scuba.util.*;
+import net.sourceforge.scuba.data.*;
 
 /**
  * A generic card manager GUI component. Will probably be removed soon.

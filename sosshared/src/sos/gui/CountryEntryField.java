@@ -15,8 +15,10 @@ import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 import javax.swing.JLabel;
 
-import sos.data.Country;
-import sos.util.Icons;
+import net.sourceforge.scuba.smartcards.*;
+import net.sourceforge.scuba.tlv.*;
+import net.sourceforge.scuba.util.*;
+import net.sourceforge.scuba.data.*;
 
 public class CountryEntryField extends Box
 {
