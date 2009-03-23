@@ -3,7 +3,7 @@
 <project name="jmrtd" default="all" basedir=".">
 
 	<description>
-		JMRTD host API distribution build file
+		JMRTD application distribution build file
 	</description>
 
 	<!-- Global properties for this build -->
