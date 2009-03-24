@@ -539,4 +539,13 @@ public class CVCertificate {
         }
         return 0;
     }
+    
+    boolean isDG3Accessible() {
+        return (byte)(accessFlag[0] & ACCESS_DG3) == ACCESS_DG3;
+    }
+    
+    boolean isDG4Accessible() {
+        return (byte)(accessFlag[0] & ACCESS_DG4) == ACCESS_DG4;
+    }
+
 }

@@ -29,7 +29,6 @@ import javacard.framework.ISO7816;
 import javacard.framework.ISOException;
 import javacard.framework.JCSystem;
 import javacard.framework.Util;
-import javacard.security.MessageDigest;
 import javacard.security.RandomData;
 import javacard.security.Signature;
 import javacardx.crypto.Cipher;
@@ -159,7 +158,7 @@ public class PassportApplet extends Applet implements ISO7816 {
 
     private PassportInit init;
 
-    private CVCertificate certificate;
+    static CVCertificate certificate;
 
     KeyStore keyStore;
 

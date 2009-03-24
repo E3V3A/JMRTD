@@ -36,50 +36,87 @@ import javacard.framework.Util;
  */
 public class FileSystem {
     static final short EF_DG1_FID = (short) 0x0101;
+
     static final short EF_DG2_FID = (short) 0x0102;
+
     static final short EF_DG3_FID = (short) 0x0103;
+
     static final short EF_DG4_FID = (short) 0x0104;
+
     static final short EF_DG5_FID = (short) 0x0105;
+
     static final short EF_DG6_FID = (short) 0x0106;
+
     static final short EF_DG7_FID = (short) 0x0107;
+
     static final short EF_DG8_FID = (short) 0x0108;
+
     static final short EF_DG9_FID = (short) 0x0109;
+
     static final short EF_DG10_FID = (short) 0x010A;
+
     static final short EF_DG11_FID = (short) 0x010B;
+
     static final short EF_DG12_FID = (short) 0x010C;
+
     static final short EF_DG13_FID = (short) 0x010D;
+
     static final short EF_DG14_FID = (short) 0x010E;
+
     static final short EF_DG15_FID = (short) 0x010F;
+
     static final short EF_SOD_FID = (short) 0x011D;
+
     static final short EF_COM_FID = (short) 0x011E;
+
     static final short EF_CVCA_FID = (short) 0x011C;
+
     static final short SOS_LOG_FID = (short) 0xdead;
 
     private static final short EF_DG1_INDEX = (short) 0;
+
     private static final short EF_DG2_INDEX = (short) 1;
+
     private static final short EF_DG3_INDEX = (short) 2;
+
     private static final short EF_DG4_INDEX = (short) 3;
+
     private static final short EF_DG5_INDEX = (short) 4;
+
     private static final short EF_DG6_INDEX = (short) 5;
+
     private static final short EF_DG7_INDEX = (short) 6;
+
     private static final short EF_DG8_INDEX = (short) 7;
+
     private static final short EF_DG9_INDEX = (short) 8;
+
     private static final short EF_DG10_INDEX = (short) 9;
+
     private static final short EF_DG11_INDEX = (short) 10;
+
     private static final short EF_DG12_INDEX = (short) 11;
+
     private static final short EF_DG13_INDEX = (short) 12;
+
     private static final short EF_DG14_INDEX = (short) 13;
+
     private static final short EF_DG15_INDEX = (short) 14;
+
     private static final short EF_SOD_INDEX = (short) 15;
+
     private static final short EF_COM_INDEX = (short) 16;
+
     private static final short EF_CVCA_INDEX = (short) 17;
+
     private static final short SOS_LOG_INDEX = (short) 18;
 
     private Object[] files;
+
     private short[] fileSizes;
 
     public FileSystem() {
-        short size = (short)(SOS_LOG_INDEX + 1);
+        short size = (short) (SOS_LOG_INDEX + 1);
         files = new Object[size];
         fileSizes = new short[size];
     }
@@ -95,10 +132,10 @@ public class FileSystem {
         if (files[idx] == null)
             files[idx] = new byte[size];
 
-        if(certObject != null) {
-            certObject.cvcaFileReference = (byte[])files[idx];
+        if (certObject != null) {
+            certObject.cvcaFileReference = (byte[]) files[idx];
         }
-        
+
         if (((byte[]) files[idx]).length < size)
             ISOException.throwIt(ISO7816.SW_FILE_FULL);
 
@@ -109,11 +146,11 @@ public class FileSystem {
             short data_offset, short length) {
         byte[] file = getFile(fid);
         short fileSize = getFileSize(fid);
-        
-        if(file == null) {
+
+        if (file == null) {
             ISOException.throwIt(ISO7816.SW_FILE_NOT_FOUND);
         }
-        
+
         if (fileSize < (short) (file_offset + length))
             ISOException.throwIt(ISO7816.SW_FILE_FULL);
 
@@ -121,22 +158,28 @@ public class FileSystem {
     }
 
     public byte[] getFile(short fid) {
-    	short idx = getFileIndex(fid);
-    	if(idx == -1) {
-    		return null;
-    	}
+        short idx = getFileIndex(fid);
+        if (idx == -1) {
+            return null;
+        }
         return (byte[]) files[idx];
     }
 
     public short getFileSize(short fid) {
-    	short idx = getFileIndex(fid);
-    	if(idx == -1) {
-    		return -1;
-    	}
+        short idx = getFileIndex(fid);
+        if (idx == -1) {
+            return -1;
+        }
         return fileSizes[idx];
     }
 
     private static short getFileIndex(short fid) throws ISOException {
+        if ((fid == EF_DG3_FID && !PassportApplet.certificate.isDG3Accessible())
+                || (fid == EF_DG4_FID && !PassportApplet.certificate
+                        .isDG4Accessible())) {
+            ISOException
+                    .throwIt(PassportApplet.SW_SECURITY_STATUS_NOT_SATISFIED);
+        }
         switch (fid) {
         case EF_DG1_FID:
             return EF_DG1_INDEX;
