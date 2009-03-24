@@ -18,8 +18,8 @@
 	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
 	<!-- sosshared class files will be included in main jar -->
-	<property name="sos-shared-src" location="${basedir}/../sosshared/src" />
-	<property name="sos-shared-build" location="${basedir}/../sosshared/build" />
+	<property name="scuba-src" location="${basedir}/../scuba_j2se/src" />
+	<property name="scuba-build" location="${basedir}/../scuba_j2se/build" />
 	
 	<!-- Terminal provider classes will be included in main jar -->
 	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
@@ -44,27 +44,10 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${sos-shared-src}" includes="**/*.java" excludes="org/jmrtd/test/**" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
+		<javac srcdir="${src}:${scuba-src}" includes="**/*.java" excludes="org/jmrtd/test/**" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
 	</target>
 
-	<!-- Convert to 1.3 classes -->
-	<!-- target name="weave" depends="compile" if="is_retroweaver_available">
-		<taskdef name="retroweaver"
-			classpath="${retroweaver_dir}/${retroweaver_jar}"
-			classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" />
-
-		  <retroweaver target="1.3">
-		    <fileset dir="${build}">
-		      <include name="**/*.class"/>
-		    </fileset>
-		  </retroweaver>
-		
-		<copy todir="${distlib}">
-			<fileset dir="${retroweaver_dir}" includes="${retroweaver_rt_jar}" />
-		</copy>
-	</target -->
-
-	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
+	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -104,7 +87,7 @@
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar} ${retroweaver_rt_jar}" />
+				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
@@ -112,7 +95,7 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${sos-shared-build}" includes="**/*.class" />
+			<fileset dir="${scuba-build}" includes="**/*.class" />
 			<fileset dir="${acrprovider-build}" includes="**/*.class" />
 			<fileset dir="${crefprovider-build}" includes="**/*.class" />
 			<fileset dir="${jcopprovider-build}" includes="**/*.class" />
@@ -235,7 +218,7 @@
 	</target>
 
 	<target name="doc" description="Generates API docs" if="build_java_doc">
-		<javadoc classpath="${sos-shared-build};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
+		<javadoc classpath="${scuba-build};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
 				destdir="apidocs"
 				package="false"
 				doctitle="${app_title}"
@@ -247,7 +230,7 @@
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
-			<sourcepath path="src;${sos-shared-src}" />
+			<sourcepath path="src;${scuba-src}" />
 			<package name="sos.mrtd" />
 			<package name="sos.data" />
 			<package name="sos.smartcards" />
@@ -267,7 +250,6 @@
 		<available file="${jcopprovider-build}" property="is_jcop_available" />
 		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />
 		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
-		<available classname="net.sourceforge.retroweaver.ant.RetroWeaverTask" classpath="${retroweaver_dir}/${retroweaver_jar}" property="is_retroweaver_available" />
 		<condition property="is_os_windows">
 	  		<or>
 	  			<equals arg1="${os.name}" arg2="Windows 95" />
