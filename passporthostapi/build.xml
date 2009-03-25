@@ -17,8 +17,8 @@
 	
 	<property file="jmrtd_hostapi.properties" />
 	
-	<property name="scuba_dir" location="${basedir}/../scuba_j2se/dist" />
-	<property name="scuba_jar" value="scuba-0.0.1.jar" />
+	<property name="scuba_smartcards_dir" location="${basedir}/../scuba_smartcards_j2se/dist" />
+	<property name="scuba_smartcards_jar" value="scuba-smartcards-0.0.1.jar" />
 	
 	<target name="all" description="Build everything" depends="init, dist, doc">
 		<move failonerror="false" file="${dist}/${app_name}.jar" tofile="${dist}/${app_name}-${app_version}.jar" />
