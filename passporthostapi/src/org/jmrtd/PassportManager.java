@@ -62,7 +62,7 @@ public class PassportManager
 		listeners = new ArrayList<PassportListener>();
 		final CardManager cm = CardManager.getInstance();
 		try {
-			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr122.ACR122Provider");
+			Class<?> acrProviderClass = Class.forName("net.sourceforge.scuba.smartcards.ACR122Provider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
 			cm.addTerminals(acrFactory, true);
@@ -72,7 +72,7 @@ public class PassportManager
 			/* Ignore this provider */
 		}
 		try {
-			Class<?> acrProviderClass = Class.forName("ds.smartcards.acr120.ACR120UProvider");
+			Class<?> acrProviderClass = Class.forName("net.sourceforge.scuba.smartcards.ACR120UProvider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
 			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR120U", null, acrProvider);
 			cm.addTerminals(acrFactory, false);
@@ -84,7 +84,7 @@ public class PassportManager
 			e.printStackTrace();
 		}
 		try {
-			Class<?> crefProviderClass = Class.forName("ds.smartcards.CREFTerminalProvider");
+			Class<?> crefProviderClass = Class.forName("net.sourceforge.scuba.smartcards.CREFTerminalProvider");
 			Provider crefProvider = (Provider)crefProviderClass.newInstance();
 			TerminalFactory crefFactory = TerminalFactory.getInstance("CREF", "localhost:9025", crefProvider);
 			cm.addTerminals(crefFactory, false);
@@ -95,7 +95,7 @@ public class PassportManager
 			e.printStackTrace();
 		}
 		try {
-			Class<?> jcopProviderClass = Class.forName("ds.smartcards.JCOPTerminalProvider");
+			Class<?> jcopProviderClass = Class.forName("net.sourceforge.scuba.smartcards.JCOPTerminalProvider");
 			Provider jcopProvider = (Provider)jcopProviderClass.newInstance();
 			TerminalFactory jcopFactory = TerminalFactory.getInstance("JCOP", "localhost:8050", jcopProvider);
 			cm.addTerminals(jcopFactory, false);
