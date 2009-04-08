@@ -132,10 +132,10 @@ public class PassportApp  implements PassportListener
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 			
 			/* START DEBUGGING CODE */
-			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
-			traceFrame.pack();
-			traceFrame.setVisible(true);
-			cardManager.addAPDUListener(traceFrame);
+//			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
+//			traceFrame.pack();
+//			traceFrame.setVisible(true);
+//			cardManager.addAPDUListener(traceFrame);
 			/* END DEBUGGING CODE */
 			
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
@@ -434,10 +434,10 @@ public class PassportApp  implements PassportListener
 									PassportService passportService = new PassportService(new TerminalCardService(terminal));
 									
 									/* START DEBUGGING CODE */
-									APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (explicit reload)");
-									traceFrame.pack();
-									traceFrame.setVisible(true);
-									passportService.addAPDUListener(traceFrame);
+//									APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (explicit reload)");
+//									traceFrame.pack();
+//									traceFrame.setVisible(true);
+//									passportService.addAPDUListener(traceFrame);
 									/* END DEBUGGING CODE */
 
 									readPassport(passportService);
@@ -487,9 +487,20 @@ public class PassportApp  implements PassportListener
 			private static final long serialVersionUID = 1528395261878587434L;
 
 			public void actionPerformed(ActionEvent e) {
+				URL readMeFile = null;
+				try {
+					readMeFile = new URL(Files.getBaseDir() + "/README");
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+				Image iconImage = null;
+				try {
+					iconImage = Icons.getImage("jmrtd_logo-100x100");
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 				try {
 					JTextArea area = new JTextArea(20, 35);
-					URL readMeFile = new URL(Files.getBaseDir() + "/README");
 					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
 					while (true) {
 						String line = in.readLine();
@@ -500,10 +511,10 @@ public class PassportApp  implements PassportListener
 					}
 					area.setCaretPosition(0);
 					area.setEditable(false);
-					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd_logo-100x100")));
+					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(iconImage));
 				} catch (Exception ex) {
 					ex.printStackTrace();
-					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(Icons.getImage("jmrtd_logo-100x100")));
+					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(iconImage));
 				}
 			}
 		};
