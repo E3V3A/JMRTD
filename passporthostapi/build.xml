@@ -17,8 +17,9 @@
 	
 	<property file="jmrtd_hostapi.properties" />
 	
-	<property name="scuba_smartcards_dir" location="${basedir}/../scuba_smartcards_j2se/dist" />
-	<property name="scuba_smartcards_jar" value="scuba-smartcards-0.0.1.jar" />
+	<property name="scuba_smartcards_jar" value="scuba_smartcards-0.0.1.jar" />
+	<property name="scuba_util_jar" value="scuba_util-0.0.1.jar" />
+	<property name="scuba_data_jar" value="scuba_data-0.0.1.jar" />
 	
 	<target name="all" description="Build everything" depends="init, dist, doc">
 		<move failonerror="false" file="${dist}/${app_name}.jar" tofile="${dist}/${app_name}-${app_version}.jar" />
@@ -53,15 +54,11 @@
 		<copy todir="${dist}">
 			<fileset dir="." includes="LICENSE" />
 		</copy>
-		
-		<copy todir="${dist}">
-			<fileset file="${scuba_dir}/${scuba_jar}" />
-		</copy>
 
 		<!-- Create the distribution jar file -->
 		<jar jarfile="${dist}/${app_name}.jar">
 			<manifest>
-				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar} ${scuba_jar}" />
+				<attribute name="Class-path" value="${scuba_smartcards_jar} ${scuba_data_jar} ${scuba_util_jar} ${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
@@ -101,7 +98,7 @@
 			<package name="net.sourceforge.scuba.tlv" />
 		</javadoc>
 	
-		<zip destfile="scuba-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
+		<zip destfile="jmrtd-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
 	</target>
 	
 	<!-- Conditional stuff is set below -->
