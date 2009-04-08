@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-<project name="jmrtd" default="all" basedir=".">
+<project name="jmrtd_app" default="all" basedir=".">
 
 	<description>
 		JMRTD application distribution build file
@@ -17,14 +17,20 @@
 	<property name="app_title" value="${app_name} ${app_version}" />
 	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
-	<!-- sosshared class files will be included in main jar -->
-	<property name="scuba-src" location="${basedir}/../scuba_j2se/src" />
-	<property name="scuba-build" location="${basedir}/../scuba_j2se/build" />
-	
-	<!-- Terminal provider classes will be included in main jar -->
-	<property name="acrprovider-build" location="${basedir}/../acrprovider/bin" />
-	<property name="crefprovider-build" location="${basedir}/../crefprovider/bin" />
-	<property name="jcopprovider-build" location="${basedir}/../jcopprovider/bin" />
+	<property name="passporthostapi_dist" location="${basedir}/../passporthostapi/dist" />
+	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
+
+	<property name="scuba_smartcards_dist" location="${basedir}/../scuba_smartcards_j2se/dist" />
+	<property name="scuba_util_dist" location="${basedir}/../scuba_util/dist" />
+	<property name="scuba_gui_dist" location="${basedir}/../scuba_gui_j2se/dist" />
+	<property name="scuba_data_dist" location="${basedir}/../scuba_data/dist" />
+	<property name="scuba_storage_dist" location="${basedir}/../scuba_storage_j2se/dist" />
+
+	<property name="scuba_smartcards_jar" value="scuba_smartcards-0.0.1.jar" />
+	<property name="scuba_util_jar" value="scuba_util-0.0.1.jar" />
+	<property name="scuba_gui_jar" value="scuba_gui-0.0.1.jar" />
+	<property name="scuba_data_jar" value="scuba_data-0.0.1.jar" />
+	<property name="scuba_storage_jar" value="scuba_storage-0.0.1.jar" />
 
 	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
 		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
@@ -44,10 +50,24 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${scuba-src}" includes="**/*.java" excludes="org/jmrtd/test/**" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
+		<javac srcdir="${src}" includes="**/*.java" classpath="${scuba_smartcards_dist}/${scuba_smartcards_jar}${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
 	</target>
 
-	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		
+	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
+		<!-- Copy JMRTD API jar -->
+		<copy todir="${distlib}">
+			<fileset file="${passporthostapi_dist}/${jmrtd_jar}" />
+		</copy>
+				
+		<!-- Copy SCUBA jars -->
+		<copy todir="${distlib}">
+			<fileset file="${scuba_smartcards_dist}/${scuba_smartcards_jar}" />
+			<fileset file="${scuba_gui_dist}/${scuba_gui_jar}" />
+			<fileset file="${scuba_data_dist}/${scuba_data_jar}" />
+			<fileset file="${scuba_util_dist}/${scuba_util_jar}" />
+			<fileset file="${scuba_storage_dist}/${scuba_storage_jar}" />
+		</copy>
+		
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -83,11 +103,11 @@
 		</copy>
 
 		<!-- Create the distribution jar file -->
-		<jar jarfile="${distlib}/jmrtd.jar">
+		<jar jarfile="${distlib}/jmrtd_app.jar">
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
+				<attribute name="Class-path" value="${jmrtd_jar} ${scuba_smartcards_jar} ${scuba_gui_jar} ${scuba_storage_jar} ${scuba_data_jar} ${scuba_util_jar} ${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
@@ -95,10 +115,6 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${scuba-build}" includes="**/*.class" />
-			<fileset dir="${acrprovider-build}" includes="**/*.class" />
-			<fileset dir="${crefprovider-build}" includes="**/*.class" />
-			<fileset dir="${jcopprovider-build}" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
 			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
