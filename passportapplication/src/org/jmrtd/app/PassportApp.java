@@ -489,13 +489,13 @@ public class PassportApp  implements PassportListener
 			public void actionPerformed(ActionEvent e) {
 				URL readMeFile = null;
 				try {
-					readMeFile = new URL(Files.getBaseDir() + "/README");
+					readMeFile = new URL(Files.getBaseDir(getClass()) + "/README");
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
 				Image iconImage = null;
 				try {
-					iconImage = Icons.getImage("jmrtd_logo-100x100");
+					iconImage = Icons.getImage("jmrtd_logo-100x100", getClass());
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
