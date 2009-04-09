@@ -50,7 +50,7 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" includes="**/*.java" classpath="${scuba_smartcards_dist}/${scuba_smartcards_jar}${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
+		<javac srcdir="${src}" includes="**/*.java" classpath="${scuba_smartcards_dist}/${scuba_smartcards_jar}:${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
 	</target>
 
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
@@ -116,7 +116,6 @@
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
-			<fileset dir="." includes="csca/*.*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>
