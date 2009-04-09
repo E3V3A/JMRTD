@@ -17,6 +17,12 @@
 	
 	<property file="jmrtd_hostapi.properties" />
 	
+	<property name="scuba_smartcards_dist" location="${basedir}/../scuba_smartcards_j2se/dist" />
+	<property name="scuba_util_dist" location="${basedir}/../scuba_util/dist" />
+	<property name="scuba_gui_dist" location="${basedir}/../scuba_gui_j2se/dist" />
+	<property name="scuba_data_dist" location="${basedir}/../scuba_data/dist" />
+	<property name="scuba_storage_dist" location="${basedir}/../scuba_storage_j2se/dist" />
+	
 	<property name="scuba_smartcards_jar" value="scuba_smartcards-0.0.1.jar" />
 	<property name="scuba_util_jar" value="scuba_util-0.0.1.jar" />
 	<property name="scuba_data_jar" value="scuba_data-0.0.1.jar" />
@@ -38,7 +44,7 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" includes="**/*.java" destdir="${build}" />
+		<javac srcdir="${src}" classpath="${bcprov_dir}/${bcprov_jar}:${scuba_smartcards_dist}/${scuba_smartcards_jar}:${scuba_data_dist}/${scuba_data_jar}:${scuba_util_dist}/${scuba_util_jar}:${certcvc_dir}/${certcvc_jar}" includes="**/*.java" destdir="${build}" />
 	</target>
 
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
@@ -66,6 +72,7 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
+			<fileset dir="." includes="csca/*.*" />
 		<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>
