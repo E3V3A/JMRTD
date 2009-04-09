@@ -93,7 +93,7 @@ public class PassportApp  implements PassportListener
 	public static final File JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd");
 	private static final File PREFERENCES_FILE = new File(JMRTD_USER_DIR, "jmrtd.properties");
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportApp.class);
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));

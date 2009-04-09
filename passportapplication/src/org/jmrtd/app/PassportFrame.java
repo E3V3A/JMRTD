@@ -102,6 +102,7 @@ import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.COMFile;
+import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAFile;
 import org.jmrtd.DG11File;
 import org.jmrtd.DG12File;
@@ -137,7 +138,7 @@ public class PassportFrame extends JFrame implements AuthListener
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportFrame.class);
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
@@ -571,17 +572,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				MRZInfo mrzInfo = dg1.getMRZInfo();
 				issuingState = mrzInfo.getIssuingState();
 			}
-			URL baseDir = Files.getBaseDir();
-			URL cscaDir = new URL(baseDir + "/csca");
-			/* TODO: also check .pem, .der formats? */
-			URL cscaFile = new URL(cscaDir + "/" + issuingState.toString().toLowerCase() + ".cer");
-			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
-			InputStream cscaIn = cscaFile.openStream();
-			if (cscaIn == null) {
-				verificationIndicator.setCSFailed("Cannot get CS certificate");
-				return; /* NOTE: Serious enough to not perform other checks, leave method. */
-			}
-			countrySigningCert = (X509Certificate)certFactory.generateCertificate(cscaIn);
+			countrySigningCert = CSCAStore.getInstance().getCertificate(issuingState);
 			sod.getDocSigningCertificate().verify(countrySigningCert.getPublicKey());
 			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {

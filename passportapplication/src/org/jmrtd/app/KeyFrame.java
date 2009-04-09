@@ -55,7 +55,7 @@ public class KeyFrame extends JFrame
 {
 	private static final long serialVersionUID = -514612440541711549L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48");
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", KeyFrame.class);
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
