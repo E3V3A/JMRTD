@@ -134,7 +134,7 @@
 			<config><![CDATA[
 				<installation version="1.0">
 				    <info>
-				        <appname>@{app_name}</appname>
+				        <appname>JMRTD</appname>
 				        <appversion>@{app_version}</appversion>
 				        <authors>
 				            <author name="@{author_name}"

@@ -37,9 +37,14 @@ Dependencies (might be included in distribution)
    * Requires jdk1.6.
 
    * Bouncycastle for crypto and ASN1 decoding:
-        The jar needs to be in classpath
-        Tested with bcprov-jdk16-139.jar.
+        The jar needs to be in classpath.
+        Tested with bcprov-jdk16-141.jar.
         URL: http://www.bouncycastle.org/
+
+   * EJBCA Cert-CVC:
+        The cert-cvc.jar needs to be in classpath.
+        Tested with version cert-cvc 1.2.8.
+        URL: http://ejbca.org/
 
    * JAI ImageIO for interpreting JPEG 2000 data:
         Needs to be installed in jre/lib,
