@@ -39,7 +39,7 @@ import net.sourceforge.scuba.smartcards.CardTerminalListener;
 /**
  * Manages passport insertion and removal events.
  *
- * FIXME: Perhaps have this class extend sos.smartcards.CardManager?
+ * FIXME: Perhaps have this class extend {@link net.sourceforge.scuba.smartcards.CardManager CardManager}?
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * @author Wojciech Mostowski (woj@cs.ru.nl)
