@@ -15,11 +15,19 @@
 	<property file="jmrtd_installer.properties" />
 
 	<property name="app_title" value="${app_name} ${app_version}" />
+	<property name="lib_title" value="${lib_name} ${app_version}" />
 	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
-	<property name="passporthostapi_dist" location="${basedir}/../passporthostapi/dist" />
+	<property name="passporthostapi_src" location="${basedir}/../passporthostapi/src" />
+	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
 	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
 
+	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards_j2se/src" />
+	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
+	<property name="scuba_gui_src" location="${basedir}/../scuba_gui_j2se/src" />
+	<property name="scuba_data_src" location="${basedir}/../scuba_data/src" />
+	<property name="scuba_storage_src" location="${basedir}/../scuba_storage_j2se/src" />
+	
 	<property name="scuba_smartcards_dist" location="${basedir}/../scuba_smartcards_j2se/dist" />
 	<property name="scuba_util_dist" location="${basedir}/../scuba_util/dist" />
 	<property name="scuba_gui_dist" location="${basedir}/../scuba_gui_j2se/dist" />
@@ -56,7 +64,7 @@
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
 		<!-- Copy JMRTD API jar -->
 		<copy todir="${distlib}">
-			<fileset file="${passporthostapi_dist}/${jmrtd_jar}" />
+			<fileset file="${jmrtd_dist}/${jmrtd_jar}" />
 		</copy>
 				
 		<!-- Copy SCUBA jars -->
@@ -134,7 +142,7 @@
 			<config><![CDATA[
 				<installation version="1.0">
 				    <info>
-				        <appname>JMRTD</appname>
+				        <appname>@{lib_name}</appname>
 				        <appversion>@{app_version}</appversion>
 				        <authors>
 				            <author name="@{author_name}"
@@ -233,25 +241,25 @@
 	</target>
 
 	<target name="doc" description="Generates API docs" if="build_java_doc">
-		<javadoc classpath="${scuba-build};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
+		<javadoc classpath="${jmrtd_dist}/${jmrtd_jar};${scuba_data_dist}/${scuba_data_jar};${scuba_smartcards_dist}/${scuba_smartcards_jar};${scuba_storage_dist}/${scuba_storage_jar};${scuba_util_dist}/${scuba_util_jar};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
 				destdir="apidocs"
 				package="false"
-				doctitle="${app_title}"
-				windowtitle="${app_title}"
-				header="${app_title}"
-				packagenames="sos.mrtd">
+				doctitle="${lib_title}"
+				windowtitle="${lib_title}"
+				header="${lib_title}"
+				packagenames="org.jmrtd">
 			<link href="http://java.sun.com/javase/6/docs/api" />
 			<link href="http://java.sun.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
-			<sourcepath path="src;${scuba-src}" />
-			<package name="sos.mrtd" />
-			<package name="sos.data" />
-			<package name="sos.smartcards" />
-			<package name="sos.tlv" />
-			<!-- package name="sos.gui" / --> <!-- Not used in public interface -->
-			<!-- package name="sos.util" / --> <!-- Not used in public interface -->
+			<sourcepath path="src;${passporthostapi_src};${scuba_data_src};${scuba_smartcards_src}" />
+			<package name="org.jmrtd" />
+			<package name="net.sourceforge.scuba.data" />
+			<package name="net.sourceforge.scuba.smartcards" />
+			<package name="net.sourceforge.scuba.tlv" />
+			<!-- package name="net.sourceforge.scuba.gui" / --> <!-- Not used in public interface -->
+			<!-- package name="net.sourceforge.scuba.util" / --> <!-- Not used in public interface -->
 		</javadoc>
 	
 		<zip destfile="jmrtd-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
