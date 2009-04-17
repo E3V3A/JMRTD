@@ -300,7 +300,7 @@ public class Passport {
      * Gets an inputstream that is ready for reading.
      * 
      * @param fid
-     * @return
+     * @return an inputstream for <code>fid</code>
      */
     public synchronized InputStream getInputStream(final short fid) {
         try {

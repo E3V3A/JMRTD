@@ -14,7 +14,7 @@ public class CVCAFile extends PassportFile {
     /**
      * Constructs a new CVCA file from the data contained in <code>in</code>.
      * 
-     * @param input
+     * @param in
      *            stream with the data to be parsed
      */
     public CVCAFile(InputStream in) {

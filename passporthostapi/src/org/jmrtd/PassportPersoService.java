@@ -184,7 +184,7 @@ public class PassportPersoService extends CardService {
      * Sends a PUT_DATA command to the card to set the private key used for
      * Extended Access Control.
      * 
-     * @param privateKey
+     * @param privKey
      *            holding the private key data.
      * @throws CardServiceException
      *             on error.
