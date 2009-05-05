@@ -64,12 +64,14 @@ public class PassportManager
 		try {
 			Class<?> acrProviderClass = Class.forName("net.sourceforge.scuba.smartcards.ACR122Provider");
 			Provider acrProvider = (Provider)acrProviderClass.newInstance();
-			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR", null, acrProvider);
+			TerminalFactory acrFactory = TerminalFactory.getInstance("ACR122", null, acrProvider);
 			cm.addTerminals(acrFactory, true);
 		} catch (ClassNotFoundException cnfe) {
 			/* Ignore this provider... not installed */ 
+			// cnfe.printStackTrace();
 		} catch (Exception e) {
 			/* Ignore this provider */
+			// e.printStackTrace();
 		}
 		try {
 			Class<?> acrProviderClass = Class.forName("net.sourceforge.scuba.smartcards.ACR120UProvider");
