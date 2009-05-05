@@ -54,11 +54,9 @@ public class PassportApplet extends Applet implements ISO7816 {
     /* values for volatile state */
     static final byte CHALLENGED = 1;
 
-    static final byte MUTUAL_AUTHENTICATED = 2;
+    static final byte MUTUAL_AUTHENTICATED = 2; // ie BAC
 
     static final byte FILE_SELECTED = 4;
-
-    static final byte ACTIVE_AUTHENTICATED = 8;
 
     static final byte CHIP_AUTHENTICATED = 0x10;
 
@@ -292,6 +290,16 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
     }
 
+    /**
+      * Processes incoming APDUs, excluding Secure Messaging.
+      *
+      * This method assumes SM protection has been removed from the
+      * incoming APDU, and does not add SM protection to the response.
+      * Handling of Secure Messaging is done in process(APDU apdu)
+      *
+      * @param protectedApdu true if Secure Messaging is used
+      * @return length of the response APDU
+     */
     public short processAPDU(APDU apdu, byte cla, byte ins,
             boolean protectedApdu, short le) {
         short responseLength = 0;
@@ -610,10 +618,11 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Processes INTERNAL_AUTHENTICATE apdus. Receives a random and signs it.
+     * Processes INTERNAL_AUTHENTICATE apdus, ie Active Authentication (AA). 
+     * Receives a random and signs it.
      * 
      * @param apdu
-     * @param protectedApdu
+     * @param protectedApdu true if Secure Messaging was used
      * @return
      */
     private short processInternalAuthenticate(APDU apdu, boolean protectedApdu) {
@@ -681,21 +690,26 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Processes incoming GET_CHALLENGE APDUs.
+     * Processes incoming GET_CHALLENGE APDUs, as part of BAC or EAC.
      * 
      * Generates random 8 bytes, sends back result and stores result in rnd.
+     * A GET_CHALLENGE APDU can be sent as part of BAC, or as part of
+     * EAC (more specifically, Terminal Authentication (TA).
      * 
      * @param apdu
      *            is used for sending (8 bytes) only
+     * @param protectedApdu true if Secure Messaging was used
      */
     private short processGetChallenge(APDU apdu, boolean protectedApdu, short le) {
         if (protectedApdu) {
+            // we're doing TA
             if (!hasChipAuthenticated()
                     || certificate.cert1HolderReference[0] == (byte)0
                     || hasTerminalAuthenticated()) {
                 ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
             }
         } else {
+            // we're doing BAC
             if (!hasMutualAuthenticationKeys() || hasMutuallyAuthenticated()) {
                 ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
             }
@@ -720,14 +734,19 @@ public class PassportApplet extends Applet implements ISO7816 {
     }
 
     /**
-     * Perform mutual authentication with terminal.
+     * Processes incoming EXTERNAL_AUTHENTICATE APDUs, as part of BAC or EAC.
+     *
+     * An EXTERNAL_AUTHENTICATE can be the last step of BAC, or the last
+     * step of Terminal Authentication (TA) when doing EAC.
      * 
      * @param apdu
      *            the APDU
-     * @return length of return APDU
+     * @param protectedApdu true if Secure Messaging was used
+     * @return length of response APDU
      */
     private short processMutualAuthenticate(APDU apdu, boolean protectedApdu) {
         if (protectedApdu) {
+            // we're doing EAC
             if (!hasChipAuthenticated() || !isChallenged()
                     || certificate.currentCertSubjectId[0] == (byte)0
                     || hasTerminalAuthenticated()) {
@@ -746,9 +765,10 @@ public class PassportApplet extends Applet implements ISO7816 {
             volatileState[0] |= TERMINAL_AUTHENTICATED;
             return 0;
         } else {
-     if (!isChallenged() || hasMutuallyAuthenticated()) {
-            ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
-        }
+        // we're doing BAC
+        if (!isChallenged() || hasMutuallyAuthenticated()) {
+               ISOException.throwIt(SW_SECURITY_STATUS_NOT_SATISFIED);
+           }
 
         byte[] buffer = apdu.getBuffer();
         short bytesLeft = (short) (buffer[OFFSET_LC] & 0x00FF);
@@ -889,7 +909,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      *            where the offset is carried in header bytes p1 and p2.
      * @param le
      *            expected length by terminal
-     * @return length of the return APDU
+     * @return length of the response APDU
      */
     private short processReadBinary(APDU apdu, short le, boolean protectedApdu) {
         if (!hasMutuallyAuthenticated()) {
@@ -1001,10 +1021,6 @@ public class PassportApplet extends Applet implements ISO7816 {
         }
     }
 
-    public static boolean hasActivelyAuthenticated() {
-        return (volatileState[0] & ACTIVE_AUTHENTICATED) == ACTIVE_AUTHENTICATED;
-    }
-
     public static boolean hasInternalAuthenticationKeys() {
         return (persistentState & (HAS_EXPONENT | HAS_MODULUS)) == (HAS_EXPONENT | HAS_MODULUS);
     }
@@ -1045,6 +1061,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         return (volatileState[0] & CHALLENGED) == CHALLENGED;
     }
 
+	/** Has BAC been completed? */
     public static boolean hasMutuallyAuthenticated() {
         return (volatileState[0] & MUTUAL_AUTHENTICATED) == MUTUAL_AUTHENTICATED;
     }
