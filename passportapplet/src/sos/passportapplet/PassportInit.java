@@ -205,19 +205,19 @@ public class PassportInit {
         }
             
         short buffer_p = 0;
-        Util.arrayCopy(buffer, docNr_p, buffer, buffer_p, docNr_length);
+        Util.arrayCopyNonAtomic(buffer, docNr_p, buffer, buffer_p, docNr_length);
         short offset = buffer_p;
         buffer_p += docNr_length;
         buffer[buffer_p] = checkDigit(buffer, offset, docNr_length);
         buffer_p++;
         
-        Util.arrayCopy(buffer, dateOfBirth_p, buffer, buffer_p, dateOfBirth_length);
+        Util.arrayCopyNonAtomic(buffer, dateOfBirth_p, buffer, buffer_p, dateOfBirth_length);
         offset = buffer_p;
         buffer_p += dateOfBirth_length;
         buffer[buffer_p] = checkDigit(buffer, offset, dateOfBirth_length);
         buffer_p++;
         
-        Util.arrayCopy(buffer, dateOfExpiry_p, buffer, buffer_p, dateOfExpiry_length);
+        Util.arrayCopyNonAtomic(buffer, dateOfExpiry_p, buffer, buffer_p, dateOfExpiry_length);
         offset = buffer_p;
         buffer_p += dateOfExpiry_length;
         buffer[buffer_p] = checkDigit(buffer, offset, dateOfExpiry_length);
@@ -253,7 +253,7 @@ public class PassportInit {
         short len = (short) (DOB_LEN + DOE_LEN);
 
         // make room for checkdigit after docNr
-        Util.arrayCopy(buffer, offset, buffer, (short) (offset + 1), len);
+        Util.arrayCopyNonAtomic(buffer, offset, buffer, (short) (offset + 1), len);
         buffer[offset] = checkDigit(buffer,
                                     (short) (offset - DOCNR_LEN),
                                     DOCNR_LEN);
@@ -262,7 +262,7 @@ public class PassportInit {
         len -= DOB_LEN;
 
         // make room for checkdigit after dateOfBirth
-        Util.arrayCopy(buffer, offset, buffer, (short) (offset + 1), len);
+        Util.arrayCopyNonAtomic(buffer, offset, buffer, (short) (offset + 1), len);
         buffer[offset] = checkDigit(buffer, (short) (offset - DOB_LEN), DOB_LEN);
 
         offset += (short) (1 + DOE_LEN);

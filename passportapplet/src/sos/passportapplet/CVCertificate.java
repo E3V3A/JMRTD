@@ -262,9 +262,9 @@ public class CVCertificate {
                     }else{
                         cert2Authorization = effectiveCertAuthorization[0];                        
                     }
-                    Util.arrayCopyNonAtomic(currentCertSubjectId, (short)0, certHolderReference, (short)0, (short)17);
-                    Util.arrayCopyNonAtomic(currentCertEffDate, (short)0, certEffDate, (short)0, (short)6);
-                    Util.arrayCopyNonAtomic(currentCertExpDate, (short)0, certExpDate, (short)0, (short)6);
+                    Util.arrayCopy(currentCertSubjectId, (short)0, certHolderReference, (short)0, (short)17);
+                    Util.arrayCopy(currentCertEffDate, (short)0, certEffDate, (short)0, (short)6);
+                    Util.arrayCopy(currentCertExpDate, (short)0, certExpDate, (short)0, (short)6);
                     currentCertPublicKey.getExponent(certPublicKeyData, (short)0);
                     currentCertPublicKey.getModulus(certPublicKeyData, (short)3);
                     short index = 0;
@@ -277,7 +277,7 @@ public class CVCertificate {
                     while(index < 36) cvcaFileReference[index++] = 0;
                 }
                 if(setTime) {
-                    Util.arrayCopyNonAtomic(currentCertEffDate, (short)0, currentDate, (short)0, (short)6);
+                    Util.arrayCopy(currentCertEffDate, (short)0, currentDate, (short)0, (short)6);
                 }
                 JCSystem.commitTransaction();
             }
@@ -299,7 +299,7 @@ public class CVCertificate {
         short len = reference[0];
         cvcaFileReference[index++] = CAR_TAG;
         cvcaFileReference[index++] = (byte)len;
-        Util.arrayCopyNonAtomic(reference, (short)1, cvcaFileReference, index, len);
+        Util.arrayCopy(reference, (short)1, cvcaFileReference, index, len);
         index += len;
         return index;
     }

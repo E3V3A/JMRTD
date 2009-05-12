@@ -167,7 +167,7 @@ public class CREFPassportCrypto extends JCOP41PassportCrypto implements ISO7816 
         encryptFinal(tempSpace_doMacFinal, tempmac_offset, (short)8, tempSpace_doMacFinal, tempmac_offset);
         //macCiphECB.doFinal(mac, mac_offset, (short)8, mac, mac_offset);
         
-        Util.arrayCopy(tempSpace_doMacFinal, tempmac_offset, mac, mac_offset, (short)8);
+        Util.arrayCopyNonAtomic(tempSpace_doMacFinal, tempmac_offset, mac, mac_offset, (short)8);
     }
 
 }

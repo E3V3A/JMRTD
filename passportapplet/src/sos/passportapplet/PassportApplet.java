@@ -220,7 +220,7 @@ public class PassportApplet extends Applet implements ISO7816 {
      * @see javacard.framework.Applet#install(byte[], byte, byte)
      */
     public static void install(byte[] buffer, short offset, byte length) {
-        (new PassportApplet(PassportCrypto.PERFECTWORLD_MODE)).register();
+        (new PassportApplet(PassportCrypto.JCOP41_MODE)).register();
     }
 
     /**
@@ -653,7 +653,7 @@ public class PassportApplet extends Applet implements ISO7816 {
             ISOException.throwIt(SW_WRONG_LENGTH);
 
         // put m2 in place
-        Util.arrayCopy(buffer, buffer_p, buffer, m2_offset, m2_len);
+        Util.arrayCopyNonAtomic(buffer, buffer_p, buffer, m2_offset, m2_len);
 
         // write some random data of m1_len
         // randomData.generateData(buffer, m1_offset, m1_length);
@@ -726,7 +726,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         randomData.generateData(rnd, (short) 0, le);
         short bufferOffset = protectedApdu ? crypto.getApduBufferOffset(le)
                 : (short) 0;
-        Util.arrayCopy(rnd, (short) 0, buffer, bufferOffset, le);
+        Util.arrayCopyNonAtomic(rnd, (short) 0, buffer, bufferOffset, le);
 
         volatileState[0] |= CHALLENGED;
 
@@ -843,7 +843,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         // create response in buffer where response = rnd.icc || rnd.ifd ||
         // k.icc
         PassportUtil.swap(buffer, rnd_icc_p, rnd_ifd_p, RND_LENGTH);
-        Util.arrayCopy(buffer, k_icc_p, buffer, (short) (2 * RND_LENGTH),
+        Util.arrayCopyNonAtomic(buffer, k_icc_p, buffer, (short) (2 * RND_LENGTH),
                 KEYMATERIAL_LENGTH);
 
         // make buffer encrypted using k_enc
@@ -943,7 +943,7 @@ public class PassportApplet extends Applet implements ISO7816 {
         if (protectedApdu) {
             bufferOffset = crypto.getApduBufferOffset(len);
         }
-        Util.arrayCopy(file, offset, buffer, bufferOffset, len);
+        Util.arrayCopyNonAtomic(file, offset, buffer, bufferOffset, len);
 
         return len;
     }

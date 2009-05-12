@@ -497,8 +497,8 @@ public class PassportCrypto {
         c[(short)(c.length-1)] = mode;
 
         // copy seed || c to key_offset
-        Util.arrayCopy(buffer, keySeed_offset, buffer, key_offset, keySeed_length);
-        Util.arrayCopy(c, (short) 0, buffer, (short)(key_offset + keySeed_length), (short)c.length);
+        Util.arrayCopyNonAtomic(buffer, keySeed_offset, buffer, key_offset, keySeed_length);
+        Util.arrayCopyNonAtomic(c, (short) 0, buffer, (short)(key_offset + keySeed_length), (short)c.length);
 
         // compute hash on key_offset (+seed len +c len)
         shaDigest.doFinal(buffer, key_offset, (short)(keySeed_length + c.length), buffer, key_offset);
@@ -533,12 +533,12 @@ public class PassportCrypto {
             ISOException.throwIt((short) 0x6d66);
         }
 
-        Util.arrayCopy(rndICC,
+        Util.arrayCopyNonAtomic(rndICC,
                        (short) (rndICC_offset + 4),
                        ssc,
                        (short) 0,
                        (short) 4);
-        Util.arrayCopy(rndIFD,
+        Util.arrayCopyNonAtomic(rndIFD,
                        (short) (rndIFD_offset + 4),
                        ssc,
                        (short) 4,
