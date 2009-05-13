@@ -399,7 +399,7 @@ public class DG11File extends DataGroup
 		DG11File other = (DG11File)obj;
 		return
 		other.toString().equals(toString()) &&
-		(other.proofOfCitizenship == null && proofOfCitizenship == null) || other.proofOfCitizenship.equals(proofOfCitizenship);
+		((other.proofOfCitizenship == null && proofOfCitizenship == null) || other.proofOfCitizenship.equals(proofOfCitizenship));
 //		other.fullNamePrimaryIdentifier.equals(fullNamePrimaryIdentifier) &&
 //		other.fullNameSecondaryIdentifiers.equals(fullNameSecondaryIdentifiers) &&
 //		other.personalNumber.equals(personalNumber) &&
