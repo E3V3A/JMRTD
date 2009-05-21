@@ -25,6 +25,9 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
     
     protected PassportService service = null; 
     
+    /** The last response APDU received (SM wrapped, when SM is active?) */
+    protected ResponseAPDU last_rapdu = null; 
+    
     public PassportTesterBase(String name) {
         super(name);
         try {
@@ -67,6 +70,7 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
     protected boolean traceApdu = false;
     
     public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+    	last_rapdu = rapdu; 
         if(traceApdu) {
             System.out.println("C: "+Hex.bytesToHexString(capdu.getBytes()));
             System.out.println("R: "+Hex.bytesToHexString(rapdu.getBytes()));
