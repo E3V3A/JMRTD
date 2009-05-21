@@ -13,6 +13,7 @@ import javax.smartcardio.TerminalFactory;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
@@ -77,5 +78,38 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
         }
         
     }
+
+	/**    
+	 *  Return true if datagroup can be selected; SM is not used even if it is active.
+	 */
+	protected boolean canSelectFileWithoutSM(short fid) {
+		try { service.sendSelectFile(null,fid);
+		      return true;
+	      } catch(CardServiceException e){
+	          return false;
+	      }
+	}
+
+	/**    
+	 *  Return true if datagroup can be selected; SM is used if it is active.  
+	 */
+	protected boolean canSelectFile(short fid) {
+		try { service.sendSelectFile(service.getWrapper(),fid);
+		      return true;
+	      } catch(CardServiceException e){
+	          return false;
+	      }
+	}
+
+	/**    
+	 *  Return true if datagroup can be read; SM is used if it is active.
+	 */
+	protected boolean canReadFile(short fid) {
+		try { CardFileInputStream in = service.readFile(fid);
+	          return (in != null);
+	      } catch(CardServiceException e){
+	          return false;
+	      }
+	}
     
 }
