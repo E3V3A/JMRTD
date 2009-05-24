@@ -26,7 +26,7 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
     
     protected PassportService service = null; 
     
-    /** The last response APDU received (SM wrapped, when SM is active?) */
+    /** The last response APDU received (SM wrapped when SM is active?) */
     protected ResponseAPDU last_rapdu = null; 
     
     public PassportTesterBase(String name) {
@@ -110,6 +110,13 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
 	      } catch(CardServiceException e){
 	          return false;
 	      }
+	}
+	
+	/**
+	 * Returns last status word received 
+	 */
+	protected int getLastSW() {
+		return last_rapdu.getSW();
 	}
     
 }
