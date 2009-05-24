@@ -81,6 +81,8 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
 
 	/**    
 	 *  Return true if datagroup can be selected; SM is not used even if it is active.
+	 *  Note that this may (should!) reset the passport application, if it is expecting 
+	 *  SM.
 	 */
 	protected boolean canSelectFileWithoutSM(short fid) {
 		try { service.sendSelectFile(null,fid);
@@ -91,7 +93,7 @@ public abstract class PassportTesterBase extends TestCase implements APDUListene
 	}
 
 	/**    
-	 *  Return true if datagroup can be selected; SM is used if it is active.  
+	 *  Return true if datagroup can be selected; SM is used if it is active. 
 	 */
 	protected boolean canSelectFile(short fid) {
 		try { service.sendSelectFile(service.getWrapper(),fid);

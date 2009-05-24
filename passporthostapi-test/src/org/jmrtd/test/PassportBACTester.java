@@ -29,6 +29,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * as - automatically adding/removing SM to APDUs - translating some (all?)
 	 * status words other than 9000 into a CardServiceException can be annoying
 	 * when testing. Sometimes you want more low level control over APDUs sent.
+	 * It would be nice if CardServiceExceptions stored the SW that caused them.
 	 * 
 	 * The PassportService won't reset the wrapper to null after an SM failure.
 	 * So after SM has been aborted, it will still try to SM-wrap.
@@ -36,7 +37,10 @@ public class PassportBACTester extends PassportTesterBase {
 	 * We don't try to handle any CardServiceExceptions, and leave that up to
 	 * junit, UNLESS we expect a CardServiceException.
 	 * 
-	 * It would be nice if CardServiceExceptions stored the SW that caused them.
+	 * Maybe some of the functionality in this class and in PassportTesterBase
+	 * (eg testSupportedInstructions() or getLastSW()) should be refactored to
+	 * some PassportTestService extends PassportService, so that it could also
+	 * be used in tests that don't use junit.
 	 */
 
 	private String documentNumber = "PPNUMMER0";
