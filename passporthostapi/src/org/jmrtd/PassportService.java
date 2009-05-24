@@ -58,28 +58,27 @@ import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.CVCertificate;
 
 /**
- * Card service for reading files (such as data groups) and
- * using the BAC and AA protocols on the passport.
- * Defines secure messaging.
- * Defines active authentication.
+ * Card service for reading files (such as data groups) and using the BAC and AA
+ * protocols on the passport. Defines secure messaging. Defines active
+ * authentication.
  * 
  * Based on ICAO-TR-PKI and ICAO-TR-LDS.
  * 
  * Usage:
- *    <pre>
- *       open() ==&gt;<br />
- *       doBAC(...) ==&gt;<br />
- *       doAA() ==&gt;<br />
- *       readFile(...)<sup>*</sup> ==&gt;<br />
+ * 
+ * <pre>
+ *       open() ==&gt;&lt;br /&gt;
+ *       doBAC(...) ==&gt;&lt;br /&gt;
+ *       doAA() ==&gt;&lt;br /&gt;
+ *       readFile(...)&lt;sup&gt;*&lt;/sup&gt; ==&gt;&lt;br /&gt;
  *       close()
- *    </pre> 
- *
+ * </pre>
+ * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
- *
+ * 
  * @version $Revision:352 $
  */
-public class PassportService extends PassportApduService
-{
+public class PassportService extends PassportApduService {
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
 	/** Data group 2 contains face image data. */
@@ -116,49 +115,51 @@ public class PassportService extends PassportApduService
 	public static final short EF_SOD = 0x011D;
 	/** File indicating which data groups are present. */
 	public static final short EF_COM = 0x011E;
-    /** File with the EAC CVCA references. Note: this can be overridden
-     *  by a file identifier in the DG14 file (TerminalAuthenticationInfo).
-     *  So check that one first. Also, this file does not have a header tag, like the others.
-     */
-    public static final short EF_CVCA = 0x011C;
+	/**
+	 * File with the EAC CVCA references. Note: this can be overridden by a file
+	 * identifier in the DG14 file (TerminalAuthenticationInfo). So check that
+	 * one first. Also, this file does not have a header tag, like the others.
+	 */
+	public static final short EF_CVCA = 0x011C;
 
-    /** Short file identifiers for the DGs */
-    
-    public static final byte SF_DG1 = 0x01;
-    public static final byte SF_DG2 = 0x02;
-    public static final byte SF_DG3 = 0x03;
-    public static final byte SF_DG4 = 0x04;
-    public static final byte SF_DG5 = 0x05;
-    public static final byte SF_DG6 = 0x06;
-    public static final byte SF_DG7 = 0x07;
-    public static final byte SF_DG8 = 0x08;
-    public static final byte SF_DG9 = 0x09;
-    public static final byte SF_DG10 = 0x0a;
-    public static final byte SF_DG11 = 0x0b;
-    public static final byte SF_DG12 = 0x0c;
-    public static final byte SF_DG13 = 0x0d;
-    public static final byte SF_DG14 = 0x0e;
-    public static final byte SF_DG15 = 0x0f;
-    public static final byte SF_DG16 = 0x10;
-    public static final byte SF_COM = 0x1E;
-    public static final byte SF_SOD = 0x1D;
-    public static final byte SF_CVCA = 0x1C;
-    
+	/** Short file identifiers for the DGs */
+
+	public static final byte SF_DG1 = 0x01;
+	public static final byte SF_DG2 = 0x02;
+	public static final byte SF_DG3 = 0x03;
+	public static final byte SF_DG4 = 0x04;
+	public static final byte SF_DG5 = 0x05;
+	public static final byte SF_DG6 = 0x06;
+	public static final byte SF_DG7 = 0x07;
+	public static final byte SF_DG8 = 0x08;
+	public static final byte SF_DG9 = 0x09;
+	public static final byte SF_DG10 = 0x0a;
+	public static final byte SF_DG11 = 0x0b;
+	public static final byte SF_DG12 = 0x0c;
+	public static final byte SF_DG13 = 0x0d;
+	public static final byte SF_DG14 = 0x0e;
+	public static final byte SF_DG15 = 0x0f;
+	public static final byte SF_DG16 = 0x10;
+	public static final byte SF_COM = 0x1E;
+	public static final byte SF_SOD = 0x1D;
+	public static final byte SF_CVCA = 0x1C;
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/**
 	 * The file read block size, some passports cannot handle large values
+	 * 
 	 * @deprecated hack
 	 */
 	public static int maxBlockSize = 255;
 
-    private static final int SESSION_STOPPED_STATE = 0;
+	private static final int SESSION_STOPPED_STATE = 0;
 	private static final int SESSION_STARTED_STATE = 1;
-    // TODO: this should be bit masks, e.g. AA and EAC should
-    // be settable both at the same time 
+	// TODO: this should be bit masks, e.g. AA and EAC should
+	// be settable both at the same time
 	private static final int BAC_AUTHENTICATED_STATE = 2;
 	private static final int AA_AUTHENTICATED_STATE = 3;
-    private static final int EAC_AUTHENTICATED_STATE = 4;
+	private static final int EAC_AUTHENTICATED_STATE = 4;
 
 	private int state;
 
@@ -178,16 +179,24 @@ public class PassportService extends PassportApduService
 	/**
 	 * Creates a new passport service for accessing the passport.
 	 * 
-	 * @param service another service which will deal with sending
-	 *        the apdus to the card.
-	 *
-	 * @throws GeneralSecurityException when the available JCE providers
-	 *         cannot provide the necessary cryptographic primitives.
+	 * @param service
+	 *            another service which will deal with sending the apdus to the
+	 *            card.
+	 * 
+	 * @throws GeneralSecurityException
+	 *             when the available JCE providers cannot provide the necessary
+	 *             cryptographic primitives.
 	 */
 	public PassportService(CardService service) throws CardServiceException {
 		super(service);
 		try {
-			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /* FIXME: SHA1WithRSA also works? */
+			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /*
+																		 * FIXME:
+																		 * SHA1WithRSA
+																		 * also
+																		 * works
+																		 * ?
+																		 */
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
@@ -222,17 +231,22 @@ public class PassportService extends PassportApduService
 
 	/**
 	 * Performs the <i>Basic Access Control</i> protocol.
-	 *
-	 * @param documentNumber the document number
-	 * @param dateOfBirth card holder's birth date
-	 * @param dateOfExpiry document's expiry date
 	 * 
-	 * @throws CardServiceException if authentication failed
+	 * @param documentNumber
+	 *            the document number
+	 * @param dateOfBirth
+	 *            card holder's birth date
+	 * @param dateOfExpiry
+	 *            document's expiry date
+	 * 
+	 * @throws CardServiceException
+	 *             if authentication failed
 	 */
-	public synchronized void doBAC(String documentNumber, Date dateOfBirth, Date dateOfExpiry)
-	throws CardServiceException {
+	public synchronized void doBAC(String documentNumber, Date dateOfBirth,
+			Date dateOfExpiry) throws CardServiceException {
 		try {
-			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
+			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF
+					.format(dateOfBirth), SDF.format(dateOfExpiry));
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();
@@ -251,7 +265,8 @@ public class PassportService extends PassportApduService
 			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
+			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD,
+					true);
 			notifyBACPerformed(event);
 			state = BAC_AUTHENTICATED_STATE;
 		} catch (GeneralSecurityException gse) {
@@ -261,196 +276,250 @@ public class PassportService extends PassportApduService
 		}
 	}
 
-    
-    /**
-     * Performs the EAC protocol with the passport. For details see
-     * TR-03110 ver. 1.11. In short: a. authenticate the chip with (EC)DH
-     * key aggrement rotocol (new secure messaging keys are created then),
-     * b. feed the sequence of terminal certificates to the card for verification.
-     * c. get a challenge from the passport, sign it with terminal private key,
-     * send back to the card for verification.
-     * 
-     * @param keyId
-     *            passport's public key id (stored in DG14), -1 if none.
-     * @param key
-     *            passport's public key (stored in DG14).
-     * @param caReference the CA certificate key reference, this can
-     *                     be read from the CVCA file
-     * @param terminalCertificates
-     *            the list/chain of terminal certificates
-     * @param terminalKey
-     *            terminal private key
-     * @param documentNumber
-     *            the passport number
-     * @return whether EAC was successful
-     * @throws CardServiceException
-     *             on error
-     */
-    public synchronized boolean doEAC(int keyId, PublicKey key,
-            String caReference,
-            List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
-            String documentNumber) throws CardServiceException {
-        try {
+	/**
+	 * Perform CA (Chip Authentication) part of EAC. For details see TR-03110
+	 * ver. 1.11. In short, we authenticate the chip with (EC)DH key agreement
+	 * protocol and create new secure messaging keys.
+	 * 
+	 * @param keyId
+	 *            passport's public key id (stored in DG14), -1 if none.
+	 * @param key
+	 *            passport's public key (stored in DG14).
+	 * @param caReference
+	 *            the CA certificate key reference, this can be read from the
+	 *            CVCA file
+	 * @throws CardServiceException
+	 *             if CA failed or some error occurred
+	 */
+	public synchronized void doCA(int keyId, PublicKey key, String caReference,
+			String documentNumber) throws CardServiceException {
+		// TODO: move first half of doEAC here
+	}
 
-            if(key == null || caReference == null || terminalCertificates == null || terminalKey == null || documentNumber == null) {
-                throw new IllegalArgumentException();
-            }
-            String algName = (key instanceof ECPublicKey)? "ECDH" : "DH";
-            KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
-            AlgorithmParameterSpec spec = null;
-            if("DH".equals(algName)) {
-                DHPublicKey k = (DHPublicKey)key;
-                spec = k.getParams();          
-            }else{
-                ECPublicKey k = (ECPublicKey)key;
-                spec = k.getParams();                
-            }
-            genKey.initialize(spec);
-            
-            KeyPair keyPair = genKey.generateKeyPair();
+	/**
+	 * Perform TA (Terminal Authentication) part of EAC. For details see
+	 * TR-03110 ver. 1.11. In short, we feed the sequence of terminal
+	 * certificates to the card for verification, get a challenge from the
+	 * passport, sign it with terminal private key, and send back to the card
+	 * for verification.
+	 * 
+	 * TODO: move second half of doEAC here
+	 */
+	public synchronized void doTA(int keyId, PublicKey key, String caReference,
+			List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
+			String documentNumber) throws CardServiceException {
+		// TODO: move second half of doEAC here
+	}
 
-            KeyAgreement agreement = KeyAgreement.getInstance(algName);
-            agreement.init(keyPair.getPrivate());
-            agreement.doPhase(key, true);
+	/**
+	 * Performs the EAC protocol with the passport. For details see TR-03110
+	 * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
+	 * protocol (new secure messaging keys are created then), b. feed the
+	 * sequence of terminal certificates to the card for verification. c. get a
+	 * challenge from the passport, sign it with terminal private key, send back
+	 * to the card for verification.
+	 * 
+	 * FIXME: it seems this method may return false OR throw a
+	 * CardServiceException to indicate that EAC failed. Clearer and more
+	 * consistent if, like doBAC, this method is void and only uses a
+	 * CardServiceException to indicate that EAC has failed.
+	 * 
+	 * @param keyId
+	 *            passport's public key id (stored in DG14), -1 if none.
+	 * @param key
+	 *            passport's public key (stored in DG14).
+	 * @param caReference
+	 *            the CA certificate key reference, this can be read from the
+	 *            CVCA file
+	 * @param terminalCertificates
+	 *            the list/chain of terminal certificates
+	 * @param terminalKey
+	 *            terminal private key
+	 * @param documentNumber
+	 *            the passport number
+	 * @return whether EAC was successful
+	 * @throws CardServiceException
+	 *             on error
+	 */
+	public synchronized boolean doEAC(int keyId, PublicKey key,
+			String caReference, List<CVCertificate> terminalCertificates,
+			PrivateKey terminalKey, String documentNumber)
+			throws CardServiceException {
+		try {
 
-            // TODO: this SHA1ing may have to be removed?
-            MessageDigest md = MessageDigest.getInstance("SHA1");
-            byte[] secret = md.digest(agreement.generateSecret());
+			if (key == null || caReference == null
+					|| terminalCertificates == null || terminalKey == null
+					|| documentNumber == null) {
+				throw new IllegalArgumentException();
+			}
+			String algName = (key instanceof ECPublicKey) ? "ECDH" : "DH";
+			KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
+			AlgorithmParameterSpec spec = null;
+			if ("DH".equals(algName)) {
+				DHPublicKey k = (DHPublicKey) key;
+				spec = k.getParams();
+			} else {
+				ECPublicKey k = (ECPublicKey) key;
+				spec = k.getParams();
+			}
+			genKey.initialize(spec);
 
-            byte[] keyData = null;
-            byte[] idData = null;
-            byte[] keyHash = null;
-            if("DH".equals(algName)) {
-                DHPublicKey k = (DHPublicKey)keyPair.getPublic();
-                keyData = k.getY().toByteArray();
-                md = MessageDigest.getInstance("SHA1");
-                keyHash = md.digest(keyData);                
-            }else{
-                org.bouncycastle.jce.interfaces.ECPublicKey k = (org.bouncycastle.jce.interfaces.ECPublicKey) keyPair
-                .getPublic();
-                keyData = k.getQ().getEncoded();
-                keyHash = k.getQ().getX().toBigInteger().toByteArray();
-            }
-            keyData = wrapDO((byte) 0x91, keyData);
-            if(keyId != -1) {
-                // TODO: what this key id format should exactly be? 
-                String kId = Hex.intToHexString(keyId);
-                while(kId.startsWith("00")) {
-                    kId = kId.substring(2);
-                }
-                idData = wrapDO((byte)0x84,Hex.hexStringToBytes(kId));
-            }
-            try {
-                sendMSEKAT(wrapper, keyData, idData);
-            } catch (CardServiceException cse) {
-                cse.printStackTrace();
-                return false;
-            }
-           
-            // Use only the first 16 bytes?
-            // byte[] s = new byte[16];
-            // System.arraycopy(secret, 0, s, 0, 16);
-            // secret = s;
-            
-            // Replace the secure messaging keys with the new generated ones:
-            SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
-            SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
-            long ssc = 0;
-            wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+			KeyPair keyPair = genKey.generateKeyPair();
 
-            String sigAlg = "SHA1withRSA";
+			KeyAgreement agreement = KeyAgreement.getInstance(algName);
+			agreement.init(keyPair.getPrivate());
+			agreement.doPhase(key, true);
 
-            // Now send the certificates for verification
-            byte[] certRef = wrapDO((byte)0x83,caReference.getBytes());
-            
-            for (CVCertificate cert : terminalCertificates) {
-                try {
-                    sendMSEDST(wrapper, certRef);
-                    byte[] body = getCertBodyData(cert);
-                    byte[] sig = getCertSignatureData(cert);
-                    // true means do not do chaining, send all in one APDU
-                    // the actual passport may require chaining (when the certificate
-                    // is too big to fit into one APDU).
-                    sendPSO(wrapper, body, sig);
-                    sigAlg = AlgorithmUtil.getAlgorithmName(cert.getCertificateBody().getPublicKey().getObjectIdentifier());
-                    certRef = wrapDO((byte)0x83,cert.getCertificateBody().getHolderReference().getConcatenated().getBytes());
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            // Now send get challenge + mutual authentication
+			// TODO: this SHA1ing may have to be removed?
+			MessageDigest md = MessageDigest.getInstance("SHA1");
+			byte[] secret = md.digest(agreement.generateSecret());
 
-            byte[] rpicc = sendGetChallenge(wrapper);
-            byte[] idpic = new byte[documentNumber.length() + 1]; 
-            System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
-            idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
-            
-            byte[] dtbs = new byte[idpic.length + rpicc.length + keyHash.length];
-            System.arraycopy(idpic, 0, dtbs, 0, idpic.length);
-            System.arraycopy(rpicc, 0, dtbs, idpic.length, rpicc.length);
-            System.arraycopy(keyHash, 0, dtbs, idpic.length + rpicc.length, keyHash.length);
+			byte[] keyData = null;
+			byte[] idData = null;
+			byte[] keyHash = null;
+			if ("DH".equals(algName)) {
+				DHPublicKey k = (DHPublicKey) keyPair.getPublic();
+				keyData = k.getY().toByteArray();
+				md = MessageDigest.getInstance("SHA1");
+				keyHash = md.digest(keyData);
+			} else {
+				org.bouncycastle.jce.interfaces.ECPublicKey k = (org.bouncycastle.jce.interfaces.ECPublicKey) keyPair
+						.getPublic();
+				keyData = k.getQ().getEncoded();
+				keyHash = k.getQ().getX().toBigInteger().toByteArray();
+			}
+			keyData = wrapDO((byte) 0x91, keyData);
+			if (keyId != -1) {
+				// TODO: what this key id format should exactly be?
+				String kId = Hex.intToHexString(keyId);
+				while (kId.startsWith("00")) {
+					kId = kId.substring(2);
+				}
+				idData = wrapDO((byte) 0x84, Hex.hexStringToBytes(kId));
+			}
+			try {
+				sendMSEKAT(wrapper, keyData, idData);
+			} catch (CardServiceException cse) {
+				cse.printStackTrace();
+				return false;
+			}
+			// Shouldn't we check something about the card's response to
+			// be sure that CA was successful?
 
+			// Use only the first 16 bytes?
+			// byte[] s = new byte[16];
+			// System.arraycopy(secret, 0, s, 0, 16);
+			// secret = s;
 
-            Signature sig = Signature.getInstance(sigAlg);
-            sig.initSign(terminalKey);
-            sig.update(dtbs);
-            byte[] signature = sig.sign();
+			// Replace the secure messaging keys with the new generated ones:
+			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
+			SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
+			long ssc = 0;
+			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 
-            sendMSEAT(wrapper, certRef);
-            sendMutualAuthenticate(wrapper, signature);
+			String sigAlg = "SHA1withRSA";
 
-            EACEvent event = new EACEvent(this, keyId, key, keyPair, caReference,
-                    terminalCertificates, terminalKey, documentNumber, rpicc, true);
-            notifyEACPerformed(event);
-            state = EAC_AUTHENTICATED_STATE;
-            return true;
-        } catch (GeneralSecurityException gse) {
-            throw new CardServiceException(gse.toString());
-        }
-    }
+			// Now send the certificates for verification
+			byte[] certRef = wrapDO((byte) 0x83, caReference.getBytes());
 
-    private byte[] wrapDO(byte tag, byte[] data) {
-        byte[] result = new byte[data.length + 2];
-        result[0] = tag;
-        result[1] = (byte)data.length;
-        System.arraycopy(data, 0, result, 2, data.length);
-        return result;
-    }
-    
-    private byte[] getCertBodyData(CVCertificate cert) throws IOException, NoSuchFieldException {
-        return cert.getCertificateBody().getDEREncoded();
-        
-    }
-    
-    // TODO: this is a nasty hack, but unfortunately the cv-cert lib does not provide a proper API
-    // call for this
-    private byte[] getCertSignatureData(CVCertificate cert) throws IOException, NoSuchFieldException {
-        byte[] data = cert.getDEREncoded();
-        byte[] body = cert.getCertificateBody().getDEREncoded();
-        int index = 0;
-        byte b1 = body[0];
-        byte b2 = body[1];
-        while(index < data.length) {
-            if(data[index] == b1 && data[index + 1] == b2) {
-                break;
-            }
-            index ++;
-        }
-        index += body.length;
-        if(index < data.length) {
-            byte[] result = new byte[data.length - index];
-            System.arraycopy(data, index, result, 0, result.length);
-            // Sanity check:
-            assert result[0] == (byte)0x5F && result[1] == (byte)0x37;
-            return result;
-        }
-        return null;
-    }
-    
+			for (CVCertificate cert : terminalCertificates) {
+				try {
+					sendMSEDST(wrapper, certRef);
+					byte[] body = getCertBodyData(cert);
+					byte[] sig = getCertSignatureData(cert);
+					// true means do not do chaining, send all in one APDU
+					// the actual passport may require chaining (when the
+					// certificate
+					// is too big to fit into one APDU).
+					sendPSO(wrapper, body, sig);
+					sigAlg = AlgorithmUtil.getAlgorithmName(cert
+							.getCertificateBody().getPublicKey()
+							.getObjectIdentifier());
+					certRef = wrapDO((byte) 0x83, cert.getCertificateBody()
+							.getHolderReference().getConcatenated().getBytes());
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			// Now send get challenge + mutual authentication
+
+			byte[] rpicc = sendGetChallenge(wrapper);
+			byte[] idpic = new byte[documentNumber.length() + 1];
+			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0,
+					documentNumber.length());
+			idpic[idpic.length - 1] = (byte) MRZInfo.checkDigit(documentNumber);
+
+			byte[] dtbs = new byte[idpic.length + rpicc.length + keyHash.length];
+			System.arraycopy(idpic, 0, dtbs, 0, idpic.length);
+			System.arraycopy(rpicc, 0, dtbs, idpic.length, rpicc.length);
+			System.arraycopy(keyHash, 0, dtbs, idpic.length + rpicc.length,
+					keyHash.length);
+
+			Signature sig = Signature.getInstance(sigAlg);
+			sig.initSign(terminalKey);
+			sig.update(dtbs);
+			byte[] signature = sig.sign();
+
+			sendMSEAT(wrapper, certRef); // shouldn't this be before the sendGetChallene above?
+			sendMutualAuthenticate(wrapper, signature);
+
+			EACEvent event = new EACEvent(this, keyId, key, keyPair,
+					caReference, terminalCertificates, terminalKey,
+					documentNumber, rpicc, true);
+			notifyEACPerformed(event);
+			state = EAC_AUTHENTICATED_STATE;
+			return true;
+		} catch (GeneralSecurityException gse) {
+			throw new CardServiceException(gse.toString());
+		}
+	}
+
+	private byte[] wrapDO(byte tag, byte[] data) {
+		byte[] result = new byte[data.length + 2];
+		result[0] = tag;
+		result[1] = (byte) data.length;
+		System.arraycopy(data, 0, result, 2, data.length);
+		return result;
+	}
+
+	private byte[] getCertBodyData(CVCertificate cert) throws IOException,
+			NoSuchFieldException {
+		return cert.getCertificateBody().getDEREncoded();
+
+	}
+
+	// TODO: this is a nasty hack, but unfortunately the cv-cert lib does not
+	// provide a proper API
+	// call for this
+	private byte[] getCertSignatureData(CVCertificate cert) throws IOException,
+			NoSuchFieldException {
+		byte[] data = cert.getDEREncoded();
+		byte[] body = cert.getCertificateBody().getDEREncoded();
+		int index = 0;
+		byte b1 = body[0];
+		byte b2 = body[1];
+		while (index < data.length) {
+			if (data[index] == b1 && data[index + 1] == b2) {
+				break;
+			}
+			index++;
+		}
+		index += body.length;
+		if (index < data.length) {
+			byte[] result = new byte[data.length - index];
+			System.arraycopy(data, index, result, 0, result.length);
+			// Sanity check:
+			assert result[0] == (byte) 0x5F && result[1] == (byte) 0x37;
+			return result;
+		}
+		return null;
+	}
+
 	/**
 	 * Adds an authentication event listener.
 	 * 
-	 * @param l listener
+	 * @param l
+	 *            listener
 	 */
 	public void addAuthenticationListener(AuthListener l) {
 		authListeners.add(l);
@@ -459,7 +528,8 @@ public class PassportService extends PassportApduService
 	/**
 	 * Removes an authentication event listener.
 	 * 
-	 * @param l listener
+	 * @param l
+	 *            listener
 	 */
 	public void removeAuthenticationListener(AuthListener l) {
 		authListeners.remove(l);
@@ -468,7 +538,8 @@ public class PassportService extends PassportApduService
 	/**
 	 * Notifies listeners about BAC events.
 	 * 
-	 * @param event BAC event
+	 * @param event
+	 *            BAC event
 	 */
 	protected void notifyBACPerformed(BACEvent event) {
 		for (AuthListener l : authListeners) {
@@ -476,27 +547,28 @@ public class PassportService extends PassportApduService
 		}
 	}
 
-    /**
-     * Notifies listeners about EAC event.
-     * 
-     * @param event
-     *            EAC event.
-     */
-    protected void notifyEACPerformed(EACEvent event) {
-        for (AuthListener l : authListeners) {
-            l.performedEAC(event);
-        }
-    }
+	/**
+	 * Notifies listeners about EAC event.
+	 * 
+	 * @param event
+	 *            EAC event.
+	 */
+	protected void notifyEACPerformed(EACEvent event) {
+		for (AuthListener l : authListeners) {
+			l.performedEAC(event);
+		}
+	}
 
-    
 	/**
 	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
-	 * @param publicKey the public key to use (usually read from the card)
+	 * @param publicKey
+	 *            the public key to use (usually read from the card)
 	 * 
 	 * @return a boolean indicating whether the card was authenticated
 	 * 
-	 * @throws GeneralSecurityException if something goes wrong
+	 * @throws GeneralSecurityException
+	 *             if something goes wrong
 	 */
 	public boolean doAA(PublicKey publicKey) throws CardServiceException {
 		try {
@@ -505,7 +577,10 @@ public class PassportService extends PassportApduService
 			byte[] response = sendAA(publicKey, m2);
 			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
 			aaSignature.initVerify(publicKey);
-			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
+			int digestLength = aaDigest.getDigestLength(); /*
+															 * should always be
+															 * 20
+															 */
 			byte[] plaintext = aaCipher.doFinal(response);
 			byte[] m1 = Util.recoverMessage(digestLength, plaintext);
 			aaSignature.update(m1);
@@ -526,16 +601,19 @@ public class PassportService extends PassportApduService
 	}
 
 	/**
-	 * Performs the <i>Active Authentication</i> protocol. This method
-	 * just gives the response from the card without checking. Use {@link #doAA(PublicKey)}
-	 * instead.
+	 * Performs the <i>Active Authentication</i> protocol. This method just
+	 * gives the response from the card without checking. Use
+	 * {@link #doAA(PublicKey)} instead.
 	 * 
-	 * @param publicKey the public key to use (usually read from the card)
-	 * @param challenge the random challenge of exactly 8 bytes
+	 * @param publicKey
+	 *            the public key to use (usually read from the card)
+	 * @param challenge
+	 *            the random challenge of exactly 8 bytes
 	 * 
 	 * @return response from the card
 	 */
-	public byte[] sendAA(PublicKey publicKey, byte[] challenge) throws CardServiceException {
+	public byte[] sendAA(PublicKey publicKey, byte[] challenge)
+			throws CardServiceException {
 		if (publicKey == null) {
 			throw new IllegalArgumentException("AA failed: bad key");
 		}
@@ -546,15 +624,14 @@ public class PassportService extends PassportApduService
 		return response;
 	}
 
-
-
 	/**
 	 * Notifies listeners about AA event.
 	 * 
-	 * @param event AA event.
+	 * @param event
+	 *            AA event.
 	 */
 	protected void notifyAAPerformed(AAEvent event) {
-		for (AuthListener l: authListeners) {
+		for (AuthListener l : authListeners) {
 			l.performedAA(event);
 		}
 	}
@@ -572,8 +649,7 @@ public class PassportService extends PassportApduService
 	}
 
 	/**
-	 * Gets the wrapper. Returns <code>null</code> until
-	 * BAC has been performed.
+	 * Gets the wrapper. Returns <code>null</code> until BAC has been performed.
 	 * 
 	 * @return the wrapper
 	 */
@@ -583,7 +659,8 @@ public class PassportService extends PassportApduService
 
 	/**
 	 * @deprecated hack
-	 * @param wrapper wrapper
+	 * @param wrapper
+	 *            wrapper
 	 */
 	public void setWrapper(SecureMessagingWrapper wrapper) {
 		this.wrapper = wrapper;
@@ -594,29 +671,32 @@ public class PassportService extends PassportApduService
 	/**
 	 * Gets the file indicated by a file identifier.
 	 * 
-	 * @param fid ICAO file identifier
+	 * @param fid
+	 *            ICAO file identifier
 	 * 
 	 * @return the file
 	 * 
-	 * @throws IOException if the file cannot be read
+	 * @throws IOException
+	 *             if the file cannot be read
 	 */
 	public CardFileInputStream readFile(short fid) throws CardServiceException {
 		return new CardFileInputStream(fid, maxBlockSize, fs);
 	}
 
-	private class PassportFileSystem implements FileSystemStructured
-	{
+	private class PassportFileSystem implements FileSystemStructured {
 		private short selectedFID;
 
 		public synchronized short getSelectedFID() {
 			return selectedFID;
 		}
 
-		public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
-			return sendReadBinary(wrapper, (short)offset, length);
+		public synchronized byte[] readBinary(int offset, int length)
+				throws CardServiceException {
+			return sendReadBinary(wrapper, (short) offset, length);
 		}
 
-		public synchronized void selectFile(short fid) throws CardServiceException {
+		public synchronized void selectFile(short fid)
+				throws CardServiceException {
 			sendSelectFile(wrapper, fid);
 			selectedFID = fid;
 		}
@@ -624,14 +704,14 @@ public class PassportService extends PassportApduService
 		public synchronized int getFileLength() throws CardServiceException {
 			try {
 				/* Each passport file consists of a TLV structure. */
-                /* Woj: no, not each, CVCA does not and has a fixed length */
+				/* Woj: no, not each, CVCA does not and has a fixed length */
 				byte[] prefix = readBinary(0, 8);
 				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
 				BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
 				int tag = tlvIn.readTag();
-                if(tag == CVCAFile.CAR_TAG) {
-                    return CVCAFile.LENGTH;
-                }
+				if (tag == CVCAFile.CAR_TAG) {
+					return CVCAFile.LENGTH;
+				}
 				int vLength = tlvIn.readLength();
 				int tlLength = prefix.length - baIn.available();
 				return tlLength + vLength;
