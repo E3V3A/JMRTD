@@ -132,4 +132,28 @@ public class PassportBACTester extends PassportTesterBase {
 		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
 		printSupportedInstructions();
 	}
+
+	/**
+	 * If access control is done when processing SELECT FILE, rather than when
+	 * processing READ BINARY, there is a chance that we can read a file that
+	 * happens to still be selected. Granted, it's a bit of a long-shot...
+	 * 
+	 * Would it be interesting to test for the possibility to do a readBinary
+	 * after a failed EAC, in the hope of having a pointer to a file holding
+	 * some certificate?
+	 */
+	public void testFileSelectedAfterRestart() throws CardServiceException {
+		traceApdu = true;
+		resetCard();
+		try {
+			byte[] b = service.sendReadBinary(null, (short) 0, 10);
+			int sw = getLastSW();
+			if (sw == ISO7816.SW_NO_ERROR || sw != ISO7816.SW_END_OF_FILE
+					|| sw != ISO7816.SW_LESS_DATA_RESPONDED_THAN_REQUESTED) {
+				fail("Weird: we can read a file before selecting one");
+			}
+		} catch (CardServiceException e) {
+
+		}
+	}
 }
