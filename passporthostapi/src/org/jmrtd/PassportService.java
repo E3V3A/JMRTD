@@ -144,7 +144,7 @@ public class PassportService extends PassportApduService {
 	public static final byte SF_SOD = 0x1D;
 	public static final byte SF_CVCA = 0x1C;
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	protected static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/**
 	 * The file read block size, some passports cannot handle large values
@@ -172,7 +172,7 @@ public class PassportService extends PassportApduService {
 	private Signature aaSignature;
 	private MessageDigest aaDigest;
 	private Cipher aaCipher;
-	private Random random;
+	protected Random random;
 
 	private PassportFileSystem fs;
 
@@ -403,8 +403,7 @@ public class PassportService extends PassportApduService {
 				cse.printStackTrace();
 				return false;
 			}
-			// Shouldn't we check something about the card's response to
-			// be sure that CA was successful?
+			// This completes CA
 
 			// Use only the first 16 bytes?
 			// byte[] s = new byte[16];
