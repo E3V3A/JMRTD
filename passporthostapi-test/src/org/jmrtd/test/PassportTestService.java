@@ -1,80 +1,83 @@
 package org.jmrtd.test;
 
+import java.io.UnsupportedEncodingException;
+import java.security.GeneralSecurityException;
 import java.security.PublicKey;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
+import javax.crypto.SecretKey;
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CardTerminals;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+import javax.smartcardio.TerminalFactory;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.smartcards.TerminalCardService;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Signature;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.AlgorithmParameterSpec;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Random;
-
-import javax.crypto.Cipher;
-import javax.crypto.KeyAgreement;
-import javax.crypto.SecretKey;
-import javax.crypto.interfaces.DHPublicKey;
-
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
-import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
-import net.sourceforge.scuba.util.Hex;
-
-import org.ejbca.cvc.AlgorithmUtil;
-import org.ejbca.cvc.CVCertificate;
-import org.jmrtd.BACEvent;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
 
 /**
  * Card service specifically designed for testing. It aims to provide both
- * high-level functionality (as PassportService does) and lower-level
- * functionality (as PasspotApduService does). It tries to do this in a
+ * high-level functionality (like PassportService does) and lower-level
+ * functionality (like PassportApduService does). It tries to do this in a
  * consistent way:
  * <ol>
- * <li>High-level commands doAA(), doBAC(), doEAC(), doCA() and doTA() return a
- * boolean indicating success or failure.</li>
- * <li>Low-level commands that correspond to a single command return the status
- * word of the response APDU.</li>
+ * <li>High-level commands (e.g. doAA(), doBAC(), doEAC(), doCA(), doTA(),
+ * canSelectFile()) return a boolean indicating success or failure.</li>
+ * <li>Low-level commands (e.g. sendGetChallenge(), sendSelectFile(),
+ * sendAnyInstruction()), that correspond to a single command APDU return the
+ * status word of the response APDU. For these method you can choose to send
+ * them with or without Secure Messaging</li>
  * </ol>
- * while hiding low-level details about the actual payloads of APDUs as much as
- * possible.
+ * Low-level details about construction the actual payloads of APDUs is hidden
+ * as much as possible.
  * 
- * Any (CardService)Exceptions escaping from these method signal some low-level
- * failures that the testing framework should not try to interpret.
+ * Usage
  * 
+ * <pre>
+ *       PassportTestService service = PassportTestService.createPassportTestService();
+ *       service.setMRZ;
+ *       ...
+ *       service.canSelectFile(...);
+ *       service.doBAC(); 
+ *       service.canSelectFile(...);
+ *       ...
+ *       // start a new test 
+ *       service.resetCard();
+ *       ...
+ * </pre>
+ * 
+ * Any Exceptions escaping from these method signal some low-level failures that
+ * the testing framework should not try to interpret. These are not the TOE's
+ * fault, but problems with the test infrastructure (incl. the card reader).
+ * <p>
+ * Attempting to send anything with Secure Messaging before Secure Messaging
+ * keys have been established (i.e. if BAC has not been performed successfully
+ * completed since the last resetCard()) will crash the test framework.
+ * <p>
  * The only reason to extend PassportService is to access protected fields
  * there. It would be cleaner to decouple it.
- * 
+ * <p>
  * I'm not sure what is the easiest way to feed in the data needed for BAC and
  * EAC into here.
- * 
- * I'm not sure that it is a workable option to provide methods here that
- * do all the individual protocol steps.
+ * <p>
+ * I'm not sure that it is a workable option to provide methods here that do all
+ * the individual protocol steps.
+ * <p>
  * 
  * @author erikpoll
- * 
  */
 public class PassportTestService extends PassportService {
+
+	private static SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
 	/** Data needed for BAC **/
 
@@ -88,22 +91,65 @@ public class PassportTestService extends PassportService {
 
 	/** Data needed for EAC **/
 
-	private int keyId;
-	private PublicKey key;
-	private String caReference;
-	private List<CVCertificate> terminalCertificates;
-
+	// private int keyId;
+	// private PublicKey key;
+	// private String caReference;
+	// private List<CVCertificate> terminalCertificates;
 	/** The last challenge received, if any **/
-	byte[] lastChallenge;
+	private byte[] lastChallenge;
 
-	public PassportTestService(CardService service) throws CardServiceException {
+	/**
+	 * Create a PassportTestService to talk to. Returns null or throws an
+	 * exception if card reader cannot be made to work.
+	 * 
+	 * @throws CardException
+	 * @throws CardServiceException
+	 * @throws Exception
+	 */
+
+	public static PassportTestService createPassportTestService()
+			throws CardException, CardServiceException, Exception {
+		PassportTestService service = null;
+		TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
+		CardTerminals terminals = tf.terminals();
+		for (CardTerminal terminal : terminals
+				.list(CardTerminals.State.CARD_PRESENT)) {
+			service = new PassportTestService(new TerminalCardService(terminal));
+			if (service != null) {
+				service.open();
+				break;
+			}
+			if (service == null) {
+				throw new Exception("No card found.");
+			}
+		}
+		return service;
+	}
+
+	protected PassportTestService(CardService service)
+			throws CardServiceException {
 		super(service);
+	}
+
+	/**
+	 * Set MRZ, with dates in "YYYYMMDD" format
+	 * 
+	 * @throws ParseException
+	 *             if format of dates is incorrect
+	 */
+	public void setMRZ(String documentNumber, String dateOfBirth,
+			String expiryDate) throws ParseException {
+		this.documentNumber = documentNumber;
+		this.dateOfBirth = SDF.parse(dateOfBirth);
+		this.dateOfExpiry = SDF.parse(expiryDate);
+
 	}
 
 	/**
 	 * Reset the card
 	 * 
 	 * @throws CardServiceException
+	 *             if card reader has a problem
 	 */
 	public void resetCard() throws CardServiceException {
 		// This actually properly resets the card.
@@ -114,9 +160,31 @@ public class PassportTestService extends PassportService {
 	}
 
 	/**
-	 * Perform BAC, with the currently stored MRZ-data
+	 * Try selecting a file, with or without Secure Messaging.
 	 * 
-	 * @return
+	 * @return whether this succeeded
+	 * @throws e
+	 *             NullpointerException is no Secure Messaging keys are found,
+	 *             if BAC hasn't been completed earlier
+	 */
+	public boolean canSelectFile(short fid, boolean useSM) {
+		try {
+			if (useSM) {
+				sendSelectFile(getWrapper(), fid);
+			} else {
+				sendSelectFile(null, fid);
+			}
+			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Try Basic Access Control, with the currently stored MRZ-data, returning
+	 * true if this succeeded.
+	 * 
+	 * @return whether this succeeded
 	 */
 	public boolean doBAC() {
 		try {
@@ -127,91 +195,68 @@ public class PassportTestService extends PassportService {
 		}
 	}
 
+	/**
+	 * Try Active Authentication, with the currently stored AA-data, returning
+	 * true if this succeeded.
+	 * 
+	 * @return whether this succeeded
+	 */
 	public boolean doAA() {
-		super.doAA(publicKey);
+		try {
+			super.doAA(publicKey);
+			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
 	}
 
+	/**
+	 * Try EAC, with the currently stored EAC-data, returning true if this
+	 * succeeded.
+	 * 
+	 * @return whether this succeeded
+	 */
 	public boolean doEAC() {
-		super.doEAC(keyId, key, caReference, terminalCertificates, terminalKey,
-				documentNumber);
+		return false;
+		// super.doEAC(keyId, key, caReference, terminalCertificates,
+		// terminalKedocumentNumber);
 	}
 
 	/**
-	 * Sent a GET CHALLENGE command.
+	 * Try Chip Authenticaion with the currently stored EAC-data, returning true
+	 * if this succeeded.
 	 * 
-	 * @param useSM
-	 *            use Secure Messaging;
-	 * @return status word.
-	 * @throws NullpointerException
-	 *             if useSM is true but there is no SM session active
+	 * @return whether this succeeded
 	 */
-	public int getSendGetChallenge(boolean useSM) {
-		CommandAPDU capdu = createGetChallengeAPDU();
-		if (useSM & getWrapper() != null) {
-			capdu = getWrapper().wrap(capdu);
-		}
-		ResponseAPDU rapdu = transmit(capdu);
-		if (getWrapper() != null) {
-			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
-		}
-		return rapdu.getSW();
+	public boolean doCA() {
+		return false;
+		// super.doEAC(keyId, key, caReference, terminalCertificates,
+		// terminalKedocumentNumber);
 	}
 
 	/**
-	 * Send a SELECT FILE command.
+	 * Try Terminal Authentication, with the currently stored EAC-data,
+	 * returning true if this succeeded.
 	 * 
-	 * @param fid
-	 *            the file to select
-	 * @param useSM
-	 * @return status word
-	 * @throws NullpointerException
-	 *             if useSM is true but there is no SM session active
+	 * @return whether this succeeded
 	 */
-	public int selectFile(short fid, boolean useSM) {
-		try {
-			if (useSM) {
-				sendSelectFile(getWrapper(), fid);
-			} else {
-				sendSelectFile(null, fid);
-			}
-			return 0x9000;
-		} catch (CardServiceException e) {
-			return e.getSW();
-		}
+	public boolean doTA() {
+		return false;
+		// super.doEAC(keyId, key, caReference, terminalCertificates,
+		// terminalKedocumentNumber);
 	}
 
 	/**
-	 * Send arbitrary instruction ins, with P1=0 and P2=0, just to see if it is
-	 * supported.
-	 * 
-	 * @param ins
-	 *            the instruction to try
-	 * @param useSM
-	 * @return status word
-	 * @throws NullpointerException
-	 *             if useSM is true but there is no SM session active
-	 */
-	public int tryInstruction(byte ins, boolean useSM) {
-		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins,
-				(byte) 0x00, (byte) 0x00);
-		ResponseAPDU rapdu;
-		try {
-			rapdu = transmit(capdu);
-		} catch (CardServiceException e) {
-			e.printStackTrace();
-			throw new RuntimeException("something low level went wrong");
-		}
-		return (rapdu.getSW());
-	}
-
-	/**
-	 * Send a GET CHALLENGE; the challenge received will be stored and used
+	 * Send a GET CHALLENGE; the challenge received will be stored and used.
+	 * Returns the resulting Status Word.
 	 * 
 	 * @return status word
+	 * @throws CardServiceException
+	 *             if there is a problem with the card reader
 	 * @throws NullpointerException
 	 *             if useSM is true but there is no SM session active
 	 */
-	public int getChallenge(boolean useSM) {
+	public int sendGetChallenge(boolean useSM) throws CardServiceException {
 		CommandAPDU capdu = createGetChallengeAPDU();
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
@@ -227,13 +272,63 @@ public class PassportTestService extends PassportService {
 	}
 
 	/**
-	 * Send a Mutual Authenticate in an attempt to successfully complete BAC,
-	 * using the last challenge received.
+	 * Send a SELECT FILE command. Returns the resulting Status Word
 	 * 
-	 * Ugly to have to copy & paste this from PassportService, with only minor
-	 * change.
+	 * @param fid
+	 *            the file to select
+	 * @param useSM
+	 * @return status word, i.e. 0x9000 if this went ok
+	 * @throws NullpointerException
+	 *             if useSM is true but there is no SM session active
+	 */
+	public int sendSelectFile(short fid, boolean useSM) {
+		try {
+			if (useSM) {
+				sendSelectFile(getWrapper(), fid);
+			} else {
+				sendSelectFile(null, fid);
+			}
+			return 0x9000;
+		} catch (CardServiceException e) {
+			return e.getSW();
+		}
+	}
+
+	/**
+	 * Send instruction ins, with P1=0 and P2=0,. Returns the resulting Status
+	 * Word.
+	 * 
+	 * @param ins
+	 *            the instruction to try
+	 * @param useSM
+	 * @return status word, i.e. 0x9000 if this went ok
+	 * @throws NullpointerException
+	 *             if useSM is true but there is no SM session active
+	 */
+	public int sendAnyInstruction(byte ins, boolean useSM) {
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins,
+				(byte) 0x00, (byte) 0x00);
+		ResponseAPDU rapdu;
+		try {
+			rapdu = transmit(capdu);
+		} catch (CardServiceException e) {
+			e.printStackTrace();
+			throw new RuntimeException("something low level went wrong");
+		}
+		return (rapdu.getSW());
+	}
+
+	/**
+	 * Send a Mutual Authenticate in an attempt to successfully complete BAC,
+	 * using the last challenge received. Returns the resulting Status Word
+	 * 
+	 * Ugly to have to copy & paste this from PassportService::doBAC, with as
+	 * only change that instead of sending a GET CHALLENGE we use the last
+	 * challenge we received, sort in the field lastChallenge
 	 * 
 	 * @return status word
+	 * @throws CardServiceException
+	 *             if something went wrong, but we don't know what.
 	 */
 	public int sendMutualAuthenticateToCompleteBAC()
 			throws CardServiceException {
@@ -271,15 +366,16 @@ public class PassportTestService extends PassportService {
 			throw new CardServiceException(uee.toString());
 		}
 	}
-	
+
 	/**
-	 * Send a Mutual Authenticate in an attempt to fail complete BAC,
-	 * using the last challenge received.
+	 * Send a Mutual Authenticate incorrectly, in an attempt to fail BAC.
+	 * Returns the resulting Status Word.
 	 * 
 	 * @return status word
 	 */
 	public int sendMutualAuthenticateToFailBAC() {
-	  //TODO complete
+		// TODO complete
+		return 0x9000;
 	}
 
 }
