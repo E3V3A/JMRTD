@@ -181,8 +181,8 @@ public class PassportTestService extends PassportService {
 	}
 
 	/**
-	 * Try Basic Access Control, with the currently stored MRZ-data, returning
-	 * true if this succeeded.
+	 * Try Basic Access Control, with the currently stored MRZ-data, returning true if this
+	 * succeeded.
 	 * 
 	 * @return whether this succeeded
 	 */
@@ -196,8 +196,8 @@ public class PassportTestService extends PassportService {
 	}
 
 	/**
-	 * Try Active Authentication, with the currently stored AA-data, returning
-	 * true if this succeeded.
+	 * Try Active Authentication, with the currently stored AA-data, returning true if this
+	 * succeeded.
 	 * 
 	 * @return whether this succeeded
 	 */
@@ -221,10 +221,11 @@ public class PassportTestService extends PassportService {
 		// super.doEAC(keyId, key, caReference, terminalCertificates,
 		// terminalKedocumentNumber);
 	}
+	
 
 	/**
-	 * Try Chip Authenticaion with the currently stored EAC-data, returning true
-	 * if this succeeded.
+	 * Try Chip Authenticaion with the currently stored EAC-data, returning true if this
+	 * succeeded.
 	 * 
 	 * @return whether this succeeded
 	 */
@@ -233,10 +234,11 @@ public class PassportTestService extends PassportService {
 		// super.doEAC(keyId, key, caReference, terminalCertificates,
 		// terminalKedocumentNumber);
 	}
+	
 
 	/**
-	 * Try Terminal Authentication, with the currently stored EAC-data,
-	 * returning true if this succeeded.
+	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
+	 * succeeded.
 	 * 
 	 * @return whether this succeeded
 	 */
