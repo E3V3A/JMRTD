@@ -15,7 +15,7 @@ public class PassportTesterExample extends PassportTesterBase {
         traceApdu = true;
         try {
           resetCard();
-          service.doBAC("PPNUMMER0", getDate("19560507"), getDate("20100101"));
+          service.doBAC("XX1234587", getDate("19760803"), getDate("20140507"));
           CardFileInputStream in = service.readFile(PassportService.EF_DG1);
           assertNotNull(in);
           in = null;
