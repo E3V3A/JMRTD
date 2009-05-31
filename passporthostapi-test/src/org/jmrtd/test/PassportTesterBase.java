@@ -28,7 +28,7 @@ public abstract class PassportTesterBase extends TestCase implements
 				.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 	}
 
-	protected PassportService service = null;
+	protected PassportTestService service = null;
 
 	/** The last response APDU received (SM wrapped when SM is active?) */
 	protected ResponseAPDU last_rapdu = null;
@@ -40,7 +40,7 @@ public abstract class PassportTesterBase extends TestCase implements
 			CardTerminals terminals = tf.terminals();
 			for (CardTerminal terminal : terminals
 					.list(CardTerminals.State.CARD_PRESENT)) {
-				service = new PassportService(new TerminalCardService(terminal));
+				service = new PassportTestService(new TerminalCardService(terminal));
 				service.addAPDUListener(this);
 				if (service != null) {
 					service.open();
