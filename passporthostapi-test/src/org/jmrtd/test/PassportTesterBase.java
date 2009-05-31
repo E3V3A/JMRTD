@@ -67,10 +67,11 @@ public abstract class PassportTesterBase extends TestCase implements
 
 	protected void resetCard() throws CardServiceException {
 		// This actually properly resets the card.
-		if (service.isOpen()) {
-			service.close();
-		}
-		service.open();
+		service.resetCard();
+//		if (service.isOpen()) {
+//			service.close();
+//		}
+//		service.open();
 	}
 
 	/**
@@ -99,37 +100,23 @@ public abstract class PassportTesterBase extends TestCase implements
 	 * active. Note that this may (should!) reset the passport application, if
 	 * it is expecting SM.
 	 */
-	protected boolean canSelectFileWithoutSM(short fid) {
-		try {
-			service.sendSelectFile(null, fid);
-			return true;
-		} catch (CardServiceException e) {
-			return false;
-		}
-	}
+     protected boolean canSelectFileWithoutSM(short fid) {
+    	return service.canSelectFileWithoutSM(fid);
+     }
 
 	/**
 	 * Return true if datagroup can be selected; SM is used if it is active.
+	 * Uses P2 = 0x02, P3 = 0x0c, and Le = 256 (see PassportAPDUService)
 	 */
 	protected boolean canSelectFile(short fid) {
-		try {
-			service.sendSelectFile(service.getWrapper(), fid);
-			return true;
-		} catch (CardServiceException e) {
-			return false;
-		}
+		return service.canSelectFile(fid);
 	}
 
 	/**
 	 * Return true if datagroup can be read; SM is used if it is active.
 	 */
 	protected boolean canReadFile(short fid) {
-		try {
-			CardFileInputStream in = service.readFile(fid);
-			return (in != null);
-		} catch (CardServiceException e) {
-			return false;
-		}
+		return service.canReadFile(fid);
 	}
 
 	/**

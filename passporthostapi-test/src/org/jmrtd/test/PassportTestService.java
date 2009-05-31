@@ -15,6 +15,7 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
@@ -158,6 +159,33 @@ public class PassportTestService extends PassportService {
 		}
 		open();
 	}
+	
+	/**
+	 * Return true if datagroup can be selected; SM is used if it is active.
+	 * Uses P2 = 0x02, P3 = 0x0c, and Le = 256 (see PassportAPDUService)
+	 */
+	protected boolean canSelectFile(short fid) {
+		try {
+			sendSelectFile(getWrapper(), fid);
+			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
+	
+	/**
+	 * Return true if datagroup can be selected; SM is not used even if it is
+	 * active. Note that this may (should!) reset the passport application, if
+	 * it is expecting SM.
+	 */
+	protected boolean canSelectFileWithoutSM(short fid) {
+		try {
+			sendSelectFile(null, fid);
+			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
 
 	/**
 	 * Try selecting a file, with or without Secure Messaging.
@@ -175,6 +203,18 @@ public class PassportTestService extends PassportService {
 				sendSelectFile(null, fid);
 			}
 			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
+	
+	/**
+	 * Return true if datagroup can be read; SM is used if it is active.
+	 */
+	protected boolean canReadFile(short fid) {
+		try {
+			CardFileInputStream in = readFile(fid);
+			return (in != null);
 		} catch (CardServiceException e) {
 			return false;
 		}
