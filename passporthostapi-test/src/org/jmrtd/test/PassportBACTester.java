@@ -20,7 +20,9 @@ import org.jmrtd.PassportService;
  * 
  * The parent class PassportTesterBase is responsible for provide MRZ data
  * 
- * Note that junit reports exceptions as test errors.
+ * Any exception escaping are test error (test framework behaves badly) rather
+ * than a test failures (ie TOE behaves badly); this is how junit interprets
+ * things.
  * 
  * @author Erik Poll (erikpoll@cs.ru.nl)
  */
@@ -84,7 +86,9 @@ public class PassportBACTester extends PassportTesterBase {
 	 * After BAC we can read MRZ (DG1) and photo (DG2)
 	 */
 	public void testBACIsWorking() throws CardServiceException {
+		traceApdu = true;
 		service.doBAC();
+		assertTrue(getLastSW()== 0x9000);
 		assertTrue(service.canSelectFile(PassportService.EF_DG1));
 		assertTrue(service.canReadFile(PassportService.EF_DG1));
 		assertTrue(service.canSelectFile(PassportService.EF_DG2));
@@ -201,7 +205,6 @@ public class PassportBACTester extends PassportTesterBase {
 			}
 		}
 	}
-	
 
 	/**
 	 * Print which instructions the applet supports, pre- and post-BAC. This
@@ -330,4 +333,68 @@ public class PassportBACTester extends PassportTesterBase {
 			// something went wrong unwrapping
 		}
 	}
+
+	/**
+	 * Check if the implementations of sendGetChallenge and
+	 * sendMutualAuthenticateToCompleteBAC in PassportTestService are correct
+	 */
+	public void testPassportTestService() throws CardServiceException {
+		traceApdu = true;
+		service.sendGetChallenge();
+		service.sendMutualAuthenticateToCompleteBAC(); 
+		assertTrue(getLastSW()== 0x9000);
+		// this should be equivalent to doing BAC;
+		assertTrue(service.canSelectFile(PassportService.EF_DG1));
+		assertTrue(service.canSelectFile(PassportService.EF_DG2));
+		assertTrue(service.canSelectFile(PassportService.EF_DG15));
+	}
+
+	/**
+	 * Try to complete BAC without doing a GetChallenge first, just in case the
+	 * applet doesn't check this and has a default initialisation of a rembered
+	 * challenge to all 0's.
+	 * 
+	 * @throws CardServiceException
+	 */
+	public void testBACWithoutGetChallenge() throws CardServiceException {
+		traceApdu = true;
+		byte[] b = { (byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00,
+				(byte) 0x00, (byte) 0x00, (byte) 0x00, (byte) 0x00 };
+		service.setLastChallenge(b);
+		service.sendMutualAuthenticateToCompleteBAC();
+		assertFalse(getLastSW()== 0x9000);
+	}
+	
+	/**
+	 * We should be allowed multiple GetChallenges before complete BAC
+	 * 
+	 * @throws CardServiceException
+	 */
+	public void testGetChallengesBeforeBAC() throws CardServiceException{
+		traceApdu = true;
+		service.sendGetChallenge();
+		service.sendGetChallenge();
+		service.sendGetChallenge();
+		boolean b = service.doBAC();
+		assertTrue (b);
+	}
+	
+	/**
+	 * Check timing of multiple failed BACs
+	 */
+	public void testDelayOnFailedBAC(){
+	   final int TRIES = 10;
+	   long start = System.currentTimeMillis();
+	   for (int i = 0; i < TRIES-1; i++) { 
+		   service.failBAC();
+	   }
+	   service.doBAC();
+	   long stop = System.currentTimeMillis();
+	   assertTrue (getLastSW()== 0x9000);
+	   System.out.println("Perform");
+	   System.out.println("Started at " + start + " millsec");
+	   System.out.println("Done at " + stop + " millsec");
+	   System.out.println("Average of " + (stop-start)/(TRIES) + "millisecs per BAC");
+	}
+	
 }

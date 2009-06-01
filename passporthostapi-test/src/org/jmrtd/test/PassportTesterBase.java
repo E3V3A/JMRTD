@@ -83,7 +83,7 @@ public abstract class PassportTesterBase extends TestCase implements
 	 */
 	public void setUp() throws CardServiceException, ParseException {
 		resetCard();
-		service.setMRZ("XX1234587", "19760803", "20140507");
+		service.setMRZ("XX1234587", "760803", "140507");
 	}
 
 	protected boolean traceApdu = false;
@@ -94,7 +94,6 @@ public abstract class PassportTesterBase extends TestCase implements
 			System.out.println("C: " + Hex.bytesToHexString(capdu.getBytes()));
 			System.out.println("R: " + Hex.bytesToHexString(rapdu.getBytes()));
 		}
-
 	}
 
 	/**

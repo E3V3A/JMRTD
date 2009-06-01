@@ -78,8 +78,6 @@ import org.jmrtd.Util;
  */
 public class PassportTestService extends PassportService {
 
-	private static SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
-
 	/** Data needed for BAC **/
 
 	private String documentNumber;
@@ -139,11 +137,10 @@ public class PassportTestService extends PassportService {
 	 *             if format of dates is incorrect
 	 */
 	public void setMRZ(String documentNumber, String dateOfBirth,
-			String expiryDate) throws ParseException {
+			String dateOfExpiry) throws ParseException {
 		this.documentNumber = documentNumber;
 		this.dateOfBirth = SDF.parse(dateOfBirth);
-		this.dateOfExpiry = SDF.parse(expiryDate);
-
+		this.dateOfExpiry = SDF.parse(dateOfExpiry);
 	}
 
 	/**
@@ -158,6 +155,7 @@ public class PassportTestService extends PassportService {
 			close();
 		}
 		open();
+		System.out.println(" ******* Resetting Card ******");
 	}
 	
 	/**
@@ -234,6 +232,22 @@ public class PassportTestService extends PassportService {
 			return false;
 		}
 	}
+	
+	/**
+	 * Try Basic Access Control, failing on purpose, returning true if this
+	 * succeeded.
+	 * 
+	 * @return whether this succeeded; should always be false
+	 */
+	public boolean failBAC() {
+		try {
+			super.doBAC("AA1234567", dateOfBirth, dateOfExpiry);
+			return true;
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
+
 
 	/**
 	 * Try Active Authentication, with the currently stored AA-data, returning true if this
@@ -374,7 +388,7 @@ public class PassportTestService extends PassportService {
 	 */
 	public int sendMutualAuthenticateToCompleteBAC()
 			throws CardServiceException {
-		try {
+		try {			
 			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF
 					.format(dateOfBirth), SDF.format(dateOfExpiry));
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
@@ -405,6 +419,7 @@ public class PassportTestService extends PassportService {
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
 			throw new CardServiceException(uee.toString());
 		}
 	}
@@ -418,6 +433,14 @@ public class PassportTestService extends PassportService {
 	public int sendMutualAuthenticateToFailBAC() {
 		// TODO complete
 		return 0x9000;
+	}
+
+	public byte[] getLastChallenge() {
+		return lastChallenge;
+	}
+
+	public void setLastChallenge(byte[] lastChallenge) {
+		this.lastChallenge = lastChallenge;
 	}
 
 }
