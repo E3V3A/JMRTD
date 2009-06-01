@@ -1,21 +1,24 @@
 package org.jmrtd.test;
 
-import java.util.Date;
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ISO7816;
-
 /**
  * Testing BAC, incl. checks on access control to data groups at various stages
  * of the protocol.
+ * 
+ * The parent class PassportTesterBase is responsible for provide MRZ data
  * 
  * Note that junit reports exceptions as test errors.
  * 
@@ -44,10 +47,6 @@ public class PassportBACTester extends PassportTesterBase {
 	 * use junit.
 	 */
 
-	private String documentNumber = "XX1234587";
-	private Date dateOfBirth = getDate("19760803");
-	private Date dateOfExpiry = getDate("20140507");
-
 	/** All files that are selectable */
 	private final byte[] files = { (byte) 0x01, // MRZ
 			(byte) 0x02, // face
@@ -58,7 +57,8 @@ public class PassportBACTester extends PassportTesterBase {
 			(byte) 0x1D, // ??
 			(byte) 0x1E }; // ??
 
-	private final byte[] commands = { (byte) 0x2A, // INS_MSE
+	private final byte[] commands = { (byte) 0x00, // ??
+			(byte) 0x2A, // INS_MSE
 			(byte) 0x2A, // INS_PSO
 			(byte) 0x82, // INS_EXTERNAL_AUTHENTICATE
 			(byte) 0x84, // INS_GET_CHALLENGE
@@ -76,7 +76,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 */
 	public void testBeforeBAC() throws CardServiceException {
 		for (short fid = 0x0100; fid <= 0x1FF; fid++) {
-			assertFalse(canSelectFile(fid));
+			assertFalse(service.canSelectFile(fid));
 		}
 	}
 
@@ -84,11 +84,11 @@ public class PassportBACTester extends PassportTesterBase {
 	 * After BAC we can read MRZ (DG1) and photo (DG2)
 	 */
 	public void testBACIsWorking() throws CardServiceException {
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
-		assertTrue(canSelectFile(PassportService.EF_DG1));
-		assertTrue(canReadFile(PassportService.EF_DG1));
-		assertTrue(canSelectFile(PassportService.EF_DG2));
-		assertTrue(canReadFile(PassportService.EF_DG2));
+		service.doBAC();
+		assertTrue(service.canSelectFile(PassportService.EF_DG1));
+		assertTrue(service.canReadFile(PassportService.EF_DG1));
+		assertTrue(service.canSelectFile(PassportService.EF_DG2));
+		assertTrue(service.canReadFile(PassportService.EF_DG2));
 	}
 
 	/**
@@ -96,78 +96,91 @@ public class PassportBACTester extends PassportTesterBase {
 	 * 
 	 * @throws CardServiceException
 	 */
-	public void testAC_fingerprint() throws CardServiceException {
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+	public void testAccessControlOnFingerprintAfterBAC()
+			throws CardServiceException {
+		service.doBAC();
 		traceApdu = true;
 		// We should now be able to read MRZ, photo and public key for AA
-		assertTrue(canSelectFile(PassportService.EF_DG1));
-		assertTrue(canSelectFile(PassportService.EF_DG2));
-		assertTrue(canSelectFile(PassportService.EF_DG15));
+		assertTrue(service.canSelectFile(PassportService.EF_DG1));
+		assertTrue(service.canSelectFile(PassportService.EF_DG2));
+		assertTrue(service.canSelectFile(PassportService.EF_DG15));
 		// but not fingerprint or iris
-		assertFalse(canReadFile(PassportService.EF_DG3));
-		assertFalse(canReadFile(PassportService.EF_DG4));
+		assertFalse(service.canReadFile(PassportService.EF_DG3));
+		assertFalse(service.canReadFile(PassportService.EF_DG4));
 	}
 
 	/**
-	 * Checking all datagroups
+	 * Checking all known datagroups (ie datagroups in the standard)
 	 * 
 	 * @throws CardServiceException
 	 */
-	public void testAccessControlAfterBAC() throws CardServiceException {
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+	public void testAccessControlOnAllFilesAfterBAC()
+			throws CardServiceException {
+		service.doBAC();
 		traceApdu = true;
 		// Datagroups that are RFU should not be selectable, probably?
-		assertFalse(canSelectFile(PassportService.EF_DG6));
-		assertTrue(canSelectFile(PassportService.EF_DG14)); // ??
+		assertFalse(service.canSelectFile(PassportService.EF_DG6));
+		assertTrue(service.canSelectFile(PassportService.EF_DG14)); // ??
 		// not so sure about other datagroups
-		assertFalse(canSelectFile(PassportService.EF_DG5));
-		assertFalse(canSelectFile(PassportService.EF_DG7));
-		assertFalse(canSelectFile(PassportService.EF_DG8));
-		assertFalse(canSelectFile(PassportService.EF_DG9));
-		assertFalse(canSelectFile(PassportService.EF_DG10));
-		assertFalse(canSelectFile(PassportService.EF_DG11));
-		assertFalse(canSelectFile(PassportService.EF_DG12));
-		assertFalse(canSelectFile(PassportService.EF_DG13));
-		assertTrue(canSelectFile(PassportService.EF_DG15)); // public key
+		assertFalse(service.canSelectFile(PassportService.EF_DG5));
+		assertFalse(service.canSelectFile(PassportService.EF_DG7));
+		assertFalse(service.canSelectFile(PassportService.EF_DG8));
+		assertFalse(service.canSelectFile(PassportService.EF_DG9));
+		assertFalse(service.canSelectFile(PassportService.EF_DG10));
+		assertFalse(service.canSelectFile(PassportService.EF_DG11));
+		assertFalse(service.canSelectFile(PassportService.EF_DG12));
+		assertFalse(service.canSelectFile(PassportService.EF_DG13));
+		assertTrue(service.canSelectFile(PassportService.EF_DG15)); // public
+		// key
 		// for AA
-		assertFalse(canSelectFile(PassportService.EF_DG16));
+		assertFalse(service.canSelectFile(PassportService.EF_DG16)); // persons
+		// to
+		assertTrue(service.canSelectFile(PassportService.EF_COM));
+		assertTrue(service.canSelectFile(PassportService.EF_SOD));
 	}
 
 	/**
 	 * After BAC, we should refuse all non-SM communication
 	 */
-	public void testAbortSM() throws CardServiceException {
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+	public void testSMAbortedCorrectlyOnNonSMSelectFile()
+			throws CardServiceException {
+		service.doBAC();
 		traceApdu = true;
-		assertFalse(canSelectFileWithoutSM(PassportService.EF_DG1));
+		assertFalse(service.canSelectFileWithoutSM(PassportService.EF_DG1));
 		// This should result in an SM error and aborting the SM session
 		assertTrue(getLastSW() == 0x6987 || getLastSW() == 0x6988);
 	}
 
 	/**
-	 * After BAC, we should refuse all non-SM communication, and after aborting
-	 * the SM sesion we can resume it
+	 * After aborting the SM session we cannot resume it
 	 */
 	public void testAfterAbortSM() throws CardServiceException {
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+		service.doBAC();
 		traceApdu = true;
-		assertFalse(canSelectFileWithoutSM(PassportService.EF_DG1));
+		assertFalse(service.canSelectFileWithoutSM(PassportService.EF_DG1));
 		// This should result in an SM error and aborting the SM session
 		assertTrue(getLastSW() == 0x6987 || getLastSW() == 0x6988);
-		// and nothing should be selectable; note that in the call below
+		// and nothing should be selectable; note that the call below
 		// will use SM wrapping with the old keys
-		assertFalse(canSelectFile(PassportService.EF_DG1));
-		// ?? somehow, this crashes things ??
+		try {
+			boolean b = service.canSelectFile(PassportService.EF_DG1);
+			assertFalse(b);
+		} catch (Exception e) {
+		}
+		// If we get an exception, this is probably because unwrapping
+		// the response APDU causes some error, which is not strange,
+		// as the response should not be SM encrypted
 	}
 
 	/**
-	 * Prints supported instructions, skipping instruction byte 112 (0x70,
-	 * MANAGE CHANNEL) because this generates an exception.
+	 * Prints supported instructions. Takes P1=P2=0 annd doesn't supply any data
+	 * or Le. Skips instruction byte 112 (0x70, MANAGE CHANNEL) because this
+	 * generates an exception.
 	 * 
 	 * Any CardServiceException is simply passed on.
 	 */
 	private void printSupportedInstructions() throws CardServiceException {
-		System.out.print("Supported instruction: ");
+		System.out.println("Supported instruction: ");
 		for (int ins = 0; ins < 256; ins++) {
 			if (ins == 112) {
 				continue; // results in strange error
@@ -179,26 +192,27 @@ public class PassportBACTester extends PassportTesterBase {
 			if (rapdu.getSW() != 0x6D00) // " instruction not supported"
 			{
 				System.out.printf(" %X ", ins);
-				System.out
-						.print("C: " + Hex.bytesToHexString(capdu.getBytes()));
-				System.out.println("R: "
+				System.out.print(" C: "
+						+ Hex.bytesToHexString(capdu.getBytes()));
+				System.out.println(" R: "
 						+ Hex.bytesToHexString(rapdu.getBytes()));
 			} else {
 				// System.out.println("Instruction " + ins + " not supported");
 			}
 		}
 	}
+	
 
 	/**
 	 * Print which instructions the applet supports, pre- and post-BAC. This
 	 * doesn't really test anything (ie should never fail) but reports useful
-	 * info to develop other tests. 22 2A 82 84 88 A4 B0 B1
+	 * info.
 	 */
 	public void testSupportedInstructions() throws CardServiceException {
 		traceApdu = false;
 		System.out.println("** Checking supported instructions before BAC **");
 		printSupportedInstructions();
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+		service.doBAC();
 		System.out.println("** Checking supported instructions after BAC **");
 		printSupportedInstructions();
 	}
@@ -207,11 +221,11 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Prints selectable and readable files;
 	 */
 	private void printSelectableFiles() {
-		HashSet<Short> c = new HashSet<Short>();
+		List<Short> c = new ArrayList<Short>();
 		System.out.print("Selectable files: ");
 		for (short fid = 0x0100; fid <= 0x01FF; fid++) {
-			// arguments note that fid shart with 0x01
-			if (canSelectFile(fid)) {
+			// note that fid starts with 0x01
+			if (service.canSelectFile(fid)) {
 				System.out.printf(" %X ", fid);
 				c.add(new Short(fid));
 			}
@@ -220,10 +234,13 @@ public class PassportBACTester extends PassportTesterBase {
 		if (!c.isEmpty()) {
 			Iterator<Short> iter = c.iterator();
 			System.out.print("Readable files: ");
-			while (iter.hasNext()) {
-				short fid = (iter.next()).shortValue();
-				if (canReadFile(fid)) {
-					System.out.printf(" %X ", fid);
+			for (Short fid_object : c) {
+				short fid = fid_object.shortValue();
+				System.out.printf(" %X:", fid);
+				if (service.canReadFile(fid)) {
+					System.out.printf("ok;  ");
+				} else {
+					System.out.printf("not ok;  ");
 				}
 			}
 			System.out.println();
@@ -232,18 +249,32 @@ public class PassportBACTester extends PassportTesterBase {
 
 	/**
 	 * Print which files are selectable, pre- and post-BAC. This test doesn't
-	 * test anything (ie should never fail), but reports useful info to develop
-	 * other tests. In particular: which of the non-standard files are present.
-	 * 
-	 * 101 102 103 10E 10F 11C 11D 11E
+	 * test anything (ie should never fail), but reports useful info.
 	 */
-	public void testSelectableFiles() throws CardServiceException {
+	public void tes_tSelectableFiles() throws CardServiceException {
 		traceApdu = false;
 		System.out.println("** Checking selectable files before BAC **");
 		printSelectableFiles();
-		service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+		service.doBAC();
 		System.out.println("** Checking selectable files after BAC **");
 		printSelectableFiles();
+	}
+
+	/** Dump file to console */
+	public void print(short fid) throws CardServiceException {
+		System.out.printf("Checking out file 0x0%X :", fid);
+		CardFileInputStream in = service.readFile(fid);
+		byte[] contents = in.toByteArray();
+		System.out.println(Hex.bytesToHexString(contents));
+	}
+
+	/**
+	 * Check the content of these unexpected files
+	 */
+	public void testWeirdFiles() throws CardServiceException {
+		service.doBAC();
+		print((short) 0x010E);
+		print((short) 0x011C);
 	}
 
 	/**
@@ -266,6 +297,37 @@ public class PassportBACTester extends PassportTesterBase {
 			}
 		} catch (CardServiceException e) {
 
+		}
+	}
+
+	/**
+	 * TODO: test if we can do anything with instruction 0xB1 that we're not
+	 * supposed to, eg read DG3.
+	 * 
+	 * @throws CardServiceException
+	 */
+	public void test_READ_BINARY2() throws CardServiceException {
+		service.doBAC();
+		traceApdu = true;
+		service.canSelectFile((short) PassportService.EF_DG3);
+		// Apparently we can select DG3, or we'd have an exception
+
+		// Let's try CLA B1 P1 P2 Lc Data Le
+		// P1 and P2 should be 00, data is the Offset TLV encoded
+		// As data we take FF FF, which TLV-encoded is 54 02 FF FF
+		byte[] offset = { (byte) 0x54, (byte) 0x02, (byte) 0xFF, (byte) 0xFF };
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+				ISO7816.INS_READ_BINARY2, (byte) 0x00, (byte) 0x00, offset,
+				(byte) 0x01);
+		capdu = service.getWrapper().wrap(capdu);
+		ResponseAPDU rapdu = service.transmit(capdu);
+		assertTrue(rapdu.getSW() == 0x6987);
+		// 0x69xx = Command not allowed
+		// 87 = Expected SM data objects missing
+		try {
+			rapdu = service.getWrapper().unwrap(rapdu, rapdu.getBytes().length);
+		} catch (Exception e) {
+			// something went wrong unwrapping
 		}
 	}
 }

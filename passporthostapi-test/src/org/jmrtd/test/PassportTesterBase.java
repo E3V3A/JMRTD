@@ -40,7 +40,8 @@ public abstract class PassportTesterBase extends TestCase implements
 			CardTerminals terminals = tf.terminals();
 			for (CardTerminal terminal : terminals
 					.list(CardTerminals.State.CARD_PRESENT)) {
-				service = new PassportTestService(new TerminalCardService(terminal));
+				service = new PassportTestService(new TerminalCardService(
+						terminal));
 				service.addAPDUListener(this);
 				if (service != null) {
 					service.open();
@@ -68,10 +69,6 @@ public abstract class PassportTesterBase extends TestCase implements
 	protected void resetCard() throws CardServiceException {
 		// This actually properly resets the card.
 		service.resetCard();
-//		if (service.isOpen()) {
-//			service.close();
-//		}
-//		service.open();
 	}
 
 	/**
@@ -79,9 +76,14 @@ public abstract class PassportTesterBase extends TestCase implements
 	 * reported as test error
 	 * 
 	 * @throws CardServiceException
+	 *             if card cannot be reset
+	 * @throws ParseException
+	 *             if someone was stupid enough to provide ill-formed MRZ data
+	 *             in the implementation of this method
 	 */
-	public void setUp() throws CardServiceException {
+	public void setUp() throws CardServiceException, ParseException {
 		resetCard();
+		service.setMRZ("XX1234587", "19760803", "20140507");
 	}
 
 	protected boolean traceApdu = false;
@@ -96,33 +98,9 @@ public abstract class PassportTesterBase extends TestCase implements
 	}
 
 	/**
-	 * Return true if datagroup can be selected; SM is not used even if it is
-	 * active. Note that this may (should!) reset the passport application, if
-	 * it is expecting SM.
-	 */
-     protected boolean canSelectFileWithoutSM(short fid) {
-    	return service.canSelectFileWithoutSM(fid);
-     }
-
-	/**
-	 * Return true if datagroup can be selected; SM is used if it is active.
-	 * Uses P2 = 0x02, P3 = 0x0c, and Le = 256 (see PassportAPDUService)
-	 */
-	protected boolean canSelectFile(short fid) {
-		return service.canSelectFile(fid);
-	}
-
-	/**
-	 * Return true if datagroup can be read; SM is used if it is active.
-	 */
-	protected boolean canReadFile(short fid) {
-		return service.canReadFile(fid);
-	}
-
-	/**
 	 * Returns last status word received
 	 */
-	protected int getLastSW() {
+	public int getLastSW() {
 		return last_rapdu.getSW();
 	}
 
