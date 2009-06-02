@@ -521,11 +521,19 @@ public class PassportFrame extends JFrame implements AuthListener
 
 				digest.reset();
 
-				InputStream dgIn = passport.getInputStream(fid);
-
+				InputStream dgIn = null;
+                Exception ex = null;
+                try {
+                    dgIn = passport.getInputStream(fid);
+                }catch(Exception e) {
+                    dgIn = null;
+                    ex = e;
+                }
                 if(dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
                         (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
                     continue;
+                }else if(ex != null) {
+                    throw ex;
                 }
                 
 				byte[] buf = new byte[4096];
