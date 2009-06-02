@@ -43,7 +43,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -711,6 +714,7 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 
 	private class PassportFileSystem implements FileSystemStructured {
 		private short selectedFID;
+        private Map<Short,Integer> lens = new HashMap<Short, Integer>();
 
 		public synchronized short getSelectedFID() {
 			return selectedFID;
@@ -718,7 +722,20 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 
 		public synchronized byte[] readBinary(int offset, int length)
 				throws CardServiceException {
-			return sendReadBinary(wrapper, (short) offset, length);
+            int totalLen = -1;
+            try {
+                totalLen = lens.get(selectedFID);
+             }catch(NoSuchElementException nsee) {
+                 
+             }catch(NullPointerException npe) {
+                 
+             }
+
+            if(totalLen > 327676) {
+              return sendReadBinaryLong(wrapper, (short) offset, length);                
+            }else{
+			  return sendReadBinary(wrapper, (short) offset, length);
+            }
 		}
 
 		public synchronized void selectFile(short fid)
@@ -728,6 +745,15 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 		}
 
 		public synchronized int getFileLength() throws CardServiceException {
+            int len = -1;
+            System.out.println("lens: "+lens);
+            try {
+               len = lens.get(selectedFID);
+            }catch(NoSuchElementException nsee) {                
+            }catch(NullPointerException npe) {
+                
+            }
+            if(len == -1) {
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
@@ -740,11 +766,16 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 				}
 				int vLength = tlvIn.readLength();
 				int tlLength = prefix.length - baIn.available();
-				return tlLength + vLength;
+                System.out.printf("FID: %X \n", selectedFID);
+                System.out.println("Length: "+(tlLength + vLength));
+                len = tlLength + vLength;
+                lens.put(selectedFID,len);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				throw new CardServiceException(ioe.toString());
 			}
-		}
+            }
+            return len;
+        }
 	}
 }

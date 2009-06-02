@@ -189,12 +189,21 @@ public class PassportApduService extends CardService {
 		return apdu;
 	}
 
-	CommandAPDU createReadBinaryAPDU(short offset, int le) {
-		byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
-		byte p2 = (byte) (offset & 0x000000FF);
-		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_READ_BINARY, p1, p2, le);
-		return apdu;
+	CommandAPDU createReadBinaryAPDU(short offset, int le, boolean longFile) {
+		if(longFile) {
+              byte l1 = (byte) ((offset & 0x0000FF00) >> 8);
+              byte l2 = (byte) (offset & 0x000000FF);
+              byte[] data = new byte[] { 0x54, 0x02, l1, l2 };
+              CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+                    ISO7816.INS_READ_BINARY2, 0, 0, data, le);
+              return apdu;
+        }else{
+            byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
+          byte p2 = (byte) (offset & 0x000000FF);
+          CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+                ISO7816.INS_READ_BINARY, p1, p2, le);
+          return apdu;
+        }
 	}
 
 	protected CommandAPDU createGetChallengeAPDU() {
@@ -381,7 +390,7 @@ public class PassportApduService extends CardService {
 			if (le == 0) {
 				return null;
 			}
-			CommandAPDU capdu = createReadBinaryAPDU(offset, le);
+			CommandAPDU capdu = createReadBinaryAPDU(offset, le, false);
 			if (wrapper != null) {
 				capdu = wrapper.wrap(capdu);
 			}
@@ -396,6 +405,32 @@ public class PassportApduService extends CardService {
 		} while (repeatOnEOF);
 		return rapdu.getData();
 	}
+
+    public synchronized byte[] sendReadBinaryLong(SecureMessagingWrapper wrapper,
+            short offset, int le) throws CardServiceException {
+        boolean repeatOnEOF = false;
+        ResponseAPDU rapdu = null;
+        do {
+            repeatOnEOF = false;
+            // In case the data ended right on the block boundary
+            if (le == 0) {
+                return null;
+            }
+            CommandAPDU capdu = createReadBinaryAPDU(offset, le, true);
+            if (wrapper != null) {
+                capdu = wrapper.wrap(capdu);
+            }
+            rapdu = transmit(capdu);
+            if (wrapper != null) {
+                rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+            }
+            if (rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
+                le--;
+                repeatOnEOF = true;
+            }
+        } while (repeatOnEOF);
+        return rapdu.getData();
+    }
 
 	/**
 	 * Sends a <code>GET CHALLENGE</code> command to the passport.
