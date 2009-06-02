@@ -197,7 +197,7 @@ public class PassportApduService extends CardService {
 		return apdu;
 	}
 
-	CommandAPDU createGetChallengeAPDU() {
+	protected CommandAPDU createGetChallengeAPDU() {
 		byte p1 = (byte) 0x00;
 		byte p2 = (byte) 0x00;
 		int le = 8;
@@ -483,7 +483,7 @@ public class PassportApduService extends CardService {
 			if (rapduBytes.length == 2) {
 				throw new CardServiceException(
 						"Mutual authentication failed: error code:  "
-								+ errorCode);
+								+ errorCode, rapdu.getSW());
 			}
 
 			if (rapduBytes.length != 42) {
