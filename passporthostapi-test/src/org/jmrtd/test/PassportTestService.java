@@ -312,7 +312,7 @@ public class PassportTestService extends PassportService {
 	 * @throws NullpointerException
 	 *             if useSM is true but there is no SM session active
 	 */
-	public int sendGetChallenge(boolean useSM) throws CardServiceException {
+	public int sendGetChallengeAndStore(boolean useSM) throws CardServiceException {
 		CommandAPDU capdu = createGetChallengeAPDU();
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
