@@ -113,30 +113,26 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		return ssc;
 	}
 
-	/**
-	 * Wraps the apdu buffer <code>capdu</code> of a command apdu. As a side
-	 * effect, this method increments the internal send sequence counter
-	 * maintained by this wrapper.
-	 * 
-	 * @param commandAPDU
-	 *            buffer containing the command apdu.
-	 * 
-	 * @return length of the command apdu after wrapping.
-	 */
-	public CommandAPDU wrap(CommandAPDU commandAPDU) {
-		try {
-			byte[] capdu = commandAPDU.getBytes();
-			byte[] wrappedApdu = wrapCommandAPDU(capdu, capdu.length);
-			// System.arraycopy(wrappedApdu, 0, capdu, 0, wrappedApdu.length);
-			return new CommandAPDU(wrappedApdu);
-		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-			throw new IllegalStateException(gse.toString());
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IllegalStateException(ioe.toString());
-		}
-	}
+   /**
+    * Wraps the apdu buffer <code>capdu</code> of a command apdu.
+    * As a side effect, this method increments the internal send
+    * sequence counter maintained by this wrapper.
+    *
+    * @param commandAPDU buffer containing the command apdu.
+    *
+    * @return length of the command apdu after wrapping.
+    */
+   public CommandAPDU wrap(CommandAPDU commandAPDU) {
+      try {
+         return wrapCommandAPDU(commandAPDU);
+      } catch (GeneralSecurityException gse) {
+         gse.printStackTrace();
+         throw new IllegalStateException(gse.toString());
+      } catch (IOException ioe) {
+         ioe.printStackTrace();
+         throw new IllegalStateException(ioe.toString());
+      }
+   }
 
 	/**
 	 * Unwraps the apdu buffer <code>rapdu</code> of a response apdu.
@@ -167,52 +163,29 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		}
 	}
 
-	/**
-	 * Does the actual encoding of a command apdu. Based on Section E.3 of
-	 * ICAO-TR-PKI, especially the examples.
-	 * 
-	 * @param capdu
-	 *            buffer containing the apdu data. It must be large enough to
-	 *            receive the wrapped apdu.
-	 * @param len
-	 *            length of the apdu data.
-	 * 
-	 * @return a byte array containing the wrapped apdu buffer.
-	 */
-	/*
-	 * @ requires apdu != null && 4 <= len && len <= apdu.length;
-	 */
-	private byte[] wrapCommandAPDU(byte[] capdu, int len)
-			throws GeneralSecurityException, IOException {
-		if (capdu == null || capdu.length < 4 || len < 4) {
-			throw new IllegalArgumentException("Invalid type");
-		}
-
-		/* Determine lc and le... */
-		int lc = 0;
-		int le = capdu[len - 1] & 0x000000FF;
-		if (len == 4) {
-			lc = 0;
-			le = 0;
-		} else if (len == 5) {
-			/* No command data, byte at index 5 is le. */
-			lc = 0;
-		} else if (len > 5) {
-			/* Byte at index 5 is not le, so it must be lc. */
-			lc = capdu[ISO7816.OFFSET_LC] & 0x000000FF;
-		}
-		if (4 + lc >= len) {
-			/* Value of lc covers rest of apdu length, there is no le. */
-			le = 0;
-		}
+   /**
+    * Does the actual encoding of a command apdu.
+    * Based on Section E.3 of ICAO-TR-PKI, especially the examples.
+    *
+    * @param capdu buffer containing the apdu data. It must be large enough
+    *             to receive the wrapped apdu.
+    * @param len length of the apdu data.
+    *
+    * @return a byte array containing the wrapped apdu buffer.
+    */
+   /*@ requires apdu != null && 4 <= len && len <= apdu.length;
+    */
+   private CommandAPDU wrapCommandAPDU(CommandAPDU c)
+   throws GeneralSecurityException, IOException {
+       
+      int lc = c.getNc();
+      int le = c.getNe();
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-		byte[] maskedHeader = new byte[4];
-		System.arraycopy(capdu, 0, maskedHeader, 0, 4);
-		// TODO: test this with a real passport if it supports chaining
-		maskedHeader[ISO7816.OFFSET_CLA] = (byte) (capdu[0] | (byte) 0x0C);
-		byte[] paddedHeader = Util.pad(maskedHeader);
+      byte[] maskedHeader = new byte[] {(byte)(c.getCLA() | (byte)0x0C), (byte)c.getINS(), (byte)c.getP1(), (byte)c.getP2()};
+
+      byte[] paddedHeader = Util.pad(maskedHeader);
 
 		byte[] do87 = new byte[0];
 		byte[] do8E = new byte[0];
@@ -226,10 +199,10 @@ public class SecureMessagingWrapper implements APDUWrapper {
 			do97 = out.toByteArray();
 		}
 
-		if (lc > 0) {
-			byte[] data = Util.pad(capdu, ISO7816.OFFSET_CDATA, lc);
-			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
-			byte[] ciphertext = cipher.doFinal(data);
+      if (lc > 0) {
+         byte[] data = Util.pad(c.getData());
+         cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
+         byte[] ciphertext = cipher.doFinal(data);
 
 			out.reset();
 			out.write((byte) 0x87);
@@ -264,17 +237,18 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		out.write(cc, 0, cc.length);
 		do8E = out.toByteArray();
 
-		/* Construct protected apdu... */
-		out.reset();
-		out.write(maskedHeader, 0, 4);
-		out.write((byte) (do87.length + do97.length + do8E.length));
-		out.write(do87, 0, do87.length);
-		out.write(do97, 0, do97.length);
-		out.write(do8E, 0, do8E.length);
-		out.write(0x00);
+      /* Construct protected apdu... */
+      out.reset();
+      out.write(do87, 0, do87.length);
+      out.write(do97, 0, do97.length);
+      out.write(do8E, 0, do8E.length);
+      byte[] data = out.toByteArray();
 
-		return out.toByteArray();
-	}
+      
+      CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3],
+              data, 256);
+      return wc;
+   }
 
 	/**
 	 * Does the actual decoding of a response apdu. Based on Section E.3 of

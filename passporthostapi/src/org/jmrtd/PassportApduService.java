@@ -632,7 +632,7 @@ public class PassportApduService extends CardService {
 		}
 	}
 
-	public synchronized void sendPSO(SecureMessagingWrapper wrapper,
+	public synchronized void sendPSOExtendedLengthMode(SecureMessagingWrapper wrapper,
 			byte[] certBodyData, byte[] certSignatureData)
 			throws CardServiceException {
 		byte[] certData = new byte[certBodyData.length
@@ -640,48 +640,71 @@ public class PassportApduService extends CardService {
 		System.arraycopy(certBodyData, 0, certData, 0, certBodyData.length);
 		System.arraycopy(certSignatureData, 0, certData, certBodyData.length,
 				certSignatureData.length);
-		int maxBlock = 223;
-		int blockSize = 223;
-		int offset = 0;
-		int length = certData.length;
-		if (certData.length > maxBlock) {
-			int numBlock = certData.length / blockSize;
-			if (numBlock * blockSize < certData.length)
-				numBlock++;
-			int i = 0;
-			while (i < numBlock - 1) {
-				CommandAPDU c = createPSOAPDU(certData, offset, blockSize,
-						false);
-				if (wrapper != null) {
-					c = wrapper.wrap(c);
-				}
-				ResponseAPDU r = transmit(c);
-				if (wrapper != null) {
-					r = wrapper.unwrap(r, r.getBytes().length);
-				}
-				int sw = r.getSW();
-				if ((short) sw != ISO7816.SW_NO_ERROR) {
-					throw new CardServiceException("Sending PSO failed.");
-				}
-				length -= blockSize;
-				offset += blockSize;
-				i++;
-			}
-		}
-		CommandAPDU c = createPSOAPDU(certData, offset, length, true);
-		if (wrapper != null) {
-			c = wrapper.wrap(c);
-		}
-		ResponseAPDU r = transmit(c);
-		if (wrapper != null) {
-			r = wrapper.unwrap(r, r.getBytes().length);
-		}
-		int sw = r.getSW();
-		if ((short) sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Sending PSO failed.");
-		}
-
+        CommandAPDU c = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_PSO, 0, 0xBE, certData);
+   	    if (wrapper != null) {
+		   c = wrapper.wrap(c);
+        }
+   	    ResponseAPDU r = transmit(c);
+   	    if (wrapper != null) {
+   	        r = wrapper.unwrap(r, r.getBytes().length);
+   	    }
+   	    int sw = r.getSW();
+   	    if ((short) sw != ISO7816.SW_NO_ERROR) {
+   	        throw new CardServiceException("Sending PSO failed.");
+   	    }
 	}
+
+    
+    public synchronized void sendPSOChainMode(SecureMessagingWrapper wrapper,
+            byte[] certBodyData, byte[] certSignatureData)
+            throws CardServiceException {
+        byte[] certData = new byte[certBodyData.length
+                + certSignatureData.length];
+        System.arraycopy(certBodyData, 0, certData, 0, certBodyData.length);
+        System.arraycopy(certSignatureData, 0, certData, certBodyData.length,
+                certSignatureData.length);
+        int maxBlock = 223;
+        int blockSize = 223;
+        int offset = 0;
+        int length = certData.length;
+        if (certData.length > maxBlock) {
+            int numBlock = certData.length / blockSize;
+            if (numBlock * blockSize < certData.length)
+                numBlock++;
+            int i = 0;
+            while (i < numBlock - 1) {
+                CommandAPDU c = createPSOAPDU(certData, offset, blockSize,
+                        false);
+                if (wrapper != null) {
+                    c = wrapper.wrap(c);
+                }
+                ResponseAPDU r = transmit(c);
+                if (wrapper != null) {
+                    r = wrapper.unwrap(r, r.getBytes().length);
+                }
+                int sw = r.getSW();
+                if ((short) sw != ISO7816.SW_NO_ERROR) {
+                    throw new CardServiceException("Sending PSO failed.");
+                }
+                length -= blockSize;
+                offset += blockSize;
+                i++;
+            }
+        }
+        CommandAPDU c = createPSOAPDU(certData, offset, length, true);
+        if (wrapper != null) {
+            c = wrapper.wrap(c);
+        }
+        ResponseAPDU r = transmit(c);
+        if (wrapper != null) {
+            r = wrapper.unwrap(r, r.getBytes().length);
+        }
+        int sw = r.getSW();
+        if ((short) sw != ISO7816.SW_NO_ERROR) {
+            throw new CardServiceException("Sending PSO failed.");
+        }
+
+    }
 
 	/**
 	 * Create (possibly chained) APDU for PSO verify certificate (p2 = 0xBE)

@@ -222,7 +222,7 @@ public class FaceInfo
 	   this.width = image.getWidth();
 	   this.height = image.getHeight();
 	   this.featurePoints = new FeaturePoint[0];
-	   this.imageDataType = IMAGE_DATA_TYPE_JPEG2000;
+	   this.imageDataType = IMAGE_DATA_TYPE_JPEG;
    }
 
    /**

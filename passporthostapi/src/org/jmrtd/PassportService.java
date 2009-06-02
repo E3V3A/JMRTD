@@ -23,6 +23,7 @@
 package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -33,12 +34,15 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
 
@@ -54,6 +58,10 @@ import net.sourceforge.scuba.smartcards.FileSystemStructured;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 import net.sourceforge.scuba.util.Hex;
 
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERSequence;
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.CVCertificate;
 
@@ -369,9 +377,10 @@ public class PassportService extends PassportApduService {
 			agreement.init(keyPair.getPrivate());
 			agreement.doPhase(key, true);
 
-			// TODO: this SHA1ing may have to be removed?
-			MessageDigest md = MessageDigest.getInstance("SHA1");
-			byte[] secret = md.digest(agreement.generateSecret());
+            MessageDigest md = MessageDigest.getInstance("SHA1");
+            byte[] secret = agreement.generateSecret();
+            // TODO: this SHA1ing may have to be removed?
+            //byte[] secret = md.digest(secret);
 
 			byte[] keyData = null;
 			byte[] idData = null;
@@ -379,6 +388,7 @@ public class PassportService extends PassportApduService {
 			if ("DH".equals(algName)) {
 				DHPublicKey k = (DHPublicKey) keyPair.getPublic();
 				keyData = k.getY().toByteArray();
+                // TODO: this is proabably wrong, what should be hased?
 				md = MessageDigest.getInstance("SHA1");
 				keyHash = md.digest(keyData);
 			} else {
@@ -386,7 +396,7 @@ public class PassportService extends PassportApduService {
 						.getPublic();
 				keyData = k.getQ().getEncoded();
 				keyHash = k.getQ().getX().toBigInteger().toByteArray();
-			}
+            }
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId != -1) {
 				// TODO: what this key id format should exactly be?
@@ -404,10 +414,6 @@ public class PassportService extends PassportApduService {
 			}
 			// This completes CA
 
-			// Use only the first 16 bytes?
-			// byte[] s = new byte[16];
-			// System.arraycopy(secret, 0, s, 0, 16);
-			// secret = s;
 
 			// Replace the secure messaging keys with the new generated ones:
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
@@ -429,7 +435,7 @@ public class PassportService extends PassportApduService {
 					// the actual passport may require chaining (when the
 					// certificate
 					// is too big to fit into one APDU).
-					sendPSO(wrapper, body, sig);
+					sendPSOExtendedLengthMode(wrapper, body, sig);
 					sigAlg = AlgorithmUtil.getAlgorithmName(cert
 							.getCertificateBody().getPublicKey()
 							.getObjectIdentifier());
@@ -446,33 +452,53 @@ public class PassportService extends PassportApduService {
 			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0,
 					documentNumber.length());
 			idpic[idpic.length - 1] = (byte) MRZInfo.checkDigit(documentNumber);
-
-			byte[] dtbs = new byte[idpic.length + rpicc.length + keyHash.length];
-			System.arraycopy(idpic, 0, dtbs, 0, idpic.length);
-			System.arraycopy(rpicc, 0, dtbs, idpic.length, rpicc.length);
-			System.arraycopy(keyHash, 0, dtbs, idpic.length + rpicc.length,
-					keyHash.length);
+            
+			ByteArrayOutputStream dtbs = new ByteArrayOutputStream();
+            dtbs.write(idpic); dtbs.write(rpicc); dtbs.write(keyHash);
 
 			Signature sig = Signature.getInstance(sigAlg);
 			sig.initSign(terminalKey);
-			sig.update(dtbs);
+			sig.update(dtbs.toByteArray());
 			byte[] signature = sig.sign();
+			if(sigAlg.endsWith("ECDSA")) {
+			    signature = getRawECDSASignature(signature);
+            }
 
 			sendMSEAT(wrapper, certRef); // shouldn't this be before the
 											// sendGetChallene above?
 			sendMutualAuthenticate(wrapper, signature);
-
 			EACEvent event = new EACEvent(this, keyId, key, keyPair,
 					caReference, terminalCertificates, terminalKey,
 					documentNumber, rpicc, true);
 			notifyEACPerformed(event);
 			state = EAC_AUTHENTICATED_STATE;
 			return true;
+        } catch (IOException ioe) {
+            throw new CardServiceException(ioe.toString());
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}
 	}
 
+    // For ECDSA the EAC 1.11 specification requires the signature to be
+    // stripped down from any ASN.1 wrappers, as so:
+    private byte[] getRawECDSASignature(byte[] signature) throws IOException {
+            ASN1InputStream in = new ASN1InputStream(signature);
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            DERSequence obj = (DERSequence)in.readObject();
+            Enumeration<DERObject> e = obj.getObjects();
+            while(e.hasMoreElements()) {
+                DERInteger i = (DERInteger)e.nextElement();
+                byte[] t = i.getValue().toByteArray();
+                if(t[0] == 0) {
+                  out.write(t, 1, t.length-1);  
+                }else{
+                  out.write(t);
+                }
+            }
+            return out.toByteArray();
+    }
+    
 	private byte[] wrapDO(byte tag, byte[] data) {
 		byte[] result = new byte[data.length + 2];
 		result[0] = tag;
@@ -559,7 +585,7 @@ public class PassportService extends PassportApduService {
 	}
 
 	/**
-	 * Performs the <i>Active Authentication</i> protocol.
+s	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
 	 * @param publicKey
 	 *            the public key to use (usually read from the card)
