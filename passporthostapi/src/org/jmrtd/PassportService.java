@@ -191,12 +191,11 @@ public class PassportService extends PassportApduService {
 		super(service);
 		try {
 			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /*
-																		 * FIXME:
-																		 * SHA1WithRSA
-																		 * also
-																		 * works
-																		 * ?
-																		 */
+																			 * FIXME:
+																			 * SHA1WithRSA
+																			 * also
+																			 * works ?
+																			 */
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
@@ -459,7 +458,8 @@ public class PassportService extends PassportApduService {
 			sig.update(dtbs);
 			byte[] signature = sig.sign();
 
-			sendMSEAT(wrapper, certRef); // shouldn't this be before the sendGetChallene above?
+			sendMSEAT(wrapper, certRef); // shouldn't this be before the
+											// sendGetChallene above?
 			sendMutualAuthenticate(wrapper, signature);
 
 			EACEvent event = new EACEvent(this, keyId, key, keyPair,
@@ -648,7 +648,8 @@ public class PassportService extends PassportApduService {
 	}
 
 	/**
-	 * Gets the wrapper. Returns <code>null</code> until BAC has been performed.
+	 * Gets the wrapper. Returns <code>null</code> until BAC has been
+	 * performed.
 	 * 
 	 * @return the wrapper
 	 */
