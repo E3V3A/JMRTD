@@ -189,7 +189,8 @@ public class PassportApduService extends CardService {
 		return apdu;
 	}
 
-	CommandAPDU createReadBinaryAPDU(short offset, int le, boolean longFile) {
+	
+	public CommandAPDU createReadBinaryAPDU(short offset, int le, boolean longFile) {
 		if(longFile) {
               byte l1 = (byte) ((offset & 0x0000FF00) >> 8);
               byte l2 = (byte) (offset & 0x000000FF);
