@@ -119,6 +119,11 @@ public class PassportApp  implements PassportListener
 	public PassportApp() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
+            try {
+               TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/sos/woj/terminals"));
+            }catch(Exception e) {
+               System.out.println("Could not load terminal certificates from a default location.");
+            }
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			cardManager = CardManager.getInstance();

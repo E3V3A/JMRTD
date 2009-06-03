@@ -319,6 +319,8 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG3:
 					dg3 = new DG3File(in);
+                    System.out.println("Read in DG3.");
+                    System.out.println(dg3);
 					break;
 				case PassportService.EF_DG4:
 					dg4 = new DG4File(in);
