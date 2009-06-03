@@ -181,7 +181,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
       int lc = c.getNc();
       int le = c.getNe();
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+      ByteArrayOutputStream out = new ByteArrayOutputStream();
 
       byte[] maskedHeader = new byte[] {(byte)(c.getCLA() | (byte)0x0C), (byte)c.getINS(), (byte)c.getP1(), (byte)c.getP2()};
 
