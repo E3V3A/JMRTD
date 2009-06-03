@@ -1,5 +1,6 @@
 package org.jmrtd.test;
 
+import java.security.Security;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,11 +30,10 @@ public class MBTadapter
 
 {
 	/** service to talk to the passport */
-	private static PassportService service;
+	private static PassportTestService service;
 
 	/* Data format for dates */
-	private static SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
-
+	// private static SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 	/***************************************************************************
 	 * 
 	 * setup connection with the card reader
@@ -44,7 +44,8 @@ public class MBTadapter
 			CardTerminals terminals = tf.terminals();
 			for (CardTerminal terminal : terminals
 					.list(CardTerminals.State.CARD_PRESENT)) {
-				service = new PassportService(new TerminalCardService(terminal));
+				service = new PassportTestService(new TerminalCardService(
+						terminal));
 				if (service != null) {
 					service.open();
 					break;
@@ -53,6 +54,7 @@ public class MBTadapter
 			if (service == null) {
 				System.exit(-23);
 			}
+			service.setMRZ("XX1234587", "760803", "140507");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -72,47 +74,14 @@ public class MBTadapter
 		service.open();
 	}
 
-	/***************************************************************************
-	 * 
-	 * Sample piece of code to try and do BAC, with hard coded MRZ
-	 * 
-	 * @throws ParseException
-	 *             if dates are mistyped
-	 */
-	public static boolean myDoBAC() throws ParseException {
-		try {
-			Date birthDate = SDF.parse("19560507");
-			Date expiryDate = SDF.parse("20100101");
-			String number = "PPNUMMER0";
-			service.doBAC(number, birthDate, expiryDate);
-			return true; // BAC succeeded
-		} catch (CardServiceException e) {
-			return false;
-		} // BAC failed
-	}
-
-	/***************************************************************************
-	 * 
-	 * Try selecting a file, with or without Secure Messaging
-	 */
-	public static boolean myCanSelectFile(short fid, boolean useSM) {
-		try {
-			if (useSM) {
-				service.sendSelectFile(service.getWrapper(), fid);
-			} else {
-				service.sendSelectFile(null, fid);
-			}
-			return true;
-		} catch (CardServiceException e) {
-			return false;
-		}
-	}
-
 	/** ****************************************************************** */
 
 	public static void main(String[] args) throws Exception
 
 	{
+		Security
+				.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+
 		if (args.length != 1) {
 			System.out.println("own port number required");
 		} else {
@@ -122,7 +91,7 @@ public class MBTadapter
 				// instantiate a socket for accepting a connection
 				ServerSocket servsock = new ServerSocket(portNo);
 
-				// wait to accept a connecion request
+				// wait to accept a connection request
 				// then a data socket is created
 				Socket sock = servsock.accept();
 
@@ -138,19 +107,47 @@ public class MBTadapter
 				PrintWriter sockout = new PrintWriter(new OutputStreamWriter(
 						outStream));
 
-				// initialize cardreader
+				// initialize card reader
 				setupCard();
 				resetCard();
 
 				while (true) { // read a line from the data stream
 					String inAction = sockin.readLine();
 
+					if (inAction.equals("Reset")) {
+						resetCard();
+					}
 					if (inAction.equals("BAC_Call")) {
-						boolean r = myDoBAC();
-						if (r) {
+						if (service.doBAC()) {
 							sockout.println("BAC_OK");
 						} else {
 							sockout.println("BAC_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.startsWith("ReadFile_Call")) {
+						String par = inAction.substring(13).trim();
+						short fd = (short) Integer.parseInt(par);
+						if (service.canReadFile (fd)) {
+							sockout.println("ReadFile_OK");
+						} else {
+							sockout.println("ReadFile_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("AA_Call")) {
+						if (service.doAA()) {
+							sockout.println("AA_OK");
+						} else {
+							sockout.println("AA_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("EAC_Call")) {
+						if (service.doEAC()) {
+							sockout.println("EAC_OK");
+						} else {
+							sockout.println("EAC_NOK");
 						}
 						sockout.flush();
 					}
