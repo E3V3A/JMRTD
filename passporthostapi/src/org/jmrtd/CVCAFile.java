@@ -117,4 +117,8 @@ public class CVCAFile extends PassportFile {
         return altCaReference;
     }
 
+    public String toString() {
+        return "CA ref: "+caReference+", Alt. CA ref: "+altCaReference;
+    }
+    
 }

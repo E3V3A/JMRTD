@@ -27,14 +27,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
@@ -46,12 +55,27 @@ import org.ejbca.cvc.HolderReferenceField;
 
 public class PassportCertificateGenerator {
 
-    public static final String filenameCA = "/home/sos/woj/terminals/cacert.cvcert";
+    public static final String filenameCA = "/home/sos/woj/passportcert/cacert.cvcert";
 
-    public static final String filenameTerminal = "/home/sos/woj/terminals/terminalcert.cvcert";
+    public static final String filenameTerminal = "/home/sos/woj/passportcert/terminalcert.cvcert";
 
-    public static final String filenameKey = "/home/sos/woj/terminals/terminalkey.der";
+    public static final String filenameKey = "/home/sos/woj/passportcert/terminalkey.der";
+    
+    public static final String rootKey = "/home/sos/woj/passportcert/rootkey.der";
 
+    private static PrivateKey readKeyFromFile(File f, String algName) {
+        try {
+            byte[] data = loadFile(f);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(data);
+            KeyFactory gen = KeyFactory.getInstance(algName);
+            return gen.generatePrivate(spec);
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    
     public static void main(String[] args) {
         try {
             // Install BC as security provider
@@ -65,15 +89,23 @@ public class PassportCertificateGenerator {
             cal2.add(Calendar.MONTH, 3);
             Date validTo = cal2.getTime();
 
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "BC");
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
             SecureRandom random = new SecureRandom();
-            keyGen.initialize(1024, random);
+
+            KeyFactory kf = KeyFactory.getInstance("ECDSA");
+            ECPrivateKey k = (ECPrivateKey)readKeyFromFile(new File(rootKey), "ECDSA");
+            
+            System.out.println("key: "+k);
+            
+           
+            
+            keyGen.initialize(224, random);
 
             // Create a new key pair for the self signed CA certificate
             KeyPair caKeyPair = keyGen.generateKeyPair();
 
             // Create a new key pair for the terminal certificate (signed by CA)
-            keyGen.initialize(1024, random);
+            keyGen.initialize(224, random);
             KeyPair terminalKeyPair = keyGen.generateKeyPair();
 
             CAReferenceField caRef = new CAReferenceField("NL", "MYDL-CVCA",

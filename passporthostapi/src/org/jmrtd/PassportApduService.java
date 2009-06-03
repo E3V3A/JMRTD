@@ -190,20 +190,15 @@ public class PassportApduService extends CardService {
 	}
 
 	public CommandAPDU createReadBinaryAPDU(int offset, int le, boolean longRead) {
-		if(longRead) {
-              offset = 0x8000;
-              byte l1 = (byte) ((offset & 0x0000FF00) >> 8);
-              byte l2 = (byte) (offset & 0x000000FF);
-              byte[] data = new byte[] { 0x54, 0x02, l1, l2 };
-              CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+        byte off1 = (byte) ((offset & 0x0000FF00) >> 8);
+        byte off2 = (byte) (offset & 0x000000FF);
+        if(longRead) {
+           byte[] data = new byte[] { 0x54, 0x02, off1, off2 };
+           return new CommandAPDU(ISO7816.CLA_ISO7816,
                     ISO7816.INS_READ_BINARY2, 0, 0, data, le);
-              return apdu;
         }else{
-            byte p1 = (byte) ((offset & 0x0000FF00) >> 8);
-          byte p2 = (byte) (offset & 0x000000FF);
-          CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-                ISO7816.INS_READ_BINARY, p1, p2, le);
-          return apdu;
+           return new CommandAPDU(ISO7816.CLA_ISO7816,
+                ISO7816.INS_READ_BINARY, off1, off2, le);
         }
 	}
 
@@ -364,7 +359,7 @@ public class PassportApduService extends CardService {
 	 */
 	public synchronized byte[] sendReadBinary(short offset, int le)
 			throws CardServiceException {
-		return sendReadBinary(null, offset, le);
+		return sendReadBinary(null, offset, le, false);
 	}
 
 	/**
@@ -377,38 +372,14 @@ public class PassportApduService extends CardService {
 	 *            offset into the file
 	 * @param le
 	 *            the expected length of the file to read
+     * @param longRead
+     *            whether it should be a long (INS=B1) read
 	 * 
 	 * @return a byte array of length <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
 	 */
-	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper,
-			short offset, int le) throws CardServiceException {
-		boolean repeatOnEOF = false;
-		ResponseAPDU rapdu = null;
-		do {
-			repeatOnEOF = false;
-			// In case the data ended right on the block boundary
-			if (le == 0) {
-				return null;
-			}
-			CommandAPDU capdu = createReadBinaryAPDU(offset, le, false);
-			if (wrapper != null) {
-				capdu = wrapper.wrap(capdu);
-			}
-			rapdu = transmit(capdu);
-			if (wrapper != null) {
-				rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-			}
-			if (rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
-				le--;
-				repeatOnEOF = true;
-			}
-		} while (repeatOnEOF);
-		return rapdu.getData();
-	}
-
-    public synchronized byte[] sendReadBinaryLong(SecureMessagingWrapper wrapper,
-            int offset, int le) throws CardServiceException {
+    public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper,
+            int offset, int le, boolean longRead) throws CardServiceException {
         boolean repeatOnEOF = false;
         ResponseAPDU rapdu = null;
         do {
@@ -417,7 +388,17 @@ public class PassportApduService extends CardService {
             if (le == 0) {
                 return null;
             }
-            CommandAPDU capdu = createReadBinaryAPDU(offset, le, true);
+            // In the case of long read 2/3 less bytes of the actual data will be returned,
+            // because a tag and length will be sent along, here we need to account for this
+            if(longRead) {
+              if(le < 128) {
+                le += 2;
+              }else if (le < 256) {
+                le += 3;
+              }
+              if(le > 256) le = 256;
+            }
+            CommandAPDU capdu = createReadBinaryAPDU(offset, le, longRead);
             if (wrapper != null) {
                 capdu = wrapper.wrap(capdu);
             }
@@ -430,8 +411,22 @@ public class PassportApduService extends CardService {
                 repeatOnEOF = true;
             }
         } while (repeatOnEOF);
-        System.out.println("R: "+Hex.bytesToHexString(rapdu.getData()));
-        return rapdu.getData();
+        byte[] r = rapdu.getData();
+        if(longRead) {
+          // Strip the response off the tag 0x53 and the length field
+          byte[] data = r;
+          int index = 0;
+          if(data[index++] != (byte)0x53) {
+             throw new CardServiceException("Malformed read binary long response data.");
+          }
+          if((byte)(data[index] & 0x80) == (byte)0x80) {
+            index += (data[index] & 0xF);
+          }
+          index ++;
+          r = new byte[data.length - index];
+          System.arraycopy(data, index, r, 0, r.length);
+        }
+        return r;
     }
 
 	/**

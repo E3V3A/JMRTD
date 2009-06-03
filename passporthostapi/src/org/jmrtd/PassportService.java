@@ -729,11 +729,8 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 
 		public synchronized byte[] readBinary(int offset, int length)
 				throws CardServiceException {
-            if(offset > 32767) {
-              return sendReadBinaryLong(wrapper, offset, length);                
-            }else{
-			  return sendReadBinary(wrapper, (short) offset, length);
-            }
+            boolean readLong = (offset > 0x7FFF); 
+            return sendReadBinary(wrapper, offset, length, readLong);                
 		}
 
 		public synchronized void selectFile(short fid)
@@ -755,7 +752,7 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 				}
 				int vLength = tlvIn.readLength();
 				int tlLength = prefix.length - baIn.available();
-                return tlLength + vLength;
+                return tlLength + vLength; 
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				throw new CardServiceException(ioe.toString());

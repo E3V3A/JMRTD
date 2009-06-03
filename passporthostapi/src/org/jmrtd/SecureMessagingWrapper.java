@@ -187,7 +187,9 @@ public class SecureMessagingWrapper implements APDUWrapper {
 
       byte[] paddedHeader = Util.pad(maskedHeader);
 
-		byte[] do87 = new byte[0];
+      boolean do85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
+      
+		byte[] do8587 = new byte[0];
 		byte[] do8E = new byte[0];
 		byte[] do97 = new byte[0];
 
@@ -205,16 +207,16 @@ public class SecureMessagingWrapper implements APDUWrapper {
          byte[] ciphertext = cipher.doFinal(data);
 
 			out.reset();
-			out.write((byte) 0x87);
-			out.write(BERTLVObject.getLengthAsBytes(ciphertext.length + 1));
-			out.write(0x01);
+			out.write(do85 ? (byte) 0x85 : (byte) 0x87);
+			out.write(BERTLVObject.getLengthAsBytes(ciphertext.length + (do85 ? 0 : 1)));
+			if(!do85) { out.write(0x01); };
 			out.write(ciphertext, 0, ciphertext.length);
-			do87 = out.toByteArray();
+			do8587 = out.toByteArray();
 		}
 
 		out.reset();
 		out.write(paddedHeader, 0, paddedHeader.length);
-		out.write(do87, 0, do87.length);
+		out.write(do8587, 0, do8587.length);
 		out.write(do97, 0, do97.length);
 		byte[] m = out.toByteArray();
 
@@ -239,7 +241,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 
       /* Construct protected apdu... */
       out.reset();
-      out.write(do87, 0, do87.length);
+      out.write(do8587, 0, do8587.length);
       out.write(do97, 0, do97.length);
       out.write(do8E, 0, do8E.length);
       byte[] data = out.toByteArray();
@@ -279,8 +281,11 @@ public class SecureMessagingWrapper implements APDUWrapper {
 				int tag = in.readByte();
 				switch (tag) {
 				case (byte) 0x87:
-					data = readDO87(in);
+					data = readDO87(in, false);
 					break;
+                case (byte) 0x85:
+                    data = readDO87(in, true);
+                    break;
 				case (byte) 0x99:
 					sw = readDO99(in);
 					break;
@@ -316,7 +321,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 * @param in
 	 *            inputstream to read from.
 	 */
-	private byte[] readDO87(DataInputStream in) throws IOException,
+	private byte[] readDO87(DataInputStream in, boolean do85) throws IOException,
 			GeneralSecurityException {
 		/* Read length... */
 		int length = 0;
@@ -324,25 +329,30 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		if ((buf & 0x00000080) != 0x00000080) {
 			/* Short form */
 			length = buf;
-			buf = in.readUnsignedByte(); /* should be 0x01... */
-			if (buf != 0x01) {
+            if(!do85) {
+			  buf = in.readUnsignedByte(); /* should be 0x01... */
+			  if (buf != 0x01) {
 				throw new IllegalStateException(
 						"DO'87 expected 0x01 marker, found "
 								+ Hex.byteToHexString((byte) buf));
-			}
+			  }
+            }
 		} else {
 			/* Long form */
 			int lengthBytesCount = buf & 0x0000007F;
 			for (int i = 0; i < lengthBytesCount; i++) {
 				length = (length << 8) | in.readUnsignedByte();
 			}
-			buf = in.readUnsignedByte(); /* should be 0x01... */
-			if (buf != 0x01) {
+            if(!do85) {
+              buf = in.readUnsignedByte(); /* should be 0x01... */
+			  if (buf != 0x01) {
 				throw new IllegalStateException("DO'87 expected 0x01 marker");
-			}
+			  }
+            }
 		}
-		length--; /* takes care of the extra 0x01 marker... */
-
+        if(!do85) {
+		  length--; /* takes care of the extra 0x01 marker... */
+        }
 		/* Read, decrypt, unpad the data... */
 		byte[] ciphertext = new byte[length];
 		in.read(ciphertext, 0, length);
