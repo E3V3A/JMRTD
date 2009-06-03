@@ -24,6 +24,7 @@ package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -398,7 +399,14 @@ public class PassportService extends PassportApduService {
 				org.bouncycastle.jce.interfaces.ECPublicKey k = (org.bouncycastle.jce.interfaces.ECPublicKey) keyPair
 						.getPublic();
 				keyData = k.getQ().getEncoded();
-				keyHash = k.getQ().getX().toBigInteger().toByteArray();
+				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
+                if(t[0] == 0) {
+                    keyHash = new byte[t.length - 1];
+                    System.arraycopy(t, 1, keyHash, 0, keyHash.length);
+                }else{
+                    keyHash = t;
+                }
+                
             }
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId != -1) {
@@ -714,7 +722,6 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 
 	private class PassportFileSystem implements FileSystemStructured {
 		private short selectedFID;
-        private Map<Short,Integer> lens = new HashMap<Short, Integer>();
 
 		public synchronized short getSelectedFID() {
 			return selectedFID;
@@ -722,17 +729,8 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 
 		public synchronized byte[] readBinary(int offset, int length)
 				throws CardServiceException {
-            int totalLen = -1;
-            try {
-                totalLen = lens.get(selectedFID);
-             }catch(NoSuchElementException nsee) {
-                 
-             }catch(NullPointerException npe) {
-                 
-             }
-
-            if(totalLen > 327676) {
-              return sendReadBinaryLong(wrapper, (short) offset, length);                
+            if(offset > 32767) {
+              return sendReadBinaryLong(wrapper, offset, length);                
             }else{
 			  return sendReadBinary(wrapper, (short) offset, length);
             }
@@ -745,15 +743,6 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 		}
 
 		public synchronized int getFileLength() throws CardServiceException {
-            int len = -1;
-            System.out.println("lens: "+lens);
-            try {
-               len = lens.get(selectedFID);
-            }catch(NoSuchElementException nsee) {                
-            }catch(NullPointerException npe) {
-                
-            }
-            if(len == -1) {
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
@@ -766,16 +755,11 @@ s	 * Performs the <i>Active Authentication</i> protocol.
 				}
 				int vLength = tlvIn.readLength();
 				int tlLength = prefix.length - baIn.available();
-                System.out.printf("FID: %X \n", selectedFID);
-                System.out.println("Length: "+(tlLength + vLength));
-                len = tlLength + vLength;
-                lens.put(selectedFID,len);
+                return tlLength + vLength;
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				throw new CardServiceException(ioe.toString());
 			}
             }
-            return len;
-        }
 	}
 }
