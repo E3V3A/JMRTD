@@ -189,9 +189,9 @@ public class PassportApduService extends CardService {
 		return apdu;
 	}
 
-	
-	public CommandAPDU createReadBinaryAPDU(short offset, int le, boolean longFile) {
-		if(longFile) {
+	CommandAPDU createReadBinaryAPDU(int offset, int le, boolean longRead) {
+		if(longRead) {
+              offset = 0x8000;
               byte l1 = (byte) ((offset & 0x0000FF00) >> 8);
               byte l2 = (byte) (offset & 0x000000FF);
               byte[] data = new byte[] { 0x54, 0x02, l1, l2 };
@@ -408,7 +408,7 @@ public class PassportApduService extends CardService {
 	}
 
     public synchronized byte[] sendReadBinaryLong(SecureMessagingWrapper wrapper,
-            short offset, int le) throws CardServiceException {
+            int offset, int le) throws CardServiceException {
         boolean repeatOnEOF = false;
         ResponseAPDU rapdu = null;
         do {
@@ -430,6 +430,7 @@ public class PassportApduService extends CardService {
                 repeatOnEOF = true;
             }
         } while (repeatOnEOF);
+        System.out.println("R: "+Hex.bytesToHexString(rapdu.getData()));
         return rapdu.getData();
     }
 
