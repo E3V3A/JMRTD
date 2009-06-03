@@ -321,7 +321,7 @@ public class PassportBACTester extends PassportTesterBase {
 	public void todo_FileSelectedAfterRestart() throws CardServiceException {
 		traceApdu = true;
 		try {
-			byte[] b = service.sendReadBinary(null, (short) 0, 10);
+			byte[] b = service.sendReadBinary(null, 0, 10, false);
 			int sw = getLastSW();
 			if (sw == ISO7816.SW_NO_ERROR || sw != ISO7816.SW_END_OF_FILE
 					|| sw != ISO7816.SW_LESS_DATA_RESPONDED_THAN_REQUESTED) {
@@ -347,7 +347,7 @@ public class PassportBACTester extends PassportTesterBase {
 		 * let's see if we can read DG1 using B0, just to make sure we do this
 		 * wrapping business correctly
 		 */
-		CommandAPDU capdu = service.createReadBinaryAPDU((short) 0, 10, false);
+		CommandAPDU capdu = service.createReadBinaryAPDU(0, 10, false);
 		capdu = service.getWrapper().wrap(capdu);
 		ResponseAPDU rapdu = service.transmit(capdu);
 		assertTrue(rapdu.getSW() == 0x9000);
@@ -398,6 +398,8 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check if the implementations of sendGetChallenge and
 	 * sendMutualAuthenticateToCompleteBAC in PassportTestService are correct.
+     * 
+     * TODO: fix this
 	 */
 	public void testPassportTestService() throws CardServiceException {
 		traceApdu = true;
