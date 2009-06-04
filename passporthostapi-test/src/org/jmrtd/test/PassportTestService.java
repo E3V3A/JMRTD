@@ -225,16 +225,44 @@ public class PassportTestService extends PassportService {
 	
 	/**
 	 * Return true if datagroup can be read; SM is used if it is active.
+	 * It reads the first 10 bytes of the datagroup.
 	 */
 	protected boolean canReadFile(short fid) {
+		boolean b = canSelectFile(fid);
+		if (!b) { return b; };
 		try {
-			CardFileInputStream in = readFile(fid);
-			return (in != null);
+			// old implementation,
+			//   CardFileInputStream in = readFile(fid);
+			//   return (in != null);
+			// breaks for long datagroup DG3
+			byte[] contents = sendReadBinary(getWrapper(), 0, 10, false);
+			if (contents != null & contents.length==10) {
+				return true;
+			} else {
+				return false;
+			}
 		} catch (CardServiceException e) {
 			return false;
 		}
 	}
 
+	/**
+	 * Return true if datagroup can be read using READ_BINARY2; SM is used if it
+	 * is active.
+	 * It reads the first 10 bytes of the datagroup.
+	 */
+	protected boolean canReadFileLong(short fid) {
+		try {
+			byte[] contents = sendReadBinary(getWrapper(), 0, 10, true);
+			if (contents != null & contents.length == 10) {
+				return true;
+			} else {
+				return false;
+			}
+		} catch (CardServiceException e) {
+			return false;
+		}
+	}
 	/**
 	 * Try Basic Access Control, with the currently stored MRZ-data, returning true if this
 	 * succeeded.
