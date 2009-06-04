@@ -1,5 +1,6 @@
 package org.jmrtd.test;
 
+import java.io.File;
 import java.security.Security;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -53,6 +54,11 @@ public abstract class PassportTesterBase extends TestCase implements
 			}
 		} catch (Exception e) {
 			fail(e.getMessage());
+		}
+		try {
+			TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/passport/terminals"));
+		}catch(Exception e) {
+			
 		}
 	}
 
