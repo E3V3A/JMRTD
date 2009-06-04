@@ -412,7 +412,7 @@ public class PassportApduService extends CardService {
             }
         } while (repeatOnEOF);
         byte[] r = rapdu.getData();
-        if(longRead) {
+        if(longRead && (short)rapdu.getSW() == ISO7816.SW_NO_ERROR) {
           // Strip the response off the tag 0x53 and the length field
           byte[] data = r;
           int index = 0;

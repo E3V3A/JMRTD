@@ -772,7 +772,6 @@ public class PassportService extends PassportApduService {
         public synchronized byte[] readBinary(int offset, int length)
                 throws CardServiceException {
             boolean readLong = (offset > 0x7FFF);
-            // boolean readLong = true;
             return sendReadBinary(wrapper, offset, length, readLong);
         }
 
