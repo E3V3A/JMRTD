@@ -797,7 +797,6 @@ public class PassportService extends PassportApduService {
                 int tlLength = prefix.length - baIn.available();
                 return tlLength + vLength;
             } catch (IOException ioe) {
-                ioe.printStackTrace();
                 throw new CardServiceException(ioe.toString());
             }
         }
