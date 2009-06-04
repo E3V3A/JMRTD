@@ -80,7 +80,7 @@ public class PassportManager
 			cm.addTerminals(acrFactory, false);
 		} catch (ClassNotFoundException cnfe) {
 			/* Ignore this provider... not installed */
-			cnfe.printStackTrace(); // TODO: comment out this printStackTrace();
+			// cnfe.printStackTrace(); // TODO: comment out this printStackTrace();
 		} catch (Exception e) {
 			/* Ignore this provider */
 			e.printStackTrace();
