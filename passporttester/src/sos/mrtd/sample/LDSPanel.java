@@ -167,7 +167,7 @@ implements AuthListener
 		byte[] offsetBytes = offsetTF.getValue();
 		offset = (short)(((offsetBytes[0] & 0x000000FF) << 8)
 				| (offsetBytes[1] & 0x000000FF));
-		byte[] data = service.sendReadBinary(wrapper, offset, le);
+		byte[] data = service.sendReadBinary(wrapper, offset, le, false);
 		remove(hexviewer);
 		hexviewer = new HexViewPanel(data, offset);
 		add(hexviewer, BorderLayout.CENTER);
