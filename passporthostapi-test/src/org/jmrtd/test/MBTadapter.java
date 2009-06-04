@@ -109,6 +109,8 @@ public class MBTadapter
 
 				// initialize card reader
 				setupCard();
+				System.out.println("eac setup: "+service.setupEAC());
+				//System.out.println("aa setup: "+service.setupAA());
 				resetCard();
 
 				while (true) { // read a line from the data stream
@@ -125,6 +127,14 @@ public class MBTadapter
 						}
 						sockout.flush();
 					}
+					if (inAction.equals("FailBAC_Call")) {
+						if (service.failBAC()) {
+							sockout.println("FailBAC_OK");
+						} else {
+							sockout.println("FailBAC_NOK");
+						}
+						sockout.flush();
+					}					
 					if (inAction.startsWith("ReadFile_Call")) {
 						String par = inAction.substring(13).trim();
 						short fd = (short) Integer.parseInt(par);
@@ -151,6 +161,15 @@ public class MBTadapter
 						}
 						sockout.flush();
 					}
+					if (inAction.equals("FailEAC_Call")) {
+						if (service.failEAC()) {
+							sockout.println("FailEAC_OK");
+						} else {
+							sockout.println("FailEAC_NOK");
+						}
+						sockout.flush();
+					}					
+		
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
