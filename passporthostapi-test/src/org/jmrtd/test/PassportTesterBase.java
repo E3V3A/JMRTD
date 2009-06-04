@@ -55,11 +55,6 @@ public abstract class PassportTesterBase extends TestCase implements
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
-		try {
-			TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/passport/terminals"));
-		}catch(Exception e) {
-			
-		}
 	}
 
 	private static SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
@@ -90,6 +85,7 @@ public abstract class PassportTesterBase extends TestCase implements
 	public void setUp() throws CardServiceException, ParseException {
 		resetCard();
 		service.setMRZ("XX1234587", "760803", "140507");
+		System.out.println("Setup EAC: " + service.setupEAC());
 	}
 
 	protected boolean traceApdu = false;

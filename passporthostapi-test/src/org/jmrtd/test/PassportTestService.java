@@ -1,11 +1,14 @@
 package org.jmrtd.test;
 
+import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.smartcardio.CardException;
@@ -21,8 +24,11 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
+import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.DG14File;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.TerminalCVCertificateDirectory;
 import org.jmrtd.Util;
 
 /**
@@ -80,7 +86,7 @@ public class PassportTestService extends PassportService {
 
 	/** Data needed for BAC **/
 
-	private String documentNumber;
+	private String documentNumber ;
 	private Date dateOfBirth;
 	private Date dateOfExpiry;
 
@@ -90,10 +96,21 @@ public class PassportTestService extends PassportService {
 
 	/** Data needed for EAC **/
 
-	// private int keyId;
-	// private PublicKey key;
-	// private String caReference;
-	// private List<CVCertificate> terminalCertificates;
+	private static TerminalCVCertificateDirectory certDir = null;
+	static {
+		try {
+		  certDir = TerminalCVCertificateDirectory.getInstance();
+		  certDir.scanDirectory(new File("/home/passport/terminals"));
+		}catch(Exception e) {
+			System.out.println("Could not load EAC terminal certificates/keys!");
+		}
+	}
+	
+	private int keyId = -1;
+	private PublicKey cardKey;
+	private String caReference = "NLCVCAA00001";
+	private List<CVCertificate> terminalCertificates;
+	private PrivateKey terminalKey;
 	/** The last challenge received, if any **/
 	private byte[] lastChallenge;
 
@@ -264,6 +281,32 @@ public class PassportTestService extends PassportService {
 		}
 	}
 
+
+	/**
+	 * Here we setup data needed for EAC.
+	 * This includes reading out DG14 and extracting the key.
+	 */
+	public boolean setupEAC() {
+		// Do this only once!
+		if(cardKey != null) {
+			return true;
+		}
+		terminalCertificates = certDir.getCertificates(caReference);
+		terminalKey = certDir.getPrivateKey(caReference);
+		doBAC();
+		short fid = PassportService.EF_DG14;
+		try {
+		  sendSelectFile(getWrapper(), fid);
+		  CardFileInputStream in = readFile(fid);
+		  DG14File dg14 = new DG14File(in);
+		  cardKey = dg14.getPublicKeys().get(-1);
+		  resetCard();
+		}catch(CardServiceException e) {
+		  return false;
+		}
+		return true;
+	}
+	
 	/**
 	 * Try EAC, with the currently stored EAC-data, returning true if this
 	 * succeeded.
@@ -271,9 +314,12 @@ public class PassportTestService extends PassportService {
 	 * @return whether this succeeded
 	 */
 	public boolean doEAC() {
-		return false;
-		// super.doEAC(keyId, key, caReference, terminalCertificates,
-		// terminalKedocumentNumber);
+		try {
+		  super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, documentNumber);
+		  return true;
+		}catch(CardServiceException cse) {
+			return false;
+		}
 	}
 	
 
