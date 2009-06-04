@@ -335,7 +335,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Can we use B1 (READ_BINARY2) at all, even for something harmless ?
 	 */
-	public void testREADBINARY2CannotBeUsedToReadDG1()
+	public void skiptestREADBINARY2CannotBeUsedToReadDG1()
 			throws CardServiceException {
 		service.doBAC();
 		traceApdu = true;
@@ -367,7 +367,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * TODO: test if we can do anything with instruction 0xB1 that we're not
 	 * supposed to, eg read DG3.
 	 */
-	public void test_READ_BINARY2() throws CardServiceException {
+	public void skiptest_READ_BINARY2() throws CardServiceException {
 		service.doBAC();
 		traceApdu = true;
 
