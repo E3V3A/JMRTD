@@ -179,10 +179,9 @@ public class Passport {
                 if(eacSuccess) { break; }
                 for(int termIndex=0; termIndex<termCerts.size(); termIndex++) {
                     try {
-                       if(service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber)){
-                           eacSuccess = true;
-                           break;
-                       }
+                       service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber);
+                       eacSuccess = true;
+                       break;
                     }catch(CardServiceException cse) {
                         cse.printStackTrace();
                     }
