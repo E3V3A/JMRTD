@@ -259,7 +259,7 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Prints selectable and readable files;
+	 * Prints selectable files and readable files, using B0 or B1;
 	 */
 	private void printSelectableFiles() {
 		List<Short> c = new ArrayList<Short>();
@@ -274,15 +274,23 @@ public class PassportBACTester extends PassportTesterBase {
 		System.out.println();
 		if (!c.isEmpty()) {
 			Iterator<Short> iter = c.iterator();
-			System.out.print("Readable files: ");
+			System.out.print("Readable files using READ BINARY (B0): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
-				System.out.printf(" %X:", fid);
 				if (service.canReadFile(fid)) {
-					System.out.printf("ok;  ");
-				} else {
-					System.out.printf("not ok;  ");
+					System.out.printf(" %X ", fid);
 				}
+			}
+			System.out.println();
+		}
+		if (!c.isEmpty()) {
+			Iterator<Short> iter = c.iterator();
+			System.out.print("Readable files using READ BINARY2 (B1): ");
+			for (Short fid_object : c) {
+				short fid = fid_object.shortValue();
+				if (service.canReadFile(fid)) {
+					System.out.printf(" %X ", fid);
+				} 
 			}
 			System.out.println();
 		}
@@ -333,73 +341,8 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Can we use B1 (READ_BINARY2) at all, even for something harmless ?
-	 */
-	public void skiptestREADBINARY2CannotBeUsedToReadDG1()
-			throws CardServiceException {
-		service.doBAC();
-		traceApdu = true;
-
-		boolean b = service.canSelectFile((short) PassportService.EF_DG1);
-		assertTrue(b);
-
-		/*
-		 * let's see if we can read DG1 using B0, just to make sure we do this
-		 * wrapping business correctly
-		 */
-		CommandAPDU capdu = service.createReadBinaryAPDU(0, 10, false);
-		capdu = service.getWrapper().wrap(capdu);
-		ResponseAPDU rapdu = service.transmit(capdu);
-		assertTrue(rapdu.getSW() == 0x9000);
-
-		/* now let's see if we can read DG1 using B1 */
-		byte[] offset = { (byte) 0x54, (byte) 0x02, (byte) 0x00, (byte) 0x00 };
-		capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY2,
-				(byte) 0x00, (byte) 0x00, offset, (byte) 0x00);
-		capdu = service.getWrapper().wrap(capdu);
-		rapdu = service.transmit(capdu);
-		assertTrue(rapdu.getSW() == 0x6987);
-		// 0x69xx = Command not allowed
-		// 87 = Expected SM data objects missing
-	}
-
-	/**
-	 * TODO: test if we can do anything with instruction 0xB1 that we're not
-	 * supposed to, eg read DG3.
-	 */
-	public void skiptest_READ_BINARY2() throws CardServiceException {
-		service.doBAC();
-		traceApdu = true;
-
-		boolean b = service.canSelectFile((short) PassportService.EF_DG3);
-		if (!b)
-			return;
-		// Let's try CLA B1 P1 P2 Lc Data Le
-		// P1 and P2 should be 00, data is the offset TLV encoded
-		// As data we take FF FF, which TLV-encoded is 54 02 FF FF
-		byte[] offset = { (byte) 0x54, (byte) 0x02, (byte) 0x00, (byte) 0x00 };
-		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_READ_BINARY2, (byte) 0x00, (byte) 0x00, offset,
-				(byte) 0x01);
-		capdu = service.getWrapper().wrap(capdu);
-		ResponseAPDU rapdu = service.transmit(capdu);
-		assertTrue(rapdu.getSW() == 0x6987);
-		// 0x69xx = Command not allowed
-		// 87 = Expected SM data objects missing
-	}
-
-	/**
-	 * Test this mysterious instruction 00
-	 */
-	public void testInstruction00() {
-
-	}
-
-	/**
 	 * Check if the implementations of sendGetChallenge and
 	 * sendMutualAuthenticateToCompleteBAC in PassportTestService are correct.
-     * 
-     * TODO: fix this
 	 */
 	public void testPassportTestService() throws CardServiceException {
 		traceApdu = true;
@@ -465,13 +408,10 @@ public class PassportBACTester extends PassportTesterBase {
 
 	}
 
-	/**
-	 * Check timing of successful BACs that follow an unsuccessful one
-	 */
 	public void tes_tAverageDelayedSuccessfulBAC() throws CardServiceException,
 			InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
-		final int TRIES = 100;
+		final int TRIES = 30;
 		service.failBAC();
 		for (int i = 0; i < TRIES; i++) {
 			service.resetCard();
@@ -495,12 +435,67 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Check timing of failed BACs that follows earlier ones.
+	 * Check duration of undelayed failed BACs (ie after successful BAC)
+	 */
+	public void tes_tAverageUndelayedFailedBAC() throws CardServiceException,
+			InterruptedException {
+		long start, stop, min = 100000000, max = 0, total = 0;
+		final int TRIES = 30;
+		for (int i = 0; i < TRIES; i++) {
+			service.doBAC();
+			service.resetCard();
+			start = System.currentTimeMillis();
+			service.failBAC();
+			stop = System.currentTimeMillis();
+			long time = stop - start;
+			if (time < min) {
+				min = time;
+			}
+			if (time > max) {
+				max = time;
+			}
+			total = total + time;
+		}
+		System.out.println("Quickest undelayed failed BAC " + min + " msec");
+		System.out.println("Slowest undelayed failed BAC " + max + " msec");
+		System.out.println("Average of " + TRIES + " tries is "
+				+ (total / TRIES) + " msec");
+	}
+
+	/**
+	 * Check duration of undelayed successful BACs (ie after successful BAC)
+	 */
+	public void tes_tAverageUndelayedSuccessfulBAC()
+			throws CardServiceException, InterruptedException {
+		long start, stop, min = 100000000, max = 0, total = 0;
+		final int TRIES = 30;
+		for (int i = 0; i < TRIES; i++) {
+			service.resetCard();
+			start = System.currentTimeMillis();
+			service.doBAC();
+			stop = System.currentTimeMillis();
+			long time = stop - start;
+			if (time < min) {
+				min = time;
+			}
+			if (time > max) {
+				max = time;
+			}
+			total = total + time;
+		}
+		System.out.println("Quickest undelayed succesful BAC " + min + " msec");
+		System.out.println("Slowest undelayed succesful BAC " + max + " msec");
+		System.out.println("Average of " + TRIES + " tries is "
+				+ (total / TRIES) + " msec");
+	}
+
+	/**
+	 * Check delay on failed BACs after failed BAC
 	 */
 	public void tes_tAverageDelayedFailedBAC() throws CardServiceException,
 			InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
-		final int TRIES = 100;
+		final int TRIES = 30;
 		service.failBAC();
 		for (int i = 0; i < TRIES; i++) {
 			start = System.currentTimeMillis();
@@ -524,12 +519,12 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Check timing of failed BACs that follows earlier ones, after soft reset
+	 * Check delay on failed BACs after failed BAC, after soft reset
 	 */
 	public void tes_tAverageDelayedBACAfterSoftReset()
 			throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
-		final int TRIES = 100;
+		final int TRIES = 30;
 		service.failBAC();
 
 		for (int i = 0; i < TRIES; i++) {
@@ -556,13 +551,12 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Check timing of successful BACs that follow an unsuccessful one, after
-	 * soft reset
+	 * Check delay of successful BAC after failed BAC, after soft reset
 	 */
 	public void tes_tAverageDelayedSuccessfulBACAfterSoftReset()
 			throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
-		final int TRIES = 100;
+		final int TRIES = 30;
 		service.failBAC();
 		for (int i = 0; i < TRIES; i++) {
 			service.resetCard();
@@ -675,4 +669,69 @@ public class PassportBACTester extends PassportTesterBase {
 				+ " millisecs");
 	}
 
+	/**
+	 * Check delay of failed and successful BACs after failed BAC followed by a
+	 * card tear. Beware user interaction required!
+	 */
+	public void tes_tDelayedBACAfterCardTear() throws CardServiceException,
+			InterruptedException {
+
+		long start, stop;
+
+		service.failBAC();
+		System.out.println("Failed a BAC - remove card now");
+		Thread.sleep(2000);
+		System.out.println("Put card back now");
+		Thread.sleep(2000);
+		service.resetCard();
+		start = System.currentTimeMillis();
+		service.failBAC();
+		stop = System.currentTimeMillis();
+		System.out
+				.println("A failed BAC after a card tear after a failed BAC takes "
+						+ (stop - start) + " millisecs");
+
+		service.failBAC();
+		System.out.println("Failed a BAC - remove card now");
+		Thread.sleep(2000);
+		System.out.println("Put card back now");
+		Thread.sleep(2000);
+		service.resetCard();
+		start = System.currentTimeMillis();
+		service.doBAC();
+		stop = System.currentTimeMillis();
+		System.out
+				.println("A succesful BAC after card tear a after a failed BAC takes "
+						+ (stop - start) + " millisecs");
+	}
+
+	/**
+	 * Check delay of failed and successful BACs after failed BAC interrupted by
+	 * a card tear. Beware user interaction required!
+	 */
+	public void tes_tDelayedBACAfterCardTear2() throws CardServiceException,
+			InterruptedException {
+
+		long start, stop;
+		byte b[] = { (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
+				(byte) 0, (byte) 0, (byte) 0 };
+		service.failBAC();
+		try {
+			int sw = service.sendGetChallengeAndStore(false); // don't use SM
+			service.setLastChallenge(b);// to screw up BAC;
+			System.out.println("Failed a BAC - remove card now");
+			sw = service.sendMutualAuthenticateToCompleteBAC();
+		} catch (CardServiceException e) {
+		} finally {
+			Thread.sleep(2000);
+			System.out.println("Put card back now");
+			Thread.sleep(2000);
+			service.resetCard();
+			start = System.currentTimeMillis();
+			service.failBAC();
+			stop = System.currentTimeMillis();
+			System.out.println("A BAC after a card tear takes "
+					+ (stop - start) + " millisecs");
+		}
+	}
 }
