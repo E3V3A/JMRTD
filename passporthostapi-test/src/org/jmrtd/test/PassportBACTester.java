@@ -59,7 +59,7 @@ public class PassportBACTester extends PassportTesterBase {
 			(byte) 0x1D, // ??
 			(byte) 0x1E }; // ??
 
-	private final byte[] commands = { (byte) 0x00, // ??
+	private final byte[] instructions = { 
 			(byte) 0x2A, // INS_MSE
 			(byte) 0x2A, // INS_PSO
 			(byte) 0x82, // INS_EXTERNAL_AUTHENTICATE
@@ -268,7 +268,7 @@ public class PassportBACTester extends PassportTesterBase {
 			// note that fid starts with 0x01
 			if (service.canSelectFile(fid)) {
 				System.out.printf(" %X ", fid);
-				c.add(new Short(fid));
+				c.add(fid);
 			}
 		}
 		System.out.println();
