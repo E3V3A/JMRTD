@@ -273,7 +273,6 @@ public class PassportBACTester extends PassportTesterBase {
 		}
 		System.out.println();
 		if (!c.isEmpty()) {
-			Iterator<Short> iter = c.iterator();
 			System.out.print("Readable files using READ BINARY (B0): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
@@ -284,7 +283,6 @@ public class PassportBACTester extends PassportTesterBase {
 			System.out.println();
 		}
 		if (!c.isEmpty()) {
-			Iterator<Short> iter = c.iterator();
 			System.out.print("Readable files using READ BINARY2 (B1): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
