@@ -252,7 +252,9 @@ public class PassportTestService extends PassportService {
 	 * is active.
 	 * It reads the first 10 bytes of the datagroup.
 	 */
-	protected boolean canReadFileLong(short fid) {
+	protected boolean canReadFileLong(short fid, boolean useSM) {
+		boolean b = canSelectFile(fid, useSM);
+		if (!b) return false;
 		try {
 			byte[] contents = sendReadBinary(getWrapper(), 0, 10, true);
 			if (contents != null & contents.length == 10) {
