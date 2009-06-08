@@ -127,6 +127,33 @@ public class MBTadapter
 						}
 						sockout.flush();
 					}
+					if (inAction.equals("GetChallenge_noSM_Call")) {
+						int stw = service.sendGetChallengeAndStore(false);
+						if (stw == 0x9000) {
+							sockout.println("GetChallenge_noSM_OK");
+						} else {
+							sockout.println("GetChallenge_noSM_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("GetChallenge_Call")) {
+						int stw = service.sendGetChallengeAndStore(true);
+						if (stw == 0x9000) {
+							sockout.println("GetChallenge_OK");
+						} else {
+							sockout.println("GetChallenge_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("CompleteBAC_Call")) {
+						int res = service.sendMutualAuthenticateToCompleteBAC();
+						if (res == 0x9000) {
+							sockout.println("CompleteBAC_OK");
+						} else {
+							sockout.println("CompleteBAC_NOK");
+						}
+						sockout.flush();
+					}
 					if (inAction.equals("FailBAC_Call")) {
 						if (service.failBAC()) {
 							sockout.println("FailBAC_OK");
@@ -138,10 +165,20 @@ public class MBTadapter
 					if (inAction.startsWith("ReadFile_Call")) {
 						String par = inAction.substring(13).trim();
 						short fd = (short) Integer.parseInt(par);
-						if (service.canReadFile (fd)) {
+						if (service.canReadFile (fd, true)) {
 							sockout.println("ReadFile_OK");
 						} else {
 							sockout.println("ReadFile_NOK");
+						}
+						sockout.flush();
+					}				
+					if (inAction.startsWith("ReadFile_Call_noSM")) {
+						String par = inAction.substring(18).trim();
+						short fd = (short) Integer.parseInt(par);
+						if (service.canReadFile (fd, false)) {
+							sockout.println("ReadFile_noSM_OK");
+						} else {
+							sockout.println("ReadFile_noSM_NOK");
 						}
 						sockout.flush();
 					}
@@ -158,6 +195,22 @@ public class MBTadapter
 							sockout.println("EAC_OK");
 						} else {
 							sockout.println("EAC_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("CA_Call")) {
+						if (service.doCA()) {
+							sockout.println("CA_OK");
+						} else {
+							sockout.println("CA_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.equals("TA_Call")) {
+						if (service.doTA()) {
+							sockout.println("TA_OK");
+						} else {
+							sockout.println("TA_NOK");
 						}
 						sockout.flush();
 					}
