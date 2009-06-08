@@ -356,6 +356,7 @@ public class PassportEACTester extends PassportTesterBase {
         while(!finished) {
             boolean result = service.doTA(ck.certs, ck.key); 
             Date middleDate = new Date((long)(from.getTime() + (long)((long)(to.getTime()-from.getTime())/2)));
+            // when it succeeds we have to start over the whole thing
         }
         
 
