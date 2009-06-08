@@ -7,6 +7,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -101,7 +102,7 @@ public class PassportTestService extends PassportService {
 	static {
 		try {
 		  certDir = TerminalCVCertificateDirectory.getInstance();
-		  certDir.scanDirectory(new File("/home/passport/terminals"));
+		  certDir.scanDirectory(new File("/home/sos/woj/terminals"));
 		}catch(Exception e) {
 			System.out.println("Could not load EAC terminal certificates/keys!");
 		}
@@ -397,23 +398,69 @@ public class PassportTestService extends PassportService {
 	 * @return whether this succeeded
 	 */
 	public boolean doCA() {
-		return false;
-		// super.doEAC(keyId, key, caReference, terminalCertificates,
-		// terminalKedocumentNumber);
+        try {
+            super.doCA(-1, cardKey);
+            return true;
+        }catch(Exception e) {
+            return false;            
+        }
 	}
 	
 
-	/**
+
+    /**
+     * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
+     * succeeded. 
+     * 
+     * @return whether this succeeded
+     */
+    public boolean doTA() {
+        try {
+            super.doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
+            return true;            
+        }catch(CardServiceException e) {
+            return false;
+        }
+    }
+
+    /**
 	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
-	 * succeeded.
+	 * succeeded. The certificates are priovided manually.
 	 * 
 	 * @return whether this succeeded
 	 */
-	public boolean doTA() {
-		return false;
-		// super.doEAC(keyId, key, caReference, terminalCertificates,
-		// terminalKedocumentNumber);
+	public boolean doTA(CVCertificate[] certs, PrivateKey key) {
+	    try {
+            List<CVCertificate> cs = new ArrayList<CVCertificate>();
+            for(CVCertificate c : certs) {
+              cs.add(c);
+            }
+            super.doTA(caReference, cs, key, null, documentNumber);
+            return true;            
+        }catch(CardServiceException e) {
+            return false;
+        }
 	}
+
+    /**
+     * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
+     * succeeded. The certificates are priovided manually. Also indicate
+     * the signature algorithm
+     * 
+     * @return whether this succeeded
+     */
+    public boolean doTA(CVCertificate[] certs, PrivateKey key, String taSigAlg) {
+        try {
+            List<CVCertificate> cs = new ArrayList<CVCertificate>();
+            for(CVCertificate c : certs) {
+              cs.add(c);
+            }
+            super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);
+            return true;            
+        }catch(CardServiceException e) {
+            return false;
+        }
+    }
 
 	/**
 	 * Send a GET CHALLENGE; the challenge received will be stored and used.

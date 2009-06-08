@@ -1,7 +1,12 @@
 package org.jmrtd.test;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
 import java.security.Security;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -19,6 +24,9 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
+import org.ejbca.cvc.CVCObject;
+import org.ejbca.cvc.CVCertificate;
+import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.*;
 
 public abstract class PassportTesterBase extends TestCase implements
@@ -104,5 +112,50 @@ public abstract class PassportTesterBase extends TestCase implements
 	public int getLastSW() {
 		return last_rapdu.getSW();
 	}
+
+    /** Reads in a CVCertficate object from a file */
+    protected static CVCertificate readCVCertificateFromFile(File f) {
+        try {
+            byte[] data = loadFile(f);
+            CVCObject parsedObject = CertificateParser.parseCertificate(data);
+            CVCertificate c = (CVCertificate) parsedObject;
+            return c;
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    /** Reads in a key file (ECDSA) */
+    protected static PrivateKey readKeyFromFile(File f) {
+        try {
+            byte[] data = loadFile(f);
+            PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(data);
+            KeyFactory gen = KeyFactory.getInstance("ECDSA");
+            return gen.generatePrivate(spec);
+        } catch (Exception e) {
+            return null;
+        }
+
+    }
+
+    /**
+     * Reads the byte data from a file.
+     */
+    protected static byte[] loadFile(File file) throws IOException {
+        byte[] dataBuffer = null;
+        FileInputStream inStream = null;
+        try {
+            dataBuffer = new byte[(int) file.length()];
+            inStream = new FileInputStream(file);
+            inStream.read(dataBuffer);
+            inStream.close();
+        } catch (IOException e1) {
+            if (inStream != null)
+                inStream.close();
+            System.out.println("loadFile error: " + e1);
+        }
+        return dataBuffer;
+    }
 
 }
