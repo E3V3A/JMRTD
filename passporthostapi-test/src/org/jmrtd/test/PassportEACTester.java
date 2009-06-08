@@ -104,6 +104,7 @@ public class PassportEACTester extends PassportTesterBase {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        assertNotNull(dvCert);
         CertsKeyPair ck = createNewCertificate(dvCert, k, 0);
         assertNotNull(ck.certs[0]);
         assertNotNull(ck.key);
@@ -129,6 +130,7 @@ public class PassportEACTester extends PassportTesterBase {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        assertNotNull(dvCert);
         CertsKeyPair ck = createNewCertificate(dvCert, k, 1);
         assertNotNull(ck.certs[0]);
         assertNotNull(ck.key);
@@ -152,6 +154,7 @@ public class PassportEACTester extends PassportTesterBase {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        assertNotNull(isCert);
         CertsKeyPair ck = createNewCertificate(isCert, k, 2);
         assertNotNull(ck.certs[0]);
         assertNotNull(ck.key);
@@ -171,6 +174,50 @@ public class PassportEACTester extends PassportTesterBase {
      *
      */
     public void testEAC4a() {
+        traceApdu = true;
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(k);
+        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        assertNotNull(dvCert);
+        assertNotNull(isCert);
+        CertsKeyPair ck = createNewCertificates(new CVCertificate[] {dvCert, isCert} , k, false);
+        assertNotNull(ck.certs[0]);
+        assertNotNull(ck.certs[1]);
+        assertNotNull(ck.key);
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertTrue(service.doTA(ck.certs, ck.key));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+        traceApdu = false;
+    }
+
+    /** 
+     * This test authenticates to the passport using a short chain of freshly 
+     * created certificates. The new certificates are copies of the old one, but
+     * freshly signed and with new terminal private key. The domestic certificate in 
+     * the chain is changed to foreign one.  
+     *
+     */
+    public void testEAC4b() {
+        traceApdu = true;
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(k);
+        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        assertNotNull(dvCert);
+        assertNotNull(isCert);
+        CertsKeyPair ck = createNewCertificates(new CVCertificate[] {dvCert, isCert} , k, true);
+        assertNotNull(ck.certs[0]);
+        assertNotNull(ck.certs[1]);
+        assertNotNull(ck.key);
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertTrue(service.doTA(ck.certs, ck.key));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+        traceApdu = false;
     }
 
     /** 
@@ -218,6 +265,53 @@ public class PassportEACTester extends PassportTesterBase {
             return null;
         }
     }
+
+    /**
+     * Resigns the chain of certificates.
+     * @param oldCerts the certificates to be resigned
+     * @param privateKey the root certificate private key
+     * @param domasticToForeign whether the domestic role in the DV certificate
+     *                            should be changed to foreign
+     * @return CertsKeyPair structure with new certificates and new private key
+     */
+    public static CertsKeyPair createNewCertificates(CVCertificate[] oldCerts, PrivateKey privateKey, boolean domasticToForeign) {
+        try {
+            List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
+            for(CVCertificate oldCert : oldCerts) {
+        CVCertificateBody body = oldCert.getCertificateBody();
+
+        CAReferenceField caRef = body.getAuthorityReference();
+        HolderReferenceField holderRef = body.getHolderReference();
+        Date validFrom = body.getValidFrom();
+        Date validTo = body.getValidTo();
+        AuthorizationRoleEnum role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
+        if(domasticToForeign && role == AuthorizationRoleEnum.DV_D) {
+            role = AuthorizationRoleEnum.DV_F;
+        }
+        AccessRightEnum rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        CVCPublicKey publicKey = body.getPublicKey();
+        String algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+
+        
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+        keyGen.initialize(((ECPrivateKey)privateKey).getParams(), new SecureRandom());
+        KeyPair keyPair = keyGen.generateKeyPair();
+        
+        CVCertificate newCert = CertificateGenerator.createCertificate(
+                keyPair.getPublic(), privateKey,
+                algName, caRef, holderRef, role, rights, validFrom,
+                validTo, "BC");
+          newCerts.add(newCert);
+          privateKey = keyPair.getPrivate();
+        }
+        return new CertsKeyPair(newCerts.toArray(new CVCertificate[0]), privateKey);
+        }catch(Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    
     
     private static String increase(String c) {
         int s = Integer.parseInt(c) + 1;
