@@ -405,6 +405,17 @@ public class PassportBACTester extends PassportTesterBase {
 		// but for EAC
 
 	}
+    
+    /** Check the aa key length to be 1280 and test aa after BAC and after EAC */
+    public void testAA() {
+        traceApdu = true;
+        service.setupAA();
+        assertTrue(service.getAAKey().toString().indexOf("1280 bits") != -1);
+        service.doBAC();
+        assertTrue(service.doAA());
+        service.doEAC();
+        assertTrue(service.doAA());
+    }
 
 	public void tes_tAverageDelayedSuccessfulBAC() throws CardServiceException,
 			InterruptedException {

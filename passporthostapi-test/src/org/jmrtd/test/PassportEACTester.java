@@ -293,8 +293,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertFalse(service.doTA(new CVCertificate[] { c1, c2 }, k));
         c2 = readCVCertificateFromFile(testIScert);
         assertNotNull(c2);
-        assertTrue(service.doTA(new CVCertificate[] { c2 }, k));
-        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+        assertFalse(service.doTA(new CVCertificate[] { c2 }, k));
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
     }
 
     /**

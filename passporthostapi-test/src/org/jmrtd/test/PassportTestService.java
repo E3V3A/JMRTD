@@ -598,6 +598,10 @@ public class PassportTestService extends PassportService {
 	public byte[] getLastChallenge() {
 		return lastChallenge;
 	}
+    
+    public PublicKey getAAKey() {
+        return publicKey;
+    }
 
 	public void setLastChallenge(byte[] lastChallenge) {
 		this.lastChallenge = lastChallenge;
