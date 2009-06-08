@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
+
 import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.AuthorizationRoleEnum;
@@ -265,6 +267,64 @@ public class PassportEACTester extends PassportTesterBase {
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
     }
 
+    /**
+     * Test if we can resend the IS certificate if the one we sent first
+     * was wrong (by inducing a wrong signature).
+     * 
+     * The  test says we cannot do it, we have to send the whole chain again,
+     * this is covered in the next test.
+     * 
+     */
+    public void testEAC6() {
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testISkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        try {
+          c2.getSignature()[20] = (byte)0xFF;
+        }catch(Exception e) {
+        }
+
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertFalse(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        c2 = readCVCertificateFromFile(testIScert);
+        assertNotNull(c2);
+        assertTrue(service.doTA(new CVCertificate[] { c2 }, k));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+    }
+
+    /**
+     * See previous test. See if we can reattempt the TA process, with the
+     * whole certificate chain, without repeating CA. 
+     * 
+     */
+    public void testEAC6a() {
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testISkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        try {
+          c2.getSignature()[20] = (byte)0xFF;
+        }catch(Exception e) {
+        }
+
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertFalse(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        c2 = readCVCertificateFromFile(testIScert);
+        assertNotNull(c2);
+        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+    }
+
+    
     /**
      * TODO: This is not a description for this method! This creates a new root
      * certificate for the passport with the following features: - if the given
