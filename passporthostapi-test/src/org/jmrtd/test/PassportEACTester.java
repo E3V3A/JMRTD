@@ -324,6 +324,43 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
+    /**
+     * Test the passport with binary search on certificates to find the current 
+     * passport date 
+     * 
+     */
+    public void testDate() {
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c2.getCertificateBody().getValidFrom();
+          to = c2.getCertificateBody().getValidTo();
+        }catch(Exception e) {
+            fail();
+        }
+        CertsKeyPair ck = createCertificatesToSearchDate(new CVCertificate[] { c1, c2}, k, from, to);
+        for(CVCertificate c : ck.certs) {
+            assertNotNull(c);
+            System.out.println("c: "+c);
+        }
+        assertNotNull(ck.key);
+        
+        service.doBAC();
+        assertTrue(service.doCA());
+        boolean finished = false;
+        while(!finished) {
+            boolean result = service.doTA(ck.certs, ck.key); 
+            Date middleDate = new Date((long)(from.getTime() + (long)((long)(to.getTime()-from.getTime())/2)));
+        }
+        
+
+    }
+
     
     /**
      * TODO: This is not a description for this method! This creates a new root
@@ -462,6 +499,65 @@ public class PassportEACTester extends PassportTesterBase {
         }
     }
 
+    
+    public static CertsKeyPair createCertificatesToSearchDate(
+            CVCertificate[] oldCerts,
+            PrivateKey privateKey, 
+            Date from, Date to) {
+        try {
+            List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
+            CVCertificate prevCert = null;
+            PublicKey prevKey = null;
+            for (CVCertificate oldCert : oldCerts) {
+                    CVCertificateBody body = oldCert.getCertificateBody();
+                    CAReferenceField caRef = body.getAuthorityReference();
+                    HolderReferenceField holderRef = body.getHolderReference();
+                    AuthorizationRoleEnum role = body
+                            .getAuthorizationTemplate().getAuthorizationField()
+                            .getRole();
+                    Date validFrom = body.getValidFrom();
+                    Date validTo = body.getValidTo();                    
+                    if (role == AuthorizationRoleEnum.DV_D) {
+                        role = AuthorizationRoleEnum.DV_F;
+                    }else if (role == AuthorizationRoleEnum.IS){
+                        validFrom = from;
+                        validTo = to;
+                    }
+                    AccessRightEnum rights = body.getAuthorizationTemplate()
+                            .getAuthorizationField().getAccessRight();
+                    CVCPublicKey publicKey = body.getPublicKey();
+                    String algName = AlgorithmUtil.getAlgorithmName(publicKey
+                            .getObjectIdentifier());
+
+                    KeyPairGenerator keyGen = KeyPairGenerator.getInstance(
+                            "ECDSA", "BC");
+                    keyGen.initialize(((ECPrivateKey) privateKey).getParams(),
+                            new SecureRandom());
+                    KeyPair keyPair = keyGen.generateKeyPair();
+
+                    CVCertificate newCert = CertificateGenerator
+                            .createCertificate(keyPair.getPublic(), privateKey,
+                                    algName, caRef, holderRef, role, rights,
+                                    validFrom, validTo, "BC");
+                    newCerts.add(newCert);
+                    privateKey = keyPair.getPrivate();
+                    // We want to make sure that the chain that we created is correct:
+                    if(prevCert != null) {
+                        newCert.verify(prevKey, "BC");
+                    }
+                    prevCert = newCert;
+                    prevKey = keyPair.getPublic();
+            }
+            return new CertsKeyPair(newCerts.toArray(oldCerts),
+                    privateKey);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    
+    
     private static CAReferenceField increase(CAReferenceField f) {
         String c = f.getCountry();
         String m = f.getMnemonic();
