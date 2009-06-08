@@ -1,20 +1,13 @@
 package org.jmrtd.test;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
-import java.security.interfaces.ECPublicKey;
-import java.security.spec.ECParameterSpec;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -22,20 +15,18 @@ import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
-import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCPublicKey;
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
-import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
-import org.ejbca.cvc.PublicKeyEC;
 import org.jmrtd.PassportService;
 
 public class PassportEACTester extends PassportTesterBase {
 
     public PassportEACTester(String name) {
         super(name);
+        traceApdu = true;
     }
 
     private static final File testDVDcert = new File(
@@ -53,7 +44,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC1() {
-        traceApdu = true;
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testISkey);
@@ -65,7 +55,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -78,7 +67,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC2a() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         service.doBAC();
@@ -86,7 +74,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertFalse(service.doTA(new CVCertificate[] {}, k, "SHA224WITHECDSA"));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -97,7 +84,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC2b() {
-        traceApdu = true;
         // We do not have a private key for the DV certificate, thus we have
         // to make our own, temporary DV certificate, here we try the domestic
         // one, in the next test we try the foreign one
@@ -116,7 +102,6 @@ public class PassportEACTester extends PassportTesterBase {
         // We don't get pass this point:
         assertFalse(service.doTA(ck.certs, ck.key));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -127,7 +112,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC2c() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
@@ -143,7 +127,6 @@ public class PassportEACTester extends PassportTesterBase {
         // We don't get pass this point:
         assertFalse(service.doTA(ck.certs, ck.key));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -152,7 +135,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC3() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate isCert = readCVCertificateFromFile(testIScert);
@@ -167,7 +149,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertFalse(service.doTA(ck.certs, ck.key));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -177,7 +158,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC4a() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
@@ -195,7 +175,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertTrue(service.doTA(ck.certs, ck.key));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -206,7 +185,6 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC4b() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
@@ -224,7 +202,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertTrue(service.doTA(ck.certs, ck.key));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
-        traceApdu = false;
     }
 
     /**
@@ -246,7 +223,6 @@ public class PassportEACTester extends PassportTesterBase {
      * Here we try 2 DV certificates and one IS certificate.
      */
     public void testEAC5a() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
@@ -265,13 +241,10 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertFalse(service.doTA(ck.certs, ck.key));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-
-        traceApdu = false;
     }
 
     /** A variation of the previous test with two IS certificates */
     public void testEAC5b() {
-        traceApdu = true;
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
         CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
@@ -290,8 +263,6 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doCA());
         assertFalse(service.doTA(ck.certs, ck.key));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
-
-        traceApdu = false;
     }
 
     /**
