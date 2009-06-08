@@ -90,9 +90,9 @@ public class PassportBACTester extends PassportTesterBase {
 		service.doBAC();
 		assertTrue(getLastSW() == 0x9000);
 		assertTrue(service.canSelectFile(PassportService.EF_DG1));
-		assertTrue(service.canReadFile(PassportService.EF_DG1));
+		assertTrue(service.canReadFile(PassportService.EF_DG1,true));
 		assertTrue(service.canSelectFile(PassportService.EF_DG2));
-		assertTrue(service.canReadFile(PassportService.EF_DG2));
+		assertTrue(service.canReadFile(PassportService.EF_DG2,true));
 	}
 
 	/**
@@ -109,8 +109,8 @@ public class PassportBACTester extends PassportTesterBase {
 		assertTrue(service.canSelectFile(PassportService.EF_DG2));
 		assertTrue(service.canSelectFile(PassportService.EF_DG15));
 		// but not fingerprint or iris
-		assertFalse(service.canReadFile(PassportService.EF_DG3));
-		assertFalse(service.canReadFile(PassportService.EF_DG4));
+		assertFalse(service.canReadFile(PassportService.EF_DG3,true));
+		assertFalse(service.canReadFile(PassportService.EF_DG4,true));
 	}
 
 	/**
@@ -276,7 +276,7 @@ public class PassportBACTester extends PassportTesterBase {
 			System.out.print("Readable files using READ BINARY (B0): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
-				if (service.canReadFile(fid)) {
+				if (service.canReadFile(fid,true)) {
 					System.out.printf(" %X ", fid);
 				}
 			}
@@ -286,7 +286,7 @@ public class PassportBACTester extends PassportTesterBase {
 			System.out.print("Readable files using READ BINARY2 (B1): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
-				if (service.canReadFile(fid)) {
+				if (service.canReadFile(fid,true)) {
 					System.out.printf(" %X ", fid);
 				} 
 			}
