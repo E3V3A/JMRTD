@@ -105,9 +105,9 @@ public class PassportBACTester extends PassportTesterBase {
 		service.doBAC();
 		traceApdu = true;
 		// We should now be able to read MRZ, photo and public key for AA
-		assertTrue(service.canSelectFile(PassportService.EF_DG1));
-		assertTrue(service.canSelectFile(PassportService.EF_DG2));
-		assertTrue(service.canSelectFile(PassportService.EF_DG15));
+		assertTrue(service.canReadFile(PassportService.EF_DG1, true));
+		assertTrue(service.canReadFile(PassportService.EF_DG2, true));
+		assertTrue(service.canReadFile(PassportService.EF_DG15, true));
 		// but not fingerprint or iris
 		assertFalse(service.canReadFile(PassportService.EF_DG3,true));
 		assertFalse(service.canReadFile(PassportService.EF_DG4,true));
@@ -261,7 +261,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Prints selectable files and readable files, using B0 or B1;
 	 */
-	private void printSelectableFiles() {
+	private void printSelectableFiles(boolean useSM) {
 		List<Short> c = new ArrayList<Short>();
 		System.out.print("Selectable files: ");
 		for (short fid = 0x0100; fid <= 0x01FF; fid++) {
@@ -276,7 +276,7 @@ public class PassportBACTester extends PassportTesterBase {
 			System.out.print("Readable files using READ BINARY (B0): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
-				if (service.canReadFile(fid,true)) {
+				if (service.canReadFile(fid, useSM)) {
 					System.out.printf(" %X ", fid);
 				}
 			}
@@ -286,7 +286,7 @@ public class PassportBACTester extends PassportTesterBase {
 			System.out.print("Readable files using READ BINARY2 (B1): ");
 			for (Short fid_object : c) {
 				short fid = fid_object.shortValue();
-				if (service.canReadFile(fid,true)) {
+				if (service.canReadFile(fid, useSM)) {
 					System.out.printf(" %X ", fid);
 				} 
 			}
@@ -301,10 +301,10 @@ public class PassportBACTester extends PassportTesterBase {
 	public void tes_tSelectableFiles() throws CardServiceException {
 		traceApdu = false;
 		System.out.println("** Checking selectable files before BAC **");
-		printSelectableFiles();
+		printSelectableFiles(false);
 		service.doBAC();
 		System.out.println("** Checking selectable files after BAC **");
-		printSelectableFiles();
+		printSelectableFiles(true);
 	}
 
 	/** Dump file to console */
