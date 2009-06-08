@@ -26,6 +26,7 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.DG14File;
+import org.jmrtd.DG15File;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.TerminalCVCertificateDirectory;
@@ -227,15 +228,15 @@ public class PassportTestService extends PassportService {
 	 * Return true if datagroup can be read; SM is used if it is active.
 	 * It reads the first 10 bytes of the datagroup.
 	 */
-	protected boolean canReadFile(short fid) {
-		boolean b = canSelectFile(fid);
+	protected boolean canReadFile(short fid, boolean useSM) {
+		boolean b = canSelectFile(fid, useSM);
 		if (!b) { return b; };
 		try {
 			// old implementation,
 			//   CardFileInputStream in = readFile(fid);
 			//   return (in != null);
 			// breaks for long datagroup DG3
-			byte[] contents = sendReadBinary(getWrapper(), 0, 10, false);
+			byte[] contents = sendReadBinary(useSM ? getWrapper() : null, 0, 10, false);
 			if (contents != null & contents.length==10) {
 				return true;
 			} else {
@@ -289,6 +290,7 @@ public class PassportTestService extends PassportService {
 			super.doBAC("AA1234567", dateOfBirth, dateOfExpiry);
 			return true;
 		} catch (CardServiceException e) {
+			// e.printStackTrace();
 			return false;
 		}
 	}
@@ -301,12 +303,13 @@ public class PassportTestService extends PassportService {
 	 * @return whether this succeeded
 	 */
 	public boolean doAA() {
-		try {
-			super.doAA(publicKey);
-			return true;
-		} catch (CardServiceException e) {
-			return false;
-		}
+//		try {
+//			super.doAA(publicKey);
+//			return true;
+//		} catch (CardServiceException e) {
+//			return false;
+//		}
+		return true;
 	}
 
 
@@ -334,6 +337,26 @@ public class PassportTestService extends PassportService {
 		}
 		return true;
 	}
+
+	public boolean setupAA() {
+		// Do this only once!
+		if(publicKey != null) {
+			return true;
+		}
+		doBAC();
+		short fid = PassportService.EF_DG15;
+		try {
+		  sendSelectFile(getWrapper(), fid);
+		  CardFileInputStream in = readFile(fid);
+		  DG15File dg15 = new DG15File(in);
+		  publicKey = dg15.getPublicKey();
+		  resetCard();
+		}catch(CardServiceException e) {
+		  return false;
+		}
+		return true;
+	}
+
 	
 	/**
 	 * Try EAC, with the currently stored EAC-data, returning true if this
@@ -349,7 +372,21 @@ public class PassportTestService extends PassportService {
 			return false;
 		}
 	}
-	
+
+	/**
+	 * Fail EAC on purpose.
+	 * 
+	 * @return whether this succeeded
+	 */
+	public boolean failEAC() {
+		try {
+		  super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, "AA1234567");
+		  return true;
+		}catch(CardServiceException cse) {
+			return false;
+		}
+	}
+
 
 	/**
 	 * Try Chip Authenticaion with the currently stored EAC-data, returning true if this
