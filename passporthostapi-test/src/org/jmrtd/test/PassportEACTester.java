@@ -349,6 +349,30 @@ public class PassportEACTester extends PassportTesterBase {
         assertFalse(verifyCerts(ck));
     }
 
+    /** Test that en expired IS Foreign certificate is not accepted.
+     * This test takes a while. */     
+    public void testEAC7b() {
+        Date currentDate = findPassportDate();
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c2.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, -1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
+        assertFalse(verifyCerts(ck));
+    }
+
+    
     /** Test that a IS Foreign certificate does not change the passport date.
      * This test takes a while (even longer than the previous one). */     
     public void testEAC7c() {
@@ -375,9 +399,9 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(checkEqualDates(currentDate, newDate));
     }
 
-    /** Test that en expired IS Foreign certificate is not accepted.
-     * This test takes a while. */     
-    public void testEAC7b() {
+    /** Test that a IS Domestic certificate changes the passport date.
+     * This test takes a while (about same as the previous one). */     
+    public void testEAC7d() {
         Date currentDate = findPassportDate();
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
@@ -389,14 +413,18 @@ public class PassportEACTester extends PassportTesterBase {
         Date from = null; Date to = null;
         try {
           from = c2.getCertificateBody().getValidFrom();
-          to = addDay(currentDate, -1);
+          to = addDay(currentDate, 1);
         }catch(Exception e) {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
-        assertFalse(verifyCerts(ck));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false);
+        assertTrue(verifyCerts(ck));
+        Date newDate = findPassportDate();
+        System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
+        assertTrue(checkEqualDates(addDay(currentDate, 1), newDate));
     }
+
 
     
     /**
