@@ -593,9 +593,13 @@ public class PassportEACTester extends PassportTesterBase {
      * passport), the test checks this!
      * 
      * After this test8a and test8b should fail.
+     * 
+     * The one run on passport sample #090527-03 passed successfully.
+     * This passport now has only the new trust point and the current date
+     * some time in 2011 (just after the expiry date of the old root CVCA 
+     * certificate, which is 2011-05-19.
      */
     public void testEAC9() {
-        traceApdu = true;
         CVCAFile cvcaFile = service.getCVCAFile();
         System.out.println("pre CVCA file: "+cvcaFile);
         assertNotNull(cvcaFile);
