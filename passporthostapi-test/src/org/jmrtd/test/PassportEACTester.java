@@ -386,8 +386,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c2.getCertificateBody().getValidFrom();
-          to = addDay(currentDate, 1);
+          from = addDay(currentDate, 1);
+          to = c2.getCertificateBody().getValidTo();
         }catch(Exception e) {
             fail();
         }
@@ -412,8 +412,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c2.getCertificateBody().getValidFrom();
-          to = addDay(currentDate, 1);
+          from = addDay(currentDate, 1);
+          to = c2.getCertificateBody().getValidTo();
         }catch(Exception e) {
             fail();
         }
@@ -462,8 +462,8 @@ public class PassportEACTester extends PassportTesterBase {
             if(!result2) {
                 result2 = verifyCerts(ck2);
             }
-            //System.out.println(PassportService.SDF.format(from)+" "+PassportService.SDF.format(middleDate)+" "+PassportService.SDF.format(to));
-            // System.out.println("Verified: "+result1+" "+result2);
+//            System.out.println(PassportService.SDF.format(from)+" "+PassportService.SDF.format(middleDate)+" "+PassportService.SDF.format(to));
+//            System.out.println("Verified: "+result1+" "+result2);
             assertTrue(result1 || result2);
 
             if(result1) {
