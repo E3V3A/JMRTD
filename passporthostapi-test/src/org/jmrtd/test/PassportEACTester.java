@@ -487,6 +487,7 @@ public class PassportEACTester extends PassportTesterBase {
      */
     public void testEAC8() {
         Date currentPassportDate = findPassportDate(true);
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentPassportDate));
         checkNewRootCertificatesExist();
         CVCAFile cvcaFile = service.getCVCAFile();
         assertNotNull(cvcaFile);
@@ -495,36 +496,37 @@ public class PassportEACTester extends PassportTesterBase {
         CVCertificate newCVCA = readCVCertificateFromFile(newCVCAcert);
         assertNotNull(origCVCA);
         assertNotNull(newCVCA);
+        boolean putNewTrustPoint = true;
         try {
-          assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
-        }catch(Exception e) {
-          fail();  
-        }
-        if(cvcaFile.getAltCAReference() != null) {
-            try {
-              assertEquals(cvcaFile.getAltCAReference(),newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
-              // It is already there, we bail out
-              return;
-            }catch(Exception e) {
-                fail();
-            }
-        }
-        assertTrue(service.doBAC());
-        assertTrue(service.doCA());
-        traceApdu = true;
-        assertTrue(service.doTA(new CVCertificate[]{newCVCA}, null));
-        traceApdu = false;
-        try {
-            resetCard();
+          if(cvcaFile.getCAReference().equals(newCVCA.getCertificateBody().getAuthorityReference().getConcatenated())) {
+            putNewTrustPoint = false;
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());                        
+          }else{
+            assertNull(cvcaFile.getAltCAReference());
+            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());            
+          }
         }catch(Exception e) {
             fail();
+        }
+
+        if(putNewTrustPoint) {
+          assertTrue(service.doBAC());
+          assertTrue(service.doCA());
+          traceApdu = true;
+          assertTrue(service.doTA(new CVCertificate[]{newCVCA}, null));
+          traceApdu = false;
+          try {
+            resetCard();
+          }catch(Exception e) {
+            fail();
+          }
         }
         cvcaFile = service.getCVCAFile();
         assertNotNull(cvcaFile);
         System.out.println("New CVCA file: "+cvcaFile);
         try {
-            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
-            assertEquals(cvcaFile.getAltCAReference(), newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+            assertEquals(cvcaFile.getCAReference(), newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
         }catch(Exception e) {
             fail();  
         }
