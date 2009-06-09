@@ -2,6 +2,7 @@ package org.jmrtd.test;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
@@ -156,6 +157,17 @@ public abstract class PassportTesterBase extends TestCase implements
             System.out.println("loadFile error: " + e1);
         }
         return dataBuffer;
+    }
+
+    public static void writeFile(File file, byte[] data) throws IOException {
+        FileOutputStream outStream = null;
+        try {
+            outStream = new FileOutputStream(file);
+            outStream.write(data);
+        } finally {
+            if (outStream != null)
+                outStream.close();
+        }
     }
 
 }
