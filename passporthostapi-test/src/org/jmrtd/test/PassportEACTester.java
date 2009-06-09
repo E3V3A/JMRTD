@@ -591,9 +591,11 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      * This test is only runnable once (in terms of permanent change to the  
      * passport), the test checks this!
+     * 
+     * After this test8a and test8b should fail.
      */
     public void testEAC9() {
-
+        traceApdu = true;
         CVCAFile cvcaFile = service.getCVCAFile();
         System.out.println("pre CVCA file: "+cvcaFile);
         assertNotNull(cvcaFile);
@@ -602,7 +604,7 @@ public class PassportEACTester extends PassportTesterBase {
         CVCertificate c0 = readCVCertificateFromFile(newCVCAcert);
         CVCertificate c1 = readCVCertificateFromFile(newDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(newIScert);        
-        PrivateKey k = readKeyFromFile(newISkey);
+        PrivateKey k = readKeyFromFile(newCVCAkey);
         assertNotNull(c0);
         assertNotNull(c1);
         assertNotNull(c2);
