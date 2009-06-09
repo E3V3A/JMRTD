@@ -26,6 +26,7 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.CVCAFile;
 import org.jmrtd.DG14File;
 import org.jmrtd.DG15File;
 import org.jmrtd.PassportService;
@@ -359,6 +360,22 @@ public class PassportTestService extends PassportService {
 		}
 		return true;
 	}
+
+    public CVCAFile getCVCAFile() {
+        CVCAFile result = null;
+        try {
+          resetCard();
+          doBAC();
+          short fid = PassportService.EF_CVCA;
+          sendSelectFile(getWrapper(), fid);
+          CardFileInputStream in = readFile(fid);
+          result = new CVCAFile(in);
+          resetCard();
+        }catch(CardServiceException e) {
+          return null;
+        }
+        return result;
+    }
 
 	
 	/**
