@@ -55,6 +55,7 @@ public class MBTadapter
 				System.exit(-23);
 			}
 			service.setMRZ("XX1234587", "760803", "140507");
+			service.setupAA();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
