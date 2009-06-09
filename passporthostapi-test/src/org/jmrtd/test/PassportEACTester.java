@@ -535,6 +535,56 @@ public class PassportEACTester extends PassportTesterBase {
     }
     
     /**
+     * Tests the normal EAC behavior after trust point update:
+     * sends the original certificates to the and tests reading out DG3.
+     * 
+     */
+    public void testEAC8a() {
+        
+        // First check (lightly) that the new trust point is already there
+        CVCAFile cvcaFile = service.getCVCAFile();
+        assertNotNull(cvcaFile);
+        assertNotNull(cvcaFile.getAltCAReference());
+        
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testISkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+    }
+
+    /**
+     * Tests the normal EAC behavior after trust point update:
+     * sends the new certificates to the and tests reading out DG3.
+     * 
+     */
+    public void testEAC8b() {
+
+        // First check (lightly) that the new trust point is already there
+        CVCAFile cvcaFile = service.getCVCAFile();
+        assertNotNull(cvcaFile);
+        assertNotNull(cvcaFile.getAltCAReference());
+
+        CVCertificate c1 = readCVCertificateFromFile(newDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(newIScert);
+        PrivateKey k = readKeyFromFile(newISkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        service.doBAC();
+        assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+        assertTrue(service.doCA());
+        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.canReadFile(PassportService.EF_DG3, true));
+    }
+
+    /**
      * Test the passport with binary search on certificates to find the current 
      * passport date 
      * 
