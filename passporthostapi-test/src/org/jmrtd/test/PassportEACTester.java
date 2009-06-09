@@ -498,12 +498,12 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(newCVCA);
         boolean putNewTrustPoint = true;
         try {
-          if(cvcaFile.getCAReference().equals(newCVCA.getCertificateBody().getAuthorityReference().getConcatenated())) {
+          if(cvcaFile.getCAReference().equals(newCVCA.getCertificateBody().getHolderReference().getConcatenated())) {
             putNewTrustPoint = false;
-            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());                        
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());                        
           }else{
             assertNull(cvcaFile.getAltCAReference());
-            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());            
+            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());            
           }
         }catch(Exception e) {
             fail();
@@ -525,13 +525,13 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(cvcaFile);
         System.out.println("New CVCA file: "+cvcaFile);
         try {
-            assertEquals(cvcaFile.getCAReference(), newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
-            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+            assertEquals(cvcaFile.getCAReference(), newCVCA.getCertificateBody().getHolderReference().getConcatenated());
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());
         }catch(Exception e) {
             fail();  
         }
-        Date dateAfterUpdate = findPassportDate(true);
-        assertTrue(checkEqualDates(currentPassportDate, dateAfterUpdate));
+       Date dateAfterUpdate = findPassportDate(true);
+       assertTrue(checkEqualDates(currentPassportDate, dateAfterUpdate));
     }
     
     /**
