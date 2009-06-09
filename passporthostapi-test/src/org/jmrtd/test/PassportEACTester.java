@@ -8,6 +8,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.interfaces.ECPrivateKey;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -28,7 +29,7 @@ public class PassportEACTester extends PassportTesterBase {
 
     public PassportEACTester(String name) {
         super(name);
-        traceApdu = true;
+//        traceApdu = true;
     }
 
     private static final File testDVDcert = new File(
@@ -324,12 +325,86 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
+    
+    /** Test that an expired IS Domestic certificate is not accepted.
+     * This test takes a while. */     
+    public void testEAC7a() {
+        Date currentDate = findPassportDate();
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c2.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, -1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false);
+        assertFalse(verifyCerts(ck));
+    }
+
+    /** Test that a IS Foreign certificate does not change the passport date.
+     * This test takes a while (even longer than the previous one). */     
+    public void testEAC7c() {
+        Date currentDate = findPassportDate();
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c2.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, 1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
+        assertTrue(verifyCerts(ck));
+        Date newDate = findPassportDate();
+        System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
+        assertTrue(checkEqualDates(currentDate, newDate));
+    }
+
+    /** Test that en expired IS Foreign certificate is not accepted.
+     * This test takes a while. */     
+    public void testEAC7b() {
+        Date currentDate = findPassportDate();
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c2.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, -1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
+        assertFalse(verifyCerts(ck));
+    }
+
+    
     /**
      * Test the passport with binary search on certificates to find the current 
      * passport date 
      * 
      */
-    public void testDate() {
+    private Date findPassportDate() {
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
@@ -343,26 +418,65 @@ public class PassportEACTester extends PassportTesterBase {
         }catch(Exception e) {
             fail();
         }
-        CertsKeyPair ck = createCertificatesToSearchDate(new CVCertificate[] { c1, c2}, k, from, to);
-        for(CVCertificate c : ck.certs) {
-            assertNotNull(c);
-            System.out.println("c: "+c);
-        }
-        assertNotNull(ck.key);
-        
-        service.doBAC();
-        assertTrue(service.doCA());
-        boolean finished = false;
-        while(!finished) {
-            boolean result = service.doTA(ck.certs, ck.key); 
-            Date middleDate = new Date((long)(from.getTime() + (long)((long)(to.getTime()-from.getTime())/2)));
-            // when it succeeds we have to start over the whole thing
-        }
-        
 
+        boolean finished = false;
+        Date middleDate = null;
+        while(!finished) {
+            middleDate = new Date((long)(from.getTime() + (long)((long)(to.getTime()-from.getTime())/2)));
+            CertsKeyPair ck1 = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, middleDate, true);
+            CertsKeyPair ck2 = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, middleDate, to, true);
+            
+            boolean result1 = verifyCerts(ck1);
+            if(!result1) {
+                result1 = verifyCerts(ck1);
+            }
+            boolean result2 = verifyCerts(ck2);
+            if(!result2) {
+                result2 = verifyCerts(ck2);
+            }
+            //System.out.println(PassportService.SDF.format(from)+" "+PassportService.SDF.format(middleDate)+" "+PassportService.SDF.format(to));
+            // System.out.println("Verified: "+result1+" "+result2);
+            assertTrue(result1 || result2);
+
+            if(result1) {
+                to = middleDate;
+            }else{
+                if(!result1 && checkEqualDates(from, middleDate)) {
+                    from = addDay(middleDate, 1);
+                }else{
+                    from = middleDate;
+                }
+            }
+            if(checkEqualDates(from , to)) {
+                finished = true;
+                middleDate = from;
+            }
+
+        }
+        return middleDate;
+    }
+    
+    private boolean verifyCerts(CertsKeyPair ck) {
+        try { resetCard(); assertTrue(true);
+        }catch(CardServiceException cse) { assertTrue(false); }
+        service.doBAC();
+        assertTrue(service.doCA());                
+        return service.doTA(ck.certs, ck.key);
     }
 
+    private boolean checkEqualDates(Date d1, Date d2) {
+        String s1 = PassportService.SDF.format(d1);
+        String s2 = PassportService.SDF.format(d2);
+        return s1.equals(s2);
+    }
     
+    private Date addDay(Date from, int num) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(from);
+        c.add(Calendar.DAY_OF_MONTH, num);
+        return c.getTime();
+    }
+
     /**
      * TODO: This is not a description for this method! This creates a new root
      * certificate for the passport with the following features: - if the given
@@ -501,10 +615,10 @@ public class PassportEACTester extends PassportTesterBase {
     }
 
     
-    public static CertsKeyPair createCertificatesToSearchDate(
+    public static CertsKeyPair createCertificatesToSearchChangeDate(
             CVCertificate[] oldCerts,
             PrivateKey privateKey, 
-            Date from, Date to) {
+            Date from, Date to, boolean makeForeign) {
         try {
             List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
             CVCertificate prevCert = null;
@@ -518,7 +632,7 @@ public class PassportEACTester extends PassportTesterBase {
                             .getRole();
                     Date validFrom = body.getValidFrom();
                     Date validTo = body.getValidTo();                    
-                    if (role == AuthorizationRoleEnum.DV_D) {
+                    if (role == AuthorizationRoleEnum.DV_D && makeForeign) {
                         role = AuthorizationRoleEnum.DV_F;
                     }else if (role == AuthorizationRoleEnum.IS){
                         validFrom = from;
