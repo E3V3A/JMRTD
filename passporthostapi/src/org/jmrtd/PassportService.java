@@ -192,7 +192,7 @@ public class PassportService extends PassportApduService {
 
     public static final byte SF_CVCA = 0x1C;
 
-    protected static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+    public static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
     /**
      * The file read block size, some passports cannot handle large values
@@ -404,7 +404,6 @@ public class PassportService extends PassportApduService {
                 } else {
                     eacKeyHash = t;
                 }
-
             }
             keyData = wrapDO((byte) 0x91, keyData);
             if (keyId != -1) {
@@ -436,17 +435,18 @@ public class PassportService extends PassportApduService {
      */
     public synchronized byte[] doTA(String caReference,
             List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
+            String taAlg,
             byte[] caKeyHash, String documentNumber)
             throws CardServiceException {
         try {
             if (caKeyHash == null) {
                 caKeyHash = eacKeyHash;
             }
-            String sigAlg = "SHA1withRSA"; // use some reasonalbe default...
+            String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
             byte[] certRef = wrapDO((byte) 0x83, caReference.getBytes());
 
             for (CVCertificate cert : terminalCertificates) {
-                try {
+                try{
                     sendMSEDST(wrapper, certRef);
                     byte[] body = getCertBodyData(cert);
                     byte[] sig = getCertSignatureData(cert);
@@ -461,7 +461,7 @@ public class PassportService extends PassportApduService {
                     certRef = wrapDO((byte) 0x83, cert.getCertificateBody()
                             .getHolderReference().getConcatenated().getBytes());
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    throw new CardServiceException(e.getMessage());
                 }
             }
             // Now send get challenge + mutual authentication
@@ -495,6 +495,13 @@ public class PassportService extends PassportApduService {
         }
     }
 
+    public synchronized byte[] doTA(String caReference,
+            List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
+            byte[] caKeyHash, String documentNumber)
+            throws CardServiceException {
+        return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
+    }
+    
     /**
      * Performs the EAC protocol with the passport. For details see TR-03110
      * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
