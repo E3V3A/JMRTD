@@ -438,15 +438,19 @@ public class PassportService extends PassportApduService {
             String taAlg,
             byte[] caKeyHash, String documentNumber)
             throws CardServiceException {
+        // FIXME caReference is not really needed, we get one from the first certificate
         try {
             if (caKeyHash == null) {
                 caKeyHash = eacKeyHash;
             }
             String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
-            byte[] certRef = wrapDO((byte) 0x83, caReference.getBytes());
-
+            byte[] certRef = null;
             for (CVCertificate cert : terminalCertificates) {
                 try{
+                    if(certRef == null) {
+                      certRef = wrapDO((byte) 0x83, cert.getCertificateBody()
+                            .getAuthorityReference().getConcatenated().getBytes());
+                    }
                     sendMSEDST(wrapper, certRef);
                     byte[] body = getCertBodyData(cert);
                     byte[] sig = getCertSignatureData(cert);
@@ -464,8 +468,11 @@ public class PassportService extends PassportApduService {
                     throw new CardServiceException(e.getMessage());
                 }
             }
+            if(terminalKey == null) {
+                return new byte[0];
+            }
             // Now send get challenge + mutual authentication
-
+            
             byte[] rpicc = sendGetChallenge(wrapper);
             byte[] idpic = new byte[documentNumber.length() + 1];
             System.arraycopy(documentNumber.getBytes(), 0, idpic, 0,
