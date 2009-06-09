@@ -485,7 +485,7 @@ public class PassportEACTester extends PassportTesterBase {
      * then check that the new trust point is reported. 
      *
      */
-    public void testEAC8() {
+    public void t_estEAC8() {
         Date currentPassportDate = findPassportDate(true);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentPassportDate));
         checkNewRootCertificatesExist();
@@ -599,7 +599,7 @@ public class PassportEACTester extends PassportTesterBase {
      * some time in 2011 (just after the expiry date of the old root CVCA 
      * certificate, which is 2011-05-19.
      */
-    public void testEAC9() {
+    public void t_estEAC9() {
         CVCAFile cvcaFile = service.getCVCAFile();
         System.out.println("pre CVCA file: "+cvcaFile);
         assertNotNull(cvcaFile);
