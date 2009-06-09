@@ -23,6 +23,7 @@ import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.HolderReferenceField;
+import org.jmrtd.CVCAFile;
 import org.jmrtd.PassportService;
 
 public class PassportEACTester extends PassportTesterBase {
@@ -32,12 +33,13 @@ public class PassportEACTester extends PassportTesterBase {
 //        traceApdu = true;
     }
 
-    private static final File testDVDcert = new File(
-            "certs/certDVD_orig.cvcert");
+    private static final File testDVDcert = new File("certs/certDVD_orig.cvcert");
 
     private static final File testIScert = new File("certs/certIS_orig.cvcert");
 
     private static final File testISkey = new File("certs/keyIS_orig.der");
+
+    private static final File testCVCAcert = new File("certs/certCVCA_orig.cvcert");
 
     private static final File testCVCAkey = new File("certs/keyCVCA_orig.der");
 
@@ -329,7 +331,7 @@ public class PassportEACTester extends PassportTesterBase {
     /** Test that an expired IS Domestic certificate is not accepted.
      * This test takes a while. */     
     public void testEAC7a() {
-        Date currentDate = findPassportDate();
+        Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
@@ -352,7 +354,7 @@ public class PassportEACTester extends PassportTesterBase {
     /** Test that en expired IS Foreign certificate is not accepted.
      * This test takes a while. */     
     public void testEAC7b() {
-        Date currentDate = findPassportDate();
+        Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
@@ -376,7 +378,7 @@ public class PassportEACTester extends PassportTesterBase {
     /** Test that a IS Foreign certificate does not change the passport date.
      * This test takes a while (even longer than the previous one). */     
     public void testEAC7c() {
-        Date currentDate = findPassportDate();
+        Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
@@ -394,7 +396,7 @@ public class PassportEACTester extends PassportTesterBase {
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
         CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
         assertTrue(verifyCerts(ck));
-        Date newDate = findPassportDate();
+        Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
         assertTrue(checkEqualDates(currentDate, newDate));
     }
@@ -402,7 +404,7 @@ public class PassportEACTester extends PassportTesterBase {
     /** Test that a IS Domestic certificate changes the passport date.
      * This test takes a while (about same as the previous one). */     
     public void testEAC7d() {
-        Date currentDate = findPassportDate();
+        Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
@@ -420,19 +422,125 @@ public class PassportEACTester extends PassportTesterBase {
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
         CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false);
         assertTrue(verifyCerts(ck));
-        Date newDate = findPassportDate();
+        Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
         assertTrue(checkEqualDates(addDay(currentDate, 1), newDate));
     }
 
 
     
+    
+    /** Test that an expired DV Domestic certificate is not accepted.
+     * This test takes a while. */     
+    public void testEAC7e() {
+        Date currentDate = findPassportDate(false);
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c1.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, -1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false, true);
+        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        assertFalse(verifyCerts(ck));
+    }
+
+    /** Test that en expired DV Foreign certificate is not accepted.
+     * This test takes a while. */     
+    public void testEAC7f() {
+        Date currentDate = findPassportDate(false);
+        System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
+        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testCVCAkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        Date from = null; Date to = null;
+        try {
+          from = c1.getCertificateBody().getValidFrom();
+          to = addDay(currentDate, -1);
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true, true);
+        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        assertFalse(verifyCerts(ck));
+    }
+
+
+    /**
+     * This test puts a new trust point on the passport. If there is one already, no action is taken.
+     * If there isn't any we put it on, we check that the date has not changed after the operation,
+     * then check that the new trust point is reported. 
+     *
+     */
+    public void testEAC8() {
+        Date currentPassportDate = findPassportDate(true);
+        checkNewRootCertificatesExist();
+        CVCAFile cvcaFile = service.getCVCAFile();
+        assertNotNull(cvcaFile);
+        System.out.println("cvca: "+cvcaFile);
+        CVCertificate origCVCA = readCVCertificateFromFile(testCVCAcert);
+        CVCertificate newCVCA = readCVCertificateFromFile(newCVCAcert);
+        assertNotNull(origCVCA);
+        assertNotNull(newCVCA);
+        try {
+          assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+        }catch(Exception e) {
+          fail();  
+        }
+        if(cvcaFile.getAltCAReference() != null) {
+            try {
+              assertEquals(cvcaFile.getAltCAReference(),newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+              // It is already there, we bail out
+              return;
+            }catch(Exception e) {
+                fail();
+            }
+        }
+        assertTrue(service.doBAC());
+        assertTrue(service.doCA());
+        traceApdu = true;
+        assertTrue(service.doTA(new CVCertificate[]{newCVCA}, null));
+        traceApdu = false;
+        try {
+            resetCard();
+        }catch(Exception e) {
+            fail();
+        }
+        cvcaFile = service.getCVCAFile();
+        assertNotNull(cvcaFile);
+        System.out.println("New CVCA file: "+cvcaFile);
+        try {
+            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+            assertEquals(cvcaFile.getAltCAReference(), newCVCA.getCertificateBody().getAuthorityReference().getConcatenated());
+        }catch(Exception e) {
+            fail();  
+        }
+        Date dateAfterUpdate = findPassportDate(true);
+        assertTrue(checkEqualDates(currentPassportDate, dateAfterUpdate));
+    }
+    
     /**
      * Test the passport with binary search on certificates to find the current 
      * passport date 
      * 
+     * The verify flag should be set to true only for tests that may alter the passport 
+     * trust points.
+     * 
      */
-    private Date findPassportDate() {
+    private Date findPassportDate(boolean verify) {
         CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
         CVCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
@@ -480,6 +588,20 @@ public class PassportEACTester extends PassportTesterBase {
                 middleDate = from;
             }
 
+        }
+        // now we need to see if this is correct, if one of the doTAs failed,
+        // then this date may be off...
+        if(verify) {
+            try {
+              from = c1.getCertificateBody().getValidFrom();
+              to = addDay(middleDate, -1);
+            }catch(Exception e) {
+                fail();
+            }
+            System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+            CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true, true);
+            ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+            assertFalse(verifyCerts(ck));
         }
         return middleDate;
     }
@@ -642,11 +764,18 @@ public class PassportEACTester extends PassportTesterBase {
         }
     }
 
-    
+
     public static CertsKeyPair createCertificatesToSearchChangeDate(
             CVCertificate[] oldCerts,
             PrivateKey privateKey, 
             Date from, Date to, boolean makeForeign) {
+        return createCertificatesToSearchChangeDate(oldCerts, privateKey, from, to, makeForeign, false);
+    }
+    
+    public static CertsKeyPair createCertificatesToSearchChangeDate(
+            CVCertificate[] oldCerts,
+            PrivateKey privateKey, 
+            Date from, Date to, boolean makeForeign, boolean applyDatesDomestic) {
         try {
             List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
             CVCertificate prevCert = null;
@@ -662,7 +791,8 @@ public class PassportEACTester extends PassportTesterBase {
                     Date validTo = body.getValidTo();                    
                     if (role == AuthorizationRoleEnum.DV_D && makeForeign) {
                         role = AuthorizationRoleEnum.DV_F;
-                    }else if (role == AuthorizationRoleEnum.IS){
+                    }
+                    if (role == AuthorizationRoleEnum.IS || applyDatesDomestic){
                         validFrom = from;
                         validTo = to;
                     }
@@ -699,7 +829,134 @@ public class PassportEACTester extends PassportTesterBase {
         }
     }
 
+    private static final File newCVCAcert = new File("certs/certCVCA_new.cvcert");
+    private static final File newDVDcert = new File("certs/certDVD_new.cvcert");
+    private static final File newIScert = new File("certs/certIS_new.cvcert");
+    private static final File newISkey = new File("certs/keyIS_new.der");
+    private static final File newCVCAkey = new File("certs/keyCVCA_new.der");
+ 
+
+    private static void createNewRootCertificateChain(CVCertificate oldRootCert, 
+            PrivateKey oldRootPrivateKey, long timeShift, CVCertificate oldDVDCert,
+            CVCertificate oldISCert) {
+        try {
+        CVCertificateBody body = oldRootCert.getCertificateBody();
+        CVCPublicKey publicKey = body.getPublicKey();
+        String country = body.getAuthorityReference().getCountry();
+        String mnemonic = body.getAuthorityReference().getMnemonic();
+        String sequence = body.getAuthorityReference().getSequence();
+        CAReferenceField caRef = new CAReferenceField(country,mnemonic,sequence);
+        sequence = increase(sequence);
+        HolderReferenceField holderRef = new HolderReferenceField(country,mnemonic,sequence);
+        Date validFrom = body.getValidFrom();
+        Date validTo = body.getValidTo();
+        validFrom.setTime((long)(validFrom.getTime() + timeShift));
+        validTo.setTime((long)(validTo.getTime() + timeShift));
+        AuthorizationRoleEnum role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
+        AccessRightEnum rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        String algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+        keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
+        KeyPair newRootKeyPair = keyGen.generateKeyPair();
+        
+        CVCertificate newRootCertificate = CertificateGenerator.createCertificate(
+                newRootKeyPair.getPublic(), oldRootPrivateKey,
+                algName, caRef, holderRef, role, rights, validFrom,
+                validTo, "BC");
+        System.out.println("newRoot: "+newRootCertificate);
+        System.out.println("newRootKey: "+newRootKeyPair.getPrivate());
+        
+        // do not overwrite!
+        if(!newCVCAcert.exists()) {
+          writeFile(newCVCAcert, newRootCertificate.getDEREncoded());
+        }
+        if(!newCVCAkey.exists()) {
+          writeFile(newCVCAkey, newRootKeyPair.getPrivate().getEncoded());
+        }
+        
+        
+        body = oldDVDCert.getCertificateBody();
+        publicKey = body.getPublicKey();
+        caRef = new CAReferenceField(country, mnemonic, sequence);
+        holderRef = body.getHolderReference();
+        validFrom = body.getValidFrom();
+        validTo = body.getValidTo();
+        role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
+        rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+
+        keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
+        KeyPair newDVDKeyPair = keyGen.generateKeyPair();
+        
+        CVCertificate newDVDCertificate = CertificateGenerator.createCertificate(
+                newDVDKeyPair.getPublic(), newRootKeyPair.getPrivate(),
+                algName, caRef, holderRef, role, rights, validFrom,
+                validTo, "BC");
+        if(!newDVDcert.exists()) {
+            writeFile(newDVDcert, newDVDCertificate.getDEREncoded());
+          }
+
+        System.out.println("newDVD: "+newDVDCertificate);
+        
+
+        body = oldISCert.getCertificateBody();
+        publicKey = body.getPublicKey();
+        caRef = body.getAuthorityReference();
+        holderRef = body.getHolderReference();
+        validFrom = body.getValidFrom();
+        validTo = body.getValidTo();
+        role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
+        rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+
+        keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
+        KeyPair newISKeyPair = keyGen.generateKeyPair();
+        
+        CVCertificate newISCertificate = CertificateGenerator.createCertificate(
+                newISKeyPair.getPublic(), newDVDKeyPair.getPrivate(),
+                algName, caRef, holderRef, role, rights, validFrom,
+                validTo, "BC");
+        if(!newIScert.exists()) {
+            writeFile(newIScert, newISCertificate.getDEREncoded());
+          }
+        if(!newISkey.exists()) {
+            writeFile(newISkey, newISKeyPair.getPrivate().getEncoded());
+          }
+
+        System.out.println("newIS: "+newISCertificate);
+        System.out.println("newISKey: "+newISKeyPair.getPrivate());
+        
+        
+        
+        }catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     
+    private void checkNewRootCertificatesExist() {
+        if(newCVCAcert.exists() && newDVDcert.exists() && newIScert.exists() && newISkey.exists() &&
+                newCVCAkey.exists()) {
+            return;
+        }
+        Date currentPassportDate = findPassportDate(true);
+        PrivateKey rootKey = readKeyFromFile(testCVCAkey);
+        CVCertificate rootCert = readCVCertificateFromFile(testCVCAcert);
+        CVCertificate dvdCert = readCVCertificateFromFile(testDVDcert);
+        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        long from = 0;
+        long now = 0;
+        try {
+          from = rootCert.getCertificateBody().getValidFrom().getTime();
+          now = currentPassportDate.getTime();
+        }catch(Exception e) {
+          fail();  
+        }
+        createNewRootCertificateChain(rootCert, rootKey, (long)((long)(now - from)/2), dvdCert, isCert);
+        assertTrue(newCVCAcert.exists() && newDVDcert.exists() && newIScert.exists() && newISkey.exists() &&
+        newCVCAkey.exists());
+    }
     
     private static CAReferenceField increase(CAReferenceField f) {
         String c = f.getCountry();
