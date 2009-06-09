@@ -584,6 +584,49 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
+    
+    /**
+     * Tests the expiry of the old trust point after the date has been set 
+     * after the expiry point of the old trust point.
+     * 
+     * This test is only runnable once (in terms of permanent change to the  
+     * passport), the test checks this!
+     */
+    public void testEAC9() {
+
+        CVCAFile cvcaFile = service.getCVCAFile();
+        System.out.println("pre CVCA file: "+cvcaFile);
+        assertNotNull(cvcaFile);
+        assertNotNull(cvcaFile.getAltCAReference());
+
+        CVCertificate c0 = readCVCertificateFromFile(newCVCAcert);
+        CVCertificate c1 = readCVCertificateFromFile(newDVDcert);
+        CVCertificate c2 = readCVCertificateFromFile(newIScert);        
+        PrivateKey k = readKeyFromFile(newISkey);
+        assertNotNull(c0);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        CVCertificate oldRoot = readCVCertificateFromFile(testCVCAcert);
+       
+        Date from = null; Date to = null;
+        try {
+          from = addDay(oldRoot.getCertificateBody().getValidTo(), 1);
+          to = c0.getCertificateBody().getValidTo();
+        }catch(Exception e) {
+            fail();
+        }
+        System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false, true);
+        assertTrue(verifyCerts(ck));
+        
+        try {  resetCard(); }catch(Exception e) {fail();}
+        cvcaFile = service.getCVCAFile();
+        System.out.println("new CVCA file: "+cvcaFile);
+        assertNotNull(cvcaFile);
+        assertNull(cvcaFile.getAltCAReference());
+    }
+
     /**
      * Test the passport with binary search on certificates to find the current 
      * passport date 
