@@ -120,6 +120,7 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.FaceInfo;
 import org.jmrtd.MRZInfo;
 import org.jmrtd.Passport;
+import org.jmrtd.PassportCertificateGenerator;
 import org.jmrtd.PassportFile;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
