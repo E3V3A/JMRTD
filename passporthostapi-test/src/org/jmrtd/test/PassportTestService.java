@@ -151,7 +151,7 @@ public class PassportTestService extends PassportService {
 	}
 
 	/**
-	 * Set MRZ, with dates in "YYYYMMDD" format
+	 * Set MRZ, with dates in "YYMMDD" format
 	 * 
 	 * @throws ParseException
 	 *             if format of dates is incorrect
@@ -531,24 +531,23 @@ public class PassportTestService extends PassportService {
 	 * Send instruction ins, with P1=0 and P2=0,. Returns the resulting Status
 	 * Word.
 	 * 
-	 * @param ins
-	 *            the instruction to try
-	 * @param useSM
-	 * @return status word, i.e. 0x9000 if this went ok
+	 * @param ins the instruction to try
+	 * @param useSM whether secure messaging should be used
+	 * @return the resulting status word
 	 * @throws NullpointerException
 	 *             if useSM is true but there is no SM session active
 	 */
-	public int sendAnyInstruction(byte ins, boolean useSM) {
+	public int sendAnyInstruction(byte ins, boolean useSM) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins,
 				(byte) 0x00, (byte) 0x00);
-		ResponseAPDU rapdu;
-		try {
-			rapdu = transmit(capdu);
-		} catch (CardServiceException e) {
-			e.printStackTrace();
-			throw new RuntimeException("something low level went wrong");
-		}
-		return (rapdu.getSW());
+        if (useSM) {
+            capdu = getWrapper().wrap(capdu);
+        }
+        ResponseAPDU rapdu = transmit(capdu);
+        if (useSM) {
+            rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
+        }
+        return rapdu.getSW();
 	}
 
 	/**
