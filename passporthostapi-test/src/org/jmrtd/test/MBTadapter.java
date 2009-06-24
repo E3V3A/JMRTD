@@ -54,8 +54,8 @@ public class MBTadapter
 			if (service == null) {
 				System.exit(-23);
 			}
-//			service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
-			service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
+			service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
+//			service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
 			service.setupAA();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -117,7 +117,6 @@ public class MBTadapter
 
 				while (true) { // read a line from the data stream
 					String inAction = sockin.readLine();
-
 					if (inAction.equals("Reset")) {
 						resetCard();
 					}
@@ -223,8 +222,43 @@ public class MBTadapter
 							sockout.println("FailEAC_NOK");
 						}
 						sockout.flush();
-					}					
-		
+					}	
+					if (inAction.startsWith("RandomInstrSM_Call")) {
+						String par = inAction.substring(18).trim();
+						byte instr = (byte) Byte.parseByte(par);
+						int res = service.sendAnyInstruction(instr,true);
+						if (res == 0x9000) {
+							sockout.println("RandomInstrSM_OK");
+						} 
+						if (res == 0x6D00) {
+							sockout.println("NotSupported");
+						}
+						//if (res == 0x6988) {
+						//	sockout.println("BadSMObject");
+						//}
+						//if (res == 0x6982) {
+						//	sockout.println("SecStat_NOK");
+						//}
+						else {
+							sockout.println("RandomInstrSM_NOK");
+						}
+						sockout.flush();
+					}
+					if (inAction.startsWith("RandomInstrnoSM_Call")) {
+						String par = inAction.substring(20).trim();
+						byte instr = (byte) Byte.parseByte(par);
+						int res = service.sendAnyInstruction(instr,false);
+						if (res == 0x9000) {
+							sockout.println("RandomInstrnoSM_OK");
+						}
+						if (res == 0x6D00) {
+							sockout.println("NotSupported");
+						}
+					   else {
+							sockout.println("RandomInstrnoSM_NOK");
+						}
+						sockout.flush();
+					}
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
