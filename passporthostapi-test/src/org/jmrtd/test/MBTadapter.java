@@ -54,7 +54,8 @@ public class MBTadapter
 			if (service == null) {
 				System.exit(-23);
 			}
-			service.setMRZ("XX1234587", "760803", "140507");
+//			service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
+			service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
 			service.setupAA();
 		} catch (Exception e) {
 			e.printStackTrace();
