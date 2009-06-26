@@ -813,5 +813,17 @@ public class PassportService extends PassportApduService {
                 throw new CardServiceException(ioe.toString());
             }
         }
+
+		public short[] getSelectedPath() {
+			short[] path = { selectedFID };
+			return path;
+		}
+
+		public void selectFile(short[] path) throws CardServiceException {
+			if (path == null) { throw new CardServiceException("Path is null"); }
+			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
+			short fid = path[path.length - 1];
+			selectFile(fid);
+		}
     }
 }
