@@ -1,5 +1,11 @@
 package org.jmrtd.test;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -59,8 +65,7 @@ public class PassportBACTester extends PassportTesterBase {
 			(byte) 0x1D, // ??
 			(byte) 0x1E }; // ??
 
-	private final byte[] instructions = { 
-			(byte) 0x2A, // INS_MSE
+	private final byte[] instructions = { (byte) 0x22, // INS_MSE
 			(byte) 0x2A, // INS_PSO
 			(byte) 0x82, // INS_EXTERNAL_AUTHENTICATE
 			(byte) 0x84, // INS_GET_CHALLENGE
@@ -82,6 +87,12 @@ public class PassportBACTester extends PassportTesterBase {
 		}
 	}
 
+	public void setUp() throws CardServiceException, ParseException {
+		resetCard();
+		service.setMRZ("IZ55B3CH2", "391109", "140406");
+		// System.out.println("Setup EAC: " + service.setupEAC());
+	}
+
 	/**
 	 * After BAC we can read MRZ (DG1) and photo (DG2)
 	 */
@@ -90,9 +101,9 @@ public class PassportBACTester extends PassportTesterBase {
 		service.doBAC();
 		assertTrue(getLastSW() == 0x9000);
 		assertTrue(service.canSelectFile(PassportService.EF_DG1));
-		assertTrue(service.canReadFile(PassportService.EF_DG1,true));
+		assertTrue(service.canReadFile(PassportService.EF_DG1, true));
 		assertTrue(service.canSelectFile(PassportService.EF_DG2));
-		assertTrue(service.canReadFile(PassportService.EF_DG2,true));
+		assertTrue(service.canReadFile(PassportService.EF_DG2, true));
 	}
 
 	/**
@@ -109,8 +120,8 @@ public class PassportBACTester extends PassportTesterBase {
 		assertTrue(service.canReadFile(PassportService.EF_DG2, true));
 		assertTrue(service.canReadFile(PassportService.EF_DG15, true));
 		// but not fingerprint or iris
-		assertFalse(service.canReadFile(PassportService.EF_DG3,true));
-		assertFalse(service.canReadFile(PassportService.EF_DG4,true));
+		assertFalse(service.canReadFile(PassportService.EF_DG3, true));
+		assertFalse(service.canReadFile(PassportService.EF_DG4, true));
 	}
 
 	/**
@@ -249,13 +260,32 @@ public class PassportBACTester extends PassportTesterBase {
 	 * doesn't really test anything (ie should never fail) but reports useful
 	 * info.
 	 */
-	public void tes_tSupportedInstructions() throws CardServiceException {
+	public void testSupportedInstructions() throws CardServiceException {
 		traceApdu = false;
 		System.out.println("** Checking supported instructions before BAC **");
 		printSupportedInstructionsPreBAC();
 		service.doBAC();
 		System.out.println("** Checking supported instructions after BAC **");
 		printSupportedInstructionsPostBAC();
+	}
+
+	/**
+	 * print responses to expected instructions
+	 */
+	public void testExpectedInstructions() throws CardServiceException {
+		traceApdu = true;
+		System.out.println("** Checking known instructions before BAC **");
+		for (int i = 0; i < instructions.length; i++) {
+			CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+					instructions[i], (byte) 0x00, (byte) 0x00);
+			ResponseAPDU rapdu = service.transmit(capdu);
+			assertFalse(rapdu.getSW() == 0x6D00);
+		}
+
+		// 0x22
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, (byte) 0x22,
+				(byte) 0x81, (byte) 0xA4);
+		ResponseAPDU rapdu = service.transmit(capdu);
 	}
 
 	/**
@@ -288,7 +318,7 @@ public class PassportBACTester extends PassportTesterBase {
 				short fid = fid_object.shortValue();
 				if (service.canReadFile(fid, useSM)) {
 					System.out.printf(" %X ", fid);
-				} 
+				}
 			}
 			System.out.println();
 		}
@@ -298,7 +328,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Print which files are selectable, pre- and post-BAC. This test doesn't
 	 * test anything (ie should never fail), but reports useful info.
 	 */
-	public void tes_tSelectableFiles() throws CardServiceException {
+	public void testSelectableFiles() throws CardServiceException {
 		traceApdu = false;
 		System.out.println("** Checking selectable files before BAC **");
 		printSelectableFiles(false);
@@ -405,17 +435,17 @@ public class PassportBACTester extends PassportTesterBase {
 		// but for EAC
 
 	}
-    
-    /** Check the aa key length to be 1280 and test aa after BAC and after EAC */
-    public void testAA() {
-        traceApdu = true;
-        service.setupAA();
-        assertTrue(service.getAAKey().toString().indexOf("1280 bits") != -1);
-        service.doBAC();
-        assertTrue(service.doAA());
-        service.doEAC();
-        assertTrue(service.doAA());
-    }
+
+	/** Check the aa key length to be 1280 and test aa after BAC and after EAC */
+	public void testAA() {
+		traceApdu = true;
+		service.setupAA();
+		assertTrue(service.getAAKey().toString().indexOf("1280 bits") != -1);
+		service.doBAC();
+		assertTrue(service.doAA());
+		service.doEAC();
+		assertTrue(service.doAA());
+	}
 
 	public void tes_tAverageDelayedSuccessfulBAC() throws CardServiceException,
 			InterruptedException {
@@ -743,4 +773,21 @@ public class PassportBACTester extends PassportTesterBase {
 					+ (stop - start) + " millisecs");
 		}
 	}
+
+	/**
+	 * Generate lots of BAC challenges to file "challenges.txt" for PRNG analysis
+	 * @throws CardServiceException 
+	 * @throws IOException 
+	 */
+	public void testGenerateBACChallenges() throws CardServiceException, IOException {
+
+		RandomAccessFile out = new RandomAccessFile("challenges.txt", "rw");
+
+		for (long i = 0; i < 1000; i++) {
+			byte[] b = service.sendGetChallenge();
+			out.writeBytes(b.toString().substring(3));
+		}
+		out.close();
+	}
+
 }
