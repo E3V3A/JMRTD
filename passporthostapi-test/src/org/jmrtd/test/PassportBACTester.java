@@ -89,7 +89,8 @@ public class PassportBACTester extends PassportTesterBase {
 
 	public void setUp() throws CardServiceException, ParseException {
 		resetCard();
-		service.setMRZ("IZ55B3CH2", "391109", "140406");
+//		service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
+		service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
 		// System.out.println("Setup EAC: " + service.setupEAC());
 	}
 
@@ -447,7 +448,7 @@ public class PassportBACTester extends PassportTesterBase {
 		assertTrue(service.doAA());
 	}
 
-	public void tes_tAverageDelayedSuccessfulBAC() throws CardServiceException,
+	public void testAverageDelayedSuccessfulBAC() throws CardServiceException,
 			InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -476,7 +477,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check duration of undelayed failed BACs (ie after successful BAC)
 	 */
-	public void tes_tAverageUndelayedFailedBAC() throws CardServiceException,
+	public void testAverageUndelayedFailedBAC() throws CardServiceException,
 			InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -504,7 +505,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check duration of undelayed successful BACs (ie after successful BAC)
 	 */
-	public void tes_tAverageUndelayedSuccessfulBAC()
+	public void testAverageUndelayedSuccessfulBAC()
 			throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -531,7 +532,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check delay on failed BACs after failed BAC
 	 */
-	public void tes_tAverageDelayedFailedBAC() throws CardServiceException,
+	public void testAverageDelayedFailedBAC() throws CardServiceException,
 			InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -560,7 +561,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check delay on failed BACs after failed BAC, after soft reset
 	 */
-	public void tes_tAverageDelayedBACAfterSoftReset()
+	public void testAverageDelayedBACAfterSoftReset()
 			throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -592,7 +593,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check delay of successful BAC after failed BAC, after soft reset
 	 */
-	public void tes_tAverageDelayedSuccessfulBACAfterSoftReset()
+	public void testAverageDelayedSuccessfulBACAfterSoftReset()
 			throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
@@ -622,7 +623,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/**
 	 * Check timing of multiple failed BACs.
 	 */
-	public void tes_tDelayedBACAfterSoftReset() throws CardServiceException,
+	public void testDelayedBACAfterSoftReset() throws CardServiceException,
 			InterruptedException {
 
 		long start, stop;
@@ -712,7 +713,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check delay of failed and successful BACs after failed BAC followed by a
 	 * card tear. Beware user interaction required!
 	 */
-	public void tes_tDelayedBACAfterCardTear() throws CardServiceException,
+	public void testDelayedBACAfterCardTear() throws CardServiceException,
 			InterruptedException {
 
 		long start, stop;
@@ -748,7 +749,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check delay of failed and successful BACs after failed BAC interrupted by
 	 * a card tear. Beware user interaction required!
 	 */
-	public void tes_tDelayedBACAfterCardTear2() throws CardServiceException,
+	public void testDelayedBACAfterCardTear2() throws CardServiceException,
 			InterruptedException {
 
 		long start, stop;
@@ -769,7 +770,7 @@ public class PassportBACTester extends PassportTesterBase {
 			start = System.currentTimeMillis();
 			service.failBAC();
 			stop = System.currentTimeMillis();
-			System.out.println("A BAC after a card tear takes "
+			System.out.println("A failed BAC after a card tear takes "
 					+ (stop - start) + " millisecs");
 		}
 	}
