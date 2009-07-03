@@ -746,7 +746,7 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	/**
-	 * Check delay of failed and successful BACs after failed BAC interrupted by
+	 * Check delay of failed BACs after failed BAC interrupted by
 	 * a card tear. Beware user interaction required!
 	 */
 	public void testDelayedBACAfterCardTear2() throws CardServiceException,
