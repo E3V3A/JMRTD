@@ -58,6 +58,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.FileInfo;
 import net.sourceforge.scuba.smartcards.FileSystemStructured;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 import net.sourceforge.scuba.util.Hex;
@@ -776,12 +777,9 @@ public class PassportService extends PassportApduService {
         return new CardFileInputStream(fid, maxBlockSize, fs);
     }
 
-    private class PassportFileSystem implements FileSystemStructured {
+    private class PassportFileSystem implements FileSystemStructured
+    {
         private short selectedFID;
-
-        public synchronized short getSelectedFID() {
-            return selectedFID;
-        }
 
         public synchronized byte[] readBinary(int offset, int length)
                 throws CardServiceException {
@@ -795,7 +793,22 @@ public class PassportService extends PassportApduService {
             selectedFID = fid;
         }
 
-        public synchronized int getFileLength() throws CardServiceException {
+		public short[] getSelectedPath() {
+			return new short[]{ selectedFID };
+		}
+
+		public void selectFile(short[] path) throws CardServiceException {
+			if (path == null) { throw new CardServiceException("Path is null"); }
+			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
+			short fid = path[path.length - 1];
+			selectFile(fid);
+		}
+
+		public FileInfo getFileInfo() throws CardServiceException {
+			return new PassportFileInfo(selectedFID, getFileLength());
+		}
+		
+        private synchronized int getFileLength() throws CardServiceException {
             try {
                 /* Each passport file consists of a TLV structure. */
                 /* Woj: no, not each, CVCA does not and has a fixed length */
@@ -813,17 +826,17 @@ public class PassportService extends PassportApduService {
                 throw new CardServiceException(ioe.toString());
             }
         }
+    }
+    
+    private class PassportFileInfo extends FileInfo
+    {
+    	private short fid;
+    	private int length;
+   
+    	public PassportFileInfo(short fid, int length) { this.fid = fid; this.length = length; }
 
-		public short[] getSelectedPath() {
-			short[] path = { selectedFID };
-			return path;
-		}
+		public short getFID() { return fid; }
 
-		public void selectFile(short[] path) throws CardServiceException {
-			if (path == null) { throw new CardServiceException("Path is null"); }
-			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
-			short fid = path[path.length - 1];
-			selectFile(fid);
-		}
+		public int getFileLength() { return length; }	
     }
 }

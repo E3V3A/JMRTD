@@ -185,7 +185,7 @@ public class PassportApduService extends CardService {
 
 	private CommandAPDU createSelectFileAPDU(byte[] fid) {
 		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_SELECT_FILE, (byte) 0x02, (byte) 0x0c, fid, 256);
+				ISO7816.INS_SELECT_FILE, (byte) 0x02, (byte) 0x0c, fid, 0);
 		return apdu;
 	}
 
