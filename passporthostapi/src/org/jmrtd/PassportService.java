@@ -24,7 +24,6 @@ package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -35,8 +34,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
@@ -44,10 +41,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -773,13 +767,14 @@ public class PassportService extends PassportApduService {
      * @throws IOException
      *             if the file cannot be read
      */
-    public CardFileInputStream readFile(short fid) throws CardServiceException {
-        return new CardFileInputStream(fid, maxBlockSize, fs);
+    public CardFileInputStream readFile(short fid) throws CardServiceException{
+        fs.selectFile(fid);
+        return new CardFileInputStream(maxBlockSize, fs);
     }
 
     private class PassportFileSystem implements FileSystemStructured
     {
-        private short selectedFID;
+        private PassportFileInfo selectedFile;
 
         public synchronized byte[] readBinary(int offset, int length)
                 throws CardServiceException {
@@ -790,11 +785,11 @@ public class PassportService extends PassportApduService {
         public synchronized void selectFile(short fid)
                 throws CardServiceException {
             sendSelectFile(wrapper, fid);
-            selectedFID = fid;
+            selectedFile = new PassportFileInfo(fid, getFileLength());
         }
 
-		public short[] getSelectedPath() {
-			return new short[]{ selectedFID };
+		public FileInfo[] getSelectedPath() {
+			return new PassportFileInfo[]{ selectedFile };
 		}
 
 		public void selectFile(short[] path) throws CardServiceException {
@@ -802,10 +797,6 @@ public class PassportService extends PassportApduService {
 			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
 			short fid = path[path.length - 1];
 			selectFile(fid);
-		}
-
-		public FileInfo getFileInfo() throws CardServiceException {
-			return new PassportFileInfo(selectedFID, getFileLength());
 		}
 		
         private synchronized int getFileLength() throws CardServiceException {
