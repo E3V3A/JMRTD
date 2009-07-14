@@ -453,6 +453,9 @@ public class PassportApp  implements PassportListener
 								/* NOTE: skip this terminal */
 							} catch (CardServiceException cse) {
 								/* NOTE: skip this terminal */
+							} catch (Exception e) {
+								e.printStackTrace();
+								System.out.println("DEBUG: skipping " + terminal.getName() + ", cannot open because of " + e.toString());
 							}
 						}
 					})).start();
