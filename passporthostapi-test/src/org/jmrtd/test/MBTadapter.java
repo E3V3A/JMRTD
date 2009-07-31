@@ -230,15 +230,18 @@ public class MBTadapter
 						if (res == 0x9000) {
 							sockout.println("RandomInstrSM_OK");
 						} 
-						if (res == 0x6D00) {
-							sockout.println("NotSupported");
+						else if (res == 0x6D00) {
+							sockout.println("SW_INS_NOT_SUPPORTED");
 						}
-						//if (res == 0x6988) {
-						//	sockout.println("BadSMObject");
-						//}
-						//if (res == 0x6982) {
-						//	sockout.println("SecStat_NOK");
-						//}
+						else if (res == 0x6988) {
+							sockout.println("SW_SM_DATA_OBJECTS_INCORRECT");
+						}
+						else if (res == 0x6982) {
+							sockout.println("SW_SECURITY_STATUS_NOT_SATISFIED");
+						}
+						else if (res == 0x6A86) {
+							sockout.println("SW_INCORRECT_P1P2");
+						}
 						else {
 							sockout.println("RandomInstrSM_NOK");
 						}
