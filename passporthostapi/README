@@ -29,7 +29,7 @@ Files
 
    README - this file
    LICENSE - copy of the LGPL license
-   jmrtd.jar - class files (use "java -jar jmrtd.jar" to run)
+   jmrtd.jar - binary class files
    src/ - sources
 
 Dependencies (might be included in distribution)
@@ -45,6 +45,11 @@ Dependencies (might be included in distribution)
         Needs to be installed in jre/lib,
         jai_imageio.jar in jre/lib/ext, some libs in jre/lib/i386.
         URL: https://jai-imageio.dev.java.net/
+        
+   * The EJBCA project's CV certificate library:
+        Needs to be in classpath.
+        Tested with current version of cert-cvc.jar.
+        URL: http://ejbca.org/
 
    * famfamfam.com icons
         GUI code may contain icons by Mark James
