@@ -152,4 +152,44 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         }
     }
 
+    /** Do the same as above, but without BAC. */
+    public void test5a() {
+        byte ins = ISO7816.INS_READ_BINARY2;
+        short sw = 0;
+        try {
+            sw = (short) service.sendAnyInstruction(ins, false);
+            System.out.println("INS: " + Hex.byteToHexString(ins) + ", SW: "
+                    + Hex.shortToHexString(sw));
+            assertTrue(sw == ISO7816.SW_INS_NOT_SUPPORTED);
+        } catch (CardServiceException cse) {
+            fail();
+        }
+    }
+
+    public void test5b() {
+        byte ins = ISO7816.INS_MSE;
+        short sw = 0;
+        try {
+            sw = (short) service.sendAnyInstruction(ins, false);
+            System.out.println("INS: " + Hex.byteToHexString(ins) + ", SW: "
+                    + Hex.shortToHexString(sw));
+            assertTrue(sw == ISO7816.SW_INS_NOT_SUPPORTED);
+        } catch (CardServiceException cse) {
+            fail();
+        }
+    }
+
+    public void test5c() {
+        byte ins = ISO7816.INS_PSO;
+        short sw = 0;
+        try {
+            sw = (short) service.sendAnyInstruction(ins, false);
+            System.out.println("INS: " + Hex.byteToHexString(ins) + ", SW: "
+                    + Hex.shortToHexString(sw));
+            assertTrue(sw == ISO7816.SW_INS_NOT_SUPPORTED);
+        } catch (CardServiceException cse) {
+            fail();
+        }
+    }
+
 }
