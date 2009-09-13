@@ -17,15 +17,15 @@ public class APDUTraceFrame extends JFrame implements APDUListener
 
 	private JTextArea area;
 
+	public APDUTraceFrame() {
+		this("APDU trace");
+	}
+	
 	public APDUTraceFrame(String title) {
 		super(title);
 		area = new JTextArea(40, 80);
 		area.setFont(new Font("Monospaced", Font.PLAIN, 9));
 		getContentPane().add(new JScrollPane(area));
-	}
-
-	public APDUTraceFrame() {
-		this("APDU trace");
 	}
 
 	public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
