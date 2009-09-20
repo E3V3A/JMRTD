@@ -1,3 +1,4 @@
+
 package org.jmrtd.test;
 
 import java.security.Security;
@@ -56,6 +57,7 @@ public class MBTadapter
 			}
 			service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
 //			service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
+//			service.setMRZ("IU4559DL3", "620827", "070507"); /* ID card MRZ*/
 			service.setupAA();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -173,7 +175,7 @@ public class MBTadapter
 						}
 						sockout.flush();
 					}				
-					if (inAction.startsWith("ReadFile_Call_noSM")) {
+					if (inAction.startsWith("NoSM_ReadFile_Call")) {
 						String par = inAction.substring(18).trim();
 						short fd = (short) Integer.parseInt(par);
 						if (service.canReadFile (fd, false)) {
@@ -252,12 +254,21 @@ public class MBTadapter
 						byte instr = (byte) Byte.parseByte(par);
 						int res = service.sendAnyInstruction(instr,false);
 						if (res == 0x9000) {
-							sockout.println("RandomInstrnoSM_OK");
+							sockout.println("RandomInstnorSM_OK");
+						} 
+						else if (res == 0x6D00) {
+							sockout.println("SW_INS_NOT_SUPPORTED");
 						}
-						if (res == 0x6D00) {
-							sockout.println("NotSupported");
+						else if (res == 0x6988) {
+							sockout.println("SW_SM_DATA_OBJECTS_INCORRECT");
 						}
-					   else {
+						else if (res == 0x6982) {
+							sockout.println("SW_SECURITY_STATUS_NOT_SATISFIED");
+						}
+						else if (res == 0x6A86) {
+							sockout.println("SW_INCORRECT_P1P2");
+						}
+						else {
 							sockout.println("RandomInstrnoSM_NOK");
 						}
 						sockout.flush();
@@ -271,4 +282,3 @@ public class MBTadapter
 }
 
 /** ****************************************************************** */
-
