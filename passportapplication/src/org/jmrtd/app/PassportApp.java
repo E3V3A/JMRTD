@@ -137,10 +137,10 @@ public class PassportApp  implements PassportListener
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 			
 			/* START DEBUGGING CODE */
-//			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
-//			traceFrame.pack();
-//			traceFrame.setVisible(true);
-//			cardManager.addAPDUListener(traceFrame);
+			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
+			traceFrame.pack();
+			traceFrame.setVisible(true);
+			cardManager.addAPDUListener(traceFrame);
 			/* END DEBUGGING CODE */
 			
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
