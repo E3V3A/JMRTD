@@ -75,7 +75,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 *             "ISO9797Alg3Mac" Mac).
 	 */
 	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac)
-			throws GeneralSecurityException {
+	throws GeneralSecurityException {
 		this(ksEnc, ksMac, 0L);
 	}
 
@@ -96,7 +96,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 *             "ISO9797Alg3Mac" Mac).
 	 */
 	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc)
-			throws GeneralSecurityException {
+	throws GeneralSecurityException {
 		this.ksEnc = ksEnc;
 		this.ksMac = ksMac;
 		this.ssc = ssc;
@@ -113,26 +113,26 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		return ssc;
 	}
 
-   /**
-    * Wraps the apdu buffer <code>capdu</code> of a command apdu.
-    * As a side effect, this method increments the internal send
-    * sequence counter maintained by this wrapper.
-    *
-    * @param commandAPDU buffer containing the command apdu.
-    *
-    * @return length of the command apdu after wrapping.
-    */
-   public CommandAPDU wrap(CommandAPDU commandAPDU) {
-      try {
-         return wrapCommandAPDU(commandAPDU);
-      } catch (GeneralSecurityException gse) {
-         gse.printStackTrace();
-         throw new IllegalStateException(gse.toString());
-      } catch (IOException ioe) {
-         ioe.printStackTrace();
-         throw new IllegalStateException(ioe.toString());
-      }
-   }
+	/**
+	 * Wraps the apdu buffer <code>capdu</code> of a command apdu.
+	 * As a side effect, this method increments the internal send
+	 * sequence counter maintained by this wrapper.
+	 *
+	 * @param commandAPDU buffer containing the command apdu.
+	 *
+	 * @return length of the command apdu after wrapping.
+	 */
+	public CommandAPDU wrap(CommandAPDU commandAPDU) {
+		try {
+			return wrapCommandAPDU(commandAPDU);
+		} catch (GeneralSecurityException gse) {
+			gse.printStackTrace();
+			throw new IllegalStateException(gse.toString());
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalStateException(ioe.toString());
+		}
+	}
 
 	/**
 	 * Unwraps the apdu buffer <code>rapdu</code> of a response apdu.
@@ -163,32 +163,32 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		}
 	}
 
-   /**
-    * Does the actual encoding of a command apdu.
-    * Based on Section E.3 of ICAO-TR-PKI, especially the examples.
-    *
-    * @param capdu buffer containing the apdu data. It must be large enough
-    *             to receive the wrapped apdu.
-    * @param len length of the apdu data.
-    *
-    * @return a byte array containing the wrapped apdu buffer.
-    */
-   /*@ requires apdu != null && 4 <= len && len <= apdu.length;
-    */
-   private CommandAPDU wrapCommandAPDU(CommandAPDU c)
-   throws GeneralSecurityException, IOException {
-       
-      int lc = c.getNc();
-      int le = c.getNe();
+	/**
+	 * Does the actual encoding of a command apdu.
+	 * Based on Section E.3 of ICAO-TR-PKI, especially the examples.
+	 *
+	 * @param capdu buffer containing the apdu data. It must be large enough
+	 *             to receive the wrapped apdu.
+	 * @param len length of the apdu data.
+	 *
+	 * @return a byte array containing the wrapped apdu buffer.
+	 */
+	/*@ requires apdu != null && 4 <= len && len <= apdu.length;
+	 */
+	private CommandAPDU wrapCommandAPDU(CommandAPDU c)
+	throws GeneralSecurityException, IOException {
 
-      ByteArrayOutputStream out = new ByteArrayOutputStream();
+		int lc = c.getNc();
+		int le = c.getNe();
 
-      byte[] maskedHeader = new byte[] {(byte)(c.getCLA() | (byte)0x0C), (byte)c.getINS(), (byte)c.getP1(), (byte)c.getP2()};
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-      byte[] paddedHeader = Util.pad(maskedHeader);
+		byte[] maskedHeader = new byte[] {(byte)(c.getCLA() | (byte)0x0C), (byte)c.getINS(), (byte)c.getP1(), (byte)c.getP2()};
 
-      boolean do85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
-      
+		byte[] paddedHeader = Util.pad(maskedHeader);
+
+		boolean do85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
+
 		byte[] do8587 = new byte[0];
 		byte[] do8E = new byte[0];
 		byte[] do97 = new byte[0];
@@ -201,10 +201,10 @@ public class SecureMessagingWrapper implements APDUWrapper {
 			do97 = out.toByteArray();
 		}
 
-      if (lc > 0) {
-         byte[] data = Util.pad(c.getData());
-         cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
-         byte[] ciphertext = cipher.doFinal(data);
+		if (lc > 0) {
+			byte[] data = Util.pad(c.getData());
+			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
+			byte[] ciphertext = cipher.doFinal(data);
 
 			out.reset();
 			out.write(do85 ? (byte) 0x85 : (byte) 0x87);
@@ -239,18 +239,17 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		out.write(cc, 0, cc.length);
 		do8E = out.toByteArray();
 
-      /* Construct protected apdu... */
-      out.reset();
-      out.write(do8587, 0, do8587.length);
-      out.write(do97, 0, do97.length);
-      out.write(do8E, 0, do8E.length);
-      byte[] data = out.toByteArray();
+		/* Construct protected apdu... */
+		out.reset();
+		out.write(do8587, 0, do8587.length);
+		out.write(do97, 0, do97.length);
+		out.write(do8E, 0, do8E.length);
+		byte[] data = out.toByteArray();
 
-      
-      CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3],
-              data, 256);
-      return wc;
-   }
+		CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3],
+				data, 256);
+		return wc;
+	}
 
 	/**
 	 * Does the actual decoding of a response apdu. Based on Section E.3 of
@@ -264,15 +263,14 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 * @return a byte array containing the unwrapped apdu buffer.
 	 */
 	private byte[] unwrapResponseAPDU(byte[] rapdu, int len)
-			throws GeneralSecurityException, IOException {
+	throws GeneralSecurityException, IOException {
 		long oldssc = ssc;
 		try {
 			if (rapdu == null || rapdu.length < 2 || len < 2) {
 				throw new IllegalArgumentException("Invalid response APDU");
 			}
 			cipher.init(Cipher.DECRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
-			DataInputStream in = new DataInputStream(new ByteArrayInputStream(
-					rapdu));
+			DataInputStream in = new DataInputStream(new ByteArrayInputStream(rapdu));
 			byte[] data = new byte[0];
 			short sw = 0;
 			boolean finished = false;
@@ -282,17 +280,17 @@ public class SecureMessagingWrapper implements APDUWrapper {
 				switch (tag) {
 				case (byte) 0x87:
 					data = readDO87(in, false);
-					break;
-                case (byte) 0x85:
-                    data = readDO87(in, true);
-                    break;
+				break;
+				case (byte) 0x85:
+					data = readDO87(in, true);
+				break;
 				case (byte) 0x99:
 					sw = readDO99(in);
-					break;
+				break;
 				case (byte) 0x8E:
 					cc = readDO8E(in);
-					finished = true;
-					break;
+				finished = true;
+				break;
 				}
 			}
 			if (!checkMac(rapdu, cc)) {
@@ -300,8 +298,8 @@ public class SecureMessagingWrapper implements APDUWrapper {
 			}
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			out.write(data, 0, data.length);
-			out.write((sw & 0x0000FF00) >> 8);
-			out.write(sw & 0x000000FF);
+			out.write((sw & 0xFF00) >> 8);
+			out.write(sw & 0x00FF);
 			return out.toByteArray();
 		} finally {
 			/*
@@ -322,37 +320,37 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 *            inputstream to read from.
 	 */
 	private byte[] readDO87(DataInputStream in, boolean do85) throws IOException,
-			GeneralSecurityException {
+	GeneralSecurityException {
 		/* Read length... */
 		int length = 0;
 		int buf = in.readUnsignedByte();
 		if ((buf & 0x00000080) != 0x00000080) {
 			/* Short form */
 			length = buf;
-            if(!do85) {
-			  buf = in.readUnsignedByte(); /* should be 0x01... */
-			  if (buf != 0x01) {
-				throw new IllegalStateException(
-						"DO'87 expected 0x01 marker, found "
-								+ Hex.byteToHexString((byte) buf));
-			  }
-            }
+			if(!do85) {
+				buf = in.readUnsignedByte(); /* should be 0x01... */
+				if (buf != 0x01) {
+					throw new IllegalStateException(
+							"DO'87 expected 0x01 marker, found "
+							+ Hex.byteToHexString((byte) buf));
+				}
+			}
 		} else {
 			/* Long form */
 			int lengthBytesCount = buf & 0x0000007F;
 			for (int i = 0; i < lengthBytesCount; i++) {
 				length = (length << 8) | in.readUnsignedByte();
 			}
-            if(!do85) {
-              buf = in.readUnsignedByte(); /* should be 0x01... */
-			  if (buf != 0x01) {
-				throw new IllegalStateException("DO'87 expected 0x01 marker");
-			  }
-            }
+			if(!do85) {
+				buf = in.readUnsignedByte(); /* should be 0x01... */
+				if (buf != 0x01) {
+					throw new IllegalStateException("DO'87 expected 0x01 marker");
+				}
+			}
 		}
-        if(!do85) {
-		  length--; /* takes care of the extra 0x01 marker... */
-        }
+		if(!do85) {
+			length--; /* takes care of the extra 0x01 marker... */
+		}
 		/* Read, decrypt, unpad the data... */
 		byte[] ciphertext = new byte[length];
 		in.read(ciphertext, 0, length);
@@ -384,7 +382,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	 *            inputstream to read from.
 	 */
 	private byte[] readDO8E(DataInputStream in) throws IOException,
-			GeneralSecurityException {
+	GeneralSecurityException {
 		int length = in.readUnsignedByte();
 		if (length != 8) {
 			throw new IllegalStateException("DO'8E wrong length");
@@ -395,7 +393,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 	}
 
 	private boolean checkMac(byte[] rapdu, byte[] cc1)
-			throws GeneralSecurityException {
+	throws GeneralSecurityException {
 		try {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			DataOutputStream dataOut = new DataOutputStream(out);

@@ -218,9 +218,9 @@ public class PassportApduService extends CardService {
 		byte p1 = (byte) 0x00;
 		byte p2 = (byte) 0x00;
 		byte[] data = rndIFD;
-		int le = 255; /* whatever... */
+		int le = 256; /* FIXME: needs to be 256 for OmniKey for some reason? -- MO */
 		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_INTERNAL_AUTHENTICATE, p1, p2, data, le);
+				ISO7816.INS_INTERNAL_AUTHENTICATE, p1, p2, data, 256);
 		return apdu;
 	}
 

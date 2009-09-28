@@ -180,9 +180,8 @@ public class Util
 		while (i >= 0 && in[i] == 0x00) {
 			i--;
 		}
-		if ((in[i] & 0x000000FF) != 0x00000080) {
-			throw new IllegalStateException("unpad expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF))
-					+ "\nDEBUG: in = " + Hex.bytesToHexString(in) + ", index = " + i);
+		if ((in[i] & 0xFF) != 0x80) {
+			throw new IllegalStateException("unpad expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF)) + "\nDEBUG: in = " + Hex.bytesToHexString(in) + ", index = " + i);
 		}
 		byte[] out = new byte[i];
 		System.arraycopy(in, 0, out, 0, i);
