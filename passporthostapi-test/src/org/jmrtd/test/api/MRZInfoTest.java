@@ -19,18 +19,18 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.ByteArrayInputStream;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.jmrtd.MRZInfo;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.util.Hex;
+
+import org.jmrtd.MRZInfo;
 
 public class MRZInfoTest extends TestCase
 {

@@ -19,7 +19,7 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -28,10 +28,10 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 
-import org.jmrtd.DG15File;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
+
+import org.jmrtd.DG15File;
 
 public class DG15FileTest extends TestCase
 {

@@ -19,15 +19,15 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
-import org.jmrtd.CVCAFile;
-
 import junit.framework.TestCase;
+
+import org.jmrtd.CVCAFile;
 
 public class CVCAFileTest extends TestCase {
 

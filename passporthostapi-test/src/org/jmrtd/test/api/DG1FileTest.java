@@ -19,18 +19,18 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.jmrtd.DG1File;
-import org.jmrtd.MRZInfo;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
+
+import org.jmrtd.DG1File;
+import org.jmrtd.MRZInfo;
 
 public class DG1FileTest extends TestCase
 {

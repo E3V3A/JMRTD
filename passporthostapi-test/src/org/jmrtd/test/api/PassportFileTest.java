@@ -19,7 +19,7 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -30,10 +30,10 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.jmrtd.PassportFile;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
+
+import org.jmrtd.PassportFile;
 
 /**
  * You can throw files containing MRTD content at this test case and
@@ -48,7 +48,11 @@ public class PassportFileTest extends TestCase {
 	 * zipped collections of these.
 	 */
 	private static final String[] TEST_FILES = {
-//		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/martijn.zip"
+		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/Camille_fr.zip",
+//		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/Oli_be.zip",
+		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/eva.zip",
+		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/IMFD0D1H9.zip",
+		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/NU7L5J452.zip"
 	};
 
 	private COMFileTest comFileTest;

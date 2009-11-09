@@ -19,7 +19,7 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -30,10 +30,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import org.jmrtd.DG11File;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
+
+import org.jmrtd.DG11File;
 
 public class DG11FileTest extends TestCase
 {
@@ -43,7 +43,7 @@ public class DG11FileTest extends TestCase
 
 	public void testToString() {
 		DG11File dg11File = createTestObject();
-		String expectedResult = "DG11File [, [], , 711019, [], [], , , , , , [], ]";
+		String expectedResult = "DG11File [, [], , 19711019, [], [], , , , , , [], ]";
 		assertEquals(dg11File.toString(), expectedResult);
 	}
 
@@ -85,7 +85,7 @@ public class DG11FileTest extends TestCase
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		try {
 			DG11File file = new DG11File(in);
-			assertEquals(file.getFullNamePrimaryIdentifier(), "WICHERS SCHREUR");
+			assertEquals(file.getFullNamePrimaryIdentifier(), "WICHERS<SCHREUR");
 			assertEquals(file.getFullNameSecondaryIdentifiers().size(), 3);
 			assertEquals(file.getFullNameSecondaryIdentifiers().get(0), "RONALDUS");
 			assertEquals(file.getFullNameSecondaryIdentifiers().get(1), "JOHANNES");
@@ -132,7 +132,7 @@ public class DG11FileTest extends TestCase
 			assertEquals(file.getPermanentAddress().get(1), "ANYTOWN");
 			assertEquals(file.getPermanentAddress().get(2), "MN");
 			assertEquals(file.getTelephone(), "1-612-555-1212");
-			assertEquals(file.getProfession(), "TRAVEL AGENT");
+			assertEquals(file.getProfession(), "TRAVEL<AGENT");
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());

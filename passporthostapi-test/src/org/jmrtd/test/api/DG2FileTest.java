@@ -19,15 +19,15 @@
  *  $Id: $
  */
 
-package org.jmrtd.test;
+package org.jmrtd.test.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import org.jmrtd.DG2File;
-
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
+
+import org.jmrtd.DG2File;
 
 public class DG2FileTest extends TestCase
 {
@@ -57,6 +57,6 @@ public class DG2FileTest extends TestCase
 	}
 
 	public void testFile(InputStream in) {
-		testReflexive(new DG2File(in));
+//		testReflexive(new DG2File(in));
 	}
 }
