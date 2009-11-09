@@ -47,7 +47,7 @@ import net.sourceforge.scuba.util.Hex;
  * File structure for the EF_DG11 file.
  * Datagroup 11 contains additional personal detail(s).
  * 
- * All fields are optional.
+ * All fields are optional. See Section 16 of LDS-TR.
  * <ol>
  * <li>Name of Holder (Primary and Secondary Identifiers, in full)</li>
  * <li>Other Name(s)</li>
@@ -74,7 +74,7 @@ public class DG11File extends DataGroup
 	private static final int TAG_LIST_TAG = 0x5C;
 	private static final int FULL_NAME_TAG = 0x5F0E;
 	private static final int PERSONAL_NUMBER_TAG = 0x5F10;
-	private static final int FULL_DATE_OF_BIRTH_TAG = 0x5F2B;
+	private static final int FULL_DATE_OF_BIRTH_TAG = 0x5F2B; // In 'CCYYMMDD' format.
 	private static final int PLACE_OF_BIRTH_TAG = 0x5F11; // Fields separated by ‘<’
 	private static final int PERMANENT_ADDRESS_TAG = 0x5F42; // Fields separated by ‘<’
 	private static final int TELEPHONE_TAG = 0x5F12;
@@ -103,7 +103,7 @@ public class DG11File extends DataGroup
 
 	/**
 	 * Constructs a new file. Use <code>null</code> if data element is not present.
-	 * Use space rather than <code>'<'</code> as separator.
+	 * Use <code>'<'</code> as separator.
 	 *
 	 * @param fullNamePrimaryIdentifier data element
 	 * @param fullNamesecondaryIdentifiers data element
@@ -172,7 +172,7 @@ public class DG11File extends DataGroup
 		case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
 		case FULL_DATE_OF_BIRTH_TAG: parseFullDateOfBirth(Hex.bytesToHexString(value)); break;
 		case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
-		case PERMANENT_ADDRESS_TAG: parsePermanentAddress(new String(value, "UTF-8")); break;
+		case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(new String(value, "UTF-8")); break;
 		case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
 		case PROFESSION_TAG: parseProfession(new String(value, "UTF-8")); break;
 		case TITLE_TAG: parseTitle(new String(value, "UTF-8")); break;
@@ -187,7 +187,8 @@ public class DG11File extends DataGroup
 	/* Field parsing and interpretation below. */
 
 	private void parseCustodyInformation(String in) {
-		custodyInformation = in.replace("<", " ").trim();
+//		custodyInformation = in.replace("<", " ").trim();
+		custodyInformation = in.trim();
 	}
 
 	private void parseOtherValidTDNumbers(String in) {
@@ -209,18 +210,22 @@ public class DG11File extends DataGroup
 	}
 
 	private void parsePersonalSummary(String in) {
-		personalSummary = in.replace("<", " ").trim();
+//		personalSummary = in.replace("<", " ").trim();
+		personalSummary = in.trim();
 	}
 
 	private void parseTitle(String in) {
-		title = in.replace("<", " ").trim();
+//		title = in.replace("<", " ").trim();
+		title = in.trim();
 	}
 
 	private void parseProfession(String in) {
-		profession = in.replace("<", " ").trim();
+//		profession = in.replace("<", " ").trim();
+		profession = in.trim();
 	}
 
 	private void parseTelephone(String in) {
+//		telephone = in.replace("<", " ").trim();
 		telephone = in.replace("<", " ").trim();
 	}
 
@@ -244,7 +249,7 @@ public class DG11File extends DataGroup
 
 	private void parseFullDateOfBirth(String in) {
 		try {
-			in = in.replace("<", " ").trim();
+//			in = in.replace("<", " ").trim();
 			fullDateOfBirth = SDF.parse(in);
 		} catch (ParseException pe) {
 			throw new IllegalArgumentException(pe.toString());
@@ -259,9 +264,10 @@ public class DG11File extends DataGroup
 	private void parseFullName(String in) {
 		int delimIndex = in.indexOf("<<");
 		if (delimIndex < 0) {
-			throw new IllegalArgumentException("Input does not contain primary identifier!");
+			throw new IllegalArgumentException("Input does not contain primary identifier! \"" + in + "\"");
 		}
-		fullNamePrimaryIdentifier = in.substring(0, delimIndex).replace("<", " ");
+//		fullNamePrimaryIdentifier = in.substring(0, delimIndex).replace("<", " ");
+		fullNamePrimaryIdentifier = in.substring(0, delimIndex);
 		StringTokenizer st = new StringTokenizer(in.substring(in.indexOf("<<") + 2), "<");
 		fullNameSecondaryIdentifiers = new ArrayList<String>();
 		while (st.hasMoreTokens()) {
@@ -397,9 +403,7 @@ public class DG11File extends DataGroup
 		if (obj == this) { return true; }
 		if (!obj.getClass().equals(DG11File.class)) { return false; }
 		DG11File other = (DG11File)obj;
-		return
-		other.toString().equals(toString()) &&
-		((other.proofOfCitizenship == null && proofOfCitizenship == null) || other.proofOfCitizenship.equals(proofOfCitizenship));
+		return other.toString().equals(toString()) && ((other.proofOfCitizenship == null && proofOfCitizenship == null) || other.proofOfCitizenship.equals(proofOfCitizenship));
 //		other.fullNamePrimaryIdentifier.equals(fullNamePrimaryIdentifier) &&
 //		other.fullNameSecondaryIdentifiers.equals(fullNameSecondaryIdentifiers) &&
 //		other.personalNumber.equals(personalNumber) &&
@@ -434,15 +438,17 @@ public class DG11File extends DataGroup
 			if (fullNamePrimaryIdentifier != null || fullNameSecondaryIdentifiers != null) {
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
 				if (fullNamePrimaryIdentifier !=  null) {
-					out.write(fullNamePrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
+//					out.write(fullNamePrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
+					out.write(fullNamePrimaryIdentifier.trim().getBytes("UTF-8"));
 				}
-				out.write('<'); out.write('<');
+				out.write("<<".getBytes("UTF-8"));
 				boolean isFirstOne = true;
 				if (fullNameSecondaryIdentifiers != null) {
 					for (String secondaryPrimaryIdentifier: fullNameSecondaryIdentifiers) {
 						if (secondaryPrimaryIdentifier != null) {
 							if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-							out.write(secondaryPrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
+//							out.write(secondaryPrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
+							out.write(secondaryPrimaryIdentifier.trim().getBytes("UTF-8"));
 						}
 					}
 				}
@@ -450,10 +456,14 @@ public class DG11File extends DataGroup
 				dataElements.add(new BERTLVObject(FULL_NAME_TAG, out.toByteArray()));
 			}
 			if (personalNumber != null) {
-				dataElements.add(new BERTLVObject(PERSONAL_NUMBER_TAG, personalNumber.trim().replace(' ', '<').getBytes("UTF-8")));
+//				dataElements.add(new BERTLVObject(PERSONAL_NUMBER_TAG, personalNumber.trim().replace(' ', '<').getBytes("UTF-8")));
+				dataElements.add(new BERTLVObject(PERSONAL_NUMBER_TAG, personalNumber.trim().getBytes("UTF-8")));
 			}
 			if (fullDateOfBirth != null) {
-				dataElements.add(new BERTLVObject(FULL_DATE_OF_BIRTH_TAG, SDF.format(fullDateOfBirth).getBytes("UTF-8")));
+				String fullDateOfBirthString = SDF.format(fullDateOfBirth);
+//				byte[] fullDateOfBirthBytes = fullDateOfBirthString.getBytes("UTF-8");
+				byte[] fullDateOfBirthBytes = Hex.hexStringToBytes(fullDateOfBirthString);
+				dataElements.add(new BERTLVObject(FULL_DATE_OF_BIRTH_TAG, fullDateOfBirthBytes));
 			}
 			if (placeOfBirth != null) {
 				boolean isFirstOne = true;
@@ -461,7 +471,9 @@ public class DG11File extends DataGroup
 				for (String detail: placeOfBirth) {
 					if (detail != null) {
 						if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
+//						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
+						out.write(detail.trim().getBytes("UTF-8"));
+
 					}
 				}
 				out.flush();
@@ -473,7 +485,8 @@ public class DG11File extends DataGroup
 				for (String detail: permanentAddress) {
 					if (detail != null) {
 						if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
+//						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
+						out.write(detail.trim().getBytes("UTF-8"));
 					}
 				}
 				out.flush();
