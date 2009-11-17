@@ -48,11 +48,6 @@ public class PassportFileTest extends TestCase {
 	 * zipped collections of these.
 	 */
 	private static final String[] TEST_FILES = {
-		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/Camille_fr.zip",
-//		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/Oli_be.zip",
-		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/eva.zip",
-		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/IMFD0D1H9.zip",
-		"/c:/Documents and Settings/martijn.oostdijk/My Documents/paspoort/NU7L5J452.zip"
 	};
 
 	private COMFileTest comFileTest;
