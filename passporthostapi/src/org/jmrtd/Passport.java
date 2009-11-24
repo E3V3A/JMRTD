@@ -63,6 +63,13 @@ import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.ejbca.cvc.CVCertificate;
 
+/**
+ * A passport object is basically a collection of buffered input streams for the data groups,
+ * combined with some status information (progress).
+ * 
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class Passport
 {
 	private static final int BUFFER_SIZE = 243;
@@ -89,41 +96,11 @@ public class Passport
 
 	private PrivateKey aaPrivateKey = null;
 
-	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
-		BufferedInputStream bufferedIn = null;
-		if(rawStreams.containsKey(fid)) {
-			int length = fileLengths.get(fid); 
-			bufferedIn = new BufferedInputStream(rawStreams.get(fid), length+1);
-			bufferedIn.mark(length + 1);
-			rawStreams.put(fid, bufferedIn);
-			return bufferedIn;
-		}else{
-			CardFileInputStream cardIn = service.readFile(fid);
-			int length = cardIn.getFileLength();
-			bufferedIn = new BufferedInputStream(cardIn, length + 1);
-			totalLength += length;
-			fileLengths.put(fid, length);
-			bufferedIn.mark(length + 1);
-			rawStreams.put(fid, bufferedIn);
-			return bufferedIn;
-		}
-	}
-
-	private void setupFile(PassportService service, short fid) throws CardServiceException {
-		CardFileInputStream in = service.readFile(fid);
-		int fileLength = in.getFileLength();
-		in.mark(fileLength + 1);
-		rawStreams.put(fid, in);
-		totalLength += fileLength;
-		fileLengths.put(fid, fileLength);        
-	}
-
 	public Passport(PassportService service) throws IOException, CardServiceException {
 		this(service, null);
 	}
 
 	public Passport(PassportService service, String documentNumber) throws IOException, CardServiceException {
-
 		BufferedInputStream bufferedIn = null;
 
 		bufferedIn = preReadFile(service, PassportService.EF_COM);
@@ -219,7 +196,6 @@ public class Passport
 	}
 
 	public Passport(File file) throws IOException {
-
 		ZipFile zipIn = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipIn.entries();
 		while (entries.hasMoreElements()) {
@@ -346,48 +322,6 @@ public class Passport
 			ioe.printStackTrace();
 			throw new IllegalStateException("ERROR: " + ioe.toString());
 		}
-	}
-
-	/**
-	 * Starts a thread to read the raw inputstream.
-	 *
-	 * @param fid
-	 * @throws IOException
-	 */
-	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
-		final Passport passport = this;
-		final InputStream unBufferedIn = rawStreams.get(fid);
-		if (unBufferedIn == null) { throw new IOException("No raw inputstream to copy " + Integer.toHexString(fid)); }
-		final int fileLength = fileLengths.get(fid);
-		unBufferedIn.reset();
-		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
-		final PipedOutputStream out = new PipedOutputStream(pipedIn);
-		final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
-		InputStream in = new BufferedInputStream(pipedIn, fileLength + 1);
-		in.mark(fileLength + 1);
-		bufferedStreams.put(fid, in);
-		(new Thread(new Runnable() {
-			public void run() {
-				byte[] buf = new byte[BUFFER_SIZE];
-				try {
-					while (true) {
-						int bytesRead = unBufferedIn.read(buf);
-						if (bytesRead < 0) { break; }
-						out.write(buf, 0, bytesRead);
-						copyOut.write(buf, 0, bytesRead);
-						passport.bytesRead += bytesRead;
-					}
-					out.flush(); out.close();
-					copyOut.flush();
-					byte[] copyOutBytes = copyOut.toByteArray();
-					filesBytes.put(fid, copyOutBytes);
-					copyOut.close();
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					/* FIXME: what if something goes wrong inside this thread? */
-				}
-			}
-		})).start();
 	}
 
 	public void putFile(short fid, byte[] bytes) {
@@ -533,5 +467,78 @@ public class Passport
 		List<Short> result = new ArrayList<Short>();
 		result.addAll(fileLengths.keySet());
 		return result;
+	}
+
+	/* Only private methods below. */
+
+	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
+		BufferedInputStream bufferedIn = null;
+		if(rawStreams.containsKey(fid)) {
+			int length = fileLengths.get(fid); 
+			bufferedIn = new BufferedInputStream(rawStreams.get(fid), length+1);
+			bufferedIn.mark(length + 1);
+			rawStreams.put(fid, bufferedIn);
+			return bufferedIn;
+		}else{
+			CardFileInputStream cardIn = service.readFile(fid);
+			int length = cardIn.getFileLength();
+			bufferedIn = new BufferedInputStream(cardIn, length + 1);
+			totalLength += length;
+			fileLengths.put(fid, length);
+			bufferedIn.mark(length + 1);
+			rawStreams.put(fid, bufferedIn);
+			return bufferedIn;
+		}
+	}
+
+	private void setupFile(PassportService service, short fid) throws CardServiceException {
+		CardFileInputStream in = service.readFile(fid);
+		int fileLength = in.getFileLength();
+		in.mark(fileLength + 1);
+		rawStreams.put(fid, in);
+		totalLength += fileLength;
+		fileLengths.put(fid, fileLength);        
+	}
+
+	/**
+	 * Starts a thread to read the raw inputstream.
+	 *
+	 * @param fid
+	 * @throws IOException
+	 */
+	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
+		final Passport passport = this;
+		final InputStream unBufferedIn = rawStreams.get(fid);
+		if (unBufferedIn == null) { throw new IOException("No raw inputstream to copy " + Integer.toHexString(fid)); }
+		final int fileLength = fileLengths.get(fid);
+		unBufferedIn.reset();
+		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
+		final PipedOutputStream out = new PipedOutputStream(pipedIn);
+		final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
+		InputStream in = new BufferedInputStream(pipedIn, fileLength + 1);
+		in.mark(fileLength + 1);
+		bufferedStreams.put(fid, in);
+		(new Thread(new Runnable() {
+			public void run() {
+				byte[] buf = new byte[BUFFER_SIZE];
+				try {
+					while (true) {
+						int bytesRead = unBufferedIn.read(buf);
+						if (bytesRead < 0) { break; }
+						out.write(buf, 0, bytesRead);
+						copyOut.write(buf, 0, bytesRead);
+						passport.bytesRead += bytesRead;
+					}
+					out.flush(); out.close();
+					copyOut.flush();
+					byte[] copyOutBytes = copyOut.toByteArray();
+					filesBytes.put(fid, copyOutBytes);
+					copyOut.close();
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+					/* FIXME: what if something goes wrong inside this thread? */
+				}
+			}
+		})).start();
 	}
 }
