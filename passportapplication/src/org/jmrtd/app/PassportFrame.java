@@ -243,7 +243,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			switch (readingMode) {
 			case SAFE_MODE:
 				verifySecurity(service);
-				displayInputStreams();
+				displayInputStreams(false);
 				verifySecurity(service);
 				break;
 			case PROGRESSIVE_MODE:
@@ -262,7 +262,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	public void readFromZipFile(File file) throws IOException {
 		try {
             passport = new Passport(file);
-			displayInputStreams();
+			displayInputStreams(false);
 			verifySecurity(null);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -273,7 +273,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	public void readFromEmptyPassport() {
 		try {
             passport = new Passport();
-			displayInputStreams();
+			displayInputStreams(false);
 			verifySecurity(null);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -292,10 +292,6 @@ public class PassportFrame extends JFrame implements AuthListener
 	 * Reads the datagroups and adds them to the GUI.
 	 * Assumes inputstreams in <code>passportFiles</code> are reset to beginning.
 	 */
-	private void displayInputStreams() {
-		displayInputStreams(false);	
-	}
-
 	private void displayInputStreams(boolean isProgressiveMode) {
 		try {
 			displayHolderInfo();
