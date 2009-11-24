@@ -86,14 +86,14 @@ import org.jmrtd.TerminalCVCertificateDirectory;
  *
  * @version $Revision: 894 $
  */
-public class PassportApp  implements PassportListener
+public class JMRTDApp  implements PassportListener
 {
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
 	public static final File JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd");
 	private static final File PREFERENCES_FILE = new File(JMRTD_USER_DIR, "jmrtd.properties");
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportApp.class);
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", JMRTDApp.class);
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
@@ -116,7 +116,7 @@ public class PassportApp  implements PassportListener
 	 *
 	 * @param arg command line arguments, are ignored for now.
 	 */
-	public PassportApp() {
+	public JMRTDApp() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
             try {
@@ -539,6 +539,6 @@ public class PassportApp  implements PassportListener
 	 * @param arg command line arguments.
 	 */
 	public static void main(String[] arg) {
-		new PassportApp();
+		new JMRTDApp();
 	}
 }

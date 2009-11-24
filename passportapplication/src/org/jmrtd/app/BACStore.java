@@ -45,7 +45,7 @@ import java.util.StringTokenizer;
 public class BACStore
 {
 	private static final File BACDB_FILE =
-		new File(PassportApp.JMRTD_USER_DIR, "bacdb.txt");
+		new File(JMRTDApp.JMRTD_USER_DIR, "bacdb.txt");
 	
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
@@ -127,8 +127,8 @@ public class BACStore
 	private void write() {
 		try {
 			if (!BACDB_FILE.exists()) {
-				if (!PassportApp.JMRTD_USER_DIR.isDirectory()) {
-					PassportApp.JMRTD_USER_DIR.mkdirs();
+				if (!JMRTDApp.JMRTD_USER_DIR.isDirectory()) {
+					JMRTDApp.JMRTD_USER_DIR.mkdirs();
 				}
 				BACDB_FILE.createNewFile();
 			}
