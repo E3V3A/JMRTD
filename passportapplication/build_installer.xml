@@ -33,7 +33,7 @@
 	<property name="scuba_data_src" location="${basedir}/../scuba_data/src" />
 	<property name="scuba_storage_src" location="${basedir}/../scuba_storage_j2se/src" />
 
-	<property name="scuba_gui_images" location="${basedir}/../scuba_gui_j2se/images" />
+	<property name="scuba_gui_base" location="${basedir}/../scuba_gui_j2se" />
 
 	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
 		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
@@ -104,7 +104,8 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png,${scuba_gui_images}/**" />
+			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
+			<fileset dir="${scuba_gui_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>
