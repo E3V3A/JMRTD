@@ -342,9 +342,6 @@ public class PassportService extends PassportApduService {
 	 *            passport's public key id (stored in DG14), -1 if none.
 	 * @param key
 	 *            passport's public key (stored in DG14).
-	 * @param caReference
-	 *            the CA certificate key reference, this can be read from the
-	 *            CVCA file
 	 * @throws CardServiceException
 	 *             if CA failed or some error occurred
 	 */
@@ -525,7 +522,6 @@ public class PassportService extends PassportApduService {
 	 *            terminal private key
 	 * @param documentNumber
 	 *            the passport number
-	 * @return whether EAC was successful
 	 * @throws CardServiceException
 	 *             on error
 	 */
