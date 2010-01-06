@@ -23,9 +23,9 @@
 	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
 	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
 
-	<property name="${acrprovider-build}" location="${basedir}/../acrprovider/bin" />
-	<property name="${crefprovider-build}" location="${basedir}/../crefprovider/bin" />
-	<property name="${jcopprovider-build}" location="${basedir}/../jcopprovider/bin" />
+	<property name="acrprovider_build" location="${basedir}/../acrprovider/bin" />
+	<property name="crefprovider_build" location="${basedir}/../crefprovider/bin" />
+	<property name="jcopprovider_build" location="${basedir}/../jcopprovider/bin" />
 	
 	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards_j2se/src" />
 	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
@@ -104,6 +104,9 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
+			<fileset dir="${acrprovider_build}/" includes="**/*.class" />
+			<fileset dir="${crefprovider_build}/" includes="**/*.class" />
+			<fileset dir="${jcopprovider_build}/" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
 			<fileset dir="${scuba_gui_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
@@ -250,9 +253,9 @@
 	<!-- Conditional stuff is set below -->
 
 	<target name="check_conditional_properties" description="Sets some properties depending on build platform">
-		<available file="${acrprovider-build}" property="is_acr_available" />
-		<available file="${crefprovider-build}" property="is_cref_available" />
-		<available file="${jcopprovider-build}" property="is_jcop_available" />
+		<available file="${acrprovider_build}" property="is_acr_available" />
+		<available file="${crefprovider_build}" property="is_cref_available" />
+		<available file="${jcopprovider_build}" property="is_jcop_available" />
 		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />
 		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
 		<condition property="is_os_windows">
