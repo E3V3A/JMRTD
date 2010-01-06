@@ -12,6 +12,7 @@
 	<property name="dist" location="dist" />
 	<property name="distlib" location="${dist}/lib" />
 
+	<property file="jmrtd.properties" />
 	<property file="jmrtd_installer.properties" />
 
 	<property name="app_title" value="${app_name} ${app_version}" />
@@ -22,23 +23,17 @@
 	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
 	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
 
+	<property name="${acrprovider-build}" location="${basedir}/../acrprovider/bin" />
+	<property name="${crefprovider-build}" location="${basedir}/../crefprovider/bin" />
+	<property name="${jcopprovider-build}" location="${basedir}/../jcopprovider/bin" />
+	
 	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards_j2se/src" />
 	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
 	<property name="scuba_gui_src" location="${basedir}/../scuba_gui_j2se/src" />
 	<property name="scuba_data_src" location="${basedir}/../scuba_data/src" />
 	<property name="scuba_storage_src" location="${basedir}/../scuba_storage_j2se/src" />
-	
-	<property name="scuba_smartcards_dist" location="${basedir}/../scuba_smartcards_j2se/dist" />
-	<property name="scuba_util_dist" location="${basedir}/../scuba_util/dist" />
-	<property name="scuba_gui_dist" location="${basedir}/../scuba_gui_j2se/dist" />
-	<property name="scuba_data_dist" location="${basedir}/../scuba_data/dist" />
-	<property name="scuba_storage_dist" location="${basedir}/../scuba_storage_j2se/dist" />
 
-	<property name="scuba_smartcards_jar" value="scuba_smartcards-0.0.1.jar" />
-	<property name="scuba_util_jar" value="scuba_util-0.0.1.jar" />
-	<property name="scuba_gui_jar" value="scuba_gui-0.0.1.jar" />
-	<property name="scuba_data_jar" value="scuba_data-0.0.1.jar" />
-	<property name="scuba_storage_jar" value="scuba_storage-0.0.1.jar" />
+	<property name="scuba_gui_images" location="${basedir}/../scuba_gui_j2se/images" />
 
 	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
 		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
@@ -58,24 +53,10 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" includes="**/*.java" classpath="${scuba_smartcards_dist}/${scuba_smartcards_jar}:${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
+		<javac srcdir="${src}:${scuba_util_src}:${scuba_data_src}:${scuba_gui_src}:${scuba_smartcards_src}:${scuba_storage_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
 	</target>
 
-	<target name="extensions" depends="init" description="Copies extensions into distribution directory">
-		<!-- Copy JMRTD API jar -->
-		<copy todir="${distlib}">
-			<fileset file="${jmrtd_dist}/${jmrtd_jar}" />
-		</copy>
-				
-		<!-- Copy SCUBA jars -->
-		<copy todir="${distlib}">
-			<fileset file="${scuba_smartcards_dist}/${scuba_smartcards_jar}" />
-			<fileset file="${scuba_gui_dist}/${scuba_gui_jar}" />
-			<fileset file="${scuba_data_dist}/${scuba_data_jar}" />
-			<fileset file="${scuba_util_dist}/${scuba_util_jar}" />
-			<fileset file="${scuba_storage_dist}/${scuba_storage_jar}" />
-		</copy>
-		
+	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -111,11 +92,11 @@
 		</copy>
 
 		<!-- Create the distribution jar file -->
-		<jar jarfile="${distlib}/jmrtd_app.jar">
+		<jar jarfile="${distlib}/jmrtd.jar">
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${jmrtd_jar} ${scuba_smartcards_jar} ${scuba_gui_jar} ${scuba_storage_jar} ${scuba_data_jar} ${scuba_util_jar} ${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
+				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar}" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
@@ -123,7 +104,7 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png" />
+			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png,images/famfamfam_silk/*.png,images/flags/*.png,${scuba_gui_images}/**" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>
@@ -241,19 +222,19 @@
 	</target>
 
 	<target name="doc" description="Generates API docs" if="build_java_doc">
-		<javadoc classpath="${jmrtd_dist}/${jmrtd_jar};${scuba_data_dist}/${scuba_data_jar};${scuba_smartcards_dist}/${scuba_smartcards_jar};${scuba_storage_dist}/${scuba_storage_jar};${scuba_util_dist}/${scuba_util_jar};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
+		<javadoc classpath="${jmrtd_dist}/${jmrtd_jar};${bcprov_dir}/${bcprov_jar};${certcvc_dir}/${certcvc_jar}"
 				destdir="apidocs"
 				package="false"
 				doctitle="${lib_title}"
 				windowtitle="${lib_title}"
 				header="${lib_title}"
-				packagenames="org.jmrtd">
+				packagenames="org.jmrtd,net.sourceforge.scuba.data,net.sourceforge.scuba.smartcards,net.sourceforge.scuba.tlv">
 			<link href="http://java.sun.com/javase/6/docs/api" />
 			<link href="http://java.sun.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
-			<sourcepath path="src;${passporthostapi_src};${scuba_data_src};${scuba_smartcards_src}" />
+			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_data_src};${scuba_storage_src};${scuba_smartcards_src};${scuba_gui_src}" />
 			<package name="org.jmrtd" />
 			<package name="net.sourceforge.scuba.data" />
 			<package name="net.sourceforge.scuba.smartcards" />

@@ -4,22 +4,23 @@ About
    Readable Travel Document (MRTD) standards as specified
    by the International Civil Aviation Organization (ICAO).
 
-Authors
+   See the project's web site at http://jmrtd.org/.
 
-   Cees-Bart Breunesse (ceesb@riscure.com)
-   Engelbert Hubbers (hubbers@cs.ru.nl)
-   Wojciech Mostowski (woj@cs.ru.nl)
-   Martijn Oostdijk (martijn.oostdijk@gmail.com)
-   Ronny Wichers Schreur (ronny@cs.ru.nl)
+Contributors
 
-Supplementary code & testing
-
-   Adam Laurie (adam@algroup.co.uk)
-   http://rfidiot.org
-
-Coffee & cold drinks
-
-   Arnout Engelen (arnouten@bzzt.net)
+   Cees-Bart Breunesse
+   Dirk-Jan van Dijk
+   Tomas Gustavsson (of http://ejbca.org)
+   Engelbert Hubbers
+   Adam Laurie (of http://rfidiot.org)
+   Wojciech Mostowski
+   Martijn Oostdijk
+   Henning Richter
+   Julien Schmaltz
+   Jan Tretmans
+   Ronny Wichers Schreur
+   
+   Contact us via info@jmrtd.org.
 
 License
 
@@ -51,34 +52,34 @@ Dependencies (might be included in distribution)
         jai_imageio.jar in jre/lib/ext, some libs in jre/lib/i386.
         URL: https://jai-imageio.dev.java.net/
 
-   * famfamfam.com icons
+   * famfamfam.com icons:
         GUI code may contain icons by Mark James
         http://www.famfamfam.com/
 
-Optional stuff
+Optional stuff (may be necessary for building the project)
 
-   * ApduIO, Java Card simulator
-        apduio.jar part of Java Card Kit
-        Tested with version 2.2.2
-        When making from source, expects a copy or link to this jar
-        (or stub) in lib directory.
-        http://java.sun.com/javacard/devkit/
+   * Project SCUBA:
+        This is the low level smart card reader stuff.
+        See http://scuba.sourceforge.net/.
 
-   * JCOP toolset
-        offcard.jar part of JCOP plugin for Eclipse
-        Tested with version 3.1.1
-        Tested with version 3.1.2
-        When making from source, expects a copy or link to this jar
-        (or stub) in lib directory.
+   * ApduIO, Java Card simulator:
+        Tested with version 2.2.2.
+        When making from source, expects a copy or link to apduio.jar (or stub) in lib directory.
+        The Java Card Kit is closed source software from Sun Microsystems, Inc.
+        See http://java.sun.com/javacard/devkit/.
+
+   * JCOP toolset:
+        Tested with version 3.1.1.
+        Tested with version 3.1.2.
+        Tested with version 3.2.7.
+        When making from source, expects a copy or link to offcard.jar (or stub) in lib directory.
+        The JCOP plugin for Eclipse is proprietary software from NXP Semiconductors.
 
    * GlobalPlatform
-        gpshell tool for installing to JCOP cards
-        http://sourceforge.net/projects/globalplatform/
+        gpshell tool for installing to JCOP cards.
+        See http://sourceforge.net/projects/globalplatform/.
 
    * RFIDIOt
         mrpkey.py command line tool for testing/reading/writing/cloning
-        http://rfidiot.org/
-	
-Website
+        See http://rfidiot.org/.
 
-   http://jmrtd.org/
