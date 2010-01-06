@@ -22,6 +22,7 @@
 
 package org.jmrtd.app;
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
@@ -48,32 +49,39 @@ import net.sourceforge.scuba.smartcards.CardManager;
  * Preferences panel.
  *
  * FIXME: Can probably be done more generically...
- * TODO: Perhaps a blanket mode, where reader can continue at own risk...
+ *
+ * TODO: Perhaps add a blanket reading mode, where user is asked to continue at own risk...
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class PreferencesPanel extends JPanel
-{	
+{
 	public enum ReadingMode {
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
 	};
 	
 	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.SAFE_MODE;
+	private static final boolean DEFAULT_APDU_TRACING_VALUE = false;
 	
 	private static final String READING_MODE_KEY = "mode.reading";
 	private static final String TERMINAL_KEY_PREFIX = "terminal.";
+	private static final String APDU_TRACING_KEY = "trace.apdu";
 
 	private static final long serialVersionUID = 5429621553165149988L;
 
 	private static Border READING_MODE_BORDER = BorderFactory.createTitledBorder("Reading Mode");
 	private static Border CARD_TERMINALS_BORDER = BorderFactory.createTitledBorder("Card Terminals");
-
+	private static Border APDU_TRACE_BORDER = BorderFactory.createTitledBorder("APDU Tracing");
+	
 	private PreferencesState changedState;
 	private PreferencesState state;
-	private CardManager cm;
-	private Map<CardTerminal, JCheckBox> checkBoxMap;
-	private Map<ReadingMode, JRadioButton> radioButtonMap;
+	private CardManager cardManager;
+
+	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
+	private Map<ReadingMode, JRadioButton> readingModeRadioButtonMap;
+	private JCheckBox apduTracingCheckBox;
+	private APDUTraceFrame apduTraceFrame;
 
 	/**
 	 * Creates the preferences panel.
@@ -82,42 +90,52 @@ public class PreferencesPanel extends JPanel
 	 * @param preferencesFile file for storing preferences
 	 */
 	public PreferencesPanel(CardManager cm, File preferencesFile) {
-		super(new FlowLayout());
-		this.cm = cm;
-		checkBoxMap = new HashMap<CardTerminal, JCheckBox>();
+		super(new BorderLayout());
+		this.cardManager = cm;
+		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();
 		List<CardTerminal> terminalList = cm.getTerminals();
 
-		JPanel cmPanel = new JPanel(new GridLayout(terminalList.size(), 1));
-		cmPanel.setBorder(CARD_TERMINALS_BORDER);
+		JPanel cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
+		cardTerminalsPreferencesPanel.setBorder(CARD_TERMINALS_BORDER);
 		if (terminalList.size() == 0) {
-			cmPanel.add(new JLabel("No card terminals!"));
+			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
 		}
 		this.state = new PreferencesState();
 		for (CardTerminal terminal: terminalList){
 			boolean isChecked = cm.isPolling(terminal);
 			JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
-			checkBoxMap.put(terminal, checkBox);
+			cardTerminalPollingCheckBoxMap.put(terminal, checkBox);
 			checkBox.setAction(getSetTerminalAction(terminal, checkBox));
-			cmPanel.add(checkBox);
+			cardTerminalsPreferencesPanel.add(checkBox);
 			state.setTerminalChecked(terminal, isChecked);
 		}
 
 		ReadingMode[] modes = ReadingMode.values();
-		radioButtonMap = new HashMap<ReadingMode, JRadioButton>();
-		JPanel rmPanel = new JPanel(new GridLayout(modes.length, 1));
-		rmPanel.setBorder(READING_MODE_BORDER);
+		readingModeRadioButtonMap = new HashMap<ReadingMode, JRadioButton>();
+		JPanel readingModePreferencesPanel = new JPanel(new GridLayout(modes.length, 1));
+		readingModePreferencesPanel.setBorder(READING_MODE_BORDER);
 		ButtonGroup buttonGroup = new ButtonGroup();
 		for (ReadingMode mode: modes) {
 			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == state.getReadingMode());
 			radioButton.setAction(getSetModeAction(mode));
-			radioButtonMap.put(mode, radioButton);
+			readingModeRadioButtonMap.put(mode, radioButton);
 			buttonGroup.add(radioButton);
-			rmPanel.add(radioButton);
+			readingModePreferencesPanel.add(radioButton);
 		}
 		this.changedState = new PreferencesState(state);
+		
+		JPanel apduTracePreferencesPanel = new JPanel(new FlowLayout());
+		apduTracingCheckBox = new JCheckBox("Trace APDUs", state.isAPDUTracing());
 
-		add(rmPanel);
-		add(cmPanel);
+		apduTracingCheckBox.setAction(getSetAPDUTracingAction(apduTracingCheckBox));
+		apduTracePreferencesPanel.add(apduTracingCheckBox);
+		apduTracePreferencesPanel.setBorder(APDU_TRACE_BORDER);
+
+		JPanel northPanel = new JPanel(new FlowLayout());
+		northPanel.add(readingModePreferencesPanel);
+		northPanel.add(apduTracePreferencesPanel);
+		add(northPanel, BorderLayout.NORTH);
+		add(cardTerminalsPreferencesPanel, BorderLayout.CENTER);
 	}
 
 	public String getName() {
@@ -128,9 +146,28 @@ public class PreferencesPanel extends JPanel
 		return state.getReadingMode();
 	}
 
+	public boolean isAPDUTracing() {
+		return state.isAPDUTracing();
+	}
+	
+	public void setAPDUTracing(boolean b) {
+		state.setAPDUTracing(b);
+	}
+	
 	public void commit() {
+		PreferencesState oldState = new PreferencesState(state);
 		state = new PreferencesState(changedState);
-		updateCardManager(state, cm);
+		updateCardManager(state, cardManager);
+		if (!oldState.isAPDUTracing() && state.isAPDUTracing()) {
+			apduTraceFrame = new APDUTraceFrame("APDU trace");
+			apduTraceFrame.pack();
+			apduTraceFrame.setVisible(true);
+			cardManager.addAPDUListener(apduTraceFrame);
+		} else if (oldState.isAPDUTracing() && !state.isAPDUTracing()) {
+			apduTraceFrame.setVisible(false);
+			cardManager.removeAPDUListener(apduTraceFrame);
+			apduTraceFrame = null;
+		}
 	}
 
 	public void abort() {
@@ -139,14 +176,15 @@ public class PreferencesPanel extends JPanel
 	}
 	
 	private void updateGUIFromState(PreferencesState state) {
-		for (CardTerminal terminal: checkBoxMap.keySet()) {
-			JCheckBox checkBox = checkBoxMap.get(terminal);
+		for (CardTerminal terminal: cardTerminalPollingCheckBoxMap.keySet()) {
+			JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal);
 			checkBox.setSelected(state.isTerminalChecked(terminal));
 		}
-		for (ReadingMode mode: radioButtonMap.keySet()) {
-			JRadioButton radioButton = radioButtonMap.get(mode);
+		for (ReadingMode mode: readingModeRadioButtonMap.keySet()) {
+			JRadioButton radioButton = readingModeRadioButtonMap.get(mode);
 			radioButton.setSelected(mode.equals(state.getReadingMode()));
 		}
+		apduTracingCheckBox.setSelected(state.isAPDUTracing());
 	}
 	
 	private void updateCardManager(PreferencesState state, CardManager cm) {
@@ -193,6 +231,17 @@ public class PreferencesPanel extends JPanel
 		return action;
 	}
 	
+	private Action getSetAPDUTracingAction(final JCheckBox checkBox) {
+		Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				changedState.setAPDUTracing(checkBox.isSelected());
+			}
+		};
+		action.putValue(Action.SHORT_DESCRIPTION, "Toggle APDU tracing");
+		action.putValue(Action.NAME, "Trace APDUs");
+		return action;
+	}
+	
 	private class PreferencesState implements Cloneable
 	{	
 		private Properties properties;
@@ -231,6 +280,18 @@ public class PreferencesPanel extends JPanel
 		public void setReadingMode(ReadingMode readingMode) {
 			properties.put(READING_MODE_KEY, readingMode);
 			
+		}
+		
+		public boolean isAPDUTracing() {
+			Boolean isAPDUTracing = (Boolean)properties.get(APDU_TRACING_KEY);
+			if (isAPDUTracing == null) {
+				return DEFAULT_APDU_TRACING_VALUE;
+			}
+			return isAPDUTracing;
+		}
+		
+		public void setAPDUTracing(boolean b) {
+			properties.put(APDU_TRACING_KEY, b);
 		}
 		
 		public Object clone() {

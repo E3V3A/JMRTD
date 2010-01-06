@@ -136,13 +136,6 @@ public class JMRTDApp  implements PassportListener
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 			
-			/* START DEBUGGING CODE */
-			APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (Card Manager)");
-			traceFrame.pack();
-			traceFrame.setVisible(true);
-			cardManager.addAPDUListener(traceFrame);
-			/* END DEBUGGING CODE */
-			
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
@@ -437,14 +430,6 @@ public class JMRTDApp  implements PassportListener
 									CardService service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
 									PassportService passportService = new PassportService(new TerminalCardService(terminal));
-									
-									/* START DEBUGGING CODE */
-//									APDUTraceFrame traceFrame = new APDUTraceFrame("APDU trace (explicit reload)");
-//									traceFrame.pack();
-//									traceFrame.setVisible(true);
-//									passportService.addAPDUListener(traceFrame);
-									/* END DEBUGGING CODE */
-
 									readPassport(passportService);
 									
 									if (isPolling) { cardManager.startPolling(terminal); }
