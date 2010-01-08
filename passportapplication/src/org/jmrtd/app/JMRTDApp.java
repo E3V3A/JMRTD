@@ -71,6 +71,8 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
+import org.jmrtd.BACEntry;
+import org.jmrtd.BACStore;
 import org.jmrtd.COMFile;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
@@ -119,11 +121,11 @@ public class JMRTDApp  implements PassportListener
 	public JMRTDApp() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
-            try {
-               TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/sos/woj/terminals"));
-            }catch(Exception e) {
-               System.out.println("Could not load terminal certificates from a default location.");
-            }
+			try {
+				TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/sos/woj/terminals"));
+			}catch(Exception e) {
+				System.out.println("Could not load terminal certificates from a default location.");
+			}
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			cardManager = CardManager.getInstance();
@@ -135,7 +137,7 @@ public class JMRTDApp  implements PassportListener
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
-			
+
 			final MRZKeyListener keySource = new MRZKeyListener(bacStorePanel);
 			addMRZKeyListener(mainFrame, keySource);
 			JMenuBar menuBar = new JMenuBar();
@@ -162,7 +164,7 @@ public class JMRTDApp  implements PassportListener
 			final char c = mrzChars.charAt(i);
 			String actionMapKey = "KeyActionFor_" + Character.toString(c);
 			am.put(actionMapKey, new AbstractAction() {
-				
+
 				private static final long serialVersionUID = 2298695182878423540L;
 
 				public void actionPerformed(ActionEvent e) {
@@ -215,14 +217,16 @@ public class JMRTDApp  implements PassportListener
 		} catch (CardServiceException cse) {
 			isBACPassport = true;
 		} catch (IOException e) {
-          e.printStackTrace();
-          // FIXME: now what?
-        }
+			e.printStackTrace();
+			// FIXME: now what?
+		}
 		if (isBACPassport) {
 			int tries = 10;
 			List<BACEntry> triedBACEntries = new ArrayList<BACEntry>();
 			try {
+				/* NOTE: outer loop, try 10 times all entries (user may be entering new entries meanwhile). */
 				while (bacEntry == null && tries-- > 0) {
+					/* NOTE: inner loop, loops through stored BAC entries. */
 					for (BACEntry entry: bacStore.getEntries()) {
 						try {
 							if (!triedBACEntries.contains(entry)) {
@@ -230,9 +234,9 @@ public class JMRTDApp  implements PassportListener
 								Date dateOfBirth = entry.getDateOfBirth();
 								Date dateOfExpiry = entry.getDateOfExpiry();
 								service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
-								/* NOTE: if authentication was ok, performedBAC will be called back. */
+								/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
 								bacEntry = entry;
-								break; /* out of for loop */
+								break; /* out of inner for loop */
 							}
 							Thread.sleep(500);
 						} catch (CardServiceException cse) {
@@ -245,14 +249,13 @@ public class JMRTDApp  implements PassportListener
 			}
 		}
 		if (!isBACPassport || bacEntry != null) {
-			PassportFrame passportFrame = new PassportFrame();
+			PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
 			passportFrame.readFromService(service, bacEntry, preferencesPanel.getReadingMode());
 		} else {
-			/* Passport requires BAC, but we failed to authenticate. */
-			APDUFingerprint fp = new APDUFingerprint(service);
+			/*
+			 * Passport requires BAC, but we failed to authenticate.
+			 */
 			String message = "Cannot get access to passport.";
-			Properties properties = fp.guessProperties();
-			message += "\nFingerprint information: \"" + properties + "\"";
 			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
 			return;
 		}
@@ -271,10 +274,10 @@ public class JMRTDApp  implements PassportListener
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-        /* Terminal Certs... */
-        JMenuItem loadItem = new JMenuItem();
-        menu.add(loadItem);
-        loadItem.setAction(getLoadAction());
+		/* Terminal Certs... */
+		JMenuItem loadItem = new JMenuItem();
+		menu.add(loadItem);
+		loadItem.setAction(getLoadTerminalCertsAction());
 
 		menu.addSeparator();
 
@@ -292,11 +295,11 @@ public class JMRTDApp  implements PassportListener
 		JMenuItem reloadItem = new JMenuItem();
 		reloadItem.setAction(getReloadAction());
 		menu.add(reloadItem);
-		
+
 		JMenuItem preferencesItem = new JMenuItem();
 		preferencesItem.setAction(getPreferencesAction());
 		menu.add(preferencesItem);
-		
+
 		return menu;
 	}
 
@@ -314,7 +317,7 @@ public class JMRTDApp  implements PassportListener
 			private static final long serialVersionUID = 2866114377708028964L;
 
 			public void actionPerformed(ActionEvent e) {
-				PassportFrame passportFrame = new PassportFrame();
+				PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
 				passportFrame.readFromEmptyPassport();
 				passportFrame.pack();
 				passportFrame.setVisible(true);
@@ -343,7 +346,7 @@ public class JMRTDApp  implements PassportListener
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
-						PassportFrame passportFrame = new PassportFrame();
+						PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
 						passportFrame.readFromZipFile(file);
 						passportFrame.pack();
 						passportFrame.setVisible(true);
@@ -362,40 +365,40 @@ public class JMRTDApp  implements PassportListener
 		return action;
 	}
 
-    private Action getLoadAction() {
-        Action action = new AbstractAction() {
+	private Action getLoadTerminalCertsAction() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -3009238098024027906L;
+			private static final long serialVersionUID = -3009238098024027906L;
 
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setAcceptAllFileFilterUsed(false);
-                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                fileChooser.setFileFilter(new FileFilter() {
-                    public boolean accept(File f) { return f.isDirectory(); }
-                    public String getDescription() { return "Directories"; }               
-                });
-                int choice = fileChooser.showOpenDialog(contentPane);
-                switch (choice) {
-                case JFileChooser.APPROVE_OPTION:
-                    try {
-                        File file = fileChooser.getSelectedFile();
-                        TerminalCVCertificateDirectory.getInstance().scanDirectory(file);
-                    } catch (IOException ioe) {
-                        /* NOTE: Do nothing. */
-                        ioe.printStackTrace();
-                    }
-                    break;
-                default: break;
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, OPEN_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Load terminals certificate & key information");
-        action.putValue(Action.NAME, "Terminal Certs...");
-        return action;
-    }
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setAcceptAllFileFilterUsed(false);
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory(); }
+					public String getDescription() { return "Directories"; }               
+				});
+				int choice = fileChooser.showOpenDialog(contentPane);
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						TerminalCVCertificateDirectory.getInstance().scanDirectory(file);
+					} catch (IOException ioe) {
+						/* NOTE: Do nothing. */
+						ioe.printStackTrace();
+					}
+					break;
+				default: break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, OPEN_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Load terminals certificate & key information");
+		action.putValue(Action.NAME, "Terminal Certs...");
+		return action;
+	}
 
 	private Action getExitAction() {
 		Action action = new AbstractAction() {
@@ -431,7 +434,7 @@ public class JMRTDApp  implements PassportListener
 									if (service != null) { service.close(); }
 									PassportService passportService = new PassportService(new TerminalCardService(terminal));
 									readPassport(passportService);
-									
+
 									if (isPolling) { cardManager.startPolling(terminal); }
 								}
 							} catch (CardException ce) {
@@ -453,7 +456,7 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.NAME, "Reload cards");
 		return action;
 	}
-	
+
 	private Action getPreferencesAction() {
 		Action action = new AbstractAction() {
 
@@ -473,7 +476,7 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.NAME, "Preferences...");
 		return action;
 	}
-	
+
 	private Action getAboutAction() {
 		Action action = new AbstractAction() {
 

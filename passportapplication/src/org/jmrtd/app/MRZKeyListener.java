@@ -28,6 +28,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.jmrtd.BACEntry;
 import org.jmrtd.MRZInfo;
 
 

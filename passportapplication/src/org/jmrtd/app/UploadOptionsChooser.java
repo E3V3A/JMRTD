@@ -52,6 +52,8 @@ import javax.swing.JTextField;
 import javax.swing.JToggleButton;
 import javax.swing.filechooser.FileFilter;
 
+import org.jmrtd.BACEntry;
+
 import net.sourceforge.scuba.smartcards.CardManager;
 
 /**

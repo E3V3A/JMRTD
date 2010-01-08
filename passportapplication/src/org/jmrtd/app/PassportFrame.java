@@ -38,6 +38,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -99,6 +101,7 @@ import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
+import org.jmrtd.BACEntry;
 import org.jmrtd.BACEvent;
 import org.jmrtd.COMFile;
 import org.jmrtd.CSCAStore;
@@ -125,7 +128,6 @@ import org.jmrtd.PassportService;
 import org.jmrtd.SODFile;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
-
 /**
  * Frame for displaying a passport while (and after) it is being read.
  *
@@ -143,7 +145,7 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
-    private static final Icon KEY_GO = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
+	private static final Icon KEY_GO = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
 	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -152,16 +154,18 @@ public class PassportFrame extends JFrame implements AuthListener
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-    
+
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	private FacePreviewPanel facePreviewPanel;
 
 	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
-    private JMenu viewMenu;
+	private JMenu viewMenu;
+	
+	private CSCAStore cscaStore;
 
-    private Passport passport;
+	private Passport passport;
 
 	private COMFile com;
 	private DG1File dg1;
@@ -175,23 +179,24 @@ public class PassportFrame extends JFrame implements AuthListener
 	private DG11File dg11;
 	private DG12File dg12;
 	private DataGroup dg13;
-    private DG14File dg14;
+	private DG14File dg14;
 	private DG15File dg15;
 	private DataGroup dg16;
 	private SODFile sod;
-    private CVCAFile cvca;
+	private CVCAFile cvca;
 
 	private X509Certificate countrySigningCert;
-    private EACEvent eacEvent;
-    
+	private EACEvent eacEvent;
+
 	private VerificationIndicator verificationIndicator;
 	private Country issuingState;
 
 	private BACEntry bacEntry;
 
-	public PassportFrame() {
+	public PassportFrame(CSCAStore cscaStore) {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
+		this.cscaStore = cscaStore;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
@@ -233,10 +238,10 @@ public class PassportFrame extends JFrame implements AuthListener
 			if (bacEntry != null) {
 				verificationIndicator.setBACSucceeded();
 			}
-            service.addAuthenticationListener(this);
+			service.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
-            passport = new Passport(service, bacEntry != null ? bacEntry.getDocumentNumber() : null);
+			passport = new Passport(service, bacEntry != null ? bacEntry.getDocumentNumber() : null);
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -259,7 +264,7 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	public void readFromZipFile(File file) throws IOException {
 		try {
-            passport = new Passport(file);
+			passport = new Passport(file);
 			displayInputStreams(false);
 			verifySecurity(null);
 		} catch (Exception e) {
@@ -270,7 +275,7 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	public void readFromEmptyPassport() {
 		try {
-            passport = new Passport();
+			passport = new Passport();
 			displayInputStreams(false);
 			verifySecurity(null);
 		} catch (Exception e) {
@@ -314,7 +319,7 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG3:
 					dg3 = new DG3File(in);
-                    System.out.println("Read in DG3.");
+					System.out.println("Read in DG3.");
 					break;
 				case PassportService.EF_DG4:
 					dg4 = new DG4File(in);
@@ -334,10 +339,10 @@ public class PassportFrame extends JFrame implements AuthListener
 				case PassportService.EF_DG12:
 					dg12 = new DG12File(in);
 					break;
-                case PassportService.EF_DG14:
-                    dg14 = new DG14File(in);
-                    updateViewMenu();
-                    break;
+				case PassportService.EF_DG14:
+					dg14 = new DG14File(in);
+					updateViewMenu();
+					break;
 				case PassportService.EF_DG15:
 					dg15 = new DG15File(in);
 					break;
@@ -349,8 +354,8 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				default:
 					String message = "File " + Integer.toHexString(fid) + " not supported!";
-//					BERTLVObject o = BERTLVObject.getInstance(in);
-//					System.out.println(o);
+					//					BERTLVObject o = BERTLVObject.getInstance(in);
+					//					System.out.println(o);
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (Exception e) {
@@ -363,10 +368,10 @@ public class PassportFrame extends JFrame implements AuthListener
 	}
 
 	private void updateViewMenu() {
-      if(eacEvent != null && dg14 != null) {
-        createEACMenus(eacEvent.getTerminalKey(), eacEvent.getCVCertificates(), dg14.getPublicKeys(), eacEvent.getCardPublicKeyId());
-      }
-    }
+		if(eacEvent != null && dg14 != null) {
+			createEACMenus(eacEvent.getTerminalKey(), eacEvent.getCVCertificates(), dg14.getPublicKeys(), eacEvent.getCardPublicKeyId());
+		}
+	}
 
 	private void displayHolderInfo() throws IOException {
 		InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
@@ -403,10 +408,10 @@ public class PassportFrame extends JFrame implements AuthListener
 		(new Thread(new Runnable() {
 			public void run() {
 				try {
-                    int totalLength=passport.getTotalLength();
-                    progressBar.setMaximum(totalLength);
+					int totalLength=passport.getTotalLength();
+					progressBar.setMaximum(totalLength);
 					while (passport.getBytesRead() <= totalLength) {
-                        Thread.sleep(200);
+						Thread.sleep(200);
 						progressBar.setValue(passport.getBytesRead());
 					}
 				} catch (InterruptedException ie) {
@@ -422,7 +427,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		verificationIndicator.setDSNotChecked();
 		verificationIndicator.setCSNotChecked(null);
 		verifyBAC(service);
-        verifyEAC(service);
+		verifyEAC(service);
 		verifyAA(service);
 		verifyDS(service);
 		verifyCS(service);
@@ -438,19 +443,19 @@ public class PassportFrame extends JFrame implements AuthListener
 		}
 	}
 
-    
-    /** Checks whether EAC was used. */
-    private void verifyEAC(PassportService service) {
-        if (passport.hasEAC()) {
-            if(passport.wasEACPerformed()) {
-              verificationIndicator.setEACSucceeded();
-            }else{
-              verificationIndicator.setEACFailed("EAC not performed");
-            }
-        }else{
-            verificationIndicator.setEACNotChecked();
-        }
-    }
+
+	/** Checks whether EAC was used. */
+	private void verifyEAC(PassportService service) {
+		if (passport.hasEAC()) {
+			if(passport.wasEACPerformed()) {
+				verificationIndicator.setEACSucceeded();
+			}else{
+				verificationIndicator.setEACFailed("EAC not performed");
+			}
+		}else{
+			verificationIndicator.setEACNotChecked();
+		}
+	}
 
 	/** Check active authentication. */
 	private void verifyAA(PassportService service) {
@@ -476,9 +481,9 @@ public class PassportFrame extends JFrame implements AuthListener
 			// cse.printStackTrace();
 			verificationIndicator.setAAFailed("AA failed (" + cse.getMessage() + ")");
 		} catch (IOException ioe) {
-           ioe.printStackTrace();
-            verificationIndicator.setAAFailed("AA failed, IOException.");           
-        }
+			ioe.printStackTrace();
+			verificationIndicator.setAAFailed("AA failed, IOException.");           
+		}
 	}
 
 	/** Checks hashes in the SOd correspond to hashes we compute. */
@@ -488,9 +493,9 @@ public class PassportFrame extends JFrame implements AuthListener
 			InputStream comIn = passport.getInputStream(PassportService.EF_COM);
 			com = new COMFile(comIn);
 			List<Integer> comDGList = new ArrayList<Integer>();
-            for(Integer tag : com.getTagList()) {
-                comDGList.add(PassportFile.lookupDataGroupNumberByTag(tag));
-            }
+			for(Integer tag : com.getTagList()) {
+				comDGList.add(PassportFile.lookupDataGroupNumberByTag(tag));
+			}
 			Collections.sort(comDGList);
 
 			InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
@@ -518,20 +523,20 @@ public class PassportFrame extends JFrame implements AuthListener
 				digest.reset();
 
 				InputStream dgIn = null;
-                Exception ex = null;
-                try {
-                    dgIn = passport.getInputStream(fid);
-                }catch(Exception e) {
-                    dgIn = null;
-                    ex = e;
-                }
-                if(dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
-                        (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-                    continue;
-                }else if(ex != null) {
-                    throw ex;
-                }
-                
+				Exception ex = null;
+				try {
+					dgIn = passport.getInputStream(fid);
+				}catch(Exception e) {
+					dgIn = null;
+					ex = e;
+				}
+				if(dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
+						(fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+					continue;
+				}else if(ex != null) {
+					throw ex;
+				}
+
 				byte[] buf = new byte[4096];
 				while (true) {
 					int bytesRead = dgIn.read(buf);
@@ -576,7 +581,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				MRZInfo mrzInfo = dg1.getMRZInfo();
 				issuingState = mrzInfo.getIssuingState();
 			}
-			countrySigningCert = CSCAStore.getInstance().getCertificate(issuingState);
+			countrySigningCert = cscaStore.getCertificate(issuingState);
 			sod.getDocSigningCertificate().verify(countrySigningCert.getPublicKey());
 			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {
@@ -629,10 +634,10 @@ public class PassportFrame extends JFrame implements AuthListener
 		menu.add(viewDocumentSignerCertificate);
 		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
-        /* View DS key, if any... */
-        JMenuItem viewDocumentSignerKey = new JMenuItem();
-        menu.add(viewDocumentSignerKey);
-        viewDocumentSignerKey.setAction(getViewDocumentSignerKeyAction());
+		/* View DS key, if any... */
+		JMenuItem viewDocumentSignerKey = new JMenuItem();
+		menu.add(viewDocumentSignerKey);
+		viewDocumentSignerKey.setAction(getViewDocumentSignerKeyAction());
 
 		/* View CS Certificate... */
 		JMenuItem viewCountrySignerCertificate = new JMenuItem();
@@ -644,46 +649,46 @@ public class PassportFrame extends JFrame implements AuthListener
 		menu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
 
-        /* View AA private key */
-        JMenuItem viewAAPrivateKey = new JMenuItem();
-        menu.add(viewAAPrivateKey);
-        viewAAPrivateKey.setAction(getViewAAPrivateKeyAction());
-        
-        viewMenu = menu;
+		/* View AA private key */
+		JMenuItem viewAAPrivateKey = new JMenuItem();
+		menu.add(viewAAPrivateKey);
+		viewAAPrivateKey.setAction(getViewAAPrivateKeyAction());
+
+		viewMenu = menu;
 
 		return menu;
 	}
 
-    private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates, Map<Integer, PublicKey> passportEACKeys, Integer usedId) {
-        
-        Component viewPassportKeyItem = null;
-        Set<Integer> ids = passportEACKeys.keySet();
-        Iterator<Integer> idIterator = ids.iterator();
-        if(ids.size() == 1) {
-            viewPassportKeyItem = new JMenuItem();
-            Integer id = idIterator.next();
-            ((JMenuItem)viewPassportKeyItem).setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), true));            
-        }else{
-            JMenu viewPassportKeyMenu = new JMenu("Passport EAC keys");
-            while(idIterator.hasNext()) {
-                Integer id = idIterator.next();
-                JMenuItem item = new JMenuItem();
-                item.setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), usedId.equals(id)));
-                viewPassportKeyMenu.add(item);
-            }
-            viewPassportKeyItem = viewPassportKeyMenu;
-        }
-        
-        JMenuItem viewTerminalKeyItem = new JMenuItem();
-        viewTerminalKeyItem.setAction(getViewTerminalKeyAction(terminalKey));
-        JMenuItem viewTerminalCertificateItem = new JMenuItem();
-        viewTerminalCertificateItem.setAction(getViewTerminalCertificateAction(this, terminalCertificates));
-        viewMenu.addSeparator();
-        viewMenu.add(viewPassportKeyItem);
-        viewMenu.add(viewTerminalCertificateItem);
-        viewMenu.add(viewTerminalKeyItem);
-    }
-    
+	private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates, Map<Integer, PublicKey> passportEACKeys, Integer usedId) {
+
+		Component viewPassportKeyItem = null;
+		Set<Integer> ids = passportEACKeys.keySet();
+		Iterator<Integer> idIterator = ids.iterator();
+		if(ids.size() == 1) {
+			viewPassportKeyItem = new JMenuItem();
+			Integer id = idIterator.next();
+			((JMenuItem)viewPassportKeyItem).setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), true));            
+		}else{
+			JMenu viewPassportKeyMenu = new JMenu("Passport EAC keys");
+			while(idIterator.hasNext()) {
+				Integer id = idIterator.next();
+				JMenuItem item = new JMenuItem();
+				item.setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), usedId.equals(id)));
+				viewPassportKeyMenu.add(item);
+			}
+			viewPassportKeyItem = viewPassportKeyMenu;
+		}
+
+		JMenuItem viewTerminalKeyItem = new JMenuItem();
+		viewTerminalKeyItem.setAction(getViewTerminalKeyAction(terminalKey));
+		JMenuItem viewTerminalCertificateItem = new JMenuItem();
+		viewTerminalCertificateItem.setAction(getViewTerminalCertificateAction(this, terminalCertificates));
+		viewMenu.addSeparator();
+		viewMenu.add(viewPassportKeyItem);
+		viewMenu.add(viewTerminalCertificateItem);
+		viewMenu.add(viewTerminalKeyItem);
+	}
+
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
@@ -704,41 +709,41 @@ public class PassportFrame extends JFrame implements AuthListener
 		menu.add(loadDocSignCertFromFile);
 		loadDocSignCertFromFile.setAction(getLoadDocSignCertAction());
 
-        /* Replace DS key with another key from file... */
-        JMenuItem loadDocSignKeyFromFile = new JMenuItem();
-        menu.add(loadDocSignKeyFromFile);
-        loadDocSignKeyFromFile.setAction(getLoadDocSignKeyAction());
-
-        menu.addSeparator();
-        
-        /* Replace AA key with another key from file... */
-        JMenuItem loadAAKeyFromFile = new JMenuItem();
-        menu.add(loadAAKeyFromFile);
-        loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
-
-        /* Replace AA private key with another key from file... */
-        JMenuItem loadAAPrivateKeyFromFile = new JMenuItem();
-        menu.add(loadAAPrivateKeyFromFile);
-        loadAAPrivateKeyFromFile.setAction(getLoadAAPrivateKeyAction());
-
-        /* Generate new AA key pair */
-        JMenuItem generateAAKeys = new JMenuItem();
-        menu.add(generateAAKeys);
-        generateAAKeys.setAction(getAAGenerateAction());
+		/* Replace DS key with another key from file... */
+		JMenuItem loadDocSignKeyFromFile = new JMenuItem();
+		menu.add(loadDocSignKeyFromFile);
+		loadDocSignKeyFromFile.setAction(getLoadDocSignKeyAction());
 
 		menu.addSeparator();
 
-        /* Generate new EAC key pair */
-        JMenuItem generateEACKeys = new JMenuItem();
-        menu.add(generateEACKeys);
-        generateEACKeys.setAction(getGenerateEACKeys());
+		/* Replace AA key with another key from file... */
+		JMenuItem loadAAKeyFromFile = new JMenuItem();
+		menu.add(loadAAKeyFromFile);
+		loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
 
-        /* Generate load CVCA Certificate */
-        JMenuItem loadCVCA = new JMenuItem();
-        menu.add(loadCVCA);
-        loadCVCA.setAction(getLoadCVCACertificate());
-        
-        menu.addSeparator();
+		/* Replace AA private key with another key from file... */
+		JMenuItem loadAAPrivateKeyFromFile = new JMenuItem();
+		menu.add(loadAAPrivateKeyFromFile);
+		loadAAPrivateKeyFromFile.setAction(getLoadAAPrivateKeyAction());
+
+		/* Generate new AA key pair */
+		JMenuItem generateAAKeys = new JMenuItem();
+		menu.add(generateAAKeys);
+		generateAAKeys.setAction(getAAGenerateAction());
+
+		menu.addSeparator();
+
+		/* Generate new EAC key pair */
+		JMenuItem generateEACKeys = new JMenuItem();
+		menu.add(generateEACKeys);
+		generateEACKeys.setAction(getGenerateEACKeys());
+
+		/* Generate load CVCA Certificate */
+		JMenuItem loadCVCA = new JMenuItem();
+		menu.add(loadCVCA);
+		loadCVCA.setAction(getLoadCVCACertificate());
+
+		menu.addSeparator();
 
 		JMenuItem upload = new JMenuItem();
 		menu.add(upload);
@@ -746,65 +751,65 @@ public class PassportFrame extends JFrame implements AuthListener
 
 		return menu;
 	}
-    
-    /* Menu item actions below... */
 
-    private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
-        Action action = new AbstractAction() {
-            private static final long serialVersionUID = -2671362506812399044L;
+	/* Menu item actions below... */
 
-            public void actionPerformed(ActionEvent e) {
-                new TerminalCertificatesDialog(frame, terminalCertificates, false);
-            }
-        };
-        action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "View Terminal CV Certificates");
-        action.putValue(Action.NAME, "Terminal EAC Certs.");
-        return action;
-    }
+	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
+		Action action = new AbstractAction() {
+			private static final long serialVersionUID = -2671362506812399044L;
 
-    private Action getViewPassportKeyAction(Integer id, final PublicKey key, boolean eacUsed) {
-        Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				new TerminalCertificatesDialog(frame, terminalCertificates, false);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Terminal CV Certificates");
+		action.putValue(Action.NAME, "Terminal EAC Certs.");
+		return action;
+	}
 
-            private static final long serialVersionUID = -4351062035608816679L;
+	private Action getViewPassportKeyAction(Integer id, final PublicKey key, boolean eacUsed) {
+		Action action = new AbstractAction() {
 
-            public void actionPerformed(ActionEvent e) {
-                    KeyFrame keyFrame = new KeyFrame("EAC Passport Public Key", key);
-                    keyFrame.pack();
-                    keyFrame.setVisible(true);
-            }
-        };
-        action.putValue(Action.SMALL_ICON, eacUsed ? KEY_GO : KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, eacUsed ? KEY_GO : KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "View passport public EAC key");
-        action.putValue(Action.NAME, "Passport EAC key");
-        return action;
-    }
+			private static final long serialVersionUID = -4351062035608816679L;
 
-    private Action getViewTerminalKeyAction(final PrivateKey terminalKey) {
-        Action action = new AbstractAction() {
+			public void actionPerformed(ActionEvent e) {
+				KeyFrame keyFrame = new KeyFrame("EAC Passport Public Key", key);
+				keyFrame.pack();
+				keyFrame.setVisible(true);
+			}
+		};
+		action.putValue(Action.SMALL_ICON, eacUsed ? KEY_GO : KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, eacUsed ? KEY_GO : KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View passport public EAC key");
+		action.putValue(Action.NAME, "Passport EAC key");
+		return action;
+	}
 
-            private static final long serialVersionUID = -4351062035608816679L;
+	private Action getViewTerminalKeyAction(final PrivateKey terminalKey) {
+		Action action = new AbstractAction() {
 
-            public void actionPerformed(ActionEvent e) {
-                if(terminalKey != null) {
-                    KeyFrame keyFrame = new KeyFrame("Terminal Private Key", terminalKey);
-                    keyFrame.pack();
-                    keyFrame.setVisible(true);
-                }else{
-                    // TODO: handle this somehow...
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "View terminal private key");
-        action.putValue(Action.NAME, "Terminal EAC key");
-        return action;
-    }
+			private static final long serialVersionUID = -4351062035608816679L;
 
-    
+			public void actionPerformed(ActionEvent e) {
+				if(terminalKey != null) {
+					KeyFrame keyFrame = new KeyFrame("Terminal Private Key", terminalKey);
+					keyFrame.pack();
+					keyFrame.setVisible(true);
+				}else{
+					// TODO: handle this somehow...
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View terminal private key");
+		action.putValue(Action.NAME, "Terminal EAC key");
+		return action;
+	}
+
+
 	private Action getCloseAction() {
 		Action action = new AbstractAction() {
 
@@ -965,11 +970,11 @@ public class PassportFrame extends JFrame implements AuthListener
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-    				File file = fileChooser.getSelectedFile();
-                    X509Certificate cert = readCertFromFile(file);
-                    if(cert != null) {
-                      passport.updateCOMSODFile(cert);
-                    }
+					File file = fileChooser.getSelectedFile();
+					X509Certificate cert = readCertFromFile(file);
+					if(cert != null) {
+						passport.updateCOMSODFile(cert);
+					}
 					break;
 				default:
 					break;
@@ -984,92 +989,92 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	}
 
-    private Action getLoadCVCACertificate() {
-        Action action = new AbstractAction() {
+	private Action getLoadCVCACertificate() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -1231362506867899044L;
+			private static final long serialVersionUID = -1231362506867899044L;
 
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
-                int choice = fileChooser.showOpenDialog(getContentPane());
-                switch (choice) {
-                case JFileChooser.APPROVE_OPTION:
-                    File file = fileChooser.getSelectedFile();
-                    CVCertificate cert = readCVCertFromFile(file);
-                    if(cert != null) {
-                      passport.setCVCertificate(cert);
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) EAC Terminal Root Certificate (CVCA) from file");
-        action.putValue(Action.NAME, "Import CVCA Cert...");
-        return action;
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					File file = fileChooser.getSelectedFile();
+					CVCertificate cert = readCVCertFromFile(file);
+					if(cert != null) {
+						passport.setCVCertificate(cert);
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) EAC Terminal Root Certificate (CVCA) from file");
+		action.putValue(Action.NAME, "Import CVCA Cert...");
+		return action;
 
-    }
+	}
 
-    private Action getGenerateEACKeys() {
-        Action action = new AbstractAction() {
+	private Action getGenerateEACKeys() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -3333362506867899044L;
+			private static final long serialVersionUID = -3333362506867899044L;
 
-            public void actionPerformed(ActionEvent e) {
-                try {
-                String preferredProvider = "BC";
-                Provider provider = Security.getProvider(preferredProvider);
-                KeyPairGenerator generator = KeyPairGenerator.getInstance(
-                        "ECDH", provider);
-                generator.initialize(new ECGenParameterSpec(
-                        PassportPersoService.EC_CURVE_NAME));
-                KeyPair keyPair = generator.generateKeyPair();
+			public void actionPerformed(ActionEvent e) {
+				try {
+					String preferredProvider = "BC";
+					Provider provider = Security.getProvider(preferredProvider);
+					KeyPairGenerator generator = KeyPairGenerator.getInstance(
+							"ECDH", provider);
+					generator.initialize(new ECGenParameterSpec(
+							PassportPersoService.EC_CURVE_NAME));
+					KeyPair keyPair = generator.generateKeyPair();
 
-                passport.setEACKeys(keyPair);
-                }catch(Exception ex) {
-                    
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Generate and set a pair of EAC keys");
-        action.putValue(Action.NAME, "Generate EAC keys");
-        return action;
-    }
+					passport.setEACKeys(keyPair);
+				}catch(Exception ex) {
 
-    
-    private Action getLoadDocSignKeyAction() {
-        Action action = new AbstractAction() {
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Generate and set a pair of EAC keys");
+		action.putValue(Action.NAME, "Generate EAC keys");
+		return action;
+	}
 
-            private static final long serialVersionUID = -1001362506867899044L;
 
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-                int choice = fileChooser.showOpenDialog(getContentPane());
-                switch (choice) {
-                case JFileChooser.APPROVE_OPTION:
-                    File file = fileChooser.getSelectedFile();
-                    PrivateKey key = readPrivateRSAKeyFromFile(file);
-                    passport.setDocSigningPrivateKey(key);
-                    break;
-                default:
-                    break;
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer private key from file");
-        action.putValue(Action.NAME, "Import Doc.Key...");
-        return action;
+	private Action getLoadDocSignKeyAction() {
+		Action action = new AbstractAction() {
 
-    }
+			private static final long serialVersionUID = -1001362506867899044L;
+
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					File file = fileChooser.getSelectedFile();
+					PrivateKey key = readPrivateRSAKeyFromFile(file);
+					passport.setDocSigningPrivateKey(key);
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer private key from file");
+		action.putValue(Action.NAME, "Import Doc.Key...");
+		return action;
+
+	}
 
 	private Action getLoadAAPublicKeyAction() {
 		Action action = new AbstractAction() {
@@ -1082,12 +1087,12 @@ public class PassportFrame extends JFrame implements AuthListener
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-						File file = fileChooser.getSelectedFile();
-						PublicKey pubKey = readPublicRSAKeyFromFile(file);
-                        if(pubKey != null) {
-                            dg15 = new DG15File(pubKey);
-                            passport.putFile(PassportService.EF_DG15, dg15.getEncoded());
-                        }
+					File file = fileChooser.getSelectedFile();
+					PublicKey pubKey = readPublicRSAKeyFromFile(file);
+					if(pubKey != null) {
+						dg15 = new DG15File(pubKey);
+						passport.putFile(PassportService.EF_DG15, dg15.getEncoded());
+					}
 					break;
 				default:
 					break;
@@ -1101,54 +1106,54 @@ public class PassportFrame extends JFrame implements AuthListener
 		return action;
 	}
 
-    private Action getAAGenerateAction() {
-        Action action = new AbstractAction() {
+	private Action getAAGenerateAction() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -2065676252065941094L;
+			private static final long serialVersionUID = -2065676252065941094L;
 
-            public void actionPerformed(ActionEvent e) {
-                try {
-                KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-                KeyPair p = gen.generateKeyPair();
-                passport.setAAKeys(p);
-                }catch(Exception ex) {
-                    ex.printStackTrace();
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Generate a new pair of Active Authentication keys");
-        action.putValue(Action.NAME, "Generate AA keys");
-        return action;
-    }
+			public void actionPerformed(ActionEvent e) {
+				try {
+					KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
+					KeyPair p = gen.generateKeyPair();
+					passport.setAAKeys(p);
+				}catch(Exception ex) {
+					ex.printStackTrace();
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Generate a new pair of Active Authentication keys");
+		action.putValue(Action.NAME, "Generate AA keys");
+		return action;
+	}
 
-    
-    private Action getLoadAAPrivateKeyAction() {
-        Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -1265676252065941094L;
+	private Action getLoadAAPrivateKeyAction() {
+		Action action = new AbstractAction() {
 
-            public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
-                fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-                int choice = fileChooser.showOpenDialog(getContentPane());
-                switch (choice) {
-                case JFileChooser.APPROVE_OPTION:
-                        File file = fileChooser.getSelectedFile();
-                        passport.setAAPrivateKey(readPrivateRSAKeyFromFile(file));
-                    break;
-                default:
-                    break;
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication private key from file");
-        action.putValue(Action.NAME, "Import AA Priv.Key...");
-        return action;
-    }
+			private static final long serialVersionUID = -1265676252065941094L;
+
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					File file = fileChooser.getSelectedFile();
+					passport.setAAPrivateKey(readPrivateRSAKeyFromFile(file));
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication private key from file");
+		action.putValue(Action.NAME, "Import AA Priv.Key...");
+		return action;
+	}
 
 	private Action getViewDocumentSignerCertificateAction() {
 		Action action = new AbstractAction() {
@@ -1156,13 +1161,13 @@ public class PassportFrame extends JFrame implements AuthListener
 			private static final long serialVersionUID = 3937090454142759317L;
 
 			public void actionPerformed(ActionEvent e) {
-                try{
-				JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
-				certificateFrame.pack();
-				certificateFrame.setVisible(true);
-                }catch(Exception ex) {
-                    ex.printStackTrace();
-                }
+				try{
+					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
+					certificateFrame.pack();
+					certificateFrame.setVisible(true);
+				}catch(Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 		};
 		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
@@ -1215,47 +1220,47 @@ public class PassportFrame extends JFrame implements AuthListener
 		return action;
 	}
 
-    private Action getViewAAPrivateKeyAction() {
-        Action action = new AbstractAction() {
+	private Action getViewAAPrivateKeyAction() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -1064369119565468811L;
+			private static final long serialVersionUID = -1064369119565468811L;
 
-            public void actionPerformed(ActionEvent e) {
-                PrivateKey key = passport.getAAPrivateKey();
-                if(key != null) {
-                KeyFrame keyFrame = new KeyFrame("Active Authentication Private Key", key);
-                keyFrame.pack();
-                keyFrame.setVisible(true);
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Private Key");
-        action.putValue(Action.NAME, "AA Priv. Key...");
-        return action;
-    }
+			public void actionPerformed(ActionEvent e) {
+				PrivateKey key = passport.getAAPrivateKey();
+				if(key != null) {
+					KeyFrame keyFrame = new KeyFrame("Active Authentication Private Key", key);
+					keyFrame.pack();
+					keyFrame.setVisible(true);
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Private Key");
+		action.putValue(Action.NAME, "AA Priv. Key...");
+		return action;
+	}
 
-    private Action getViewDocumentSignerKeyAction() {
-        Action action = new AbstractAction() {
+	private Action getViewDocumentSignerKeyAction() {
+		Action action = new AbstractAction() {
 
-            private static final long serialVersionUID = -2064369119565468811L;
+			private static final long serialVersionUID = -2064369119565468811L;
 
-            public void actionPerformed(ActionEvent e) {
-                PrivateKey key = passport.getDocSigningPrivateKey(); 
-                if(key != null) {
-                KeyFrame keyFrame = new KeyFrame("Doc Signing Private Key", key);
-                keyFrame.pack();
-                keyFrame.setVisible(true);
-                }
-            }
-        };
-        action.putValue(Action.SMALL_ICON, KEY_ICON);
-        action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-        action.putValue(Action.SHORT_DESCRIPTION, "View Doc Signing Private Key");
-        action.putValue(Action.NAME, "Doc Key...");
-        return action;
-    }
+			public void actionPerformed(ActionEvent e) {
+				PrivateKey key = passport.getDocSigningPrivateKey(); 
+				if(key != null) {
+					KeyFrame keyFrame = new KeyFrame("Doc Signing Private Key", key);
+					keyFrame.pack();
+					keyFrame.setVisible(true);
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View Doc Signing Private Key");
+		action.putValue(Action.NAME, "Doc Key...");
+		return action;
+	}
 
 	private Action getUploadAction() {
 		Action action = new AbstractAction() {
@@ -1270,11 +1275,11 @@ public class PassportFrame extends JFrame implements AuthListener
 					bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 				}
 				PublicKey aaPublicKey = null;
-                InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-                if (dg15In != null) {
-                    dg15 = new DG15File(dg15In);
-                    aaPublicKey = dg15.getPublicKey();
-                }
+				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
+				if (dg15In != null) {
+					dg15 = new DG15File(dg15In);
+					aaPublicKey = dg15.getPublicKey();
+				}
 				UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
 				int choice = chooser.showOptionsDialog(getContentPane());
 				switch (choice) {
@@ -1283,42 +1288,42 @@ public class PassportFrame extends JFrame implements AuthListener
 					boolean wasPolling = cm.isPolling(terminal);
 					try {
 						cm.stopPolling(terminal);
-                        // FIXME: have to wait for the poller?
-						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
-						persoService.open();
-						if (chooser.isBACSelected()) {
-							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
-						}
-						if (aaPublicKey != null) {
-                            PrivateKey k = passport.getAAPrivateKey();
-                            if(k != null) {
-							  persoService.putPrivateKey(k);
-                            }
-						}
-                        if(passport.getCVCertificate() != null) {
-                            persoService.putCVCertificate(passport.getCVCertificate());
-                        }
-                        if(passport.getEACPrivateKey() != null) {
-                            persoService.putPrivateEACKey(passport.getEACPrivateKey());
-                        }
-						for (short fid: passport.getFileList()) {
-							byte[] fileBytes = passport.getFileBytes(fid);
-							persoService.createFile(fid, (short)fileBytes.length);
-							persoService.selectFile(fid);
-                            ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
-							persoService.writeFile(fid, in);
-						}
-						persoService.lockApplet();
-						persoService.close();
-                        // TODO: to see when it is done
-                        // Proper progress bar should be implemented
-                        System.out.println("Passport uploaded.");
-//					} catch (IOException ioe) {
-//						/* NOTE: Do nothing. */
+						// FIXME: have to wait for the poller?
+								PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
+								persoService.open();
+								if (chooser.isBACSelected()) {
+									persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+								}
+								if (aaPublicKey != null) {
+									PrivateKey k = passport.getAAPrivateKey();
+									if(k != null) {
+										persoService.putPrivateKey(k);
+									}
+								}
+								if(passport.getCVCertificate() != null) {
+									persoService.putCVCertificate(passport.getCVCertificate());
+								}
+								if(passport.getEACPrivateKey() != null) {
+									persoService.putPrivateEACKey(passport.getEACPrivateKey());
+								}
+								for (short fid: passport.getFileList()) {
+									byte[] fileBytes = passport.getFileBytes(fid);
+									persoService.createFile(fid, (short)fileBytes.length);
+									persoService.selectFile(fid);
+									ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
+									persoService.writeFile(fid, in);
+								}
+								persoService.lockApplet();
+								persoService.close();
+								// TODO: to see when it is done
+								// Proper progress bar should be implemented
+								System.out.println("Passport uploaded.");
+								//					} catch (IOException ioe) {
+								//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
 						cse.printStackTrace();
-//					} catch (GeneralSecurityException gse) {
-//						gse.printStackTrace();
+						//					} catch (GeneralSecurityException gse) {
+						//						gse.printStackTrace();
 					} finally {
 						if (wasPolling) { cm.startPolling(terminal); }
 					}
@@ -1335,84 +1340,82 @@ public class PassportFrame extends JFrame implements AuthListener
 		return action;
 	}
 
-       public static PrivateKey readPrivateRSAKeyFromFile(File file) {
-            try {
-                InputStream fl = fullStream(file);
-                byte[] key = new byte[fl.available()];
-                KeyFactory kf = KeyFactory.getInstance("RSA");
-                fl.read(key, 0, fl.available());
-                fl.close();
-                PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
-                return kf.generatePrivate(keysp);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
+	public static PrivateKey readPrivateRSAKeyFromFile(File file) {
+		try {
+			InputStream fl = fullStream(file);
+			byte[] key = new byte[fl.available()];
+			KeyFactory kf = KeyFactory.getInstance("RSA");
+			fl.read(key, 0, fl.available());
+			fl.close();
+			PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
+			return kf.generatePrivate(keysp);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-       public static PublicKey readPublicRSAKeyFromFile(File file) {
-           try {
-               InputStream fl = fullStream(file);
-               byte[] key = new byte[fl.available()];
-               KeyFactory kf = KeyFactory.getInstance("RSA");
-               fl.read(key, 0, fl.available());
-               fl.close();
-               X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
-               return kf.generatePublic(keysp);
-           } catch (Exception e) {
-               e.printStackTrace();
-               return null;
-           }
-       }
+	public static PublicKey readPublicRSAKeyFromFile(File file) {
+		try {
+			InputStream fl = fullStream(file);
+			byte[] key = new byte[fl.available()];
+			KeyFactory kf = KeyFactory.getInstance("RSA");
+			fl.read(key, 0, fl.available());
+			fl.close();
+			X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
+			return kf.generatePublic(keysp);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-        public static X509Certificate readCertFromFile(File file) {
-            try {
-                CertificateFactory cf = CertificateFactory.getInstance("X509");
-                InputStream certstream = fullStream(file);
-                return (X509Certificate) cf.generateCertificate(certstream);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
-        }
+	public static X509Certificate readCertFromFile(File file) {
+		try {
+			CertificateFactory cf = CertificateFactory.getInstance("X509");
+			InputStream certstream = fullStream(file);
+			return (X509Certificate) cf.generateCertificate(certstream);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
 
-        public static CVCertificate readCVCertFromFile(File f) {
-            try {
-                InputStream fl = fullStream(f);
-                byte[] data = new byte[fl.available()];
-                fl.read(data);
-                CVCObject parsedObject = CertificateParser.parseCertificate(data);
-                CVCertificate c = (CVCertificate) parsedObject;
-                return c;
-            } catch (Exception e) {
-                e.printStackTrace();
-                return null;
-            }
+	public static CVCertificate readCVCertFromFile(File f) {
+		try {
+			InputStream fl = fullStream(f);
+			byte[] data = new byte[fl.available()];
+			fl.read(data);
+			CVCObject parsedObject = CertificateParser.parseCertificate(data);
+			CVCertificate c = (CVCertificate) parsedObject;
+			return c;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 
-        }
+	}
 
-        
-        private static InputStream fullStream(File f) throws IOException {
-            DataInputStream dis = new DataInputStream(new FileInputStream(f));
-            byte[] bytes = new byte[(int)f.length()];
-            dis.readFully(bytes);
-            ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-            return bais;
-        }
+	private static InputStream fullStream(File f) throws IOException {
+		DataInputStream dis = new DataInputStream(new FileInputStream(f));
+		byte[] bytes = new byte[(int)f.length()];
+		dis.readFully(bytes);
+		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
+		return bais;
+	}
 
-        public void performedAA(AAEvent ae) {
-            // TODO Auto-generated method stub
-            
-        }
+	public void performedAA(AAEvent ae) {
+		// TODO Auto-generated method stub
 
-        public void performedBAC(BACEvent be) {
-            // TODO Auto-generated method stub
-            
-        }
+	}
 
-        public void performedEAC(EACEvent ee) {
-            eacEvent = ee;
-            updateViewMenu();
-        }
+	public void performedBAC(BACEvent be) {
+		// TODO Auto-generated method stub
 
+	}
+
+	public void performedEAC(EACEvent ee) {
+		eacEvent = ee;
+		updateViewMenu();
+	}
 }

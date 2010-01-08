@@ -45,6 +45,9 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
+import org.jmrtd.BACEntry;
+import org.jmrtd.BACStore;
+
 import net.sourceforge.scuba.util.Icons;
 
 /**

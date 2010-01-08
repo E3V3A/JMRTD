@@ -28,6 +28,8 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 
+import org.jmrtd.BACEntry;
+
 import net.sourceforge.scuba.swing.DateEntryField;
 import net.sourceforge.scuba.swing.MRZEntryField;
 

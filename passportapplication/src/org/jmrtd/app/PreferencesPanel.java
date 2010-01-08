@@ -23,10 +23,15 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,13 +42,23 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
+import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComponent;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JTabbedPane;
+import javax.swing.JTextField;
 import javax.swing.border.Border;
+import javax.swing.filechooser.FileFilter;
+
+import org.jmrtd.CSCAStore;
+import org.jmrtd.TerminalCVCertificateDirectory;
 
 import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.util.Files;
 
 /**
  * Preferences panel.
@@ -60,20 +75,18 @@ public class PreferencesPanel extends JPanel
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
 	};
-	
+
 	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.SAFE_MODE;
-	private static final boolean DEFAULT_APDU_TRACING_VALUE = false;
-	
+	private static final boolean DEFAULT_APDU_TRACING_SETTING = false;
+
 	private static final String READING_MODE_KEY = "mode.reading";
 	private static final String TERMINAL_KEY_PREFIX = "terminal.";
 	private static final String APDU_TRACING_KEY = "trace.apdu";
-
+	private static final String CSCA_STORE_KEY ="csca.store.url";
+	private static final String CVCA_STORE_URL_KEY ="cvca.store.url";
+	
 	private static final long serialVersionUID = 5429621553165149988L;
 
-	private static Border READING_MODE_BORDER = BorderFactory.createTitledBorder("Reading Mode");
-	private static Border CARD_TERMINALS_BORDER = BorderFactory.createTitledBorder("Card Terminals");
-	private static Border APDU_TRACE_BORDER = BorderFactory.createTitledBorder("APDU Tracing");
-	
 	private PreferencesState changedState;
 	private PreferencesState state;
 	private CardManager cardManager;
@@ -92,11 +105,21 @@ public class PreferencesPanel extends JPanel
 	public PreferencesPanel(CardManager cm, File preferencesFile) {
 		super(new BorderLayout());
 		this.cardManager = cm;
-		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();
+		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
+
+		JTabbedPane jtb = new JTabbedPane();
+		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
+		jtb.addTab("Certificate Files", createCertificatesPanel());
+		add(jtb, BorderLayout.CENTER);
+		
+		this.changedState = new PreferencesState(state);
+	}
+
+	private JComponent createTerminalsPreferencesTab(CardManager cm) {
 		List<CardTerminal> terminalList = cm.getTerminals();
 
 		JPanel cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
-		cardTerminalsPreferencesPanel.setBorder(CARD_TERMINALS_BORDER);
+		cardTerminalsPreferencesPanel.setBorder(BorderFactory.createTitledBorder("Card Terminals"));
 		if (terminalList.size() == 0) {
 			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
 		}
@@ -113,7 +136,7 @@ public class PreferencesPanel extends JPanel
 		ReadingMode[] modes = ReadingMode.values();
 		readingModeRadioButtonMap = new HashMap<ReadingMode, JRadioButton>();
 		JPanel readingModePreferencesPanel = new JPanel(new GridLayout(modes.length, 1));
-		readingModePreferencesPanel.setBorder(READING_MODE_BORDER);
+		readingModePreferencesPanel.setBorder(BorderFactory.createTitledBorder("Reading Mode"));
 		ButtonGroup buttonGroup = new ButtonGroup();
 		for (ReadingMode mode: modes) {
 			JRadioButton radioButton = new JRadioButton(mode.toString(), mode == state.getReadingMode());
@@ -122,20 +145,69 @@ public class PreferencesPanel extends JPanel
 			buttonGroup.add(radioButton);
 			readingModePreferencesPanel.add(radioButton);
 		}
-		this.changedState = new PreferencesState(state);
-		
+		JPanel terminalSettingsTab = new JPanel(new BorderLayout());
+
 		JPanel apduTracePreferencesPanel = new JPanel(new FlowLayout());
 		apduTracingCheckBox = new JCheckBox("Trace APDUs", state.isAPDUTracing());
 
 		apduTracingCheckBox.setAction(getSetAPDUTracingAction(apduTracingCheckBox));
 		apduTracePreferencesPanel.add(apduTracingCheckBox);
-		apduTracePreferencesPanel.setBorder(APDU_TRACE_BORDER);
+		apduTracePreferencesPanel.setBorder(BorderFactory.createTitledBorder("APDU Tracing"));
+
 
 		JPanel northPanel = new JPanel(new FlowLayout());
 		northPanel.add(readingModePreferencesPanel);
 		northPanel.add(apduTracePreferencesPanel);
-		add(northPanel, BorderLayout.NORTH);
-		add(cardTerminalsPreferencesPanel, BorderLayout.CENTER);
+		terminalSettingsTab.add(northPanel, BorderLayout.NORTH);
+		terminalSettingsTab.add(cardTerminalsPreferencesPanel, BorderLayout.CENTER);
+		return terminalSettingsTab;
+	}
+
+	private JComponent createCertificatesPanel() {
+		final JPanel panel = new JPanel(new GridLayout(2,1));
+		panel.setBorder(BorderFactory.createTitledBorder("Certificate and key stores"));
+		final JComponent cvcaPanel = new FolderBrowser("CVCA store");
+		final JComponent cscaPanel = new FolderBrowser("CSCA store");
+		panel.add(cscaPanel);
+		panel.add(cvcaPanel);
+		return panel;
+	}
+		
+	private class FolderBrowser extends JPanel
+	{
+		public FolderBrowser(String title) {
+			super(new FlowLayout());
+			final Component c = this;
+			setBorder(BorderFactory.createTitledBorder(title));
+			final JTextField cvcaDirectoryField = new JTextField(30);
+			final JButton browseCVCADirectoryButton = new JButton("...");
+			add(cvcaDirectoryField);
+			add(browseCVCADirectoryButton);
+			browseCVCADirectoryButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					JFileChooser fileChooser = new JFileChooser();
+					fileChooser.setAcceptAllFileFilterUsed(false);
+					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					fileChooser.setFileFilter(new FileFilter() {
+						public boolean accept(File f) { return f.isDirectory(); }
+						public String getDescription() { return "Directories"; }               
+					});
+					int choice = fileChooser.showOpenDialog(c);
+					switch (choice) {
+					case JFileChooser.APPROVE_OPTION:
+						try {
+							File file = fileChooser.getSelectedFile();
+							cvcaDirectoryField.setText(file.getCanonicalPath());
+						} catch (IOException ioe) {
+							/* NOTE: Do nothing. */
+							ioe.printStackTrace();
+						}
+						break;
+					default: break;
+					}
+				}
+			});
+		}
 	}
 
 	public String getName() {
@@ -149,11 +221,11 @@ public class PreferencesPanel extends JPanel
 	public boolean isAPDUTracing() {
 		return state.isAPDUTracing();
 	}
-	
+
 	public void setAPDUTracing(boolean b) {
 		state.setAPDUTracing(b);
 	}
-	
+
 	public void commit() {
 		PreferencesState oldState = new PreferencesState(state);
 		state = new PreferencesState(changedState);
@@ -174,7 +246,7 @@ public class PreferencesPanel extends JPanel
 		changedState = new PreferencesState(state);
 		updateGUIFromState(state);
 	}
-	
+
 	private void updateGUIFromState(PreferencesState state) {
 		for (CardTerminal terminal: cardTerminalPollingCheckBoxMap.keySet()) {
 			JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal);
@@ -186,7 +258,7 @@ public class PreferencesPanel extends JPanel
 		}
 		apduTracingCheckBox.setSelected(state.isAPDUTracing());
 	}
-	
+
 	private void updateCardManager(PreferencesState state, CardManager cm) {
 		List<CardTerminal> terminals = cm.getTerminals();
 		for (CardTerminal terminal: terminals) {
@@ -207,6 +279,10 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.SHORT_DESCRIPTION, "Change polling behavior for " + terminal.getName());
 		action.putValue(Action.NAME, terminal.getName());
 		return action;
+	}
+	
+	public CSCAStore getCSCAStore() {
+		return state.getCSCAStore();
 	}
 
 	public Action getSetModeAction(final ReadingMode mode) {
@@ -230,7 +306,7 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.NAME, modeString);
 		return action;
 	}
-	
+
 	private Action getSetAPDUTracingAction(final JCheckBox checkBox) {
 		Action action = new AbstractAction() {
 			public void actionPerformed(ActionEvent e) {
@@ -241,19 +317,19 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.NAME, "Trace APDUs");
 		return action;
 	}
-	
+
 	private class PreferencesState implements Cloneable
 	{	
 		private Properties properties;
-		
+
 		private PreferencesState(Properties properties) {
 			this.properties = (Properties)properties.clone();
 		}
-		
+
 		public PreferencesState() {
 			this(new Properties());
 		}
-		
+
 		public PreferencesState(PreferencesState otherState) {
 			this(otherState.properties);
 		}
@@ -261,39 +337,39 @@ public class PreferencesPanel extends JPanel
 		public String toString() {
 			return properties.toString();
 		}
-		
+
 		public boolean isTerminalChecked(CardTerminal terminal) {
 			Boolean result = (Boolean)properties.get(createTerminalKey(terminal.getName()));
 			return result != null && result;
 		}
-		
+
 		public void setTerminalChecked(CardTerminal terminal, boolean b) {
 			setTerminalChecked(terminal.getName(), b);
 		}
-		
+
 		public ReadingMode getReadingMode() {
 			ReadingMode readingMode = (ReadingMode)properties.get(READING_MODE_KEY);
 			if (readingMode == null) { return DEFAULT_READING_MODE; }
 			return readingMode;
 		}
-		
+
 		public void setReadingMode(ReadingMode readingMode) {
 			properties.put(READING_MODE_KEY, readingMode);
-			
+
 		}
-		
+
 		public boolean isAPDUTracing() {
 			Boolean isAPDUTracing = (Boolean)properties.get(APDU_TRACING_KEY);
 			if (isAPDUTracing == null) {
-				return DEFAULT_APDU_TRACING_VALUE;
+				return DEFAULT_APDU_TRACING_SETTING;
 			}
 			return isAPDUTracing;
 		}
-		
+
 		public void setAPDUTracing(boolean b) {
 			properties.put(APDU_TRACING_KEY, b);
 		}
-		
+
 		public Object clone() {
 			return new PreferencesState(properties);
 		}
@@ -305,5 +381,23 @@ public class PreferencesPanel extends JPanel
 		private String createTerminalKey(String terminalName) {
 			return TERMINAL_KEY_PREFIX + terminalName.trim();
 		}
+		
+		private CSCAStore getCSCAStore() {
+			return (CSCAStore)properties.get(CSCA_STORE_KEY);
+		}
+		
+		private void setCSCAStore(CSCAStore url) {
+			properties.put(CSCA_STORE_KEY, url);
+		}
+	}
+	
+	private static URL getDefaultCSCADir() {
+		URL cscaDir = null;
+		try {
+			cscaDir = new URL(Files.getBaseDir(CSCAStore.class) + "/csca");
+		} catch (MalformedURLException mfue) {
+			mfue.printStackTrace();
+		}
+		return cscaDir;
 	}
 }
