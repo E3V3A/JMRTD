@@ -9,24 +9,13 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.util.Files;
 
 public class CSCAStore
 {
-	private final static CSCAStore INSTANCE = new CSCAStore();
-	
 	private URL cscaDir;
 	
-	private CSCAStore() {
-		try {
-			cscaDir = new URL(Files.getBaseDir(CSCAStore.class) + "/csca");
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
-		}
-	}
-	
-	public static CSCAStore getInstance() {
-		return INSTANCE;
+	public CSCAStore(URL folder) {
+		cscaDir = folder;
 	}
 	
 	public X509Certificate getCertificate(Country c) throws IOException {
