@@ -10,11 +10,12 @@ Contributors
 
    Cees-Bart Breunesse
    Dirk-Jan van Dijk
-   Tomas Gustavsson (of http://ejbca.org)
+   Tomas Gustavsson (http://ejbca.org)
    Engelbert Hubbers
-   Adam Laurie (of http://rfidiot.org)
+   Adam Laurie (http://rfidiot.org)
    Wojciech Mostowski
    Martijn Oostdijk
+   Erik Poll
    Henning Richter
    Julien Schmaltz
    Jan Tretmans
@@ -39,7 +40,7 @@ Dependencies (might be included in distribution)
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath.
-        Tested with bcprov-jdk16-141.jar.
+        Tested with bcprov-jdk16-144.jar.
         URL: http://www.bouncycastle.org/
 
    * EJBCA Cert-CVC:
