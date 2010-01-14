@@ -24,10 +24,14 @@ package org.jmrtd.test.api;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.util.Map;
 import java.util.TreeMap;
+
+import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
 
 import junit.framework.TestCase;
 
@@ -38,39 +42,83 @@ import org.jmrtd.DG14File;
 
 public class DG14FileTest extends TestCase {
 
+	Provider BC_PROV = new BouncyCastleProvider();
+
 	public void testReflexive1() throws NoSuchAlgorithmException {
-		Security.addProvider(new BouncyCastleProvider());
-		KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC");
-		keyGen1.initialize(192);
-		KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("DH");
-		System.out.println("DEBUG: DG14FileTest: Generating key pair 1");
+		try {
+			Map<Integer, PublicKey> keys = new TreeMap<Integer, PublicKey>();
 
-		KeyPair keyPair1 = null;
-		KeyPair keyPair2 = null;
-		keyPair1 = keyGen1.generateKeyPair();
-		System.out.println("DEBUG: DG14FileTest: Generating key pair 2");
-		keyPair2 = keyGen2.generateKeyPair();
+			Security.addProvider(BC_PROV);
 
-		PublicKey publicKey1 = keyPair1.getPublic();
-		PublicKey publicKey2 = keyPair2.getPublic();
+			/* Using BC here, since SunJCE doesn't support EC. */
+			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", "BC");
+			keyGen1.initialize(192);
+			KeyPair keyPair1 = keyGen1.generateKeyPair();
 
-		Map<Integer, PublicKey> keys = new TreeMap<Integer, PublicKey>();
-		keys.put(1, publicKey1);
-		keys.put(2, publicKey2);
+			/* Using SunJCE here, since BC sometimes hangs?!?! Bug in BC?
+			 *
+			 * FIXME: This happened to MO on WinXP, Eclipse 3.4, Sun JDK1.6.0_15,
+			 * not tested on other platforms... replace "SunJCE" with "BC" and see
+			 * if this test halts forever.
+			 */
+			KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("DH", "SunJCE");
 
-		System.out.println("DEBUG: publicKey1.getEncoded().length == " + publicKey1.getEncoded().length);
-		System.out.println("DEBUG: publicKey2.getEncoded().length == " + publicKey2.getEncoded().length);
+			
+			System.out.println("DEBUG: DG14FileTest: Generating key pair 2");
+			KeyPair keyPair2 = keyGen2.generateKeyPair();
+			PublicKey publicKey1 = keyPair1.getPublic();
+			PublicKey publicKey2 = keyPair2.getPublic();
 
-		Map<Integer, DERObjectIdentifier> algs = new TreeMap<Integer, DERObjectIdentifier>();
-		algs.put(1, EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC);
-		algs.put(2, EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
+			keys.put(1, publicKey1);
+			keys.put(2, publicKey2);
 
-		DG14File f = new DG14File(keys, algs, null, null);
+			Map<Integer, DERObjectIdentifier> algs = new TreeMap<Integer, DERObjectIdentifier>();
+			algs.put(1, EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC);
+			algs.put(2, EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
 
-		System.out.println("DEBUG: DG14FileTest: End");
+			DG14File dg14File = new DG14File(keys, algs, null, null);
 
-		assertEquals(keys, f.getPublicKeys());
-		assertEquals(algs, f.getChipAuthenticationInfos());
+			System.out.println("DEBUG: DG14FileTest: End");
 
+			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getPublicKeys();
+			
+
+			/* Oops, assertEquals fails... sometimes (depending on order of
+			 * inserted providers) because neither SunJCE nor BC implement equals
+			 * methods in their DHPublicKey.
+			 * 
+			 * 		assertEquals(keys, dg14PublicKeys);
+			 * 
+			 * Below we compare the parameters ourselves using equalsDHPublicKey(..)
+			 * method... not pretty.
+			 * 
+			 * FIXME: Other solutions?
+			 */
+			assertEquals(keys.keySet(), dg14PublicKeys.keySet());
+			for (int i: keys.keySet()) {
+				PublicKey publicKey = (PublicKey)keys.get(i);
+				PublicKey dg14PublicKey = (PublicKey)dg14PublicKeys.get(i);
+				if (publicKey instanceof DHPublicKey) {
+					assertTrue(equalsDHPublicKey((DHPublicKey)publicKey, dg14PublicKey));
+				} else {
+					assertEquals(publicKey, dg14PublicKey);
+				}
+			}
+			assertEquals(algs, dg14File.getChipAuthenticationInfos());
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
+
+	public boolean equalsDHPublicKey(DHPublicKey thisPublicKey, Object other) {
+		if (!(other instanceof DHPublicKey)) { return false; }
+		DHPublicKey otherPublicKey = (DHPublicKey)other;
+		DHParameterSpec params1 = thisPublicKey.getParams();
+		DHParameterSpec params2 = otherPublicKey.getParams();
+		return thisPublicKey.getAlgorithm().equals(otherPublicKey.getAlgorithm())
+		&& params1.getL()== params2.getL()
+		&& params1.getG().equals(params2.getG())
+		&& params1.getP().equals(params2.getP())
+		&& thisPublicKey.getY().equals(otherPublicKey.getY());
 	}
 }
