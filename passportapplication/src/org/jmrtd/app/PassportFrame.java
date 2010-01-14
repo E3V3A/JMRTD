@@ -38,8 +38,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -101,8 +99,8 @@ import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
-import org.jmrtd.BACEntry;
 import org.jmrtd.BACEvent;
+import org.jmrtd.BACKey;
 import org.jmrtd.COMFile;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAFile;
@@ -126,6 +124,7 @@ import org.jmrtd.PassportFile;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SODFile;
+import org.jmrtd.CVCAStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 
 /**
@@ -164,6 +163,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private JMenu viewMenu;
 	
 	private CSCAStore cscaStore;
+	private CVCAStore cvcaStore;
 
 	private Passport passport;
 
@@ -191,12 +191,13 @@ public class PassportFrame extends JFrame implements AuthListener
 	private VerificationIndicator verificationIndicator;
 	private Country issuingState;
 
-	private BACEntry bacEntry;
+	private BACKey bacEntry;
 
-	public PassportFrame(CSCAStore cscaStore) {
+	public PassportFrame(CSCAStore cscaStore, CVCAStore cvcaStore) {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
 		this.cscaStore = cscaStore;
+		this.cvcaStore = cvcaStore;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
@@ -232,7 +233,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	 * 
 	 * @return a passport frame.
 	 */
-	public void readFromService(PassportService service, BACEntry bacEntry, ReadingMode readingMode) throws CardServiceException {
+	public void readFromService(PassportService service, BACKey bacEntry, ReadingMode readingMode) throws CardServiceException {
 		try {
 			this.bacEntry = bacEntry;
 			if (bacEntry != null) {
@@ -241,7 +242,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			service.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
-			passport = new Passport(service, bacEntry != null ? bacEntry.getDocumentNumber() : null);
+			passport = new Passport(service, cvcaStore, bacEntry != null ? bacEntry.getDocumentNumber() : null);
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -581,7 +582,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				MRZInfo mrzInfo = dg1.getMRZInfo();
 				issuingState = mrzInfo.getIssuingState();
 			}
-			countrySigningCert = cscaStore.getCertificate(issuingState);
+			countrySigningCert = (cscaStore == null) ? null : cscaStore.getCertificate(issuingState);
 			sod.getDocSigningCertificate().verify(countrySigningCert.getPublicKey());
 			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {
@@ -1269,10 +1270,10 @@ public class PassportFrame extends JFrame implements AuthListener
 
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
-				BACEntry bacEntry = null;
+				BACKey bacEntry = null;
 				if (dg1 != null) {
 					MRZInfo mrzInfo = dg1.getMRZInfo();
-					bacEntry = new BACEntry(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
+					bacEntry = new BACKey(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 				}
 				PublicKey aaPublicKey = null;
 				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);

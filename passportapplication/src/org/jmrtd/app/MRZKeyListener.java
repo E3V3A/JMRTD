@@ -28,7 +28,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import org.jmrtd.BACEntry;
+import org.jmrtd.BACKey;
 import org.jmrtd.MRZInfo;
 
 
@@ -120,7 +120,7 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 						doeCheckDigit == MRZInfo.checkDigit(doeString) &&
 						docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
 						(gender == 'M' || gender == 'F' || gender == '<')) {
-					store.addEntry(new BACEntry(docNumber, dob, doe));
+					store.addEntry(new BACKey(docNumber, dob, doe));
 					resetBuffer();
 					return;
 				}
@@ -154,7 +154,7 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 						doeCheckDigit == MRZInfo.checkDigit(doeString) &&
 						docNumberCheckDigit == MRZInfo.checkDigit(docNumber) &&
 						(gender == 'M' || gender == 'F' || gender == '<')) {	
-					store.addEntry(new BACEntry(docNumber, dob, doe));
+					store.addEntry(new BACKey(docNumber, dob, doe));
 					resetBuffer();
 				}
 			} catch (ParseException pe) {

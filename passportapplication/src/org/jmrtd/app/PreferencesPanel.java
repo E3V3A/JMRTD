@@ -30,7 +30,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
@@ -51,14 +50,9 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
 import javax.swing.filechooser.FileFilter;
 
-import org.jmrtd.CSCAStore;
-import org.jmrtd.TerminalCVCertificateDirectory;
-
 import net.sourceforge.scuba.smartcards.CardManager;
-import net.sourceforge.scuba.util.Files;
 
 /**
  * Preferences panel.
@@ -82,8 +76,9 @@ public class PreferencesPanel extends JPanel
 	private static final String READING_MODE_KEY = "mode.reading";
 	private static final String TERMINAL_KEY_PREFIX = "terminal.";
 	private static final String APDU_TRACING_KEY = "trace.apdu";
-	private static final String CSCA_STORE_KEY ="csca.store.url";
-	private static final String CVCA_STORE_URL_KEY ="cvca.store.url";
+	private static final String BAC_STORE_KEY = "bac.store.dir";
+	private static final String CSCA_STORE_KEY ="csca.store.dir";
+	private static final String CVCA_STORE_KEY ="cvca.store.dir";
 	
 	private static final long serialVersionUID = 5429621553165149988L;
 
@@ -281,8 +276,16 @@ public class PreferencesPanel extends JPanel
 		return action;
 	}
 	
-	public CSCAStore getCSCAStore() {
+	public URL getBACStore() {
+		return state.getBACStore();
+	}
+	
+	public URL getCSCAStore() {
 		return state.getCSCAStore();
+	}
+	
+	public URL getCVCAStore() {
+		return state.getCVCAStore();
 	}
 
 	public Action getSetModeAction(final ReadingMode mode) {
@@ -381,23 +384,29 @@ public class PreferencesPanel extends JPanel
 		private String createTerminalKey(String terminalName) {
 			return TERMINAL_KEY_PREFIX + terminalName.trim();
 		}
-		
-		private CSCAStore getCSCAStore() {
-			return (CSCAStore)properties.get(CSCA_STORE_KEY);
+
+		public URL getBACStore() {
+			return (URL)properties.get(BAC_STORE_KEY);
 		}
 		
-		private void setCSCAStore(CSCAStore url) {
+		public void setBACStore(URL url) {
 			properties.put(CSCA_STORE_KEY, url);
 		}
-	}
-	
-	private static URL getDefaultCSCADir() {
-		URL cscaDir = null;
-		try {
-			cscaDir = new URL(Files.getBaseDir(CSCAStore.class) + "/csca");
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
+		
+		public URL getCSCAStore() {
+			return (URL)properties.get(CSCA_STORE_KEY);
 		}
-		return cscaDir;
+		
+		public void setCSCAStore(URL url) {
+			properties.put(CSCA_STORE_KEY, url);
+		}
+		
+		public URL getCVCAStore() {
+			return (URL)properties.get(CVCA_STORE_KEY);
+		}
+		
+		public void setCVCAStore(URL url) {
+			properties.put(CVCA_STORE_KEY, url);
+		}
 	}
 }

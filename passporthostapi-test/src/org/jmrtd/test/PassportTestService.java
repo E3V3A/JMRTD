@@ -6,7 +6,6 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,12 +25,13 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.BACKey;
 import org.jmrtd.CVCAFile;
 import org.jmrtd.DG14File;
 import org.jmrtd.DG15File;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
-import org.jmrtd.TerminalCVCertificateDirectory;
+import org.jmrtd.CVCAStore;
 import org.jmrtd.Util;
 
 /**
@@ -99,16 +99,15 @@ public class PassportTestService extends PassportService {
 
 	/** Data needed for EAC **/
 
-	private static TerminalCVCertificateDirectory certDir = null;
+	private static CVCAStore certDir = null;
 	static {
 		try {
-		  certDir = TerminalCVCertificateDirectory.getInstance();
-		  certDir.scanDirectory(new File("/home/sos/woj/terminals"));
-		}catch(Exception e) {
+			certDir = new CVCAStore(new File("/home/sos/woj/terminals"));
+		} catch(Exception e) {
 			System.out.println("Could not load EAC terminal certificates/keys!");
 		}
 	}
-	
+
 	private int keyId = -1;
 	private PublicKey cardKey;
 	private String caReference = "NLCVCAA00001";
@@ -127,7 +126,7 @@ public class PassportTestService extends PassportService {
 	 */
 
 	public static PassportTestService createPassportTestService()
-			throws CardException, CardServiceException, Exception {
+	throws CardException, CardServiceException, Exception {
 		PassportTestService service = null;
 		TerminalFactory tf = TerminalFactory.getInstance("PC/SC", null);
 		CardTerminals terminals = tf.terminals();
@@ -146,7 +145,7 @@ public class PassportTestService extends PassportService {
 	}
 
 	protected PassportTestService(CardService service)
-			throws CardServiceException {
+	throws CardServiceException {
 		super(service);
 	}
 
@@ -177,7 +176,7 @@ public class PassportTestService extends PassportService {
 		open();
 		System.out.println(" ******* Resetting Card ******");
 	}
-	
+
 	/**
 	 * Return true if datagroup can be selected; SM is used if it is active.
 	 * Uses P2 = 0x02, P3 = 0x0c, and Le = 256 (see PassportAPDUService)
@@ -190,7 +189,7 @@ public class PassportTestService extends PassportService {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Return true if datagroup can be selected; SM is not used even if it is
 	 * active. Note that this may (should!) reset the passport application, if
@@ -225,7 +224,7 @@ public class PassportTestService extends PassportService {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Return true if datagroup can be read; SM is used if it is active.
 	 * It reads the first 10 bytes of the datagroup.
@@ -276,13 +275,13 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean doBAC() {
 		try {
-			super.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+			super.doBAC(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
 			return true;
 		} catch (CardServiceException e) {
 			return false;
 		}
 	}
-	
+
 	/**
 	 * Try Basic Access Control, failing on purpose, returning true if this
 	 * succeeded.
@@ -291,7 +290,7 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean failBAC() {
 		try {
-			super.doBAC("AA1234567", dateOfBirth, dateOfExpiry);
+			super.doBAC(new BACKey("AA1234567", dateOfBirth, dateOfExpiry));
 			return true;
 		} catch (CardServiceException e) {
 			// e.printStackTrace();
@@ -307,12 +306,12 @@ public class PassportTestService extends PassportService {
 	 * @return whether this succeeded
 	 */
 	public boolean doAA() {
-//		try {
-//			super.doAA(publicKey);
-//			return true;
-//		} catch (CardServiceException e) {
-//			return false;
-//		}
+		//		try {
+		//			super.doAA(publicKey);
+		//			return true;
+		//		} catch (CardServiceException e) {
+		//			return false;
+		//		}
 		return true;
 	}
 
@@ -331,13 +330,13 @@ public class PassportTestService extends PassportService {
 		doBAC();
 		short fid = PassportService.EF_DG14;
 		try {
-		  sendSelectFile(getWrapper(), fid);
-		  CardFileInputStream in = readFile(fid);
-		  DG14File dg14 = new DG14File(in);
-		  cardKey = dg14.getPublicKeys().get(-1);
-		  resetCard();
+			sendSelectFile(getWrapper(), fid);
+			CardFileInputStream in = readFile(fid);
+			DG14File dg14 = new DG14File(in);
+			cardKey = dg14.getPublicKeys().get(-1);
+			resetCard();
 		}catch(CardServiceException e) {
-		  return false;
+			return false;
 		}
 		return true;
 	}
@@ -350,34 +349,34 @@ public class PassportTestService extends PassportService {
 		doBAC();
 		short fid = PassportService.EF_DG15;
 		try {
-		  sendSelectFile(getWrapper(), fid);
-		  CardFileInputStream in = readFile(fid);
-		  DG15File dg15 = new DG15File(in);
-		  publicKey = dg15.getPublicKey();
-		  resetCard();
+			sendSelectFile(getWrapper(), fid);
+			CardFileInputStream in = readFile(fid);
+			DG15File dg15 = new DG15File(in);
+			publicKey = dg15.getPublicKey();
+			resetCard();
 		}catch(CardServiceException e) {
-		  return false;
+			return false;
 		}
 		return true;
 	}
 
-    public CVCAFile getCVCAFile() {
-        CVCAFile result = null;
-        try {
-          resetCard();
-          doBAC();
-          short fid = PassportService.EF_CVCA;
-          sendSelectFile(getWrapper(), fid);
-          CardFileInputStream in = readFile(fid);
-          result = new CVCAFile(in);
-          resetCard();
-        }catch(CardServiceException e) {
-          return null;
-        }
-        return result;
-    }
+	public CVCAFile getCVCAFile() {
+		CVCAFile result = null;
+		try {
+			resetCard();
+			doBAC();
+			short fid = PassportService.EF_CVCA;
+			sendSelectFile(getWrapper(), fid);
+			CardFileInputStream in = readFile(fid);
+			result = new CVCAFile(in);
+			resetCard();
+		}catch(CardServiceException e) {
+			return null;
+		}
+		return result;
+	}
 
-	
+
 	/**
 	 * Try EAC, with the currently stored EAC-data, returning true if this
 	 * succeeded.
@@ -386,8 +385,8 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean doEAC() {
 		try {
-		  super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, documentNumber);
-		  return true;
+			super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, documentNumber);
+			return true;
 		}catch(CardServiceException cse) {
 			return false;
 		}
@@ -400,8 +399,8 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean failEAC() {
 		try {
-		  super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, "AA1234567");
-		  return true;
+			super.doEAC(keyId, cardKey, caReference, terminalCertificates, terminalKey, "AA1234567");
+			return true;
 		}catch(CardServiceException cse) {
 			return false;
 		}
@@ -415,69 +414,69 @@ public class PassportTestService extends PassportService {
 	 * @return whether this succeeded
 	 */
 	public boolean doCA() {
-        try {
-            super.doCA(-1, cardKey);
-            return true;
-        }catch(Exception e) {
-            return false;            
-        }
+		try {
+			super.doCA(-1, cardKey);
+			return true;
+		}catch(Exception e) {
+			return false;            
+		}
 	}
-	
 
 
-    /**
-     * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
-     * succeeded. 
-     * 
-     * @return whether this succeeded
-     */
-    public boolean doTA() {
-        try {
-            super.doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
-            return true;            
-        }catch(CardServiceException e) {
-            return false;
-        }
-    }
 
-    /**
+	/**
+	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
+	 * succeeded. 
+	 * 
+	 * @return whether this succeeded
+	 */
+	public boolean doTA() {
+		try {
+			super.doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
+			return true;            
+		}catch(CardServiceException e) {
+			return false;
+		}
+	}
+
+	/**
 	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
 	 * succeeded. The certificates are priovided manually.
 	 * 
 	 * @return whether this succeeded
 	 */
 	public boolean doTA(CVCertificate[] certs, PrivateKey key) {
-	    try {
-            List<CVCertificate> cs = new ArrayList<CVCertificate>();
-            for(CVCertificate c : certs) {
-              cs.add(c);
-            }
-            super.doTA(caReference, cs, key, null, documentNumber);
-            return true;            
-        }catch(CardServiceException e) {
-            return false;
-        }
+		try {
+			List<CVCertificate> cs = new ArrayList<CVCertificate>();
+			for(CVCertificate c : certs) {
+				cs.add(c);
+			}
+			super.doTA(caReference, cs, key, null, documentNumber);
+			return true;            
+		}catch(CardServiceException e) {
+			return false;
+		}
 	}
 
-    /**
-     * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
-     * succeeded. The certificates are priovided manually. Also indicate
-     * the signature algorithm
-     * 
-     * @return whether this succeeded
-     */
-    public boolean doTA(CVCertificate[] certs, PrivateKey key, String taSigAlg) {
-        try {
-            List<CVCertificate> cs = new ArrayList<CVCertificate>();
-            for(CVCertificate c : certs) {
-              cs.add(c);
-            }
-            super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);
-            return true;            
-        }catch(CardServiceException e) {
-            return false;
-        }
-    }
+	/**
+	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
+	 * succeeded. The certificates are priovided manually. Also indicate
+	 * the signature algorithm
+	 * 
+	 * @return whether this succeeded
+	 */
+	public boolean doTA(CVCertificate[] certs, PrivateKey key, String taSigAlg) {
+		try {
+			List<CVCertificate> cs = new ArrayList<CVCertificate>();
+			for(CVCertificate c : certs) {
+				cs.add(c);
+			}
+			super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);
+			return true;            
+		}catch(CardServiceException e) {
+			return false;
+		}
+	}
 
 	/**
 	 * Send a GET CHALLENGE; the challenge received will be stored and used.
@@ -540,14 +539,14 @@ public class PassportTestService extends PassportService {
 	public int sendAnyInstruction(byte ins, boolean useSM) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins,
 				(byte) 0x00, (byte) 0x00);
-        if (useSM) {
-            capdu = getWrapper().wrap(capdu);
-        }
-        ResponseAPDU rapdu = transmit(capdu);
-        if (useSM) {
-            rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
-        }
-        return rapdu.getSW();
+		if (useSM) {
+			capdu = getWrapper().wrap(capdu);
+		}
+		ResponseAPDU rapdu = transmit(capdu);
+		if (useSM) {
+			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
+		}
+		return rapdu.getSW();
 	}
 
 	/**
@@ -563,7 +562,7 @@ public class PassportTestService extends PassportService {
 	 *             if something went wrong, but we don't know what.
 	 */
 	public int sendMutualAuthenticateToCompleteBAC()
-			throws CardServiceException {
+	throws CardServiceException {
 		try {			
 			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF
 					.format(dateOfBirth), SDF.format(dateOfExpiry));
@@ -614,10 +613,10 @@ public class PassportTestService extends PassportService {
 	public byte[] getLastChallenge() {
 		return lastChallenge;
 	}
-    
-    public PublicKey getAAKey() {
-        return publicKey;
-    }
+
+	public PublicKey getAAKey() {
+		return publicKey;
+	}
 
 	public void setLastChallenge(byte[] lastChallenge) {
 		this.lastChallenge = lastChallenge;

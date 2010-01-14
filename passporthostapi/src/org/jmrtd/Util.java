@@ -162,7 +162,7 @@ public class Util
 	}
 
 	/*@ requires 0 <= offset && offset < length;
-     @ requires 0 <= length && length <= in.length;
+	  @ requires 0 <= length && length <= in.length;
 	 */
 	public static byte[] pad(/*@ non_null */ byte[] in,
 			int offset, int length) {

@@ -299,11 +299,9 @@ public class PassportService extends PassportApduService {
 	 * @throws CardServiceException
 	 *             if authentication failed
 	 */
-	public synchronized void doBAC(String documentNumber, Date dateOfBirth,
-			Date dateOfExpiry) throws CardServiceException {
+	public synchronized void doBAC(BACKey bacKey) throws CardServiceException {
 		try {
-			byte[] keySeed = Util.computeKeySeed(documentNumber, SDF
-					.format(dateOfBirth), SDF.format(dateOfExpiry));
+			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();

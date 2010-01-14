@@ -28,12 +28,13 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
+
+import net.sourceforge.scuba.util.Files;
 
 /**
  * Flat file based database for BAC entries.
@@ -44,25 +45,35 @@ import java.util.StringTokenizer;
  */
 public class BACStore
 {
-	private static final File JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd");
+	private static final File
+	JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd"),
+	DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
 
-	private static final File BACDB_FILE =
-		new File(JMRTD_USER_DIR, "bacdb.txt");
-	
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
-	private List<BACEntry> entries;
+	private File bacDBFile;
+
+	private List<BACKey> entries;
 
 	public BACStore() {
-		entries = new ArrayList<BACEntry>();
-		read();
+		this(DEFAULT_BACDB_FILE);
 	}
 
-	public List<BACEntry> getEntries() {
+	public BACStore(File bacDBFile) {
+		this.bacDBFile = bacDBFile;
+		entries = new ArrayList<BACKey>();
+		read();
+	}
+	
+	public BACStore(URL url) {
+		this(Files.toFile(url));
+	}
+
+	public List<BACKey> getEntries() {
 		return entries;
 	}
 
-	public void addEntry(BACEntry entry) {
+	public void addEntry(BACKey entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
 			write();
@@ -73,31 +84,9 @@ public class BACStore
 		}
 	}
 
-	public void addEntry(int i, BACEntry entry) {
+	public void addEntry(int i, BACKey entry) {
 		entries.add(i, entry);
 		write();
-	}
-
-	public String getDocumentNumber() {
-		return getMostRecentEntry().getDocumentNumber();
-	}
-
-	public Date getDateOfBirth() {
-		return getMostRecentEntry().getDateOfBirth();
-	}
-
-	public Date getDateOfExpiry() {
-		return getMostRecentEntry().getDateOfExpiry();
-	}
-
-	private BACEntry getMostRecentEntry() {
-		if (entries.isEmpty()) {
-			String defaultDocumentNumber = "";
-			Date defaultDateOfBirth = Calendar.getInstance().getTime();
-			Date defaultDateOfExpiry = Calendar.getInstance().getTime();
-			return new BACEntry(defaultDocumentNumber, defaultDateOfBirth, defaultDateOfExpiry);
-		}
-		return entries.get(entries.size() - 1);
 	}
 
 	private String[] getFields(String entry) {
@@ -112,12 +101,12 @@ public class BACStore
 
 	private void read() {
 		try {
-			BufferedReader d = new BufferedReader(new FileReader(BACDB_FILE));
+			BufferedReader d = new BufferedReader(new FileReader(bacDBFile));
 			while (true) {
 				String line = d.readLine();
 				if (line == null) { break; }
 				String[] fields = getFields(line);
-				entries.add(new BACEntry(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
+				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
 			}
 		} catch (FileNotFoundException fnfe) {
 			/* NOTE: no problem... */
@@ -128,14 +117,15 @@ public class BACStore
 
 	private void write() {
 		try {
-			if (!BACDB_FILE.exists()) {
-				if (!JMRTD_USER_DIR.isDirectory()) {
-					JMRTD_USER_DIR.mkdirs();
+			if (!bacDBFile.exists()) {
+				File parent = bacDBFile.getParentFile();
+				if (!parent.isDirectory()) {
+					parent.mkdirs();
 				}
-				BACDB_FILE.createNewFile();
+				bacDBFile.createNewFile();
 			}
-			PrintWriter d = new PrintWriter(new FileWriter(BACDB_FILE));
-			for (BACEntry entry: entries) {
+			PrintWriter d = new PrintWriter(new FileWriter(bacDBFile));
+			for (BACKey entry: entries) {
 				d.println(entry);
 			}
 			d.flush();
@@ -144,10 +134,10 @@ public class BACStore
 			e.printStackTrace();
 		}
 	}
-	
+
 	public String toString() {
 		StringBuffer result = new StringBuffer();
-		for (BACEntry entry: entries) {
+		for (BACKey entry: entries) {
 			result.append(entry.toString());
 			result.append('\n');
 		}
@@ -159,7 +149,7 @@ public class BACStore
 		write();
 	}
 
-	public BACEntry getEntry(int entryRowIndex) {
+	public BACKey getEntry(int entryRowIndex) {
 		return entries.get(entryRowIndex);
 	}
 }

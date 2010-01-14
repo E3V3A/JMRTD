@@ -1,5 +1,6 @@
 package org.jmrtd.test;
 
+import org.jmrtd.BACKey;
 import org.jmrtd.PassportService;
 
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
@@ -14,9 +15,7 @@ public class PassportTesterExample extends PassportTesterBase {
 	public void test1() {
 		traceApdu = true;
 		try {
-			service
-					.doBAC("XX1234587", getDate("19760803"),
-							getDate("20140507"));
+			service.doBAC(new BACKey("XX1234587", getDate("19760803"), getDate("20140507")));
 			CardFileInputStream in = service.readFile(PassportService.EF_DG1);
 			assertNotNull(in);
 			in = null;

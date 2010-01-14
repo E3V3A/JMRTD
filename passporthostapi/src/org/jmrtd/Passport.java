@@ -96,11 +96,17 @@ public class Passport
 
 	private PrivateKey aaPrivateKey = null;
 
-	public Passport(PassportService service) throws IOException, CardServiceException {
-		this(service, null);
-	}
-
-	public Passport(PassportService service, String documentNumber) throws IOException, CardServiceException {
+	/**
+	 * Constructs a passport object by reading from an actual passport chip
+	 * through a PassportService.
+	 * 
+	 * @param service the service to read from
+	 * @param documentNumber the document number is used in EAC
+	 * 
+	 * @throws IOException on error
+	 * @throws CardServiceException on error
+	 */
+	public Passport(PassportService service, CVCAStore d, String documentNumber) throws IOException, CardServiceException {
 		BufferedInputStream bufferedIn = null;
 
 		bufferedIn = preReadFile(service, PassportService.EF_COM);
@@ -147,7 +153,6 @@ public class Passport
 			List<List<CVCertificate>> termCerts = new ArrayList<List<CVCertificate>>();
 			List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
 			List<String> caRefs = new ArrayList<String>();
-			TerminalCVCertificateDirectory d = TerminalCVCertificateDirectory.getInstance();
 			for(String caRef : new String[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 				if(caRef != null) {
 					try {
@@ -157,7 +162,7 @@ public class Passport
 							termKeys.add(d.getPrivateKey(caRef));
 							caRefs.add(caRef);
 						}
-					}catch(NoSuchElementException nsee) {}
+					} catch(NoSuchElementException nsee) {}
 				}
 			}
 			if(termCerts.size() == 0) {
@@ -202,7 +207,11 @@ public class Passport
 			ZipEntry entry = entries.nextElement();
 			if (entry == null) { break; }
 			String fileName = entry.getName();
-			int size = (int)(entry.getSize() & 0x00000000FFFFFFFFL);
+			long sizeAsLong = entry.getSize();
+			if (sizeAsLong < 0) {
+				throw new IOException("ZipEntry has negative size.");
+			}
+			int size = (int)(sizeAsLong & 0x00000000FFFFFFFFL);
 			try {
 				int fid = -1;
 				int delimIndex = fileName.indexOf('.');

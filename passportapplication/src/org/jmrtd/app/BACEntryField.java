@@ -28,10 +28,10 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 
-import org.jmrtd.BACEntry;
-
 import net.sourceforge.scuba.swing.DateEntryField;
 import net.sourceforge.scuba.swing.MRZEntryField;
+
+import org.jmrtd.BACKey;
 
 /**
  * Text field for entering BAC entries.
@@ -65,7 +65,7 @@ public class BACEntryField extends Box implements BACEntrySource
 		add(dateOfExpiryField);
 	}
 
-	public BACEntryField(BACEntry bacEntry) {
+	public BACEntryField(BACKey bacEntry) {
 		this();
 		setValue(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
 	}

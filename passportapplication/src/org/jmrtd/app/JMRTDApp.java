@@ -37,7 +37,6 @@ import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import javax.smartcardio.CardException;
@@ -69,14 +68,15 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.BACEntry;
+import org.jmrtd.BACKey;
 import org.jmrtd.BACStore;
 import org.jmrtd.COMFile;
+import org.jmrtd.CSCAStore;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
-import org.jmrtd.TerminalCVCertificateDirectory;
+import org.jmrtd.CVCAStore;
 
 /**
  * Simple graphical application to demonstrate the
@@ -108,9 +108,11 @@ public class JMRTDApp  implements PassportListener
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	private Container contentPane;
-	private BACStore bacStore;
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
+	private BACStore bacStore;
+	private CSCAStore cscaStore;
+	private CVCAStore cvcaStore;
 
 	/**
 	 * Constructs the GUI.
@@ -120,17 +122,13 @@ public class JMRTDApp  implements PassportListener
 	public JMRTDApp() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
-			try {
-				TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/sos/woj/terminals"));
-			} catch(Exception e) {
-				System.out.println("Could not load terminal certificates from a default location.");
-			}
 			PassportManager passportManager = PassportManager.getInstance();
 			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
-			this.bacStore =  new BACStore();
-			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 			preferencesPanel = new PreferencesPanel(cardManager, PREFERENCES_FILE);
+			this.bacStore = new BACStore(preferencesPanel.getBACStore());
+			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
+
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
 			mainFrame.setIconImage(JMRTD_ICON);
 			contentPane = mainFrame.getContentPane();
@@ -208,7 +206,7 @@ public class JMRTDApp  implements PassportListener
 			return;
 		}
 		boolean isBACPassport = false;
-		BACEntry bacEntry = null;
+		BACKey bacEntry = null;
 		try {
 			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
 			new COMFile(comIn); /* NOTE: EF.COM is read here to test if BAC is implemented */
@@ -221,20 +219,17 @@ public class JMRTDApp  implements PassportListener
 		}
 		if (isBACPassport) {
 			int tries = 10;
-			List<BACEntry> triedBACEntries = new ArrayList<BACEntry>();
+			List<BACKey> triedBACEntries = new ArrayList<BACKey>();
 			try {
 				/* NOTE: outer loop, try 10 times all entries (user may be entering new entries meanwhile). */
 				while (bacEntry == null && tries-- > 0) {
 					/* NOTE: inner loop, loops through stored BAC entries. */
-					for (BACEntry entry: bacStore.getEntries()) {
+					for (BACKey bacKey: bacStore.getEntries()) {
 						try {
-							if (!triedBACEntries.contains(entry)) {
-								String documentNumber = entry.getDocumentNumber();
-								Date dateOfBirth = entry.getDateOfBirth();
-								Date dateOfExpiry = entry.getDateOfExpiry();
-								service.doBAC(documentNumber, dateOfBirth, dateOfExpiry);
+							if (!triedBACEntries.contains(bacKey)) {
+								service.doBAC(bacKey);
 								/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-								bacEntry = entry;
+								bacEntry = bacKey;
 								break; /* out of inner for loop */
 							}
 							Thread.sleep(500);
@@ -248,7 +243,7 @@ public class JMRTDApp  implements PassportListener
 			}
 		}
 		if (!isBACPassport || bacEntry != null) {
-			PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
+			PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
 			passportFrame.readFromService(service, bacEntry, preferencesPanel.getReadingMode());
 		} else {
 			/*
@@ -316,7 +311,7 @@ public class JMRTDApp  implements PassportListener
 			private static final long serialVersionUID = 2866114377708028964L;
 
 			public void actionPerformed(ActionEvent e) {
-				PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
+				PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
 				passportFrame.readFromEmptyPassport();
 				passportFrame.pack();
 				passportFrame.setVisible(true);
@@ -345,7 +340,7 @@ public class JMRTDApp  implements PassportListener
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
-						PassportFrame passportFrame = new PassportFrame(preferencesPanel.getCSCAStore());
+						PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
 						passportFrame.readFromZipFile(file);
 						passportFrame.pack();
 						passportFrame.setVisible(true);
@@ -380,13 +375,8 @@ public class JMRTDApp  implements PassportListener
 				int choice = fileChooser.showOpenDialog(contentPane);
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-					try {
-						File file = fileChooser.getSelectedFile();
-						TerminalCVCertificateDirectory.getInstance().scanDirectory(file);
-					} catch (IOException ioe) {
-						/* NOTE: Do nothing. */
-						ioe.printStackTrace();
-					}
+					File file = fileChooser.getSelectedFile();
+					cvcaStore.setLocation(file);
 					break;
 				default: break;
 				}

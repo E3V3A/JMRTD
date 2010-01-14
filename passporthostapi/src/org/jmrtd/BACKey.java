@@ -22,6 +22,7 @@
 
 package org.jmrtd;
 
+import java.security.Key;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -32,15 +33,17 @@ import java.util.Date;
  *
  * @version $Revision: 764 $
  */
-public class BACEntry
+public class BACKey implements Key
 {
+	private static final long serialVersionUID = -1059774581180524710L;
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private String documentNumber;
 	private Date dateOfBirth;
 	private Date dateOfExpiry;
 
-	public BACEntry(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+	public BACKey(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth;
 		this.dateOfExpiry = dateOfExpiry;
@@ -61,7 +64,7 @@ public class BACEntry
 	public String toString() {
 		return documentNumber + ", " + SDF.format(dateOfBirth) + ", " + SDF.format(dateOfExpiry);
 	}
-	
+
 	public int hashCode() {
 		int result = 5;
 		result = 61 * result + (documentNumber == null ? 0 : documentNumber.hashCode());
@@ -72,11 +75,23 @@ public class BACEntry
 
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
-		if (other.getClass() != BACEntry.class) { return false; }
+		if (other.getClass() != BACKey.class) { return false; }
 		if (other == this) { return true; }
-		BACEntry previous = (BACEntry)other;
+		BACKey previous = (BACKey)other;
 		return documentNumber.equals(previous.documentNumber) &&
 		dateOfBirth.equals(previous.dateOfBirth) &&
 		dateOfExpiry.equals(previous.dateOfExpiry);
+	}
+
+	public String getAlgorithm() {
+		return "BAC";
+	}
+
+	public byte[] getEncoded() {
+		return null;
+	}
+
+	public String getFormat() {
+		return null;
 	}
 }
