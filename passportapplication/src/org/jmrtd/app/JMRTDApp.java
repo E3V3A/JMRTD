@@ -39,7 +39,6 @@ import java.security.Security;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -61,7 +60,6 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
-import net.sourceforge.scuba.smartcards.APDUFingerprint;
 import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardManager;
@@ -85,6 +83,7 @@ import org.jmrtd.TerminalCVCertificateDirectory;
  * JMRTD passport host API.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  *
  * @version $Revision: 894 $
  */
@@ -123,11 +122,11 @@ public class JMRTDApp  implements PassportListener
 			Security.insertProviderAt(PROVIDER, 4);
 			try {
 				TerminalCVCertificateDirectory.getInstance().scanDirectory(new File("/home/sos/woj/terminals"));
-			}catch(Exception e) {
+			} catch(Exception e) {
 				System.out.println("Could not load terminal certificates from a default location.");
 			}
-			PassportManager pm = PassportManager.getInstance();
-			pm.addPassportListener(this);
+			PassportManager passportManager = PassportManager.getInstance();
+			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
 			this.bacStore =  new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
