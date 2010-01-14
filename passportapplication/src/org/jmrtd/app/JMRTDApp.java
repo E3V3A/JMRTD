@@ -126,7 +126,7 @@ public class JMRTDApp  implements PassportListener
 			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
 			preferencesPanel = new PreferencesPanel(cardManager, PREFERENCES_FILE);
-			this.bacStore = new BACStore(preferencesPanel.getBACStore());
+			this.bacStore = new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
