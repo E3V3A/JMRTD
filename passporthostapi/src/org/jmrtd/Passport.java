@@ -204,19 +204,31 @@ public class Passport
 			String fileName = entry.getName();
 			int size = (int)(entry.getSize() & 0x00000000FFFFFFFFL);
 			try {
+				int fid = -1;
 				int delimIndex = fileName.indexOf('.');
-				if (delimIndex != 4) {
+				if (!fileName.endsWith(".bin") && !fileName.endsWith(".BIN")) {
 					System.out.println("DEBUG: skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
-					continue;
+					continue;					
 				}
-				short fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
+				if (delimIndex == 4) {
+					try {
+						/* Filename <FID>.bin? */
+						fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
+					} catch (NumberFormatException nfe) {
+						/* ...guess not */ 
+					}
+				}
 				byte[] bytes = new byte[size];
 				int fileLength = bytes.length;
-				fileLengths.put(fid, fileLength);
 				DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
 				dataIn.readFully(bytes);
-				rawStreams.put(fid, new ByteArrayInputStream(bytes));
+				if (fid < 0) {
+					/* FIXME: untested! */
+					fid = PassportFile.lookupFIDByTag(bytes[0] & 0xFF);
+				}
 				totalLength += fileLength;
+				fileLengths.put((short)fid, fileLength);
+				rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
 				if(fid == PassportService.EF_COM) {
 					comFile = new COMFile(new ByteArrayInputStream(bytes));
 				}else if(fid == PassportService.EF_SOD) {
