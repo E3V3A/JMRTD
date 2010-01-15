@@ -27,7 +27,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.DG2File;
+import org.jmrtd.lds.DG2File;
 
 public class DG2FileTest extends TestCase
 {

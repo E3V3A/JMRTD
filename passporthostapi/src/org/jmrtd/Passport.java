@@ -62,6 +62,15 @@ import net.sourceforge.scuba.util.Hex;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.DG14File;
+import org.jmrtd.lds.DG15File;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.DG2File;
+import org.jmrtd.lds.MRZInfo;
+import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.SODFile;
 
 /**
  * A passport object is basically a collection of buffered input streams for the data groups,

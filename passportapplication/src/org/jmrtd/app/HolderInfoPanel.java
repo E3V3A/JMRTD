@@ -41,7 +41,7 @@ import net.sourceforge.scuba.swing.DateEntryField;
 import net.sourceforge.scuba.swing.GenderEntryField;
 import net.sourceforge.scuba.swing.MRZEntryField;
 
-import org.jmrtd.MRZInfo;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Panel for displaying and editing DG1.

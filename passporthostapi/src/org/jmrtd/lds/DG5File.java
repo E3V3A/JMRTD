@@ -20,59 +20,38 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
-import java.util.List;
 
 /**
- * File structure for the EF_DG3 file.
+ * File structure for the EF_DG5 file.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
-public class DG3File extends CBEFFDataGroup
+public class DG5File extends DisplayedImageDataGroup
 {
-	/**
-	 * Creates a new file based on an input stream.
-	 *
-	 * @param in an input stream
-	 */
-	public DG3File(InputStream in) {
+	public DG5File(BufferedImage image) {
+		super(image);
+	}
+
+	public DG5File(InputStream in) {
 		super(in);
 	}
 
+	public int getTag() {
+		return EF_DG5_TAG;
+	}
+	
 	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
+		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public int getTag() {
-		return EF_DG3_TAG;
-	}
-
-	public List<byte[]> getFingerPrints() {
-		return templates;
-	}
-
-	/**
-	 * Gets a textual representation of this file.
-	 * 
-	 * @return a textual representation of this file
-	 */
 	public String toString() {
-		return "DG3File";
+		return "DG5File";
 	}
-
-	/**
-	 * Reads biometric data block.
-	 * 
-	 * TODO: actually interpret the finger prints...
-	 */
-//	protected void readBiometricData(InputStream in, int length) throws IOException {
-//
-//	}
 }

@@ -36,6 +36,7 @@ import javax.swing.JTextField;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.jmrtd.AuthListener;
+import org.jmrtd.BACKey;
 import org.jmrtd.PassportService;
 
 /**
@@ -80,7 +81,7 @@ public class BACPanel extends JPanel
 					String documentNumber = docNrTF.getText().toUpperCase();
 					String dateOfBirth = dateOfBirthTF.getText();
 					String dateOfExpiry = dateOfExpiryTF.getText();
-					service.doBAC(documentNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry));
+					service.doBAC(new BACKey(documentNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry)));
 					bacDB.addEntry(documentNumber, dateOfBirth, dateOfExpiry);
 					docNrTF.setText(documentNumber);
 				} catch (CardServiceException cse) {

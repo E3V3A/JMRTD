@@ -23,8 +23,8 @@ import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.HolderReferenceField;
-import org.jmrtd.CVCAFile;
 import org.jmrtd.PassportService;
+import org.jmrtd.lds.CVCAFile;
 
 public class PassportEACTester extends PassportTesterBase {
 

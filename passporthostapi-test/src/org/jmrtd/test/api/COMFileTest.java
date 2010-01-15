@@ -29,8 +29,8 @@ import java.util.List;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.COMFile;
-import org.jmrtd.PassportFile;
+import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.PassportFile;
 
 public class COMFileTest extends TestCase
 {

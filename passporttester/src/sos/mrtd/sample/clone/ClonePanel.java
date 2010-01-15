@@ -28,13 +28,13 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.DG1File;
 import org.jmrtd.EACEvent;
-import org.jmrtd.MRZInfo;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.MRZInfo;
 
 import sos.mrtd.sample.PassportGUI;
 

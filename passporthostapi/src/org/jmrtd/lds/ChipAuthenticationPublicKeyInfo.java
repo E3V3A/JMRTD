@@ -19,74 +19,86 @@
  *
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
 
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 /**
- * A specialised SecurityInfo structure that stores chip authentication info,
- * see EAC 1.11 specification.
+ * A specialised SecurityInfo structure that stores chip authentication public
+ * key info, see EAC 1.11 specification.
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
  */
-public class ChipAuthenticationInfo extends SecurityInfo {
+public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
-    public static final int VERSION_NUM = 1;
-
-    public ChipAuthenticationInfo(SecurityInfo si) {
+    public ChipAuthenticationPublicKeyInfo(SecurityInfo si) {
         super(si);
     }
 
-    public ChipAuthenticationInfo(InputStream in) throws IOException {
+    public ChipAuthenticationPublicKeyInfo(InputStream in) throws IOException {
         super(in);
     }
 
     /**
-     * Constructs a new object
+     * Constructs a new object.
      * 
      * @param identifier
      *            a proper EAC identifier
-     * @param version
-     *            has to be one
+     * @param publicKeyInfo
+     *            appropriate SubjectPublicKeyInfo structure
      * @param keyId
      *            the key identifier
      */
-    public ChipAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version, Integer keyId) {
-        super(identifier, new DERInteger(version),
+    public ChipAuthenticationPublicKeyInfo(DERObjectIdentifier identifier,
+            SubjectPublicKeyInfo publicKeyInfo, Integer keyId) {
+        super(identifier, publicKeyInfo.getDERObject(),
                 keyId != null ? new DERInteger(keyId) : null);
     }
 
     /**
-     * Constructs a new object
+     * Constructs a new object.
      * 
      * @param identifier
      *            a proper EAC identifier
-     * @param version
-     *            has to be one
+     * @param publicKeyInfo
+     *            appropriate SubjectPublicKeyInfo structure
      */
-    public ChipAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version) {
-        this(identifier, version, null);
+    public ChipAuthenticationPublicKeyInfo(DERObjectIdentifier identifier,
+            SubjectPublicKeyInfo publicKeyInfo) {
+        this(identifier, publicKeyInfo, null);
     }
 
     /**
-     * Returns a key identifier stored in this ChipAuthenticationInfo structure, null
-     * if not present
+     * Returns a key identifier stored in this ChipAuthenticationPublicKeyInfo
+     * structure, null if not present
      * 
-     * @return key identifier stored in this ChipAuthenticationInfo structure
+     * @return key identifier stored in this ChipAuthenticationPublicKeyInfo
+     *         structure
      */
     public Integer getKeyId() {
         if (optionalData == null) {
             return -1;
         }
         return ((DERInteger) optionalData).getValue().intValue();
+    }
+
+    /**
+     * Returns a SubjectPublicKeyInfo contained in this
+     * ChipAuthenticationPublicKeyInfo structure
+     * 
+     * @return SubjectPublicKeyInfo contained in this
+     *         ChipAuthenticationPublicKeyInfo structure
+     */
+    public SubjectPublicKeyInfo getSubjectPublicKeyInfo() {
+        return new SubjectPublicKeyInfo((DERSequence) requiredData);
     }
 
     /**
@@ -98,10 +110,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
                 throw new IllegalArgumentException("Wrong identifier: "
                         + identifier.getId());
             }
-            if (!(requiredData instanceof DERInteger)
-                    || ((DERInteger) requiredData).getValue().intValue() != VERSION_NUM) {
-                throw new IllegalArgumentException("Wrong version");
-            }
+            getSubjectPublicKeyInfo();
             if (optionalData != null && !(optionalData instanceof DERInteger)) {
                 throw new IllegalArgumentException("Key ID not an integer: "
                         + optionalData.getClass().getName());
@@ -115,15 +124,15 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 
     /**
      * Checks whether the given object identifier identfies a
-     * ChipAuthenticationInfo structure.
+     * ChipAuthenticationPublicKeyInfo structure.
      * 
      * @param id
      *            object identifier
      * @return true if the match is positive
      */
     public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-        return id.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
-                || id.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
+        return id.equals(EACObjectIdentifiers.id_PK_DH)
+                || id.equals(EACObjectIdentifiers.id_PK_ECDH);
     }
 
 }

@@ -63,6 +63,8 @@ import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Card service for reading files (such as data groups) and using the BAC and AA

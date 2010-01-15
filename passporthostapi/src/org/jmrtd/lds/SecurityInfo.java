@@ -19,7 +19,7 @@
  *
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;

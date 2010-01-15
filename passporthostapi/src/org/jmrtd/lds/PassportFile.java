@@ -20,7 +20,9 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
+
+import org.jmrtd.PassportService;
 
 
 /**

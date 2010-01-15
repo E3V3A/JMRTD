@@ -29,8 +29,8 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.DG1File;
-import org.jmrtd.MRZInfo;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.MRZInfo;
 
 public class DG1FileTest extends TestCase
 {

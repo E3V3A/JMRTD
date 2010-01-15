@@ -10,10 +10,10 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.COMFile;
-import org.jmrtd.PassportFile;
 import org.jmrtd.PassportService;
-import org.jmrtd.SODFile;
+import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.SODFile;
 
 /**
  * This class is supposed to test the absence of EAC implementation/features on

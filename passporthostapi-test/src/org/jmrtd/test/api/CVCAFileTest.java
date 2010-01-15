@@ -27,7 +27,7 @@ import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.jmrtd.CVCAFile;
+import org.jmrtd.lds.CVCAFile;
 
 public class CVCAFileTest extends TestCase {
 

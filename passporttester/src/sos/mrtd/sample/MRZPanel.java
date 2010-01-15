@@ -43,11 +43,11 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.DG1File;
 import org.jmrtd.EACEvent;
-import org.jmrtd.MRZInfo;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * GUI component for accessing the MRZ datagroup on the passport.

@@ -51,10 +51,10 @@ import net.sourceforge.scuba.swing.MRZEntryField;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.DG15File;
 import org.jmrtd.EACEvent;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
+import org.jmrtd.lds.DG15File;
 
 /**
  * GUI component for sending initialization commands to the passport.

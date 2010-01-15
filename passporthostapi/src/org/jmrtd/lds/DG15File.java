@@ -20,7 +20,7 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.InputStream;
 import java.security.KeyFactory;

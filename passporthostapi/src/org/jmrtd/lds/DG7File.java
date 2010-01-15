@@ -20,45 +20,38 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
+import java.awt.image.BufferedImage;
 import java.io.InputStream;
 
 /**
- * File structure for the EF_DG4 file.
+ * File structure for the EF_DG7 file.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
-public class DG4File extends CBEFFDataGroup
+public class DG7File extends DisplayedImageDataGroup
 {
-	/**
-	 * Constructs a new file based on an input stream.
-	 * 
-	 * @param in an input stream
-	 */
-	public DG4File(InputStream in) {
+	public DG7File(BufferedImage image) {
+		super(image);
+	}
+
+	public DG7File(InputStream in) {
 		super(in);
 	}
 
+	public int getTag() {
+		return EF_DG7_TAG;
+	}
+
 	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
+		// TODO Auto-generated method stub
 		return null;
 	}
 
-	public int getTag() {
-		return EF_DG4_TAG;
-	}
-
-	/**
-	 * Gets a textual representation of this file.
-	 * 
-	 * @return a textual representation of this file
-	 */
 	public String toString() {
-		return "DG4File";
+		return "DG7File";
 	}
 }

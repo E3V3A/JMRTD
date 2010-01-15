@@ -42,11 +42,11 @@ import net.sourceforge.scuba.util.Hex;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.DG15File;
 import org.jmrtd.EACEvent;
 import org.jmrtd.PassportApduService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.lds.DG15File;
 
 /**
  * Convenient GUI component for doing AA.

@@ -38,7 +38,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jmrtd.DG14File;
+import org.jmrtd.lds.DG14File;
 
 public class DG14FileTest extends TestCase {
 

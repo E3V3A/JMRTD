@@ -26,13 +26,13 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.BACKey;
-import org.jmrtd.CVCAFile;
-import org.jmrtd.DG14File;
-import org.jmrtd.DG15File;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.CVCAStore;
 import org.jmrtd.Util;
+import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.DG14File;
+import org.jmrtd.lds.DG15File;
 
 /**
  * Card service specifically designed for testing. It aims to provide both

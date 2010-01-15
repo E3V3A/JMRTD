@@ -33,7 +33,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.DG11File;
+import org.jmrtd.lds.DG11File;
 
 public class DG11FileTest extends TestCase
 {

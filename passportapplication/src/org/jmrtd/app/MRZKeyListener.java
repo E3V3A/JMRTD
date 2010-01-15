@@ -29,7 +29,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.jmrtd.BACKey;
-import org.jmrtd.MRZInfo;
+import org.jmrtd.lds.MRZInfo;
 
 
 /**

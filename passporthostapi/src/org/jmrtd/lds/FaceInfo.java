@@ -20,7 +20,7 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
@@ -42,6 +42,8 @@ import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
+
+import org.jmrtd.ImageReadUpdateListener;
 
 import net.sourceforge.scuba.data.Gender;
 

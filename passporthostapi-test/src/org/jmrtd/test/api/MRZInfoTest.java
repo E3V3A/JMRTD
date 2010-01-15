@@ -30,7 +30,7 @@ import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.MRZInfo;
+import org.jmrtd.lds.MRZInfo;
 
 public class MRZInfoTest extends TestCase
 {

@@ -46,12 +46,12 @@ import net.sourceforge.scuba.swing.ImagePanel;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.DG2File;
 import org.jmrtd.EACEvent;
-import org.jmrtd.FaceInfo;
 import org.jmrtd.PassportApduService;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.lds.DG2File;
+import org.jmrtd.lds.FaceInfo;
 
 /**
  * GUI component for accessing the face image on the passport.

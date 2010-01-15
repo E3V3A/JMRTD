@@ -30,7 +30,7 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.util.Fonts;
 
-import org.jmrtd.MRZInfo;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Panel for displaying the MRZ datagroup on the passport.

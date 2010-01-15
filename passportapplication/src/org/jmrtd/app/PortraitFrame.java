@@ -50,8 +50,8 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 import net.sourceforge.scuba.util.Images;
 
-import org.jmrtd.FaceInfo;
 import org.jmrtd.ImageReadUpdateListener;
+import org.jmrtd.lds.FaceInfo;
 
 /**
  * Frame for displaying and manipulating one portrait image.

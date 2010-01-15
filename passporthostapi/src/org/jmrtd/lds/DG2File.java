@@ -20,7 +20,7 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.awt.Image;
 import java.io.BufferedInputStream;

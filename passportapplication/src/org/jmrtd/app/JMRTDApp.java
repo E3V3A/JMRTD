@@ -70,13 +70,13 @@ import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.BACKey;
 import org.jmrtd.BACStore;
-import org.jmrtd.COMFile;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.CVCAStore;
+import org.jmrtd.lds.COMFile;
 
 /**
  * Simple graphical application to demonstrate the

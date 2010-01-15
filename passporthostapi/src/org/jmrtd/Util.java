@@ -51,6 +51,7 @@ import org.bouncycastle.asn1.DERString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.asn1.DERUnknownTag;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Some static helper functions. Mostly dealing with low-level crypto.

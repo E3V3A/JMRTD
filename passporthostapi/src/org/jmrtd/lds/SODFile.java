@@ -20,7 +20,7 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

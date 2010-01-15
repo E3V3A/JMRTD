@@ -54,6 +54,8 @@ import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
 import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Service for initializing blank passport reference applets.

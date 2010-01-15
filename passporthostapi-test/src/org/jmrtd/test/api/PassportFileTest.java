@@ -33,7 +33,7 @@ import java.util.zip.ZipFile;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
-import org.jmrtd.PassportFile;
+import org.jmrtd.lds.PassportFile;
 
 /**
  * You can throw files containing MRTD content at this test case and

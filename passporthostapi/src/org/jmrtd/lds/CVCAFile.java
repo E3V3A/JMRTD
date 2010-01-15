@@ -1,6 +1,7 @@
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.InputStream;
+
 
 public class CVCAFile extends PassportFile {
 

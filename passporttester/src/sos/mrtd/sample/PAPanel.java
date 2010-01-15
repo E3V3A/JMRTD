@@ -53,13 +53,13 @@ import net.sourceforge.scuba.util.Hex;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.COMFile;
 import org.jmrtd.EACEvent;
 import org.jmrtd.PassportApduService;
-import org.jmrtd.PassportFile;
 import org.jmrtd.PassportService;
-import org.jmrtd.SODFile;
 import org.jmrtd.SecureMessagingWrapper;
+import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.SODFile;
 
 /**
  * Convenient GUI component examining the security object.

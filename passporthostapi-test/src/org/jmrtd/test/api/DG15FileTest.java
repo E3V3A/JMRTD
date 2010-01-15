@@ -31,7 +31,7 @@ import java.security.PublicKey;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.DG15File;
+import org.jmrtd.lds.DG15File;
 
 public class DG15FileTest extends TestCase
 {
