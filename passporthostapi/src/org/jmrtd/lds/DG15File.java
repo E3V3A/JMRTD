@@ -99,7 +99,7 @@ public class DG15File extends DataGroup
 	
 	public boolean equals(Object obj) {
 		if (obj == null) { return false; }
-		if (obj.getClass() != DG15File.class) { return false; }
+		if (obj.getClass() != this.getClass()) { return false; }
 		DG15File other = (DG15File)obj;
 		return publicKey.equals(other.publicKey);
 	}

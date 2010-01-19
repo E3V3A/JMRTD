@@ -69,6 +69,8 @@ public class CVCAStore
 		}
 	};
 
+	private static final String DEFAULT_CVCA_DIR = "/home/sos/woj/terminals";
+
 	private File dir;
 	
 	private Map<String, List<CVCertificate>> certificateListsMap;
@@ -105,6 +107,7 @@ public class CVCAStore
 		if (!dir.isDirectory()) {
 			throw new IllegalArgumentException("File " + dir.getAbsolutePath() + " is not a directory.");
 		}
+		this.dir = dir;
 		File[] dirs = dir.listFiles(DIRECTORY_FILE_FILTER);
 		try {
 			for (File f : dirs) { scanOneDirectory(f); }
@@ -252,6 +255,6 @@ public class CVCAStore
 	}
 	
 	private static File getDefaultCVCADir() {
-		return new File("/home/sos/woj/terminals");
+		return new File(DEFAULT_CVCA_DIR);
 	}
 }

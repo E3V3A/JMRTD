@@ -73,11 +73,11 @@ public class BACKey implements Key
 		return result;
 	}
 
-	public boolean equals(Object other) {
-		if (other == null) { return false; }
-		if (other.getClass() != BACKey.class) { return false; }
-		if (other == this) { return true; }
-		BACKey previous = (BACKey)other;
+	public boolean equals(Object o) {
+		if (o == null) { return false; }
+		if (!o.getClass().equals(this.getClass())) { return false; }
+		if (o == this) { return true; }
+		BACKey previous = (BACKey)o;
 		return documentNumber.equals(previous.documentNumber) &&
 		dateOfBirth.equals(previous.dateOfBirth) &&
 		dateOfExpiry.equals(previous.dateOfExpiry);

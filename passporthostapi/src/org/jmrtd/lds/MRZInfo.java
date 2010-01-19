@@ -27,6 +27,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,8 +46,10 @@ import net.sourceforge.scuba.data.Gender;
  * 
  * @version $Revision$
  */
-public class MRZInfo
+public class MRZInfo implements Serializable
 {
+	private static final long serialVersionUID = 7054965914471297804L;
+
 	/** Unspecified document type (do not use, choose ID1 or ID3). */
 	public static final int DOC_TYPE_UNSPECIFIED = 0;
 	/** ID1 document type for credit card sized national identity cards. */

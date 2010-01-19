@@ -92,7 +92,7 @@ public class PassportEvent extends EventObject
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
 		if (other == this) { return true; }
-		if (other.getClass() != PassportEvent.class) { return false; }
+		if (!other.getClass().equals(this.getClass())) { return false; }
 		PassportEvent otherCardEvent = (PassportEvent)other;
 		return type == otherCardEvent.type && service.equals(otherCardEvent.service);
 	}

@@ -110,7 +110,7 @@ public class FaceInfo
    /** Feature flags meaning based on Section 5.5.6 of ISO 19794-5. */
    public enum Features { FEATURES_ARE_SPECIFIED, GLASSES, MOUSTACHE, BEARD, TEETH_VISIBLE, 
        BLINK, MOUTH_OPEN, LEFT_EYE_PATCH, RIGHT_EYE_PATCH, DARK_GLASSES, DISTORTING_MEDICAL_CONDITION };
-   private static final int FEATURE_FEATURES_ARE_SPECIFIED_FLAG = 0x00,
+   private static final int FEATURE_FEATURES_ARE_SPECIFIED_FLAG = 0x000001,
                             FEATURE_GLASSES_FLAG = 0x000002,
                             FEATURE_MOUSTACHE_FLAG = 0x000004,
                             FEATURE_BEARD_FLAG = 0x000008,
@@ -442,7 +442,7 @@ public class FaceInfo
 		   }
 		   if (resultImage != null) {
 			   image = resultImage;
-			   notifyImageReadUpdateListeners(resultImage, offset / totalLength);
+			   notifyImageReadUpdateListeners(resultImage, offset / (double)totalLength);
 		   }
 	   }	   
 	   return resultImage;
@@ -861,7 +861,7 @@ public class FaceInfo
     * 
     * @version $Revision$
     */
-   public class FeaturePoint
+   public static class FeaturePoint
    {
 	   private int type;
 	   private int majorCode;

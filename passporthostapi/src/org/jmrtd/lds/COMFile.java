@@ -104,7 +104,7 @@ public class COMFile extends PassportFile
 			if (tag != EF_COM_TAG) {
 				throw new IOException("Wrong tag!");
 			}
-			int length = tlvIn.readLength();
+			/* int length = */ tlvIn.readLength();
 
 			int versionLDSTag = tlvIn.readTag();
 			if (versionLDSTag != VERSION_LDS_TAG) {
@@ -135,7 +135,7 @@ public class COMFile extends PassportFile
 			if (tagListTag != TAG_LIST_TAG) {
 				throw new IllegalArgumentException("Expected TAG_LIST_TAG (" + Integer.toHexString(TAG_LIST_TAG) + "), found " + Integer.toHexString(tagListTag));
 			}
-			int tagListLength = tlvIn.readLength();
+			/* int tagListLength = */ tlvIn.readLength();
 			byte[] tagBytes = tlvIn.readValue();
 			tagList = new ArrayList<Integer>();
 			for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }

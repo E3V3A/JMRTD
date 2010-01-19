@@ -448,7 +448,7 @@ public class PassportService extends PassportApduService {
 					byte[] sig = getCertSignatureData(cert);
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
-							// certificate
+					// certificate
 					// is too big to fit into one APDU).
 					sendPSOExtendedLengthMode(wrapper, body, sig);
 					sigAlg = AlgorithmUtil.getAlgorithmName(cert
@@ -541,20 +541,25 @@ public class PassportService extends PassportApduService {
 	// For ECDSA the EAC 1.11 specification requires the signature to be
 	// stripped down from any ASN.1 wrappers, as so:
 	private byte[] getRawECDSASignature(byte[] signature) throws IOException {
-		ASN1InputStream in = new ASN1InputStream(signature);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		DERSequence obj = (DERSequence) in.readObject();
-		Enumeration<DERObject> e = obj.getObjects();
-		while (e.hasMoreElements()) {
-			DERInteger i = (DERInteger) e.nextElement();
-			byte[] t = i.getValue().toByteArray();
-			if (t[0] == 0) {
-				out.write(t, 1, t.length - 1);
-			} else {
-				out.write(t);
+		try {
+			ASN1InputStream in = new ASN1InputStream(signature);
+			DERSequence obj = (DERSequence) in.readObject();
+			Enumeration<DERObject> e = obj.getObjects();
+			while (e.hasMoreElements()) {
+				DERInteger i = (DERInteger) e.nextElement();
+				byte[] t = i.getValue().toByteArray();
+				if (t[0] == 0) {
+					out.write(t, 1, t.length - 1);
+				} else {
+					out.write(t);
+				}
 			}
+			out.flush();
+			return out.toByteArray();
+		} finally {
+			out.close();
 		}
-		return out.toByteArray();
 	}
 
 	private byte[] wrapDO(byte tag, byte[] data) {
@@ -592,7 +597,7 @@ public class PassportService extends PassportApduService {
 			byte[] result = new byte[data.length - index];
 			System.arraycopy(data, index, result, 0, result.length);
 			// Sanity check:
-				assert result[0] == (byte) 0x5F && result[1] == (byte) 0x37;
+			assert result[0] == (byte) 0x5F && result[1] == (byte) 0x37;
 			return result;
 		}
 		return null;
@@ -812,7 +817,7 @@ public class PassportService extends PassportApduService {
 		}
 	}
 
-	private class PassportFileInfo extends FileInfo
+	private static class PassportFileInfo extends FileInfo
 	{
 		private short fid;
 		private int length;

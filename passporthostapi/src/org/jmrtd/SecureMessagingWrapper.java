@@ -149,9 +149,8 @@ public class SecureMessagingWrapper implements APDUWrapper {
 			byte[] rapdu = responseAPDU.getBytes();
 			if (rapdu.length == 2) {
 				// no sense in unwrapping - card indicates SM error
-				throw new IllegalStateException(
-						"Card indicates SM error, SW = " + rapdu.toString());
-				//TODO wouldn't it be cleaner to throw a CardServiceException?
+				throw new IllegalStateException("Card indicates SM error, SW = " + Hex.bytesToHexString(rapdu));
+				/* FIXME: wouldn't it be cleaner to throw a CardServiceException? */
 			}
 			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
 		} catch (GeneralSecurityException gse) {

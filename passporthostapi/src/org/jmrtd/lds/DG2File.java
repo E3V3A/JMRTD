@@ -85,9 +85,9 @@ public class DG2File extends CBEFFDataGroup
 		}
 		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		/* Facial Record Header (14) */
-		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)
-		int version = dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)
-		long length = dataIn.readInt() & 0x000000FFFFFFFFL;
+		/* int fac0 = */ dataIn.readInt(); // header (e.g. "FAC", 0x00)
+		/* int version = */ dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)
+		/* long length = */ dataIn.readInt() /* & 0x000000FFFFFFFFL */;
 		int faceCount = dataIn.readUnsignedShort();
 		for (int i = 0; i < faceCount; i++) {
 			FaceInfo faceInfo = new FaceInfo(dataIn);
@@ -209,7 +209,7 @@ public class DG2File extends CBEFFDataGroup
 	public boolean equals(Object obj) {
 		if (obj == null) { return false; }
 		if (obj == this) { return true; }
-		if (obj.getClass() != DG2File.class) { return false; }
+		if (!obj.getClass().equals(this.getClass())) { return false; }
 		DG2File other = (DG2File)obj;
 		if (faces == null) { return other.faces == null; }
 		return Arrays.equals(getEncoded(), other.getEncoded());

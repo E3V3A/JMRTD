@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Super class for data group files.
@@ -65,7 +66,7 @@ public abstract class DataGroup extends PassportFile
 	 */
 	public String toString() {
 		if (isSourceConsistent) {
-			return sourceObject.toString();
+			return Hex.bytesToHexString(sourceObject);
 		}
 		return super.toString();
 	}

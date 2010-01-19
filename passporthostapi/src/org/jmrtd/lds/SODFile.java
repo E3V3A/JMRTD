@@ -81,10 +81,10 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
  */
 public class SODFile extends PassportFile
 {
-//	private static final DERObjectIdentifier SHA1_HASH_ALG_OID = new DERObjectIdentifier("1.3.14.3.2.26");
-//	private static final DERObjectIdentifier SHA1_WITH_RSA_ENC_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
-//	private static final DERObjectIdentifier SHA256_HASH_ALG_OID = new DERObjectIdentifier("2.16.840.1.101.3.4.2.1");
-//	private static final DERObjectIdentifier E_CONTENT_TYPE_OID = new DERObjectIdentifier("1.2.528.1.1006.1.20.1");
+	//	private static final DERObjectIdentifier SHA1_HASH_ALG_OID = new DERObjectIdentifier("1.3.14.3.2.26");
+	//	private static final DERObjectIdentifier SHA1_WITH_RSA_ENC_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
+	//	private static final DERObjectIdentifier SHA256_HASH_ALG_OID = new DERObjectIdentifier("2.16.840.1.101.3.4.2.1");
+	//	private static final DERObjectIdentifier E_CONTENT_TYPE_OID = new DERObjectIdentifier("1.2.528.1.1006.1.20.1");
 
 	private static final DERObjectIdentifier ICAO_SOD_OID = new DERObjectIdentifier("2.23.136.1.1.1");
 	private static final DERObjectIdentifier SIGNED_DATA_OID = new DERObjectIdentifier("1.2.840.113549.1.7.2");
@@ -132,29 +132,29 @@ public class SODFile extends PassportFile
 				docSigningCertificate);
 	}
 
-    /**
-     * Constructs a Security Object data structure.
-     *
-     * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
-     * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
-     * @param dataGroupHashes maps datagroupnumbers (1 to 16) to hashes of the data groups
-     * @param privateKey private key to sign the data
-     * @param docSigningCertificate the document signing certificate
-     * 
-     * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
-     * @throws CertificateException if the document signing certificate cannot be used
-     */
-    public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes,
-            PrivateKey privateKey,
-            X509Certificate docSigningCertificate)
-    throws NoSuchAlgorithmException, CertificateException {
-        signedData = createSignedData(digestAlgorithm,
-                digestEncryptionAlgorithm,
-                dataGroupHashes,
-                privateKey,
-                docSigningCertificate);
-    }
+	/**
+	 * Constructs a Security Object data structure.
+	 *
+	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
+	 * @param dataGroupHashes maps datagroupnumbers (1 to 16) to hashes of the data groups
+	 * @param privateKey private key to sign the data
+	 * @param docSigningCertificate the document signing certificate
+	 * 
+	 * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
+	 * @throws CertificateException if the document signing certificate cannot be used
+	 */
+	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			PrivateKey privateKey,
+			X509Certificate docSigningCertificate)
+	throws NoSuchAlgorithmException, CertificateException {
+		signedData = createSignedData(digestAlgorithm,
+				digestEncryptionAlgorithm,
+				dataGroupHashes,
+				privateKey,
+				docSigningCertificate);
+	}
 
 	/**
 	 * Constructs a Security Object data structure.
@@ -163,18 +163,18 @@ public class SODFile extends PassportFile
 	 * @throws IOException if something goes wrong
 	 */
 	public SODFile(InputStream in) throws IOException {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-			tlvIn.readTag();
-			tlvIn.readLength();
-			ASN1InputStream asn1in =
-				new ASN1InputStream(in);
-			DERSequence seq = (DERSequence)asn1in.readObject();
-			DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
-			DERTaggedObject o = (DERTaggedObject)seq.getObjectAt(1);
-			/* TODO: where is this tagNo specified? */
-			int tagNo = o.getTagNo();
-			DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-			this.signedData = new SignedData(s2);
+		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+		tlvIn.readTag();
+		tlvIn.readLength();
+		ASN1InputStream asn1in =
+			new ASN1InputStream(in);
+		DERSequence seq = (DERSequence)asn1in.readObject();
+		DERObjectIdentifier objectIdentifier = (DERObjectIdentifier)seq.getObjectAt(0);
+		DERTaggedObject o = (DERTaggedObject)seq.getObjectAt(1);
+		/* TODO: where is this tagNo specified? */
+		/* int tagNo = */ o.getTagNo();
+		DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
+		this.signedData = new SignedData(s2);
 	}
 
 	/**
@@ -349,7 +349,7 @@ public class SODFile extends PassportFile
         String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
 		 */
 	}
-	
+
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -363,15 +363,15 @@ public class SODFile extends PassportFile
 			return "SODFile";
 		}
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == null) { return false; }
 		if (obj == this) { return true; }
-		if (obj.getClass() != SODFile.class) { return false; }
+		if (!obj.getClass().equals(this.getClass())) { return false; }
 		SODFile other = (SODFile)obj;
 		return Arrays.equals(getEncoded(), other.getEncoded());
 	}
-	
+
 	public int hashCode() {
 		return 11 * Arrays.hashCode(getEncoded()) + 111;
 	}
@@ -509,37 +509,37 @@ public class SODFile extends PassportFile
 		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
 	}
 
-    private static SignedData createSignedData(String digestAlgorithm,
-            String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
-            X509Certificate docSigningCertificate)
-            throws NoSuchAlgorithmException, CertificateException {
-        ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
-        ContentInfo contentInfo = createContentInfo(digestAlgorithm,
-                dataGroupHashes);
-        byte[] content = ((DEROctetString) contentInfo.getContent())
-                .getOctets();
+	private static SignedData createSignedData(String digestAlgorithm,
+			String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
+			X509Certificate docSigningCertificate)
+	throws NoSuchAlgorithmException, CertificateException {
+		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
+		ContentInfo contentInfo = createContentInfo(digestAlgorithm,
+				dataGroupHashes);
+		byte[] content = ((DEROctetString) contentInfo.getContent())
+		.getOctets();
 
-        byte[] encryptedDigest = null;
-        try {
-            byte[] dataToBeSigned = createAuthenticatedAttributes(
-                    digestAlgorithm, content).getDEREncoded();
-            Signature s = Signature.getInstance(digestEncryptionAlgorithm);
-            s.initSign(privateKey);
-            s.update(dataToBeSigned);
-            encryptedDigest = s.sign();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));
-        ASN1Set crls = null;
-        ASN1Set signerInfos = createSingletonSet(createSignerInfo(
-                digestAlgorithm, digestEncryptionAlgorithm, content,
-                encryptedDigest, docSigningCertificate).toASN1Object());
-        return new SignedData(digestAlgorithmsSet, contentInfo, certificates,
-                crls, signerInfos);
-    }
+		byte[] encryptedDigest = null;
+		try {
+			byte[] dataToBeSigned = createAuthenticatedAttributes(
+					digestAlgorithm, content).getDEREncoded();
+			Signature s = Signature.getInstance(digestEncryptionAlgorithm);
+			s.initSign(privateKey);
+			s.update(dataToBeSigned);
+			encryptedDigest = s.sign();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));
+		ASN1Set crls = null;
+		ASN1Set signerInfos = createSingletonSet(createSignerInfo(
+				digestAlgorithm, digestEncryptionAlgorithm, content,
+				encryptedDigest, docSigningCertificate).toASN1Object());
+		return new SignedData(digestAlgorithmsSet, contentInfo, certificates,
+				crls, signerInfos);
+	}
 
 	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
 		DERObjectIdentifier algorithmIdentifier = lookupOIDByMnemonic(digestAlgorithm);
@@ -550,8 +550,13 @@ public class SODFile extends PassportFile
 	private static ASN1Sequence createCertificate(X509Certificate cert) throws CertificateException {
 		try {
 			byte[] certSpec = cert.getEncoded();
-			ASN1Sequence certSeq = (ASN1Sequence)(new ASN1InputStream(certSpec)).readObject();
-			return certSeq;
+			ASN1InputStream asn1In = new ASN1InputStream(certSpec);
+			try {
+				ASN1Sequence certSeq = (ASN1Sequence)(asn1In).readObject();
+				return certSeq;
+			} finally {
+				asn1In.close();
+			}
 		} catch (IOException ioe) {
 			throw new CertificateException("Could not construct certificate byte stream");
 		}
@@ -615,7 +620,7 @@ public class SODFile extends PassportFile
 		ASN1Encodable[] result = { e };
 		return new DERSet(result);
 	}
-	
+
 	/**
 	 * Gets the common mnemonic string (such as "SHA1", "SHA256withRSA") given an OID.
 	 *

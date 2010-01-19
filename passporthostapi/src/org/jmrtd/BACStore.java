@@ -108,6 +108,7 @@ public class BACStore
 				String[] fields = getFields(line);
 				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
 			}
+			d.close();
 		} catch (FileNotFoundException fnfe) {
 			/* NOTE: no problem... */
 		} catch (Exception e) {

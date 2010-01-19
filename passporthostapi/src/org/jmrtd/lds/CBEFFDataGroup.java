@@ -170,9 +170,11 @@ abstract class CBEFFDataGroup extends DataGroup
 		case SMT_DO_CC /* 0x8E */:
 			/* NOTE: payload contains a MAC */
 			tlvIn.skip(doLength);
+			break; /* FIXME: FindBugs told me to insert this break, pls check -- MO */
 		case SMT_DO_DS /* 0x9E */:
 			/* NOTE: payload contains a signature */
-			tlvIn.skip(doLength);
+			tlvIn.skip(doLength); /* FIXME: FindBugs told me to insert this break, pls check -- MO */
+			break;
 		}
 		return null;
 	}
