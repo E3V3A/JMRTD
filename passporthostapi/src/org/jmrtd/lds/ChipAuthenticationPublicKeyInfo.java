@@ -36,9 +36,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
+ * FIXME: dependency on BC?
  */
-public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
-
+public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
+{
     public ChipAuthenticationPublicKeyInfo(SecurityInfo si) {
         super(si);
     }
@@ -134,5 +135,4 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
         return id.equals(EACObjectIdentifiers.id_PK_DH)
                 || id.equals(EACObjectIdentifiers.id_PK_ECDH);
     }
-
 }

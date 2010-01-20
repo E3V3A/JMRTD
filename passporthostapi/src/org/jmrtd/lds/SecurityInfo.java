@@ -36,13 +36,12 @@ import org.bouncycastle.asn1.DERSequence;
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
+ * FIXME: dependency on BC?
  */
-public class SecurityInfo {
-
+public class SecurityInfo
+{
     protected DERObjectIdentifier identifier;
-
     protected DERObject requiredData;
-
     protected DERObject optionalData;
 
     /**
@@ -151,5 +150,4 @@ public class SecurityInfo {
      */
     protected void checkFields() {
     }
-
 }

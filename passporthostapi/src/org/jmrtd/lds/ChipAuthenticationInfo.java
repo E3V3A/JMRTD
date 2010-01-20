@@ -34,6 +34,7 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
+ * FIXME: dependency on BC?
  */
 public class ChipAuthenticationInfo extends SecurityInfo {
 
@@ -125,5 +126,4 @@ public class ChipAuthenticationInfo extends SecurityInfo {
         return id.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
                 || id.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
     }
-
 }
