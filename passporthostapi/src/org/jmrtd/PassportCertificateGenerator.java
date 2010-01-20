@@ -116,7 +116,6 @@ public class PassportCertificateGenerator {
 
 			c = readCVCertificateFromFile(new File(filenameTerminal));
 			System.out.println(c.getCertificateBody().getAsText());
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

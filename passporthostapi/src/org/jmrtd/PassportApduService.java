@@ -57,7 +57,10 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class PassportApduService extends CardService {
+public class PassportApduService extends CardService
+{
+	private static final long serialVersionUID = 2451509825132976178L;
+
 	/** The applet we select when we start a session. */
 	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02,
 			0x47, 0x10, 0x01 };

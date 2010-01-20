@@ -1,10 +1,12 @@
 package org.jmrtd.test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Vector;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -338,7 +340,7 @@ public class PassportBACTester extends PassportTesterBase {
 	public void print(short fid) throws CardServiceException {
 		System.out.printf("Checking out file 0x0%X :", fid);
 		CardFileInputStream in = service.readFile(fid);
-		byte[] contents = in.toByteArray();
+		byte[] contents = toByteArray(in);
 		System.out.println(Hex.bytesToHexString(contents));
 	}
 
@@ -785,6 +787,34 @@ public class PassportBACTester extends PassportTesterBase {
 			out.writeBytes(b.toString().substring(3));
 		}
 		out.close();
+	}
+
+	/*
+	 * FIXME: Erik, I moved the toByteArray here from CardFileInputStream, a generic
+	 * inputstream-to-byte-array reader doesn't belong there IMO. -- MO
+	 */
+	
+	/**
+	 * 
+	 * @return the contents of the file
+	 */
+	private byte[] toByteArray(InputStream in) {
+		try {
+			Vector<Integer> vec = new Vector<Integer>();
+			int c = 0;
+			while ((c = in.read()) != -1) {
+				vec.add(new Integer(c));
+			}
+			byte[] result = new byte[vec.size()];
+			int index = 0;
+			for (Integer i : vec) {
+				result[index++] = i.byteValue();
+			}
+			return result;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 }

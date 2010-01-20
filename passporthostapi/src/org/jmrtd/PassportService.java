@@ -25,6 +25,7 @@ package org.jmrtd;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
@@ -87,7 +88,10 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision:352 $
  */
-public class PassportService extends PassportApduService {
+public class PassportService extends PassportApduService implements Serializable
+{
+	private static final long serialVersionUID = 1751933705552226972L;
+
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
 
@@ -227,13 +231,9 @@ public class PassportService extends PassportApduService {
 	protected SecureMessagingWrapper wrapper;
 
 	private Signature aaSignature;
-
 	private MessageDigest aaDigest;
-
 	private Cipher aaCipher;
-
 	protected Random random;
-
 	private PassportFileSystem fs;
 
 	/**
@@ -772,8 +772,10 @@ public class PassportService extends PassportApduService {
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
 
-	private class PassportFileSystem implements FileSystemStructured
+	private class PassportFileSystem implements FileSystemStructured, Serializable
 	{
+		private static final long serialVersionUID = -8273017272522947990L;
+
 		private PassportFileInfo selectedFile;
 
 		public synchronized byte[] readBinary(int offset, int length)
@@ -819,8 +821,10 @@ public class PassportService extends PassportApduService {
 		}
 	}
 
-	private static class PassportFileInfo extends FileInfo
+	private static class PassportFileInfo extends FileInfo implements Serializable
 	{
+		private static final long serialVersionUID = 6727369753765119839L;
+
 		private short fid;
 		private int length;
 

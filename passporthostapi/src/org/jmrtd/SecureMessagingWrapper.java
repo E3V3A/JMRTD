@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 
@@ -50,7 +51,10 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class SecureMessagingWrapper implements APDUWrapper {
+public class SecureMessagingWrapper implements APDUWrapper, Serializable
+{
+	private static final long serialVersionUID = -2859033943345961793L;
+
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
 			new byte[8]);
 

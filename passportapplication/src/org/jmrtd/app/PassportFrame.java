@@ -161,7 +161,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
-	
+
 	private CSCAStore cscaStore;
 	private CVCAStore cvcaStore;
 
@@ -204,8 +204,8 @@ public class PassportFrame extends JFrame implements AuthListener
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
-		SpringLayout southLayout = new SpringLayout();
-		southPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
+		//		SpringLayout southLayout = new SpringLayout();
+		//		southPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
 		//		southLayout.putConstraint(SpringLayout.NORTH, verificationIndicator, 2, SpringLayout.NORTH, southPanel);
 		//		southLayout.putConstraint(SpringLayout.WEST, verificationIndicator, 2, SpringLayout.WEST, southPanel);
 		//		southLayout.putConstraint(SpringLayout.NORTH, progressBar, 2, SpringLayout.NORTH, southPanel);
@@ -1290,37 +1290,37 @@ public class PassportFrame extends JFrame implements AuthListener
 					try {
 						cm.stopPolling(terminal);
 						// FIXME: have to wait for the poller?
-								PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
-								persoService.open();
-								if (chooser.isBACSelected()) {
-									persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
-								}
-								if (aaPublicKey != null) {
-									PrivateKey k = passport.getAAPrivateKey();
-									if(k != null) {
-										persoService.putPrivateKey(k);
-									}
-								}
-								if(passport.getCVCertificate() != null) {
-									persoService.putCVCertificate(passport.getCVCertificate());
-								}
-								if(passport.getEACPrivateKey() != null) {
-									persoService.putPrivateEACKey(passport.getEACPrivateKey());
-								}
-								for (short fid: passport.getFileList()) {
-									byte[] fileBytes = passport.getFileBytes(fid);
-									persoService.createFile(fid, (short)fileBytes.length);
-									persoService.selectFile(fid);
-									ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
-									persoService.writeFile(fid, in);
-								}
-								persoService.lockApplet();
-								persoService.close();
-								// TODO: to see when it is done
-								// Proper progress bar should be implemented
-								System.out.println("Passport uploaded.");
-								//					} catch (IOException ioe) {
-								//						/* NOTE: Do nothing. */
+						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
+						persoService.open();
+						if (chooser.isBACSelected()) {
+							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+						}
+						if (aaPublicKey != null) {
+							PrivateKey k = passport.getAAPrivateKey();
+							if(k != null) {
+								persoService.putPrivateKey(k);
+							}
+						}
+						if(passport.getCVCertificate() != null) {
+							persoService.putCVCertificate(passport.getCVCertificate());
+						}
+						if(passport.getEACPrivateKey() != null) {
+							persoService.putPrivateEACKey(passport.getEACPrivateKey());
+						}
+						for (short fid: passport.getFileList()) {
+							byte[] fileBytes = passport.getFileBytes(fid);
+							persoService.createFile(fid, (short)fileBytes.length);
+							persoService.selectFile(fid);
+							ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
+							persoService.writeFile(fid, in);
+						}
+						persoService.lockApplet();
+						persoService.close();
+						// TODO: to see when it is done
+						// Proper progress bar should be implemented
+						System.out.println("Passport uploaded.");
+						//					} catch (IOException ioe) {
+						//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
 						cse.printStackTrace();
 						//					} catch (GeneralSecurityException gse) {
