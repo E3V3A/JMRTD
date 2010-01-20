@@ -51,8 +51,6 @@ public class CVCAFile extends PassportFile {
         } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalArgumentException("Malformed input data");
-        } finally {
-        	try { dataIn.close(); } catch (IOException ioe) { ioe.printStackTrace(); }
         }
     }
 

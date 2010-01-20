@@ -73,8 +73,8 @@ public class CVCAStore
 
 	private File dir;
 	
-	private Map<String, List<CVCertificate>> certificateListsMap;
-	private Map<String, PrivateKey> keysMap;
+	private final Map<String, List<CVCertificate>> certificateListsMap;
+	private final Map<String, PrivateKey> keysMap;
 
 	public CVCAStore() {
 		this(getDefaultCVCADir());
@@ -104,10 +104,13 @@ public class CVCAStore
 	}
 
 	public void setLocation(File dir) {
-		if (!dir.isDirectory()) {
-			throw new IllegalArgumentException("File " + dir.getAbsolutePath() + " is not a directory.");
-		}
 		this.dir = dir;
+		if (!dir.isDirectory()) {
+			String message = "File " + dir.getAbsolutePath() + " is not a directory.";
+			System.err.println("WARNING: " + message);
+			// throw new IllegalArgumentException(message);
+			return;
+		}
 		File[] dirs = dir.listFiles(DIRECTORY_FILE_FILTER);
 		try {
 			for (File f : dirs) { scanOneDirectory(f); }
@@ -117,12 +120,12 @@ public class CVCAStore
 		}
 	}
 	
-	private void scanOneDirectory(File f) throws IOException {
-		if (!f.isDirectory()) {
-			throw new IllegalArgumentException("File " + f.getAbsolutePath() + " is not a directory.");
+	private void scanOneDirectory(File dir) throws IOException {
+		if (!dir.isDirectory()) {
+			throw new IllegalArgumentException("File " + dir.getAbsolutePath() + " is not a directory.");
 		}
-		File[] certFiles = f.listFiles(TERMINAL_CERT_FILE_FILTER);
-		File[] keyFiles = f.listFiles(TERMINAL_KEY_FILE_FILTER);
+		File[] certFiles = dir.listFiles(TERMINAL_CERT_FILE_FILTER);
+		File[] keyFiles = dir.listFiles(TERMINAL_KEY_FILE_FILTER);
 		certFiles = sortFiles(certFiles);
 		List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
 		String keyAlgName = "RSA";
@@ -138,7 +141,7 @@ public class CVCAStore
 			}
 		}
 		if (keyFiles.length != 1) { throw new IOException(); }
-		System.out.println("Found key file: "+keyFiles[0]);
+		System.out.println("Found key file: " + keyFiles[0]);
 		PrivateKey k = readKeyFromFile(keyFiles[0], keyAlgName);
 		if (k == null) { throw new IOException(); }
 		try {

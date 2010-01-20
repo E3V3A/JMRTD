@@ -126,8 +126,10 @@ public class JMRTDApp  implements PassportListener
 			PassportManager passportManager = PassportManager.getInstance();
 			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
+			this.bacStore = new BACStore(); /* FIXME: get this from preferences? */
+			this.cscaStore = new CSCAStore(); /* FIXME: get this from preferences? */
+			this.cvcaStore = new CVCAStore(); /* FIXME: get this from preferences? */
 			preferencesPanel = new PreferencesPanel(cardManager, PREFERENCES_FILE);
-			this.bacStore = new BACStore();
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);

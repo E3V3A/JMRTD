@@ -115,10 +115,9 @@ public class Passport
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService service, CVCAStore d, String documentNumber) throws IOException, CardServiceException {
-		BufferedInputStream bufferedIn = null;
-
-		bufferedIn = preReadFile(service, PassportService.EF_COM);
+	public Passport(PassportService service, CVCAStore cvcaStore, String documentNumber) throws IOException, CardServiceException {
+		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
+		BufferedInputStream bufferedIn = preReadFile(service, PassportService.EF_COM);
 		comFile = new COMFile(bufferedIn);
 		bufferedIn.reset();
 
@@ -129,25 +128,23 @@ public class Passport
 		CVCAFile cvcaFile = null;
 		for (int tag: comFile.getTagList()) {
 			short fid = PassportFile.lookupFIDByTag(tag);
-			if(fid == PassportService.EF_DG14) {
+			if (fid == PassportService.EF_DG14) {
 				bufferedIn = preReadFile(service, PassportService.EF_DG14);
 				dg14file = new DG14File(bufferedIn);
 				bufferedIn.reset();
 				// Now try to deal with EF.CVCA
 				List<Integer> cvcafids = dg14file.getCVCAFileIds();
 				if(cvcafids != null && cvcafids.size() != 0) {
-					if(cvcafids.size() > 1) {
-						System.err.println("Warning: more than one CVCA file id present in DG14.");
-					}
+					if(cvcafids.size() > 1) { System.err.println("Warning: more than one CVCA file id present in DG14."); }
 					CVCA_FID = cvcafids.get(0).shortValue();
 				}
 				bufferedIn = preReadFile(service, CVCA_FID);
 				cvcaFile = new CVCAFile(bufferedIn);
 				bufferedIn.reset();
-			}else{
-				try{
+			} else {
+				try {
 					setupFile(service, fid);
-				}catch(CardServiceException ex) {
+				} catch(CardServiceException ex) {
 					// Most likely EAC protected file: 
 					eacFids.add(fid);                  
 				}
@@ -163,15 +160,15 @@ public class Passport
 			List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
 			List<String> caRefs = new ArrayList<String>();
 			for(String caRef : new String[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
-				if(caRef != null) {
+				if (caRef != null && cvcaStore != null) {
 					try {
-						List<CVCertificate> t = d.getCertificates(caRef);
+						List<CVCertificate> t = cvcaStore.getCertificates(caRef);
 						if(t != null) {
 							termCerts.add(t);
-							termKeys.add(d.getPrivateKey(caRef));
+							termKeys.add(cvcaStore.getPrivateKey(caRef));
 							caRefs.add(caRef);
 						}
-					} catch(NoSuchElementException nsee) {}
+					} catch (NoSuchElementException nsee) { /* FIXME: Why silent? -- MO */ }
 				}
 			}
 			if(termCerts.size() == 0) {
@@ -541,7 +538,12 @@ public class Passport
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
 		final Passport passport = this;
 		final InputStream unBufferedIn = rawStreams.get(fid);
-		if (unBufferedIn == null) { throw new IOException("No raw inputstream to copy " + Integer.toHexString(fid)); }
+		if (unBufferedIn == null) {
+			String message = "No raw inputstream to copy " + Integer.toHexString(fid);
+			System.err.println("WARNING: " + message + "\nNot starting thread.");
+//			throw new IOException(message);
+			return;
+		}
 		final int fileLength = fileLengths.get(fid);
 		unBufferedIn.reset();
 		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
