@@ -37,6 +37,17 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  * A specialised SecurityInfo structure that stores terminal authentication
  * info, see EAC 1.11 specification.
  * 
+ * This data structure provides detailed information on an implementation of Terminal Authentication.
+ * <ul>
+ * <li>The object identifier <code>protocol</code> SHALL identify the Terminal
+ *     Authentication Protocol as the specific protocol may change over time.</li>
+ * <li>The integer <code>version</code> SHALL identify the version of the protocol.
+ *     Currently, versions 1 and 2 are supported.</li>
+ * <li>The sequence <code>efCVCA</code> MAY be used to indicate a (short) file
+ *     identifier of the file EF.CVCA. It MUST be used, if the default (short) file
+ *     identifier is not used.</li>
+ * </ul>
+ * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
  */
@@ -63,7 +74,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
      *            the file ID information of the efCVCA file
      */
     public TerminalAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version, DERSequence efCVCA) {
+            int version, DERSequence efCVCA) {
         super(identifier, new DERInteger(version), efCVCA);
     }
 
@@ -76,7 +87,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
      *            has to be 1
      */
     public TerminalAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version) {
+            int version) {
         this(identifier, version, null);
     }
 
@@ -184,4 +195,15 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
         return ((DEROctetString) s.getObjectAt(1)).getOctets()[0];
     }
 
+    /*
+     * FIXME: working on this... -- MO
+     */
+    public String toString() {
+    	StringBuffer result = new StringBuffer();
+    	result.append("TerminalAuthenticationInfo");
+    	result.append("[");
+    	result.append("filedID = " + getFileID());
+    	result.append("]");
+    	return result.toString();
+    }
 }

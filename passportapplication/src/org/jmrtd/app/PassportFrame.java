@@ -201,12 +201,6 @@ public class PassportFrame extends JFrame implements AuthListener
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(centerPanel, BorderLayout.CENTER);
-		//		SpringLayout southLayout = new SpringLayout();
-		//		southPanel.setLayout(new FlowLayout(FlowLayout.LEADING));
-		//		southLayout.putConstraint(SpringLayout.NORTH, verificationIndicator, 2, SpringLayout.NORTH, southPanel);
-		//		southLayout.putConstraint(SpringLayout.WEST, verificationIndicator, 2, SpringLayout.WEST, southPanel);
-		//		southLayout.putConstraint(SpringLayout.NORTH, progressBar, 2, SpringLayout.NORTH, southPanel);
-		//		southLayout.putConstraint(SpringLayout.EAST, progressBar, 2, SpringLayout.EAST, southPanel);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
 		panel.add(southPanel, BorderLayout.SOUTH);
@@ -238,7 +232,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			}
 			service.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
-			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
+			logger.info(Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 			passport = new Passport(service, cvcaStore, bacEntry != null ? bacEntry.getDocumentNumber() : null);
 			displayProgressBar();
 			switch (readingMode) {
@@ -339,6 +333,7 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG14:
 					dg14 = new DG14File(in);
+					System.out.println("DEBUG: dg14 = \n" + dg14);
 					updateViewMenu();
 					break;
 				case PassportService.EF_DG15:
@@ -352,8 +347,6 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				default:
 					String message = "File " + Integer.toHexString(fid) + " not supported!";
-					//					BERTLVObject o = BERTLVObject.getInstance(in);
-					//					System.out.println(o);
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (IOException ioe) {
@@ -367,7 +360,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	}
 
 	private void updateViewMenu() {
-		if(eacEvent != null && dg14 != null) {
+		if (eacEvent != null && dg14 != null) {
 			createEACMenus(eacEvent.getTerminalKey(), eacEvent.getCVCertificates(), dg14.getPublicKeys(), eacEvent.getCardPublicKeyId());
 		}
 	}
@@ -403,18 +396,23 @@ public class PassportFrame extends JFrame implements AuthListener
 		});
 	}
 
+	/**
+	 * Sets up the progress bar, starts up the thread, returns immediately.
+	 */
 	private void displayProgressBar() {
 		(new Thread(new Runnable() {
 			public void run() {
 				try {
-					int totalLength=passport.getTotalLength();
+					int totalLength = passport.getTotalLength();
 					progressBar.setMaximum(totalLength);
 					while (passport.getBytesRead() <= totalLength) {
 						Thread.sleep(200);
 						progressBar.setValue(passport.getBytesRead());
 					}
 				} catch (InterruptedException ie) {
+					/* NOTE: interrupted, end thread. */
 				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		})).start();
@@ -446,12 +444,12 @@ public class PassportFrame extends JFrame implements AuthListener
 	/** Checks whether EAC was used. */
 	private void verifyEAC(PassportService service) {
 		if (passport.hasEAC()) {
-			if(passport.wasEACPerformed()) {
+			if (passport.wasEACPerformed()) {
 				verificationIndicator.setEACSucceeded();
 			}else{
 				verificationIndicator.setEACFailed("EAC not performed");
 			}
-		}else{
+		} else {
 			verificationIndicator.setEACNotChecked();
 		}
 	}

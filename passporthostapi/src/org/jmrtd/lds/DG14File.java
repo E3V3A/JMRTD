@@ -131,8 +131,7 @@ public class DG14File extends DataGroup {
 					throw new IllegalArgumentException("Wrong key Id: " + i);
 				}
 				PublicKey k = publicKeys.get(i);
-				securityInfos
-				.add(new ChipAuthenticationPublicKeyInfo(
+				securityInfos.add(new ChipAuthenticationPublicKeyInfo(
 						getProtocolIdentifier(k),
 						getSubjectPublicKeyInfo(k), i));
 			}
@@ -247,21 +246,33 @@ public class DG14File extends DataGroup {
 	 * @return the mapping of key identifiers to public keys
 	 */
 	public Map<Integer, PublicKey> getPublicKeys() {
-		List<ChipAuthenticationPublicKeyInfo> l = new ArrayList<ChipAuthenticationPublicKeyInfo>();
-		Map<Integer, PublicKey> r = new TreeMap<Integer, PublicKey>();
-		for (SecurityInfo si : securityInfos) {
-			if (si instanceof ChipAuthenticationPublicKeyInfo) {
-				l.add((ChipAuthenticationPublicKeyInfo) si);
+		Map<Integer, PublicKey> publicKeys = new TreeMap<Integer, PublicKey>();
+		boolean foundOne = false;
+		for (SecurityInfo securityInfo: securityInfos) {
+			if (securityInfo instanceof ChipAuthenticationPublicKeyInfo) {
+				ChipAuthenticationPublicKeyInfo info = (ChipAuthenticationPublicKeyInfo)securityInfo;
+				publicKeys.put(info.getKeyId(), getPublicKey(info.getSubjectPublicKeyInfo()));
+				foundOne = true;
 			}
 		}
-		if (l.size() == 0) {
-			throw new IllegalStateException("No keys?");
-		}
-		for (ChipAuthenticationPublicKeyInfo info : l) {
-			r.put(info.getKeyId(), getPublicKey(info
-					.getSubjectPublicKeyInfo()));
-		}
-		return r;
+		if (!foundOne) { throw new IllegalStateException("No keys?"); }
+		return publicKeys;
+	}
+	
+	public String toString() {
+		return "DG14File " + securityInfos.toString();
+	}
+
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (!(obj.getClass().equals(this.getClass()))) { return false; }
+		DG14File other = (DG14File)obj;
+		return (securityInfos == null && other.securityInfos == null)
+			|| securityInfos.equals(other.securityInfos);
+	}
+	
+	public int hashCode() {
+		return 5 * securityInfos.hashCode() + 41;
 	}
 
 	private static PublicKey getPublicKey(SubjectPublicKeyInfo info) {

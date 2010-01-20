@@ -32,6 +32,18 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  * A specialised SecurityInfo structure that stores chip authentication info,
  * see EAC 1.11 specification.
  * 
+ * This data structure provides detailed information on an implementation of
+ * Chip Authentication.
+ * <ul>
+ * <li>The object identifier <code>protocol</code> SHALL identify the
+ *     algorithms to be used (i.e. key agreement, symmetric cipher and MAC).</li>
+ * <li>The integer <code>version</code> SHALL identify the version of the protocol.
+ *     Currently, versions 1 and 2 are supported.</li>
+ * <li>The integer <code>keyId</code> MAY be used to indicate the local key identifier.
+ *     It MUST be used if the MRTD chip provides multiple public keys for Chip
+ *     Authentication.</li>
+ * </ul>
+ * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
  * FIXME: dependency on BC?

@@ -539,9 +539,8 @@ public class Passport
 		final Passport passport = this;
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
-			String message = "No raw inputstream to copy " + Integer.toHexString(fid);
-			System.err.println("WARNING: " + message + "\nNot starting thread.");
-//			throw new IOException(message);
+			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
+			System.err.println("WARNING: " + message + " (not starting thread)");
 			return;
 		}
 		final int fileLength = fileLengths.get(fid);
