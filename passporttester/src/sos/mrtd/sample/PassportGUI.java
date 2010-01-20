@@ -105,7 +105,6 @@ public class PassportGUI extends JPanel implements PassportListener
 			PassportManager pm = PassportManager.getInstance();
 			pm.addPassportListener(this);
 			CardManager cm = CardManager.getInstance();
-			cm.start();
 			
 			/* DEBUG: For debugging! */
 //			CardManager cm = CardManager.getInstance();
