@@ -54,160 +54,152 @@ import org.ejbca.cvc.CVCertificate;
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  *
  */
-public class CVCertificateFrame extends JFrame {
-    private static final long serialVersionUID = 2118341538613049952L;
+public class CVCertificateFrame extends JFrame
+{
+	private static final long serialVersionUID = 2118341538613049952L;
 
-    private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", CVCertificateFrame.class);
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", CVCertificateFrame.class);
 
-    private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-    private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
-    private CVCertificatePanel certificatePanel;
+	private CVCertificatePanel certificatePanel;
 
-    public CVCertificateFrame(CVCertificate certificate) {
-        this("CV Certificate", certificate);
-    }
+	public CVCertificateFrame(CVCertificate certificate) {
+		this("CV Certificate", certificate);
+	}
 
-    public CVCertificateFrame(String title, CVCertificate certificate) {
-        super(title);
-        setIconImage(JMRTD_ICON);
+	public CVCertificateFrame(String title, CVCertificate certificate) {
+		super(title);
+		setIconImage(JMRTD_ICON);
 
-        /* Menu bar */
-        JMenuBar menuBar = new JMenuBar();
-        menuBar.add(createFileMenu());
-        setJMenuBar(menuBar);
+		/* Menu bar */
+		JMenuBar menuBar = new JMenuBar();
+		menuBar.add(createFileMenu());
+		setJMenuBar(menuBar);
 
-        /* Frame content */
-        certificatePanel = new CVCertificatePanel(certificate);
-        Container cp = getContentPane();
-        cp.add(certificatePanel);
-    }
+		/* Frame content */
+		certificatePanel = new CVCertificatePanel(certificate);
+		Container cp = getContentPane();
+		cp.add(certificatePanel);
+	}
 
-    private JMenu createFileMenu() {
-        JMenu fileMenu = new JMenu("File");
+	private JMenu createFileMenu() {
+		JMenu fileMenu = new JMenu("File");
 
-        /* Save As...*/
-        JMenuItem saveAsItem = new JMenuItem("Save As...");
-        fileMenu.add(saveAsItem);
-        saveAsItem.setAction(new SaveAsAction());
+		/* Save As...*/
+		JMenuItem saveAsItem = new JMenuItem("Save As...");
+		fileMenu.add(saveAsItem);
+		saveAsItem.setAction(new SaveAsAction());
 
-        /* Close */
-        JMenuItem closeItem = new JMenuItem("Close");
-        fileMenu.add(closeItem);
-        closeItem.setAction(new CloseAction());
+		/* Close */
+		JMenuItem closeItem = new JMenuItem("Close");
+		fileMenu.add(closeItem);
+		closeItem.setAction(new CloseAction());
 
-        return fileMenu;
-    }
+		return fileMenu;
+	}
 
-    /**
-     * Saves the certificate to file.
-     * 
-     */
-    private class SaveAsAction extends AbstractAction
-    {
-        private static final long serialVersionUID = -7143003045680922518L;
+	/**
+	 * Saves the certificate to file.
+	 * 
+	 */
+	private class SaveAsAction extends AbstractAction  /* FIXME: Why class, why not method which returns anonymous class? -- MO */
+	{
+		private static final long serialVersionUID = -7143003045680922518L;
 
-        public SaveAsAction() {
-            putValue(SMALL_ICON, SAVE_AS_ICON);
-            putValue(LARGE_ICON_KEY, SAVE_AS_ICON);
-            putValue(SHORT_DESCRIPTION, "Save certificate to file");
-            putValue(NAME, "Save As...");
-        }
+		public SaveAsAction() {
+			putValue(SMALL_ICON, SAVE_AS_ICON);
+			putValue(LARGE_ICON_KEY, SAVE_AS_ICON);
+			putValue(SHORT_DESCRIPTION, "Save certificate to file");
+			putValue(NAME, "Save As...");
+		}
 
-        public void actionPerformed(ActionEvent e) {
-            JFileChooser fileChooser = new JFileChooser();
-            fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
-            int choice = fileChooser.showSaveDialog(getContentPane());
-            switch (choice) {
-            case JFileChooser.APPROVE_OPTION:
-                try {
-                    File file = fileChooser.getSelectedFile();
-                    FileOutputStream out = new FileOutputStream(file);
-                    out.write(certificatePanel.getCertificate().getDEREncoded());
-                    out.flush();
-                    out.close();
-                } catch (Exception ex) {
-                    ex.printStackTrace();
-                }
-                break;
-            default: break;
-            }
-        }
-    }
+		public void actionPerformed(ActionEvent e) {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+			int choice = fileChooser.showSaveDialog(getContentPane());
+			switch (choice) {
+			case JFileChooser.APPROVE_OPTION:
+				try {
+					File file = fileChooser.getSelectedFile();
+					FileOutputStream out = new FileOutputStream(file);
+					out.write(certificatePanel.getCertificate().getDEREncoded());
+					out.flush();
+					out.close();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
+				break;
+			default: break;
+			}
+		}
+	}
 
-    private class CloseAction extends AbstractAction
-    {
-        private static final long serialVersionUID = 2579413086163111656L;
+	private class CloseAction extends AbstractAction  /* FIXME: Why class, why not method which returns anonymous class? -- MO */
+	{
+		private static final long serialVersionUID = 2579413086163111656L;
 
-        public CloseAction() {
-            putValue(SMALL_ICON, CLOSE_ICON);
-            putValue(LARGE_ICON_KEY, CLOSE_ICON);
-            putValue(SHORT_DESCRIPTION, "Close Window");
-            putValue(NAME, "Close");
-        }
+		public CloseAction() {
+			putValue(SMALL_ICON, CLOSE_ICON);
+			putValue(LARGE_ICON_KEY, CLOSE_ICON);
+			putValue(SHORT_DESCRIPTION, "Close Window");
+			putValue(NAME, "Close");
+		}
 
-        public void actionPerformed(ActionEvent e) {
-            dispose();
-        }
-    }
+		public void actionPerformed(ActionEvent e) {
+			dispose();
+		}
+	}
 
-    private static String certificateToString(CVCertificate certificate) {
-        try{
-        String certText = null;
-        if (certificate == null) { return null; }
-        if (certificate instanceof CVCertificate) {
-            StringBuffer result = new StringBuffer();
-            CVCertificate cert = (CVCertificate)certificate;
-            result.append("subject: " );
-            result.append(cert.getCertificateBody().getHolderReference().getConcatenated());
-            result.append('\n');
-            result.append("issuer: ");
-            result.append(cert.getCertificateBody().getAuthorityReference().getConcatenated());
-            result.append('\n');
-            result.append("Not before: " + cert.getCertificateBody().getValidFrom() + "\n");
-            result.append("Not after: " +  cert.getCertificateBody().getValidTo()+ "\n");
-            certText = result.toString();
-        } else {
-            certText = certificate.toString();
-        }
-        return certText;
-        }catch(Exception ex) {
-            ex.printStackTrace();
-            return "NULL";
-        }
-    }
+	private static String certificateToString(CVCertificate certificate) {
+		try{
+			if (certificate == null) { return "null"; }
+			StringBuffer result = new StringBuffer();
+			CVCertificate cert = (CVCertificate)certificate;
+			result.append("subject: " );
+			result.append(cert.getCertificateBody().getHolderReference().getConcatenated());
+			result.append('\n');
+			result.append("issuer: ");
+			result.append(cert.getCertificateBody().getAuthorityReference().getConcatenated());
+			result.append('\n');
+			result.append("Not before: " + cert.getCertificateBody().getValidFrom() + "\n");
+			result.append("Not after: " +  cert.getCertificateBody().getValidTo()+ "\n");
+			return result.toString();
+		}catch (Exception ex) {
+			ex.printStackTrace();
+			return "null";
+		}
+	}
 
-    public class CVCertificatePanel extends JPanel
-    {
-        private static final long serialVersionUID = 2109469067988004311L;
+	public static class CVCertificatePanel extends JPanel
+	{
+		private static final long serialVersionUID = 2109469067988004311L;
 
-        private CVCertificate certificate;
-        private JTextArea area;
-        
-        public CVCertificatePanel(CVCertificate certificate) {
-            super(new BorderLayout());
-            try{
-            this.certificate = certificate;
-            area = new JTextArea(20, 40);
-            area.append(certificateToString(certificate));
-            area.setEditable(false);
-            add(new JScrollPane(area), BorderLayout.CENTER);
-            add(new KeyPanel(certificate.getCertificateBody().getPublicKey()), BorderLayout.SOUTH);
-            }catch(Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-        
-        public CVCertificate getCertificate() {
-            return certificate;
-        }
-        
-        public void setFont(Font font) {
-            super.setFont(font);
-            if (area != null) { area.setFont(font); }
-        }
+		private CVCertificate certificate;
+		private JTextArea area;
 
+		public CVCertificatePanel(CVCertificate certificate) {
+			super(new BorderLayout());
+			try{
+				this.certificate = certificate;
+				area = new JTextArea(20, 40);
+				area.append(certificateToString(certificate));
+				area.setEditable(false);
+				add(new JScrollPane(area), BorderLayout.CENTER);
+				add(new KeyPanel(certificate.getCertificateBody().getPublicKey()), BorderLayout.SOUTH);
+			} catch(Exception ex) {
+				ex.printStackTrace();
+			}
+		}
 
-    }
+		public CVCertificate getCertificate() {
+			return certificate;
+		}
 
+		public void setFont(Font font) {
+			super.setFont(font);
+			if (area != null) { area.setFont(font); }
+		}
+	}
 }

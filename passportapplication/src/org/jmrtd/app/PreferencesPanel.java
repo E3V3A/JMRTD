@@ -168,8 +168,10 @@ public class PreferencesPanel extends JPanel
 		return panel;
 	}
 		
-	private class FolderBrowser extends JPanel
+	private static class FolderBrowser extends JPanel
 	{
+		private static final long serialVersionUID = -1280621620589365355L;
+
 		public FolderBrowser(String title) {
 			super(new FlowLayout());
 			final Component c = this;

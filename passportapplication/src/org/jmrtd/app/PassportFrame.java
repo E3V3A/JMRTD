@@ -25,7 +25,6 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -58,7 +57,6 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,7 +81,6 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SpringLayout;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
@@ -102,11 +99,11 @@ import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKey;
 import org.jmrtd.CSCAStore;
+import org.jmrtd.CVCAStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
@@ -359,10 +356,11 @@ public class PassportFrame extends JFrame implements AuthListener
 					//					System.out.println(o);
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
-			} catch (Exception e) {
-				JTextArea message = new JTextArea(5, 15);
-				message.append("Exception reading file " + Integer.toHexString(fid) + ": \n" + e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n");
-				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(message), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+			} catch (IOException ioe) {
+				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
+				+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
+				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
 				continue;
 			}
 		}
@@ -569,7 +567,6 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	/** Checks country signer certificate, if known. */
 	private void verifyCS(PassportService service) {
-
 		if (sod == null) {
 			verificationIndicator.setCSFailed("Cannot check CSCA: missing SOD file");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
@@ -583,7 +580,12 @@ public class PassportFrame extends JFrame implements AuthListener
 				issuingState = mrzInfo.getIssuingState();
 			}
 			countrySigningCert = (cscaStore == null) ? null : cscaStore.getCertificate(issuingState);
-			sod.getDocSigningCertificate().verify(countrySigningCert.getPublicKey());
+			if (countrySigningCert == null) {
+				verificationIndicator.setCSFailed("Could not get DS certificate");
+				return;
+			}
+			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
+			docSigningCertificate.verify(countrySigningCert.getPublicKey());
 			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {
 			verificationIndicator.setCSFailed("Could not open CSCA certificate");
@@ -660,25 +662,20 @@ public class PassportFrame extends JFrame implements AuthListener
 		return menu;
 	}
 
-	private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates, Map<Integer, PublicKey> passportEACKeys, Integer usedId) {
+	private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates,
+			Map<Integer, PublicKey> passportEACKeys, Integer usedId) {		
+		Set<Map.Entry<Integer, PublicKey>> entries = passportEACKeys.entrySet();
+		int pubKeysCount = passportEACKeys.size();
 
-		Component viewPassportKeyItem = null;
-		Set<Integer> ids = passportEACKeys.keySet();
-		Iterator<Integer> idIterator = ids.iterator();
-		if(ids.size() == 1) {
-			viewPassportKeyItem = new JMenuItem();
-			Integer id = idIterator.next();
-			((JMenuItem)viewPassportKeyItem).setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), true));            
-		}else{
-			JMenu viewPassportKeyMenu = new JMenu("Passport EAC keys");
-			while(idIterator.hasNext()) {
-				Integer id = idIterator.next();
-				JMenuItem item = new JMenuItem();
-				item.setAction(getViewPassportKeyAction(id, passportEACKeys.get(id), usedId.equals(id)));
-				viewPassportKeyMenu.add(item);
-			}
-			viewPassportKeyItem = viewPassportKeyMenu;
+		JMenu viewPassportKeyMenu = new JMenu("Passport EAC keys");
+		for (Map.Entry<Integer, PublicKey> entry: entries) {
+			int id = entry.getKey();
+			PublicKey publicKey = entry.getValue();
+			JMenuItem item = new JMenuItem();
+			item.setAction(getViewPassportKeyAction(id, publicKey, (pubKeysCount == 1) || usedId.equals(id)));
+			viewPassportKeyMenu.add(item);
 		}
+		Component viewPassportKeyItem = pubKeysCount == 1 ? viewPassportKeyMenu.getComponent(0) : viewPassportKeyMenu;
 
 		JMenuItem viewTerminalKeyItem = new JMenuItem();
 		viewTerminalKeyItem.setAction(getViewTerminalKeyAction(terminalKey));
@@ -1036,8 +1033,8 @@ public class PassportFrame extends JFrame implements AuthListener
 					KeyPair keyPair = generator.generateKeyPair();
 
 					passport.setEACKeys(keyPair);
-				}catch(Exception ex) {
-
+				} catch (GeneralSecurityException ex) {
+					ex.printStackTrace(); /* NOTE: not silent. -- MO */
 				}
 			}
 		};
@@ -1394,7 +1391,6 @@ public class PassportFrame extends JFrame implements AuthListener
 			e.printStackTrace();
 			return null;
 		}
-
 	}
 
 	private static InputStream fullStream(File f) throws IOException {
@@ -1402,7 +1398,8 @@ public class PassportFrame extends JFrame implements AuthListener
 		byte[] bytes = new byte[(int)f.length()];
 		dis.readFully(bytes);
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-		return bais;
+		dis.close();
+		return bais; /* FIXME: Why do we need this? Why not use BufferedInputStream? -- MO */
 	}
 
 	public void performedAA(AAEvent ae) {

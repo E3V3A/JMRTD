@@ -29,6 +29,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
@@ -116,7 +117,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 						.getConcatenated());
 			}
 		} catch (Exception e) {
-
+			/* FIXME: silent?!? */
 		}
 
 		list = new JList(model);
@@ -130,7 +131,6 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		setSize(new Dimension(450, 200));
 		setLocationRelativeTo(parent);
 		setVisible(true);
-
 	}
 
 	public void actionPerformed(ActionEvent e) {
@@ -163,11 +163,9 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		} else if (C_INSERT.equals(e.getActionCommand())) {
 			actionAdd(list.getSelectedIndex());
 		}
-
 	}
 
 	private void actionAdd(int index) {
-
 		CVCertificate cert = null;
 		String name = null;
 		JFileChooser fileChooser = new JFileChooser();
@@ -177,21 +175,15 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		case JFileChooser.APPROVE_OPTION:
 			try {
 				File file = fileChooser.getSelectedFile();
-				FileInputStream in = new FileInputStream(file);
 				byte[] certData = new byte[(int) file.length()];
-				int c = in.read();
-				int i = 0;
-				while (c != -1) {
-					certData[i++] = (byte) c;
-					c = in.read();
-				}
-				cert = (CVCertificate) CertificateParser
-				.parseCertificate(certData);
-				name = cert.getCertificateBody().getHolderReference()
-				.getConcatenated();
+				DataInputStream in = new DataInputStream(new FileInputStream(file));
+				in.readFully(certData);
+				in.close();
+				cert = (CVCertificate) CertificateParser.parseCertificate(certData);
+				name = cert.getCertificateBody().getHolderReference().getConcatenated();
 			} catch (Exception ex) {
 				ex.printStackTrace();
-				// TODO: handle this somehow
+				/* TODO: handle this somehow */
 			}
 			break;
 		default:

@@ -126,6 +126,7 @@ public class UploadOptionsChooser // extends JComponent
 		PKCS8EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKeyBytes);
 		KeyFactory factory = KeyFactory.getInstance("RSA");
 		PrivateKey privateKey = factory.generatePrivate(privateKeySpec);
+		fileIn.close();
 		return privateKey;
 	}
 

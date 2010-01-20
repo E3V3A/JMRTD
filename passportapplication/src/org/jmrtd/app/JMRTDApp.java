@@ -102,7 +102,8 @@ public class JMRTDApp  implements PassportListener
 	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 
-	private static final String ABOUT_INFO = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
+	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
+	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
 
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
@@ -146,8 +147,9 @@ public class JMRTDApp  implements PassportListener
 			mainFrame.pack();
 			mainFrame.setVisible(true);
 		} catch (Exception e) {
+			/* NOTE: if it propagated this far, something is wrong... */
 			e.printStackTrace();
-			System.exit(1);
+			throw new IllegalStateException(e);
 		}
 	}
 
@@ -395,7 +397,7 @@ public class JMRTDApp  implements PassportListener
 			private static final long serialVersionUID = -6229877165532173683L;
 
 			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
+				System.exit(0); /* NOTE: shuts down the entire VM. */
 			}
 		};
 		action.putValue(Action.SMALL_ICON, EXIT_ICON);
@@ -478,28 +480,27 @@ public class JMRTDApp  implements PassportListener
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}
-				Image iconImage = null;
-				try {
-					iconImage = Icons.getImage("jmrtd_logo-100x100", getClass());
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				ImageIcon aboutJMRTDImageIcon = null;
+				Image aboutJMRTDImage = Icons.getImage(ABOUT_JMRTD_LOGO, getClass());
+				if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
+
 				try {
 					JTextArea area = new JTextArea(20, 35);
+					if (readMeFile == null) { throw new Exception("Could not open README file"); }
 					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
 					while (true) {
 						String line = in.readLine();
 						if (line == null) { break; }
-						line.trim();
-						area.append("  " + line);
+						area.append("  " + line.trim());
 						area.append("\n");
 					}
+					in.close();
 					area.setCaretPosition(0);
 					area.setEditable(false);
-					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(iconImage));
+					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
 				} catch (Exception ex) {
 					ex.printStackTrace();
-					JOptionPane.showMessageDialog(contentPane, ABOUT_INFO, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, new ImageIcon(iconImage));
+					JOptionPane.showMessageDialog(contentPane, ABOUT_JMRTD_DEFAULT_TEXT, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
 				}
 			}
 		};
