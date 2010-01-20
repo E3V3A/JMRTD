@@ -6,8 +6,8 @@ General
 + Move BACStore to passporthostapi (from passportapplication).
 + Fix unit test (when run from package explorer hangs on DG14 tests).
 - Make loading of GRT compatible ZIP files possible. They seem to use EF_DG<X>.BIN naming inside ZIP files. Test it.
-- Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of flat files?
+- Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Copy default files from distribution jar into .jmrtd/
 - Adoption of Henning's stuff in SCUBA (finger printing passports based on nationality) is buggy for now. Need more regression testing.
@@ -31,8 +31,8 @@ ASN.1 parsing:
 - ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes.
 
 Code quality
++ Run Findbugs. Add it to eclipse.
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
-- Run Findbugs. Add it to eclipse.
 
 Web site (jmrtd.org)
 + Check new docs on ICAO site, update links.
@@ -43,7 +43,7 @@ Web site (jmrtd.org)
 SCUBA support for exotic card readers
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (need to purchase one for this?).
-- Nokia NFC relay terminal via Bluetooth.
+- Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 
 Way too ambitious
 - Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
