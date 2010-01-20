@@ -51,7 +51,7 @@ public class BACStore
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
-	private File bacDBFile;
+	private File location;
 
 	private List<BACKey> entries;
 
@@ -59,14 +59,22 @@ public class BACStore
 		this(DEFAULT_BACDB_FILE);
 	}
 
-	public BACStore(File bacDBFile) {
-		this.bacDBFile = bacDBFile;
+	public BACStore(File location) {
+		setLocation(location);
 		entries = new ArrayList<BACKey>();
 		read();
 	}
 	
-	public BACStore(URL url) {
-		this(Files.toFile(url));
+	public BACStore(URL location) {
+		this(Files.toFile(location));
+	}
+	
+	public File getLocation() {
+		return location;
+	}
+	
+	public void setLocation(File location) {
+		this.location = location;
 	}
 
 	public List<BACKey> getEntries() {
@@ -76,17 +84,17 @@ public class BACStore
 	public void addEntry(BACKey entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
-			write(entries, bacDBFile);
+			write(entries, location);
 		} else {
 			entries.remove(entry);
 			entries.add(entry);
-			write(entries, bacDBFile);
+			write(entries, location);
 		}
 	}
 
 	public void addEntry(int i, BACKey entry) {
 		entries.add(i, entry);
-		write(entries, bacDBFile);
+		write(entries, location);
 	}
 
 	private String[] getFields(String entry) {
@@ -101,7 +109,7 @@ public class BACStore
 
 	private void read() {
 		try {
-			BufferedReader d = new BufferedReader(new FileReader(bacDBFile));
+			BufferedReader d = new BufferedReader(new FileReader(location));
 			while (true) {
 				String line = d.readLine();
 				if (line == null) { break; }
@@ -149,7 +157,7 @@ public class BACStore
 
 	public void removeEntry(int index) {
 		entries.remove(index);
-		write(entries, bacDBFile);
+		write(entries, location);
 	}
 
 	public BACKey getEntry(int entryRowIndex) {

@@ -18,25 +18,33 @@ import net.sourceforge.scuba.util.Files;
  */
 public class CSCAStore
 {
-	private URL cscaDir;
+	private URL location;
 	
 	public CSCAStore() {
 		this(getDefaultCSCADir());
 	}
-	
-	public CSCAStore(URL folder) {
-		cscaDir = folder;
+
+	public CSCAStore(URL location) {
+		setLocation(location);
 	}
-	
+
 	public X509Certificate getCertificate(Country c) throws IOException {
 		return getCertificate(c.toString().toLowerCase());
+	}
+
+	public URL getLocation() {
+		return location;
+	}
+	
+	public void setLocation(URL location) {
+		this.location = location;
 	}
 	
 	private X509Certificate getCertificate(String alias) throws IOException {
 		try {
 			X509Certificate countrySigningCert = null;
 			/* TODO: also check .pem, .der formats? */
-			URL cscaFile = new URL(cscaDir + "/" + alias + ".cer");
+			URL cscaFile = new URL(location + "/" + alias + ".cer");
 			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
 			InputStream cscaIn = cscaFile.openStream();
 			if (cscaIn == null) {

@@ -69,9 +69,10 @@ public class CVCAStore
 		}
 	};
 
-	private static final String DEFAULT_CVCA_DIR = "/home/sos/woj/terminals";
+	/** This is slightly more flexible than "/home/sos/woj/terminals". */
+	private static final File DEFAULT_CVCA_DIR = new File(System.getProperty("user.home"), "terminals");
 
-	private File dir;
+	private File location;
 	
 	private final Map<String, List<CVCertificate>> certificateListsMap;
 	private final Map<String, PrivateKey> keysMap;
@@ -80,10 +81,10 @@ public class CVCAStore
 		this(getDefaultCVCADir());
 	}
 	
-	public CVCAStore(File dir) {
+	public CVCAStore(File location) {
 		certificateListsMap = new HashMap<String, List<CVCertificate>>();
 		keysMap = new HashMap<String, PrivateKey>();
-		setLocation(dir);
+		setLocation(location);
 	}
 
 	/**
@@ -103,15 +104,19 @@ public class CVCAStore
 		keysMap.put(alias, privateKey);
 	}
 
-	public void setLocation(File dir) {
-		this.dir = dir;
-		if (!dir.isDirectory()) {
-			String message = "File " + dir.getAbsolutePath() + " is not a directory.";
+	public File getLocation() {
+		return location;
+	}
+	
+	public void setLocation(File location) {
+		this.location = location;
+		if (!location.isDirectory()) {
+			String message = "File " + location.getAbsolutePath() + " is not a directory.";
 			System.err.println("WARNING: " + message);
 			// throw new IllegalArgumentException(message);
 			return;
 		}
-		File[] dirs = dir.listFiles(DIRECTORY_FILE_FILTER);
+		File[] dirs = location.listFiles(DIRECTORY_FILE_FILTER);
 		try {
 			for (File f : dirs) { scanOneDirectory(f); }
 		} catch (Exception e) {
@@ -122,7 +127,7 @@ public class CVCAStore
 	
 	private void scanOneDirectory(File dir) throws IOException {
 		if (!dir.isDirectory()) {
-			throw new IllegalArgumentException("File " + dir.getAbsolutePath() + " is not a directory.");
+			throw new IllegalArgumentException("File " + dir.getCanonicalPath() + " is not a directory.");
 		}
 		File[] certFiles = dir.listFiles(TERMINAL_CERT_FILE_FILTER);
 		File[] keyFiles = dir.listFiles(TERMINAL_KEY_FILE_FILTER);
@@ -131,12 +136,12 @@ public class CVCAStore
 		String keyAlgName = "RSA";
 		for (File file : certFiles) {
 			System.out.println("Found certificate file: "+file);
-			CVCertificate c = readCVCertificateFromFile(file);
-			if (c == null) { throw new IOException(); }
-			terminalCertificates.add(c);
+			CVCertificate cvCertificate = readCVCertificateFromFile(file);
+			if (cvCertificate == null) { throw new IOException(); }
+			terminalCertificates.add(cvCertificate);
 			try {
-				keyAlgName = c.getCertificateBody().getPublicKey().getAlgorithm();
-			} catch(NoSuchFieldException nsfe) {
+				keyAlgName = cvCertificate.getCertificateBody().getPublicKey().getAlgorithm();
+			} catch (NoSuchFieldException nsfe) {
 				/* FIXME: why silent? */
 			}
 		}
@@ -258,6 +263,6 @@ public class CVCAStore
 	}
 	
 	private static File getDefaultCVCADir() {
-		return new File(DEFAULT_CVCA_DIR);
+		return DEFAULT_CVCA_DIR;
 	}
 }
