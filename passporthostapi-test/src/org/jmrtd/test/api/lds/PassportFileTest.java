@@ -19,7 +19,7 @@
  *  $Id: $
  */
 
-package org.jmrtd.test.api;
+package org.jmrtd.test.api.lds;
 
 import java.io.BufferedInputStream;
 import java.io.File;

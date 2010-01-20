@@ -19,7 +19,7 @@
  *  $Id: $
  */
 
-package org.jmrtd.test.api;
+package org.jmrtd.test.api.lds;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
