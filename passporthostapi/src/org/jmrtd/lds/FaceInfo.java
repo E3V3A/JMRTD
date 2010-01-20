@@ -43,9 +43,9 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
-import org.jmrtd.ImageReadUpdateListener;
-
 import net.sourceforge.scuba.data.Gender;
+
+import org.jmrtd.ImageReadUpdateListener;
 
 /**
  * Data structure for storing face information as found in DG2.

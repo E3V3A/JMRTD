@@ -173,8 +173,8 @@ abstract class CBEFFDataGroup extends DataGroup
 			break; /* FIXME: FindBugs told me to insert this break, pls check -- MO */
 		case SMT_DO_DS /* 0x9E */:
 			/* NOTE: payload contains a signature */
-			tlvIn.skip(doLength); /* FIXME: FindBugs told me to insert this break, pls check -- MO */
-			break;
+			tlvIn.skip(doLength);
+			break; /* FIXME: FindBugs told me to insert this break, pls check -- MO */
 		}
 		return null;
 	}

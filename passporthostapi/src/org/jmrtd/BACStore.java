@@ -76,17 +76,17 @@ public class BACStore
 	public void addEntry(BACKey entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
-			write();
+			write(entries, bacDBFile);
 		} else {
 			entries.remove(entry);
 			entries.add(entry);
-			write();
+			write(entries, bacDBFile);
 		}
 	}
 
 	public void addEntry(int i, BACKey entry) {
 		entries.add(i, entry);
-		write();
+		write(entries, bacDBFile);
 	}
 
 	private String[] getFields(String entry) {
@@ -116,21 +116,23 @@ public class BACStore
 		}
 	}
 
-	private void write() {
+	private static void write(List<BACKey> entries, File bacDBFile) {
 		try {
 			if (!bacDBFile.exists()) {
 				File parent = bacDBFile.getParentFile();
-				if (!parent.isDirectory()) {
-					parent.mkdirs();
+				if (!parent.isDirectory()) { 
+					if (!parent.mkdirs()) {
+						System.err.println("WARNING: could not create directory for bacDBFile \"" + parent.getCanonicalPath() + "\"");
+					}
 				}
-				bacDBFile.createNewFile();
+				if (!bacDBFile.createNewFile()) {
+					System.err.println("WARNING: could not create bacDBFile \"" + bacDBFile.getCanonicalPath() + "\"");
+				}
 			}
-			PrintWriter d = new PrintWriter(new FileWriter(bacDBFile));
-			for (BACKey entry: entries) {
-				d.println(entry);
-			}
-			d.flush();
-			d.close();
+			PrintWriter bacDBWriter = new PrintWriter(new FileWriter(bacDBFile));
+			for (BACKey entry: entries) { bacDBWriter.println(entry); }
+			bacDBWriter.flush();
+			bacDBWriter.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -147,7 +149,7 @@ public class BACStore
 
 	public void removeEntry(int index) {
 		entries.remove(index);
-		write();
+		write(entries, bacDBFile);
 	}
 
 	public BACKey getEntry(int entryRowIndex) {

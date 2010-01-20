@@ -1,5 +1,7 @@
 package org.jmrtd.lds;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 
@@ -19,41 +21,38 @@ public class CVCAFile extends PassportFile {
      *            stream with the data to be parsed
      */
     public CVCAFile(InputStream in) {
+    	DataInputStream dataIn = new DataInputStream(in);
         try {
-            int tag = in.read();
+            int tag = dataIn.read();
             if (tag != CAR_TAG) {
                 throw new IllegalArgumentException("Wrong tag.");
             }
-            int len = in.read();
+            int len = dataIn.read();
             if (len > 16) {
                 throw new IllegalArgumentException("Wrong length.");
             }
             byte[] data = new byte[len];
-            in.read(data);
+            dataIn.readFully(data);
             caReference = new String(data);
-            tag = in.read();
+            tag = dataIn.read();
             if (tag != 0) {
-                if (tag != CAR_TAG) {
-                    throw new IllegalArgumentException("Wrong tag.");
-                }
-                len = in.read();
-                if (len > 16) {
-                    throw new IllegalArgumentException("Wrong length.");
-                }
+                if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+                len = dataIn.read();
+                if (len > 16) { throw new IllegalArgumentException("Wrong length."); }
                 data = new byte[len];
-                in.read(data);
+                dataIn.readFully(data);
                 altCaReference = new String(data);
-                tag = in.read();
+                tag = dataIn.read();
             }
             while (tag != -1) {
-                if (tag != 0) {
-                    throw new IllegalArgumentException("Bad file padding.");
-                }
-                tag = in.read();
+                if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
+                tag = dataIn.read();
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalArgumentException("Malformed input data");
+        } finally {
+        	try { dataIn.close(); } catch (IOException ioe) { ioe.printStackTrace(); }
         }
     }
 

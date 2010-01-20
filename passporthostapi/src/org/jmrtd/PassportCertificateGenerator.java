@@ -111,8 +111,7 @@ public class PassportCertificateGenerator {
 			// Test - read the filew again and parse its contents,
 			// spit out the certificates
 
-			CVCertificate c = readCVCertificateFromFile(new File(
-					filenameCA));
+			CVCertificate c = readCVCertificateFromFile(new File(filenameCA));
 			System.out.println(c.getCertificateBody().getAsText());
 
 			c = readCVCertificateFromFile(new File(filenameTerminal));

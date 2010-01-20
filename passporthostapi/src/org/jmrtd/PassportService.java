@@ -541,10 +541,11 @@ public class PassportService extends PassportApduService {
 	// For ECDSA the EAC 1.11 specification requires the signature to be
 	// stripped down from any ASN.1 wrappers, as so:
 	private byte[] getRawECDSASignature(byte[] signature) throws IOException {
+		ASN1InputStream asn1In = new ASN1InputStream(signature);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
-			ASN1InputStream in = new ASN1InputStream(signature);
-			DERSequence obj = (DERSequence) in.readObject();
+			DERSequence obj = (DERSequence) asn1In.readObject();
+			
 			Enumeration<DERObject> e = obj.getObjects();
 			while (e.hasMoreElements()) {
 				DERInteger i = (DERInteger) e.nextElement();
@@ -558,6 +559,7 @@ public class PassportService extends PassportApduService {
 			out.flush();
 			return out.toByteArray();
 		} finally {
+			asn1In.close();
 			out.close();
 		}
 	}

@@ -403,7 +403,7 @@ public class DG11File extends DataGroup
 		if (obj == this) { return true; }
 		if (!obj.getClass().equals(this.getClass())) { return false; }
 		DG11File other = (DG11File)obj;
-		return (other.proofOfCitizenship == null && proofOfCitizenship == null && other.toString().equals(toString()) || other.proofOfCitizenship.equals(proofOfCitizenship));
+		return (other.proofOfCitizenship == null && proofOfCitizenship == null && other.toString().equals(toString()) || (other.proofOfCitizenship != null && other.proofOfCitizenship.equals(proofOfCitizenship)));
 //		other.fullNamePrimaryIdentifier.equals(fullNamePrimaryIdentifier) &&
 //		other.fullNameSecondaryIdentifiers.equals(fullNameSecondaryIdentifiers) &&
 //		other.personalNumber.equals(personalNumber) &&

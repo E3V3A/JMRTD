@@ -189,7 +189,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		boolean do85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
 
 		byte[] do8587 = new byte[0];
-		byte[] do8E = new byte[0];
+		/* byte[] do8E = new byte[0]; */ /* FIXME: FindBugs told me this is a dead store -- MO */
 		byte[] do97 = new byte[0];
 
 		if (le > 0) {
@@ -230,13 +230,12 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		/* Compute cryptographic checksum... */
 		mac.init(ksMac);
 		byte[] cc = mac.doFinal(n);
-		// ssc++; // TODO dit snappen
 
 		out.reset();
 		out.write((byte) 0x8E);
 		out.write(cc.length);
 		out.write(cc, 0, cc.length);
-		do8E = out.toByteArray();
+		byte[] do8E = out.toByteArray();
 
 		/* Construct protected apdu... */
 		out.reset();
@@ -245,8 +244,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		out.write(do8E, 0, do8E.length);
 		byte[] data = out.toByteArray();
 
-		CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3],
-				data, 256);
+		CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3], data, 256);
 		return wc;
 	}
 
@@ -352,7 +350,7 @@ public class SecureMessagingWrapper implements APDUWrapper {
 		}
 		/* Read, decrypt, unpad the data... */
 		byte[] ciphertext = new byte[length];
-		in.read(ciphertext, 0, length);
+		in.readFully(ciphertext);
 		byte[] paddedData = cipher.doFinal(ciphertext);
 		byte[] data = Util.unpad(paddedData);
 		return data;

@@ -129,7 +129,7 @@ public class DG12File extends DataGroup
 	private void readField(int fieldTag, BERTLVInputStream tlvIn) throws IOException {
 		int tag = tlvIn.readTag();
 		if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
-		int length = tlvIn.readLength();
+		/* int length = */ tlvIn.readLength();
 		byte[] value = tlvIn.readValue();
 		switch (tag) {	
 		case ISSUING_AUTHORITY_TAG: parseIssuingAuthority(new String(value)); break;

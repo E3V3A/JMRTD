@@ -210,8 +210,8 @@ public class Passport
 	}
 
 	public Passport(File file) throws IOException {
-		ZipFile zipIn = new ZipFile(file);
-		Enumeration<? extends ZipEntry> entries = zipIn.entries();
+		ZipFile zipFile = new ZipFile(file);
+		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
 			ZipEntry entry = entries.nextElement();
 			if (entry == null) { break; }
@@ -238,8 +238,10 @@ public class Passport
 				}
 				byte[] bytes = new byte[size];
 				int fileLength = bytes.length;
-				DataInputStream dataIn = new DataInputStream(zipIn.getInputStream(entry));
+				InputStream zipEntryIn = zipFile.getInputStream(entry);
+				DataInputStream dataIn = new DataInputStream(zipEntryIn);
 				dataIn.readFully(bytes);
+				dataIn.close();
 				if (fid < 0) {
 					/* FIXME: untested! */
 					fid = PassportFile.lookupFIDByTag(bytes[0] & 0xFF);
@@ -249,7 +251,7 @@ public class Passport
 				rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
 				if(fid == PassportService.EF_COM) {
 					comFile = new COMFile(new ByteArrayInputStream(bytes));
-				}else if(fid == PassportService.EF_SOD) {
+				} else if (fid == PassportService.EF_SOD) {
 					sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
 				}
 			} catch (NumberFormatException nfe) {
@@ -385,7 +387,7 @@ public class Passport
 					byte[] data = getFileBytes(fid);
 					byte tag = data[0];
 					dgHashes.put(PassportFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
-					comFile.insertTag(new Integer(tag));
+					comFile.insertTag(Integer.valueOf(tag));
 				}
 			}
 			if(docSigningPrivateKey != null) {

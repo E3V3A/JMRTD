@@ -288,8 +288,7 @@ public class DG14File extends DataGroup {
 		}
 	}
 
-	private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(
-			PublicKey publicKey) {
+	private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey) {
 		// Here we need to some hocus-pokus, the EAC specification require for
 		// all the
 		// key information to include the domain parameters explicitly. This is
@@ -298,11 +297,10 @@ public class DG14File extends DataGroup {
 		// the case.
 		try {
 			if (publicKey instanceof ECPublicKey) {
-				SubjectPublicKeyInfo vInfo = new SubjectPublicKeyInfo(
-						(DERSequence) new ASN1InputStream(publicKey
-								.getEncoded()).readObject());
-				DERObject parameters = vInfo.getAlgorithmId().getParameters()
-				.getDERObject();
+				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
+				SubjectPublicKeyInfo vInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				asn1In.close();
+				DERObject parameters = vInfo.getAlgorithmId().getParameters().getDERObject();
 				X9ECParameters params = null;
 				if (parameters instanceof DERObjectIdentifier) {
 					params = X962NamedCurves
@@ -314,7 +312,6 @@ public class DG14File extends DataGroup {
 							.getN(), params.getH(), params.getSeed());
 				} else {
 					return vInfo;
-
 				}
 
 				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey) publicKey;
@@ -326,7 +323,6 @@ public class DG14File extends DataGroup {
 				// p.getY().toBigInteger(), true);
 				vInfo = new SubjectPublicKeyInfo(id, p.getEncoded());
 				return vInfo;
-
 			} else if (publicKey instanceof DHPublicKey) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				try {
