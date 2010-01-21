@@ -79,17 +79,7 @@ public class DG14File extends DataGroup {
 			DERSet set = (DERSet) asn1in.readObject();
 			for (int i = 0; i < set.size(); i++) {
 				DERObject o = set.getObjectAt(i).getDERObject();
-				SecurityInfo si = new SecurityInfo(o);
-				if (ChipAuthenticationPublicKeyInfo.checkRequiredIdentifier(si
-						.getObjectIdentifier())) {
-					si = new ChipAuthenticationPublicKeyInfo(si);
-				} else if (ChipAuthenticationInfo.checkRequiredIdentifier(si
-						.getObjectIdentifier())) {
-					si = new ChipAuthenticationInfo(si);
-				} else if (TerminalAuthenticationInfo
-						.checkRequiredIdentifier(si.getObjectIdentifier())) {
-					si = new TerminalAuthenticationInfo(si);
-				}
+				SecurityInfo si = SecurityInfo.createSecurityInfo(o);
 				securityInfos.add(si);
 			}
 			asn1in.close();

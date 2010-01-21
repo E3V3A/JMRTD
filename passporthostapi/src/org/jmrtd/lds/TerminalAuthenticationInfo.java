@@ -51,8 +51,8 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
  */
-public class TerminalAuthenticationInfo extends SecurityInfo {
-
+public class TerminalAuthenticationInfo extends SecurityInfo
+{
     public static final int VERSION_NUM = 1;
 
     public TerminalAuthenticationInfo(SecurityInfo si) {
@@ -73,8 +73,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
      * @param efCVCA
      *            the file ID information of the efCVCA file
      */
-    public TerminalAuthenticationInfo(DERObjectIdentifier identifier,
-            int version, DERSequence efCVCA) {
+    public TerminalAuthenticationInfo(DERObjectIdentifier identifier, int version, DERSequence efCVCA) {
         super(identifier, new DERInteger(version), efCVCA);
     }
 
