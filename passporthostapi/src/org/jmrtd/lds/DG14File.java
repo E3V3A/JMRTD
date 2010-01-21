@@ -24,15 +24,12 @@ package org.jmrtd.lds;
 import java.io.InputStream;
 import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.interfaces.ECPublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-
-import javax.crypto.interfaces.DHPublicKey;
 
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
@@ -41,13 +38,9 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.bouncycastle.asn1.x9.X962NamedCurves;
-import org.bouncycastle.asn1.x9.X9ECParameters;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see
@@ -56,12 +49,11 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
  * checked here!), and the file identifier of the efCVCA file.
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
- * 
  */
-public class DG14File extends DataGroup {
-
+public class DG14File extends DataGroup
+{
 	/** The different security infos that make up this file */
-	private List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
+	private List<SecurityInfo> securityInfos;
 
 	/**
 	 * Constructs a new DG14 file from the data in <code>in</code>.
@@ -71,6 +63,7 @@ public class DG14File extends DataGroup {
 	 */
 	public DG14File(InputStream in) {
 		try {
+			securityInfos = new ArrayList<SecurityInfo>();
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 			tlvIn.readTag();
 			tlvIn.readLength();
@@ -82,14 +75,22 @@ public class DG14File extends DataGroup {
 				SecurityInfo si = SecurityInfo.createSecurityInfo(o);
 				securityInfos.add(si);
 			}
-			asn1in.close();
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e.toString());
 		}
 	}
 
 	/**
-	 * Constructs a new DG14 file from the provided data:
+	 * Constructs a new DG14 file from the provided data.
+	 *  
+	 * @param securityInfos a list of security infos
+	 */
+	public DG14File(List<SecurityInfo> securityInfos) {
+		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
+	}
+
+	/**
+	 * Constructs a new DG14 file from the provided data.
 	 * 
 	 * @param publicKeys
 	 *            the map of (EC or DH) public keys indexed by key identifiers.
@@ -104,6 +105,7 @@ public class DG14File extends DataGroup {
 	 *            a mapping of file identifiers (see above) to short file
 	 *            identifiers (can be empty)
 	 */
+	// FIXME: why not simply List<SecurityInfo>()
 	public DG14File(Map<Integer, PublicKey> publicKeys,
 			Map<Integer, DERObjectIdentifier> chipInfoMap,
 			List<Integer> cvcaFileIdList,
@@ -111,41 +113,39 @@ public class DG14File extends DataGroup {
 		if (publicKeys.size() == 0) {
 			throw new IllegalArgumentException("Need at least one key.");
 		}
+		securityInfos = new ArrayList<SecurityInfo>();
 		if (publicKeys.size() == 1 && publicKeys.containsKey(-1)) {
-			PublicKey k = publicKeys.get(-1);
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(
-					getProtocolIdentifier(k), getSubjectPublicKeyInfo(k)));
+			PublicKey publicKey = publicKeys.get(-1);
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
 		} else {
-			for (int i : publicKeys.keySet()) {
+			for (Map.Entry<Integer, PublicKey> entry: publicKeys.entrySet()) {
+				int i = entry.getKey();
+				PublicKey publicKey = entry.getValue();
 				if (i < 0) {
 					throw new IllegalArgumentException("Wrong key Id: " + i);
 				}
-				PublicKey k = publicKeys.get(i);
-				securityInfos.add(new ChipAuthenticationPublicKeyInfo(
-						getProtocolIdentifier(k),
-						getSubjectPublicKeyInfo(k), i));
+				securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey, i));
 			}
 		}
 		if (chipInfoMap != null && chipInfoMap.size() > 0) {
 			if (chipInfoMap.size() == 1 && chipInfoMap.containsKey(-1)) {
-				securityInfos.add(new ChipAuthenticationInfo(chipInfoMap
-						.get(-1), ChipAuthenticationInfo.VERSION_NUM));
+				securityInfos.add(new ChipAuthenticationInfo(chipInfoMap.get(-1).getId(),
+						ChipAuthenticationInfo.VERSION_NUM));
 			} else {
 				for (int i : chipInfoMap.keySet()) {
-					securityInfos.add(new ChipAuthenticationInfo(chipInfoMap
-							.get(i), ChipAuthenticationInfo.VERSION_NUM, i));
+					securityInfos.add(new ChipAuthenticationInfo(chipInfoMap.get(i).getId(),
+							ChipAuthenticationInfo.VERSION_NUM, i));
 				}
 			}
 		}
 		if (cvcaFileIdList == null || cvcaFileIdList.size() == 0) {
 			securityInfos.add(new TerminalAuthenticationInfo(
-					EACObjectIdentifiers.id_TA,
+					EACObjectIdentifiers.id_TA.getId(),
 					TerminalAuthenticationInfo.VERSION_NUM));
 		} else {
 			for (Integer i : cvcaFileIdList) {
 				securityInfos.add(new TerminalAuthenticationInfo(i,
-						cvcaShortFileIdMap.containsKey(i) ? cvcaShortFileIdMap
-								.get(i) : -1));
+						cvcaShortFileIdMap.containsKey(i) ? cvcaShortFileIdMap.get(i) : -1));
 			}
 		}
 	}
@@ -155,13 +155,12 @@ public class DG14File extends DataGroup {
 			return sourceObject;
 		}
 		try {
-			ASN1EncodableVector v = new ASN1EncodableVector();
+			ASN1EncodableVector vector = new ASN1EncodableVector();
 			for (SecurityInfo si : securityInfos) {
-				v.add(si.getDERObject());
+				vector.add(si.getDERObject());
 			}
-			DERSet s = new DERSet(v);
-			BERTLVObject secInfos = new BERTLVObject(PassportFile.EF_DG14_TAG,
-					s.getDEREncoded());
+			DERSet derSet = new DERSet(vector);
+			BERTLVObject secInfos = new BERTLVObject(PassportFile.EF_DG14_TAG, derSet.getDEREncoded());
 			sourceObject = secInfos.getEncoded();
 			isSourceConsistent = true;
 			return sourceObject;
@@ -220,7 +219,7 @@ public class DG14File extends DataGroup {
 		for (SecurityInfo si : securityInfos) {
 			if (si instanceof ChipAuthenticationInfo) {
 				ChipAuthenticationInfo i = (ChipAuthenticationInfo) si;
-				map.put(i.getKeyId(), i.getObjectIdentifier());
+				map.put(i.getKeyId(), new DERObjectIdentifier(i.getObjectIdentifier()));
 				if (i.getKeyId() == -1) {
 					return map;
 				}
@@ -248,7 +247,7 @@ public class DG14File extends DataGroup {
 		if (!foundOne) { throw new IllegalStateException("No keys?"); }
 		return publicKeys;
 	}
-	
+
 	public String toString() {
 		return "DG14File " + securityInfos.toString();
 	}
@@ -258,9 +257,9 @@ public class DG14File extends DataGroup {
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG14File other = (DG14File)obj;
 		return (securityInfos == null && other.securityInfos == null)
-			|| securityInfos.equals(other.securityInfos);
+		|| securityInfos.equals(other.securityInfos);
 	}
-	
+
 	public int hashCode() {
 		return 5 * securityInfos.hashCode() + 41;
 	}
@@ -279,64 +278,5 @@ public class DG14File extends DataGroup {
 		}
 	}
 
-	private static DERObjectIdentifier getProtocolIdentifier(PublicKey publicKey) {
-		if (publicKey instanceof ECPublicKey) {
-			return EACObjectIdentifiers.id_PK_ECDH;
-		} else if (publicKey instanceof DHPublicKey) {
-			return EACObjectIdentifiers.id_PK_DH;
-		} else {
-			throw new IllegalArgumentException("Wrong key type.");
-		}
-	}
 
-	private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey) {
-		// Here we need to some hocus-pokus, the EAC specification require for
-		// all the
-		// key information to include the domain parameters explicitly. This is
-		// not what
-		// Bouncy Castle does by default. But we first have to check if this is
-		// the case.
-		try {
-			if (publicKey instanceof ECPublicKey) {
-				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
-				SubjectPublicKeyInfo vInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
-				asn1In.close();
-				DERObject parameters = vInfo.getAlgorithmId().getParameters().getDERObject();
-				X9ECParameters params = null;
-				if (parameters instanceof DERObjectIdentifier) {
-					params = X962NamedCurves
-					.getByOID((DERObjectIdentifier) parameters);
-					org.bouncycastle.math.ec.ECPoint p = params.getG();
-					p = p.getCurve().createPoint(p.getX().toBigInteger(),
-							p.getY().toBigInteger(), false);
-					params = new X9ECParameters(params.getCurve(), p, params
-							.getN(), params.getH(), params.getSeed());
-				} else {
-					return vInfo;
-				}
-
-				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey) publicKey;
-				AlgorithmIdentifier id = new AlgorithmIdentifier(vInfo
-						.getAlgorithmId().getObjectId(), params.getDERObject());
-				org.bouncycastle.math.ec.ECPoint p = pub.getQ();
-				// In case we would like to compress the point:
-				// p = p.getCurve().createPoint(p.getX().toBigInteger(),
-				// p.getY().toBigInteger(), true);
-				vInfo = new SubjectPublicKeyInfo(id, p.getEncoded());
-				return vInfo;
-			} else if (publicKey instanceof DHPublicKey) {
-				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
-				try {
-					return new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
-				} finally {
-					asn1In.close();
-				}
-			} else {
-				throw new IllegalArgumentException("Unrecognized key type, should be DH or EC");
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
 }

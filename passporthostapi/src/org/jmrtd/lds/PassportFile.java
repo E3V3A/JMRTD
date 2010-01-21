@@ -22,6 +22,12 @@
 
 package org.jmrtd.lds;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import net.sourceforge.scuba.tlv.BERTLVInputStream;
+
 import org.jmrtd.PassportService;
 
 
@@ -80,10 +86,47 @@ public abstract class PassportFile
 	 * @return a byte array containing the file
 	 */
 	/*@ ensures
-	 *@    isSourceConsistent ==> \result.equals(sourceObject.getEncoded());
+	 *@    isSourceConsistent ==> \result.equals(sourceObject);
 	 */
 	public abstract byte[] getEncoded();
 
+	/**
+	 * Factory method for creating passport files for a given input stream.
+	 * 
+	 * @param in a given input stream
+	 * 
+	 * @return a specific file
+	 * 
+	 * @throws IOException on reading error from the input stream
+	 */
+	public PassportFile createPassportFile(InputStream in) throws IOException {
+		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 8));
+		tlvIn.mark(5);
+		int tag = tlvIn.readTag();
+		tlvIn.reset();
+		switch (tag) {
+		case EF_COM_TAG: return new COMFile(tlvIn);
+		case EF_DG1_TAG: return new DG1File(tlvIn);
+		case EF_DG2_TAG: return new DG2File(tlvIn);
+		case EF_DG3_TAG: return new DG3File(tlvIn);
+		case EF_DG4_TAG: return new DG4File(tlvIn);
+		case EF_DG5_TAG: return new DG5File(tlvIn);
+		case EF_DG6_TAG: return new DG6File(tlvIn);
+		case EF_DG7_TAG: return new DG7File(tlvIn);
+		case EF_DG8_TAG: throw new IllegalArgumentException("DG8 files are not yet supported");
+		case EF_DG9_TAG: throw new IllegalArgumentException("DG9 files are not yet supported");
+		case EF_DG10_TAG: throw new IllegalArgumentException("DG10 files are not yet supported");
+		case EF_DG11_TAG: return new DG11File(tlvIn);
+		case EF_DG12_TAG: return new DG12File(tlvIn);
+		case EF_DG13_TAG: throw new IllegalArgumentException("DG13 files are not yet supported");
+		case EF_DG14_TAG: return new DG14File(tlvIn);
+		case EF_DG15_TAG: return new DG15File(tlvIn);
+		case EF_DG16_TAG: throw new IllegalArgumentException("DG16 files are not yet supported");
+		default:
+			throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+		}
+	}
+	
 	/**
 	 * Finds a file identifier for an ICAO tag.
 	 *

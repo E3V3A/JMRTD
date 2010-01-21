@@ -21,20 +21,19 @@
 
 package org.jmrtd.lds;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 
 /**
- * A specialised SecurityInfo structure that stores terminal authentication
+ * A concrete SecurityInfo structure that stores terminal authentication
  * info, see EAC 1.11 specification.
  * 
  * This data structure provides detailed information on an implementation of Terminal Authentication.
@@ -48,33 +47,32 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  *     identifier is not used.</li>
  * </ul>
  * 
- * @author Wojciech Mostowski <woj@cs.ru.nl>
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
  */
 public class TerminalAuthenticationInfo extends SecurityInfo
 {
     public static final int VERSION_NUM = 1;
 
-    public TerminalAuthenticationInfo(SecurityInfo si) {
-        super(si);
-    }
-
-    public TerminalAuthenticationInfo(InputStream in) throws IOException {
-        super(in);
-    }
-
+	private String oid;
+	private int version;
+	private DERObject optionalData;			// FIXME: can be DERSequence efCVCA
+    
     /**
      * Constructs a new object.
      * 
-     * @param identifier
+     * @param oid
      *            the id_TA identifier
      * @param version
      *            has to be 1
      * @param efCVCA
      *            the file ID information of the efCVCA file
      */
-    public TerminalAuthenticationInfo(DERObjectIdentifier identifier, int version, DERSequence efCVCA) {
-        super(identifier, new DERInteger(version), efCVCA);
+    public TerminalAuthenticationInfo(String oid, int version, DERSequence efCVCA) {
+		this.oid = oid;
+		this.version = version;
+		this.optionalData = efCVCA;
+		checkFields();
     }
 
     /**
@@ -85,10 +83,23 @@ public class TerminalAuthenticationInfo extends SecurityInfo
      * @param version
      *            has to be 1
      */
-    public TerminalAuthenticationInfo(DERObjectIdentifier identifier,
-            int version) {
+    public TerminalAuthenticationInfo(String identifier, int version) {
         this(identifier, version, null);
     }
+    
+	public DERObject getDERObject() {
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(new DERObjectIdentifier(oid));
+		v.add(new DERInteger(version));
+		if (optionalData != null) {
+			v.add(optionalData);
+		}
+		return new DERSequence(v);
+	}
+	
+	public String getObjectIdentifier() {
+		return oid;
+	}
 
     /**
      * Constructs a new object with the required object identifier and version
@@ -99,45 +110,37 @@ public class TerminalAuthenticationInfo extends SecurityInfo
      * @param shortFileId
      *            short file id for the above file, -1 if none
      */
-    public TerminalAuthenticationInfo(Integer fileId, Integer shortFileId) {
-        this(
-                EACObjectIdentifiers.id_TA,
-                VERSION_NUM,
-                shortFileId.byteValue() != -1 ? new DERSequence(
-                        new ASN1Encodable[] {
-                                new DEROctetString(Hex.hexStringToBytes(Hex
-                                        .shortToHexString(fileId.shortValue()))),
-                                new DEROctetString(Hex.hexStringToBytes(Hex
-                                        .byteToHexString(shortFileId
-                                                .byteValue()))) })
-                        : new DERSequence(
-                                new ASN1Encodable[] { new DEROctetString(Hex
-                                        .hexStringToBytes(Hex
-                                                .shortToHexString(fileId
-                                                        .shortValue()))) }));
-    }
+	public TerminalAuthenticationInfo(Integer fileId, Integer shortFileId) {
+		this(EACObjectIdentifiers.id_TA.getId(), VERSION_NUM, shortFileId
+				.byteValue() != -1 ? new DERSequence(new ASN1Encodable[] {
+				new DEROctetString(Hex.hexStringToBytes(Hex
+						.shortToHexString(fileId.shortValue()))),
+				new DEROctetString(Hex.hexStringToBytes(Hex
+						.byteToHexString(shortFileId.byteValue()))) })
+				: new DERSequence(new ASN1Encodable[] { new DEROctetString(Hex
+						.hexStringToBytes(Hex.shortToHexString(fileId
+								.shortValue()))) }));
+	}
 
     /**
      * Checks the correctness of the data for this instance of SecurityInfo
      */
     protected void checkFields() {
         try {
-            if (!checkRequiredIdentifier(identifier)) {
-                throw new IllegalArgumentException("Wrong identifier: "
-                        + identifier.getId());
+            if (!checkRequiredIdentifier(oid)) {
+                throw new IllegalArgumentException("Wrong identifier: " + oid);
             }
-            if (!(requiredData instanceof DERInteger)
-                    || ((DERInteger) requiredData).getValue().intValue() != VERSION_NUM) {
+            if (version != VERSION_NUM) {
                 throw new IllegalArgumentException("Wrong version");
             }
             if (optionalData != null) {
-                DERSequence s = (DERSequence) optionalData;
-                DEROctetString fid = (DEROctetString) s.getObjectAt(0);
+                DERSequence sequence = (DERSequence) optionalData;
+                DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
                 if (fid.getOctets().length != 2) {
                     throw new IllegalArgumentException("Malformed FID.");
                 }
-                if (s.size() == 2) {
-                    DEROctetString sfi = (DEROctetString) s.getObjectAt(1);
+                if (sequence.size() == 2) {
+                    DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);
                     if (sfi.getOctets().length != 1) {
                         throw new IllegalArgumentException("Malformed SFI.");
                     }
@@ -151,15 +154,15 @@ public class TerminalAuthenticationInfo extends SecurityInfo
     }
 
     /**
-     * Checks whether the given object identifier identfies a
+     * Checks whether the given object identifier identifies a
      * TerminalAuthenticationInfo structure.
      * 
      * @param id
      *            object identifier
      * @return true if the match is positive
      */
-    public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-        return id.equals(EACObjectIdentifiers.id_TA);
+    public static boolean checkRequiredIdentifier(String id) {
+        return id.equals(EACObjectIdentifiers.id_TA.getId());
     }
 
     /**
@@ -194,9 +197,6 @@ public class TerminalAuthenticationInfo extends SecurityInfo
         return ((DEROctetString) s.getObjectAt(1)).getOctets()[0];
     }
 
-    /*
-     * FIXME: working on this... -- MO
-     */
     public String toString() {
     	StringBuffer result = new StringBuffer();
     	result.append("TerminalAuthenticationInfo");

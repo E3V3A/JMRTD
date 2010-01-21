@@ -41,12 +41,19 @@ public abstract class DataGroup extends PassportFile
 	private int dataGroupLength;
 
 	/**
-	 * Constructor only visible to the other
-	 * classes in this package.
+	 * Constructs a datagroup. This constructor
+	 * is only visible to the other classes in this package.
 	 */
 	DataGroup() {
 	}
 
+	/**
+	 * Constructs a datagroup from the DER encoded data in the
+	 * given input stream. Tag and length are read, so the input stream
+	 * is positioned just before the value.
+	 * 
+	 * @param in an input stream
+	 */
 	protected DataGroup(InputStream in) {
 		try {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	

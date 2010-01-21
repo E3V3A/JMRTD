@@ -21,15 +21,15 @@
 
 package org.jmrtd.lds;
 
-import java.io.IOException;
-import java.io.InputStream;
-
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 
 /**
- * A specialised SecurityInfo structure that stores chip authentication info,
+ * A concrete SecurityInfo structure that stores chip authentication info,
  * see EAC 1.11 specification.
  * 
  * This data structure provides detailed information on an implementation of
@@ -44,98 +44,99 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  *     Authentication.</li>
  * </ul>
  * 
- * @author Wojciech Mostowski <woj@cs.ru.nl>
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
  * FIXME: dependency on BC?
  */
 public class ChipAuthenticationInfo extends SecurityInfo {
 
-    public static final int VERSION_NUM = 1;
+	public static final int VERSION_NUM = 1;
 
-    public ChipAuthenticationInfo(SecurityInfo si) {
-        super(si);
-    }
+	private String oid;
+	private int version;
+	private int keyId;
 
-    public ChipAuthenticationInfo(InputStream in) throws IOException {
-        super(in);
-    }
+	/**
+	 * Constructs a new object.
+	 * 
+	 * @param oid
+	 *            a proper EAC identifier
+	 * @param version
+	 *            has to be 1
+	 * @param keyId
+	 *            the key identifier
+	 */
+	public ChipAuthenticationInfo(String oid, int version, int keyId) {
+		this.oid = oid;
+		this.version = version;
+		this.keyId = keyId;
+		checkFields();
+	}
 
-    /**
-     * Constructs a new object
-     * 
-     * @param identifier
-     *            a proper EAC identifier
-     * @param version
-     *            has to be one
-     * @param keyId
-     *            the key identifier
-     */
-    public ChipAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version, Integer keyId) {
-        super(identifier, new DERInteger(version),
-                keyId != null ? new DERInteger(keyId) : null);
-    }
+	/**
+	 * Constructs a new object.
+	 * 
+	 * @param oid
+	 *            a proper EAC identifier
+	 * @param version
+	 *            has to be 1
+	 */
+	public ChipAuthenticationInfo(String oid, int version) {
+		this(oid, version, -1);
+	}
 
-    /**
-     * Constructs a new object
-     * 
-     * @param identifier
-     *            a proper EAC identifier
-     * @param version
-     *            has to be one
-     */
-    public ChipAuthenticationInfo(DERObjectIdentifier identifier,
-            Integer version) {
-        this(identifier, version, null);
-    }
+	public DERObject getDERObject() {
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(new DERObjectIdentifier(oid));
+		v.add(new DERInteger(version));
+		if (keyId >= 0) {
+			v.add(new DERInteger(keyId));
+		}
+		return new DERSequence(v);
+	}
+	
+	public String getObjectIdentifier() {
+		return oid;
+	}
 
-    /**
-     * Returns a key identifier stored in this ChipAuthenticationInfo structure, null
-     * if not present
-     * 
-     * @return key identifier stored in this ChipAuthenticationInfo structure
-     */
-    public Integer getKeyId() {
-        if (optionalData == null) {
-            return -1;
-        }
-        return ((DERInteger) optionalData).getValue().intValue();
-    }
+	/**
+	 * Returns a key identifier stored in this ChipAuthenticationInfo structure, null
+	 * if not present
+	 * 
+	 * @return key identifier stored in this ChipAuthenticationInfo structure
+	 */
+	public Integer getKeyId() {
+		return keyId;
+	}
 
-    /**
-     * Checks the correctness of the data for this instance of SecurityInfo
-     */
-    protected void checkFields() {
-        try {
-            if (!checkRequiredIdentifier(identifier)) {
-                throw new IllegalArgumentException("Wrong identifier: "
-                        + identifier.getId());
-            }
-            if (!(requiredData instanceof DERInteger)
-                    || ((DERInteger) requiredData).getValue().intValue() != VERSION_NUM) {
-                throw new IllegalArgumentException("Wrong version");
-            }
-            if (optionalData != null && !(optionalData instanceof DERInteger)) {
-                throw new IllegalArgumentException("Key ID not an integer: "
-                        + optionalData.getClass().getName());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new IllegalArgumentException(
-                    "Malformed ChipAuthenticationInfo.");
-        }
-    }
+	/**
+	 * Checks the correctness of the data for this instance of SecurityInfo
+	 */
+	protected void checkFields() {
+		try {
+			if (!checkRequiredIdentifier(oid)) {
+				throw new IllegalArgumentException("Wrong identifier: "	+ oid);
+			}
+			if (version != VERSION_NUM) {
+				throw new IllegalArgumentException("Wrong version");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException("Malformed ChipAuthenticationInfo.");
+		}
+	}
 
-    /**
-     * Checks whether the given object identifier identfies a
-     * ChipAuthenticationInfo structure.
-     * 
-     * @param id
-     *            object identifier
-     * @return true if the match is positive
-     */
-    public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-        return id.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
-                || id.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
-    }
+	/**
+	 * Checks whether the given object identifier identfies a
+	 * ChipAuthenticationInfo structure.
+	 * 
+	 * @param oid
+	 *            object identifier
+	 * @return true if the match is positive
+	 */
+	static boolean checkRequiredIdentifier(String oid) {
+		DERObjectIdentifier derOID = new DERObjectIdentifier(oid);
+		return derOID.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
+		|| derOID.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
+	}
 }

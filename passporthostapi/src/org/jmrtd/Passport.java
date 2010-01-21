@@ -64,6 +64,7 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
@@ -71,10 +72,11 @@ import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
+import org.jmrtd.lds.SecurityInfo;
 
 /**
- * A passport object is basically a collection of buffered input streams for the data groups,
- * combined with some status information (progress).
+ * A passport object is basically a collection of buffered input streams for the
+ * data groups, combined with some status information (progress).
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -87,8 +89,8 @@ public class Passport
 	private Map<Short, InputStream> bufferedStreams = new HashMap<Short, InputStream>();
 	private Map<Short, byte[]> filesBytes = new HashMap<Short, byte[]>();
 	private Map<Short, Integer> fileLengths = new HashMap<Short, Integer>();
-	private int bytesRead = 0;
-	private int totalLength = 0;
+	private int bytesRead;
+	private int totalLength;
 
 	public short CVCA_FID = PassportService.EF_CVCA;
 
@@ -106,10 +108,11 @@ public class Passport
 	private PrivateKey aaPrivateKey = null;
 
 	/**
-	 * Constructs a passport object by reading from an actual passport chip
+	 * Constructs a passport object by reading from an actual MRTD chip
 	 * through a PassportService.
 	 * 
 	 * @param service the service to read from
+	 * @param cvcaStore contains EAC relevant credentials
 	 * @param documentNumber the document number is used in EAC
 	 * 
 	 * @throws IOException on error
@@ -176,7 +179,7 @@ public class Passport
 				return;
 			}
 			// Try EAC
-			if(documentNumber == null) {
+			if (documentNumber == null) {
 				// Try DG1 if document number was not supplied
 				bufferedIn = preReadFile(service, PassportService.EF_DG1);
 				documentNumber = new DG1File(bufferedIn).getMRZInfo().getDocumentNumber();
@@ -447,10 +450,12 @@ public class Passport
 
 	public void setEACKeys(KeyPair keyPair) {
 		this.eacPrivateKey = keyPair.getPrivate();
-		Map<Integer,PublicKey> key = new TreeMap<Integer, PublicKey>();
-		key.put(-1, keyPair.getPublic());
-		DG14File dg14file = new DG14File(key, null, null, null);
-		putFile(PassportService.EF_DG14, dg14file.getEncoded());
+
+		List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
+		PublicKey publicKey = keyPair.getPublic();
+		securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
+		DG14File dg14File = new DG14File(securityInfos);		
+		putFile(PassportService.EF_DG14, dg14File.getEncoded());
 	}
 
 	public void setAAKeys(KeyPair keyPair) {
@@ -501,17 +506,16 @@ public class Passport
 	/* Only private methods below. */
 
 	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
-		BufferedInputStream bufferedIn = null;
-		if(rawStreams.containsKey(fid)) {
+		if (rawStreams.containsKey(fid)) {
 			int length = fileLengths.get(fid); 
-			bufferedIn = new BufferedInputStream(rawStreams.get(fid), length+1);
+			BufferedInputStream bufferedIn = new BufferedInputStream(rawStreams.get(fid), length + 1);
 			bufferedIn.mark(length + 1);
 			rawStreams.put(fid, bufferedIn);
 			return bufferedIn;
-		}else{
+		} else {
 			CardFileInputStream cardIn = service.readFile(fid);
 			int length = cardIn.getFileLength();
-			bufferedIn = new BufferedInputStream(cardIn, length + 1);
+			BufferedInputStream bufferedIn = new BufferedInputStream(cardIn, length + 1);
 			totalLength += length;
 			fileLengths.put(fid, length);
 			bufferedIn.mark(length + 1);

@@ -23,11 +23,9 @@
 package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.util.Enumeration;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -35,22 +33,6 @@ import javax.crypto.spec.DESedeKeySpec;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERApplicationSpecific;
-import org.bouncycastle.asn1.DERBoolean;
-import org.bouncycastle.asn1.DEREnumerated;
-import org.bouncycastle.asn1.DERGeneralizedTime;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERString;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.DERUTCTime;
-import org.bouncycastle.asn1.DERUnknownTag;
 import org.jmrtd.lds.MRZInfo;
 
 /**

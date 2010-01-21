@@ -21,22 +21,30 @@
 
 package org.jmrtd.lds;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.interfaces.DHPublicKey;
+
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X962NamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 
 /**
- * A specialised SecurityInfo structure that stores chip authentication public
+ * A concrete SecurityInfo structure that stores chip authentication public
  * key info, see EAC 1.11 specification.
  * 
  * This data structure provides a Chip Authentication Public Key of the MRTD chip.
@@ -50,47 +58,77 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
  *     Authentication.</li>
  * </ul>
  * 
- * @author Wojciech Mostowski <woj@cs.ru.nl>
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
  * FIXME: interface dependency on BC classes?
+ * FIXME: maybe clean up some of these constructors...
  */
 public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 {
-	public ChipAuthenticationPublicKeyInfo(SecurityInfo securityInfo) {
-		super(securityInfo);
-	}
-
-	public ChipAuthenticationPublicKeyInfo(InputStream in) throws IOException {
-		super(in);
-	}
+	private String oid;
+	private SubjectPublicKeyInfo subjectPublicKeyInfo;			// FIXME can be SubjectPublicKeyInfo
+	private int keyId;
 
 	/**
 	 * Constructs a new object.
 	 * 
-	 * @param identifier
+	 * @param oid
 	 *            a proper EAC identifier
 	 * @param publicKeyInfo
 	 *            appropriate SubjectPublicKeyInfo structure
 	 * @param keyId
-	 *            the key identifier
+	 *            the key identifier or -1 if not present
 	 */
-	public ChipAuthenticationPublicKeyInfo(DERObjectIdentifier identifier,
-			SubjectPublicKeyInfo publicKeyInfo, Integer keyId) {
-		super(identifier, publicKeyInfo.getDERObject(),
-				keyId != null ? new DERInteger(keyId) : null);
+	public ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo, int keyId) {
+		this.oid = oid;
+		this.subjectPublicKeyInfo = publicKeyInfo;
+		this.keyId = keyId;
+		checkFields();
 	}
 
 	/**
 	 * Constructs a new object.
 	 * 
-	 * @param identifier
+	 * @param oid
 	 *            a proper EAC identifier
 	 * @param publicKeyInfo
 	 *            appropriate SubjectPublicKeyInfo structure
 	 */
-	public ChipAuthenticationPublicKeyInfo(DERObjectIdentifier identifier,
-			SubjectPublicKeyInfo publicKeyInfo) {
-		this(identifier, publicKeyInfo, null);
+	public ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo) {
+		this(oid, publicKeyInfo, -1);
+	}
+	
+	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, int keyId) {
+		this(getProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
+	}
+
+	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey) {
+		this(getProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey));
+	}
+
+	private static String getProtocolIdentifier(PublicKey publicKey) {
+		// FIXME: What about PublicKey.getAlgorithm()?
+		if (publicKey instanceof ECPublicKey) {
+			return EACObjectIdentifiers.id_PK_ECDH.getId();
+		} else if (publicKey instanceof DHPublicKey) {
+			return EACObjectIdentifiers.id_PK_DH.getId();
+		} else {
+			throw new IllegalArgumentException("Wrong key type.");
+		}
+	}
+
+	public DERObject getDERObject() {
+		ASN1EncodableVector vector = new ASN1EncodableVector();
+		vector.add(new DERObjectIdentifier(oid));
+		vector.add((DERSequence)subjectPublicKeyInfo.getDERObject());
+		if (keyId >= 0) {
+			vector.add(new DERInteger(keyId));
+		}
+		return new DERSequence(vector);
+	}
+
+	public String getObjectIdentifier() {
+		return oid;
 	}
 
 	/**
@@ -100,11 +138,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	 * @return key identifier stored in this ChipAuthenticationPublicKeyInfo
 	 *         structure
 	 */
-	public Integer getKeyId() {
-		if (optionalData == null) {
-			return -1;
-		}
-		return ((DERInteger) optionalData).getValue().intValue();
+	public int getKeyId() {
+		return keyId;
 	}
 
 	/**
@@ -115,22 +150,17 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	 *         ChipAuthenticationPublicKeyInfo structure
 	 */
 	public SubjectPublicKeyInfo getSubjectPublicKeyInfo() {
-		return new SubjectPublicKeyInfo((DERSequence) requiredData);
+		return subjectPublicKeyInfo;
 	}
 
 	/**
 	 * Checks the correctness of the data for this instance of SecurityInfo
 	 */
+	// FIXME: also check type of public key
 	protected void checkFields() {
 		try {
-			if (!checkRequiredIdentifier(identifier)) {
-				throw new IllegalArgumentException("Wrong identifier: "
-						+ identifier.getId());
-			}
-			getSubjectPublicKeyInfo();
-			if (optionalData != null && !(optionalData instanceof DERInteger)) {
-				throw new IllegalArgumentException("Key Id not an integer: "
-						+ optionalData.getClass().getName());
+			if (!checkRequiredIdentifier(oid)) {
+				throw new IllegalArgumentException("Wrong identifier: " + oid);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -140,25 +170,26 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	}
 
 	/**
-	 * Checks whether the given object identifier identfies a
+	 * Checks whether the given object identifier identifies a
 	 * ChipAuthenticationPublicKeyInfo structure.
 	 * 
-	 * @param id
-	 *            object identifier
+	 * @param oid object identifier
+	 * 
 	 * @return true if the match is positive
 	 */
-	public static boolean checkRequiredIdentifier(DERObjectIdentifier id) {
-		return id.equals(EACObjectIdentifiers.id_PK_DH)
-		|| id.equals(EACObjectIdentifiers.id_PK_ECDH);
+	public static boolean checkRequiredIdentifier(String oid) {
+		DERObjectIdentifier derOID = new DERObjectIdentifier(oid);
+		return derOID.equals(EACObjectIdentifiers.id_PK_DH)
+		|| derOID.equals(EACObjectIdentifiers.id_PK_ECDH);
 	}
 
 	public String toString() {
-		DERObjectIdentifier protocolOID = getObjectIdentifier();
-		String protocol = null;
+		DERObjectIdentifier derOID = new DERObjectIdentifier(oid);
+		String protocol = oid;
 		try {
-			protocol = lookupMnemonicByOID(getObjectIdentifier());
+			protocol = lookupMnemonicByOID(derOID);
 		} catch (NoSuchAlgorithmException nsae) {
-			protocol = protocolOID.getId();
+			/* NOTE: we'll stick with oid */
 		}
 
 		return "ChipAuthenticationPublicKeyInfo ["
@@ -171,15 +202,79 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	private String subjectPublicKeyInfoToString(SubjectPublicKeyInfo spki) {
 		try {
 			StringBuffer result = new StringBuffer();
-			byte[] encodedPublicKeyInfoBytes = spki.getDEREncoded();
-			KeySpec keySpec = new X509EncodedKeySpec(encodedPublicKeyInfoBytes);
-			KeyFactory factory = KeyFactory.getInstance("DH");
-			PublicKey publicKey = factory.generatePublic(keySpec);
+
+			PublicKey publicKey = getPublicKey(spki);
 			result.append(publicKey.toString());
 			return result.toString();
 		} catch (Exception ee) {
 			ee.printStackTrace();
 			return ee.getMessage();
+		}
+	}
+
+	private static PublicKey getPublicKey(SubjectPublicKeyInfo spki) {
+		try {
+			byte[] encodedPublicKeyInfoBytes = spki.getDEREncoded();
+			KeySpec keySpec = new X509EncodedKeySpec(encodedPublicKeyInfoBytes);
+			KeyFactory factory = KeyFactory.getInstance("DH");
+			return factory.generatePublic(keySpec);
+		} catch (GeneralSecurityException gse) {
+			gse.printStackTrace();
+			return null;
+		}
+	}
+	
+	/*
+	 * Woj, I moved this here from DG14File, seemed more appropriate here. -- MO
+	 */
+	private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey) {
+		// Here we need to some hocus-pokus, the EAC specification require for
+		// all the
+		// key information to include the domain parameters explicitly. This is
+		// not what
+		// Bouncy Castle does by default. But we first have to check if this is
+		// the case.
+		try {
+			if (publicKey instanceof ECPublicKey) {
+				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
+				SubjectPublicKeyInfo vInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				asn1In.close();
+				DERObject parameters = vInfo.getAlgorithmId().getParameters().getDERObject();
+				X9ECParameters params = null;
+				if (parameters instanceof DERObjectIdentifier) {
+					params = X962NamedCurves
+					.getByOID((DERObjectIdentifier) parameters);
+					org.bouncycastle.math.ec.ECPoint p = params.getG();
+					p = p.getCurve().createPoint(p.getX().toBigInteger(),
+							p.getY().toBigInteger(), false);
+					params = new X9ECParameters(params.getCurve(), p, params
+							.getN(), params.getH(), params.getSeed());
+				} else {
+					return vInfo;
+				}
+
+				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey) publicKey;
+				AlgorithmIdentifier id = new AlgorithmIdentifier(vInfo
+						.getAlgorithmId().getObjectId(), params.getDERObject());
+				org.bouncycastle.math.ec.ECPoint p = pub.getQ();
+				// In case we would like to compress the point:
+				// p = p.getCurve().createPoint(p.getX().toBigInteger(),
+				// p.getY().toBigInteger(), true);
+				vInfo = new SubjectPublicKeyInfo(id, p.getEncoded());
+				return vInfo;
+			} else if (publicKey instanceof DHPublicKey) {
+				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
+				try {
+					return new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				} finally {
+					asn1In.close();
+				}
+			} else {
+				throw new IllegalArgumentException("Unrecognized key type, should be DH or EC");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 }
