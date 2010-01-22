@@ -17,6 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
+ * $Id: $
  */
 
 package org.jmrtd.lds;
@@ -66,7 +67,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 {
 	private String oid;
-	private SubjectPublicKeyInfo subjectPublicKeyInfo;			// FIXME can be SubjectPublicKeyInfo
+	private SubjectPublicKeyInfo subjectPublicKeyInfo;
 	private int keyId;
 
 	/**
@@ -99,22 +100,11 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	}
 	
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, int keyId) {
-		this(getProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
+		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
 	}
 
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey) {
-		this(getProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey));
-	}
-
-	private static String getProtocolIdentifier(PublicKey publicKey) {
-		// FIXME: What about PublicKey.getAlgorithm()?
-		if (publicKey instanceof ECPublicKey) {
-			return EACObjectIdentifiers.id_PK_ECDH.getId();
-		} else if (publicKey instanceof DHPublicKey) {
-			return EACObjectIdentifiers.id_PK_DH.getId();
-		} else {
-			throw new IllegalArgumentException("Wrong key type.");
-		}
+		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey));
 	}
 
 	public DERObject getDERObject() {
@@ -242,20 +232,16 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 				DERObject parameters = vInfo.getAlgorithmId().getParameters().getDERObject();
 				X9ECParameters params = null;
 				if (parameters instanceof DERObjectIdentifier) {
-					params = X962NamedCurves
-					.getByOID((DERObjectIdentifier) parameters);
+					params = X962NamedCurves.getByOID((DERObjectIdentifier)parameters);
 					org.bouncycastle.math.ec.ECPoint p = params.getG();
-					p = p.getCurve().createPoint(p.getX().toBigInteger(),
-							p.getY().toBigInteger(), false);
-					params = new X9ECParameters(params.getCurve(), p, params
-							.getN(), params.getH(), params.getSeed());
+					p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), false);
+					params = new X9ECParameters(params.getCurve(), p, params.getN(), params.getH(), params.getSeed());
 				} else {
 					return vInfo;
 				}
 
-				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey) publicKey;
-				AlgorithmIdentifier id = new AlgorithmIdentifier(vInfo
-						.getAlgorithmId().getObjectId(), params.getDERObject());
+				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
+				AlgorithmIdentifier id = new AlgorithmIdentifier(vInfo.getAlgorithmId().getObjectId(), params.getDERObject());
 				org.bouncycastle.math.ec.ECPoint p = pub.getQ();
 				// In case we would like to compress the point:
 				// p = p.getCurve().createPoint(p.getX().toBigInteger(),
@@ -275,6 +261,17 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
+		}
+	}
+	
+	private static String inferProtocolIdentifier(PublicKey publicKey) {
+		// FIXME: Couldn't we use PublicKey.getAlgorithm() here?
+		if (publicKey instanceof ECPublicKey) {
+			return EACObjectIdentifiers.id_PK_ECDH.getId();
+		} else if (publicKey instanceof DHPublicKey) {
+			return EACObjectIdentifiers.id_PK_DH.getId();
+		} else {
+			throw new IllegalArgumentException("Wrong key type.");
 		}
 	}
 }

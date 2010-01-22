@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
- *
+ * 
+ * $Id: $
  */
 
 package org.jmrtd.lds;
@@ -56,7 +57,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 
 	private String oid;
 	private int version;
-	private DERObject optionalData;			// FIXME: can be DERSequence efCVCA
+	private DERSequence efCVCA;
     
     /**
      * Constructs a new object.
@@ -71,7 +72,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo
     public TerminalAuthenticationInfo(String oid, int version, DERSequence efCVCA) {
 		this.oid = oid;
 		this.version = version;
-		this.optionalData = efCVCA;
+		this.efCVCA = efCVCA;
 		checkFields();
     }
 
@@ -86,20 +87,6 @@ public class TerminalAuthenticationInfo extends SecurityInfo
     public TerminalAuthenticationInfo(String identifier, int version) {
         this(identifier, version, null);
     }
-    
-	public DERObject getDERObject() {
-		ASN1EncodableVector v = new ASN1EncodableVector();
-		v.add(new DERObjectIdentifier(oid));
-		v.add(new DERInteger(version));
-		if (optionalData != null) {
-			v.add(optionalData);
-		}
-		return new DERSequence(v);
-	}
-	
-	public String getObjectIdentifier() {
-		return oid;
-	}
 
     /**
      * Constructs a new object with the required object identifier and version
@@ -122,10 +109,39 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 								.shortValue()))) }));
 	}
 
+	public DERObject getDERObject() {
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(new DERObjectIdentifier(oid));
+		v.add(new DERInteger(version));
+		if (efCVCA != null) {
+			v.add(efCVCA);
+		}
+		return new DERSequence(v);
+	}
+	
+	public String getObjectIdentifier() {
+		return oid;
+	}
+
+    /**
+     * Returns the efCVCA file identifier stored in this file, -1 if none
+     * 
+     * @return the efCVCA file identifier stored in this file
+     */
+    public int getFileID() {
+        if (efCVCA == null) {
+            return -1;
+        }
+        DERSequence s = (DERSequence) efCVCA;
+        DEROctetString fid = (DEROctetString) s.getObjectAt(0);
+        byte[] fidBytes = fid.getOctets();
+        return Hex.hexStringToInt(Hex.bytesToHexString(fidBytes));
+    }
+	
     /**
      * Checks the correctness of the data for this instance of SecurityInfo
      */
-    protected void checkFields() {
+    private void checkFields() {
         try {
             if (!checkRequiredIdentifier(oid)) {
                 throw new IllegalArgumentException("Wrong identifier: " + oid);
@@ -133,8 +149,8 @@ public class TerminalAuthenticationInfo extends SecurityInfo
             if (version != VERSION_NUM) {
                 throw new IllegalArgumentException("Wrong version");
             }
-            if (optionalData != null) {
-                DERSequence sequence = (DERSequence) optionalData;
+            if (efCVCA != null) {
+                DERSequence sequence = (DERSequence) efCVCA;
                 DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
                 if (fid.getOctets().length != 2) {
                     throw new IllegalArgumentException("Malformed FID.");
@@ -166,31 +182,16 @@ public class TerminalAuthenticationInfo extends SecurityInfo
     }
 
     /**
-     * Returns the efCVCA file identifier stored in this file, -1 if none
-     * 
-     * @return the efCVCA file identifier stored in this file
-     */
-    public int getFileID() {
-        if (optionalData == null) {
-            return -1;
-        }
-        DERSequence s = (DERSequence) optionalData;
-        DEROctetString fid = (DEROctetString) s.getObjectAt(0);
-        byte[] fidBytes = fid.getOctets();
-        return Hex.hexStringToInt(Hex.bytesToHexString(fidBytes));
-    }
-
-    /**
      * Returns the efCVCA short file identifier stored in this file, -1 if none
      * or not present
      * 
      * @return the efCVCA short file identifier stored in this file
      */
     public byte getShortFileID() {
-        if (optionalData == null) {
+        if (efCVCA == null) {
             return -1;
         }
-        DERSequence s = (DERSequence) optionalData;
+        DERSequence s = (DERSequence) efCVCA;
         if (s.size() != 2) {
             return -1;
         }

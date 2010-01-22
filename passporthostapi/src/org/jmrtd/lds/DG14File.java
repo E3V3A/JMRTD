@@ -56,6 +56,15 @@ public class DG14File extends DataGroup
 	private List<SecurityInfo> securityInfos;
 
 	/**
+	 * Constructs a new DG14 file from the provided data.
+	 *  
+	 * @param securityInfos a list of security infos
+	 */
+	public DG14File(List<SecurityInfo> securityInfos) {
+		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
+	}
+	
+	/**
 	 * Constructs a new DG14 file from the data in <code>in</code>.
 	 * 
 	 * @param in
@@ -69,7 +78,7 @@ public class DG14File extends DataGroup
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
 			ASN1InputStream asn1in = new ASN1InputStream(value);
-			DERSet set = (DERSet) asn1in.readObject();
+			DERSet set = (DERSet)asn1in.readObject();
 			for (int i = 0; i < set.size(); i++) {
 				DERObject o = set.getObjectAt(i).getDERObject();
 				SecurityInfo si = SecurityInfo.createSecurityInfo(o);
@@ -78,15 +87,6 @@ public class DG14File extends DataGroup
 		} catch (Exception e) {
 			throw new IllegalArgumentException(e.toString());
 		}
-	}
-
-	/**
-	 * Constructs a new DG14 file from the provided data.
-	 *  
-	 * @param securityInfos a list of security infos
-	 */
-	public DG14File(List<SecurityInfo> securityInfos) {
-		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
 	}
 
 	/**
@@ -105,7 +105,7 @@ public class DG14File extends DataGroup
 	 *            a mapping of file identifiers (see above) to short file
 	 *            identifiers (can be empty)
 	 */
-	// FIXME: why not simply List<SecurityInfo>()
+	// FIXME: why not simply use the List<SecurityInfo>() constructor?
 	public DG14File(Map<Integer, PublicKey> publicKeys,
 			Map<Integer, DERObjectIdentifier> chipInfoMap,
 			List<Integer> cvcaFileIdList,
@@ -257,7 +257,7 @@ public class DG14File extends DataGroup
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG14File other = (DG14File)obj;
 		return (securityInfos == null && other.securityInfos == null)
-		|| securityInfos.equals(other.securityInfos);
+			|| securityInfos.equals(other.securityInfos);
 	}
 
 	public int hashCode() {
@@ -271,12 +271,9 @@ public class DG14File extends DataGroup
 			// not?
 			KeyFactory kf = KeyFactory.getInstance("DH");
 			return kf.generatePublic(spec);
-
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			throw new IllegalArgumentException("Could not decode key.");
 		}
 	}
-
-
 }
