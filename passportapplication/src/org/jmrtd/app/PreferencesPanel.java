@@ -439,11 +439,7 @@ public class PreferencesPanel extends JPanel
 			final Component c = this;
 			setBorder(BorderFactory.createTitledBorder(title));
 			final JTextField folderTextField = new JTextField(30);
-			try {
-				folderTextField.setText(directory.getCanonicalPath());
-			} catch(IOException ioe) {
-				/* NOTE: We'll leave this field empty then... */
-			}
+			folderTextField.setText(directory.getAbsolutePath());
 			final JButton browseCVCADirectoryButton = new JButton("...");
 			add(folderTextField);
 			add(browseCVCADirectoryButton);

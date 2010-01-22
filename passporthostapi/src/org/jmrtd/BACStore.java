@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.text.SimpleDateFormat;
@@ -46,7 +47,7 @@ import net.sourceforge.scuba.util.Files;
 public class BACStore
 {
 	private static final File
-	JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd"),
+	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
 	DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
@@ -62,19 +63,34 @@ public class BACStore
 	public BACStore(File location) {
 		setLocation(location);
 		entries = new ArrayList<BACKey>();
-		read();
+		read(location, entries);
 	}
-	
+
 	public BACStore(URL location) {
 		this(Files.toFile(location));
 	}
-	
+
 	public File getLocation() {
 		return location;
 	}
-	
+
 	public void setLocation(File location) {
 		this.location = location;
+		try {
+			if (!location.exists()) {
+				File parent = location.getParentFile();
+				if (!parent.isDirectory()) { 
+					if (!parent.mkdirs()) {
+						System.err.println("WARNING: could not create directory for bacDBFile \"" + parent.getCanonicalPath() + "\"");
+					}
+				}
+				if (!location.createNewFile()) {
+					System.err.println("WARNING: could not create bacDBFile \"" + location.getCanonicalPath() + "\"");
+				}
+			}
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
 	}
 
 	public List<BACKey> getEntries() {
@@ -97,7 +113,7 @@ public class BACStore
 		write(entries, location);
 	}
 
-	private String[] getFields(String entry) {
+	private static String[] getFields(String entry) {
 		StringTokenizer st = new StringTokenizer(entry.trim(), ",");
 		int tokenCount = st.countTokens();
 		String[] result = new String[tokenCount];
@@ -105,45 +121,6 @@ public class BACStore
 			result[i] = st.nextToken().trim();
 		}
 		return result;
-	}
-
-	private void read() {
-		try {
-			BufferedReader d = new BufferedReader(new FileReader(location));
-			while (true) {
-				String line = d.readLine();
-				if (line == null) { break; }
-				String[] fields = getFields(line);
-				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
-			}
-			d.close();
-		} catch (FileNotFoundException fnfe) {
-			/* NOTE: no problem... */
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	private static void write(List<BACKey> entries, File bacDBFile) {
-		try {
-			if (!bacDBFile.exists()) {
-				File parent = bacDBFile.getParentFile();
-				if (!parent.isDirectory()) { 
-					if (!parent.mkdirs()) {
-						System.err.println("WARNING: could not create directory for bacDBFile \"" + parent.getCanonicalPath() + "\"");
-					}
-				}
-				if (!bacDBFile.createNewFile()) {
-					System.err.println("WARNING: could not create bacDBFile \"" + bacDBFile.getCanonicalPath() + "\"");
-				}
-			}
-			PrintWriter bacDBWriter = new PrintWriter(new FileWriter(bacDBFile));
-			for (BACKey entry: entries) { bacDBWriter.println(entry); }
-			bacDBWriter.flush();
-			bacDBWriter.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 
 	public String toString() {
@@ -162,5 +139,33 @@ public class BACStore
 
 	public BACKey getEntry(int entryRowIndex) {
 		return entries.get(entryRowIndex);
+	}
+	
+	private static void read(File location, List<BACKey> entries) {
+		try {
+			BufferedReader d = new BufferedReader(new FileReader(location));
+			while (true) {
+				String line = d.readLine();
+				if (line == null) { break; }
+				String[] fields = getFields(line);
+				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
+			}
+			d.close();
+		} catch (FileNotFoundException fnfe) {
+			/* NOTE: no problem... */
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static void write(List<BACKey> entries, File file) {
+		try {
+			PrintWriter writer = new PrintWriter(new FileWriter(file));
+			for (BACKey entry: entries) { writer.println(entry); }
+			writer.flush();
+			writer.close();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+		}
 	}
 }

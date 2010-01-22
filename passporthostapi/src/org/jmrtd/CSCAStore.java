@@ -1,5 +1,6 @@
 package org.jmrtd;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -18,6 +19,10 @@ import net.sourceforge.scuba.util.Files;
  */
 public class CSCAStore
 {
+	private static final File
+	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+	DEFAULT_CSCA_DIR = new File(JMRTD_USER_DIR, "csca");
+	
 	private URL location;
 	
 	public CSCAStore() {

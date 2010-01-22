@@ -36,6 +36,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import net.sourceforge.scuba.util.Files;
+
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
@@ -69,8 +71,10 @@ public class CVCAStore
 		}
 	};
 
-	/** This is slightly more flexible than "/home/sos/woj/terminals". */
-	private static final File DEFAULT_CVCA_DIR = new File(System.getProperty("user.home"), "terminals");
+	/** This is slightly more flexible than "/home/sos/woj/terminals" ;) -- MO. */
+	private static final File
+	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+	DEFAULT_CVCA_DIR = new File(JMRTD_USER_DIR, "cvca");
 
 	private File location;
 	
@@ -78,7 +82,7 @@ public class CVCAStore
 	private final Map<String, PrivateKey> keysMap;
 
 	public CVCAStore() {
-		this(getDefaultCVCADir());
+		this(DEFAULT_CVCA_DIR);
 	}
 	
 	public CVCAStore(File location) {
@@ -260,9 +264,5 @@ public class CVCAStore
 		} catch (Exception e) {
 			return null;
 		}
-	}
-	
-	private static File getDefaultCVCADir() {
-		return DEFAULT_CVCA_DIR;
-	}
+	}	
 }

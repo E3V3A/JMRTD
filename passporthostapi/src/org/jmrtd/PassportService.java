@@ -290,15 +290,11 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Performs the <i>Basic Access Control</i> protocol.
 	 * 
-	 * @param documentNumber
-	 *            the document number
-	 * @param dateOfBirth
-	 *            card holder's birth date
-	 * @param dateOfExpiry
-	 *            document's expiry date
+	 * @param bacKey the key based on the document number,
+	 *               the card holder's birth date,
+	 *               and the document's expiry date
 	 * 
-	 * @throws CardServiceException
-	 *             if authentication failed
+	 * @throws CardServiceException if authentication failed
 	 */
 	public synchronized void doBAC(BACKey bacKey) throws CardServiceException {
 		try {
@@ -321,8 +317,7 @@ public class PassportService extends PassportApduService implements Serializable
 			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD,
-					true);
+			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
 			notifyBACPerformed(event);
 			state = BAC_AUTHENTICATED_STATE;
 		} catch (GeneralSecurityException gse) {
