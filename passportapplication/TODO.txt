@@ -9,7 +9,7 @@ VERSION 0.4.4
 -------------
 
 General
-+ Revert back to one jmrtd.jar (includes all of SCUBA)
++ Revert back to one jmrtd.jar (includes all of SCUBA) in distribution.
 + Move LDS data classes (*File, *Info) into org.jmrtd.lds package.
 + Move BACStore to passporthostapi (from passportapplication).
 + Fix unit test (when run from package explorer hangs on DG14 tests).
@@ -18,10 +18,11 @@ General
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of flat files?
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Move the verifySecurity logic from PassportFrame to the passporthostapi.
+- Move the verifySecurity logic from PassportFrame to the passporthostapi (in Passport class?).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
 - Copy default files from distribution jar into .jmrtd/
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
+- Where should BACStore, CSCAStore, CVCAStore, preferences be stored. On Windows in "user.home\Application Data\JMRTD", not in "user.home/.jmrtd".
 
 Preferences
 + Tabbed panes in preferences.
@@ -52,6 +53,8 @@ VERSION 0.5.x
 General
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
+- LDAP interface to PKD?
+- Java keystores instead of directries with DER binary files for CVCA, CSCA credentials.
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
@@ -67,10 +70,16 @@ Code quality
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 - ESC/Java2
 
-Web site
+Web site and documentation
 - A faq would be nice, with a howto compile it yourself.
 
 
 VERSION 0.9.x
 -------------
+
+Features
 - Webcam OCR of MRZ (OCR-B font).
+
+Documentation
+- Proper system documentation
+- Proper user documentation

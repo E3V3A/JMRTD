@@ -673,7 +673,7 @@ public class FaceInfo
 	   case SOURCE_TYPE_STATIC_PHOTO_DIGITAL_CAM:
 		   return "static photograph from a digital still-image camera";
 	   case SOURCE_TYPE_STATIC_PHOTO_SCANNER:
-		   return "static photograph fram a scanner";
+		   return "static photograph from a scanner";
 	   case SOURCE_TYPE_VIDEO_FRAME_UNKNOWN_SOURCE:
 		   return "single video frame from an unknown source";
 	   case SOURCE_TYPE_VIDEO_FRAME_ANALOG_CAM:

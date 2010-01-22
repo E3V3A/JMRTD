@@ -29,8 +29,13 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,7 +57,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 
+import org.jmrtd.CSCAStore;
+import org.jmrtd.CVCAStore;
+
 import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.util.Files;
 
 /**
  * Preferences panel.
@@ -79,12 +88,15 @@ public class PreferencesPanel extends JPanel
 	private static final String BAC_STORE_KEY = "bac.store.dir";
 	private static final String CSCA_STORE_KEY ="csca.store.dir";
 	private static final String CVCA_STORE_KEY ="cvca.store.dir";
-	
+
 	private static final long serialVersionUID = 5429621553165149988L;
 
+	private File preferencesFile;
 	private PreferencesState changedState;
 	private PreferencesState state;
 	private CardManager cardManager;
+	private CSCAStore cscaStore;
+	private CVCAStore cvcaStore;
 
 	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
 	private Map<ReadingMode, JRadioButton> readingModeRadioButtonMap;
@@ -97,16 +109,19 @@ public class PreferencesPanel extends JPanel
 	 * @param cm the card manager
 	 * @param preferencesFile file for storing preferences
 	 */
-	public PreferencesPanel(CardManager cm, File preferencesFile) {
+	public PreferencesPanel(CardManager cm, CSCAStore cscaStore, CVCAStore cvcaStore, File preferencesFile) {
 		super(new BorderLayout());
 		this.cardManager = cm;
+		this.cscaStore = cscaStore;
+		this.cvcaStore = cvcaStore;
+		this.preferencesFile = preferencesFile;
 		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
 
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
 		jtb.addTab("Certificate Files", createCertificatesPanel());
 		add(jtb, BorderLayout.CENTER);
-		
+
 		this.changedState = new PreferencesState(state);
 	}
 
@@ -161,50 +176,24 @@ public class PreferencesPanel extends JPanel
 	private JComponent createCertificatesPanel() {
 		final JPanel panel = new JPanel(new GridLayout(2,1));
 		panel.setBorder(BorderFactory.createTitledBorder("Certificate and key stores"));
-		final JComponent cvcaPanel = new FolderBrowser("CVCA store");
-		final JComponent cscaPanel = new FolderBrowser("CSCA store");
+		final DirectoryBrowser cscaPanel = new DirectoryBrowser("CSCA store", Files.toFile(cscaStore.getLocation()));
+		cscaPanel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				File newDirectory = cscaPanel.getDirectory();
+				cvcaStore.setLocation(newDirectory);
+			}
+		});
+		final DirectoryBrowser cvcaPanel = new DirectoryBrowser("CVCA store", cvcaStore.getLocation());
+		cvcaPanel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				File newDirectory = cvcaPanel.getDirectory();
+				cvcaStore.setLocation(newDirectory);
+			}
+		});
+
 		panel.add(cscaPanel);
 		panel.add(cvcaPanel);
 		return panel;
-	}
-		
-	private static class FolderBrowser extends JPanel
-	{
-		private static final long serialVersionUID = -1280621620589365355L;
-
-		public FolderBrowser(String title) {
-			super(new FlowLayout());
-			final Component c = this;
-			setBorder(BorderFactory.createTitledBorder(title));
-			final JTextField cvcaDirectoryField = new JTextField(30);
-			final JButton browseCVCADirectoryButton = new JButton("...");
-			add(cvcaDirectoryField);
-			add(browseCVCADirectoryButton);
-			browseCVCADirectoryButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					JFileChooser fileChooser = new JFileChooser();
-					fileChooser.setAcceptAllFileFilterUsed(false);
-					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-					fileChooser.setFileFilter(new FileFilter() {
-						public boolean accept(File f) { return f.isDirectory(); }
-						public String getDescription() { return "Directories"; }               
-					});
-					int choice = fileChooser.showOpenDialog(c);
-					switch (choice) {
-					case JFileChooser.APPROVE_OPTION:
-						try {
-							File file = fileChooser.getSelectedFile();
-							cvcaDirectoryField.setText(file.getCanonicalPath());
-						} catch (IOException ioe) {
-							/* NOTE: Do nothing. */
-							ioe.printStackTrace();
-						}
-						break;
-					default: break;
-					}
-				}
-			});
-		}
 	}
 
 	public String getName() {
@@ -236,6 +225,11 @@ public class PreferencesPanel extends JPanel
 			apduTraceFrame.setVisible(false);
 			cardManager.removeAPDUListener(apduTraceFrame);
 			apduTraceFrame = null;
+		}
+		try {
+			state.write();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
 		}
 	}
 
@@ -277,17 +271,17 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.NAME, terminal.getName());
 		return action;
 	}
-	
-	public URL getBACStore() {
-		return state.getBACStore();
+
+	public URL getBACStoreLocation() {
+		return state.getBACStoreLocation();
 	}
-	
-	public URL getCSCAStore() {
-		return state.getCSCAStore();
+
+	public URL getCSCAStoreLocation() {
+		return state.getCSCAStoreLocation();
 	}
-	
-	public URL getCVCAStore() {
-		return state.getCVCAStore();
+
+	public URL getCVCAStoreLocation() {
+		return state.getCVCAStoreLocation();
 	}
 
 	public Action getSetModeAction(final ReadingMode mode) {
@@ -323,8 +317,14 @@ public class PreferencesPanel extends JPanel
 		return action;
 	}
 
-	private class PreferencesState implements Cloneable
+
+	/**
+	 * The state that needs to be saved to or restored from file.
+	 */
+	private class PreferencesState implements Cloneable, Serializable
 	{	
+		private static final long serialVersionUID = -256804944538594379L;
+		
 		private Properties properties;
 
 		private PreferencesState(Properties properties) {
@@ -360,7 +360,6 @@ public class PreferencesPanel extends JPanel
 
 		public void setReadingMode(ReadingMode readingMode) {
 			properties.put(READING_MODE_KEY, readingMode);
-
 		}
 
 		public boolean isAPDUTracing() {
@@ -387,28 +386,105 @@ public class PreferencesPanel extends JPanel
 			return TERMINAL_KEY_PREFIX + terminalName.trim();
 		}
 
-		public URL getBACStore() {
+		public URL getBACStoreLocation() {
 			return (URL)properties.get(BAC_STORE_KEY);
 		}
-		
+
 		public void setBACStore(URL url) {
 			properties.put(CSCA_STORE_KEY, url);
 		}
-		
-		public URL getCSCAStore() {
+
+		public URL getCSCAStoreLocation() {
 			return (URL)properties.get(CSCA_STORE_KEY);
 		}
-		
+
 		public void setCSCAStore(URL url) {
 			properties.put(CSCA_STORE_KEY, url);
 		}
-		
-		public URL getCVCAStore() {
+
+		public URL getCVCAStoreLocation() {
 			return (URL)properties.get(CVCA_STORE_KEY);
 		}
-		
+
 		public void setCVCAStore(URL url) {
 			properties.put(CVCA_STORE_KEY, url);
 		}
+
+		private void write() throws IOException {
+			FileOutputStream fileOut = new FileOutputStream(preferencesFile);
+			ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
+			objectOut.writeObject(properties);
+			objectOut.flush();
+			objectOut.close();
+		}
+	}
+
+	/**
+	 * A file browser GUI component to search for a directory.
+	 */
+	private static class DirectoryBrowser extends JPanel
+	{
+		private static final long serialVersionUID = -1280621620589365355L;
+
+		private Collection<ActionListener> actionListeners;
+		private File directory;
+		private int eventCount;
+
+		public DirectoryBrowser(String title, File directory) {
+			super(new FlowLayout());
+			final JPanel panel = this;
+			this.actionListeners = new ArrayList<ActionListener>();
+			this.directory = directory;
+			this.eventCount = 0;
+			final Component c = this;
+			setBorder(BorderFactory.createTitledBorder(title));
+			final JTextField folderTextField = new JTextField(30);
+			try {
+				folderTextField.setText(directory.getCanonicalPath());
+			} catch(IOException ioe) {
+				/* NOTE: We'll leave this field empty then... */
+			}
+			final JButton browseCVCADirectoryButton = new JButton("...");
+			add(folderTextField);
+			add(browseCVCADirectoryButton);
+			browseCVCADirectoryButton.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					JFileChooser fileChooser = new JFileChooser();
+					fileChooser.setAcceptAllFileFilterUsed(false);
+					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+					fileChooser.setFileFilter(new FileFilter() {
+						public boolean accept(File f) { return f.isDirectory(); }
+						public String getDescription() { return "Directories"; }               
+					});
+					int choice = fileChooser.showOpenDialog(c);
+					switch (choice) {
+					case JFileChooser.APPROVE_OPTION:
+						try {
+							File file = fileChooser.getSelectedFile();
+							setDirectory(file);
+							folderTextField.setText(file.getCanonicalPath());
+							notifyActionListeners(new ActionEvent(panel, eventCount++, "Select"));
+						} catch (IOException ioe) {
+							/* NOTE: Do nothing. */
+							ioe.printStackTrace();
+						}
+						break;
+					default: break;
+					}
+				}
+			});
+		}
+
+		public File getDirectory() {
+			return directory;
+		}
+
+		public void setDirectory(File directory) {
+			this.directory = directory;
+		}
+
+		public void addActionListener(ActionListener l) { actionListeners.add(l); }
+
+		private void notifyActionListeners(ActionEvent e) { for (ActionListener l: actionListeners) { l.actionPerformed(e); } }
 	}
 }
