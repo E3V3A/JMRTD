@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,15 +17,13 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
+ * $Id: $
  */
 
 package org.jmrtd.lds;
 
 import java.io.InputStream;
-import java.security.KeyFactory;
 import java.security.PublicKey;
-import java.security.spec.KeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +38,6 @@ import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see
@@ -240,7 +237,7 @@ public class DG14File extends DataGroup
 		for (SecurityInfo securityInfo: securityInfos) {
 			if (securityInfo instanceof ChipAuthenticationPublicKeyInfo) {
 				ChipAuthenticationPublicKeyInfo info = (ChipAuthenticationPublicKeyInfo)securityInfo;
-				publicKeys.put(info.getKeyId(), getPublicKey(info.getSubjectPublicKeyInfo()));
+				publicKeys.put(info.getKeyId(), info.getSubjectPublicKey());
 				foundOne = true;
 			}
 		}
@@ -262,18 +259,5 @@ public class DG14File extends DataGroup
 
 	public int hashCode() {
 		return 5 * securityInfos.hashCode() + 41;
-	}
-
-	private static PublicKey getPublicKey(SubjectPublicKeyInfo info) {
-		try {
-			KeySpec spec = new X509EncodedKeySpec(info.getDEREncoded());
-			// TODO: Why does this "DH" work for both EC & DH, and "EC" does
-			// not?
-			KeyFactory kf = KeyFactory.getInstance("DH");
-			return kf.generatePublic(spec);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			throw new IllegalArgumentException("Could not decode key.");
-		}
 	}
 }

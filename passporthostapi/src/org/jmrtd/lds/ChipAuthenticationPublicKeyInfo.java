@@ -86,17 +86,17 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 		this.keyId = keyId;
 		checkFields();
 	}
-
-	/**
-	 * Constructs a new object.
-	 * 
-	 * @param oid
-	 *            a proper EAC identifier
-	 * @param publicKeyInfo
-	 *            appropriate SubjectPublicKeyInfo structure
-	 */
+	
 	public ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo) {
 		this(oid, publicKeyInfo, -1);
+	}
+	
+	public ChipAuthenticationPublicKeyInfo(String oid, PublicKey publicKey, int keyId) {
+		this(oid, getSubjectPublicKeyInfo(publicKey), keyId);
+	}
+	
+	public ChipAuthenticationPublicKeyInfo(String oid, PublicKey publicKey) {
+		this(oid, getSubjectPublicKeyInfo(publicKey), -1);
 	}
 	
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, int keyId) {
@@ -104,7 +104,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	}
 
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey) {
-		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey));
+		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), -1);
 	}
 
 	public DERObject getDERObject() {
@@ -134,13 +134,13 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 
 	/**
 	 * Returns a SubjectPublicKeyInfo contained in this
-	 * ChipAuthenticationPublicKeyInfo structure
+	 * ChipAuthenticationPublicKeyInfo structure.
 	 * 
 	 * @return SubjectPublicKeyInfo contained in this
 	 *         ChipAuthenticationPublicKeyInfo structure
 	 */
-	public SubjectPublicKeyInfo getSubjectPublicKeyInfo() {
-		return subjectPublicKeyInfo;
+	public PublicKey getSubjectPublicKey() {
+		return getPublicKey(subjectPublicKeyInfo);
 	}
 
 	/**
@@ -184,22 +184,9 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 
 		return "ChipAuthenticationPublicKeyInfo ["
 		+ "protocol = " + protocol + ", "
-		+ "chipAuthenticationPublicKey = " + subjectPublicKeyInfoToString(getSubjectPublicKeyInfo()) + ", "
+		+ "chipAuthenticationPublicKey = " + getSubjectPublicKey().toString() + ", "
 		+ "keyId = " + Integer.toString(getKeyId()) +
 		"]";
-	}
-
-	private String subjectPublicKeyInfoToString(SubjectPublicKeyInfo spki) {
-		try {
-			StringBuffer result = new StringBuffer();
-
-			PublicKey publicKey = getPublicKey(spki);
-			result.append(publicKey.toString());
-			return result.toString();
-		} catch (Exception ee) {
-			ee.printStackTrace();
-			return ee.getMessage();
-		}
 	}
 
 	private static PublicKey getPublicKey(SubjectPublicKeyInfo spki) {

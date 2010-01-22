@@ -92,20 +92,20 @@ public class Passport
 	private int bytesRead;
 	private int totalLength;
 
-	public short CVCA_FID = PassportService.EF_CVCA;
+	private short cvcaFID = PassportService.EF_CVCA;
 
 	// Our local copies of the COM and SOD files:
-	private COMFile comFile = null;
-	private SODFile sodFile = null;
+	private COMFile comFile;
+	private SODFile sodFile;
 
 	private boolean hasEACSupport = false;
 	private boolean isEACSuccess = false;
 
-	private PrivateKey docSigningPrivateKey = null;
-	private CVCertificate cvcaCertificate = null;
-	private PrivateKey eacPrivateKey = null;
+	private PrivateKey docSigningPrivateKey;
+	private CVCertificate cvcaCertificate;
+	private PrivateKey eacPrivateKey;
 
-	private PrivateKey aaPrivateKey = null;
+	private PrivateKey aaPrivateKey;
 
 	/**
 	 * Constructs a passport object by reading from an actual MRTD chip
@@ -139,9 +139,9 @@ public class Passport
 				List<Integer> cvcafids = dg14file.getCVCAFileIds();
 				if(cvcafids != null && cvcafids.size() != 0) {
 					if(cvcafids.size() > 1) { System.err.println("Warning: more than one CVCA file id present in DG14."); }
-					CVCA_FID = cvcafids.get(0).shortValue();
+					cvcaFID = cvcafids.get(0).shortValue();
 				}
-				bufferedIn = preReadFile(service, CVCA_FID);
+				bufferedIn = preReadFile(service, cvcaFID);
 				cvcaFile = new CVCAFile(bufferedIn);
 				bufferedIn.reset();
 			} else {
@@ -366,7 +366,7 @@ public class Passport
 		fileLengths.put(fid, fileLength);
 		// FIXME: is this necessary?
 		totalLength += fileLength;
-		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != CVCA_FID) {
+		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 			updateCOMSODFile(null);
 		}
 	}
@@ -383,7 +383,7 @@ public class Passport
 			Collections.sort(dgFids);
 			MessageDigest digest = MessageDigest.getInstance(digestAlg);
 			for (Short fid : dgFids) {
-				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != CVCA_FID) {
+				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 					byte[] data = getFileBytes(fid);
 					byte tag = data[0];
 					dgHashes.put(PassportFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
@@ -434,7 +434,7 @@ public class Passport
 		this.cvcaCertificate = cert;
 		try {
 			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getCertificateBody().getHolderReference().getConcatenated());
-			putFile(CVCA_FID, cvcaFile.getEncoded());
+			putFile(cvcaFID, cvcaFile.getEncoded());
 		} catch (NoSuchFieldException ex) {
 			/* FIXME: Woj, why is this silent? -- MO */
 		}

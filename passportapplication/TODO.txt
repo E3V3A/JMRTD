@@ -1,24 +1,27 @@
-TODO (for all JMRTD projects, not just passportapplication), towards 0.4.4
+JMRTD/SCUBA TODO (it's not a changelog, it's not a roadmap, it's a TODO file)
+
+VERSION 0.4.3
+-------------
+
++ Woj's EAC stuff.
+
+VERSION 0.4.4
+-------------
 
 General
 + Revert back to one jmrtd.jar (includes all of SCUBA)
 + Move LDS data classes (*File, *Info) into org.jmrtd.lds package.
 + Move BACStore to passporthostapi (from passportapplication).
 + Fix unit test (when run from package explorer hangs on DG14 tests).
-- Make loading of GRT compatible ZIP files possible. They seem to use EF_DG<X>.BIN naming inside ZIP files. Test it.
++ Make loading of GRT compatible ZIP files possible. They seem to use EF_DG<X>.BIN naming inside ZIP files. Test it.
+- Display EAC menu when DG14 present, even if EAC event did not take place. Grayed out if no DG14.
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of flat files?
+- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Move the verifySecurity logic from PassportFrame to the passporthostapi.
-- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
 - Copy default files from distribution jar into .jmrtd/
-- Adoption of Henning's stuff in SCUBA (finger printing passports based on nationality) is buggy for now. Need more regression testing.
-
-Dependencies
-+ Latest JAI ImageIO 1.2
-+ Latest Bouncy Castle 1.45
-- cert-cvc latest is 1.2.11. Need EAC samples to test. Woj still has samples?
-- Update README (also jmrtd.org?)
+- Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 
 Preferences
 + Tabbed panes in preferences.
@@ -28,26 +31,46 @@ Preferences
 - Preferences saving to $HOME/.jmrtd/jmrtd.properties.
 - Remember location of directory from which (passport) files were loaded, return there when opening new file.
 
-ASN.1 parsing:
-- Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
-- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes.
+Dependencies
++ Latest JAI ImageIO 1.2
++ Latest Bouncy Castle 1.45
+- cert-cvc latest is 1.2.11. Need EAC samples to test. Woj still has samples?
+- Check/update README and Web site to reflect correct version numbers.
 
 Code quality
 + Run Findbugs. Test the Eclipse plugin.
-- Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
 Web site (jmrtd.org)
 + Check new docs on ICAO site, update links.
 + Fix scmmicro.com broken links in install.shtml.
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
-- A faq would be nice, with a howto compile it yourself.
+
+
+VERSION 0.5.x
+-------------
+
+General
+- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
+- Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
+
+ASN.1 parsing
+- Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
+- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes.
 
 SCUBA support for exotic card readers
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (need to purchase one for this?).
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 
-Way too ambitious
-- Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
+Code quality
+- Findbugs.
+- Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
+- ESC/Java2
+
+Web site
+- A faq would be nice, with a howto compile it yourself.
+
+
+VERSION 0.9.x
+-------------
 - Webcam OCR of MRZ (OCR-B font).
-- Run ESC/Java2 on the sources. Test the Eclipse plugin.

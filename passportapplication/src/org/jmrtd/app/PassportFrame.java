@@ -333,7 +333,6 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG14:
 					dg14 = new DG14File(in);
-					System.out.println("DEBUG: dg14 = \n" + dg14);
 					updateViewMenu();
 					break;
 				case PassportService.EF_DG15:
