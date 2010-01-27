@@ -17,6 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
+ * $Id: $
  */
 
 package org.jmrtd;
@@ -25,6 +26,8 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -77,18 +80,19 @@ public class CVCAStore
 	DEFAULT_CVCA_DIR = new File(JMRTD_USER_DIR, "cvca");
 
 	private File location;
-	
+
 	private final Map<String, List<CVCertificate>> certificateListsMap;
 	private final Map<String, PrivateKey> keysMap;
 
 	public CVCAStore() {
-		this(DEFAULT_CVCA_DIR);
-	}
-	
-	public CVCAStore(File location) {
 		certificateListsMap = new HashMap<String, List<CVCertificate>>();
 		keysMap = new HashMap<String, PrivateKey>();
-		setLocation(location);
+		try {
+			URL url = DEFAULT_CVCA_DIR.toURI().toURL();
+			setLocation(url);
+		} catch (MalformedURLException mfue) {
+			mfue.printStackTrace();
+		}
 	}
 
 	/**
@@ -108,12 +112,17 @@ public class CVCAStore
 		keysMap.put(alias, privateKey);
 	}
 
-	public File getLocation() {
-		return location;
+	public URL getLocation() {
+		try {
+			return location.toURI().toURL();
+		} catch (MalformedURLException mfue) {
+			mfue.printStackTrace();
+			return null;
+		}
 	}
-	
-	public void setLocation(File location) {
-		this.location = location;
+
+	public void setLocation(URL url) {
+		this.location = Files.toFile(url);;
 		if (!location.isDirectory()) {
 			String message = "File " + location.getAbsolutePath() + " is not a directory.";
 			System.err.println("WARNING: " + message);
@@ -128,7 +137,7 @@ public class CVCAStore
 			// throw new IOException();
 		}
 	}
-	
+
 	private void scanOneDirectory(File dir) throws IOException {
 		if (!dir.isDirectory()) {
 			throw new IllegalArgumentException("File " + dir.getCanonicalPath() + " is not a directory.");

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,10 +29,11 @@ import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.io.Writer;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,11 +58,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.filechooser.FileFilter;
 
-import org.jmrtd.CSCAStore;
-import org.jmrtd.CVCAStore;
-
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.util.Files;
+
+import org.jmrtd.CSCAStore;
+import org.jmrtd.CVCAStore;
 
 /**
  * Preferences panel.
@@ -92,8 +93,8 @@ public class PreferencesPanel extends JPanel
 	private static final long serialVersionUID = 5429621553165149988L;
 
 	private File preferencesFile;
-	private PreferencesState changedState;
 	private PreferencesState state;
+	private PreferencesState changedState;
 	private CardManager cardManager;
 	private CSCAStore cscaStore;
 	private CVCAStore cvcaStore;
@@ -116,6 +117,7 @@ public class PreferencesPanel extends JPanel
 		this.cvcaStore = cvcaStore;
 		this.preferencesFile = preferencesFile;
 		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
+		this.state = new PreferencesState();
 
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
@@ -133,7 +135,6 @@ public class PreferencesPanel extends JPanel
 		if (terminalList.size() == 0) {
 			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
 		}
-		this.state = new PreferencesState();
 		for (CardTerminal terminal: terminalList){
 			boolean isChecked = cm.isPolling(terminal);
 			JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
@@ -174,20 +175,33 @@ public class PreferencesPanel extends JPanel
 	}
 
 	private JComponent createCertificatesPanel() {
+		state.setCSCAStore(cscaStore.getLocation());
+		state.setCVCAStore(cvcaStore.getLocation());
 		final JPanel panel = new JPanel(new GridLayout(2,1));
 		panel.setBorder(BorderFactory.createTitledBorder("Certificate and key stores"));
 		final DirectoryBrowser cscaPanel = new DirectoryBrowser("CSCA store", Files.toFile(cscaStore.getLocation()));
 		cscaPanel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				File newDirectory = cscaPanel.getDirectory();
-				cvcaStore.setLocation(newDirectory);
+				try {
+					URL url = (newDirectory.toURI().toURL());
+					state.setCVCAStore(url);
+				} catch (MalformedURLException mfue) {
+					mfue.printStackTrace();
+				}
 			}
 		});
-		final DirectoryBrowser cvcaPanel = new DirectoryBrowser("CVCA store", cvcaStore.getLocation());
+		final DirectoryBrowser cvcaPanel = new DirectoryBrowser("CVCA store", Files.toFile(cvcaStore.getLocation()));
 		cvcaPanel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				File newDirectory = cvcaPanel.getDirectory();
-				cvcaStore.setLocation(newDirectory);
+				try {
+					URL url = newDirectory.toURI().toURL();
+					state.setCSCAStore(url);
+				} catch (MalformedURLException mfue) {
+					mfue.printStackTrace();
+				}
+
 			}
 		});
 
@@ -226,8 +240,12 @@ public class PreferencesPanel extends JPanel
 			cardManager.removeAPDUListener(apduTraceFrame);
 			apduTraceFrame = null;
 		}
+		cvcaStore.setLocation(state.getCVCAStoreLocation());
+		cscaStore.setLocation(state.getCSCAStoreLocation());
 		try {
-			state.write();
+			FileWriter fileWriter = new FileWriter(preferencesFile);
+			state.store(fileWriter);
+			fileWriter.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
@@ -324,15 +342,15 @@ public class PreferencesPanel extends JPanel
 	private class PreferencesState implements Cloneable, Serializable
 	{	
 		private static final long serialVersionUID = -256804944538594379L;
-		
-		private Properties properties;
 
-		private PreferencesState(Properties properties) {
-			this.properties = (Properties)properties.clone();
-		}
+		private Properties properties;
 
 		public PreferencesState() {
 			this(new Properties());
+		}
+
+		private PreferencesState(Properties properties) {
+			this.properties = (Properties)properties.clone();
 		}
 
 		public PreferencesState(PreferencesState otherState) {
@@ -344,8 +362,12 @@ public class PreferencesPanel extends JPanel
 		}
 
 		public boolean isTerminalChecked(CardTerminal terminal) {
-			Boolean result = (Boolean)properties.get(createTerminalKey(terminal.getName()));
-			return result != null && result;
+			Object obj = properties.get(createTerminalKey(terminal.getName()));
+			if (obj == null) { return false; }
+			String value = ((String)obj).trim();
+			if ("".equals(value)) { return false; }
+			Boolean result = Boolean.parseBoolean(value);
+			return result;
 		}
 
 		public void setTerminalChecked(CardTerminal terminal, boolean b) {
@@ -353,25 +375,34 @@ public class PreferencesPanel extends JPanel
 		}
 
 		public ReadingMode getReadingMode() {
-			ReadingMode readingMode = (ReadingMode)properties.get(READING_MODE_KEY);
-			if (readingMode == null) { return DEFAULT_READING_MODE; }
+			Object obj = properties.get(READING_MODE_KEY);
+			if (obj == null) {
+				properties.put(READING_MODE_KEY, DEFAULT_READING_MODE.toString());
+				return DEFAULT_READING_MODE;
+			}
+			ReadingMode readingMode = ReadingMode.valueOf(properties.get(READING_MODE_KEY).toString());
 			return readingMode;
 		}
 
 		public void setReadingMode(ReadingMode readingMode) {
-			properties.put(READING_MODE_KEY, readingMode);
+			if (readingMode == null) { return; }
+			properties.put(READING_MODE_KEY, readingMode.toString());
 		}
 
 		public boolean isAPDUTracing() {
-			Boolean isAPDUTracing = (Boolean)properties.get(APDU_TRACING_KEY);
-			if (isAPDUTracing == null) {
+			Object obj = properties.get(APDU_TRACING_KEY);
+			if (obj == null) {
+				properties.put(APDU_TRACING_KEY, Boolean.toString(DEFAULT_APDU_TRACING_SETTING));
 				return DEFAULT_APDU_TRACING_SETTING;
 			}
+			String value = ((String)obj).trim();
+			if ("".equals(value)) { return false; }
+			boolean isAPDUTracing = Boolean.parseBoolean(value);
 			return isAPDUTracing;
 		}
 
 		public void setAPDUTracing(boolean b) {
-			properties.put(APDU_TRACING_KEY, b);
+			properties.put(APDU_TRACING_KEY, Boolean.toString(b));
 		}
 
 		public Object clone() {
@@ -379,7 +410,7 @@ public class PreferencesPanel extends JPanel
 		}
 
 		private void setTerminalChecked(String terminalName, boolean b) {
-			properties.put(createTerminalKey(terminalName), b);
+			properties.put(createTerminalKey(terminalName), Boolean.toString(b));
 		}
 
 		private String createTerminalKey(String terminalName) {
@@ -391,31 +422,44 @@ public class PreferencesPanel extends JPanel
 		}
 
 		public void setBACStore(URL url) {
-			properties.put(CSCA_STORE_KEY, url);
+			if (url == null) { return; }
+			properties.put(CSCA_STORE_KEY, url.toString());
 		}
 
 		public URL getCSCAStoreLocation() {
-			return (URL)properties.get(CSCA_STORE_KEY);
+			try {
+				String value = (String)properties.get(CSCA_STORE_KEY);
+				return new URL(value);
+			} catch (MalformedURLException mfue) {
+				mfue.printStackTrace();
+				return null;
+			}
 		}
 
 		public void setCSCAStore(URL url) {
-			properties.put(CSCA_STORE_KEY, url);
+			if (url == null) { return; }
+			properties.put(CSCA_STORE_KEY, url.toString());
 		}
 
 		public URL getCVCAStoreLocation() {
-			return (URL)properties.get(CVCA_STORE_KEY);
+			try {
+				String value = (String)properties.get(CVCA_STORE_KEY);
+				if (value == null) { return null; }
+				return new URL(value);
+			} catch (MalformedURLException mfue) {
+				mfue.printStackTrace();
+				return null;
+			}
 		}
 
 		public void setCVCAStore(URL url) {
-			properties.put(CVCA_STORE_KEY, url);
+			if (url == null) { return; }
+			properties.put(CVCA_STORE_KEY, url.toString());
 		}
 
-		private void write() throws IOException {
-			FileOutputStream fileOut = new FileOutputStream(preferencesFile);
-			ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
-			objectOut.writeObject(properties);
-			objectOut.flush();
-			objectOut.close();
+		private void store(Writer writer) throws IOException {
+			properties.store(writer, "JMRTD preferences");
+			writer.flush();
 		}
 	}
 

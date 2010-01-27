@@ -33,6 +33,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
@@ -71,11 +72,11 @@ import net.sourceforge.scuba.util.Icons;
 import org.jmrtd.BACKey;
 import org.jmrtd.BACStore;
 import org.jmrtd.CSCAStore;
+import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.lds.COMFile;
 
 /**
@@ -91,8 +92,9 @@ public class JMRTDApp  implements PassportListener
 {
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
-	public static final File JMRTD_USER_DIR = new File(new File(System.getProperty("user.home")), ".jmrtd");
-	private static final File PREFERENCES_FILE = new File(JMRTD_USER_DIR, "jmrtd.properties");
+	private static final File
+	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+	PREFERENCES_FILE = new File(JMRTD_USER_DIR, "jmrtd.properties");
 
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", JMRTDApp.class);
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
@@ -379,8 +381,14 @@ public class JMRTDApp  implements PassportListener
 				int choice = fileChooser.showOpenDialog(contentPane);
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					cvcaStore.setLocation(file);
+					try {
+						File file = fileChooser.getSelectedFile();
+						URL url  = file == null ? null : file.toURI().toURL();
+						cvcaStore.setLocation(url);
+					} catch (MalformedURLException mfue) {
+						mfue.printStackTrace();
+						/* NOTE: not changing CVCA location. */
+					}
 					break;
 				default: break;
 				}

@@ -47,8 +47,8 @@ import net.sourceforge.scuba.util.Files;
 public class BACStore
 {
 	private static final File
-	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
-	DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
+		JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+		DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 

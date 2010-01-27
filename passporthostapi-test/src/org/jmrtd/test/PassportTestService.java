@@ -26,9 +26,9 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.BACKey;
+import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.Util;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG14File;
@@ -102,7 +102,8 @@ public class PassportTestService extends PassportService {
 	private static CVCAStore certDir = null;
 	static {
 		try {
-			certDir = new CVCAStore(new File("/home/sos/woj/terminals"));
+			certDir = new CVCAStore();
+			certDir.setLocation(new File("/home/sos/woj/terminals").toURI().toURL());
 		} catch(Exception e) {
 			System.out.println("Could not load EAC terminal certificates/keys!");
 		}

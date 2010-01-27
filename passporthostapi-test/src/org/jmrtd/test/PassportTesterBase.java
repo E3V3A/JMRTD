@@ -20,7 +20,6 @@ import javax.smartcardio.TerminalFactory;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.smartcards.APDUListener;
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
@@ -28,7 +27,6 @@ import net.sourceforge.scuba.util.Hex;
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CertificateParser;
-import org.jmrtd.*;
 
 public abstract class PassportTesterBase extends TestCase implements
 		APDUListener {

@@ -1,9 +1,19 @@
 package org.jmrtd.atrselect;
 
+import java.io.IOException;
+import java.io.PrintStream;
 import java.security.NoSuchAlgorithmException;
-import java.util.*;
-import java.io.*;
-import javax.smartcardio.*;
+import java.util.Vector;
+
+import javax.smartcardio.ATR;
+import javax.smartcardio.Card;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardException;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CardTerminals;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
+import javax.smartcardio.TerminalFactory;
 
 public class SelectPassport {
 
