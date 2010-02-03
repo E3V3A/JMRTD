@@ -191,9 +191,11 @@ public class JMRTDApp  implements PassportListener
 					apduTraceFrame.setVisible(true);
 					cardManager.addAPDUListener(apduTraceFrame);
 				} else {
-					apduTraceFrame.setVisible(false);
-					cardManager.removeAPDUListener(apduTraceFrame);
-					apduTraceFrame = null;
+					if (apduTraceFrame != null) {
+						apduTraceFrame.setVisible(false);
+						cardManager.removeAPDUListener(apduTraceFrame);
+						apduTraceFrame = null;
+					}
 				}
 				cvcaStore.setLocation(preferencesPanel.getCVCAStoreLocation());
 				cscaStore.setLocation(preferencesPanel.getCSCAStoreLocation());
