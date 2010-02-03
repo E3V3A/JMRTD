@@ -38,7 +38,9 @@ import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -58,6 +60,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.smartcards.CardEvent;
@@ -117,6 +121,8 @@ public class JMRTDApp  implements PassportListener
 	private CSCAStore cscaStore;
 	private CVCAStore cvcaStore;
 
+	private APDUTraceFrame apduTraceFrame;
+
 	/**
 	 * Constructs the GUI.
 	 *
@@ -131,7 +137,8 @@ public class JMRTDApp  implements PassportListener
 			this.bacStore = new BACStore(); /* FIXME: get this from preferences? */
 			this.cscaStore = new CSCAStore(); /* FIXME: get this from preferences? */
 			this.cvcaStore = new CVCAStore(); /* FIXME: get this from preferences? */
-			preferencesPanel = new PreferencesPanel(cardManager, cscaStore, cvcaStore, PREFERENCES_FILE);
+			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), PREFERENCES_FILE);
+			preferencesPanel.addChangeListener(getPreferencesChangeListener());
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
@@ -155,6 +162,43 @@ public class JMRTDApp  implements PassportListener
 			e.printStackTrace();
 			throw new IllegalStateException(e);
 		}
+	}
+
+	private Map<CardTerminal, Boolean> getTerminalPollingMap() {
+		Map<CardTerminal, Boolean> terminalPollingMap = new HashMap<CardTerminal, Boolean>();
+		List<CardTerminal> terminals = cardManager.getTerminals();
+		for (CardTerminal terminal: terminals) { terminalPollingMap.put(terminal, cardManager.isPolling(terminal)); }
+		return terminalPollingMap;
+	}
+
+	private ChangeListener getPreferencesChangeListener() {
+		return new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				List<CardTerminal> terminals = cardManager.getTerminals();
+				for (CardTerminal terminal: terminals) {
+					if (preferencesPanel.isTerminalChecked(terminal)) {
+						if (!cardManager.isPolling(terminal)) { cardManager.startPolling(terminal); }
+					} else {
+						if (cardManager.isPolling(terminal)) { cardManager.stopPolling(terminal); }
+					}
+				}
+
+				if (preferencesPanel.isAPDUTracing()) {
+					if (apduTraceFrame == null) {
+						apduTraceFrame = new APDUTraceFrame("APDU trace");
+					}
+					apduTraceFrame.pack();
+					apduTraceFrame.setVisible(true);
+					cardManager.addAPDUListener(apduTraceFrame);
+				} else {
+					apduTraceFrame.setVisible(false);
+					cardManager.removeAPDUListener(apduTraceFrame);
+					apduTraceFrame = null;
+				}
+				cvcaStore.setLocation(preferencesPanel.getCVCAStoreLocation());
+				cscaStore.setLocation(preferencesPanel.getCSCAStoreLocation());
+			}
+		};
 	}
 
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {
@@ -466,8 +510,11 @@ public class JMRTDApp  implements PassportListener
 			public void actionPerformed(ActionEvent e) {
 				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
 				switch (n) {
-				case JOptionPane.OK_OPTION: preferencesPanel.commit(); break;
-				default: preferencesPanel.abort();
+				case JOptionPane.OK_OPTION:
+					preferencesPanel.commit();
+					break;
+				default:
+					preferencesPanel.abort();
 				}
 			}
 		};
