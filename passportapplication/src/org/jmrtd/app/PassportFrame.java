@@ -672,7 +672,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			item.setAction(getViewPassportKeyAction(id, publicKey, (pubKeysCount == 1) || usedId.equals(id)));
 			viewPassportKeyMenu.add(item);
 		}
-		Component viewPassportKeyItem = pubKeysCount == 1 ? viewPassportKeyMenu.getComponent(0) : viewPassportKeyMenu;
+		Component viewPassportKeyItem = pubKeysCount == 1 ? viewPassportKeyMenu : viewPassportKeyMenu.getComponent(0);
 
 		JMenuItem viewTerminalKeyItem = new JMenuItem();
 		viewTerminalKeyItem.setAction(getViewTerminalKeyAction(terminalKey));
