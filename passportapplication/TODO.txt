@@ -18,7 +18,7 @@ General
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of directories with flat files?
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Move the verifySecurity logic from PassportFrame to the passporthostapi (in Passport class?).
+- Move BAC, readFromService, and verifySecurity logic from JMRTDApp and PassportFrame to the passporthostapi (in Passport class).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
 - Copy default files from distribution jar into .jmrtd/
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
@@ -27,8 +27,10 @@ General
 Preferences
 + Tabbed panes in preferences.
 + APDU tracing from preferences, at least for card manager (also for reload action?).
+- Fix trace frame not popping up when restarting and set in persistent preferences.
 + Preferences saving to $HOME/.jmrtd/jmrtd.properties, as text file.
-- CV cert & key folder settings from tab in preferences window.
+  Better yet, JSR-10, platform dependent saving to persistent storage.
++ CV cert & key folder settings from tab in preferences window.
 - CSCA folder setting from tab in preferences window. (And copy default CSCA files from jar into $HOME/.jmrtd).
 - Remember location of directory from which (passport) files were loaded, return there when opening new file.
 
@@ -53,7 +55,7 @@ VERSION 0.5.x
 General
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
-- LDAP interface to PKD?
+- LDAP interface (JNDI) to PKD?
 - Java keystores instead of directries with DER binary files for CVCA, CSCA credentials.
 
 ASN.1 parsing

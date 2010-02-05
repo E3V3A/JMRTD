@@ -252,6 +252,15 @@ public class JMRTDApp  implements PassportListener
 		}
 	}
 
+	/**
+	 * Reads the passport from a service by attempting to
+	 * perform BAC and firing up a PassportFrame.
+	 * 
+	 * FIXME: this logic could be moved into the passporthostapi's Passport class.
+	 * 
+	 * @param service
+	 * @throws CardServiceException
+	 */
 	private void readPassport(PassportService service) throws CardServiceException {
 		try {
 			service.open();

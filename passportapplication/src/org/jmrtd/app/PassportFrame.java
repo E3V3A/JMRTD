@@ -220,9 +220,11 @@ public class PassportFrame extends JFrame implements AuthListener
 	/**
 	 * Fills the passportFiles inputstreams with passport inputstreams.
 	 * 
-	 * @param service the service
+	 * FIXME: move some of this stuff into the passporthostapi's Passport class.
 	 * 
-	 * @return a passport frame.
+	 * @param service the service (assumed to be already open)
+	 * @param bacEntry the BAC credentials that were used (if non-null this method assumes BAC was already performed)
+	 * @param readingMode either safe or progressive
 	 */
 	public void readFromService(PassportService service, BACKey bacEntry, ReadingMode readingMode) throws CardServiceException {
 		try {
@@ -417,6 +419,16 @@ public class PassportFrame extends JFrame implements AuthListener
 		})).start();
 	}
 
+	/**
+	 * Verifies the passport using the security related mechanisms.
+	 * Adjusts the verificationIndicator to show the user the verification status.
+	 * 
+	 * Assumes passport object is non-null and read from the service.
+	 * 
+	 * FIXME: move this to passporthostapi's Passport class.
+	 * 
+	 * @param service
+	 */
 	private void verifySecurity(PassportService service) {
 		verificationIndicator.setBACNotChecked();
 		verificationIndicator.setAANotChecked();
@@ -431,7 +443,6 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	/** Checks whether BAC was used. */
 	private void verifyBAC(PassportService service) {
-
 		if (bacEntry != null) {
 			verificationIndicator.setBACSucceeded();
 		} else {
