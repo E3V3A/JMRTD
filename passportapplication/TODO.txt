@@ -27,9 +27,9 @@ General
 Preferences
 + Tabbed panes in preferences.
 + APDU tracing from preferences, at least for card manager (also for reload action?).
++ Preferences saving to $HOME/.jmrtd/jmrtd.properties, as text file.
 - CV cert & key folder settings from tab in preferences window.
 - CSCA folder setting from tab in preferences window. (And copy default CSCA files from jar into $HOME/.jmrtd).
-- Preferences saving to $HOME/.jmrtd/jmrtd.properties, as text file.
 - Remember location of directory from which (passport) files were loaded, return there when opening new file.
 
 Dependencies

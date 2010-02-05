@@ -23,16 +23,12 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
-import java.awt.Component;
 import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.Serializable;
-import java.io.Writer;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,32 +37,28 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.prefs.BackingStoreException;
+import java.util.prefs.Preferences;
 
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
-import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
-import javax.swing.JTextField;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
 
-import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.swing.DirectoryBrowser;
 import net.sourceforge.scuba.util.Files;
 
 /**
  * Preferences panel.
- *
- * FIXME: Can probably be done more generically... using JSR 10 (Preferences API).
  *
  * TODO: Perhaps add a blanket reading mode, where user is asked to continue at own risk...
  *
@@ -94,31 +86,30 @@ public class PreferencesPanel extends JPanel
 	private PreferencesState state;
 	private PreferencesState changedState;
 
-	private CardManager cardManager;
 	private URL cscaStoreLocation, cvcaStoreLocation;
-	private File preferencesFile;
-	
+	private Preferences preferences;
+
 	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
 	private Map<ReadingMode, JRadioButton> readingModeRadioButtonMap;
 	private JCheckBox apduTracingCheckBox;
 
 	private Collection<ChangeListener> changeListeners;
-	
+
 	/**
 	 * Creates the preferences panel.
 	 *
 	 * @param cm the card manager
 	 * @param preferencesFile file for storing preferences
 	 */
-	public PreferencesPanel(Map<CardTerminal, Boolean> cm, URL cscaStore, URL cvcaStore, File preferencesFile) {
+	public PreferencesPanel(Map<CardTerminal, Boolean> cm, URL cscaStore, URL cvcaStore, Class<?> applicationClass) {
 		super(new BorderLayout());
 		this.changeListeners = new ArrayList<ChangeListener>();
 		this.cscaStoreLocation = cscaStore;
 		this.cvcaStoreLocation = cvcaStore;
-		this.preferencesFile = preferencesFile;
+		this.preferences = Preferences.userNodeForPackage(applicationClass);
 		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
 		this.state = new PreferencesState();
-
+		update();
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
 		jtb.addTab("Certificate Files", createCertificatesPanel());
@@ -126,7 +117,7 @@ public class PreferencesPanel extends JPanel
 
 		this.changedState = new PreferencesState(state);
 	}
-	
+
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
 		JPanel cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cardTerminalsPreferencesPanel.setBorder(BorderFactory.createTitledBorder("Card Terminals"));
@@ -217,7 +208,7 @@ public class PreferencesPanel extends JPanel
 	public ReadingMode getReadingMode() {
 		return state.getReadingMode();
 	}
-	
+
 	public boolean isTerminalChecked(CardTerminal terminal) {
 		return state.isTerminalChecked(terminal);
 	}
@@ -231,17 +222,15 @@ public class PreferencesPanel extends JPanel
 	}
 
 	public void commit() {
-		PreferencesState oldState = new PreferencesState(state);
+		//		PreferencesState oldState = new PreferencesState(state);
 		state = new PreferencesState(changedState);
-		try {
-			FileWriter fileWriter = new FileWriter(preferencesFile);
-			state.store(fileWriter);
-			fileWriter.close();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
+		state.store(preferences);
 		ChangeEvent ce = new ChangeEvent(this);
 		notifyChangeListeners(ce);
+	}
+
+	public void update() {
+		state.load(preferences);
 	}
 
 	public void abort() {
@@ -261,10 +250,11 @@ public class PreferencesPanel extends JPanel
 		apduTracingCheckBox.setSelected(state.isAPDUTracing());
 	}
 
-
-
 	public Action getSetTerminalAction(final CardTerminal terminal, final JCheckBox checkBox) {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = 8704502832790166859L;
+
 			public void actionPerformed(ActionEvent e) {
 				changedState.setTerminalChecked(terminal, checkBox.isSelected());
 			}
@@ -288,6 +278,9 @@ public class PreferencesPanel extends JPanel
 
 	public Action getSetModeAction(final ReadingMode mode) {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -7253305323528439137L;
+
 			public void actionPerformed(ActionEvent e) {
 				changedState.setReadingMode(mode);
 			}
@@ -310,6 +303,9 @@ public class PreferencesPanel extends JPanel
 
 	private Action getSetAPDUTracingAction(final JCheckBox checkBox) {
 		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -585154276383750505L;
+
 			public void actionPerformed(ActionEvent e) {
 				changedState.setAPDUTracing(checkBox.isSelected());
 			}
@@ -322,24 +318,26 @@ public class PreferencesPanel extends JPanel
 	public void addChangeListener(ChangeListener l) {
 		changeListeners.add(l);	
 	}
-	
+
 	private void notifyChangeListeners(ChangeEvent ce) {
 		for (ChangeListener l: changeListeners) { l.stateChanged(ce); }
 	}
 
 	/**
-	 * The state that needs to be saved to or restored from file.
+	 * The state that needs to be saved to or restored from file. The panel
+	 * collects user changes in one instance while maintaining the original
+	 * settings in another instance.
 	 */
 	private class PreferencesState implements Cloneable, Serializable
 	{	
 		private static final long serialVersionUID = -256804944538594379L;
 
 		private Properties properties;
-		
+
 		public PreferencesState() {
 			this(new Properties());
 		}
-		
+
 		public PreferencesState(Properties properties) {
 			this.properties = (Properties)properties.clone();
 		}
@@ -448,74 +446,26 @@ public class PreferencesPanel extends JPanel
 			properties.put(CVCA_STORE_KEY, url.toString());
 		}
 
-		private void store(Writer writer) throws IOException {
-			properties.store(writer, "JMRTD preferences");
-			writer.flush();
-		}
-	}
-
-	/**
-	 * A file browser GUI component to search for a directory.
-	 */
-	private static class DirectoryBrowser extends JPanel
-	{
-		private static final long serialVersionUID = -1280621620589365355L;
-
-		private Collection<ActionListener> actionListeners;
-		private File directory;
-		private int eventCount;
-
-		public DirectoryBrowser(String title, File directory) {
-			super(new FlowLayout());
-			final JPanel panel = this;
-			this.actionListeners = new ArrayList<ActionListener>();
-			this.directory = directory;
-			this.eventCount = 0;
-			final Component c = this;
-			setBorder(BorderFactory.createTitledBorder(title));
-			final JTextField folderTextField = new JTextField(30);
-			folderTextField.setText(directory.getAbsolutePath());
-			final JButton browseCVCADirectoryButton = new JButton("...");
-			add(folderTextField);
-			add(browseCVCADirectoryButton);
-			browseCVCADirectoryButton.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					JFileChooser fileChooser = new JFileChooser();
-					fileChooser.setAcceptAllFileFilterUsed(false);
-					fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-					fileChooser.setFileFilter(new FileFilter() {
-						public boolean accept(File f) { return f.isDirectory(); }
-						public String getDescription() { return "Directories"; }               
-					});
-					int choice = fileChooser.showOpenDialog(c);
-					switch (choice) {
-					case JFileChooser.APPROVE_OPTION:
-						try {
-							File file = fileChooser.getSelectedFile();
-							setDirectory(file);
-							folderTextField.setText(file.getCanonicalPath());
-							notifyActionListeners(new ActionEvent(panel, eventCount++, "Select"));
-						} catch (IOException ioe) {
-							/* NOTE: Do nothing. */
-							ioe.printStackTrace();
-						}
-						break;
-					default: break;
+		public void load(Preferences preferences) {
+			try {
+				String[] keys = preferences.keys();
+				for (String key: keys) {
+					String value = preferences.get(key, null);
+					if (value != null) {
+						properties.put(key, value);
 					}
 				}
-			});
+			} catch (BackingStoreException bse) {
+				bse.printStackTrace();
+				/* NOTE: can we ignore this silently? */
+			}
 		}
 
-		public File getDirectory() {
-			return directory;
+		public void store(Preferences preferences) {
+			for (Entry<Object, Object> entry: properties.entrySet()) {
+				String key = (String)entry.getKey(), value = (String)entry.getValue();
+				preferences.put(key, value);
+			}
 		}
-
-		public void setDirectory(File directory) {
-			this.directory = directory;
-		}
-
-		public void addActionListener(ActionListener l) { actionListeners.add(l); }
-
-		private void notifyActionListeners(ActionEvent e) { for (ActionListener l: actionListeners) { l.actionPerformed(e); } }
 	}
 }
