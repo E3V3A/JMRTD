@@ -33,7 +33,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
@@ -41,6 +40,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.prefs.Preferences;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
@@ -110,6 +110,14 @@ public class JMRTDApp  implements PassportListener
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
+	public static final String READING_MODE_KEY = "mode.reading",
+		TERMINAL_KEY_PREFIX = "terminal.",
+		APDU_TRACING_KEY = "trace.apdu",
+		BAC_STORE_KEY = "location.bac",
+		CSCA_STORE_KEY ="location.csca",
+		CVCA_STORE_KEY ="location.cvca",
+		PASSPORT_ZIP_FILES_DIR_KEY = "location.passportzipfiles";
+
 	private Container contentPane;
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
@@ -130,9 +138,9 @@ public class JMRTDApp  implements PassportListener
 			PassportManager passportManager = PassportManager.getInstance();
 			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
-			this.bacStore = new BACStore(); /* FIXME: get this from preferences? */
-			this.cscaStore = new CSCAStore(); /* FIXME: get this from preferences? */
-			this.cvcaStore = new CVCAStore(); /* FIXME: get this from preferences? */
+			this.bacStore = new BACStore();
+			this.cscaStore = new CSCAStore();
+			this.cvcaStore = new CVCAStore();
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), this.getClass());
 			preferencesPanel.addChangeListener(getPreferencesChangeListener());
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
@@ -171,7 +179,8 @@ public class JMRTDApp  implements PassportListener
 	 * Returns a change listener that will propagate changes in preferences
 	 * made by the user to the state of this class.
 	 * 
-	 * @return
+	 * @return a change listener that will propagate changes in preferences
+	 *         made by the user to the state of this class
 	 */
 	private ChangeListener getPreferencesChangeListener() {
 		return new ChangeListener() {
@@ -332,7 +341,7 @@ public class JMRTDApp  implements PassportListener
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-		/* Terminal Certs... */ /* We're doing this from the preferences now -- MO */
+		/* Terminal Certs... */ /* We're doing this from the preferences panel now -- MO */
 //		JMenuItem loadItem = new JMenuItem();
 //		menu.add(loadItem);
 //		loadItem.setAction(getLoadTerminalCertsAction());
@@ -389,21 +398,23 @@ public class JMRTDApp  implements PassportListener
 	}
 
 	private Action getOpenAction() {
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
 		Action action = new AbstractAction() {
-
 			private static final long serialVersionUID = -9209238098024027906L;
 
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setFileFilter(new FileFilter() {
-					public boolean accept(File f) { return f.isDirectory() || f.getName().endsWith("zip") || f.getName().endsWith("ZIP"); }
-					public String getDescription() { return "ZIP archives"; }				
-				});
+				String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
+				}
+				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(contentPane);
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
+						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
 						passportFrame.readFromZipFile(file);
 						passportFrame.pack();

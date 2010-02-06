@@ -74,13 +74,6 @@ public class PreferencesPanel extends JPanel
 	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.SAFE_MODE;
 	private static final boolean DEFAULT_APDU_TRACING_SETTING = false;
 
-	private static final String READING_MODE_KEY = "mode.reading";
-	private static final String TERMINAL_KEY_PREFIX = "terminal.";
-	private static final String APDU_TRACING_KEY = "trace.apdu";
-	private static final String BAC_STORE_KEY = "bac.store.dir";
-	private static final String CSCA_STORE_KEY ="csca.store.dir";
-	private static final String CVCA_STORE_KEY ="cvca.store.dir";
-
 	private static final long serialVersionUID = 5429621553165149988L;
 
 	private PreferencesState state;
@@ -364,24 +357,24 @@ public class PreferencesPanel extends JPanel
 		}
 
 		public ReadingMode getReadingMode() {
-			Object obj = properties.get(READING_MODE_KEY);
+			Object obj = properties.get(JMRTDApp.READING_MODE_KEY);
 			if (obj == null) {
-				properties.put(READING_MODE_KEY, DEFAULT_READING_MODE.toString());
+				properties.put(JMRTDApp.READING_MODE_KEY, DEFAULT_READING_MODE.toString());
 				return DEFAULT_READING_MODE;
 			}
-			ReadingMode readingMode = ReadingMode.valueOf(properties.get(READING_MODE_KEY).toString());
+			ReadingMode readingMode = ReadingMode.valueOf(properties.get(JMRTDApp.READING_MODE_KEY).toString());
 			return readingMode;
 		}
 
 		public void setReadingMode(ReadingMode readingMode) {
 			if (readingMode == null) { return; }
-			properties.put(READING_MODE_KEY, readingMode.toString());
+			properties.put(JMRTDApp.READING_MODE_KEY, readingMode.toString());
 		}
 
 		public boolean isAPDUTracing() {
-			Object obj = properties.get(APDU_TRACING_KEY);
+			Object obj = properties.get(JMRTDApp.APDU_TRACING_KEY);
 			if (obj == null) {
-				properties.put(APDU_TRACING_KEY, Boolean.toString(DEFAULT_APDU_TRACING_SETTING));
+				properties.put(JMRTDApp.APDU_TRACING_KEY, Boolean.toString(DEFAULT_APDU_TRACING_SETTING));
 				return DEFAULT_APDU_TRACING_SETTING;
 			}
 			String value = ((String)obj).trim();
@@ -391,7 +384,7 @@ public class PreferencesPanel extends JPanel
 		}
 
 		public void setAPDUTracing(boolean b) {
-			properties.put(APDU_TRACING_KEY, Boolean.toString(b));
+			properties.put(JMRTDApp.APDU_TRACING_KEY, Boolean.toString(b));
 		}
 
 		public Object clone() {
@@ -403,21 +396,21 @@ public class PreferencesPanel extends JPanel
 		}
 
 		private String createTerminalKey(String terminalName) {
-			return TERMINAL_KEY_PREFIX + terminalName.trim();
+			return JMRTDApp.TERMINAL_KEY_PREFIX + terminalName.trim();
 		}
 
 		public URL getBACStoreLocation() {
-			return (URL)properties.get(BAC_STORE_KEY);
+			return (URL)properties.get(JMRTDApp.BAC_STORE_KEY);
 		}
 
 		public void setBACStore(URL url) {
 			if (url == null) { return; }
-			properties.put(CSCA_STORE_KEY, url.toString());
+			properties.put(JMRTDApp.CSCA_STORE_KEY, url.toString());
 		}
 
 		public URL getCSCAStoreLocation() {
 			try {
-				String value = (String)properties.get(CSCA_STORE_KEY);
+				String value = (String)properties.get(JMRTDApp.CSCA_STORE_KEY);
 				return new URL(value);
 			} catch (MalformedURLException mfue) {
 				mfue.printStackTrace();
@@ -427,12 +420,12 @@ public class PreferencesPanel extends JPanel
 
 		public void setCSCAStore(URL url) {
 			if (url == null) { return; }
-			properties.put(CSCA_STORE_KEY, url.toString());
+			properties.put(JMRTDApp.CSCA_STORE_KEY, url.toString());
 		}
 
 		public URL getCVCAStoreLocation() {
 			try {
-				String value = (String)properties.get(CVCA_STORE_KEY);
+				String value = (String)properties.get(JMRTDApp.CVCA_STORE_KEY);
 				if (value == null) { return null; }
 				return new URL(value);
 			} catch (MalformedURLException mfue) {
@@ -443,7 +436,7 @@ public class PreferencesPanel extends JPanel
 
 		public void setCVCAStore(URL url) {
 			if (url == null) { return; }
-			properties.put(CVCA_STORE_KEY, url.toString());
+			properties.put(JMRTDApp.CVCA_STORE_KEY, url.toString());
 		}
 
 		public void load(Preferences preferences) {

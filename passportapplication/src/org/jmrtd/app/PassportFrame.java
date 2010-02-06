@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -533,15 +534,20 @@ public class PassportFrame extends JFrame implements AuthListener
 				Exception ex = null;
 				try {
 					dgIn = passport.getInputStream(fid);
-				}catch(Exception e) {
+				} catch(Exception e) {
 					dgIn = null;
 					ex = e;
 				}
-				if(dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
+				if (dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
 						(fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 					continue;
-				}else if(ex != null) {
+				} else if (ex != null) {
 					throw ex;
+				}
+
+				if (dgIn == null) {
+					verificationIndicator.setDSFailed("Authentication of DG" + dgNumber + " failed");
+					return;
 				}
 
 				byte[] buf = new byte[4096];
@@ -833,18 +839,24 @@ public class PassportFrame extends JFrame implements AuthListener
 	}
 
 	private Action getSaveAsAction() {
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = 9113082315691234764L;
 
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
+				String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
+				}
 				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
+						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						FileOutputStream fileOut = new FileOutputStream(file);
 						ZipOutputStream zipOut = new ZipOutputStream(fileOut);
 						for (short fid: passport.getFileList()) {

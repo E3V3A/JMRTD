@@ -14,25 +14,24 @@ General
 + Move BACStore to passporthostapi (from passportapplication).
 + Fix unit test (when run from package explorer hangs on DG14 tests).
 + Make loading of GRT compatible ZIP files possible. They seem to use EF_DG<X>.BIN naming inside ZIP files. Test it.
++ Store BACStore, CSCAStore, CVCAStore, preferences in APPDATA subdir, not in user.home/.jmrtd
 - Display EAC menu when DG14 present, even if EAC event did not take place. Grayed out if no DG14.
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of directories with flat files?
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
-- Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Move BAC, readFromService, and verifySecurity logic from JMRTDApp and PassportFrame to the passporthostapi (in Passport class).
+- Move some of the PKCS7 (or 9?) signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
-- Copy default files from distribution jar into .jmrtd/
+- Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs).
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
-- Store BACStore, CSCAStore, CVCAStore, preferences in APPDATA subdir, not in user.home/.jmrtd
 
 Preferences
 + Tabbed panes in preferences.
 + APDU tracing from preferences, at least for card manager (also for reload action?).
-- Fix trace frame not popping up when restarting and set in persistent preferences.
-+ Preferences saving to $HOME/.jmrtd/jmrtd.properties, as text file.
-  Better yet, JSR-10, platform dependent saving to persistent storage.
++ Preferences persistent storage based on JSR-10.
 + CV cert & key folder settings from tab in preferences window.
-- CSCA folder setting from tab in preferences window. (And copy default CSCA files from jar into $HOME/.jmrtd).
-- Remember location of directory from which (passport) files were loaded, return there when opening new file.
++ Remember location of directory from which (passport) files were loaded, return there when opening new file.
+- Fix trace frame not popping up when restarting and set in persistent preferences.
+- CSCA folder setting from tab in preferences window.
 
 Dependencies
 + Latest JAI ImageIO 1.2
