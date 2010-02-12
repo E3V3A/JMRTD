@@ -255,7 +255,7 @@ public class PassportFrame extends JFrame implements AuthListener
 						for (BACKeySpec bacKeySpec: bacEntries) {
 							try {
 								if (!triedBACEntries.contains(bacKeySpec)) {
-									System.out.println("DEBUG: trying BAC " + bacKeySpec);
+									logger.info("BAC: " + bacKeySpec);
 									service.doBAC(bacKeySpec);
 									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
 									bacEntry = bacKeySpec;
@@ -301,7 +301,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			}
 			service.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
-			logger.info(Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
+			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 			passport = new Passport(service, cvcaStore, bacKeySpec);
 			displayProgressBar();
 			switch (readingMode) {
@@ -315,7 +315,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				verifySecurity(service);
 				break;
 			}
-			logger.info(Integer.toString((int)(System.currentTimeMillis() - t)/1000));
+			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dispose();

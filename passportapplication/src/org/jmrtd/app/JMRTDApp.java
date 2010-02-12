@@ -36,7 +36,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,7 +63,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.sourceforge.scuba.smartcards.CardEvent;
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -72,7 +70,6 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAStore;
@@ -80,7 +77,6 @@ import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
-import org.jmrtd.lds.COMFile;
 
 /**
  * Simple graphical application to demonstrate the
