@@ -19,6 +19,9 @@
 	<property name="lib_title" value="${lib_name} ${app_version}" />
 	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
 
+	<property name="passporthostapi_base" location="${basedir}/../passporthostapi" />
+	<property name="scuba_gui_base" location="${basedir}/../scuba_gui_j2se" />
+	
 	<property name="passporthostapi_src" location="${basedir}/../passporthostapi/src" />
 	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
 	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
@@ -32,8 +35,6 @@
 	<property name="scuba_gui_src" location="${basedir}/../scuba_gui_j2se/src" />
 	<property name="scuba_data_src" location="${basedir}/../scuba_data/src" />
 	<property name="scuba_storage_src" location="${basedir}/../scuba_storage_j2se/src" />
-
-	<property name="scuba_gui_base" location="${basedir}/../scuba_gui_j2se" />
 
 	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
 		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
@@ -109,6 +110,7 @@
 			<fileset dir="${jcopprovider_build}/" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
 			<fileset dir="${scuba_gui_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
+			<fileset dir="${passporthostapi_base}" includes="csca/*" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>

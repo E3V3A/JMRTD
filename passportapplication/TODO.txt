@@ -43,6 +43,7 @@ General
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
 - LDAP interface (JNDI) to PKD?
+- Certificate revocation lists
 - Java keystores instead of directries with DER binary files for CVCA, CSCA credentials.
 - Move BAC, readFromService, and verifySecurity logic from PassportFrame to the passporthostapi (in Passport class).
 - Move some of the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
@@ -74,7 +75,7 @@ Code quality
 - ESC/Java2
 
 Web site and documentation
-- A faq would be nice, with a howto compile it yourself.
+- A FAQ would be nice, with a howto compile it yourself.
 
 VERSION 0.9.x
 -------------

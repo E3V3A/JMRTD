@@ -114,13 +114,13 @@ public class Passport
 	 * 
 	 * @param service the service to read from
 	 * @param cvcaStore contains EAC relevant credentials
-	 * @param documentNumber the document number is used in EAC
+	 * @param bacKeySpec contains the the document number that is used in EAC
 	 * 
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService service, CVCAStore cvcaStore, BACKeySpec bacEntry) throws IOException, CardServiceException {
-		String documentNumber = bacEntry != null ? bacEntry.getDocumentNumber() : null;
+	public Passport(PassportService service, CVCAStore cvcaStore, BACKeySpec bacKeySpec) throws IOException, CardServiceException {
+		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : null;
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
