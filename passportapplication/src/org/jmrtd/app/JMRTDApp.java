@@ -62,7 +62,6 @@ import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
@@ -107,8 +106,7 @@ public class JMRTDApp  implements PassportListener
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
 
-	private static final Provider PROVIDER =
-		new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	public static final String READING_MODE_KEY = "mode.reading",
 		TERMINAL_KEY_PREFIX = "terminal.",
@@ -341,11 +339,6 @@ public class JMRTDApp  implements PassportListener
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-		/* Terminal Certs... */ /* We're doing this from the preferences panel now -- MO */
-//		JMenuItem loadItem = new JMenuItem();
-//		menu.add(loadItem);
-//		loadItem.setAction(getLoadTerminalCertsAction());
-
 		menu.addSeparator();
 
 		/* Exit */
@@ -433,42 +426,6 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.NAME, "Open File...");
 		return action;
 	}
-
-//	private Action getLoadTerminalCertsAction() {
-//		Action action = new AbstractAction() {
-//
-//			private static final long serialVersionUID = -3009238098024027906L;
-//
-//			public void actionPerformed(ActionEvent e) {
-//				JFileChooser fileChooser = new JFileChooser();
-//				fileChooser.setAcceptAllFileFilterUsed(false);
-//				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-//				fileChooser.setFileFilter(new FileFilter() {
-//					public boolean accept(File f) { return f.isDirectory(); }
-//					public String getDescription() { return "Directories"; }               
-//				});
-//				int choice = fileChooser.showOpenDialog(contentPane);
-//				switch (choice) {
-//				case JFileChooser.APPROVE_OPTION:
-//					try {
-//						File file = fileChooser.getSelectedFile();
-//						URL url  = file == null ? null : file.toURI().toURL();
-//						cvcaStore.setLocation(url);
-//					} catch (MalformedURLException mfue) {
-//						mfue.printStackTrace();
-//						/* NOTE: not changing CVCA location. */
-//					}
-//					break;
-//				default: break;
-//				}
-//			}
-//		};
-//		action.putValue(Action.SMALL_ICON, OPEN_ICON);
-//		action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
-//		action.putValue(Action.SHORT_DESCRIPTION, "Load terminals certificate & key information");
-//		action.putValue(Action.NAME, "Terminal Certs...");
-//		return action;
-//	}
 
 	private Action getExitAction() {
 		Action action = new AbstractAction() {
