@@ -140,7 +140,11 @@ public class JMRTDApp  implements PassportListener
 			this.cscaStore = new CSCAStore();
 			this.cvcaStore = new CVCAStore();
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), this.getClass());
-			preferencesPanel.addChangeListener(getPreferencesChangeListener());
+			preferencesPanel.addChangeListener(new ChangeListener() {
+				public void stateChanged(ChangeEvent e) {
+					updateFromPreferences();
+				}
+			});
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
@@ -159,6 +163,7 @@ public class JMRTDApp  implements PassportListener
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
+			updateFromPreferences();
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */
 			e.printStackTrace();
@@ -172,45 +177,34 @@ public class JMRTDApp  implements PassportListener
 		for (CardTerminal terminal: terminals) { terminalPollingMap.put(terminal, cardManager.isPolling(terminal)); }
 		return terminalPollingMap;
 	}
-
-	/**
-	 * Returns a change listener that will propagate changes in preferences
-	 * made by the user to the state of this class.
-	 * 
-	 * @return a change listener that will propagate changes in preferences
-	 *         made by the user to the state of this class
-	 */
-	private ChangeListener getPreferencesChangeListener() {
-		return new ChangeListener() {
-			public void stateChanged(ChangeEvent e) {
-				List<CardTerminal> terminals = cardManager.getTerminals();
-				for (CardTerminal terminal: terminals) {
-					if (preferencesPanel.isTerminalChecked(terminal)) {
-						if (!cardManager.isPolling(terminal)) { cardManager.startPolling(terminal); }
-					} else {
-						if (cardManager.isPolling(terminal)) { cardManager.stopPolling(terminal); }
-					}
-				}
-
-				if (preferencesPanel.isAPDUTracing()) {
-					if (apduTraceFrame == null) {
-						apduTraceFrame = new APDUTraceFrame("APDU trace");
-					}
-					apduTraceFrame.pack();
-					apduTraceFrame.setVisible(true);
-					cardManager.addAPDUListener(apduTraceFrame);
-				} else {
-					if (apduTraceFrame != null) {
-						apduTraceFrame.setVisible(false);
-						cardManager.removeAPDUListener(apduTraceFrame);
-						apduTraceFrame = null;
-					}
-				}
-
-				cvcaStore.setLocation(preferencesPanel.getCVCAStoreLocation());
-				cscaStore.setLocation(preferencesPanel.getCSCAStoreLocation());
+	
+	private void updateFromPreferences() {
+		List<CardTerminal> terminals = cardManager.getTerminals();
+		for (CardTerminal terminal: terminals) {
+			if (preferencesPanel.isTerminalChecked(terminal)) {
+				if (!cardManager.isPolling(terminal)) { cardManager.startPolling(terminal); }
+			} else {
+				if (cardManager.isPolling(terminal)) { cardManager.stopPolling(terminal); }
 			}
-		};
+		}
+
+		if (preferencesPanel.isAPDUTracing()) {
+			if (apduTraceFrame == null) {
+				apduTraceFrame = new APDUTraceFrame("APDU trace");
+			}
+			apduTraceFrame.pack();
+			apduTraceFrame.setVisible(true);
+			cardManager.addAPDUListener(apduTraceFrame);
+		} else {
+			if (apduTraceFrame != null) {
+				apduTraceFrame.setVisible(false);
+				cardManager.removeAPDUListener(apduTraceFrame);
+				apduTraceFrame = null;
+			}
+		}
+
+		cvcaStore.setLocation(preferencesPanel.getCVCAStoreLocation());
+		cscaStore.setLocation(preferencesPanel.getCSCAStoreLocation());
 	}
 
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {

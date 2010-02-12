@@ -28,7 +28,7 @@ Dependencies
 + Latest Bouncy Castle 1.45
 
 Code quality
-+ Run Findbugs. Test the Eclipse plugin.
++ Run Findbugs.
 
 Web site (jmrtd.org)
 + Check new docs on ICAO site, update links.
@@ -36,25 +36,27 @@ Web site (jmrtd.org)
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
 
 VERSION 0.4.5 / 0.5.x
--------------
+---------------------
 
 General
 - Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of directories with flat files?
+- Move BAC logic from PassportFrame to Passport class.
+- Move readFromService logic from PassportFrame to the Passport class.
+- Move the verifySecurity logic from PassportFrame to Passport class.
+- Move some of the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
 - LDAP interface (JNDI) to PKD?
-- Certificate revocation lists
-- Java keystores instead of directries with DER binary files for CVCA, CSCA credentials.
-- Move BAC, readFromService, and verifySecurity logic from PassportFrame to the passporthostapi (in Passport class).
-- Move some of the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
+- Support for certificate revocation lists
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 - Show progress during BAC testing in PassportFrame constructor
-  (especially since some MRTDs now loop for long time after failed attempt).
+  (especially since some MRTDs now wait for a long time after failed attempt).
 - Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
-- Fix trace frame not popping up when restarting and set in persistent preferences.
 - Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
+- Switch to editor mode for uploading to JMRTD applet only (not default).
+- Alternative view (file tree style) on passport.
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
