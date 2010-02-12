@@ -85,6 +85,7 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
@@ -98,7 +99,8 @@ import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
-import org.jmrtd.BACKey;
+import org.jmrtd.BACKeySpec;
+import org.jmrtd.BACStore;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAStore;
 import org.jmrtd.EACEvent;
@@ -152,6 +154,8 @@ public class PassportFrame extends JFrame implements AuthListener
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
+	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
+
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
 	private FacePreviewPanel facePreviewPanel;
@@ -189,7 +193,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private VerificationIndicator verificationIndicator;
 	private Country issuingState;
 
-	private BACKey bacEntry;
+	private BACKeySpec bacEntry;
 
 	public PassportFrame(CSCAStore cscaStore, CVCAStore cvcaStore) {
 		super(PASSPORT_FRAME_TITLE);
@@ -218,25 +222,87 @@ public class PassportFrame extends JFrame implements AuthListener
 		setVisible(true);
 	}
 
+	public  void readFromService(PassportService service, BACStore bacStore, ReadingMode readingMode) throws CardServiceException {	
+		try {
+			service.open();
+		} catch (Exception e) {
+			Object message = "Sorry, " + e.getMessage();
+			JOptionPane.showMessageDialog(this, message, "Cannot open passport!", JOptionPane.ERROR_MESSAGE, null);
+			return;
+		}
+		boolean isBACPassport = false;
+		BACKeySpec bacEntry = null;
+		try {
+			/* EF.COM is read here to test if BAC is implemented */
+			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
+			new COMFile(comIn);
+			isBACPassport = false;
+		} catch (CardServiceException cse) {
+			isBACPassport = true;
+		} catch (IOException e) {
+			e.printStackTrace();
+			// FIXME: now what?
+		}
+		if (isBACPassport) {
+			int tries = MAX_TRIES_PER_BAC_ENTRY;
+			List<BACKeySpec> bacEntries = bacStore.getEntries();
+			List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
+			try {
+				/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
+				while (bacEntry == null && tries-- > 0) {
+					/* NOTE: inner loop, loops through stored BAC entries. */
+					synchronized (bacStore) {
+						for (BACKeySpec bacKeySpec: bacEntries) {
+							try {
+								if (!triedBACEntries.contains(bacKeySpec)) {
+									System.out.println("DEBUG: trying BAC " + bacKeySpec);
+									service.doBAC(bacKeySpec);
+									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
+									bacEntry = bacKeySpec;
+									break; /* out of inner for loop */
+								}
+								Thread.sleep(500);
+							} catch (CardServiceException cse) {
+								/* NOTE: BAC failed? Try next BACEntry */
+							}
+						}
+					}
+				}
+			} catch (InterruptedException ie) {
+				/* NOTE: Interrupted? leave loop. */
+			}
+		}
+		if (!isBACPassport || bacEntry != null) {
+			readFromService(service, bacEntry, readingMode);
+		} else {
+			/*
+			 * Passport requires BAC, but we failed to authenticate.
+			 */
+			String message = "Cannot get access to passport.";
+			JOptionPane.showMessageDialog(this, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
+			return;
+		}
+	}
+
 	/**
 	 * Fills the passportFiles inputstreams with passport inputstreams.
 	 * 
 	 * FIXME: move some of this stuff into the passporthostapi's Passport class.
 	 * 
 	 * @param service the service (assumed to be already open)
-	 * @param bacEntry the BAC credentials that were used (if non-null this method assumes BAC was already performed)
+	 * @param bacKeySpec the BAC credentials that were used (if non-null this method assumes BAC was already performed)
 	 * @param readingMode either safe or progressive
 	 */
-	public void readFromService(PassportService service, BACKey bacEntry, ReadingMode readingMode) throws CardServiceException {
+	private void readFromService(PassportService service, BACKeySpec bacKeySpec, ReadingMode readingMode) throws CardServiceException {
 		try {
-			this.bacEntry = bacEntry;
-			if (bacEntry != null) {
+			this.bacEntry = bacKeySpec;
+			if (bacKeySpec != null) {
 				verificationIndicator.setBACSucceeded();
 			}
 			service.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
 			logger.info(Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
-			passport = new Passport(service, cvcaStore, bacEntry != null ? bacEntry.getDocumentNumber() : null);
+			passport = new Passport(service, cvcaStore, bacKeySpec);
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -457,7 +523,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		if (passport.hasEAC()) {
 			if (passport.wasEACPerformed()) {
 				verificationIndicator.setEACSucceeded();
-			}else{
+			} else {
 				verificationIndicator.setEACFailed("EAC not performed");
 			}
 		} else {
@@ -1287,10 +1353,10 @@ public class PassportFrame extends JFrame implements AuthListener
 
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
-				BACKey bacEntry = null;
+				BACKeySpec bacEntry = null;
 				if (dg1 != null) {
 					MRZInfo mrzInfo = dg1.getMRZInfo();
-					bacEntry = new BACKey(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
+					bacEntry = new BACKeySpec(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 				}
 				PublicKey aaPublicKey = null;
 				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);

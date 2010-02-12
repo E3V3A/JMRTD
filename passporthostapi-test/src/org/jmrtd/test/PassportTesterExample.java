@@ -3,7 +3,7 @@ package org.jmrtd.test;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 
-import org.jmrtd.BACKey;
+import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 
 public class PassportTesterExample extends PassportTesterBase {
@@ -15,7 +15,7 @@ public class PassportTesterExample extends PassportTesterBase {
 	public void test1() {
 		traceApdu = true;
 		try {
-			service.doBAC(new BACKey("XX1234587", getDate("19760803"), getDate("20140507")));
+			service.doBAC(new BACKeySpec("XX1234587", getDate("19760803"), getDate("20140507")));
 			CardFileInputStream in = service.readFile(PassportService.EF_DG1);
 			assertNotNull(in);
 			in = null;

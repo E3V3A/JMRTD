@@ -296,7 +296,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @throws CardServiceException if authentication failed
 	 */
-	public synchronized void doBAC(BACKey bacKey) throws CardServiceException {
+	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
 			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);

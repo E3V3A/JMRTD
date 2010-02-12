@@ -85,10 +85,11 @@ public class Passport
 {
 	private static final int BUFFER_SIZE = 243;
 
-	private Map<Short, InputStream> rawStreams = new HashMap<Short, InputStream>();
-	private Map<Short, InputStream> bufferedStreams = new HashMap<Short, InputStream>();
-	private Map<Short, byte[]> filesBytes = new HashMap<Short, byte[]>();
-	private Map<Short, Integer> fileLengths = new HashMap<Short, Integer>();
+	private Map<Short, InputStream> rawStreams;
+	private Map<Short, InputStream> bufferedStreams;
+	private Map<Short, byte[]> filesBytes;
+	private Map<Short, Integer> fileLengths;
+	private Map<Short, Boolean> couldNotRead;
 	private int bytesRead;
 	private int totalLength;
 
@@ -118,8 +119,14 @@ public class Passport
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService service, CVCAStore cvcaStore, String documentNumber) throws IOException, CardServiceException {
+	public Passport(PassportService service, CVCAStore cvcaStore, BACKeySpec bacEntry) throws IOException, CardServiceException {
+		String documentNumber = bacEntry != null ? bacEntry.getDocumentNumber() : null;
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
+		rawStreams = new HashMap<Short, InputStream>();
+		bufferedStreams = new HashMap<Short, InputStream>();
+		filesBytes = new HashMap<Short, byte[]>();
+		fileLengths = new HashMap<Short, Integer>();
+		couldNotRead = new HashMap<Short, Boolean>();
 		BufferedInputStream bufferedIn = preReadFile(service, PassportService.EF_COM);
 		comFile = new COMFile(bufferedIn);
 		bufferedIn.reset();
@@ -200,7 +207,7 @@ public class Passport
 					}
 				}
 			}
-			if(isEACSuccess) {
+			if (isEACSuccess) {
 				// setup DG3 and/or DG4 for reading
 				for (Short fid : eacFids) {
 					setupFile(service, fid);
@@ -545,6 +552,7 @@ public class Passport
 		if (unBufferedIn == null) {
 			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
 			System.err.println("WARNING: " + message + " (not starting thread)");
+			couldNotRead.put(fid, true);
 			return;
 		}
 		final int fileLength = fileLengths.get(fid);

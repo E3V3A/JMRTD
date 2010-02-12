@@ -22,7 +22,7 @@
 
 package org.jmrtd;
 
-import java.security.Key;
+import java.security.spec.KeySpec;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -33,7 +33,7 @@ import java.util.Date;
  *
  * @version $Revision: 764 $
  */
-public class BACKey implements Key
+public class BACKeySpec implements KeySpec
 {
 	private static final long serialVersionUID = -1059774581180524710L;
 
@@ -43,7 +43,7 @@ public class BACKey implements Key
 	private Date dateOfBirth;
 	private Date dateOfExpiry;
 
-	public BACKey(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+	public BACKeySpec(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth;
 		this.dateOfExpiry = dateOfExpiry;
@@ -77,7 +77,7 @@ public class BACKey implements Key
 		if (o == null) { return false; }
 		if (!o.getClass().equals(this.getClass())) { return false; }
 		if (o == this) { return true; }
-		BACKey previous = (BACKey)o;
+		BACKeySpec previous = (BACKeySpec)o;
 		return documentNumber.equals(previous.documentNumber) &&
 		dateOfBirth.equals(previous.dateOfBirth) &&
 		dateOfExpiry.equals(previous.dateOfExpiry);

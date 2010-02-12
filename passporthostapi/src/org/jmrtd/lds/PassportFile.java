@@ -99,7 +99,7 @@ public abstract class PassportFile
 	 * 
 	 * @throws IOException on reading error from the input stream
 	 */
-	public PassportFile createPassportFile(InputStream in) throws IOException {
+	public static PassportFile createPassportFile(InputStream in) throws IOException {
 		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 8));
 		tlvIn.mark(5);
 		int tag = tlvIn.readTag();

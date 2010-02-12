@@ -47,7 +47,7 @@ import javax.swing.table.TableCellEditor;
 
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.BACKey;
+import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
 
 /**
@@ -127,7 +127,7 @@ public class BACStorePanel extends JPanel
 		table.addKeyListener(l);
 	}
 
-	public void addEntry(BACKey entry) {
+	public void addEntry(BACKeySpec entry) {
 		store.addEntry(entry);
 		table.revalidate();
 	}
@@ -158,7 +158,7 @@ public class BACStorePanel extends JPanel
 				case DATE_OF_EXPIRY_COLUMN: dateOfExpiry = SDF.parse(changedValue); break;
 				}
 
-				BACKey entry = new BACKey(documentNumber, dateOfBirth, dateOfExpiry);
+				BACKeySpec entry = new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry);
 
 				store.removeEntry(editingRow);
 				store.addEntry(editingRow, entry);
@@ -197,8 +197,8 @@ public class BACStorePanel extends JPanel
 		}
 
 		public Object getValueAt(int rowIndex, int columnIndex) {
-			List<BACKey> entries = store.getEntries();
-			BACKey entry = entries.get(rowIndex);
+			List<BACKeySpec> entries = store.getEntries();
+			BACKeySpec entry = entries.get(rowIndex);
 			switch(columnIndex) {
 			case 0: return entry.getDocumentNumber();
 			case 1: return SDF.format(entry.getDateOfBirth());
@@ -228,7 +228,7 @@ public class BACStorePanel extends JPanel
 					String documentNumber = entryField.getDocumentNumber();
 					Date dateOfBirth = entryField.getDateOfBirth();
 					Date dateOfExpiry = entryField.getDateOfExpiry();
-					addEntry(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
+					addEntry(new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry));
 				}
 			}
 		};
@@ -276,7 +276,7 @@ public class BACStorePanel extends JPanel
 				try {
 					int entryRowIndex = table.getSelectedRow();
 					if (entryRowIndex <= 0) { return; }
-					BACKey entry = store.getEntry(entryRowIndex);
+					BACKeySpec entry = store.getEntry(entryRowIndex);
 					store.removeEntry(entryRowIndex);
 					store.addEntry(entryRowIndex - 1, entry);
 					table.removeRowSelectionInterval(entryRowIndex - 1, entryRowIndex);
@@ -302,7 +302,7 @@ public class BACStorePanel extends JPanel
 				try {
 					int entryRowIndex = table.getSelectedRow();
 					if (entryRowIndex >= table.getRowCount()) { return; }
-					BACKey entry = store.getEntry(entryRowIndex);
+					BACKeySpec entry = store.getEntry(entryRowIndex);
 					store.removeEntry(entryRowIndex);
 					store.addEntry(entryRowIndex + 1, entry);
 					table.removeRowSelectionInterval(entryRowIndex, entryRowIndex + 1);

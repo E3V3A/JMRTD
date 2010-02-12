@@ -72,7 +72,7 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.BACKey;
+import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAStore;
@@ -269,61 +269,8 @@ public class JMRTDApp  implements PassportListener
 	 * @throws CardServiceException
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
-		try {
-			service.open();
-		} catch (Exception e) {
-			Object message = "Sorry, " + e.getMessage();
-			JOptionPane.showMessageDialog(contentPane, message, "Cannot open passport!", JOptionPane.ERROR_MESSAGE, null);
-			return;
-		}
-		boolean isBACPassport = false;
-		BACKey bacEntry = null;
-		try {
-			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
-			new COMFile(comIn); /* NOTE: EF.COM is read here to test if BAC is implemented */
-			isBACPassport = false;
-		} catch (CardServiceException cse) {
-			isBACPassport = true;
-		} catch (IOException e) {
-			e.printStackTrace();
-			// FIXME: now what?
-		}
-		if (isBACPassport) {
-			int tries = 10;
-			List<BACKey> triedBACEntries = new ArrayList<BACKey>();
-			try {
-				/* NOTE: outer loop, try 10 times all entries (user may be entering new entries meanwhile). */
-				while (bacEntry == null && tries-- > 0) {
-					/* NOTE: inner loop, loops through stored BAC entries. */
-					for (BACKey bacKey: bacStore.getEntries()) {
-						try {
-							if (!triedBACEntries.contains(bacKey)) {
-								service.doBAC(bacKey);
-								/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-								bacEntry = bacKey;
-								break; /* out of inner for loop */
-							}
-							Thread.sleep(500);
-						} catch (CardServiceException cse) {
-							/* NOTE: BAC failed? Try next BACEntry */
-						}
-					}
-				}
-			} catch (InterruptedException ie) {
-				/* NOTE: Interrupted? leave loop. */
-			}
-		}
-		if (!isBACPassport || bacEntry != null) {
-			PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
-			passportFrame.readFromService(service, bacEntry, preferencesPanel.getReadingMode());
-		} else {
-			/*
-			 * Passport requires BAC, but we failed to authenticate.
-			 */
-			String message = "Cannot get access to passport.";
-			JOptionPane.showMessageDialog(contentPane, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
-			return;
-		}
+		PassportFrame passportFrame = new PassportFrame(cscaStore, cvcaStore);
+		passportFrame.readFromService(service, bacStore, preferencesPanel.getReadingMode());
 	}
 
 	private JMenu createFileMenu() {

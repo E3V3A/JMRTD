@@ -54,7 +54,7 @@ import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.smartcards.CardManager;
 
-import org.jmrtd.BACKey;
+import org.jmrtd.BACKeySpec;
 
 /**
  * Options component for uploading to applet.
@@ -70,7 +70,7 @@ public class UploadOptionsChooser // extends JComponent
 	public static final int APPROVE_OPTION = 0;
 	private UploadOptionsPanel panel;
 
-	public UploadOptionsChooser(BACKey bacEntry, PublicKey aaPublicKey) {
+	public UploadOptionsChooser(BACKeySpec bacEntry, PublicKey aaPublicKey) {
 		panel = new UploadOptionsPanel(bacEntry, aaPublicKey);
 	}
 
@@ -130,9 +130,9 @@ public class UploadOptionsChooser // extends JComponent
 		return privateKey;
 	}
 
-	public BACKey getBACEntry() {
+	public BACKeySpec getBACEntry() {
 		BACEntryField bef = panel.bacEntryField;
-		return new BACKey(bef.getDocumentNumber(), bef.getDateOfBirth(), bef.getDateOfExpiry());
+		return new BACKeySpec(bef.getDocumentNumber(), bef.getDateOfBirth(), bef.getDateOfExpiry());
 	}
 	
 	private class UploadOptionsPanel extends JPanel
@@ -144,7 +144,7 @@ public class UploadOptionsChooser // extends JComponent
 		private JTextField fileTF;
 		private JButton browseButton;
 
-		public UploadOptionsPanel(BACKey bacEntry, PublicKey aaPublicKey) {
+		public UploadOptionsPanel(BACKeySpec bacEntry, PublicKey aaPublicKey) {
 			super(new BorderLayout());
 			JPanel northPanel = new JPanel();
 			terminalsComboBox = new JComboBox();

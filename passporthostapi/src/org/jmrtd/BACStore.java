@@ -54,7 +54,7 @@ public class BACStore
 
 	private File location;
 
-	private List<BACKey> entries;
+	private List<BACKeySpec> entries;
 
 	public BACStore() {
 		this(DEFAULT_BACDB_FILE);
@@ -62,7 +62,7 @@ public class BACStore
 
 	public BACStore(File location) {
 		setLocation(location);
-		entries = new ArrayList<BACKey>();
+		entries = new ArrayList<BACKeySpec>();
 		read(location, entries);
 	}
 
@@ -93,11 +93,11 @@ public class BACStore
 		}
 	}
 
-	public List<BACKey> getEntries() {
+	public List<BACKeySpec> getEntries() {
 		return entries;
 	}
 
-	public void addEntry(BACKey entry) {
+	public synchronized void addEntry(BACKeySpec entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
 			write(entries, location);
@@ -108,7 +108,7 @@ public class BACStore
 		}
 	}
 
-	public void addEntry(int i, BACKey entry) {
+	public synchronized  void addEntry(int i, BACKeySpec entry) {
 		entries.add(i, entry);
 		write(entries, location);
 	}
@@ -125,30 +125,30 @@ public class BACStore
 
 	public String toString() {
 		StringBuffer result = new StringBuffer();
-		for (BACKey entry: entries) {
+		for (BACKeySpec entry: entries) {
 			result.append(entry.toString());
 			result.append('\n');
 		}
 		return result.toString();
 	}
 
-	public void removeEntry(int index) {
+	public synchronized void removeEntry(int index) {
 		entries.remove(index);
 		write(entries, location);
 	}
 
-	public BACKey getEntry(int entryRowIndex) {
+	public BACKeySpec getEntry(int entryRowIndex) {
 		return entries.get(entryRowIndex);
 	}
 	
-	private static void read(File location, List<BACKey> entries) {
+	private static void read(File location, List<BACKeySpec> entries) {
 		try {
 			BufferedReader d = new BufferedReader(new FileReader(location));
 			while (true) {
 				String line = d.readLine();
 				if (line == null) { break; }
 				String[] fields = getFields(line);
-				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
+				entries.add(new BACKeySpec(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
 			}
 			d.close();
 		} catch (FileNotFoundException fnfe) {
@@ -158,10 +158,10 @@ public class BACStore
 		}
 	}
 
-	private static void write(List<BACKey> entries, File file) {
+	private static void write(List<BACKeySpec> entries, File file) {
 		try {
 			PrintWriter writer = new PrintWriter(new FileWriter(file));
-			for (BACKey entry: entries) { writer.println(entry); }
+			for (BACKeySpec entry: entries) { writer.println(entry); }
 			writer.flush();
 			writer.close();
 		} catch (IOException ioe) {
