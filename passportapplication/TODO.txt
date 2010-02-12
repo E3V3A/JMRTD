@@ -52,15 +52,18 @@ General
 - Show progress during BAC testing in PassportFrame constructor
   (especially since some MRTDs now wait for a long time after failed attempt).
 - Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
-- Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs).
+- Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs) so that a standard profile is created.
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
-- Switch to editor mode for uploading to JMRTD applet only (not default).
-- Alternative view (file tree style) on passport.
+- Only go to editor mode if user explicitly indicates (default display mode should be not editable).
+- When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
+  Currently its hardcoded to ID-1.
+- Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
+  Perhaps even allow ASN.1 tree in a JTree.
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
-- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes.
+- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
 
 SCUBA support for exotic card readers
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
@@ -77,13 +80,14 @@ Code quality
 - ESC/Java2
 
 Web site and documentation
-- A FAQ would be nice, with a howto compile it yourself.
+- A FAQ would be nice, with a how to compile it yourself.
 
 VERSION 0.9.x
 -------------
 
 Features
-- Webcam OCR of MRZ (OCR-B font).
+- Webcam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
+  distance so that auto-focus isn't even necessary.
 
 Documentation
 - Proper system documentation
