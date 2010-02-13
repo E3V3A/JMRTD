@@ -1,7 +1,7 @@
 /*
  *  JMRTD Tests.
  *
- *  Copyright (C) 2009  The JMRTD team
+ *  Copyright (C) 2010  The JMRTD team
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -19,9 +19,8 @@
  *  $Id: $
  */
 
-package org.jmrtd.test.api.lds;
+package org.jmrtd.test.api;
 
-import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.Security;
 
