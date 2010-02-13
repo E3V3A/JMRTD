@@ -414,7 +414,12 @@ public class PassportFrame extends JFrame implements AuthListener
 					cvca = new CVCAFile(in);
 					break;
 				default:
-					String message = "File " + Integer.toHexString(fid) + " not supported!";
+					String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
+					if ((fid & 0x010F) == fid) {
+						int tag = PassportFile.lookupTagByFID(fid);
+						int dgNumber = PassportFile.lookupDataGroupNumberByTag(tag);
+						message = "Displaying of DG" + dgNumber + " not supported!";
+					}
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
 			} catch (IOException ioe) {

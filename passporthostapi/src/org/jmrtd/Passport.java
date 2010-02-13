@@ -74,6 +74,10 @@ import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
+/*
+ * TODO: Implement toString(), equals(), hashCode().
+ */
+
 /**
  * A passport object is basically a collection of buffered input streams for the
  * data groups, combined with some status information (progress).
@@ -217,6 +221,12 @@ public class Passport
 	}
 
 	public Passport(File file) throws IOException {
+		rawStreams = new HashMap<Short, InputStream>();
+		bufferedStreams = new HashMap<Short, InputStream>();
+		filesBytes = new HashMap<Short, byte[]>();
+		fileLengths = new HashMap<Short, Integer>();
+		couldNotRead = new HashMap<Short, Boolean>();
+		
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
@@ -268,7 +278,12 @@ public class Passport
 	}
 
 	public Passport() throws GeneralSecurityException {
-
+		rawStreams = new HashMap<Short, InputStream>();
+		bufferedStreams = new HashMap<Short, InputStream>();
+		filesBytes = new HashMap<Short, byte[]>();
+		fileLengths = new HashMap<Short, Integer>();
+		couldNotRead = new HashMap<Short, Boolean>();
+	
 		/* EF.COM */
 		List<Integer> tagList = new ArrayList<Integer>();
 		tagList.add(PassportFile.EF_DG1_TAG);
@@ -284,7 +299,7 @@ public class Passport
 		Date today = Calendar.getInstance().getTime();
 		String primaryIdentifier = "";
 		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID1, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
+		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID3, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		fileLength = dg1Bytes.length;
