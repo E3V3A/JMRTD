@@ -193,9 +193,9 @@ public class SODFile extends PassportFile
 		ASN1InputStream asn1in = new ASN1InputStream(in);
 		DERSequence seq = (DERSequence)asn1in.readObject();
 		/* DERObjectIdentifier objectIdentifier = (DERObjectIdentifier) seq.getObjectAt(0); */ /* FIXME: do we need this? */
-		DERTaggedObject o = (DERTaggedObject)seq.getObjectAt(1);
+		//DERTaggedObject o = (DERTaggedObject)seq.getObjectAt(1);
 		/* TODO: where is this tagNo specified? */
-		/* int tagNo = */ o.getTagNo();
+		// int tagNo =  o.getTagNo();
 		DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
 		this.signedData = new SignedData(s2);
 	}
