@@ -30,6 +30,9 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.StringTokenizer;
+
+import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.util.Files;
@@ -51,7 +54,9 @@ public class CSCAStore
 		setLocation(getDefaultCSCADir());
 	}
 
-	public X509Certificate getCertificate(Country c) throws IOException {
+	public X509Certificate getCertificate(X500Principal issuer) throws IOException {
+		/* FIXME: still assumes one cert per country. */
+		Country c = getCountry(issuer);
 		return getCertificate(c.toString().toLowerCase());
 	}
 
@@ -92,5 +97,18 @@ public class CSCAStore
 			mfue.printStackTrace();
 		}
 		return cscaDir;
+	}
+	
+	private Country getCountry(X500Principal issuer) {
+		String issuerName = issuer.getName(X500Principal.RFC2253);
+		StringTokenizer st = new StringTokenizer(issuerName, ",");
+		while (st.hasMoreTokens()) {
+			String token = st.nextToken();
+			if (token.toUpperCase().startsWith("C=")) {
+				String countryString = token.substring(token.indexOf('=') + 1, token.length());
+				return Country.getInstance(countryString);
+			}
+		}
+		return null;
 	}
 }

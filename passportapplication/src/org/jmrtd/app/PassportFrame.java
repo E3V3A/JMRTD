@@ -67,6 +67,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
+import javax.security.auth.x500.X500Principal;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -664,12 +665,16 @@ public class PassportFrame extends JFrame implements AuthListener
 				MRZInfo mrzInfo = dg1.getMRZInfo();
 				issuingState = mrzInfo.getIssuingState();
 			}
-			countrySigningCert = (cscaStore == null) ? null : cscaStore.getCertificate(issuingState);
+			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
+			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
+			countrySigningCert = null;
+			if (cscaStore != null) {
+				countrySigningCert = cscaStore.getCertificate(docIssuer);
+			}
 			if (countrySigningCert == null) {
-				verificationIndicator.setCSFailed("Could not get DS certificate");
+				verificationIndicator.setCSFailed("Could not open CSCA certificate");
 				return;
 			}
-			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 			docSigningCertificate.verify(countrySigningCert.getPublicKey());
 			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
 		} catch (FileNotFoundException fnfe) {
@@ -679,13 +684,16 @@ public class PassportFrame extends JFrame implements AuthListener
 			verificationIndicator.setCSFailed(se.getMessage());
 		} catch (CertificateException ce) {
 			verificationIndicator.setCSFailed(ce.getMessage());
+			ce.printStackTrace();
 		} catch (GeneralSecurityException gse) {
 			verificationIndicator.setCSFailed(gse.getMessage());
 			gse.printStackTrace();
 		} catch (IOException ioe) {
 			verificationIndicator.setCSFailed("Could not open CSCA certificate");
+			ioe.printStackTrace();
 		} catch (Exception e) {
 			verificationIndicator.setCSFailed(e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
