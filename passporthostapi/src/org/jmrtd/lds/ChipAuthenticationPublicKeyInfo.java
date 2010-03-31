@@ -238,17 +238,12 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 				vInfo = new SubjectPublicKeyInfo(id, p.getEncoded());
 				return vInfo;
 			} else if (publicKey instanceof DHPublicKey) {
-				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
-				try {
-				  DHPublicKey dhKey = ((DHPublicKey)publicKey);
-				  DHParameterSpec dhSpec = dhKey.getParams();
-				  return new SubjectPublicKeyInfo(
-				      new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
-				               new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
-				               new DERInteger(dhKey.getY()));
-				} finally {
-					asn1In.close();
-				}
+				DHPublicKey dhKey = ((DHPublicKey)publicKey);
+				DHParameterSpec dhSpec = dhKey.getParams();
+				return new SubjectPublicKeyInfo(
+				    new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
+				             new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
+				             new DERInteger(dhKey.getY()));
 			} else {
 				throw new IllegalArgumentException("Unrecognized key type, should be DH or EC");
 			}
