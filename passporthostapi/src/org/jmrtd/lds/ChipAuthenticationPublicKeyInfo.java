@@ -31,6 +31,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.interfaces.DHPublicKey;
+import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -39,6 +40,7 @@ import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
@@ -238,7 +240,12 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 			} else if (publicKey instanceof DHPublicKey) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				try {
-					return new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				  DHPublicKey dhKey = ((DHPublicKey)publicKey);
+				  DHParameterSpec dhSpec = dhKey.getParams();
+				  return new SubjectPublicKeyInfo(
+				      new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
+				               new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
+				               new DERInteger(dhKey.getY()));
 				} finally {
 					asn1In.close();
 				}
