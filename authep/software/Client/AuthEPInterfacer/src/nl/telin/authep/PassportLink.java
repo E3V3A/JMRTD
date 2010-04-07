@@ -38,9 +38,10 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
-import org.jmrtd.DG15File;
-import org.jmrtd.PassportFile;
+import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
+import org.jmrtd.lds.DG15File;
+import org.jmrtd.lds.PassportFile;
 
 /**
  * PassportLink handles communication between the chip on the passport
@@ -190,7 +191,7 @@ public class PassportLink {
 	{
 		if(activateTerminal())
 		{
-			_activePassportService.doBAC(docNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry));
+			_activePassportService.doBAC(new BACKeySpec(docNumber, SDF.parse(dateOfBirth), SDF.parse(dateOfExpiry)));
 		}
 	}
 

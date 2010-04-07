@@ -102,14 +102,14 @@ public class InterfacerApplet extends Applet implements CardTerminalListener, Ke
 	public void stop() {
 		log("Auth EP - InterfacerApplet - stop");
 		isRunning = false;
-		CardManager.getInstance().stop();
+//		CardManager.getInstance().stop();
 		Interfacer.getNetworkLink().stopAccept();
 	}
 
 	public void destroy() {
 		log("Auth EP - InterfacerApplet - destroy");
 		isRunning = false;
-		CardManager.getInstance().stop();
+//		CardManager.getInstance().stop();
 		Interfacer.getNetworkLink().stopAccept();
 	}
 
