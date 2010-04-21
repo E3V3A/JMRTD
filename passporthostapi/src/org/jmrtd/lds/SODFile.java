@@ -69,6 +69,8 @@ import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
+import org.jmrtd.Passport;
+import org.jmrtd.PassportService;
 
 /**
  * File structure for the EF_SOD file.
