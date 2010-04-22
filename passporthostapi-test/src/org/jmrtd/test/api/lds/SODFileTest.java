@@ -22,6 +22,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.io.FileInputStream;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -47,7 +48,6 @@ import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.SODFile;
-
 
 public class SODFileTest extends TestCase {
 
@@ -120,6 +120,22 @@ public class SODFileTest extends TestCase {
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
 		keyPairGenerator.initialize(1024);
 		return keyPairGenerator.generateKeyPair();
+	}
+
+	public void testDavidEid() {
+		try {
+			Provider[] providers = 	Security.getProviders();
+			for (Provider provider: providers) {
+				System.out.println("Security provider: " + provider);
+			}
+			
+			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
+			X509Certificate cert = sodFile.getDocSigningCertificate();
+			System.out.println(cert.toString());
+			System.out.println(cert.getSerialNumber());
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
 	}
 
 	public void testFile(InputStream in) {
