@@ -242,6 +242,7 @@
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
 			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_data_src};${scuba_storage_src};${scuba_smartcards_src};${scuba_gui_src}" />
 			<package name="org.jmrtd" />
+			<package name="org.jmrtd.lds" />
 			<package name="net.sourceforge.scuba.data" />
 			<package name="net.sourceforge.scuba.smartcards" />
 			<package name="net.sourceforge.scuba.tlv" />

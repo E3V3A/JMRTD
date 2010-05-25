@@ -56,9 +56,9 @@ public abstract class SecurityInfo
 	public abstract String getObjectIdentifier();
 	
 	/**
-	 * Factory method for creating security info objects given an input stream.
+	 * Factory method for creating security info objects given an input.
 	 * 
-	 * @param in the input stream
+	 * @param obj the input
 	 * 
 	 * @return a concrete security info object
 	 */
