@@ -330,12 +330,13 @@ public class SODFile extends PassportFile
 		byte[] eContent = getEContent(signedData);      
 		byte[] signature = getEncryptedDigest(signedData);
 
-		String encAlg = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId().getId();
-
+		DERObjectIdentifier encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId();
+		String encAlgJavaString = lookupMnemonicByOID(encAlgId);
+		
 		// For the cases where the signature is simply a digest (haven't seen a passport like this, 
 		// thus this is guessing)
 
-		if(encAlg == null) {
+		if (encAlgId.getId() == null) {
 			String digestAlg = getSignerInfo(signedData).getDigestAlgorithm().getObjectId().getId();
 			MessageDigest digest = MessageDigest.getInstance(digestAlg);
 			digest.update(eContent);
@@ -345,12 +346,20 @@ public class SODFile extends PassportFile
 
 		// For the RSA_SA_PSS 1. the default hash is SHA1, 2. The hash id is not encoded in OID
 		// So it has to be specified "manually"
-		if(encAlg.equals(RSA_SA_PSS_OID.toString())) {
-			encAlg = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId()) +
-			"withRSA/PSS"; 
+		if (encAlgId.equals(RSA_SA_PSS_OID)) {
+			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
+			+ "withRSA/PSS";
 		}
-
-		Signature sig = Signature.getInstance(encAlg);
+		
+		if (encAlgId.equals(PKCS1_RSA_OID)) {
+			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
+			+ "withRSA";
+		}
+		
+		System.out.println("DEBUG: de OID = " + encAlgId);
+		System.out.println("DEBUG: de Java encalg = " + encAlgJavaString);
+		
+		Signature sig = Signature.getInstance(encAlgJavaString);
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
 		return sig.verify(signature);

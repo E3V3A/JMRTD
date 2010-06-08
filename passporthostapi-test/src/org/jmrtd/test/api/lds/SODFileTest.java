@@ -122,14 +122,15 @@ public class SODFileTest extends TestCase {
 		return keyPairGenerator.generateKeyPair();
 	}
 
-	public void testDavidEid() {
+	public void testDavidEid1() {
 		try {
 			Provider[] providers = 	Security.getProviders();
 			for (Provider provider: providers) {
 				System.out.println("Security provider: " + provider);
 			}
 			
-			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
+			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
+			// SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
 			X509Certificate cert = sodFile.getDocSigningCertificate();
 			System.out.println(cert.toString());
 			System.out.println(cert.getSerialNumber());
@@ -138,6 +139,19 @@ public class SODFileTest extends TestCase {
 		}
 	}
 
+	public void testDavidEid2() {
+		try {
+			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));			
+			X509Certificate cert = sodFile.getDocSigningCertificate();			
+			X509Certificate sodcert = sodFile.getDocSigningCertificate();
+			boolean result = sodFile.checkDocSignature(sodcert);
+			System.out.println("DEBUG: result = " + result);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+	
 	public void testFile(InputStream in) {
 		try {
 			testReflexive(new SODFile(in));
