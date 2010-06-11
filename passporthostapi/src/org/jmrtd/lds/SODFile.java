@@ -715,6 +715,7 @@ public class SODFile extends PassportFile
 		if (name.equalsIgnoreCase("SHA1withECDSA")) { return X9_SHA1_WITH_ECDSA_OID; }
 		if (name.equalsIgnoreCase("SHA224withECDSA")) { return X9_SHA224_WITH_ECDSA_OID; }
 		if (name.equalsIgnoreCase("SHA256withECDSA")) { return X9_SHA256_WITH_ECDSA_OID; }
+		if (name.equalsIgnoreCase("SAwithRSA/PSS")) { return RSA_SA_PSS_OID; }
 		throw new NoSuchAlgorithmException("Unknown OID " + name);
 	}
 }
