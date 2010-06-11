@@ -141,7 +141,8 @@ public class SODFileTest extends TestCase {
 
 	public void testDavidEid2() {
 		try {
-			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));			
+//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
+			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/DavidEid_falsified_EF.SOD.bin"));
 			X509Certificate cert = sodFile.getDocSigningCertificate();			
 			X509Certificate sodcert = sodFile.getDocSigningCertificate();
 			boolean result = sodFile.checkDocSignature(sodcert);

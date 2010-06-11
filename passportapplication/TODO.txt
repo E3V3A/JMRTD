@@ -75,7 +75,7 @@ Dependencies
 - Check/update README and Web site to reflect correct version numbers.
 
 Code quality
-- Findbugs.
+- Findbugs
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 - ESC/Java2
 

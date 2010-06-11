@@ -687,6 +687,7 @@ public class SODFile extends PassportFile
 		if (oid.equals(PKCS1_SHA512_WITH_RSA_OID)) { return "SHA512withRSA"; }
 		if (oid.equals(PKCS1_SHA224_WITH_RSA_OID)) { return "SHA224withRSA"; }
 		if (oid.equals(IEEE_P1363_SHA1_OID)) { return "SHA1"; }
+		if (oid.equals(RSA_SA_PSS_OID)) { return "SAwithRSA/PSS"; }
 		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
 
