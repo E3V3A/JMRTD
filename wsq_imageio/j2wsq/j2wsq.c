@@ -19,10 +19,10 @@ int debug = 0;
 /**
  * Based on dwsq.c.
  */
-JNIEXPORT jobject JNICALL Java_WSQ_decodeWSQ (JNIEnv *env,
-                                                 jobject obj,
-                                                 jbyteArray in) {
-
+JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
+ JNIEnv *env,
+ jobject obj,
+ jbyteArray in) {
    char *j_str;
    unsigned char *idata, *odata;
    int i;
