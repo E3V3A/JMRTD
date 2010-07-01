@@ -1,47 +1,75 @@
 package org.jmrtd.imageio;
 
-import java.io.*;
-import java.util.*;
-import javax.imageio.*;
-import javax.imageio.spi.*;
-import javax.imageio.stream.*;
+import java.io.IOException;
+import java.util.Locale;
+
+import javax.imageio.ImageReader;
+import javax.imageio.spi.ImageReaderSpi;
 
 public class WSQImageReaderSpi extends ImageReaderSpi
 {
-   private static final String VENDOR_NAME = "JMRTD";
-   private static final String VERSION = "0.0.1";
-   private static final String READER_CLASS_NAME = "org.jmrtd.imageio.WSQImageReader";
-   private static final String[] NAMES = { "WSQ FBI" };
-   private static final String[] SUFFIXES = { "wsq" };
-   private static final String[] MIME_TYPES = { "images/x-wsq" };
+	static final String vendorName = "JMRTD";
+	static final String version = "0.0.1";
+	static final String readerClassName = "org.jmrtd.imageio.WSQImageReader";
+	static final String[] names = { "WSQ FBI" };
+	static final String[] suffixes = { "wsq" };
+	static final String[] MIMETypes = { "images/x-wsq" };
+	static final String[] writerSpiNames = { };
 
-   public WSQImageReaderSpi() {
-      super();
-   }
+	// Metadata formats, more information below
+	static final boolean supportsStandardStreamMetadataFormat = false;
+	static final String nativeStreamMetadataFormatName = null;
+	static final String nativeStreamMetadataFormatClassName = null;
+	static final String[] extraStreamMetadataFormatNames = null;
+	static final String[] extraStreamMetadataFormatClassNames = null;
+	static final boolean supportsStandardImageMetadataFormat = false;
+	static final String nativeImageMetadataFormatName = "org.jmrtd.imageio.WSQMetadata_1.0";
+	static final String nativeImageMetadataFormatClassName = "org.jmrtd.imageio.WSQMetadata";
+	static final String[] extraImageMetadataFormatNames = null;
+	static final String[] extraImageMetadataFormatClassNames = null;
 
-   public String getDescription(Locale locale) {
-      return "Description goes here";
-   }
+	public WSQImageReaderSpi() {
+		super(vendorName, version, names, suffixes, MIMETypes,
+				readerClassName,
+				STANDARD_INPUT_TYPE, // Accept ImageInputStreams
+				writerSpiNames,
+				supportsStandardStreamMetadataFormat,
+				nativeStreamMetadataFormatName,
+				nativeStreamMetadataFormatClassName,
+				extraStreamMetadataFormatNames,
+				extraStreamMetadataFormatClassNames,
+				supportsStandardImageMetadataFormat,
+				nativeImageMetadataFormatName,
+				nativeStreamMetadataFormatClassName, extraImageMetadataFormatNames,
+				extraImageMetadataFormatClassNames);
+	}
 
-   public boolean canDecodeInput(Object input) throws IOException {
-      if (!(input instanceof ImageInputStream)) {
-         return false;
-      }
-      ImageInputStream stream = (ImageInputStream)input;
-      byte[] header = new byte[2]; // FIXME 2?
-      try {
-         stream.mark();
-         stream.readFully(header);
-         stream.reset();
-      } catch (IOException ioe) {
-         return false;
-      }
-      // FIXME check header
-      return true;
-   }
+	public String getDescription(Locale locale) {
+		return "Description goes here";
+	}
 
-   public ImageReader createReaderInstance(Object extension) {
-      return new WSQImageReader(this);
-   }
+	public boolean canDecodeInput(Object input) throws IOException {
+		/*
+		if (!(input instanceof ImageInputStream)) {
+			return false;
+		}
+		ImageInputStream stream = (ImageInputStream)input;
+		byte[] header = new byte[2]; // FIXME 2?
+		try {
+			stream.mark();
+			stream.readFully(header);
+			stream.reset();
+		} catch (IOException ioe) {
+			return false;
+		}
+		*/
+		// FIXME check header
+		return true;
+	}
+
+	public ImageReader createReaderInstance(Object extension) {
+		System.out.println("DEBUG: in createReaderInstance(Object), extension = " + extension);
+		return new WSQImageReader(this);
+	}
 }
 

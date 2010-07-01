@@ -3,7 +3,7 @@ TARGET=win32
 CFILES=allocfet.c computil.c dataio.c delfet.c extrfet.c fatalerr.c freefet.c huff.c lkupfet.c nistcom.c strfet.c syserr.c updatfet.c wsq_decoder.c wsq_encoder.c wsq_globals.c wsq_huff.c wsq_ppi.c wsq_tableio.c wsq_tree.c wsq_util.c
 
 j2wsq.dll: objects
-	cl /O1 /LD /Zi j2wsq.c *.obj /Fej2wsq.dll /I. /I$(JAVA_INCLUDE)\win32 /I$(JAVA_INCLUDE) /link /nodefaultlib:libcmt msvcrt.lib
+	cl /O1 /LD /Zi j2wsq.c *.obj /Fej2wsq.dll /I. /I$(JAVA_INCLUDE)\win32 /I$(JAVA_INCLUDE)
 	
 
 objects:
@@ -11,4 +11,4 @@ objects:
 
 
 clean:
-	del *.dll *.obj
+	del *.dll *.obj *.lib *.dll.manifest *.pdb *.exp *.ilk

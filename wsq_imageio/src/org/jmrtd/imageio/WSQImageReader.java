@@ -1,9 +1,12 @@
 package org.jmrtd.imageio;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBuffer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageReadParam;
@@ -15,23 +18,44 @@ import javax.imageio.stream.ImageInputStream;
 
 public class WSQImageReader extends ImageReader
 {
-	ImageInputStream stream = null;
+	static {
+		System.loadLibrary("j2wsq");
+	}
+	
+	ImageInputStream stream;
+	int width, height;
+	private BufferedImage image;
 
 	public WSQImageReader(ImageReaderSpi provider) {
 		super(provider);
-		System.loadLibrary("j2wsq");
+		System.out.println("DEBUG: in WSQImageReader(ImageReaderSpi)");
+		// System.loadLibrary("j2wsq");
+		System.out.println("DEBUG: in WSQImageReader(ImageReaderSpi): shared lib loaded");
 	}
-
-	public void setInput(Object input, boolean isStreamable) {
-		super.setInput(input, isStreamable);
+	
+	public void setInput(Object input) {
+		super.setInput(input); // NOTE: should be setInput(input, false, false);
+	}
+	
+	public void setInput(Object input, boolean seekForwardOnly) {
+		super.setInput(input, seekForwardOnly);  // NOTE: should be setInput(input, seekForwardOnly, false);
+	}
+	
+	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
+		super.setInput(input, seekForwardOnly, ignoreMetaData);
+		System.out.println("DEBUG: in setInput(Object, " + seekForwardOnly + ", " + ignoreMetaData + ");");
 		if (input == null) {
-			this.stream = null;
+			this.image = null;
 			return;
 		}
-		if (input instanceof ImageInputStream) {
-			this.stream = (ImageInputStream)input;
-		} else {
-			throw new IllegalArgumentException("bad input");
+		try {
+			byte[] inputBytes = getBytes(input);
+			this.image = decodeWSQ(inputBytes);
+			this.width = image.getWidth();
+			this.height = image.getHeight();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			this.image = null;
 		}
 	}
 
@@ -39,13 +63,14 @@ public class WSQImageReader extends ImageReader
 		return 1;
 	}
 
-	private native BufferedImage decodeWSQ(byte[] in);
-
-	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
-		if (imageIndex != 0) {
-			throw new IllegalArgumentException("bad input");
-		}
-		try {
+	private byte[] getBytes(Object input) throws IOException {
+		System.out.println("DEBUG: in getBytes()");
+		if (input == null) { return null; }
+		if (input instanceof byte[]) { return (byte[])input; }
+		if (input instanceof ImageInputStream) {
+			System.out.println("DEBUG: in getBytes(), input is ImageInputStream");
+			this.stream = (ImageInputStream)input;
+			this.stream.mark();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buf = new byte[1024];
 			while (true) {
@@ -54,28 +79,51 @@ public class WSQImageReader extends ImageReader
 				out.write(buf, 0, bytesRead);
 			}
 			out.flush();
-			byte[] inputBytes = out.toByteArray();
-			out.close();
-			return decodeWSQ(inputBytes);
-		} catch (IOException e) {
-			throw new IIOException(e.getMessage());
+			this.stream.reset();
+			return out.toByteArray();
+		} else {
+			throw new IllegalArgumentException("bad input");
 		}
 	}
 
-	public int getWidth(int imageIndex) throws IOException {
-		return 0;
+	private native BufferedImage decodeWSQ(byte[] in);
+
+	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
+		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
+		try {
+			System.out.println("DEBUG: in read(int, ImageReadParam)");
+			System.out.println("DEBUG: image = " + image);
+			System.out.println("DEBUG: stream = " + stream);
+			if (stream != null) {
+				System.out.println(" stream.getStreamPosition() = " + stream.getStreamPosition()
+						+ " stream.length() = " + stream.length());
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return image;
 	}
-	
+
+	public int getWidth(int imageIndex) throws IOException {
+		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
+		return width;
+	}
+
 	public int getHeight(int imageIndex) throws IOException {
-		return 0;
+		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
+		return height;
 	}
 
 	public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
+		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		return null;
 	}
 
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
-		return null;
+		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
+		List<ImageTypeSpecifier> list = new ArrayList();
+		list.add(ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false));
+		return list.iterator();
 	}
 
 	public IIOMetadata getStreamMetadata() throws IOException {
