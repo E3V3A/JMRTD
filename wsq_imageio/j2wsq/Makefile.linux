@@ -6,11 +6,10 @@ CFILES=allocfet.c computil.c dataio.c delfet.c extrfet.c fatalerr.c freefet.c hu
 all: libj2wsq.so
 
 objects:
-	gcc -mno-cygwin -O3 -c -I. $(CFILES)
+	gcc -O3 -c -I. $(CFILES)
 
 libj2wsq.so: objects
 	gcc\
-	   -mno-cygwin\
 	   -O3\
 	   -shared\
 	   -Wl,-soname,libj2wsq.so\
@@ -24,5 +23,5 @@ libj2wsq.so: objects
 	strip libj2wsq.so
 
 clean:
-	rm -f *.o *.so *.lo
+	rm -f *.o *.so *.lo *.obj *.dll *.lib *.exp
 

@@ -14,4 +14,4 @@ objects:
 
 
 clean:
-	del *.dll *.obj *.lib *.dll.manifest *.pdb *.exp *.ilk
+	del *.dll *.obj *.lib *.dll.manifest *.pdb *.exp *.ilk *.o *.lo *.so

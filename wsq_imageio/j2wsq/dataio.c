@@ -155,10 +155,9 @@ int getc_ushort(
    if(ret)
       return(ret);
 
-#ifdef __i386__
+#if defined (__i386__) || defined(__x86_64__)
    swap_short_bytes(shrt_dat);
 #endif
-   swap_short_bytes(shrt_dat); // MO
 
    *oshrt_dat = shrt_dat;
    return(0);
@@ -176,10 +175,9 @@ int putc_ushort(
    int ret;
    unsigned char *cptr;
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
    swap_short_bytes(ishort);
 #endif
-   swap_short_bytes(ishort); // MO
 
    cptr = (unsigned char *)(&ishort);
 
@@ -207,10 +205,9 @@ int getc_uint(
    if(ret)
       return(ret);
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
    swap_int_bytes(int_dat);
 #endif
-   swap_int_bytes(int_dat); // MO
 
    *oint_dat = int_dat;
    return(0);
@@ -228,10 +225,9 @@ int putc_uint(
    int ret;
    unsigned char *cptr;
 
-#ifdef __i386__
+#if defined(__i386__) || defined(__x86_64__)
    swap_int_bytes(iint);
 #endif
-   swap_int_bytes(iint); // MO
 
    cptr = (unsigned char *)(&iint);
 
