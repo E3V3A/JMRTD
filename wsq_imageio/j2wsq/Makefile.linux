@@ -6,7 +6,7 @@ CFILES=allocfet.c computil.c dataio.c delfet.c extrfet.c fatalerr.c freefet.c hu
 all: libj2wsq.so
 
 objects:
-	gcc -O3 -c -I. $(CFILES)
+	gcc -O3 -fPIC -c -I. $(CFILES)
 
 libj2wsq.so: objects
 	gcc\

@@ -15,6 +15,7 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="wsq_imageio.jar">
 			<manifest>
+				<attribute name="Main-class" value="org.jmrtd.imageio.test.WSQTest" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="JMRTD"/>
