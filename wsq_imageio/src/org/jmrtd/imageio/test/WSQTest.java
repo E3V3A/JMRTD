@@ -12,8 +12,8 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-public class WSQTest {
-
+public class WSQTest
+{
 	public WSQTest(String fileName) {
 		try {
 			File file = new File(fileName);

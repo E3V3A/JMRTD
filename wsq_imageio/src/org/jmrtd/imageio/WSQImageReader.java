@@ -17,33 +17,26 @@ import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
 public class WSQImageReader extends ImageReader
-{
-	static {
-		System.loadLibrary("j2wsq");
-	}
-	
+{	
 	ImageInputStream stream;
 	int width, height;
 	private BufferedImage image;
 
 	public WSQImageReader(ImageReaderSpi provider) {
 		super(provider);
-		System.out.println("DEBUG: in WSQImageReader(ImageReaderSpi)");
-		// System.loadLibrary("j2wsq");
-		System.out.println("DEBUG: in WSQImageReader(ImageReaderSpi): shared lib loaded");
+		System.loadLibrary("j2wsq");
 	}
-	
+
 	public void setInput(Object input) {
 		super.setInput(input); // NOTE: should be setInput(input, false, false);
 	}
-	
+
 	public void setInput(Object input, boolean seekForwardOnly) {
 		super.setInput(input, seekForwardOnly);  // NOTE: should be setInput(input, seekForwardOnly, false);
 	}
-	
+
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
 		super.setInput(input, seekForwardOnly, ignoreMetaData);
-		System.out.println("DEBUG: in setInput(Object, " + seekForwardOnly + ", " + ignoreMetaData + ");");
 		if (input == null) {
 			this.image = null;
 			return;
@@ -64,11 +57,9 @@ public class WSQImageReader extends ImageReader
 	}
 
 	private byte[] getBytes(Object input) throws IOException {
-		System.out.println("DEBUG: in getBytes()");
 		if (input == null) { return null; }
 		if (input instanceof byte[]) { return (byte[])input; }
 		if (input instanceof ImageInputStream) {
-			System.out.println("DEBUG: in getBytes(), input is ImageInputStream");
 			this.stream = (ImageInputStream)input;
 			this.stream.mark();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -90,17 +81,6 @@ public class WSQImageReader extends ImageReader
 
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		try {
-			System.out.println("DEBUG: in read(int, ImageReadParam)");
-			System.out.println("DEBUG: image = " + image);
-			System.out.println("DEBUG: stream = " + stream);
-			if (stream != null) {
-				System.out.println(" stream.getStreamPosition() = " + stream.getStreamPosition()
-						+ " stream.length() = " + stream.length());
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 		return image;
 	}
 
@@ -121,7 +101,7 @@ public class WSQImageReader extends ImageReader
 
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		List<ImageTypeSpecifier> list = new ArrayList();
+		List<ImageTypeSpecifier> list = new ArrayList<ImageTypeSpecifier>();
 		list.add(ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false));
 		return list.iterator();
 	}

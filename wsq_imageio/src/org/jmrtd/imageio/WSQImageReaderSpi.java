@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import javax.imageio.ImageReader;
 import javax.imageio.spi.ImageReaderSpi;
+import javax.imageio.stream.ImageInputStream;
 
 public class WSQImageReaderSpi extends ImageReaderSpi
 {
@@ -49,26 +50,14 @@ public class WSQImageReaderSpi extends ImageReaderSpi
 	}
 
 	public boolean canDecodeInput(Object input) throws IOException {
-		/*
 		if (!(input instanceof ImageInputStream)) {
 			return false;
 		}
-		ImageInputStream stream = (ImageInputStream)input;
-		byte[] header = new byte[2]; // FIXME 2?
-		try {
-			stream.mark();
-			stream.readFully(header);
-			stream.reset();
-		} catch (IOException ioe) {
-			return false;
-		}
-		*/
 		// FIXME check header
 		return true;
 	}
 
 	public ImageReader createReaderInstance(Object extension) {
-		System.out.println("DEBUG: in createReaderInstance(Object), extension = " + extension);
 		return new WSQImageReader(this);
 	}
 }
