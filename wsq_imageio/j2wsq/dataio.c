@@ -155,7 +155,7 @@ int getc_ushort(
    if(ret)
       return(ret);
 
-#if defined (__i386__) || defined(__x86_64__)
+#if defined (__i386__) || defined(__x86_64__) || defined(_WIN32)
    swap_short_bytes(shrt_dat);
 #endif
 
@@ -175,7 +175,7 @@ int putc_ushort(
    int ret;
    unsigned char *cptr;
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(_WIN32)
    swap_short_bytes(ishort);
 #endif
 
@@ -205,7 +205,7 @@ int getc_uint(
    if(ret)
       return(ret);
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(_WIN32)
    swap_int_bytes(int_dat);
 #endif
 
@@ -225,7 +225,7 @@ int putc_uint(
    int ret;
    unsigned char *cptr;
 
-#if defined(__i386__) || defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__) || defined(_WIN32)
    swap_int_bytes(iint);
 #endif
 
