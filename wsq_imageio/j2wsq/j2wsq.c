@@ -50,11 +50,11 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    for (i = 0; i < ilen; i++) {
       idata[i] = (unsigned char)(jidata[i]);
    }
+   (*env)->ReleaseByteArrayElements(env, in, jidata, JNI_FALSE);
 
    ret = wsq_decode_mem(&odata, &width, &height, &depth, &ppi, &lossyflag, idata, ilen);
    if(ret){
-      // free(idata);
-      (*env)->ReleaseByteArrayElements(env, in, idata, JNI_FALSE);
+      free(idata);
       exit(ret); // FIXME: exception? Use ThrowNew(env, clazz, message) (\return 0 on succes, < 0 on failure)
    }
 
@@ -62,11 +62,9 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    ret = getc_nistcom_wsq(&nistcom, idata, ilen);
    if(ret){
       free(idata);
-      (*env)->ReleaseByteArrayElements(env, in, jidata, JNI_FALSE);
-      exit(ret);
+      exit(ret); // FIXME: exception? Use ThrowNew(env, clazz, message) (\return 0 on succes, < 0 on failure)
    }
    free(idata);
-   (*env)->ReleaseByteArrayElements(env, in, jidata, JNI_FALSE);
 
    /* WSQ decoder always returns ppi=-1, so believe PPI in NISTCOM, */
    /* if it already exists. */
