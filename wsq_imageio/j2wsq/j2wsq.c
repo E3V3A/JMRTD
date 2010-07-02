@@ -31,7 +31,7 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    jbyte *jidata, *jodata;
    jint jwidth, jheight, jdepth, jimgtype;
    jbyteArray jdecodedbytes;
-   jclass imgClazz, rasterClazz;
+   jclass imgClazz, rasterClazz, ioexceptionClazz;
    jobject imgObject, rasterObject;
    jmethodID imgInitMethodID, imgGetRasterMethodID, rasterSetDataElementsMethodID;
    jfieldID imgTypeByteGrayFieldID;
@@ -41,6 +41,9 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    int lossyflag;                 /* data loss flag */
    NISTCOM *nistcom;              /* NIST Comment */
    char *ppi_str;
+
+   /* Just in case we want to throw something (at someone)... */
+   ioexceptionClazz = (*env)->FindClass(env, "java/io/IOException");
 
    ilen = (*env)->GetArrayLength(env, in);
    jidata = (*env)->GetByteArrayElements(env, in, JNI_FALSE);
@@ -55,14 +58,16 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    ret = wsq_decode_mem(&odata, &width, &height, &depth, &ppi, &lossyflag, idata, ilen);
    if(ret){
       free(idata);
-      exit(ret); // FIXME: exception? Use ThrowNew(env, clazz, message) (\return 0 on succes, < 0 on failure)
+      (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function wsq_decode_mem failed");
+      return NULL;
    }
 
    /* Get NISTCOM from compressed data. */
    ret = getc_nistcom_wsq(&nistcom, idata, ilen);
    if(ret){
       free(idata);
-      exit(ret); // FIXME: exception? Use ThrowNew(env, clazz, message) (\return 0 on succes, < 0 on failure)
+      (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function getc_nistcom_wsq failed");
+      return NULL;
    }
    free(idata);
 
@@ -74,7 +79,8 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
       if(ret){
          free(odata);
          freefet(nistcom);
-         exit(ret); // TODO: exception?
+         (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function extractfet_ret failed on NCM_PPI");
+         return NULL;
       }
    }
    if(ppi_str != (char *)NULL){
@@ -90,18 +96,28 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
      if(nistcom != (NISTCOM *)NULL) {
         freefet(nistcom);
      }
-     exit(ret); // FIXME: exception?
+     (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function combine_wsq_nistcom failed");
+     return NULL;
    }
 
    // (Re)read image features from comment.
-   ret = extractfet_ret(&j_str, "PIX_WIDTH", nistcom);
-   if (ret) { /* FIXME: exception? */ }
+   ret = extractfet_ret(&j_str, NCM_PIX_WIDTH, nistcom);
+   if (ret) {
+      (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function extractfet_ret failed on NCM_PIX_WIDTH");
+      return NULL;
+   }
    jwidth = atoi(j_str);
-   ret = extractfet_ret(&j_str, "PIX_HEIGHT", nistcom);
-   if (ret) { /* FIXME: exception? */ }
+   ret = extractfet_ret(&j_str, NCM_PIX_HEIGHT, nistcom);
+   if (ret) {
+      (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function extractfet_ret failed on NCM_PIX_HEIGHT");
+      return NULL;
+   }
    jheight = atoi(j_str);
-   ret = extractfet_ret(&j_str, "PIX_DEPTH", nistcom);
-   if (ret) { /* FIXME: exception? */ }
+   ret = extractfet_ret(&j_str, NCM_PIX_DEPTH, nistcom);
+   if (ret) {
+      (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function extractfet_ret failed on NCM_PIX_DEPTH");
+      return NULL;
+   }
    jdepth = atoi(j_str);
 
    freefet(nistcom);

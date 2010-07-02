@@ -85,7 +85,7 @@ public class WSQImageReader extends ImageReader
 		}
 	}
 
-	private native BufferedImage decodeWSQ(byte[] in);
+	private native BufferedImage decodeWSQ(byte[] in) throws IOException;
 
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
