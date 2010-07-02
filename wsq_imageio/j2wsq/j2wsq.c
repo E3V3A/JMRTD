@@ -19,10 +19,8 @@ int debug = 0;
 /**
  * Based on dwsq.c.
  */
-JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
- JNIEnv *env,
- jobject obj,
- jbyteArray in) {
+JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ
+ (JNIEnv *env, jobject obj, jbyteArray in) {
    char *j_str;
    unsigned char *idata, *odata;
    int i;
@@ -156,4 +154,13 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ(
    /* Return. */
    return imgObject;
 }
+
+/**
+ * Based on cwsq.c.
+ */
+JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageReader_encodeWSQ
+ (JNIEnv *env, jobject obj, jobject imgObject) {
+   return NULL;
+}
+
 
