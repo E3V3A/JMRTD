@@ -169,7 +169,7 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ
  *
  * @return a byte array containing the encoded image
  */
-JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageReader_encodeWSQ
+JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
  (JNIEnv *env, jobject obj, jobject imgObject, jdouble r_bitrate, jint ppi) {
    int i, ret;
    jint jwidth, jheight, jdepth;    /* Image characteristic parameters */
