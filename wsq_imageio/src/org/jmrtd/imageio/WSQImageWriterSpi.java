@@ -52,6 +52,7 @@ public class WSQImageWriterSpi extends ImageWriterSpi
 
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
 		/* FIXME: check gray scale? */
+		System.out.println("DEBUG: WSQImageWriterSpi.canEncodeImage()");
 		return true;
 	}
 

@@ -21,6 +21,7 @@ public class WSQImageWriter extends ImageWriter
 
 	public WSQImageWriter(ImageWriterSpi provider) {
 		super(provider);
+		System.out.println("DEBUG: WSQImageWriter<init>");
 		String libraryName = "j2wsq";
 		try {
 			System.loadLibrary(libraryName);

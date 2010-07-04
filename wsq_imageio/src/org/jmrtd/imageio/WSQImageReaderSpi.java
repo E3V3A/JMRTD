@@ -53,8 +53,11 @@ public class WSQImageReaderSpi extends ImageReaderSpi
 		if (!(input instanceof ImageInputStream)) {
 			return false;
 		}
-		// FIXME check header
-		return true;
+		ImageInputStream inStream = (ImageInputStream)input;
+		inStream.mark();
+		int header = inStream.readUnsignedShort();
+		inStream.reset();
+		return (header & 0xFFFF) == 0xFFA0;
 	}
 
 	public ImageReader createReaderInstance(Object extension) {
