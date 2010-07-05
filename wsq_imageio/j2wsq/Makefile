@@ -5,6 +5,9 @@ all:
 	-nmake -f Makefile.win32
 	-make -f Makefile.linux
 
+install:
+	-make -f Makefile.linux install
+
 clean:
 	-nmake -f Makefile.win32 clean
 	-make -f Makefile.linux clean

@@ -155,7 +155,6 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ
    rasterObject = (*env)->CallObjectMethod(env, imgObject, imgGetRasterMethodID);
    (*env)->CallVoidMethod(env, rasterObject, rasterSetDataElementsMethodID, 0, 0, jwidth, jheight, jdecodedbytes);
 
-   /* Return. */
    return imgObject;
 }
 
@@ -177,7 +176,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
    jsize ilen, olen;                /* Number of bytes in input and output data. */
    char *comment_text;
    jbyte *jidata, *jodata;
-   jbyteArray in;
+   jbyteArray in, out;
    jclass imgClazz, rasterClazz, writableRasterClazz, ioexceptionClazz;
    jobject rasterObject;
    jmethodID imgGetWidthMethodID, imgGetHeightMethodID, imgGetRasterMethodID, rasterGetDataElementsMethodID;
@@ -187,9 +186,9 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
    writableRasterClazz = (*env)->FindClass(env, "java/awt/image/WritableRaster");
    imgGetRasterMethodID = (*env)->GetMethodID(env, imgClazz, "getRaster", "()Ljava/awt/image/WritableRaster;");
    imgGetWidthMethodID = (*env)->GetMethodID(env, imgClazz, "getWidth", "()I");
-   imgGetHeightMethodID = (*env)->GetMethodID(env, imgClazz, "getHeigth", "()I");
+   imgGetHeightMethodID = (*env)->GetMethodID(env, imgClazz, "getHeight", "()I");
    imgGetRasterMethodID = (*env)->GetMethodID(env, imgClazz, "getRaster", "()Ljava/awt/image/WritableRaster;");
-   rasterGetDataElementsMethodID = (*env)->GetMethodID(env, rasterClazz, "getDataElements", "(IILjava/lang/Object;)Ljava/lang/Object;");
+   rasterGetDataElementsMethodID = (*env)->GetMethodID(env, rasterClazz, "getDataElements", "(IIIILjava/lang/Object;)Ljava/lang/Object;");
 
    /* Get width, height from buffered img. */
    jwidth = (*env)->CallIntMethod(env, imgObject, imgGetWidthMethodID);
@@ -231,7 +230,9 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
       jodata[i] = (jbyte)(odata[i]);
    }
    free(odata);
+   out = (*env)->NewByteArray(env, olen);
+   (*env)->SetByteArrayRegion(env, out, 0, olen, jodata);
 
-   return jodata;
+   return out;
 }
 

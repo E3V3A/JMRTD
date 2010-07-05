@@ -30,9 +30,10 @@ public class WSQTest
 	private static void transcodeFile(String sourceFileName, String targetFileName) throws IOException {
 		String destFormat = targetFileName.substring(targetFileName.indexOf('.') + 1, targetFileName.length());
 		System.out.println("DEBUG: destFormat = " + destFormat);
-
 		File file = new File(sourceFileName);
 		BufferedImage image = ImageIO.read(file);
+		System.out.println("DEBUG: image.getType() == " + image.getType());
+		System.out.println("DEBUG: (and BufferedImage.TYPE_BYTE_GRAY == " + BufferedImage.TYPE_BYTE_GRAY + ")");
 		File out = new File(targetFileName);
 		ImageIO.write(image, destFormat, out);
 	}

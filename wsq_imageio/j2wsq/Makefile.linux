@@ -22,6 +22,9 @@ libj2wsq.so: objects
 	   -o libj2wsq.so
 	strip libj2wsq.so
 
+install: libj2wsq.so
+	mv libj2wsq.so ..
+
 clean:
 	rm -f *.o *.so *.lo *.obj *.dll *.lib *.exp
 
