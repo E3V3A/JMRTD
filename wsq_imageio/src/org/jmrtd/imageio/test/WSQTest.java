@@ -46,7 +46,7 @@ public class WSQTest
 				break;
 			default:
 				System.err.println("Usage:  java " + WSQTest.class.getCanonicalName() + " <file>.wsq");
-				System.err.println("Usage:  java " + WSQTest.class.getCanonicalName() + " <sourcefile>.extension <targetfile>.extension");
+				System.err.println("        java " + WSQTest.class.getCanonicalName() + " <sourcefile>.extension <targetfile>.extension");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
