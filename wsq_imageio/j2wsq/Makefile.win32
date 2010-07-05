@@ -3,10 +3,7 @@ TARGET=win32
 CFILES=allocfet.c computil.c dataio.c delfet.c extrfet.c fatalerr.c freefet.c huff.c lkupfet.c nistcom.c strfet.c syserr.c updatfet.c wsq_decoder.c wsq_encoder.c wsq_globals.c wsq_huff.c wsq_ppi.c wsq_tableio.c wsq_tree.c wsq_util.c
 
 j2wsq.dll:
-	cl /LD /GFLy /O1sy j2wsq.c $(CFILES) /Fej2wsq.dll /I. /I$(JAVA_INCLUDE)\win32 /I$(JAVA_INCLUDE) /nologo /FD /EHsc /W3 /Wp64
-
-objects:
-	cl /W3 /GFLy /O1sy /EHsc /c /I. $(CFILES)
+	cl /LD /GFLy /O1sy j2wsq.c $(CFILES) /Fej2wsq.dll /DWIN32 /D_WINDLL /D_USRDLL /D_WINDOWS /I. /I$(JAVA_INCLUDE)\win32 /I$(JAVA_INCLUDE) /nologo /EHsc
 
 
 # /link /nodefaultlib:libcmt.lib msvcrt.lib
@@ -50,6 +47,9 @@ objects:
 # /MACHINE:X86
 # /ERRORREPORT:PROMPT
 # kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib
+
+install: j2wsq.dll
+	move j2wsq.dll ..
 
 clean:
 	del *.dll *.obj *.lib *.dll.manifest *.pdb *.exp *.ilk *.o *.lo *.so
