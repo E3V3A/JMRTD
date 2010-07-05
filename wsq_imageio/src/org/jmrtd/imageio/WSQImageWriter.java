@@ -17,11 +17,10 @@ import javax.imageio.stream.ImageOutputStream;
 
 public class WSQImageWriter extends ImageWriter
 {
-	ImageOutputStream stream;
+	private ImageOutputStream stream;
 
 	public WSQImageWriter(ImageWriterSpi provider) {
 		super(provider);
-		System.out.println("DEBUG: WSQImageWriter<init>");
 		String libraryName = "j2wsq";
 		try {
 			System.loadLibrary(libraryName);
@@ -56,13 +55,11 @@ public class WSQImageWriter extends ImageWriter
 
 	public IIOMetadata convertStreamMetadata(IIOMetadata inData,
 			ImageWriteParam param) {
-		// We only understand our own metadata
 		if (inData instanceof WSQMetadata) {
 			return inData;
 		} else {
 			return null;
 		}
-
 	}
 
 	public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
@@ -78,7 +75,7 @@ public class WSQImageWriter extends ImageWriter
 	throws IOException {
 		/* FIXME: get these from params? */
 		double bitRate = 1.5;
-		int ppi = 25;
+		int ppi = 75;
 		RenderedImage renderedImg = image.getRenderedImage();
 		BufferedImage bufferedImg = convertRenderedImage(renderedImg);
 		byte[] encodedBytes = encodeWSQ(bufferedImg, bitRate, ppi);

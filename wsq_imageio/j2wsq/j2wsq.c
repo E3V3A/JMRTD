@@ -212,7 +212,7 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
    (*env)->ReleaseByteArrayElements(env, in, jidata, JNI_FALSE);
 
    /* Encode/compress the image pixmap. */
-   ret = wsq_encode_mem(&odata, &olen, r_bitrate,
+   ret = wsq_encode_mem(&odata, &olen, (float)r_bitrate,
                    idata, jwidth, jheight, jdepth, ppi, comment_text);
    if (ret){
       free(idata);

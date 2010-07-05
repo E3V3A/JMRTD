@@ -1,5 +1,6 @@
 package org.jmrtd.imageio;
 
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Locale;
 
@@ -51,9 +52,7 @@ public class WSQImageWriterSpi extends ImageWriterSpi
 	}
 
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
-		/* FIXME: check gray scale? */
-		System.out.println("DEBUG: WSQImageWriterSpi.canEncodeImage()");
-		return true;
+		return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
 	}
 
 	public ImageWriter createWriterInstance(Object extension) throws IOException {
