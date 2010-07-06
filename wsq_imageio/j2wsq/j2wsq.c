@@ -197,15 +197,12 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
 
    /* FIXME: check image type -> should be 8 bit gray scale, otherwise throw exception. */
 
-   /* Copy pixel data from buffered img to C char array. */
+   /* Copy pixel data from buffered img to unsigned char array. */
    rasterObject = (*env)->CallObjectMethod(env, imgObject, imgGetRasterMethodID);
    in = (jbyteArray)((*env)->CallObjectMethod(env, rasterObject, rasterGetDataElementsMethodID, 0, 0, jwidth, jheight, NULL));
-
    ilen = (*env)->GetArrayLength(env, in);
    jidata = (*env)->GetByteArrayElements(env, in, JNI_FALSE);
    idata = (unsigned char *)malloc(sizeof(unsigned char) * ilen);
-
-   /* Convert input from jbyte to unsigned char. */
    for (i = 0; i < ilen; i++) {
       idata[i] = (unsigned char)(jidata[i]);
    }
@@ -220,11 +217,10 @@ JNIEXPORT jbyteArray JNICALL Java_org_jmrtd_imageio_WSQImageWriter_encodeWSQ
       (*env)->ThrowNew(env, ioexceptionClazz, "(In native C code) function wsq_encode_mem failed");
       return NULL;
    }
-
    free(idata);
    if (comment_text != (char *)NULL) { free(comment_text); }
 
-   /* Convert output from unsigned char to jbyte. */
+   /* Convert output from unsigned char array to jbyteArray. */
    jodata = malloc(sizeof(jbyte) * olen);
    for (i = 0; i < olen; i++) {
       jodata[i] = (jbyte)(odata[i]);

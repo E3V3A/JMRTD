@@ -52,6 +52,7 @@ public class WSQImageWriterSpi extends ImageWriterSpi
 	}
 
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
+		/* FIXME: also check dimensions? */
 		return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
 	}
 
