@@ -1,5 +1,6 @@
 package org.jmrtd.imageio;
 
+import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.RenderedImage;
@@ -45,7 +46,7 @@ public class WSQImageWriter extends ImageWriter
 	 * @see javax.imageio.ImageWriter#getDefaultWriteParam()
 	 */
 	public ImageWriteParam getDefaultWriteParam() {
-		return new ImageWriteParam(getLocale());
+		return new WSQImageWriteParam(getLocale());
 	}
 
 	public IIOMetadata convertImageMetadata(IIOMetadata inData,
@@ -73,11 +74,38 @@ public class WSQImageWriter extends ImageWriter
 
 	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param)
 	throws IOException {
-		/* FIXME: get these from params? */
 		double bitRate = 1.5;
 		int ppi = 75;
+		if (param instanceof WSQImageWriteParam) {
+			WSQImageWriteParam wsqParam = (WSQImageWriteParam)param;
+			bitRate = wsqParam.getBitRate();
+			ppi = wsqParam.getPPI();
+		}
 		RenderedImage renderedImg = image.getRenderedImage();
+
+		Rectangle sourceRegion =
+			new Rectangle(0, 0, renderedImg.getWidth(), renderedImg.getHeight());
+		int sourceXSubsampling = 1;
+		int sourceYSubsampling = 1;
+		int[] sourceBands = null;
+		if (param != null) {
+			if (param.getSourceRegion() != null) {
+				sourceRegion = sourceRegion.intersection(param.getSourceRegion());
+			}
+			sourceXSubsampling = param.getSourceXSubsampling();
+			sourceYSubsampling = param.getSourceYSubsampling();
+			sourceBands = param.getSourceBands();
+
+			int subsampleXOffset = param.getSubsamplingXOffset();
+			int subsampleYOffset = param.getSubsamplingYOffset();
+			sourceRegion.x += subsampleXOffset;
+			sourceRegion.y += subsampleYOffset;
+			sourceRegion.width -= subsampleXOffset;
+			sourceRegion.height -= subsampleYOffset;
+		}
+
 		BufferedImage bufferedImg = convertRenderedImage(renderedImg);
+
 		byte[] encodedBytes = encodeWSQ(bufferedImg, bitRate, ppi);
 		stream.write(encodedBytes);
 		stream.flush();

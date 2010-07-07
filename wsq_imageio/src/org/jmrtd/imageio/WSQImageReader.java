@@ -1,5 +1,6 @@
 package org.jmrtd.imageio;
 
+import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.io.ByteArrayOutputStream;
@@ -50,7 +51,8 @@ public class WSQImageReader extends ImageReader
 			return;
 		}
 		try {
-			byte[] inputBytes = getBytes(input);
+			/* We're reading the complete image already, just to get the width and height. */
+			byte[] inputBytes = readBytes(input);
 			this.image = decodeWSQ(inputBytes);
 			this.width = image.getWidth();
 			this.height = image.getHeight();
@@ -64,7 +66,7 @@ public class WSQImageReader extends ImageReader
 		return 1;
 	}
 
-	private byte[] getBytes(Object input) throws IOException {
+	private byte[] readBytes(Object input) throws IOException {
 		if (input == null) { return null; }
 		if (input instanceof byte[]) { return (byte[])input; }
 		if (input instanceof ImageInputStream) {
@@ -87,7 +89,16 @@ public class WSQImageReader extends ImageReader
 
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		return image;
+		try {
+			Point destinationOffset = new Point(0, 0);
+			if (param != null) { destinationOffset = param.getDestinationOffset(); }
+			BufferedImage dst = getDestination(param, getImageTypes(0), width, height);
+			dst.getRaster().setRect((int)destinationOffset.getX(), (int)destinationOffset.getY(), image.getRaster());
+			return dst;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IIOException(ioe.getMessage());
+		}
 	}
 
 	public int getWidth(int imageIndex) throws IOException {
@@ -115,6 +126,6 @@ public class WSQImageReader extends ImageReader
 	public IIOMetadata getStreamMetadata() throws IOException {
 		return null;
 	}
-	
+
 	private native BufferedImage decodeWSQ(byte[] in) throws IOException;
 }

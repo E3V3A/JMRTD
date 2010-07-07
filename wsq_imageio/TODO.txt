@@ -1,4 +1,2 @@
-- Get region from params in ImageReader and ImageWriter (we now read/write complete image)
-- Get bitrate, PPI from params in ImageWriter (need to subclass IIOParam), provide defaults but not hard coded like it is now
 - Throw exceptions in Java calling parts in j2wsq.c on failure (i.e. if IDs are not found)
 
