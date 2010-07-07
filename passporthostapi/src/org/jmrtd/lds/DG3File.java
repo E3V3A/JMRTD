@@ -22,7 +22,11 @@
 
 package org.jmrtd.lds;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -34,6 +38,9 @@ import java.util.List;
  */
 public class DG3File extends CBEFFDataGroup
 {
+
+	private List<FingerInfo> fingers;
+
 	/**
 	 * Creates a new file based on an input stream.
 	 *
@@ -69,10 +76,66 @@ public class DG3File extends CBEFFDataGroup
 
 	/**
 	 * Reads biometric data block.
+	 * Based on ISO/IEC FCD 19794-4 aka Annex F.
 	 * 
-	 * TODO: actually interpret the finger prints...
+	 * TODO: work in progress... -- MO
 	 */
-//	protected void readBiometricData(InputStream in, int length) throws IOException {
-//
-//	}
+	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
+		if (!in.markSupported()) {
+			in = new BufferedInputStream(in, valueLength + 1);
+		}
+		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
+		/* General Record Header (32) */
+		/* int fir0 = */ dataIn.readInt(); /* header (e.g. "FIR", 0x00) (4) */
+		/* int version = */ dataIn.readInt(); /* version in ASCII (e.g. "010" 0x00) (4) */
+		/* long length = */ readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
+		/* int captureDeviceID = */ dataIn.readUnsignedShort();
+		/* int imageAcquisitionLevel = */ dataIn.readUnsignedShort();
+		int fingerCount = dataIn.readUnsignedByte();
+		int scaleUnits = dataIn.readUnsignedByte(); /* 1 -> PPI, 2 -> PPCM */
+		int scanResH = dataIn.readUnsignedShort();
+		int scanResV = dataIn.readUnsignedShort();
+		int imgResH = dataIn.readUnsignedShort(); /* should be <= scanResH */
+		int imgResV = dataIn.readUnsignedShort(); /* should be <= scanResV */
+		int depth = dataIn.readUnsignedByte(); /* 1 - 16 bits, i.e. 2 - 65546 gray levels */
+		int compressionAlg = dataIn.readUnsignedByte(); /* 0 Uncompressed – no bit packing
+														   1 Uncompressed – bit packed
+														   2 Compressed – WSQ
+														   3 Compressed – JPEG
+														   4 Compressed – JPEG2000
+														   5 PNG
+		 */
+		/* int RFU = */ dataIn.readUnsignedShort(); /* Should be 0x0000 */
+
+		String mimeType = null;
+		switch (compressionAlg) {
+		case 0: break;
+		case 1: break;
+		case 2: mimeType = "images/x-wsq"; break;
+		case 3: mimeType = "image/jpeg"; break;
+		case 4: mimeType = "image/jpeg2000"; break;
+		case 5: mimeType = "image/png";  break;
+		}
+
+		for (int i = 0; i < fingerCount; i++) {
+			FingerInfo fingerInfo = new FingerInfo(dataIn, mimeType);
+			addFingerInfo(fingerInfo);
+		}
+	}
+
+	private void addFingerInfo(FingerInfo fingerInfo) {
+		if (fingers == null) { fingers = new ArrayList<FingerInfo>(); }
+		fingers.add(fingerInfo);
+	}
+
+	private long readUnsignedLong(DataInputStream dataIn, int byteCount) throws IOException {
+		byte[] buf = new byte[byteCount];
+		dataIn.readFully(buf);
+		long result = 0;
+		for (int i = 0; i < buf.length; i++) {
+			result *= 10;
+			result += buf[i] & 0xFF;
+		}
+		return result;
+	}
 }
