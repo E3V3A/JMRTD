@@ -128,9 +128,9 @@ public class SODFileTest extends TestCase {
 			for (Provider provider: providers) {
 				System.out.println("Security provider: " + provider);
 			}
-			
-			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
-			// SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
+
+			//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
+			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
 			X509Certificate cert = sodFile.getDocSigningCertificate();
 			System.out.println(cert.toString());
 			System.out.println(cert.getSerialNumber());
@@ -141,9 +141,9 @@ public class SODFileTest extends TestCase {
 
 	public void testDavidEid2() {
 		try {
-//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
-			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/DavidEid_falsified_EF.SOD.bin"));
-			X509Certificate cert = sodFile.getDocSigningCertificate();			
+			//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
+			//			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/DavidEid_falsified_EF.SOD.bin"));
+			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/davideid3.bin"));
 			X509Certificate sodcert = sodFile.getDocSigningCertificate();
 			boolean result = sodFile.checkDocSignature(sodcert);
 			System.out.println("DEBUG: result = " + result);
@@ -152,7 +152,7 @@ public class SODFileTest extends TestCase {
 			fail(e.getMessage());
 		}
 	}
-	
+
 	public void testFile(InputStream in) {
 		try {
 			testReflexive(new SODFile(in));
