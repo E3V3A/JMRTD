@@ -39,16 +39,17 @@ VERSION 0.4.5 / 0.5.x
 ---------------------
 
 General
-- Uniform handling of BAC, CSCA, CVCA stores. Use Java keystores instead of directories with flat files?
+- Uniform handling of BAC, CSCA, CVCA stores.
+- Use Java keystores instead of directories with flat files?
 - Move BAC logic from PassportFrame to Passport class.
 - Move readFromService logic from PassportFrame to the Passport class.
 - Move the verifySecurity logic from PassportFrame to Passport class.
 - Move some of the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
-- Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge) or implementing it in pure Java.
++ Displaying of WSQ finger print images, either by JNI wrapping the NIST C files (see sourceforge.net/ffpis).
 - LDAP interface (JNDI) to PKD?
 - Support for certificate revocation lists
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
+- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Show progress during BAC testing in PassportFrame constructor
   (especially since some MRTDs now wait for a long time after failed attempt).
 - Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
@@ -58,8 +59,12 @@ General
 - Only go to editor mode if user explicitly indicates (default display mode should be not editable).
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
   Currently its hardcoded to ID-1.
+
+User interface
 - Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
   Perhaps even allow ASN.1 tree in a JTree.
+- In general: better interaction, based on user purpose (inspection / security testing / personalization / identity provisioning).
+  Check the Da Costa presentation at BlackHat 2010.
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
@@ -68,7 +73,6 @@ ASN.1 parsing
 SCUBA support for exotic card readers
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (need to purchase one for this?).
-- Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 
 Dependencies
 - cert-cvc latest. Need EAC samples to test. Woj still has samples?
@@ -77,10 +81,11 @@ Dependencies
 Code quality
 - Findbugs
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
-- ESC/Java2
+
 
 Web site and documentation
-- A FAQ would be nice, with a how to compile it yourself.
+- A FAQ would be nice
+- Compile-it-yourself instructions
 
 VERSION 0.9.x
 -------------
@@ -88,6 +93,11 @@ VERSION 0.9.x
 Features
 - Webcam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary.
+- WSQ image support in pure Java.
+- Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
+
+Code quality
+- ESC/Java2
 
 Documentation
 - Proper system documentation
