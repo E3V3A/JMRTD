@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -62,7 +63,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	SMT_DO_CG = 0x85,
 	SMT_DO_CC = 0x8E,
 	SMT_DO_DS = 0x9E;
-	
+
 	protected List<byte[]> templates;
 
 	protected CBEFFDataGroup() {
@@ -110,7 +111,7 @@ abstract class CBEFFDataGroup extends DataGroup
 
 		int headerTemplateTag = tlvIn.readTag();
 		int headerTemplateLength = tlvIn.readLength();
-
+		
 		if ((headerTemplateTag == SMT_TAG)) {
 			/* The BIT is protected... */
 			readStaticallyProtectedBIT(headerTemplateTag, headerTemplateLength, templateIndex, tlvIn);
@@ -121,7 +122,7 @@ abstract class CBEFFDataGroup extends DataGroup
 			throw new IllegalArgumentException("Unsupported template tag: " + Integer.toHexString(headerTemplateTag));
 		}
 	}
-	
+
 	/**
 	 *  A1, A2, ...
 	 *  Will contain DOs as described in ISO 7816-11 Annex C.
@@ -198,8 +199,6 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */
-//	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
-
 	protected void readBiometricData(InputStream in, int length) throws IOException {
 		DataInputStream dataIn = new DataInputStream(in);
 		byte[] data = new byte[length];
@@ -207,7 +206,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		if (templates == null) { templates = new ArrayList<byte[]>(); }
 		templates.add(data);
 	}
-	
+
 	public abstract byte[] getEncoded();
 
 	public abstract String toString();

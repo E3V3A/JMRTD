@@ -71,7 +71,6 @@ public class WSQImageReader extends ImageReader
 		if (input instanceof byte[]) { return (byte[])input; }
 		if (input instanceof ImageInputStream) {
 			this.stream = (ImageInputStream)input;
-			this.stream.mark();
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buf = new byte[1024];
 			while (true) {
@@ -80,7 +79,6 @@ public class WSQImageReader extends ImageReader
 				out.write(buf, 0, bytesRead);
 			}
 			out.flush();
-			this.stream.reset();
 			return out.toByteArray();
 		} else {
 			throw new IllegalArgumentException("bad input");

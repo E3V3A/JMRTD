@@ -23,6 +23,7 @@
 package org.jmrtd.lds;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +32,8 @@ import java.util.Iterator;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
+
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * Data structure for storing finger information as found in DG3.
@@ -82,23 +85,30 @@ public class FingerInfo
 		impressionType = dataIn.readUnsignedByte();
 		lineLengthH = dataIn.readUnsignedShort();
 		lineLengthV = dataIn.readUnsignedShort();
-		/* int RFU = */ dataIn.readUnsignedShort(); /* Should be 0x0000 */
+		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
 
-		/* TODO: read image */
+		int imageBytesLength = (int)(fingerDataBlockLength - 14);
+		byte[] imageBytes = new byte[imageBytesLength];
+		dataIn.readFully(imageBytes);
+
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
+		image = null;
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = (ImageReader)readers.next();
-				ImageInputStream iis = ImageIO.createImageInputStream(in);
+				ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(imageBytes));
 				reader.setInput(iis);
 				image = reader.read(0);
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */
+				e.printStackTrace();
 				continue;
 			}
 		}
 		/* Tried all readers */
-		throw new IOException("Could not decode \"" + mimeType + "\" image!");
+		if (image == null) {
+			throw new IOException("Could not decode \"" + mimeType + "\" image!");
+		}
 	}
 
 	public byte[] getEncoded() {
