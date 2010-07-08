@@ -73,7 +73,7 @@ public class WSQImageReader extends ImageReader
 			this.stream = (ImageInputStream)input;
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buf = new byte[1024];
-			while (true) {
+			while (true) { // FIXME: this too greedy! This reads all bytes until EOF, what if stream contains WSQ image and some trailing stuff that caller wants to read himself?!?
 				int bytesRead = stream.read(buf, 0, 1024);
 				if (bytesRead < 0) { break; }
 				out.write(buf, 0, bytesRead);
