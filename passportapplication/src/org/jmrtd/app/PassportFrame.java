@@ -124,6 +124,7 @@ import org.jmrtd.lds.DG6File;
 import org.jmrtd.lds.DG7File;
 import org.jmrtd.lds.DataGroup;
 import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
@@ -723,6 +724,11 @@ public class PassportFrame extends JFrame implements AuthListener
 		menu.add(viewImageAtOriginalSize);
 		viewImageAtOriginalSize.setAction(getViewPortraitAtOriginalSizeAction());
 
+		/* View fingerprints (if any) at full size... */
+		JMenuItem viewFingerPrints = new JMenuItem();
+		menu.add(viewFingerPrints);
+		viewFingerPrints.setAction(getViewFingerPrintsAction());
+		
 		menu.addSeparator();
 
 		/* View DS Certificate... */
@@ -989,6 +995,29 @@ public class PassportFrame extends JFrame implements AuthListener
 		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
 		action.putValue(Action.NAME, "Portrait at 100%...");
+		return action;
+	}
+	
+	private Action getViewFingerPrintsAction() {
+		Action action = new AbstractAction() {
+
+			private static final long serialVersionUID = -7141975907858754026L;
+
+			public void actionPerformed(ActionEvent e) {
+				if (dg3 == null) {
+					InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
+					dg3 = new DG3File(dg3In);
+				}
+				List<FingerInfo> fingerPrints = dg3.getFingerPrints();
+				FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
+				fingerPrintFrame.setVisible(true);
+				fingerPrintFrame.pack();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, MAGNIFIER_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
+		action.putValue(Action.NAME, "Fingerprints...");
 		return action;
 	}
 

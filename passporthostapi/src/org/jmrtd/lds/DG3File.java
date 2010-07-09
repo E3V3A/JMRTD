@@ -38,7 +38,7 @@ import java.util.List;
 public class DG3File extends CBEFFDataGroup
 {
 
-	private List<FingerInfo> fingers;
+	private List<FingerInfo> fingerPrints;
 
 	/**
 	 * Creates a new file based on an input stream.
@@ -60,8 +60,8 @@ public class DG3File extends CBEFFDataGroup
 		return EF_DG3_TAG;
 	}
 
-	public List<byte[]> getFingerPrints() {
-		return templates;
+	public List<FingerInfo> getFingerPrints() {
+		return fingerPrints;
 	}
 
 	/**
@@ -121,8 +121,8 @@ public class DG3File extends CBEFFDataGroup
 	}
 
 	private void addFingerInfo(FingerInfo fingerInfo) {
-		if (fingers == null) { fingers = new ArrayList<FingerInfo>(); }
-		fingers.add(fingerInfo);
+		if (fingerPrints == null) { fingerPrints = new ArrayList<FingerInfo>(); }
+		fingerPrints.add(fingerInfo);
 	}
 
 	private long readUnsignedLong(DataInputStream dataIn, int byteCount) throws IOException {

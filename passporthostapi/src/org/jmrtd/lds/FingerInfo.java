@@ -33,8 +33,6 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
-import net.sourceforge.scuba.util.Hex;
-
 /**
  * Data structure for storing finger information as found in DG3.
  * Coding is based on ISO/IEC FCD 19794-4 aka Annex F.
@@ -125,5 +123,9 @@ public class FingerInfo
 	 */
 	public String toString() {
 		return "FingerInfo";
+	}
+	
+	public BufferedImage getImage() {
+		return image;
 	}
 }
