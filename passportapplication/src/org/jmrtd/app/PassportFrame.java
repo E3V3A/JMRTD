@@ -145,6 +145,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
+	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
 	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
 	private static final Icon KEY_GO = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
 	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
@@ -155,7 +156,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-
+	
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
@@ -1014,8 +1015,8 @@ public class PassportFrame extends JFrame implements AuthListener
 				fingerPrintFrame.pack();
 			}
 		};
-		action.putValue(Action.SMALL_ICON, MAGNIFIER_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
+		action.putValue(Action.SMALL_ICON, FINGERPRINT_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, FINGERPRINT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
 		action.putValue(Action.NAME, "Fingerprints...");
 		return action;
