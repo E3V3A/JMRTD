@@ -83,7 +83,7 @@ public class DG3File extends CBEFFDataGroup
 		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		/* General Record Header (32) */
 		int fir0 = dataIn.readInt(); /* header (e.g. "FIR", 0x00) (4) */
-		if (fir0 != 0x46495200) { throw new IllegalArgumentException("'FIR0' marker expected!"); }
+		if (fir0 != 0x46495200) { throw new IllegalArgumentException("'FIR0' marker expected! Found " + Integer.toHexString(fir0)); }
 		/* int version = */ dataIn.readInt(); /* version in ASCII (e.g. "010" 0x00) (4) */
 		/* long length = */ readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
 		/* int captureDeviceID = */ dataIn.readUnsignedShort();

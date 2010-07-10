@@ -28,6 +28,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -85,8 +86,7 @@ public class FingerInfo
 		lineLengthV = dataIn.readUnsignedShort();
 		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
 
-		int imageBytesLength = (int)(fingerDataBlockLength - 14);
-		System.out.println("DEBUG: imageBytesLength = " + imageBytesLength);
+		long imageBytesLength = fingerDataBlockLength - 14;
 
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 		image = null;
@@ -95,9 +95,14 @@ public class FingerInfo
 				ImageReader reader = (ImageReader)readers.next();
 				ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
 				System.out.println("DEBUG: pos = " + iis.getStreamPosition());
+				long posBeforeImage = iis.getStreamPosition();
 				reader.setInput(iis);
-				System.out.println("DEBUG: pos = " + iis.getStreamPosition());
 				image = reader.read(0);
+				long posAfterImage =  iis.getStreamPosition();
+				if ((posAfterImage - posBeforeImage) != imageBytesLength) {
+					/* FIXME: send this to a logger instead of stdout. */
+					System.out.println("WARNING: image may not have been correctly read");
+				}
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */
 				e.printStackTrace();

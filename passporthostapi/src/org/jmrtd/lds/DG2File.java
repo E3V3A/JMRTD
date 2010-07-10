@@ -80,9 +80,6 @@ public class DG2File extends CBEFFDataGroup
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
-		if (!in.markSupported()) {
-			in = new BufferedInputStream(in, valueLength + 1);
-		}
 		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		/* Facial Record Header (14) */
 		/* int fac0 = */ dataIn.readInt(); // header (e.g. "FAC", 0x00)
