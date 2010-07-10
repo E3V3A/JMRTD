@@ -156,7 +156,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
-	
+
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
@@ -729,7 +729,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		JMenuItem viewFingerPrints = new JMenuItem();
 		menu.add(viewFingerPrints);
 		viewFingerPrints.setAction(getViewFingerPrintsAction());
-		
+
 		menu.addSeparator();
 
 		/* View DS Certificate... */
@@ -998,7 +998,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		action.putValue(Action.NAME, "Portrait at 100%...");
 		return action;
 	}
-	
+
 	private Action getViewFingerPrintsAction() {
 		Action action = new AbstractAction() {
 

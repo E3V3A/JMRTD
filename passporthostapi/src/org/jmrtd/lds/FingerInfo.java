@@ -86,16 +86,17 @@ public class FingerInfo
 		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
 
 		int imageBytesLength = (int)(fingerDataBlockLength - 14);
-		byte[] imageBytes = new byte[imageBytesLength];
-		dataIn.readFully(imageBytes);
+		System.out.println("DEBUG: imageBytesLength = " + imageBytesLength);
 
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 		image = null;
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = (ImageReader)readers.next();
-				ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(imageBytes));
+				ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
+				System.out.println("DEBUG: pos = " + iis.getStreamPosition());
 				reader.setInput(iis);
+				System.out.println("DEBUG: pos = " + iis.getStreamPosition());
 				image = reader.read(0);
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */
