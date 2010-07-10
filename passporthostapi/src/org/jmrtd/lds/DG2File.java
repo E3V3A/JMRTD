@@ -23,7 +23,6 @@
 package org.jmrtd.lds;
 
 import java.awt.Image;
-import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

@@ -23,12 +23,10 @@
 package org.jmrtd.lds;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
-import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -40,6 +38,9 @@ import javax.imageio.stream.ImageInputStream;
  *
  * WARNING: Work in progress.
  *
+ * TODO: proper enums for data types
+ * TODO: getEncoded
+ * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: $
@@ -94,7 +95,6 @@ public class FingerInfo
 			try {
 				ImageReader reader = (ImageReader)readers.next();
 				ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
-				System.out.println("DEBUG: pos = " + iis.getStreamPosition());
 				long posBeforeImage = iis.getStreamPosition();
 				reader.setInput(iis);
 				image = reader.read(0);

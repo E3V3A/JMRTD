@@ -21,12 +21,14 @@
 
 package org.jmrtd.test.api.lds;
 
+import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 import junit.framework.TestCase;
 
 import org.jmrtd.lds.DG3File;
+import org.jmrtd.lds.FingerInfo;
 
 public class DG3FileTest extends TestCase
 {
@@ -39,7 +41,11 @@ public class DG3FileTest extends TestCase
 //			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
 			String testFile = "t:/paspoort/woj-dg3-top-secret-0103.bin";
 			FileInputStream in = new FileInputStream(testFile);
-			new DG3File(in);
+			DG3File dg3 = new DG3File(in);
+			for (FingerInfo fingerPrint: dg3.getFingerPrints()) {
+				BufferedImage image = fingerPrint.getImage();
+				System.out.println("DEBUG: fingerprint " + image.getWidth() + " x " + image.getHeight());
+			}
 		} catch (FileNotFoundException fnfe) {
 			fail(fnfe.getMessage());
 		}
