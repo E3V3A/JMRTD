@@ -68,15 +68,21 @@ public class WSQImageReader extends ImageReader
 
 	private byte[] readBytes(Object input) throws IOException {
 		if (input == null) { return null; }
-		if (input instanceof byte[]) { return (byte[])input; }
 		if (input instanceof ImageInputStream) {
 			this.stream = (ImageInputStream)input;
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			byte[] buf = new byte[1024];
-			while (true) { // FIXME: this too greedy! This reads all bytes until EOF, what if stream contains WSQ image and some trailing stuff that caller wants to read himself?!?
-				int bytesRead = stream.read(buf, 0, 1024);
-				if (bytesRead < 0) { break; }
-				out.write(buf, 0, bytesRead);
+			while (true) {
+				int b = stream.read();
+				if (b < 0) { break; }
+				out.write(b);
+
+				/* NOTE: Check EOI marker FFA1 */
+				if (b  == 0xFF) {
+					int b1 = stream.read();
+					if (b1 < 0) { break; }
+					out.write(b1);
+					if (b1 == 0xA1) { break; }
+				}
 			}
 			out.flush();
 			return out.toByteArray();

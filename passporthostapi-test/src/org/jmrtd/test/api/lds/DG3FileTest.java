@@ -36,7 +36,9 @@ public class DG3FileTest extends TestCase
 
 	public void testFile() {
 		try {
-			FileInputStream in = new FileInputStream("t:/paspoort/woj-dg3-top-secret-0103.bin");
+//			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
+			String testFile = "t:/paspoort/woj-dg3-top-secret-0103.bin";
+			FileInputStream in = new FileInputStream(testFile);
 			new DG3File(in);
 		} catch (FileNotFoundException fnfe) {
 			fail(fnfe.getMessage());
