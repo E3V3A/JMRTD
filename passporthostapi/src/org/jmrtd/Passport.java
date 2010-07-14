@@ -55,6 +55,7 @@ import java.util.zip.ZipFile;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
@@ -299,7 +300,7 @@ public class Passport
 		Date today = Calendar.getInstance().getTime();
 		String primaryIdentifier = "";
 		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID3, Country.NL, primaryIdentifier, secondaryIdentifiers, "", Country.NL, today, Gender.MALE, today, "");
+		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID3, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, today, Gender.MALE, today, "");
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		fileLength = dg1Bytes.length;

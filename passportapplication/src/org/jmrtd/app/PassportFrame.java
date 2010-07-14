@@ -28,6 +28,9 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -213,6 +216,14 @@ public class PassportFrame extends JFrame implements AuthListener
 		southPanel.add(progressBar);
 		panel.add(southPanel, BorderLayout.SOUTH);
 		facePreviewPanel = new FacePreviewPanel(160, 200);
+		facePreviewPanel.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				super.mouseClicked(e);
+				if (e.getClickCount() > 1) {
+					viewPortraitAtOriginalSize();
+				}
+			}
+		});
 		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
@@ -671,7 +682,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
 			countrySigningCert = null;
 			if (cscaStore != null) {
-				countrySigningCert = cscaStore.getCertificate(docIssuer);
+				countrySigningCert = (X509Certificate)cscaStore.getCertificate(docIssuer);
 			}
 			if (countrySigningCert == null) {
 				verificationIndicator.setCSFailed("Could not open CSCA certificate");
@@ -981,15 +992,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			private static final long serialVersionUID = -7141975907898754026L;
 
 			public void actionPerformed(ActionEvent e) {
-				int index = facePreviewPanel.getSelectedIndex();
-				if (dg2 == null) {
-					InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
-					dg2 = new DG2File(dg2In);
-				}
-				FaceInfo faceInfo = dg2.getFaces().get(index);
-				PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
-				portraitFrame.setVisible(true);
-				portraitFrame.pack();
+				viewPortraitAtOriginalSize();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, MAGNIFIER_ICON);
@@ -997,6 +1000,18 @@ public class PassportFrame extends JFrame implements AuthListener
 		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
 		action.putValue(Action.NAME, "Portrait at 100%...");
 		return action;
+	}
+	
+	private void viewPortraitAtOriginalSize() {
+		int index = facePreviewPanel.getSelectedIndex();
+		if (dg2 == null) {
+			InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
+			dg2 = new DG2File(dg2In);
+		}
+		FaceInfo faceInfo = dg2.getFaces().get(index);
+		PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
+		portraitFrame.setVisible(true);
+		portraitFrame.pack();
 	}
 
 	private Action getViewFingerPrintsAction() {

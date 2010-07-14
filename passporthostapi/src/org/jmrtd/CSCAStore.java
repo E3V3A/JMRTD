@@ -27,6 +27,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.NoSuchProviderException;
+import java.security.Provider;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -44,17 +47,19 @@ import net.sourceforge.scuba.util.Files;
  */
 public class CSCAStore
 {
+	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	
 	private static final File
-		JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
-		DEFAULT_CSCA_DIR = new File(JMRTD_USER_DIR, "csca"); // FIXME: copy from the dist dir to this one, if this doesn't exist already
-	
+	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+	DEFAULT_CSCA_DIR = new File(JMRTD_USER_DIR, "csca"); // FIXME: copy from the dist dir to this one, if this doesn't exist already
+
 	private URL location;
-	
+
 	public CSCAStore() {
 		setLocation(getDefaultCSCADir());
 	}
 
-	public X509Certificate getCertificate(X500Principal issuer) throws IOException {
+	public Certificate getCertificate(X500Principal issuer) throws IOException {
 		/* FIXME: still assumes one cert per country. */
 		Country c = getCountry(issuer);
 		return getCertificate(c.toString().toLowerCase());
@@ -63,22 +68,27 @@ public class CSCAStore
 	public URL getLocation() {
 		return location;
 	}
-	
+
 	public void setLocation(URL location) {
 		this.location = location;
 	}
-	
-	private X509Certificate getCertificate(String alias) throws IOException {
+
+	public Certificate getCertificate(String alias) throws IOException {
 		try {
-			X509Certificate countrySigningCert = null;
+			Certificate countrySigningCert = null;
 			/* TODO: also check .pem, .der formats? */
 			URL cscaFile = new URL(location + "/" + alias + ".cer");
-			CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+			CertificateFactory certFactory = null;
+			try {
+				certFactory = CertificateFactory.getInstance("X.509", PROVIDER);
+			} catch (Exception e) {
+				certFactory = CertificateFactory.getInstance("X.509");		
+			}
 			InputStream cscaIn = cscaFile.openStream();
 			if (cscaIn == null) {
 				throw new IOException("Could not read certificate for " + alias);
 			}
-			countrySigningCert = (X509Certificate)certFactory.generateCertificate(cscaIn);
+			countrySigningCert = certFactory.generateCertificate(cscaIn);
 			return countrySigningCert;
 		} catch (MalformedURLException mfue) {
 			mfue.printStackTrace();
@@ -98,7 +108,7 @@ public class CSCAStore
 		}
 		return cscaDir;
 	}
-	
+
 	private Country getCountry(X500Principal issuer) {
 		String issuerName = issuer.getName(X500Principal.RFC2253);
 		StringTokenizer st = new StringTokenizer(issuerName, ",");

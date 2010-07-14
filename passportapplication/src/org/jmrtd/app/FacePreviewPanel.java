@@ -24,6 +24,9 @@ package org.jmrtd.app;
 
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -129,5 +132,11 @@ public class FacePreviewPanel extends JPanel
 		AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
 		g2.drawImage(image, at, null); 
 		return scaledImage;
+	}
+	
+
+	public void addMouseListener(MouseListener l) {
+		super.addMouseListener(l);
+		tabbedPane.addMouseListener(l);
 	}
 }

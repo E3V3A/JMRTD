@@ -28,6 +28,7 @@ import java.util.Date;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.MRZInfo;
@@ -55,11 +56,11 @@ public class MRZInfoTest extends TestCase
 	
 	public static MRZInfo createTestObject() {
 		int documentType = MRZInfo.DOC_TYPE_ID3;
-		Country issuingState = Country.NL;
+		Country issuingState = ISOCountry.NL;
 		String primaryIdentifier = "MEULENDIJK";
 		String[] secondaryIdentifiers = { "LOES", "ALBERTINE" };
 		String documentNumber = "XX0000000";
-		Country nationality = Country.NL;
+		Country nationality = ISOCountry.NL;
 		Calendar cal = Calendar.getInstance();
 		cal.set(1971, 10 - 1, 19);
 		Date dateOfBirth = cal.getTime();
