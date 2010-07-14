@@ -53,7 +53,6 @@ import java.util.TreeMap;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;

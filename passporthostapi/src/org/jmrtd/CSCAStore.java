@@ -27,17 +27,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.NoSuchProviderException;
 import java.security.Provider;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.StringTokenizer;
 
 import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.util.Files;
 
 /**
@@ -116,7 +115,7 @@ public class CSCAStore
 			String token = st.nextToken();
 			if (token.toUpperCase().startsWith("C=")) {
 				String countryString = token.substring(token.indexOf('=') + 1, token.length());
-				return Country.getInstance(countryString);
+				return ISOCountry.getInstance(countryString);
 			}
 		}
 		return null;

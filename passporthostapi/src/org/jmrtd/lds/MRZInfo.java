@@ -37,6 +37,7 @@ import java.util.StringTokenizer;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.data.ISOCountry;
 
 /**
  * Data structure for storing the MRZ information
@@ -341,7 +342,7 @@ public class MRZInfo implements Serializable
 	private Country readIssuingState(DataInputStream in) throws IOException {
 		byte[] data = new byte[3];
 		in.readFully(data);
-		return Country.getInstance(new String(data));
+		return ISOCountry.getInstance(new String(data));
 	}
 
 	/**
@@ -402,7 +403,7 @@ public class MRZInfo implements Serializable
 	private Country readNationality(DataInputStream in) throws IOException {
 		byte[] data = new byte[3];
 		in.readFully(data);
-		return Country.getInstance(new String(data).trim());
+		return ISOCountry.getInstance(new String(data).trim());
 	}
 
 	/**

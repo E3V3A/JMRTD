@@ -15,6 +15,7 @@ import java.util.Map;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
+import net.sourceforge.scuba.data.ISOCountry;
 
 import org.jmrtd.CSCAStore;
 
@@ -82,7 +83,7 @@ public class CSCATest extends TestCase
 			System.err.println("DEBUG: testing certificate for " + c);
 			Certificate certificate = cscaStore.getCertificate(c);
 			if (certificate == null) { fail("Could not load certificate for " + c); }
-			Country country = Country.getInstance(c);
+			Country country = ISOCountry.getInstance(c);
 			List<Certificate> certificates = cscaMap.get(country);
 			if (certificates == null) { certificates = new ArrayList<Certificate>(); }
 			certificates.add(certificate);
@@ -108,7 +109,7 @@ public class CSCATest extends TestCase
 				System.out.println("DEBUG: alias = " + alias);
 				String countryCode = alias.substring(0, 2).toUpperCase();
 				System.out.println("DEBUG: countryCode = " + countryCode);
-				Country country = Country.getInstance(countryCode);
+				Country country = ISOCountry.getInstance(countryCode);
 				List<Certificate> certificates = result.get(country);
 				if (certificates == null) { certificates = new ArrayList<Certificate>(); }
 				certificates.add(certificate);
