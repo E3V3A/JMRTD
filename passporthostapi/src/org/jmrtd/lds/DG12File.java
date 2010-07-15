@@ -109,7 +109,7 @@ public class DG12File extends DataGroup
 		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != PassportFile.EF_DG12_TAG) { throw new IllegalArgumentException("Expected EF_DG12_TAG"); }
-		int length = tlvIn.readLength();
+		int length = tlvIn.readLength();		
 		tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
 		length = tlvIn.readLength();
@@ -120,6 +120,9 @@ public class DG12File extends DataGroup
 			int lo = tlvIn.read();
 			tag = ((hi & 0xFF) << 8) | (lo & 0xFF);
 			tagList[i] = tag;
+		}
+		for (int t: tagList) {
+			System.out.println("DEBUG: DG12 tagList entry " + Integer.toHexString(t));
 		}
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);

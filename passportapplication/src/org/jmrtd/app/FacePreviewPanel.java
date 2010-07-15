@@ -53,7 +53,10 @@ public class FacePreviewPanel extends JPanel
 	private static final long serialVersionUID = 9113961215076977525L;
 
 	private static final Icon IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
-
+	private static final Icon FACE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("user"));
+	private static final Icon FINGER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("thumb_up"));
+	private static final Icon IRIS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("eye"));
+	
 	private int width, height;
 	private JTabbedPane tabbedPane;
 
@@ -69,7 +72,7 @@ public class FacePreviewPanel extends JPanel
 		return tabbedPane.getSelectedIndex();
 	}
 
-	public void addFace(FaceInfo faceInfo,boolean isProgressiveMode) {
+	public void addFace(FaceInfo faceInfo, boolean isProgressiveMode) {
 		try {
 			final int index = tabbedPane.getTabCount();
 			BufferedImage image = (BufferedImage)createImage(width - 10, height - 10);

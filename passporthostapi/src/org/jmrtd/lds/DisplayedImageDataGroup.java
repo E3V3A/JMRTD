@@ -28,6 +28,8 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
 /**
@@ -46,8 +48,13 @@ abstract class DisplayedImageDataGroup extends DataGroup
 
 	private List<BufferedImage> images;
 
-	protected DisplayedImageDataGroup(BufferedImage image) {
+	protected DisplayedImageDataGroup() {
 		this.images = new ArrayList<BufferedImage>();
+	}
+	
+	protected DisplayedImageDataGroup(BufferedImage image) {
+		this();
+		images.add(image);
 	}
 
 	/**
@@ -57,6 +64,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 */
 	public DisplayedImageDataGroup(InputStream in) {
 		super(in);
+		this.images = new ArrayList<BufferedImage>();
 		try {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 			int countTag = tlvIn.readTag();
@@ -92,12 +100,13 @@ abstract class DisplayedImageDataGroup extends DataGroup
 				displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
 			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
 		}
+		int displayedImageLength = tlvIn.readLength();
 		/* Displayed Facial Image: ISO 10918, JFIF option
 		 * Displayed Finger: ANSI/NIST-ITL 1-2000
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
 		 */
-		BufferedImage image = javax.imageio.ImageIO.read(tlvIn);
-		images.add(image);
+		BufferedImage image = ImageIO.read(tlvIn);
+		if (image != null) { images.add(image); }
 	}
 
 	/**

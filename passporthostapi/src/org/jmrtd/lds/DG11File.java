@@ -262,13 +262,15 @@ public class DG11File extends DataGroup
 	}
 
 	private void parseFullName(String in) {
-		int delimIndex = in.indexOf("<<");
-		if (delimIndex < 0) {
-			throw new IllegalArgumentException("Input does not contain primary identifier! \"" + in + "\"");
+		String delim = "<<";
+		int delimIndex = in.indexOf(delim);
+		if (delimIndex < 0) { // FIXME: logger instead of stderr!
+			System.err.println("WARNING: Input does not contain primary identifier delimited by \"<<\", input was \"" + in + "\"");
+			delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+			delimIndex = in.indexOf(delim);
 		}
-//		fullNamePrimaryIdentifier = in.substring(0, delimIndex).replace("<", " ");
 		fullNamePrimaryIdentifier = in.substring(0, delimIndex);
-		StringTokenizer st = new StringTokenizer(in.substring(in.indexOf("<<") + 2), "<");
+		StringTokenizer st = new StringTokenizer(in.substring(in.indexOf(delim) + delim.length()), "<");
 		fullNameSecondaryIdentifiers = new ArrayList<String>();
 		while (st.hasMoreTokens()) {
 			String secondaryIdentifier = st.nextToken().trim();
