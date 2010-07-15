@@ -39,16 +39,18 @@ import javax.swing.JTabbedPane;
 import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.ImageReadUpdateListener;
+import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.FingerInfo;
 
 /**
- * Component for displaying a preview of the portrait(s).
+ * Component for displaying a previews of LDS content (typically a portrait).
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: 894 $
  */
-public class FacePreviewPanel extends JPanel
+public class DisplayPreviewPanel extends JPanel
 {	
 	private static final long serialVersionUID = 9113961215076977525L;
 
@@ -56,11 +58,18 @@ public class FacePreviewPanel extends JPanel
 	private static final Icon FACE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("user"));
 	private static final Icon FINGER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("thumb_up"));
 	private static final Icon IRIS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("eye"));
-	
+	private static final Icon WRITTEN_SIGNATURE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("text_signature"));
+
 	private int width, height;
 	private JTabbedPane tabbedPane;
 
-	public FacePreviewPanel(int width, int height) {
+	/**
+	 * Constructs an instance of this component.
+	 * 
+	 * @param width width of this component
+	 * @param height height of this component
+	 */
+	public DisplayPreviewPanel(int width, int height) {
 		super(new FlowLayout());
 		this.width = width;
 		this.height = height;
@@ -79,7 +88,7 @@ public class FacePreviewPanel extends JPanel
 			final JLabel label = new JLabel(new ImageIcon(image));
 			final JPanel panel = new JPanel(new FlowLayout());
 			panel.add(label);
-			tabbedPane.addTab(Integer.toString(index), IMAGE_ICON, panel);
+			tabbedPane.addTab(Integer.toString(index), FACE_ICON, panel);
 			revalidate(); repaint();
 			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
 				public void passComplete(BufferedImage image, double percentage) {
@@ -98,14 +107,53 @@ public class FacePreviewPanel extends JPanel
 		}	
 	}
 
+	public void addFaces(Collection<FaceInfo> faces, boolean isProgressiveMode) {
+		for (FaceInfo faceInfo: faces) {
+			addFace(faceInfo, isProgressiveMode);
+		}
+	}
+
 	public void removeFace(int index) {
 		tabbedPane.removeTabAt(index);
 		revalidate(); repaint();
 	}
 
-	public void addFaces(Collection<FaceInfo> faces, boolean isProgressiveMode) {
-		for (FaceInfo faceInfo: faces) {
-			addFace(faceInfo, isProgressiveMode);
+	public void addFingerPrint(FingerInfo info) {
+		BufferedImage image = info.getImage();
+		final int index = tabbedPane.getTabCount();
+		BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+		final JLabel label = new JLabel(new ImageIcon(scaledImage));
+		final JPanel panel = new JPanel(new FlowLayout());
+		panel.add(label);
+		tabbedPane.addTab(Integer.toString(index), FINGER_ICON, panel);
+	}
+	
+	public void addFingerPrints(Collection<FingerInfo> fingers) {
+		for (FingerInfo finger: fingers) {
+			addFingerPrint(finger);
+		}
+	}
+
+	public void addDisplayedImage(DisplayedImageInfo info) {
+		BufferedImage image = info.getImage();
+		final int index = tabbedPane.getTabCount();
+		BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+		final JLabel label = new JLabel(new ImageIcon(scaledImage));
+		final JPanel panel = new JPanel(new FlowLayout());
+		panel.add(label);
+		Icon icon = null;
+		switch (info.getType()) {
+		case DisplayedImageInfo.TYPE_PORTRAIT: icon = FACE_ICON; break;
+		case DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK: icon = WRITTEN_SIGNATURE_ICON; break;
+		default: icon = IMAGE_ICON; break;
+		}
+		tabbedPane.addTab(Integer.toString(index), icon, panel);
+	}
+
+
+	public void addDisplayedImages(Collection<DisplayedImageInfo> images) {
+		for (DisplayedImageInfo image: images) {
+			addDisplayedImage(image);
 		}
 	}
 
@@ -134,7 +182,6 @@ public class FacePreviewPanel extends JPanel
 		g2.drawImage(image, at, null); 
 		return scaledImage;
 	}
-	
 
 	public void addMouseListener(MouseListener l) {
 		super.addMouseListener(l);

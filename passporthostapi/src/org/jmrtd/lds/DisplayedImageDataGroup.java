@@ -46,15 +46,10 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	private static final int DISPLAYED_PORTRAIT_TAG = 0x5F40;
 	private static final int DISPLAYED_SIGNATURE_OR_MARK_TAG = 0x5F43;
 
-	private List<BufferedImage> images;
+	private List<DisplayedImageInfo> images;
 
 	protected DisplayedImageDataGroup() {
-		this.images = new ArrayList<BufferedImage>();
-	}
-	
-	protected DisplayedImageDataGroup(BufferedImage image) {
-		this();
-		images.add(image);
+		this.images = new ArrayList<DisplayedImageInfo>();
 	}
 
 	/**
@@ -64,7 +59,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 */
 	public DisplayedImageDataGroup(InputStream in) {
 		super(in);
-		this.images = new ArrayList<BufferedImage>();
+		this.images = new ArrayList<DisplayedImageInfo>();
 		try {
 			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
 			int countTag = tlvIn.readTag();
@@ -73,7 +68,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 			}
 			int countLength = tlvIn.readLength();
 			if (countLength != 1) {
-				throw new IllegalArgumentException("ISPLAYED_IMAGE_COUNT should have length 1");
+				throw new IllegalArgumentException("DISPLAYED_IMAGE_COUNT should have length 1");
 			}
 			int count = (tlvIn.readValue()[0] & 0xFF);
 			for (int i = 0; i < count; i++) {
@@ -106,7 +101,15 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
 		 */
 		BufferedImage image = ImageIO.read(tlvIn);
-		if (image != null) { images.add(image); }
+		int type = -1;
+		if (image != null) {
+			switch (displayedImageTag) {
+			case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
+			case DISPLAYED_SIGNATURE_OR_MARK_TAG: type = DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK; break;
+			default: throw new IllegalArgumentException("Unknown type in displayed image group (tag " + Integer.toHexString(displayedImageTag));
+			}
+			images.add(new DisplayedImageInfo(type, image));
+		}
 	}
 
 	/**
@@ -114,7 +117,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 *
 	 * @return images
 	 */
-	public List<BufferedImage> getImages() {
+	public List<DisplayedImageInfo> getImages() {
 		return images;
 	}
 

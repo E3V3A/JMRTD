@@ -226,7 +226,7 @@ public class Passport
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new HashMap<Short, Boolean>();
-		
+
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
 		while (entries.hasMoreElements()) {
@@ -240,28 +240,40 @@ public class Passport
 			int size = (int)(sizeAsLong & 0x00000000FFFFFFFFL);
 			try {
 				int fid = -1;
-				int delimIndex = fileName.indexOf('.');
-				if (!fileName.endsWith(".bin") && !fileName.endsWith(".BIN")) {
-					System.out.println("DEBUG: skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
-					continue;					
+				int delimIndex = fileName.lastIndexOf('.');
+				String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
+				if (delimIndex >= 0) {
+					if (!fileName.endsWith(".bin")
+							&& !fileName.endsWith(".BIN")
+							&& !fileName.endsWith(".dat")
+							&& !fileName.endsWith(".DAT")) {
+						System.err.println("WARNING: skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
+						continue;					
+					}
 				}
-				if (delimIndex == 4) {
+
+				if (baseName.length() == 4) {
 					try {
 						/* Filename <FID>.bin? */
-						fid = Hex.hexStringToShort(fileName.substring(0, fileName.indexOf('.')));
+						fid = Hex.hexStringToShort(baseName);
 					} catch (NumberFormatException nfe) {
 						/* ...guess not */ 
 					}
 				}
+
 				byte[] bytes = new byte[size];
 				int fileLength = bytes.length;
 				InputStream zipEntryIn = zipFile.getInputStream(entry);
 				DataInputStream dataIn = new DataInputStream(zipEntryIn);
 				dataIn.readFully(bytes);
 				dataIn.close();
+				int tagBasedFID = PassportFile.lookupFIDByTag(bytes[0] & 0xFF);
 				if (fid < 0) {
 					/* FIXME: untested! */
-					fid = PassportFile.lookupFIDByTag(bytes[0] & 0xFF);
+					fid = tagBasedFID;
+				}
+				if (fid != tagBasedFID) {
+					System.err.println("WARNING: file name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
 				}
 				totalLength += fileLength;
 				fileLengths.put((short)fid, fileLength);
@@ -283,7 +295,7 @@ public class Passport
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new HashMap<Short, Boolean>();
-	
+
 		/* EF.COM */
 		List<Integer> tagList = new ArrayList<Integer>();
 		tagList.add(PassportFile.EF_DG1_TAG);

@@ -353,10 +353,10 @@ public class SODFile extends PassportFile
 			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
 			+ "withRSA";
 		}
-		
-		System.out.println("DEBUG: de OID = " + encAlgId);
-		System.out.println("DEBUG: de Java encalg = " + encAlgJavaString);
-		
+
+		System.err.println("INFO: DEBUG: OID = " + encAlgId);
+		System.err.println("INFO: DEBUG: encAlgJavaString = " + encAlgJavaString);
+
 		Signature sig = Signature.getInstance(encAlgJavaString);
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);

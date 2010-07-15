@@ -22,7 +22,6 @@
 
 package org.jmrtd.lds;
 
-import java.awt.image.BufferedImage;
 import java.io.InputStream;
 
 /**
@@ -34,8 +33,7 @@ import java.io.InputStream;
  */
 public class DG5File extends DisplayedImageDataGroup
 {
-	public DG5File(BufferedImage image) {
-		super(image);
+	public DG5File() {
 	}
 
 	public DG5File(InputStream in) {

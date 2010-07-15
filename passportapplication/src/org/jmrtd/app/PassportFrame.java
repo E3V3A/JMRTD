@@ -163,7 +163,7 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
-	private FacePreviewPanel facePreviewPanel;
+	private DisplayPreviewPanel displayPreviewPanel;
 
 	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
@@ -214,8 +214,8 @@ public class PassportFrame extends JFrame implements AuthListener
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
 		panel.add(southPanel, BorderLayout.SOUTH);
-		facePreviewPanel = new FacePreviewPanel(160, 200);
-		facePreviewPanel.addMouseListener(new MouseAdapter() {
+		displayPreviewPanel = new DisplayPreviewPanel(160, 200);
+		displayPreviewPanel.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				super.mouseClicked(e);
 				if (e.getClickCount() > 1) {
@@ -223,7 +223,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				}
 			}
 		});
-		centerPanel.add(facePreviewPanel, BorderLayout.WEST);
+		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
@@ -389,11 +389,11 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
-					facePreviewPanel.addFaces(dg2.getFaces(), isProgressiveMode);
+					displayPreviewPanel.addFaces(dg2.getFaces(), isProgressiveMode);
 					break;
 				case PassportService.EF_DG3:
 					dg3 = new DG3File(in);
-					System.out.println("Read in DG3.");
+					displayPreviewPanel.addFingerPrints(dg3.getFingerPrints());
 					break;
 				case PassportService.EF_DG4:
 					dg4 = new DG4File(in);
@@ -406,6 +406,7 @@ public class PassportFrame extends JFrame implements AuthListener
 					break;
 				case PassportService.EF_DG7:
 					dg7 = new DG7File(in);
+					displayPreviewPanel.addDisplayedImages(dg7.getImages());
 					break;
 				case PassportService.EF_DG11:
 					dg11 = new DG11File(in);
@@ -1002,7 +1003,7 @@ public class PassportFrame extends JFrame implements AuthListener
 	}
 	
 	private void viewPortraitAtOriginalSize() {
-		int index = facePreviewPanel.getSelectedIndex();
+		int index = displayPreviewPanel.getSelectedIndex();
 		if (dg2 == null) {
 			InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
 			dg2 = new DG2File(dg2In);
@@ -1064,7 +1065,7 @@ public class PassportFrame extends JFrame implements AuthListener
 						}
 						dg2.addFaceInfo(faceInfo);
 						passport.putFile(PassportService.EF_DG2, dg2.getEncoded());
-						facePreviewPanel.addFace(faceInfo, false);
+						displayPreviewPanel.addFace(faceInfo, false);
 					} catch (IOException ioe) {
 						/* NOTE: Do nothing. */
 					}
@@ -1087,10 +1088,10 @@ public class PassportFrame extends JFrame implements AuthListener
 			private static final long serialVersionUID = -6635439106858528541L;
 
 			public void actionPerformed(ActionEvent e) {
-				int index = facePreviewPanel.getSelectedIndex();
+				int index = displayPreviewPanel.getSelectedIndex();
 				dg2.removeFaceInfo(index);
 				passport.putFile(PassportService.EF_DG2, dg2.getEncoded());
-				facePreviewPanel.removeFace(index);
+				displayPreviewPanel.removeFace(index);
 			}
 		};
 		action.putValue(Action.SMALL_ICON, DELETE_IMAGE_ICON);

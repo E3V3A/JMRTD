@@ -114,7 +114,7 @@ public class CSCAStore
 		while (st.hasMoreTokens()) {
 			String token = st.nextToken();
 			if (token.toUpperCase().startsWith("C=")) {
-				String countryString = token.substring(token.indexOf('=') + 1, token.length());
+				String countryString = token.substring(token.indexOf('=') + 1, token.length()).toUpperCase();
 				return ISOCountry.getInstance(countryString);
 			}
 		}

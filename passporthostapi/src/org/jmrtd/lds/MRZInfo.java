@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -61,6 +62,8 @@ public class MRZInfo implements Serializable
 	public static final int DOC_TYPE_ID3 = 3;                           
 
 	private static final String MRZ_CHARS = "<0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+	private static final Calendar CALENDAR = Calendar.getInstance(); 
 
 	private static final SimpleDateFormat SDF =
 		new SimpleDateFormat("yyMMdd");
@@ -355,11 +358,11 @@ public class MRZInfo implements Serializable
 	private String readName(DataInputStream in, int le) throws IOException {
 		byte[] data = new byte[le];
 		in.readFully(data);
-//		for (int i = 0; i < data.length; i++) {
-//		if (data[i] == '<') {
-//		data[i] = ' ';
-//		}
-//		}
+		//		for (int i = 0; i < data.length; i++) {
+		//		if (data[i] == '<') {
+		//		data[i] = ' ';
+		//		}
+		//		}
 		String name = new String(data).trim();
 		return name;
 	}
@@ -430,7 +433,9 @@ public class MRZInfo implements Serializable
 
 	/**
 	 * Reads the date of birth of the passport holder.
-	 * Base year is 1900.
+	 * As only the rightmost two digits are stored,
+	 * the assumption that this is a date in the recent
+	 * past is made.
 	 * 
 	 * @return the date of birth
 	 * 
@@ -441,12 +446,14 @@ public class MRZInfo implements Serializable
 		byte[] data = new byte[6];
 		in.readFully(data);
 		String dateString = new String(data).trim();
-		return parseDate(1900, dateString);
+		return parseDateInRecentPast(dateString);
 	}
 
 	/**
 	 * Reads the date of expiry of this document.
-	 * Base year is 2000.
+	 * As only the rightmost two digits are stored,
+	 * the assumption that this is a date in the near
+	 * future is made.
 	 * 
 	 * @return the date of expiry
 	 * 
@@ -456,7 +463,39 @@ public class MRZInfo implements Serializable
 	private Date readDateOfExpiry(DataInputStream in) throws IOException, NumberFormatException {
 		byte[] data = new byte[6];
 		in.readFully(data);
-		return parseDate(2000, new String(data).trim());
+		return parseDateInNearFuture(new String(data).trim());
+	}
+
+	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
+		Date today = CALENDAR.getTime();
+		int thisYear = CALENDAR.get(Calendar.YEAR);
+		int currentBaseYear = (thisYear / 100) * 100;
+		int pastBaseYear = currentBaseYear - 100;
+		int futureBaseYear = currentBaseYear + 100;
+		
+		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+		
+		if (parsedDate3.before(today)) { return parsedDate3; }
+		else if (parsedDate2.before(today)) { return parsedDate2; }
+		else { return parsedDate1; }
+	}
+	
+	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
+		Date today = CALENDAR.getTime();
+		int thisYear = CALENDAR.get(Calendar.YEAR);
+		int currentBaseYear = (thisYear / 100) * 100;
+		int pastBaseYear = currentBaseYear - 100;
+		int futureBaseYear = currentBaseYear + 100;
+		
+		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+		
+		if (parsedDate1.after(today)) { return parsedDate1; }
+		else if (parsedDate2.after(today)) { return parsedDate2; }
+		else { return parsedDate3; }
 	}
 
 	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
@@ -722,7 +761,7 @@ public class MRZInfo implements Serializable
 		}
 		return out.toString();
 	}
-	
+
 	/**
 	 * Gets a hash code for this MRZ info.
 	 * 
@@ -743,7 +782,7 @@ public class MRZInfo implements Serializable
 		MRZInfo other = (MRZInfo)obj;
 		return toString().equals(other.toString());
 	}
-	
+
 	private void checkDigit() {
 		this.documentNumberCheckDigit = checkDigit(documentNumber);
 		this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
