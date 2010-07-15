@@ -150,7 +150,6 @@ public class DisplayPreviewPanel extends JPanel
 		tabbedPane.addTab(Integer.toString(index), icon, panel);
 	}
 
-
 	public void addDisplayedImages(Collection<DisplayedImageInfo> images) {
 		for (DisplayedImageInfo image: images) {
 			addDisplayedImage(image);
