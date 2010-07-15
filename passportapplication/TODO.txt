@@ -64,7 +64,7 @@ General
 User interface
 - Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
   Perhaps even allow ASN.1 tree in a JTree.
-- In general: better interaction, based on user purpose (inspection / security testing / personalization / identity provisioning).
+- In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
   Check the Da Costa presentation at BlackHat 2010.
 
 ASN.1 parsing
