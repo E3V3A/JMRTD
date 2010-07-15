@@ -12,18 +12,22 @@
 
 	<target name="dist" depends="" description="Generates the distribution .jar file">
 		
+		<mkdir dir="META-INF/services" />
+		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jmrtd.imageio.WSQImageReaderSpi</echo>
+		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jmrtd.imageio.WSQImageWriterSpi</echo>
+		
 		<!-- Create the distribution jar file -->
 		<jar jarfile="wsq_imageio.jar">
 			<manifest>
-				<attribute name="Main-class" value="org.jmrtd.imageio.test.WSQTest" />
+				<!-- attribute name="Main-class" value="org.jmrtd.imageio.test.WSQTest" / -->
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="JMRTD"/>
 				<attribute name="Implementation-Title" value="wsq_imageio"/>
 				<attribute name="Implementation-Version" value="0.0.1"/>
 			</manifest>
-			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="" includes="META-INF/**/*" />
+			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
+			<fileset dir="" includes="META-INF/**/*" />					
 		</jar>	
 	</target>
 
