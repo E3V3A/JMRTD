@@ -129,12 +129,13 @@ public class JMRTDApp  implements PassportListener
 	public JMRTDApp() {
 		try {
 			Security.insertProviderAt(PROVIDER, 4);
-			PassportManager passportManager = PassportManager.getInstance();
-			passportManager.addPassportListener(this);
 			cardManager = CardManager.getInstance();
+			PassportManager passportManager = PassportManager.getInstance();
+			
 			this.bacStore = new BACStore();
 			this.cscaStore = new CSCAStore();
 			this.cvcaStore = new CVCAStore();
+
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), this.getClass());
 			preferencesPanel.addChangeListener(new ChangeListener() {
 				public void stateChanged(ChangeEvent e) {
@@ -160,6 +161,8 @@ public class JMRTDApp  implements PassportListener
 			mainFrame.pack();
 			mainFrame.setVisible(true);
 			updateFromPreferences();
+			
+			passportManager.addPassportListener(this);
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */
 			e.printStackTrace();
