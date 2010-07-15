@@ -45,7 +45,7 @@ import javax.imageio.stream.ImageInputStream;
  *
  * @version $Revision: $
  */
-public class FingerInfo
+public class FingerInfo extends DisplayedImageInfo
 {
 	private long fingerDataBlockLength;
 	private int fingerOrPalmPostion;
@@ -59,10 +59,11 @@ public class FingerInfo
 	private DataInputStream dataIn;
 
 	private FingerInfo() {
+		super(TYPE_FINGER);
 	}
 
-	public FingerInfo(int lotsOfParams) {
-
+	public FingerInfo(int lotsOfParams /* TODO */) {
+		super(TYPE_FINGER);
 	}
 
 	/**
@@ -131,7 +132,11 @@ public class FingerInfo
 		return "FingerInfo";
 	}
 	
-	public BufferedImage getImage() {
+	public BufferedImage getImage()  {
+		return getImage(false);
+	}
+	
+	public BufferedImage getImage(boolean isProgressive) {
 		return image;
 	}
 }

@@ -55,7 +55,7 @@ import org.jmrtd.ImageReadUpdateListener;
  *
  * @version $Revision$
  */
-public class FaceInfo
+public class FaceInfo extends DisplayedImageInfo
 {
    /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
@@ -195,6 +195,7 @@ public class FaceInfo
    private DataInputStream dataIn;
 
    private FaceInfo() {
+	   super(TYPE_PORTRAIT);
 	   imageReadUpdateListeners = new ArrayList<ImageReadUpdateListener>();
    }
 
@@ -376,7 +377,7 @@ public class FaceInfo
       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType, boolean isProgressiveMode) throws IOException {
+   private BufferedImage processImage(InputStream in, String mimeType, boolean isProgressiveMode) {
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
@@ -389,7 +390,7 @@ public class FaceInfo
 		   }
 	   }
 	   /* Tried all readers */
-	   throw new IOException("Could not decode \"" + mimeType + "\" image!");
+	   throw new IllegalArgumentException("Could not decode \"" + mimeType + "\" image!");
    }
 
    private BufferedImage processImage(InputStream in, ImageReader reader, boolean isProgressiveMode) {
@@ -485,7 +486,7 @@ public class FaceInfo
     * 
     * @return image
     */
-   public BufferedImage getImage(boolean isProgressiveMode) throws IOException {
+   public BufferedImage getImage(boolean isProgressiveMode) {
 	   BufferedImage resultImage = null;
 	   if (image != null) { return image; }
 	   switch (imageDataType) {
@@ -496,7 +497,7 @@ public class FaceInfo
 		   resultImage = processImage(dataIn, "image/jpeg2000", isProgressiveMode);
 		   break;
 	   default:
-		   throw new IOException("Unknown image data type!");
+		   throw new IllegalStateException("Unknown image data type!");
 	   }
 
 	   /* Set width and height for real. */
@@ -506,7 +507,7 @@ public class FaceInfo
 	   return resultImage;
    }
    
-   public BufferedImage getImage() throws IOException {
+   public BufferedImage getImage() {
 	   return getImage(false);
    }
 

@@ -28,7 +28,9 @@ import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -62,7 +64,8 @@ public class DisplayPreviewPanel extends JPanel
 
 	private int width, height;
 	private JTabbedPane tabbedPane;
-
+	private List<DisplayedImageInfo> infos;
+	
 	/**
 	 * Constructs an instance of this component.
 	 * 
@@ -73,88 +76,65 @@ public class DisplayPreviewPanel extends JPanel
 		super(new FlowLayout());
 		this.width = width;
 		this.height = height;
+		infos = new ArrayList<DisplayedImageInfo>();
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
 		add(tabbedPane);
 	}
 
+	/**
+	 * @return
+	 */
 	public int getSelectedIndex() {
 		return tabbedPane.getSelectedIndex();
 	}
+	
+	public DisplayedImageInfo getSelectedDisplayedImage() {
+		return infos.get(tabbedPane.getSelectedIndex());
+	}
 
-	public void addFace(FaceInfo faceInfo, boolean isProgressiveMode) {
+	public void addDisplayedImage(DisplayedImageInfo info, boolean isProgressiveMode) {
 		try {
+			Icon icon = null;
+			switch (info.getType()) {
+			case DisplayedImageInfo.TYPE_PORTRAIT: icon = FACE_ICON; break;
+			case DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK: icon = WRITTEN_SIGNATURE_ICON; break;
+			case DisplayedImageInfo.TYPE_FINGER: icon = FINGER_ICON; break;
+			case DisplayedImageInfo.TYPE_IRIS: icon = IRIS_ICON; break;
+			default: icon = IMAGE_ICON; break;
+			}
 			final int index = tabbedPane.getTabCount();
 			BufferedImage image = (BufferedImage)createImage(width - 10, height - 10);
 			final JLabel label = new JLabel(new ImageIcon(image));
 			final JPanel panel = new JPanel(new FlowLayout());
 			panel.add(label);
-			tabbedPane.addTab(Integer.toString(index), FACE_ICON, panel);
+			infos.add(info);
+			tabbedPane.addTab(Integer.toString(index + 1), icon, panel);
 			revalidate(); repaint();
-			faceInfo.addImageReadUpdateListener(new ImageReadUpdateListener() {
-				public void passComplete(BufferedImage image, double percentage) {
-					if (image == null) { return; }
-					BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-					label.setIcon(new ImageIcon(scaledImage));
-					revalidate(); repaint();
-				}
-			});
-			image = faceInfo.getImage(isProgressiveMode);
+			if (info instanceof FaceInfo) {
+				((FaceInfo)info).addImageReadUpdateListener(new ImageReadUpdateListener() {
+					public void passComplete(BufferedImage image, double percentage) {
+						if (image == null) { return; }
+						BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+						label.setIcon(new ImageIcon(scaledImage));
+						revalidate(); repaint();
+					}
+				});
+			}
+			image = info.getImage(isProgressiveMode);
 			image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 			label.setIcon(new ImageIcon(image));
 			revalidate(); repaint();
-		} catch (IOException ioe) {
+		} catch (Exception e) {
 			/* We'll just skip this image then. */
 		}	
 	}
 
-	public void addFaces(Collection<FaceInfo> faces, boolean isProgressiveMode) {
-		for (FaceInfo faceInfo: faces) {
-			addFace(faceInfo, isProgressiveMode);
-		}
-	}
-
-	public void removeFace(int index) {
+	public void removeDisplayedImage(int index) {
 		tabbedPane.removeTabAt(index);
+		infos.remove(index);
 		revalidate(); repaint();
 	}
 
-	public void addFingerPrint(FingerInfo info) {
-		BufferedImage image = info.getImage();
-		final int index = tabbedPane.getTabCount();
-		BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-		final JLabel label = new JLabel(new ImageIcon(scaledImage));
-		final JPanel panel = new JPanel(new FlowLayout());
-		panel.add(label);
-		tabbedPane.addTab(Integer.toString(index), FINGER_ICON, panel);
-	}
-	
-	public void addFingerPrints(Collection<FingerInfo> fingers) {
-		for (FingerInfo finger: fingers) {
-			addFingerPrint(finger);
-		}
-	}
-
-	public void addDisplayedImage(DisplayedImageInfo info) {
-		BufferedImage image = info.getImage();
-		final int index = tabbedPane.getTabCount();
-		BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-		final JLabel label = new JLabel(new ImageIcon(scaledImage));
-		final JPanel panel = new JPanel(new FlowLayout());
-		panel.add(label);
-		Icon icon = null;
-		switch (info.getType()) {
-		case DisplayedImageInfo.TYPE_PORTRAIT: icon = FACE_ICON; break;
-		case DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK: icon = WRITTEN_SIGNATURE_ICON; break;
-		default: icon = IMAGE_ICON; break;
-		}
-		tabbedPane.addTab(Integer.toString(index), icon, panel);
-	}
-
-	public void addDisplayedImages(Collection<DisplayedImageInfo> images) {
-		for (DisplayedImageInfo image: images) {
-			addDisplayedImage(image);
-		}
-	}
 
 	/**
 	 * A scaling factor resulting in at most desiredWidth and desiredHeight yet
