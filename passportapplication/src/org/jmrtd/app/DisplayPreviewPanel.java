@@ -27,9 +27,7 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import javax.swing.Icon;
@@ -43,7 +41,6 @@ import net.sourceforge.scuba.util.Icons;
 import org.jmrtd.ImageReadUpdateListener;
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.FaceInfo;
-import org.jmrtd.lds.FingerInfo;
 
 /**
  * Component for displaying a previews of LDS content (typically a portrait).

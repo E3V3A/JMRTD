@@ -35,8 +35,8 @@ Web site (jmrtd.org)
 + Fix scmmicro.com broken links in install.shtml.
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
 
-VERSION 0.4.5 / 0.5.x
----------------------
+VERSION 0.4.5
+-------------
 
 General
 - Uniform handling of BAC, CSCA, CVCA stores.
@@ -44,36 +44,26 @@ General
 - Move BAC logic from PassportFrame to Passport class.
 - Move readFromService logic from PassportFrame to the Passport class.
 - Move the verifySecurity logic from PassportFrame to Passport class.
-- Move some of the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Get DG3 (finger) bio template I/O to the same level as DG2 (face)
+- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
++ Get DG3 (finger) bio template I/O to the same level as DG2 (face)
 + ImageIO support for WSQ finger print images, using JNI wrapping around C files (http://sourceforge.net/ffpis).
 - LDAP interface (JNDI) to PKD?
-- Support for certificate revocation lists
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
-- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Show progress during BAC testing in PassportFrame constructor
   (especially since some MRTDs now wait for a long time after failed attempt).
 - Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
 - Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs) so that a standard profile is created.
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
-- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 - Only go to editor mode if user explicitly indicates (default display mode should be not editable).
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
-  Currently its hardcoded to ID-1.
+  Currently it's hardcoded to ID-1.
 
-User interface
-- Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
-  Perhaps even allow ASN.1 tree in a JTree.
+Bugs/temporary fixes
+- Remove image method in DisplayPreviewPanel only targets DG2 (displayed images could also be in DG3 - DG7, ...?)
+- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
+
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
   Check the Da Costa presentation at BlackHat 2010.
-
-ASN.1 parsing
-- Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
-- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
-
-SCUBA support for exotic card readers
-- Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
-- JCOP tools supported terminals such as Pegoda (need to purchase one for this?).
 
 Dependencies
 - cert-cvc latest. Need EAC samples to test. Woj still has samples?
@@ -81,8 +71,29 @@ Dependencies
 
 Code quality
 - Findbugs
+
+VERSION 0.5.0
+-------------
+
+General
+- Support for certificate revocation lists
+- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
+
+Code quality
+- Findbugs
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
+ASN.1 parsing
+- Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
+- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
+
+User interface
+- Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
+  Perhaps even allow ASN.1 tree in a JTree.
+
+SCUBA support for exotic card readers
+- Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
+- JCOP tools supported terminals such as Pegoda (need to purchase one for this?).
 
 Web site and documentation
 - A FAQ would be nice

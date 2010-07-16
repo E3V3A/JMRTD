@@ -35,7 +35,6 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -43,22 +42,15 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
-import java.security.SignatureException;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -69,7 +61,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
-import javax.security.auth.x500.X500Principal;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -88,7 +79,6 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
@@ -104,9 +94,6 @@ import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.BACStore;
-import org.jmrtd.CSCAStore;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
@@ -171,9 +158,6 @@ public class PassportFrame extends JFrame implements AuthListener
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
-	private CSCAStore cscaStore;
-	private CVCAStore cvcaStore;
-
 	private Passport passport;
 
 	private COMFile com;
@@ -202,11 +186,10 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	private BACKeySpec bacEntry;
 
-	public PassportFrame(CSCAStore cscaStore, CVCAStore cvcaStore) {
+	public PassportFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
-		this.cscaStore = cscaStore;
-		this.cvcaStore = cvcaStore;
+		this.passport = passport;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		centerPanel = new JPanel(new BorderLayout());
@@ -235,127 +218,30 @@ public class PassportFrame extends JFrame implements AuthListener
 		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
-	}
-
-	public  void readFromService(PassportService service, BACStore bacStore, ReadingMode readingMode) throws CardServiceException {	
+		
 		try {
-			service.open();
-		} catch (Exception e) {
-			Object message = "Sorry, " + e.getMessage();
-			JOptionPane.showMessageDialog(this, message, "Cannot open passport!", JOptionPane.ERROR_MESSAGE, null);
-			return;
-		}
-		boolean isBACPassport = false;
-		BACKeySpec bacEntry = null;
-		try {
-			/* EF.COM is read here to test if BAC is implemented */
-			CardFileInputStream comIn = service.readFile(PassportService.EF_COM);
-			new COMFile(comIn);
-			isBACPassport = false;
-		} catch (CardServiceException cse) {
-			isBACPassport = true;
-		} catch (IOException e) {
-			e.printStackTrace();
-			// FIXME: now what?
-		}
-		if (isBACPassport) {
-			int tries = MAX_TRIES_PER_BAC_ENTRY;
-			List<BACKeySpec> bacEntries = bacStore.getEntries();
-			List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
-			try {
-				/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
-				while (bacEntry == null && tries-- > 0) {
-					/* NOTE: inner loop, loops through stored BAC entries. */
-					synchronized (bacStore) {
-						for (BACKeySpec bacKeySpec: bacEntries) {
-							try {
-								if (!triedBACEntries.contains(bacKeySpec)) {
-									logger.info("BAC: " + bacKeySpec);
-									service.doBAC(bacKeySpec);
-									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-									bacEntry = bacKeySpec;
-									break; /* out of inner for loop */
-								}
-								Thread.sleep(500);
-							} catch (CardServiceException cse) {
-								/* NOTE: BAC failed? Try next BACEntry */
-							}
-						}
-					}
-				}
-			} catch (InterruptedException ie) {
-				/* NOTE: Interrupted? leave loop. */
-			}
-		}
-		if (!isBACPassport || bacEntry != null) {
-			readFromService(service, bacEntry, readingMode);
-		} else {
-			/*
-			 * Passport requires BAC, but we failed to authenticate.
-			 */
-			String message = "Cannot get access to passport.";
-			JOptionPane.showMessageDialog(this, message, "Basic Access denied!", JOptionPane.INFORMATION_MESSAGE, null);
-			return;
-		}
-	}
-
-	/**
-	 * Fills the passportFiles inputstreams with passport inputstreams.
-	 * 
-	 * FIXME: move some of this stuff into the passporthostapi's Passport class.
-	 * 
-	 * @param service the service (assumed to be already open)
-	 * @param bacKeySpec the BAC credentials that were used (if non-null this method assumes BAC was already performed)
-	 * @param readingMode either safe or progressive
-	 */
-	private void readFromService(PassportService service, BACKeySpec bacKeySpec, ReadingMode readingMode) throws CardServiceException {
-		try {
-			this.bacEntry = bacKeySpec;
-			if (bacKeySpec != null) {
-				verificationIndicator.setBACSucceeded();
-			}
-			service.addAuthenticationListener(this);
+			passport.addAuthenticationListener(this);
 			long t = System.currentTimeMillis();
 			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
-			passport = new Passport(service, cvcaStore, bacKeySpec);
+			
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
-				verifySecurity(service);
+				passport.verifySecurity(); // blocks
+				verificationIndicator.setStatus(passport.getVerificationStatus());
 				displayInputStreams(false);
-				verifySecurity(service);
 				break;
 			case PROGRESSIVE_MODE:
 				displayInputStreams(true);
-				verifySecurity(service);
 				break;
 			}
+			passport.verifySecurity();
+			verificationIndicator.setStatus(passport.getVerificationStatus());
 			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dispose();
 			return;
-		}
-	}
-
-	public void readFromZipFile(File file) throws IOException {
-		try {
-			passport = new Passport(file);
-			displayInputStreams(false);
-			verifySecurity(null);
-		} catch (Exception e) {
-			e.printStackTrace();
-			dispose();
-		}
-	}
-
-	public void readFromEmptyPassport() {
-		try {
-			passport = new Passport();
-			displayInputStreams(false);
-			verifySecurity(null);
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 
@@ -480,10 +366,7 @@ public class PassportFrame extends JFrame implements AuthListener
 				mrzPanel.setMRZ(updatedMRZInfo);
 				dg1 = new DG1File(updatedMRZInfo);
 				passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
-				verificationIndicator.setBACNotChecked();
-				verificationIndicator.setAANotChecked();
-				verificationIndicator.setDSNotChecked();
-				verificationIndicator.setCSNotChecked(null);
+				verificationIndicator.setStatus(passport.getVerificationStatus());
 			}
 		});
 	}
@@ -508,211 +391,6 @@ public class PassportFrame extends JFrame implements AuthListener
 				}
 			}
 		})).start();
-	}
-
-	/**
-	 * Verifies the passport using the security related mechanisms.
-	 * Adjusts the verificationIndicator to show the user the verification status.
-	 * 
-	 * Assumes passport object is non-null and read from the service.
-	 * 
-	 * FIXME: move this to passporthostapi's Passport class.
-	 * 
-	 * @param service
-	 */
-	private void verifySecurity(PassportService service) {
-		verificationIndicator.setBACNotChecked();
-		verificationIndicator.setAANotChecked();
-		verificationIndicator.setDSNotChecked();
-		verificationIndicator.setCSNotChecked(null);
-		verifyBAC(service);
-		verifyEAC(service);
-		verifyAA(service);
-		verifyDS(service);
-		verifyCS(service);
-	}
-
-	/** Checks whether BAC was used. */
-	private void verifyBAC(PassportService service) {
-		if (bacEntry != null) {
-			verificationIndicator.setBACSucceeded();
-		} else {
-			verificationIndicator.setBACFailed("BAC not used");
-		}
-	}
-
-
-	/** Checks whether EAC was used. */
-	private void verifyEAC(PassportService service) {
-		if (passport.hasEAC()) {
-			if (passport.wasEACPerformed()) {
-				verificationIndicator.setEACSucceeded();
-			} else {
-				verificationIndicator.setEACFailed("EAC not performed");
-			}
-		} else {
-			verificationIndicator.setEACNotChecked();
-		}
-	}
-
-	/** Check active authentication. */
-	private void verifyAA(PassportService service) {
-		try {
-			if (sod == null) {
-				InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-				sod = new SODFile(sodIn);
-			}
-			if (sod.getDataGroupHashes().get(15) == null) {
-				verificationIndicator.setAAFailed("AA not supported (no DG15 hash in EF.SOd)");
-			}
-			InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-			if (dg15In != null && service != null) {
-				dg15 = new DG15File(dg15In);
-				PublicKey pubKey = dg15.getPublicKey();
-				if (service.doAA(pubKey)) {
-					verificationIndicator.setAASucceeded();
-				} else {
-					verificationIndicator.setAAFailed("Response to AA incorrect");
-				}
-			}
-		} catch (CardServiceException cse) {
-			// cse.printStackTrace();
-			verificationIndicator.setAAFailed("AA failed (" + cse.getMessage() + ")");
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			verificationIndicator.setAAFailed("AA failed, IOException.");           
-		}
-	}
-
-	/** Checks hashes in the SOd correspond to hashes we compute. */
-	private void verifyDS(PassportService service) {
-		countrySigningCert = null;
-		try {
-			InputStream comIn = passport.getInputStream(PassportService.EF_COM);
-			com = new COMFile(comIn);
-			List<Integer> comDGList = new ArrayList<Integer>();
-			for(Integer tag : com.getTagList()) {
-				comDGList.add(PassportFile.lookupDataGroupNumberByTag(tag));
-			}
-			Collections.sort(comDGList);
-
-			InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-			sod = new SODFile(sodIn);
-			Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
-
-			verificationIndicator.setDSNotChecked();
-
-			/* Jeroen van Beek sanity check */
-			List<Integer> tagsOfHashes = new ArrayList<Integer>();
-			tagsOfHashes.addAll(hashes.keySet());
-			Collections.sort(tagsOfHashes);
-			if (!tagsOfHashes.equals(comDGList)) {
-				verificationIndicator.setDSFailed("\"Jeroen van Beek sanity check\" failed!");
-				return; /* NOTE: Serious enough to not perform other checks, leave method. */
-			}
-
-			String digestAlgorithm = sod.getDigestAlgorithm();
-			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
-
-			for (int dgNumber: hashes.keySet()) {
-				short fid = PassportFile.lookupFIDByTag(PassportFile.lookupTagByDataGroupNumber(dgNumber));
-				byte[] storedHash = hashes.get(dgNumber);
-
-				digest.reset();
-
-				InputStream dgIn = null;
-				Exception ex = null;
-				try {
-					dgIn = passport.getInputStream(fid);
-				} catch(Exception e) {
-					dgIn = null;
-					ex = e;
-				}
-				if (dgIn == null && passport.hasEAC() && !passport.wasEACPerformed() &&
-						(fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-					continue;
-				} else if (ex != null) {
-					throw ex;
-				}
-
-				if (dgIn == null) {
-					verificationIndicator.setDSFailed("Authentication of DG" + dgNumber + " failed");
-					return;
-				}
-
-				byte[] buf = new byte[4096];
-				while (true) {
-					int bytesRead = dgIn.read(buf);
-					if (bytesRead < 0) { break; }
-					digest.update(buf, 0, bytesRead);
-				}
-				byte[] computedHash = digest.digest();
-				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationIndicator.setDSFailed("Authentication of DG" + dgNumber + " failed");
-					return; /* NOTE: Serious enough to not perform other checks, leave method. */
-				}
-			}
-
-			X509Certificate docSigningCert = sod.getDocSigningCertificate();
-			if (sod.checkDocSignature(docSigningCert)) {
-				verificationIndicator.setDSSucceeded();
-			} else {
-				verificationIndicator.setDSFailed("DS Signature incorrect");
-			}
-		} catch (NoSuchAlgorithmException nsae) {
-			verificationIndicator.setDSFailed(nsae.getMessage());
-			return; /* NOTE: Serious enough to not perform other checks, leave method. */
-		} catch (Exception e) {
-			e.printStackTrace();
-			verificationIndicator.setDSFailed(e.getMessage());
-			return; /* NOTE: Serious enough to not perform other checks, leave method. */
-		}
-	}
-
-	/** Checks country signer certificate, if known. */
-	private void verifyCS(PassportService service) {
-		if (sod == null) {
-			verificationIndicator.setCSFailed("Cannot check CSCA: missing SOD file");
-			return; /* NOTE: Serious enough to not perform other checks, leave method. */
-		}
-		try {
-			issuingState = null;
-			InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
-			if (dg1In != null) {
-				DG1File dg1 = new DG1File(dg1In);
-				MRZInfo mrzInfo = dg1.getMRZInfo();
-				issuingState = mrzInfo.getIssuingState();
-			}
-			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			countrySigningCert = null;
-			if (cscaStore != null) {
-				countrySigningCert = (X509Certificate)cscaStore.getCertificate(docIssuer);
-			}
-			if (countrySigningCert == null) {
-				verificationIndicator.setCSFailed("Could not open CSCA certificate");
-				return;
-			}
-			docSigningCertificate.verify(countrySigningCert.getPublicKey());
-			verificationIndicator.setCSSucceeded(); /* NOTE: No exception... verification succeeded! */
-		} catch (FileNotFoundException fnfe) {
-			verificationIndicator.setCSFailed("Could not open CSCA certificate");
-			return; /* NOTE: Serious enough to not perform other checks, leave method. */
-		} catch (SignatureException se) {
-			verificationIndicator.setCSFailed(se.getMessage());
-		} catch (CertificateException ce) {
-			verificationIndicator.setCSFailed(ce.getMessage());
-			ce.printStackTrace();
-		} catch (GeneralSecurityException gse) {
-			verificationIndicator.setCSFailed(gse.getMessage());
-			gse.printStackTrace();
-		} catch (IOException ioe) {
-			verificationIndicator.setCSFailed("Could not open CSCA certificate");
-			ioe.printStackTrace();
-		} catch (Exception e) {
-			verificationIndicator.setCSFailed(e.getMessage());
-			e.printStackTrace();
-		}
 	}
 
 	/* Menu stuff below... */
