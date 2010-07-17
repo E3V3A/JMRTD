@@ -42,6 +42,7 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStoreException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
@@ -61,6 +62,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
+import javax.security.auth.x500.X500Principal;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -77,7 +79,6 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -94,6 +95,7 @@ import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
+import org.jmrtd.CSCAStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
@@ -127,7 +129,7 @@ import org.jmrtd.lds.SODFile;
  *
  * @version $Revision: 894 $
  */
-public class PassportFrame extends JFrame implements AuthListener
+public class PassportFrame extends JFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
@@ -178,13 +180,9 @@ public class PassportFrame extends JFrame implements AuthListener
 	private SODFile sod;
 	private CVCAFile cvca;
 
-	private X509Certificate countrySigningCert;
 	private EACEvent eacEvent;
 
 	private VerificationIndicator verificationIndicator;
-	private Country issuingState;
-
-	private BACKeySpec bacEntry;
 
 	public PassportFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
@@ -218,12 +216,21 @@ public class PassportFrame extends JFrame implements AuthListener
 		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
-		
+
 		try {
-			passport.addAuthenticationListener(this);
+			passport.addAuthenticationListener(new AuthListener() {
+				public void performedAA(AAEvent ae) { /* NOTE: do nothing */ }
+
+				public void performedBAC(BACEvent be) { /* NOTE: do nothing */ }
+
+				public void performedEAC(EACEvent ee) {
+					eacEvent = ee;
+					updateViewMenu();
+				}
+			});
 			long t = System.currentTimeMillis();
 			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
-			
+
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -270,10 +277,10 @@ public class PassportFrame extends JFrame implements AuthListener
 				InputStream in = passport.getInputStream(fid);
 				switch (fid) {
 				case PassportService.EF_COM:
-					/* NOTE: Already processed this one above. */
+					/* NOTE: Already processed this one. */
 					break;
 				case PassportService.EF_DG1:
-					/* NOTE: Already processed this one above. */
+					/* NOTE: Already processed this one. */
 					break;
 				case PassportService.EF_DG2:
 					dg2 = new DG2File(in);
@@ -345,8 +352,9 @@ public class PassportFrame extends JFrame implements AuthListener
 
 	private void displayHolderInfo() throws IOException {
 		InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
-		dg1 = new DG1File(dg1In);
+		DG1File dg1 = new DG1File(dg1In);
 		MRZInfo mrzInfo = dg1.getMRZInfo();
+		BACKeySpec bacEntry = passport.getBACKeySpec();
 		if (bacEntry != null &&
 				!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
 						mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
@@ -364,7 +372,7 @@ public class PassportFrame extends JFrame implements AuthListener
 			public void actionPerformed(ActionEvent e) {
 				MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
 				mrzPanel.setMRZ(updatedMRZInfo);
-				dg1 = new DG1File(updatedMRZInfo);
+				DG1File dg1 = new DG1File(updatedMRZInfo);
 				passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
 				verificationIndicator.setStatus(passport.getVerificationStatus());
 			}
@@ -684,7 +692,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		action.putValue(Action.NAME, "Portrait at 100%...");
 		return action;
 	}
-	
+
 	private void viewPreviewImageAtOriginalSize() {
 		DisplayedImageInfo info = displayPreviewPanel.getSelectedDisplayedImage();
 		switch (info.getType()) {
@@ -999,6 +1007,10 @@ public class PassportFrame extends JFrame implements AuthListener
 
 			public void actionPerformed(ActionEvent e) {
 				try{
+					if (sod == null) {
+						InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
+						sod = new SODFile(sodIn);
+					}
 					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
 					certificateFrame.pack();
 					certificateFrame.setVisible(true);
@@ -1020,13 +1032,23 @@ public class PassportFrame extends JFrame implements AuthListener
 			private static final long serialVersionUID = -7115158536366060439L;
 
 			public void actionPerformed(ActionEvent e) {
-				if (countrySigningCert == null) {
-					JOptionPane.showMessageDialog(getContentPane(), "CSCA for " + issuingState.getName() + " not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-				} else {
-					JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (" + issuingState + ", from file)", countrySigningCert);
-					certificateFrame.pack();
-					certificateFrame.setVisible(true);
+				try {
+					X509Certificate docSigningCertificate = (X509Certificate)passport.getDocSigningCertificate();
+					X500Principal issuer = docSigningCertificate.getIssuerX500Principal();
+					CSCAStore cscaStore = passport.getCSCAStore();
+					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(issuer);
+
+					if (countrySigningCert == null) {
+						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
+					} else {
+						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
+						certificateFrame.pack();
+						certificateFrame.setVisible(true);
+					}
+				} catch (KeyStoreException kse) {
+					kse.printStackTrace();
 				}
+
 			}
 		};
 		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
@@ -1192,7 +1214,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		}
 	}
 
-	public static PublicKey readPublicRSAKeyFromFile(File file) {
+	private static PublicKey readPublicRSAKeyFromFile(File file) {
 		try {
 			InputStream fl = fullStream(file);
 			byte[] key = new byte[fl.available()];
@@ -1207,7 +1229,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		}
 	}
 
-	public static X509Certificate readCertFromFile(File file) {
+	private static X509Certificate readCertFromFile(File file) {
 		try {
 			CertificateFactory cf = CertificateFactory.getInstance("X509");
 			InputStream certstream = fullStream(file);
@@ -1218,7 +1240,7 @@ public class PassportFrame extends JFrame implements AuthListener
 		}
 	}
 
-	public static CVCertificate readCVCertFromFile(File f) {
+	private static CVCertificate readCVCertFromFile(File f) {
 		try {
 			InputStream fl = fullStream(f);
 			byte[] data = new byte[fl.available()];
@@ -1239,20 +1261,5 @@ public class PassportFrame extends JFrame implements AuthListener
 		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
 		dis.close();
 		return bais; /* FIXME: Why do we need this? Why not use BufferedInputStream? -- MO */
-	}
-
-	public void performedAA(AAEvent ae) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void performedBAC(BACEvent be) {
-		// TODO Auto-generated method stub
-
-	}
-
-	public void performedEAC(EACEvent ee) {
-		eacEvent = ee;
-		updateViewMenu();
 	}
 }

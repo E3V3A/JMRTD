@@ -35,10 +35,12 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -121,6 +123,8 @@ public class Passport
 	private PrivateKey eacPrivateKey;
 
 	private PrivateKey aaPrivateKey;
+
+	private X509Certificate countrySigningCertificate, documentSigningCertificate;
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -560,6 +564,17 @@ public class Passport
 	public void setDocSigningCertificate(X509Certificate newCertificate) {
 		updateCOMSODFile(newCertificate);
 	}
+	
+	public Certificate getDocSigningCertificate() {
+		if (documentSigningCertificate != null) { return documentSigningCertificate; }
+		try {InputStream sodIn = getInputStream(PassportService.EF_SOD);
+		SODFile sod = new SODFile(sodIn);
+		documentSigningCertificate = sod.getDocSigningCertificate();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return documentSigningCertificate;
+	}
 
 	public void setCVCertificate(CVCertificate cert) {
 		this.cvcaCertificate = cert;
@@ -578,7 +593,15 @@ public class Passport
 	public PrivateKey getDocSigningPrivateKey() {
 		return docSigningPrivateKey;
 	}
-
+	
+	public CSCAStore getCSCAStore() {
+		return cscaStore;
+	}
+	
+	public CVCAStore getCVCAStore() {
+		return cvcaStore;
+	}
+	
 	public void setEACKeys(KeyPair keyPair) {
 		this.eacPrivateKey = keyPair.getPrivate();
 
