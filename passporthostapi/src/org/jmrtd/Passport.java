@@ -131,7 +131,7 @@ public class Passport
 
 	private Passport() {
 	}
-	
+
 	/**
 	 * Creates passport from scratch.
 	 * 
@@ -288,8 +288,9 @@ public class Passport
 		readFromService(service, cvcaStore, bacKeySpec);
 	}
 
-	public Passport(File file) throws IOException {
+	public Passport(File file, CSCAStore cscaStore) throws IOException {
 		this();
+		this.cscaStore = cscaStore;
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -606,7 +607,7 @@ public class Passport
 	public void setEACPrivateKey(PrivateKey privateKey) {
 		this.eacPrivateKey = privateKey;
 	}
-	
+
 	public void setEACPublicKey(PublicKey publicKey) {
 		List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
 		securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
@@ -876,6 +877,10 @@ public class Passport
 	/** Checks country signer certificate, if known. */
 	private void verifyCS(PassportService service) {
 		try {
+			if (cscaStore == null) {
+				verificationStatus.setCS(Verdict.FAILED);
+				return;
+			}
 			InputStream sodIn = getInputStream(PassportService.EF_SOD);
 			SODFile sod = new SODFile(sodIn);
 			if (sod == null) {
@@ -886,9 +891,8 @@ public class Passport
 			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
 			X509Certificate countrySigningCert = null;
-			if (cscaStore != null) {
-				countrySigningCert = (X509Certificate)cscaStore.getCertificate(docIssuer);
-			}
+			countrySigningCert = (X509Certificate)cscaStore.getCertificate(docIssuer);
+
 			if (countrySigningCert == null) {
 				logger.warning("Could not find CSCA certificate");
 				verificationStatus.setCS(Verdict.FAILED);

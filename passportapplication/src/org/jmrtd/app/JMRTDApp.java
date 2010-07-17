@@ -357,7 +357,7 @@ public class JMRTDApp  implements PassportListener
 					try {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport passport = new Passport(file);
+						Passport passport = new Passport(file, cscaStore);
 						PassportFrame passportFrame = new PassportFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
 						passportFrame.setVisible(true);

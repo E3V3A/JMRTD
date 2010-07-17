@@ -81,8 +81,9 @@ public class CSCAStore
 			Certificate certificate = keyStore.getCertificate(alias);
 			if (certificate instanceof X509Certificate) {
 				X500Principal certIssuer = ((X509Certificate)certificate).getIssuerX500Principal();
-				if (certIssuer.equals(issuer)) { return certificate; }
-				else if (certIssuer.getName().equals(issuer.getName())) {
+				if (certIssuer.equals(issuer)) {
+					return certificate;
+				} else if (certIssuer.getName().equals(issuer.getName())) {
 					System.err.println("WARNING: DEBUG: (in CSCAStore) problem with equals method of X500Principal...");
 					return certificate;
 				}
