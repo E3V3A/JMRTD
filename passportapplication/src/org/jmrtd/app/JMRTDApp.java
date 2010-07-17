@@ -112,7 +112,9 @@ public class JMRTDApp  implements PassportListener
 	BAC_STORE_KEY = "location.bac",
 	CSCA_STORE_KEY ="location.csca",
 	CVCA_STORE_KEY ="location.cvca",
-	PASSPORT_ZIP_FILES_DIR_KEY = "location.passportzipfiles";
+	PASSPORT_ZIP_FILES_DIR_KEY = "location.passportzipfiles",
+	IMAGE_FILES_DIR_KEY = "location.imagefiles",
+	CERT_AND_KEY_FILES_DIR_KEY = "location.certfiles";
 
 	private Container contentPane;
 	private CardManager cardManager;
