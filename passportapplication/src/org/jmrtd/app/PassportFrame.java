@@ -886,7 +886,8 @@ public class PassportFrame extends JFrame
 							PassportPersoService.EC_CURVE_NAME));
 					KeyPair keyPair = generator.generateKeyPair();
 
-					passport.setEACKeys(keyPair);
+					passport.setEACPrivateKey(keyPair.getPrivate());
+					passport.setEACPublicKey(keyPair.getPublic());
 				} catch (GeneralSecurityException ex) {
 					ex.printStackTrace(); /* NOTE: not silent. -- MO */
 				}
@@ -977,7 +978,8 @@ public class PassportFrame extends JFrame
 				try {
 					KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
 					KeyPair p = gen.generateKeyPair();
-					passport.setAAKeys(p);
+					passport.setAAPrivateKey(p.getPrivate());
+					passport.setAAPublicKey(p.getPublic());
 				} catch(Exception ex) {
 					ex.printStackTrace();
 				}
@@ -1053,7 +1055,9 @@ public class PassportFrame extends JFrame
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					X509Certificate docSigningCertificate = (X509Certificate)passport.getDocSigningCertificate();
+					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
+					SODFile	sod = new SODFile(sodIn);
+					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 					X500Principal issuer = docSigningCertificate.getIssuerX500Principal();
 					CSCAStore cscaStore = passport.getCSCAStore();
 					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(issuer);
@@ -1065,8 +1069,8 @@ public class PassportFrame extends JFrame
 						certificateFrame.pack();
 						certificateFrame.setVisible(true);
 					}
-				} catch (KeyStoreException kse) {
-					kse.printStackTrace();
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 
 			}

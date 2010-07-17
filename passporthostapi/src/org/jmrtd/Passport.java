@@ -39,7 +39,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -115,15 +114,12 @@ public class Passport
 	private SODFile sodFile;
 
 	private boolean hasEACSupport = false;
-	private boolean isEACSuccess = false;
 
 	private PrivateKey docSigningPrivateKey;
 	private CVCertificate cvcaCertificate;
 	private PrivateKey eacPrivateKey;
 
 	private PrivateKey aaPrivateKey;
-
-	private X509Certificate countrySigningCertificate, documentSigningCertificate;
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -133,7 +129,23 @@ public class Passport
 
 	private PassportService service;
 
-	public Passport() throws GeneralSecurityException {
+	private Passport() {
+	}
+	
+	/**
+	 * Creates passport from scratch.
+	 * 
+	 * @param docType either <code>MRZInfo.DOC_TYPE_ID1</code> or <code>MRZInfo.DOC_TYPE_ID3</code>
+	 * @throws GeneralSecurityException if something wrong
+	 */
+	public Passport(int docType) throws GeneralSecurityException {
+		this();
+		switch (docType) {
+		case MRZInfo.DOC_TYPE_ID1: break;
+		case MRZInfo.DOC_TYPE_ID2: break;
+		case MRZInfo.DOC_TYPE_ID3: break;
+		default: throw new IllegalArgumentException("Unknown document type specified");
+		}
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -155,7 +167,7 @@ public class Passport
 		Date today = Calendar.getInstance().getTime();
 		String primaryIdentifier = "";
 		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(MRZInfo.DOC_TYPE_ID3, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, today, Gender.MALE, today, "");
+		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, today, Gender.MALE, today, "");
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		fileLength = dg1Bytes.length;
@@ -204,6 +216,7 @@ public class Passport
 	}
 
 	public Passport(PassportService service, CSCAStore cscaStore, CVCAStore cvcaStore, BACStore bacStore) throws CardServiceException {
+		this();
 		this.service = service;
 		try {
 			service.open();
@@ -271,10 +284,12 @@ public class Passport
 	}
 
 	public Passport(PassportService service, CVCAStore cvcaStore, BACKeySpec bacKeySpec) throws IOException, CardServiceException {
+		this();
 		readFromService(service, cvcaStore, bacKeySpec);
 	}
 
 	public Passport(File file) throws IOException {
+		this();
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -342,9 +357,6 @@ public class Passport
 			}
 		}
 	}
-
-
-
 
 	/**
 	 * Constructs a passport object by reading from an actual MRTD chip
@@ -434,18 +446,18 @@ public class Passport
 			Map<Integer, PublicKey> cardKeys = dg14file.getPublicKeys();
 			Set<Integer> keyIds = cardKeys.keySet();
 			for(int i : keyIds) {
-				if(isEACSuccess) { break; }
+				if (verificationStatus.getEAC() == Verdict.SUCCEEDED) { break; }
 				for(int termIndex=0; termIndex<termCerts.size(); termIndex++) {
 					try {
 						service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber);
-						isEACSuccess = true;
+						verificationStatus.setEAC(Verdict.SUCCEEDED);
 						break;
 					}catch(CardServiceException cse) {
 						cse.printStackTrace();
 					}
 				}
 			}
-			if (isEACSuccess) {
+			if (verificationStatus.getEAC() == Verdict.SUCCEEDED) {
 				// setup DG3 and/or DG4 for reading
 				for (Short fid : eacFids) {
 					setupFile(service, fid);
@@ -563,17 +575,6 @@ public class Passport
 	public void setDocSigningCertificate(X509Certificate newCertificate) {
 		updateCOMSODFile(newCertificate);
 	}
-	
-	public Certificate getDocSigningCertificate() {
-		if (documentSigningCertificate != null) { return documentSigningCertificate; }
-		try {InputStream sodIn = getInputStream(PassportService.EF_SOD);
-		SODFile sod = new SODFile(sodIn);
-		documentSigningCertificate = sod.getDocSigningCertificate();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return documentSigningCertificate;
-	}
 
 	public void setCVCertificate(CVCertificate cert) {
 		this.cvcaCertificate = cert;
@@ -581,7 +582,8 @@ public class Passport
 			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getCertificateBody().getHolderReference().getConcatenated());
 			putFile(cvcaFID, cvcaFile.getEncoded());
 		} catch (NoSuchFieldException ex) {
-			/* FIXME: Woj, why is this silent? -- MO */
+			ex.printStackTrace();
+			/* FIXME: Woj, this was silent? -- MO */
 		}
 	}
 
@@ -592,29 +594,24 @@ public class Passport
 	public PrivateKey getDocSigningPrivateKey() {
 		return docSigningPrivateKey;
 	}
-	
+
 	public CSCAStore getCSCAStore() {
 		return cscaStore;
 	}
-	
+
 	public CVCAStore getCVCAStore() {
 		return cvcaStore;
 	}
-	
-	public void setEACKeys(KeyPair keyPair) {
-		this.eacPrivateKey = keyPair.getPrivate();
 
+	public void setEACPrivateKey(PrivateKey privateKey) {
+		this.eacPrivateKey = privateKey;
+	}
+	
+	public void setEACPublicKey(PublicKey publicKey) {
 		List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
-		PublicKey publicKey = keyPair.getPublic();
 		securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
 		DG14File dg14File = new DG14File(securityInfos);		
 		putFile(PassportService.EF_DG14, dg14File.getEncoded());
-	}
-
-	public void setAAKeys(KeyPair keyPair) {
-		this.aaPrivateKey = keyPair.getPrivate();
-		DG15File dg15file = new DG15File(keyPair.getPublic());
-		putFile(PassportService.EF_DG15, dg15file.getEncoded());
 	}
 
 	public PrivateKey getAAPrivateKey() {
@@ -632,14 +629,6 @@ public class Passport
 
 	public PrivateKey getEACPrivateKey() {
 		return eacPrivateKey;
-	}
-
-	public boolean hasEAC() {
-		return hasEACSupport;
-	}
-
-	public boolean wasEACPerformed() {
-		return isEACSuccess;
 	}
 
 	public int getTotalLength() {
@@ -763,15 +752,10 @@ public class Passport
 
 	/** Checks whether EAC was used. */
 	private void verifyEAC() {
-		if (hasEAC()) {
-			if (wasEACPerformed()) {
-				verificationStatus.setEAC(Verdict.SUCCEEDED);
-			} else {
-				verificationStatus.setEAC(Verdict.FAILED);
-			}
-		} else {
+		if (!hasEACSupport) {
 			verificationStatus.setEAC(Verdict.NOT_PRESENT);
 		}
+		/* NOTE: If EAC was performed, verification status already updated! */
 	}
 
 	/** Check active authentication. */
@@ -804,7 +788,6 @@ public class Passport
 
 	/** Checks hashes in the SOd correspond to hashes we compute. */
 	private void verifyDS(PassportService service) {
-		X509Certificate countrySigningCert = null;
 		try {
 			InputStream comIn = getInputStream(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
@@ -847,8 +830,7 @@ public class Passport
 					dgIn = null;
 					ex = e;
 				}
-				if (dgIn == null && hasEAC() && !wasEACPerformed() &&
-						(fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+				if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 					continue;
 				} else if (ex != null) {
 					throw ex;

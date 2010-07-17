@@ -79,6 +79,7 @@ import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Simple graphical application to demonstrate the
@@ -322,7 +323,7 @@ public class JMRTDApp  implements PassportListener
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport passport = new Passport();
+					Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3);
 					PassportFrame passportFrame = new PassportFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);
