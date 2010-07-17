@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Key;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -104,18 +105,24 @@ public class KeyFrame extends JFrame
 	 * to print the resulting file.
 	 */
 	private Action getSaveAsAction() {
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7264665364705062205L;
 
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
+				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
+				}
 				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
+						preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
 						FileOutputStream out = new FileOutputStream(file);
 						/* FIXME: This is DER encoding? */
 						out.write(keyPanel.getKey().getEncoded());

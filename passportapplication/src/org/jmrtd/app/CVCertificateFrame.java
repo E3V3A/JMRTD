@@ -28,8 +28,10 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -50,8 +52,8 @@ import org.ejbca.cvc.CVCertificate;
 /**
  * Frame for displaying (and saving to file) a public card verifiable certificate.
  *
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
- * @author Wojciech Mostowski <woj@cs.ru.nl>
  *
  */
 public class CVCertificateFrame extends JFrame
@@ -90,12 +92,12 @@ public class CVCertificateFrame extends JFrame
 		/* Save As...*/
 		JMenuItem saveAsItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(new SaveAsAction());
+		saveAsItem.setAction(getSaveAsAction());
 
 		/* Close */
 		JMenuItem closeItem = new JMenuItem("Close");
 		fileMenu.add(closeItem);
-		closeItem.setAction(new CloseAction());
+		closeItem.setAction(getCloseAction());
 
 		return fileMenu;
 	}
@@ -104,52 +106,59 @@ public class CVCertificateFrame extends JFrame
 	 * Saves the certificate to file.
 	 * 
 	 */
-	private class SaveAsAction extends AbstractAction  /* FIXME: Why class, why not method which returns anonymous class? -- MO */
-	{
-		private static final long serialVersionUID = -7143003045680922518L;
+	private Action getSaveAsAction() {
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
+		Action action = new AbstractAction() {
 
-		public SaveAsAction() {
-			putValue(SMALL_ICON, SAVE_AS_ICON);
-			putValue(LARGE_ICON_KEY, SAVE_AS_ICON);
-			putValue(SHORT_DESCRIPTION, "Save certificate to file");
-			putValue(NAME, "Save As...");
-		}
+			private static final long serialVersionUID = -7143003045680922518L;
 
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
-			int choice = fileChooser.showSaveDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					FileOutputStream out = new FileOutputStream(file);
-					out.write(certificatePanel.getCertificate().getDEREncoded());
-					out.flush();
-					out.close();
-				} catch (Exception ex) {
-					ex.printStackTrace();
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				break;
-			default: break;
+				fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+				int choice = fileChooser.showSaveDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
+						FileOutputStream out = new FileOutputStream(file);
+						out.write(certificatePanel.getCertificate().getDEREncoded());
+						out.flush();
+						out.close();
+					} catch (Exception ex) {
+						ex.printStackTrace();
+					}
+					break;
+				default: break;
+				}
 			}
-		}
+		};
+
+		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Save certificate to file");
+		action.putValue(Action.NAME, "Save As...");
+
+		return action;
 	}
 
-	private class CloseAction extends AbstractAction  /* FIXME: Why class, why not method which returns anonymous class? -- MO */
-	{
-		private static final long serialVersionUID = 2579413086163111656L;
+	private Action getCloseAction() {
+		Action action = new AbstractAction() {
+			private static final long serialVersionUID = 2579413086163111656L;
 
-		public CloseAction() {
-			putValue(SMALL_ICON, CLOSE_ICON);
-			putValue(LARGE_ICON_KEY, CLOSE_ICON);
-			putValue(SHORT_DESCRIPTION, "Close Window");
-			putValue(NAME, "Close");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			dispose();
-		}
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CLOSE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
+		action.putValue(Action.NAME, "Close");
+		return action;
 	}
 
 	private static String certificateToString(CVCertificate certificate) {

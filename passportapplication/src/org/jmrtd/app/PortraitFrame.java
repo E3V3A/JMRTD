@@ -28,6 +28,7 @@ import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -147,18 +148,24 @@ public class PortraitFrame extends JFrame
 	}
 
 	private Action getSaveAsAction() {
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4810689890241792533L;
 
 			public void actionPerformed(ActionEvent e) {
 				JFileChooser fileChooser = new JFileChooser();
+				String directory = preferences.get(JMRTDApp.IMAGE_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
+				}
 				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
 					try {
 						File file = fileChooser.getSelectedFile();
+						preferences.put(JMRTDApp.IMAGE_FILES_DIR_KEY, file.getParent());
 						String fileName = file.getName().toLowerCase();
 						if (fileName.endsWith(".png")) {
 							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);
