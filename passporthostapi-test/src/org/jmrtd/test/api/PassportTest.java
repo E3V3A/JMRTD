@@ -28,6 +28,7 @@ import junit.framework.TestCase;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.jmrtd.Passport;
+import org.jmrtd.lds.MRZInfo;
 
 public class PassportTest extends TestCase
 {
@@ -40,7 +41,7 @@ public class PassportTest extends TestCase
 
 	public void testInitNoException() {
 		try {
-			Passport passport = new Passport();
+			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3);
 			assertNotNull(passport);
 		} catch (Exception e) {
 			fail(e.getMessage());
