@@ -163,7 +163,7 @@ public class PassportFrame extends JFrame
 	private Passport passport;
 
 	private COMFile com;
-	private DG1File dg1;
+	// private DG1File dg1;
 	private DG2File dg2;
 	private DG3File dg3;
 	private DG4File dg4;
@@ -1128,11 +1128,7 @@ public class PassportFrame extends JFrame
 
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
-				BACKeySpec bacEntry = null;
-				if (dg1 != null) {
-					MRZInfo mrzInfo = dg1.getMRZInfo();
-					bacEntry = new BACKeySpec(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
-				}
+				BACKeySpec bacEntry = passport.getBACKeySpec();
 				PublicKey aaPublicKey = null;
 				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
 				if (dg15In != null) {
