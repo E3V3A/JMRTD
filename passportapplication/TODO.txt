@@ -41,9 +41,9 @@ VERSION 0.4.5
 General
 - Uniform handling of BAC, CSCA, CVCA stores.
 - Use Java keystores instead of directories with flat files?
-- Move BAC logic from PassportFrame to Passport class.
-- Move readFromService logic from PassportFrame to the Passport class.
-- Move the verifySecurity logic from PassportFrame to Passport class.
++ Move BAC logic from PassportFrame to Passport class.
++ Move readFromService logic from PassportFrame to the Passport class.
++ Move the verifySecurity logic from PassportFrame to Passport class.
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 + Get DG3 (finger) bio template I/O to the same level as DG2 (face)
 + ImageIO support for WSQ finger print images, using JNI wrapping around C files (http://sourceforge.net/ffpis).
