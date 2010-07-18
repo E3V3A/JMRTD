@@ -42,7 +42,7 @@ public class DG3FileTest extends TestCase
 			String testFile = "t:/paspoort/woj-dg3-top-secret-0103.bin";
 			FileInputStream in = new FileInputStream(testFile);
 			DG3File dg3 = new DG3File(in);
-			for (FingerInfo fingerPrint: dg3.getFingerPrints()) {
+			for (FingerInfo fingerPrint: dg3.getFingerInfos()) {
 				BufferedImage image = fingerPrint.getImage();
 				System.out.println("DEBUG: fingerprint " + image.getWidth() + " x " + image.getHeight());
 			}

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,13 +58,13 @@ public class DG2File extends CBEFFDataGroup
 	private static final byte[] FORMAT_IDENTIFIER = { 'F', 'A', 'C', 0x00 };
 	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
 
-	private List<FaceInfo> faces;
+	private List<FaceInfo> faceInfos;
 
 	/**
 	 * Creates a new file with zero images.
 	 */
 	public DG2File() {
-		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
+		if (faceInfos == null) { faceInfos = new ArrayList<FaceInfo>(); }
 		isSourceConsistent = false;
 	}
 
@@ -75,7 +75,7 @@ public class DG2File extends CBEFFDataGroup
 	 */
 	public DG2File(InputStream in) {
 		super(in);
-		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
+		if (faceInfos == null) { faceInfos = new ArrayList<FaceInfo>(); }
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
@@ -106,8 +106,8 @@ public class DG2File extends CBEFFDataGroup
 	 * @param fi the image to add
 	 */
 	public void addFaceInfo(FaceInfo fi) {
-		if (faces == null) { faces = new ArrayList<FaceInfo>(); }
-		faces.add(fi);
+		if (faceInfos == null) { faceInfos = new ArrayList<FaceInfo>(); }
+		faceInfos.add(fi);
 		isSourceConsistent = false;
 	}
 
@@ -117,7 +117,7 @@ public class DG2File extends CBEFFDataGroup
 	 * @param index the index of the image to remove
 	 */
 	public void removeFaceInfo(int index) {
-		faces.remove(index);
+		faceInfos.remove(index);
 		isSourceConsistent = false;
 	}
 
@@ -141,12 +141,12 @@ public class DG2File extends CBEFFDataGroup
 			/* FIXME: some of this should be moved to CBEFFDataGroup! */
 			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
 					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
-							(byte)faces.size()));
+							(byte)faceInfos.size()));
 
 			group.reconstructLength();
 
 			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-			for (FaceInfo info: faces) {
+			for (FaceInfo info: faceInfos) {
 				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
 						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
 				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
@@ -190,9 +190,9 @@ public class DG2File extends CBEFFDataGroup
 		StringBuffer result = new StringBuffer();
 		result.append("DG2File");
 		result.append(" [");
-		int faceCount = faces.size();
+		int faceCount = faceInfos.size();
 		int i = 0;
-		for (FaceInfo faceInfo: faces) {
+		for (FaceInfo faceInfo: faceInfos) {
 			result.append(faceInfo.getWidth() + "x" + faceInfo.getHeight());
 			if (i < faceCount - 1) { result.append(", "); }
 			i++;
@@ -207,13 +207,13 @@ public class DG2File extends CBEFFDataGroup
 		if (obj == this) { return true; }
 		if (!obj.getClass().equals(this.getClass())) { return false; }
 		DG2File other = (DG2File)obj;
-		if (faces == null) { return other.faces == null; }
+		if (faceInfos == null) { return other.faceInfos == null; }
 		return Arrays.equals(getEncoded(), other.getEncoded());
 	}
 
 	public int hashCode() {
-		if (faces == null) { return 7 * 0x000FACE5 + 17; } /* FIXME: never happens :) */
-		return 7 * faces.hashCode() + 17;
+		if (faceInfos == null) { return 7 * 0x000FACE5 + 17; } /* FIXME: never happens :) */
+		return 7 * faceInfos.hashCode() + 17;
 	}
 
 	/**
@@ -221,7 +221,7 @@ public class DG2File extends CBEFFDataGroup
 	 *
 	 * @return the images
 	 */
-	public List<FaceInfo> getFaces() {
-		return faces;
+	public List<FaceInfo> getFaceInfos() {
+		return faceInfos;
 	}
 }

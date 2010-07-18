@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,7 +46,7 @@ public class DG1File extends DataGroup implements Serializable
 	private static final long serialVersionUID = 5091606125728809058L;
 
 	private static final short MRZ_INFO_TAG = 0x5F1F;
-	
+
 	private MRZInfo mrzInfo;
 
 	/**
@@ -65,8 +65,19 @@ public class DG1File extends DataGroup implements Serializable
 	 *
 	 * @throws IOException if something goes wrong
 	 */
-	public DG1File(InputStream in) throws IOException {
-		read(in);
+	public DG1File(InputStream in) {
+		try {
+			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			int tag = tlvIn.readTag();
+			if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
+			tlvIn.skipToTag(MRZ_INFO_TAG);
+			tlvIn.readLength();
+			isSourceConsistent = false;
+			this.mrzInfo = new MRZInfo(tlvIn);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 	/**
@@ -105,16 +116,6 @@ public class DG1File extends DataGroup implements Serializable
 
 	public int hashCode() {
 		return 3 * mrzInfo.hashCode() + 57;
-	}
-
-	private void read(InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
-		int tag = tlvIn.readTag();
-		if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
-		tlvIn.skipToTag(MRZ_INFO_TAG);
-		tlvIn.readLength();
-		isSourceConsistent = false;
-		this.mrzInfo = new MRZInfo(tlvIn);
 	}
 
 	private void write(OutputStream out) throws IOException {

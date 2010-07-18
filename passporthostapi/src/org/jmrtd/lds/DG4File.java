@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,8 @@ package org.jmrtd.lds;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * File structure for the EF_DG4 file.
@@ -36,17 +38,7 @@ import java.io.InputStream;
  * @version $Revision$
  */
 public class DG4File extends CBEFFDataGroup
-{
-	private static int
-	IMAGEFORMAT_MONO_RAW = 2, /* (0x0002) */
-	IMAGEFORMAT_RGB_RAW = 4, /* (0x0004) */
-	IMAGEFORMAT_MONO_JPEG = 6, /* (0x0006) */
-	IMAGEFORMAT_RGB_JPEG = 8, /* (0x0008) */
-	IMAGEFORMAT_MONO_JPEG_LS = 10, /* (0x000A) */
-	IMAGEFORMAT_RGB_JPEG_LS = 12, /* (0x000C) */
-	IMAGEFORMAT_MONO_JPEG2000 = 14, /* (0x000E) */
-	IMAGEFORMAT_RGB_JPEG2000 = 16; /* (0x0010) */
-	
+{	
 	private static int
 	IMAGE_QUAL_UNDEF = 0xFE, /* (decimal 254) */
 	IMAGE_QUAL_LOW_LO = 0x1A,
@@ -62,6 +54,8 @@ public class DG4File extends CBEFFDataGroup
 	EYE_RIGHT = 1,
 	EYE_LEFT = 2;
 
+	private List<IrisInfo> irisInfos;
+	
 	/* TODO: many more constants here, amongst others bitfields... */
 	
 	/**
@@ -71,6 +65,7 @@ public class DG4File extends CBEFFDataGroup
 	 */
 	public DG4File(InputStream in) {
 		super(in);
+		irisInfos = new ArrayList<IrisInfo>();
 	}
 
 	public byte[] getEncoded() {
@@ -78,6 +73,10 @@ public class DG4File extends CBEFFDataGroup
 			return sourceObject;
 		}
 		return null;
+	}
+	
+	public List<IrisInfo> getIrisInfos() {
+		return irisInfos;
 	}
 
 	public int getTag() {
@@ -143,36 +142,12 @@ public class DG4File extends CBEFFDataGroup
 		int featureID = dataIn.readUnsignedByte();
 		int imageCount = dataIn.readUnsignedShort();
 		
+
+		
 		/* Images */
 		for (int imageIndex = 0; imageIndex < imageCount; imageIndex++) {
-			readIrisImage(dataIn, featureIndex, imageIndex, imageFormat);
+			IrisInfo info = new IrisInfo(dataIn, imageFormat);
+			irisInfos.add(info);
 		}
-	}
-	
-	private void readIrisImage(DataInputStream dataIn, int featureIndex, int imageIndex, int imageFormat) throws IOException {
-		int imageNumber = dataIn.readUnsignedShort();
-		int quality = dataIn.readUnsignedByte();
-		/*
-		 * (65536*angle/360) modulo 65536
-		 * ROT_ANGLE_UNDEF = 0xFFFF
-		 * Where angle is measured in degrees from
-		 * horizontal
-		 * Used only for rectilinear images. For polar images
-		 * entry shall be ROT_ANGLE_UNDEF
-		 */
-		int rotAngleEye = dataIn.readShort();
-		/*
-		 * Rotation uncertainty = (unsigned short) round
-		 * (65536 * uncertainty/180)
-		 * Where 0 <= uncertainty < 180
-		 * ROT_UNCERTAIN_UNDEF = 0xFFFF
-		 * Where uncertainty is measured in degrees and is
-		 * the absolute value of maximum error
-		 */
-		int rotUncertainty = dataIn.readUnsignedShort();
-		long imageLength = dataIn.readInt() & 0xFFFFFFFFL;
-		
-		/* TODO: create IrisInfo objects here! */
-		dataIn.skip(imageLength); /* FIXME! */
-	}
+	}	
 }

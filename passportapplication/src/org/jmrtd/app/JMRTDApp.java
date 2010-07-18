@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -268,7 +268,7 @@ public class JMRTDApp  implements PassportListener
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
 		Passport passport = new Passport(service, cscaStore, cvcaStore, bacStore);
-		PassportFrame passportFrame = new PassportFrame(passport, preferencesPanel.getReadingMode());
+		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
 	}
 
 	private JMenu createFileMenu() {
@@ -324,7 +324,7 @@ public class JMRTDApp  implements PassportListener
 			public void actionPerformed(ActionEvent e) {
 				try {
 					Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3);
-					PassportFrame passportFrame = new PassportFrame(passport, ReadingMode.SAFE_MODE);
+					PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);
 				} catch (Exception ex) {
@@ -358,7 +358,7 @@ public class JMRTDApp  implements PassportListener
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						Passport passport = new Passport(file, cscaStore);
-						PassportFrame passportFrame = new PassportFrame(passport, ReadingMode.SAFE_MODE);
+						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
 						passportFrame.setVisible(true);
 					} catch (IOException ioe) {

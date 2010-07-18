@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportApduService.java 894 2009-03-23 15:50:46Z martijno $
+ * $Id: $
  */
 
 package org.jmrtd;
@@ -44,6 +44,11 @@ import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
 
+/**
+ * FIXME: Should this class still be here? Move it to passporthostapi-test project? -- MO
+ * 
+ * @author woj
+ */
 public class PassportCertificateGenerator {
 
 	public static final String filenameCA = "/home/sos/woj/terminals/cacert.cvcert";

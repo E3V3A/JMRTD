@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,31 +27,15 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStoreException;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
-import java.security.Security;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.ECGenParameterSpec;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -62,9 +46,7 @@ import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.imageio.ImageIO;
 import javax.security.auth.x500.X500Principal;
-import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -80,18 +62,12 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.smartcards.CardManager;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
@@ -99,7 +75,6 @@ import org.jmrtd.BACKeySpec;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
-import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.lds.CVCAFile;
@@ -128,11 +103,11 @@ import org.jmrtd.lds.SODFile;
  *
  * @version $Revision: 894 $
  */
-public class PassportFrame extends JFrame
+public class PassportViewFrame extends JFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportFrame.class);
+	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportViewFrame.class);
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
 	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
@@ -143,11 +118,7 @@ public class PassportFrame extends JFrame
 	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon LOAD_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
-	private static final Icon DELETE_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
-	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
-	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
 
 	private Logger logger = Logger.getLogger(getClass().getSimpleName());
 
@@ -163,7 +134,7 @@ public class PassportFrame extends JFrame
 
 	private VerificationIndicator verificationIndicator;
 
-	public PassportFrame(Passport passport, ReadingMode readingMode) {
+	public PassportViewFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
 		this.passport = passport;
@@ -264,12 +235,12 @@ public class PassportFrame extends JFrame
 					break;
 				case PassportService.EF_DG2:
 					DG2File dg2 = new DG2File(in);
-					List<FaceInfo> faces = dg2.getFaces();
+					List<FaceInfo> faces = dg2.getFaceInfos();
 					for (FaceInfo face: faces) { displayPreviewPanel.addDisplayedImage(face, isProgressiveMode); }
 					break;
 				case PassportService.EF_DG3:
 					DG3File dg3 = new DG3File(in);
-					List<FingerInfo> fingers = dg3.getFingerPrints();
+					List<FingerInfo> fingers = dg3.getFingerInfos();
 					for (FingerInfo finger: fingers) { displayPreviewPanel.addDisplayedImage(finger, isProgressiveMode); }
 					break;
 				case PassportService.EF_DG4:
@@ -353,22 +324,12 @@ public class PassportFrame extends JFrame
 						mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
 			JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "MRZ used in BAC differs from MRZ in DG1!", JOptionPane.WARNING_MESSAGE);
 		}
-		final HolderInfoPanel holderInfoPanel = new HolderInfoPanel(mrzInfo);
+		final HolderViewPanel holderInfoPanel = new HolderViewPanel(mrzInfo);
 		final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
 		centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 		centerPanel.revalidate();
 		centerPanel.repaint();
-		holderInfoPanel.addActionListener(new ActionListener() {
-			/* User changes DG1 info in GUI. */
-			public void actionPerformed(ActionEvent e) {
-				MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
-				mrzPanel.setMRZ(updatedMRZInfo);
-				DG1File dg1 = new DG1File(updatedMRZInfo);
-				passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
-				verificationIndicator.setStatus(passport.getVerificationStatus());
-			}
-		});
 	}
 
 	/**
@@ -431,11 +392,6 @@ public class PassportFrame extends JFrame
 		menu.add(viewDocumentSignerCertificate);
 		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
-		/* View DS key, if any... */
-		JMenuItem viewDocumentSignerKey = new JMenuItem();
-		menu.add(viewDocumentSignerKey);
-		viewDocumentSignerKey.setAction(getViewDocumentSignerKeyAction());
-
 		/* View CS Certificate... */
 		JMenuItem viewCountrySignerCertificate = new JMenuItem();
 		menu.add(viewCountrySignerCertificate);
@@ -445,11 +401,6 @@ public class PassportFrame extends JFrame
 		JMenuItem viewAAPublicKey = new JMenuItem();
 		menu.add(viewAAPublicKey);
 		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
-
-		/* View AA private key */
-		JMenuItem viewAAPrivateKey = new JMenuItem();
-		menu.add(viewAAPrivateKey);
-		viewAAPrivateKey.setAction(getViewAAPrivateKeyAction());
 
 		viewMenu = menu;
 
@@ -483,69 +434,33 @@ public class PassportFrame extends JFrame
 
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
-
-		/* Load additional portrait from file... */
-		JMenuItem loadPortraitFromFile = new JMenuItem();
-		menu.add(loadPortraitFromFile);
-		loadPortraitFromFile.setAction(getAddPortraitAction());
-
-		/* Delete selected portrait */
-		JMenuItem deletePortrait = new JMenuItem();
-		menu.add(deletePortrait);
-		deletePortrait.setAction(getRemovePortraitAction());
-
-		menu.addSeparator();
-
-		/* Replace DSC with another certificate from file... */
-		JMenuItem loadDocSignCertFromFile = new JMenuItem();
-		menu.add(loadDocSignCertFromFile);
-		loadDocSignCertFromFile.setAction(getLoadDocSignCertAction());
-
-		/* Replace DS key with another key from file... */
-		JMenuItem loadDocSignKeyFromFile = new JMenuItem();
-		menu.add(loadDocSignKeyFromFile);
-		loadDocSignKeyFromFile.setAction(getLoadDocSignKeyAction());
-
-		menu.addSeparator();
-
-		/* Replace AA key with another key from file... */
-		JMenuItem loadAAKeyFromFile = new JMenuItem();
-		menu.add(loadAAKeyFromFile);
-		loadAAKeyFromFile.setAction(getLoadAAPublicKeyAction());
-
-		/* Replace AA private key with another key from file... */
-		JMenuItem loadAAPrivateKeyFromFile = new JMenuItem();
-		menu.add(loadAAPrivateKeyFromFile);
-		loadAAPrivateKeyFromFile.setAction(getLoadAAPrivateKeyAction());
-
-		/* Generate new AA key pair */
-		JMenuItem generateAAKeys = new JMenuItem();
-		menu.add(generateAAKeys);
-		generateAAKeys.setAction(getAAGenerateAction());
-
-		menu.addSeparator();
-
-		/* Generate new EAC key pair */
-		JMenuItem generateEACKeys = new JMenuItem();
-		menu.add(generateEACKeys);
-		generateEACKeys.setAction(getGenerateEACKeys());
-
-		/* Generate load CVCA Certificate */
-		JMenuItem loadCVCA = new JMenuItem();
-		menu.add(loadCVCA);
-		loadCVCA.setAction(getLoadCVCACertificate());
-
-		menu.addSeparator();
-
-		JMenuItem upload = new JMenuItem();
-		menu.add(upload);
-		upload.setAction(getUploadAction());
-
+		
+		JMenuItem openEditorItem = new JMenuItem();
+		openEditorItem.setAction(getOpenEditorAction());
+	
+		menu.add(openEditorItem);
 		return menu;
 	}
 
 	/* Menu item actions below... */
 
+	private Action getOpenEditorAction() {
+		Action action = new AbstractAction() {
+
+			public void actionPerformed(ActionEvent e) {
+				JFrame editorFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
+				dispose();
+			}
+			
+		};
+		action.putValue(Action.SMALL_ICON, OPEN_EDITOR_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, OPEN_EDITOR_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Open passport in editor");
+		action.putValue(Action.NAME, "Open in editor");
+
+		return action;
+	}
+	
 	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
 		Action action = new AbstractAction() {
 			private static final long serialVersionUID = -2671362506812399044L;
@@ -689,9 +604,6 @@ public class PassportFrame extends JFrame
 		DisplayedImageInfo info = displayPreviewPanel.getSelectedDisplayedImage();
 		switch (info.getType()) {
 		case DisplayedImageInfo.TYPE_PORTRAIT:
-			InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
-			DG2File dg2 = new DG2File(dg2In);
-
 			FaceInfo faceInfo = (FaceInfo)info;
 			PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
 			portraitFrame.pack();
@@ -716,7 +628,7 @@ public class PassportFrame extends JFrame
 			public void actionPerformed(ActionEvent e) {
 				InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
 				DG3File dg3 = new DG3File(dg3In);
-				List<FingerInfo> fingerPrints = dg3.getFingerPrints();
+				List<FingerInfo> fingerPrints = dg3.getFingerInfos();
 				FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
 				fingerPrintFrame.setVisible(true);
 				fingerPrintFrame.pack();
@@ -726,301 +638,6 @@ public class PassportFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, FINGERPRINT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
 		action.putValue(Action.NAME, "Fingerprints...");
-		return action;
-	}
-
-	private Action getAddPortraitAction() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = 9003244936310622991L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.IMAGE_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
-
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					try {
-						File file = fileChooser.getSelectedFile();
-						preferences.put(JMRTDApp.IMAGE_FILES_DIR_KEY, file.getParent());
-						BufferedImage image = ImageIO.read(file);
-
-						FaceInfo faceInfo = new FaceInfo(
-								Gender.UNSPECIFIED,
-								FaceInfo.EyeColor.UNSPECIFIED,
-								FaceInfo.HAIR_COLOR_UNSPECIFIED,
-								FaceInfo.EXPRESSION_UNSPECIFIED,
-								FaceInfo.SOURCE_TYPE_UNSPECIFIED,
-								image);
-						InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
-						DG2File dg2 = new DG2File(dg2In);
-						dg2.addFaceInfo(faceInfo);
-						passport.putFile(PassportService.EF_DG2, dg2.getEncoded());
-						displayPreviewPanel.addDisplayedImage(faceInfo, false);
-					} catch (IOException ioe) {
-						/* NOTE: Do nothing. */
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_IMAGE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_IMAGE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (additional) portrait from file");
-		action.putValue(Action.NAME, "Import portrait...");
-		return action;
-	}
-
-	private Action getRemovePortraitAction() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -6635439106858528541L;
-
-			public void actionPerformed(ActionEvent e) {
-				int index = displayPreviewPanel.getSelectedIndex();
-				InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
-				DG2File dg2 = new DG2File(dg2In);
-				dg2.removeFaceInfo(index);
-				passport.putFile(PassportService.EF_DG2, dg2.getEncoded());
-				displayPreviewPanel.removeDisplayedImage(index);
-			}
-		};
-		action.putValue(Action.SMALL_ICON, DELETE_IMAGE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, DELETE_IMAGE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Delete selected portrait");
-		action.putValue(Action.NAME, "Delete portrait");
-		return action;
-	}
-
-	private Action getLoadDocSignCertAction() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -2441362506867899044L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.CERTIFICATE_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					X509Certificate cert = readCertFromFile(file);
-					if(cert != null) {
-						passport.updateCOMSODFile(cert);
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer Certificate from file");
-		action.putValue(Action.NAME, "Import Doc.Cert...");
-		return action;
-
-	}
-
-	private Action getLoadCVCACertificate() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -1231362506867899044L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					CVCertificate cert = readCVCertFromFile(file);
-					if(cert != null) {
-						passport.setCVCertificate(cert);
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_CERT_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_CERT_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) EAC Terminal Root Certificate (CVCA) from file");
-		action.putValue(Action.NAME, "Import CVCA Cert...");
-		return action;
-	}
-
-	private Action getGenerateEACKeys() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -3333362506867899044L;
-
-			public void actionPerformed(ActionEvent e) {
-				try {
-					String preferredProvider = "BC";
-					Provider provider = Security.getProvider(preferredProvider);
-					KeyPairGenerator generator = KeyPairGenerator.getInstance(
-							"ECDH", provider);
-					generator.initialize(new ECGenParameterSpec(
-							PassportPersoService.EC_CURVE_NAME));
-					KeyPair keyPair = generator.generateKeyPair();
-
-					passport.setEACPrivateKey(keyPair.getPrivate());
-					passport.setEACPublicKey(keyPair.getPublic());
-				} catch (GeneralSecurityException ex) {
-					ex.printStackTrace(); /* NOTE: not silent. -- MO */
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Generate and set a pair of EAC keys");
-		action.putValue(Action.NAME, "Generate EAC keys");
-		return action;
-	}
-
-	private Action getLoadDocSignKeyAction() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -1001362506867899044L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					PrivateKey key = readPrivateRSAKeyFromFile(file);
-					passport.setDocSigningPrivateKey(key);
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Document Signer private key from file");
-		action.putValue(Action.NAME, "Import Doc.Key...");
-		return action;
-	}
-
-	private Action getLoadAAPublicKeyAction() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -8265676252065941094L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					PublicKey pubKey = readPublicRSAKeyFromFile(file);
-					if(pubKey != null) {
-						DG15File dg15 = new DG15File(pubKey);
-						passport.putFile(PassportService.EF_DG15, dg15.getEncoded());
-					}
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication public key from file");
-		action.putValue(Action.NAME, "Import AA Pub.Key...");
-		return action;
-	}
-
-	private Action getAAGenerateAction() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -2065676252065941094L;
-
-			public void actionPerformed(ActionEvent e) {
-				try {
-					KeyPairGenerator gen = KeyPairGenerator.getInstance("RSA");
-					KeyPair p = gen.generateKeyPair();
-					passport.setAAPrivateKey(p.getPrivate());
-					passport.setAAPublicKey(p.getPublic());
-				} catch(Exception ex) {
-					ex.printStackTrace();
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Generate a new pair of Active Authentication keys");
-		action.putValue(Action.NAME, "Generate AA keys");
-		return action;
-	}
-
-	private Action getLoadAAPrivateKeyAction() {
-		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -1265676252065941094L;
-
-			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					File file = fileChooser.getSelectedFile();
-					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					passport.setAAPrivateKey(readPrivateRSAKeyFromFile(file));
-					break;
-				default:
-					break;
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Active Authentication private key from file");
-		action.putValue(Action.NAME, "Import AA Priv.Key...");
 		return action;
 	}
 
@@ -1101,185 +718,5 @@ public class PassportFrame extends JFrame
 		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Public Key");
 		action.putValue(Action.NAME, "AA Pub. Key...");
 		return action;
-	}
-
-	private Action getViewAAPrivateKeyAction() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -1064369119565468811L;
-
-			public void actionPerformed(ActionEvent e) {
-				PrivateKey key = passport.getAAPrivateKey();
-				if(key != null) {
-					KeyFrame keyFrame = new KeyFrame("Active Authentication Private Key", key);
-					keyFrame.pack();
-					keyFrame.setVisible(true);
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Private Key");
-		action.putValue(Action.NAME, "AA Priv. Key...");
-		return action;
-	}
-
-	private Action getViewDocumentSignerKeyAction() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -2064369119565468811L;
-
-			public void actionPerformed(ActionEvent e) {
-				PrivateKey key = passport.getDocSigningPrivateKey(); 
-				if(key != null) {
-					KeyFrame keyFrame = new KeyFrame("Doc Signing Private Key", key);
-					keyFrame.pack();
-					keyFrame.setVisible(true);
-				}
-			}
-		};
-		action.putValue(Action.SMALL_ICON, KEY_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "View Doc Signing Private Key");
-		action.putValue(Action.NAME, "Doc Key...");
-		return action;
-	}
-
-	private Action getUploadAction() {
-		Action action = new AbstractAction() {
-
-			private static final long serialVersionUID = -1281934051651404839L;
-
-			public void actionPerformed(ActionEvent e) {
-				CardManager cm = CardManager.getInstance();
-				BACKeySpec bacEntry = passport.getBACKeySpec();
-				PublicKey aaPublicKey = null;
-				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-				if (dg15In != null) {
-					DG15File dg15 = new DG15File(dg15In);
-					aaPublicKey = dg15.getPublicKey();
-				}
-				UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
-				int choice = chooser.showOptionsDialog(getContentPane());
-				switch (choice) {
-				case UploadOptionsChooser.APPROVE_OPTION:
-					CardTerminal terminal = chooser.getSelectedTerminal();
-					boolean wasPolling = cm.isPolling(terminal);
-					try {
-						cm.stopPolling(terminal);
-						// FIXME: have to wait for the poller?
-						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
-						persoService.open();
-						if (chooser.isBACSelected()) {
-							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
-						}
-						if (aaPublicKey != null) {
-							PrivateKey k = passport.getAAPrivateKey();
-							if(k != null) {
-								persoService.putPrivateKey(k);
-							}
-						}
-						if(passport.getCVCertificate() != null) {
-							persoService.putCVCertificate(passport.getCVCertificate());
-						}
-						if(passport.getEACPrivateKey() != null) {
-							persoService.putPrivateEACKey(passport.getEACPrivateKey());
-						}
-						for (short fid: passport.getFileList()) {
-							byte[] fileBytes = passport.getFileBytes(fid);
-							persoService.createFile(fid, (short)fileBytes.length);
-							persoService.selectFile(fid);
-							ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
-							persoService.writeFile(fid, in);
-						}
-						persoService.lockApplet();
-						persoService.close();
-						// TODO: to see when it is done
-						// Proper progress bar should be implemented
-						System.out.println("Passport uploaded.");
-						//					} catch (IOException ioe) {
-						//						/* NOTE: Do nothing. */
-					} catch (CardServiceException cse) {
-						cse.printStackTrace();
-						//					} catch (GeneralSecurityException gse) {
-						//						gse.printStackTrace();
-					} finally {
-						if (wasPolling) { cm.startPolling(terminal); }
-					}
-					break;
-				default:
-					break;
-				}
-			}			
-		};
-		action.putValue(Action.SMALL_ICON, UPLOAD_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, UPLOAD_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Upload this passport to a passport applet");
-		action.putValue(Action.NAME, "Upload passport...");
-		return action;
-	}
-
-	private static PrivateKey readPrivateRSAKeyFromFile(File file) {
-		try {
-			InputStream fl = fullStream(file);
-			byte[] key = new byte[fl.available()];
-			KeyFactory kf = KeyFactory.getInstance("RSA");
-			fl.read(key, 0, fl.available());
-			fl.close();
-			PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
-			return kf.generatePrivate(keysp);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static PublicKey readPublicRSAKeyFromFile(File file) {
-		try {
-			InputStream fl = fullStream(file);
-			byte[] key = new byte[fl.available()];
-			KeyFactory kf = KeyFactory.getInstance("RSA");
-			fl.read(key, 0, fl.available());
-			fl.close();
-			X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
-			return kf.generatePublic(keysp);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static X509Certificate readCertFromFile(File file) {
-		try {
-			CertificateFactory cf = CertificateFactory.getInstance("X509");
-			InputStream certstream = fullStream(file);
-			return (X509Certificate) cf.generateCertificate(certstream);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static CVCertificate readCVCertFromFile(File f) {
-		try {
-			InputStream fl = fullStream(f);
-			byte[] data = new byte[fl.available()];
-			fl.read(data);
-			CVCObject parsedObject = CertificateParser.parseCertificate(data);
-			CVCertificate c = (CVCertificate) parsedObject;
-			return c;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static InputStream fullStream(File f) throws IOException {
-		DataInputStream dis = new DataInputStream(new FileInputStream(f));
-		byte[] bytes = new byte[(int)f.length()];
-		dis.readFully(bytes);
-		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-		dis.close();
-		return bais; /* FIXME: Why do we need this? Why not use BufferedInputStream? -- MO */
 	}
 }

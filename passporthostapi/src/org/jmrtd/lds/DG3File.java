@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2008  The JMRTD team
+ * Copyright (C) 2006 - 2010  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,7 +38,7 @@ import java.util.List;
 public class DG3File extends CBEFFDataGroup
 {
 
-	private List<FingerInfo> fingerPrints;
+	private List<FingerInfo> fingerInfos;
 
 	/**
 	 * Creates a new file based on an input stream.
@@ -60,8 +60,8 @@ public class DG3File extends CBEFFDataGroup
 		return EF_DG3_TAG;
 	}
 
-	public List<FingerInfo> getFingerPrints() {
-		return fingerPrints;
+	public List<FingerInfo> getFingerInfos() {
+		return fingerInfos;
 	}
 
 	/**
@@ -108,7 +108,7 @@ public class DG3File extends CBEFFDataGroup
 		switch (compressionAlg) {
 		case 0: break;
 		case 1: break;
-		case 2: mimeType = "images/x-wsq"; break;
+		case 2: mimeType = "image/x-wsq"; break;
 		case 3: mimeType = "image/jpeg"; break;
 		case 4: mimeType = "image/jpeg2000"; break;
 		case 5: mimeType = "image/png";  break;
@@ -121,8 +121,8 @@ public class DG3File extends CBEFFDataGroup
 	}
 
 	private void addFingerInfo(FingerInfo fingerInfo) {
-		if (fingerPrints == null) { fingerPrints = new ArrayList<FingerInfo>(); }
-		fingerPrints.add(fingerInfo);
+		if (fingerInfos == null) { fingerInfos = new ArrayList<FingerInfo>(); }
+		fingerInfos.add(fingerInfo);
 	}
 
 	private long readUnsignedLong(DataInputStream dataIn, int byteCount) throws IOException {

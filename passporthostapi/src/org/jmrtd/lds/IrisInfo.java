@@ -33,62 +33,77 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
 /**
- * Data structure for storing finger information as found in DG3.
- * Coding is based on ISO/IEC FCD 19794-4 aka Annex F.
+ * Data structure for storing iris image information as found in DG4.
+ * Coding is based on ISO/IEC FCD 19794-6 aka Annex E.
  *
  * WARNING: Work in progress.
  *
  * TODO: proper enums for data types
  * TODO: getEncoded
  * 
+ * TODO: this is just the iris image, need a class for iris feature (containing multiple images of same eye)? See DG4File class.
+ * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: $
  */
-public class FingerInfo extends DisplayedImageInfo
+public class IrisInfo extends DisplayedImageInfo
 {
-	private long fingerDataBlockLength;
-	private int fingerOrPalmPostion;
-	private int viewCount;
-	private int viewNumber;
-	private int fingerOrPalmImageQuality;
-	private int impressionType;
-	private int lineLengthH, lineLengthV;
+	public static final int
+	IMAGEFORMAT_MONO_RAW = 2, /* (0x0002) */
+	IMAGEFORMAT_RGB_RAW = 4, /* (0x0004) */
+	IMAGEFORMAT_MONO_JPEG = 6, /* (0x0006) */
+	IMAGEFORMAT_RGB_JPEG = 8, /* (0x0008) */
+	IMAGEFORMAT_MONO_JPEG_LS = 10, /* (0x000A) */
+	IMAGEFORMAT_RGB_JPEG_LS = 12, /* (0x000C) */
+	IMAGEFORMAT_MONO_JPEG2000 = 14, /* (0x000E) */
+	IMAGEFORMAT_RGB_JPEG2000 = 16; /* (0x0010) */
+
 	private BufferedImage image;
 
 	private DataInputStream dataIn;
 
-	private FingerInfo() {
-		super(TYPE_FINGER);
+	private IrisInfo() {
+		super(TYPE_IRIS);
 	}
 
-	public FingerInfo(int lotsOfParams /* TODO */) {
-		super(TYPE_FINGER);
+	public IrisInfo(int lotsOfParams /* TODO */) {
+		super(TYPE_IRIS);
 	}
 
 	/**
-	 * Constructs a new finger information record.
+	 * Constructs a new iris image record.
 	 * 
 	 * @param in input stream
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
-	FingerInfo(InputStream in, String mimeType) throws IOException {
+	IrisInfo(InputStream in, int imageFormat) throws IOException {
 		this();
 		dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
+		String mimeType = getMimeType(imageFormat);
 
-		/* Finger Information (14) */
-		fingerDataBlockLength = dataIn.readInt() & 0xFFFFFFFFL;
-		fingerOrPalmPostion = dataIn.readUnsignedByte();
-		viewCount = dataIn.readUnsignedByte();
-		viewNumber = dataIn.readUnsignedByte();
-		fingerOrPalmImageQuality = dataIn.readUnsignedByte();
-		impressionType = dataIn.readUnsignedByte();
-		lineLengthH = dataIn.readUnsignedShort();
-		lineLengthV = dataIn.readUnsignedShort();
-		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
-
-		long imageLength = fingerDataBlockLength - 14;
+		int imageNumber = dataIn.readUnsignedShort();
+		int quality = dataIn.readUnsignedByte();
+		/*
+		 * (65536*angle/360) modulo 65536
+		 * ROT_ANGLE_UNDEF = 0xFFFF
+		 * Where angle is measured in degrees from
+		 * horizontal
+		 * Used only for rectilinear images. For polar images
+		 * entry shall be ROT_ANGLE_UNDEF
+		 */
+		int rotAngleEye = dataIn.readShort();
+		/*
+		 * Rotation uncertainty = (unsigned short) round
+		 * (65536 * uncertainty/180)
+		 * Where 0 <= uncertainty < 180
+		 * ROT_UNCERTAIN_UNDEF = 0xFFFF
+		 * Where uncertainty is measured in degrees and is
+		 * the absolute value of maximum error
+		 */
+		int rotUncertainty = dataIn.readUnsignedShort();
+		long imageLength = dataIn.readInt() & 0xFFFFFFFFL;
 
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 		image = null;
@@ -129,14 +144,29 @@ public class FingerInfo extends DisplayedImageInfo
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		return "FingerInfo";
+		return "IrisInfo";
 	}
-	
+
 	public BufferedImage getImage()  {
 		return getImage(false);
 	}
-	
+
 	public BufferedImage getImage(boolean isProgressive) {
 		return image;
+	}
+
+	private static String getMimeType(int imageFormat) {
+		String mimeType = null;
+		switch (imageFormat) {
+		case IMAGEFORMAT_MONO_RAW:
+		case IMAGEFORMAT_RGB_RAW: mimeType = "image/x-raw"; break;
+		case IMAGEFORMAT_MONO_JPEG:
+		case IMAGEFORMAT_RGB_JPEG:
+		case IMAGEFORMAT_MONO_JPEG_LS:
+		case IMAGEFORMAT_RGB_JPEG_LS:  mimeType = "image/jpeg"; break;
+		case IMAGEFORMAT_MONO_JPEG2000:
+		case IMAGEFORMAT_RGB_JPEG2000: mimeType = "image/jpeg2000"; break;
+		}
+		return mimeType;
 	}
 }

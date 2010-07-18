@@ -96,7 +96,7 @@ public class DG1FileTest extends TestCase
 	public void testFile(InputStream in) {
 		try {
 			testReflexive(new DG1File(in));
-		} catch (IOException e) {
+		} catch (Exception e) {
 			fail(e.toString());
 		}
 	}
