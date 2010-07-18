@@ -49,12 +49,16 @@ General
 + ImageIO support for WSQ finger print images, using JNI wrapping around C files (http://sourceforge.net/ffpis).
 - LDAP interface (JNDI) to PKD?
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
-- Show progress during BAC testing in PassportFrame constructor
-  (especially since some MRTDs now wait for a long time after failed attempt).
-- Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
 - Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs) so that a standard profile is created.
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
-- Only go to editor mode if user explicitly indicates (default display mode should be not editable).
+- Implement DG3, DG4, FingerInfo, IrisInfo (and related classes and interfaces).
+- Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
+  FaceInfo for DG2, but a list of lists).
+- getEncoded() implementations for all *File and *Info in lds package.
+
+GUI
++ Only go to editor mode if user explicitly indicates (default display mode should be not editable).
+- Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
   Currently it's hardcoded to ID-1.
 
@@ -79,6 +83,10 @@ General
 - Support for certificate revocation lists
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 
+GUI
+- Show progress during BAC testing in PassportFrame constructor
+  (especially since some MRTDs now wait for a long time after failed attempt).
+  
 Code quality
 - Findbugs
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
