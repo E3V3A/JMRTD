@@ -890,18 +890,24 @@ public class Passport
 			}
 			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			X509Certificate countrySigningCert = null;
-			countrySigningCert = (X509Certificate)cscaStore.getCertificate(docIssuer);
+			X509Certificate certificateFromStore = null;
+			certificateFromStore = (X509Certificate)cscaStore.getCertificate(docSigningCertificate);
 
-			if (countrySigningCert == null) {
-				logger.warning("Could not find CSCA certificate");
+			if (certificateFromStore == null) {
+				logger.warning("Could not find certificate in store to check \"" + docIssuer + "\"");
 				verificationStatus.setCS(Verdict.FAILED);
 				return;
 			}
-			docSigningCertificate.verify(countrySigningCert.getPublicKey());
+			
+			if (docSigningCertificate.equals(certificateFromStore)) {
+				logger.info("Document signer found in store.");
+				verificationStatus.setCS(Verdict.SUCCEEDED);
+			}
+			
+			docSigningCertificate.verify(certificateFromStore.getPublicKey());
 			verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
 		} catch (Exception e) {
-			logger.warning("Could not find CSCA certificate. " + e.getMessage());
+			logger.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
 		}
 	}

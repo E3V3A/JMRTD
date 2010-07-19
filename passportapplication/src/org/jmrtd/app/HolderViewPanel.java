@@ -89,8 +89,6 @@ public class HolderViewPanel extends JPanel
 				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.NORTH, this);
 				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.NORTH, this);
 			} else {
-				System.out.println("DEBUG: prevComp.getWidth() == " + prevComp.getWidth());
-				System.out.println("DEBUG: prevComp.getHeight() == " + prevComp.getHeight());
 				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.SOUTH, prevComp);
 				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.SOUTH, prevComp);
 			}
@@ -100,10 +98,8 @@ public class HolderViewPanel extends JPanel
 			add(valueComp);
 			if (keyComp.getHeight() >= valueComp.getHeight()) {
 				prevComp = keyComp;
-				System.out.println("DEBUG: prevComp = keyComp");
 			} else {
 				prevComp = valueComp;
-				System.out.println("DEBUG: prevComp = valueComp");
 			}
 		}
 	}

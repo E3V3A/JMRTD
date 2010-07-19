@@ -68,23 +68,21 @@ public class CSCAStore
 	/**
 	 * Finds a certificate in this store given issuer information.
 	 * 
-	 * @param issuer identifies the issuer
+	 * @param docIssuer identifies the issuer (of the document signer)
 	 * @return a certificate or null
 	 * @throws KeyStoreException on error while reading the underlying keystore
 	 */
-	public Certificate getCertificate(X500Principal issuer) throws KeyStoreException {
+	public Certificate getCertificate(Certificate docCertificate) throws KeyStoreException {
 		if (keyStore == null) { keyStore = getKeyStore(location); }
 		Enumeration<String> aliases = keyStore.aliases();
 		while (aliases.hasMoreElements()) {
 			String alias = aliases.nextElement();
 			if (alias.length() < 3) { System.err.println("WARNING: Aliases in CSCA store not in XXn format (found: \"" + alias + "\""); }
 			Certificate certificate = keyStore.getCertificate(alias);
-			if (certificate instanceof X509Certificate) {
-				X500Principal certIssuer = ((X509Certificate)certificate).getIssuerX500Principal();
-				if (certIssuer.equals(issuer)) {
-					return certificate;
-				} else if (certIssuer.getName().equals(issuer.getName())) {
-					System.err.println("WARNING: DEBUG: (in CSCAStore) problem with equals method of X500Principal...");
+			if (docCertificate instanceof X509Certificate && certificate instanceof X509Certificate) {
+				X500Principal docIssuer = ((X509Certificate)docCertificate).getIssuerX500Principal();
+				X500Principal certSubject = ((X509Certificate)certificate).getSubjectX500Principal();
+				if (certSubject.equals(docIssuer) || certificate.equals(docCertificate)) {
 					return certificate;
 				}
 			}

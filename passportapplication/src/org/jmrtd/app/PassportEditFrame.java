@@ -1059,9 +1059,8 @@ public class PassportEditFrame extends JFrame
 					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 					SODFile	sod = new SODFile(sodIn);
 					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-					X500Principal issuer = docSigningCertificate.getIssuerX500Principal();
 					CSCAStore cscaStore = passport.getCSCAStore();
-					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(issuer);
+					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(docSigningCertificate);
 
 					if (countrySigningCert == null) {
 						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
