@@ -115,6 +115,7 @@ VERSION 0.5.0
 
 General
 - Support for certificate revocation lists
+- Check and compare date (current) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 
 GUI
@@ -124,6 +125,7 @@ GUI
 Code quality
 - Findbugs
 - Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
+- Check JavaDoc
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
