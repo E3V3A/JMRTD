@@ -25,9 +25,9 @@ import javax.security.auth.x500.X500Principal;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
-import net.sourceforge.scuba.util.Files;
 
 import org.jmrtd.CSCAStore;
+import org.jmrtd.PKCS12CSCAStore;
 
 public class CSCATest extends TestCase
 {
@@ -60,7 +60,7 @@ public class CSCATest extends TestCase
 	}
 
 	private void writeAllToStore() {
-		CSCAStore cscaStore = new CSCAStore();
+		CSCAStore cscaStore = new PKCS12CSCAStore();
 		cscaMap = new HashMap<Country, List<Certificate>>();
 		for (String c: EASY_COUNTRIES) { readCountryFromCertFile(c, cscaStore); }
 		for (String c: CZ_COUNTRIES) { readCountryFromCertFile(c, cscaStore); }

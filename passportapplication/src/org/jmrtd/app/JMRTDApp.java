@@ -73,6 +73,7 @@ import net.sourceforge.scuba.util.Icons;
 import org.jmrtd.BACStore;
 import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAStore;
+import org.jmrtd.PKCS12CSCAStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
@@ -80,6 +81,7 @@ import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.lds.MRZInfo;
+import org.jmrtd.pkd.PKDCSCAStore;
 
 /**
  * Simple graphical application to demonstrate the
@@ -138,7 +140,7 @@ public class JMRTDApp  implements PassportListener
 			PassportManager passportManager = PassportManager.getInstance();
 
 			this.bacStore = new BACStore();
-			this.cscaStore = new CSCAStore();
+			this.cscaStore = new PKCS12CSCAStore();
 			this.cvcaStore = new CVCAStore();
 
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), this.getClass());
@@ -357,11 +359,23 @@ public class JMRTDApp  implements PassportListener
 					try {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport passport = new Passport(file, cscaStore);
+						Passport passport = null; // new Passport(file, cscaStore);
+
+						/* BEGIN TEST TEST TEST */
+						try {
+							String pkdURL = "ldap://motest:389/";
+							String pkdBaseDN = "dc=data,dc=pkdDownload";
+							cscaStore = new PKDCSCAStore(pkdURL, pkdBaseDN);
+							passport = new Passport(file, cscaStore);
+						} catch (Exception ex) {
+							ex.printStackTrace();
+						}
+						/* END TEST TEST TEST */
+
 						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
 						passportFrame.setVisible(true);
-					} catch (IOException ioe) {
+					} catch (/* IO */ Exception ioe) {
 						/* NOTE: Do nothing. */
 					}
 					break;

@@ -46,7 +46,6 @@ import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.security.auth.x500.X500Principal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;

@@ -79,7 +79,8 @@ public class PreferencesPanel extends JPanel
 	private PreferencesState state;
 	private PreferencesState changedState;
 
-	private URL cscaStoreLocation, cvcaStoreLocation;
+	private String cscaStoreLocation;
+	private URL cvcaStoreLocation;
 	private Preferences preferences;
 
 	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
@@ -94,7 +95,7 @@ public class PreferencesPanel extends JPanel
 	 * @param cm the card manager
 	 * @param preferencesFile file for storing preferences
 	 */
-	public PreferencesPanel(Map<CardTerminal, Boolean> cm, URL cscaStore, URL cvcaStore, Class<?> applicationClass) {
+	public PreferencesPanel(Map<CardTerminal, Boolean> cm, String cscaStore, URL cvcaStore, Class<?> applicationClass) {
 		super(new BorderLayout());
 		this.changeListeners = new ArrayList<ChangeListener>();
 		this.cscaStoreLocation = cscaStore;
@@ -163,7 +164,7 @@ public class PreferencesPanel extends JPanel
 		state.setCVCAStore(cvcaStoreLocation);
 		final JPanel panel = new JPanel(new GridLayout(2,1));
 		panel.setBorder(BorderFactory.createTitledBorder("Certificate and key stores"));
-		final DirectoryBrowser cscaPanel = new DirectoryBrowser("CSCA store", Files.toFile(cscaStoreLocation));
+		final DirectoryBrowser cscaPanel = new DirectoryBrowser("CSCA store", new File(cscaStoreLocation));
 		cscaPanel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				File newDirectory = cscaPanel.getDirectory();
@@ -179,12 +180,12 @@ public class PreferencesPanel extends JPanel
 		cvcaPanel.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				File newDirectory = cvcaPanel.getDirectory();
-				try {
-					URL url = newDirectory.toURI().toURL();
-					state.setCSCAStore(url);
-				} catch (MalformedURLException mfue) {
-					mfue.printStackTrace();
-				}
+//				try {
+					// URL url = newDirectory.toURI().toURL();
+					state.setCSCAStore(newDirectory.getAbsolutePath());
+//				} catch (MalformedURLException mfue) {
+//					mfue.printStackTrace();
+//				}
 
 			}
 		});
@@ -261,7 +262,7 @@ public class PreferencesPanel extends JPanel
 		return state.getBACStoreLocation();
 	}
 
-	public URL getCSCAStoreLocation() {
+	public String getCSCAStoreLocation() {
 		return state.getCSCAStoreLocation();
 	}
 
@@ -408,19 +409,13 @@ public class PreferencesPanel extends JPanel
 			properties.put(JMRTDApp.CSCA_STORE_KEY, url.toString());
 		}
 
-		public URL getCSCAStoreLocation() {
-			try {
-				String value = (String)properties.get(JMRTDApp.CSCA_STORE_KEY);
-				return new URL(value);
-			} catch (MalformedURLException mfue) {
-				mfue.printStackTrace();
-				return null;
-			}
+		public String getCSCAStoreLocation() {
+			return (String)properties.get(JMRTDApp.CSCA_STORE_KEY);
 		}
 
-		public void setCSCAStore(URL url) {
-			if (url == null) { return; }
-			properties.put(JMRTDApp.CSCA_STORE_KEY, url.toString());
+		public void setCSCAStore(String location) {
+			if (location == null) { return; }
+			properties.put(JMRTDApp.CSCA_STORE_KEY, location.toString());
 		}
 
 		public URL getCVCAStoreLocation() {

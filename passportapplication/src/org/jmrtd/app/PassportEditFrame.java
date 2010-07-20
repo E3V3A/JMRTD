@@ -62,7 +62,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
-import javax.security.auth.x500.X500Principal;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
 import javax.swing.Action;

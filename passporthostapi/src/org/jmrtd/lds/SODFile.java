@@ -30,6 +30,7 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.Signature;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
@@ -106,6 +107,8 @@ public class SODFile extends PassportFile
 	private static final DERObjectIdentifier X9_SHA256_WITH_ECDSA_OID = new DERObjectIdentifier("1.2.840.10045.4.3.2");
 	private static final DERObjectIdentifier IEEE_P1363_SHA1_OID = new DERObjectIdentifier("1.3.14.3.2.26");
 
+	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	
 	private SignedData signedData;
 
 	/**
@@ -132,53 +135,53 @@ public class SODFile extends PassportFile
 				docSigningCertificate);
 	}
 
-    /**
-     * Constructs a Security Object data structure using a specified signature provider.
-     *
-     * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
-     * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
-     * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
-     * @param privateKey private key to sign the data
-     * @param docSigningCertificate the document signing certificate
-     * @param provider specific signature provider that should be used to create the signature 
-     * 
-     * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
-     * @throws CertificateException if the document signing certificate cannot be used
-     */
-    public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes,
-            PrivateKey privateKey,
-            X509Certificate docSigningCertificate, String provider)
-    throws NoSuchAlgorithmException, CertificateException {
-        signedData = createSignedData(digestAlgorithm,
-                digestEncryptionAlgorithm,
-                dataGroupHashes,
-                privateKey,
-                docSigningCertificate, provider);
-    }
-    /**
-     * Constructs a Security Object data structure.
-     *
-     * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
-     * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
-     * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
-     * @param privateKey private key to sign the data
-     * @param docSigningCertificate the document signing certificate
-     * 
-     * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
-     * @throws CertificateException if the document signing certificate cannot be used
-     */
-    public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes,
-            PrivateKey privateKey,
-            X509Certificate docSigningCertificate)
-    throws NoSuchAlgorithmException, CertificateException {
-        signedData = createSignedData(digestAlgorithm,
-                digestEncryptionAlgorithm,
-                dataGroupHashes,
-                privateKey,
-                docSigningCertificate, null);
-    }
+	/**
+	 * Constructs a Security Object data structure using a specified signature provider.
+	 *
+	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
+	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
+	 * @param privateKey private key to sign the data
+	 * @param docSigningCertificate the document signing certificate
+	 * @param provider specific signature provider that should be used to create the signature 
+	 * 
+	 * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
+	 * @throws CertificateException if the document signing certificate cannot be used
+	 */
+	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			PrivateKey privateKey,
+			X509Certificate docSigningCertificate, String provider)
+	throws NoSuchAlgorithmException, CertificateException {
+		signedData = createSignedData(digestAlgorithm,
+				digestEncryptionAlgorithm,
+				dataGroupHashes,
+				privateKey,
+				docSigningCertificate, provider);
+	}
+	/**
+	 * Constructs a Security Object data structure.
+	 *
+	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
+	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
+	 * @param privateKey private key to sign the data
+	 * @param docSigningCertificate the document signing certificate
+	 * 
+	 * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
+	 * @throws CertificateException if the document signing certificate cannot be used
+	 */
+	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			PrivateKey privateKey,
+			X509Certificate docSigningCertificate)
+	throws NoSuchAlgorithmException, CertificateException {
+		signedData = createSignedData(digestAlgorithm,
+				digestEncryptionAlgorithm,
+				dataGroupHashes,
+				privateKey,
+				docSigningCertificate, null);
+	}
 
 	/**
 	 * Constructs a Security Object data structure.
@@ -291,10 +294,12 @@ public class SODFile extends PassportFile
 		if (certs.size() != 1) {
 			System.err.println("WARNING: found " + certs.size() + " certificates");
 		}
+		X509CertificateObject certObject = null;
 		for (int i = 0; i < certs.size(); i++) {
 			X509CertificateStructure e =
 				new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
-			certSpec = new X509CertificateObject(e).getEncoded();
+			certObject = new X509CertificateObject(e);
+			certSpec = certObject.getEncoded();
 		}
 
 		/*
@@ -302,9 +307,16 @@ public class SODFile extends PassportFile
 		 * but by reconstructing it using the client's default provider we hide
 		 * the fact that we're using BC.
 		 */
-		CertificateFactory factory = CertificateFactory.getInstance("X.509");
-		X509Certificate cert = (X509Certificate)factory.generateCertificate(new ByteArrayInputStream(certSpec));
-		return cert;
+		try {
+			CertificateFactory factory = CertificateFactory.getInstance("X.509");
+			X509Certificate cert = (X509Certificate)factory.generateCertificate(new ByteArrayInputStream(certSpec));
+			return cert;
+		} catch (Exception e) {
+			/*
+			 * NOTE: Reconstructing using preferred provider didn't work?!?!
+			 */
+			return certObject;
+		}
 	}
 
 	/**
@@ -330,13 +342,19 @@ public class SODFile extends PassportFile
 
 		DERObjectIdentifier encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId();
 		String encAlgJavaString = lookupMnemonicByOID(encAlgId);
-		
+
 		// For the cases where the signature is simply a digest (haven't seen a passport like this, 
 		// thus this is guessing)
 
 		if (encAlgId.getId() == null) {
 			String digestAlg = getSignerInfo(signedData).getDigestAlgorithm().getObjectId().getId();
-			MessageDigest digest = MessageDigest.getInstance(digestAlg);
+			MessageDigest digest = null;
+			try {
+				digest = MessageDigest.getInstance(digestAlg);
+			} catch (Exception e) {
+				/* FIXME: Warn client that they should perhaps add BC as provider? */
+				digest = MessageDigest.getInstance(digestAlg, PROVIDER);
+			}
 			digest.update(eContent);
 			byte[] digestBytes = digest.digest();
 			return Arrays.equals(digestBytes, signature);
@@ -348,7 +366,7 @@ public class SODFile extends PassportFile
 			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
 			+ "withRSA/PSS";
 		}
-		
+
 		if (encAlgId.equals(PKCS1_RSA_OID)) {
 			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
 			+ "withRSA";
@@ -357,7 +375,13 @@ public class SODFile extends PassportFile
 		System.err.println("INFO: DEBUG: OID = " + encAlgId);
 		System.err.println("INFO: DEBUG: encAlgJavaString = " + encAlgJavaString);
 
-		Signature sig = Signature.getInstance(encAlgJavaString);
+		Signature sig = null;
+		try {
+			sig = Signature.getInstance(encAlgJavaString);
+		} catch (Exception e) {
+			/* FIXME: Warn client that they should perhaps add BC as provider? */
+			sig = Signature.getInstance(encAlgJavaString, PROVIDER);
+		}
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
 		return sig.verify(signature);
@@ -556,12 +580,12 @@ public class SODFile extends PassportFile
 		try {
 			byte[] dataToBeSigned = createAuthenticatedAttributes(
 					digestAlgorithm, content).getDEREncoded();
-            Signature s;
-            if (provider != null) {
-                s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
-            } else {
-                s = Signature.getInstance(digestEncryptionAlgorithm);            	
-            }
+			Signature s;
+			if (provider != null) {
+				s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
+			} else {
+				s = Signature.getInstance(digestEncryptionAlgorithm);            	
+			}
 			s.initSign(privateKey);
 			s.update(dataToBeSigned);
 			encryptedDigest = s.sign();

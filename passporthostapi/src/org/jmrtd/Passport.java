@@ -898,14 +898,14 @@ public class Passport
 				verificationStatus.setCS(Verdict.FAILED);
 				return;
 			}
-			
+
 			if (docSigningCertificate.equals(certificateFromStore)) {
 				logger.info("Document signer found in store.");
 				verificationStatus.setCS(Verdict.SUCCEEDED);
+			} else {
+				docSigningCertificate.verify(certificateFromStore.getPublicKey());
+				verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
 			}
-			
-			docSigningCertificate.verify(certificateFromStore.getPublicKey());
-			verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
 		} catch (Exception e) {
 			logger.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
