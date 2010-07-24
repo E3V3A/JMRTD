@@ -23,15 +23,21 @@
 package org.jmrtd;
 
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URLConnection;
+import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
+import java.security.UnrecoverableEntryException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import javax.security.auth.x500.X500Principal;
@@ -41,12 +47,12 @@ import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.util.Files;
 
 /**
- * Certificate store. For storing and retrieving CSCA certificates.
+ * Certificate store. For storing and retrieving certificates.
  * Backed by PKCS12 key store.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class PKCS12CSCAStore extends CSCAStore
+public class PKCS12FileStore extends TrustStore
 {
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
@@ -54,55 +60,53 @@ public class PKCS12CSCAStore extends CSCAStore
 	private static String KEY_STORE_FILE_NAME = "csca.ks";
 
 	private KeyStore keyStore;
-	private String location;
+	private URI location;
 
-	public PKCS12CSCAStore() {
+	public PKCS12FileStore() {
 		this(getDefaultKeyStoreFile());
 	}
 
-	public PKCS12CSCAStore(String location) {
+	public PKCS12FileStore(URI location) {
 		try {
-			setLocation(location);
-			keyStore = readPKCS12KeyStore(new URL(location));
+			keyStore = readPKCS12KeyStore(location);
 		} catch (KeyStoreException kse) {
 			kse.printStackTrace();
 			// FIXME: What to do? Fatal error?
-		} catch (MalformedURLException mfue) {
-			// TODO Auto-generated catch block
-			mfue.printStackTrace();
-			throw new IllegalArgumentException(mfue.getMessage());
 		}
 	}
 
-	/**
-	 * Finds a certificate in this store given issuer information.
-	 * 
-	 * @param docIssuer identifies the issuer (of the document signer)
-	 * @return a certificate or null
-	 * @throws KeyStoreException on error while reading the underlying keystore
-	 */
-	public Certificate getCertificate(Certificate docCertificate) throws KeyStoreException {
-		if (keyStore == null) {
-			try {
-				keyStore = readPKCS12KeyStore(new URL(location));
-			} catch (MalformedURLException mfue) {
-				mfue.printStackTrace();
+	public Collection<Certificate> getCertificates() {
+		List<Certificate> result = new ArrayList<Certificate>();
+		try {
+			Enumeration<String> aliases = keyStore.aliases();
+			while (aliases.hasMoreElements()) {
+				String alias = (String)aliases.nextElement();
+				Certificate certificate = keyStore.getCertificate(alias);
+				result.add(certificate);
 			}
+		} catch (KeyStoreException kse) {
+			kse.printStackTrace();
 		}
-		Enumeration<String> aliases = keyStore.aliases();
-		while (aliases.hasMoreElements()) {
-			String alias = aliases.nextElement();
-			if (alias.length() < 3) { System.err.println("WARNING: Aliases in CSCA store not in XXn format (found: \"" + alias + "\""); }
-			Certificate certificate = keyStore.getCertificate(alias);
-			if (docCertificate instanceof X509Certificate && certificate instanceof X509Certificate) {
-				X500Principal docIssuer = ((X509Certificate)docCertificate).getIssuerX500Principal();
-				X500Principal certSubject = ((X509Certificate)certificate).getSubjectX500Principal();
-				if (certSubject.equals(docIssuer) || certificate.equals(docCertificate)) {
-					return certificate;
-				}
+		return result;
+	}
+	
+	public Collection<Key> getKeys() {
+		List<Key> result = new ArrayList<Key>();
+		try {
+			Enumeration<String> aliases = keyStore.aliases();
+			while (aliases.hasMoreElements()) {
+				String alias = (String)aliases.nextElement();
+				Key certificate = keyStore.getKey(alias, null);
+				result.add(certificate);
 			}
+		} catch (KeyStoreException kse) {
+			kse.printStackTrace();
+		} catch (UnrecoverableEntryException uee) {
+			uee.printStackTrace();
+		} catch (GeneralSecurityException gse) {
+			gse.printStackTrace();
 		}
-		return null;
+		return result;
 	}
 
 	/**
@@ -116,11 +120,9 @@ public class PKCS12CSCAStore extends CSCAStore
 		Country country = getCountry(certificate);
 		String alias = (country == null) ? "unknown" : country.toAlpha2Code().toLowerCase();
 		int i = 1;
-		if (keyStore == null) { try {
-			keyStore = readPKCS12KeyStore(new URL(location));
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
-		} }
+		if (keyStore == null) {
+			keyStore = readPKCS12KeyStore(location);
+		}
 		Enumeration<String> aliases = keyStore.aliases();
 		while (aliases.hasMoreElements()) {
 			String otherAlias = aliases.nextElement();
@@ -139,12 +141,8 @@ public class PKCS12CSCAStore extends CSCAStore
 		}
 	}
 
-	public String getLocation() {
+	public URI getLocation() {
 		return location;
-	}
-
-	public void setLocation(String location) {
-		this.location = location;
 	}
 
 	private Country getCountry(Certificate cert) {
@@ -170,9 +168,9 @@ public class PKCS12CSCAStore extends CSCAStore
 	 * @return
 	 * @throws KeyStoreException
 	 */
-	private static KeyStore readPKCS12KeyStore(URL location) throws KeyStoreException {
+	private static KeyStore readPKCS12KeyStore(URI location) throws KeyStoreException {
 		try {
-			URLConnection uc = location.openConnection();
+			URLConnection uc = location.toURL().openConnection();
 			InputStream in = uc.getInputStream();
 			KeyStore ks = KeyStore.getInstance("PKCS12", PROVIDER);
 			char[] pw = "".toCharArray();
@@ -185,13 +183,13 @@ public class PKCS12CSCAStore extends CSCAStore
 		throw new KeyStoreException("Error getting keystore...");
 	}
 
-	private static String getDefaultKeyStoreFile() {
-		URL cscaFileURL = null;
+	private static URI getDefaultKeyStoreFile() {
+		URI cscaFileURL = null;
 		try {
-			cscaFileURL = new URL(Files.getBaseDir(PKCS12CSCAStore.class) + "/" + KEY_STORE_FILE_NAME);
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
+			cscaFileURL = new URI(Files.getBaseDir(PKCS12FileStore.class) + "/" + KEY_STORE_FILE_NAME);
+		} catch (URISyntaxException use) {
+			use.printStackTrace();
 		}
-		return cscaFileURL.toString();
+		return cscaFileURL;
 	}
 }

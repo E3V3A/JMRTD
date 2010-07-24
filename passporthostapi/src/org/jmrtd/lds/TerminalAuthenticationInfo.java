@@ -50,6 +50,7 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
+ * @version $Revision: $
  */
 public class TerminalAuthenticationInfo extends SecurityInfo
 {
@@ -129,9 +130,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo
      * @return the efCVCA file identifier stored in this file
      */
     public int getFileID() {
-        if (efCVCA == null) {
-            return -1;
-        }
+        if (efCVCA == null) { return -1; }
         DERSequence s = (DERSequence) efCVCA;
         DEROctetString fid = (DEROctetString) s.getObjectAt(0);
         byte[] fidBytes = fid.getOctets();
@@ -143,18 +142,12 @@ public class TerminalAuthenticationInfo extends SecurityInfo
      */
     private void checkFields() {
         try {
-            if (!checkRequiredIdentifier(oid)) {
-                throw new IllegalArgumentException("Wrong identifier: " + oid);
-            }
-            if (version != VERSION_NUM) {
-                throw new IllegalArgumentException("Wrong version");
-            }
+            if (!checkRequiredIdentifier(oid)) { throw new IllegalArgumentException("Wrong identifier: " + oid); }
+            if (version != VERSION_NUM) { throw new IllegalArgumentException("Wrong version"); }
             if (efCVCA != null) {
                 DERSequence sequence = (DERSequence) efCVCA;
                 DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
-                if (fid.getOctets().length != 2) {
-                    throw new IllegalArgumentException("Malformed FID.");
-                }
+                if (fid.getOctets().length != 2) { throw new IllegalArgumentException("Malformed FID."); }
                 if (sequence.size() == 2) {
                     DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);
                     if (sfi.getOctets().length != 1) {
@@ -164,8 +157,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo
             }
         } catch (Exception e) {
             e.printStackTrace();
-            throw new IllegalArgumentException(
-                    "Malformed TerminalAuthenticationInfo.");
+            throw new IllegalArgumentException("Malformed TerminalAuthenticationInfo.");
         }
     }
 
@@ -188,13 +180,9 @@ public class TerminalAuthenticationInfo extends SecurityInfo
      * @return the efCVCA short file identifier stored in this file
      */
     public byte getShortFileID() {
-        if (efCVCA == null) {
-            return -1;
-        }
+        if (efCVCA == null) { return -1; }
         DERSequence s = (DERSequence) efCVCA;
-        if (s.size() != 2) {
-            return -1;
-        }
+        if (s.size() != 2) { return -1; }
         return ((DEROctetString) s.getObjectAt(1)).getOctets()[0];
     }
 

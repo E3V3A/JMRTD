@@ -80,7 +80,7 @@ public class BACStorePanel extends JPanel
 	private BACStoreTable table;
 	private BACEntryField entryField;
 
-	private Action addAction, deleteAction, moveUpAction, moveDownAction;
+	// private Action addAction, deleteAction, moveUpAction, moveDownAction;
 
 	/**
 	 * Constructs the GUI.
@@ -91,15 +91,15 @@ public class BACStorePanel extends JPanel
 		super(new BorderLayout());
 		this.store = store;
 
-		moveUpAction = getMoveUpAction();
-		moveDownAction = getMoveDownAction();
-		deleteAction = getDeleteAction();
-		addAction = getAddAction();
-
 		table = new BACStoreTable();
 		entryField = new BACEntryField();
 		add(new JScrollPane(table), BorderLayout.CENTER);
 
+		Action moveUpAction = getMoveUpAction(),
+		moveDownAction = getMoveDownAction(),
+		deleteAction = getDeleteAction(),
+		addAction = getAddAction();
+		
 		JToolBar toolBar = new JToolBar();
 		JButton upButton = new JButton();
 		toolBar.add(upButton);
@@ -162,6 +162,7 @@ public class BACStorePanel extends JPanel
 
 				store.removeEntry(editingRow);
 				store.addEntry(editingRow, entry);
+				super.editingStopped(e);
 			} catch (NumberFormatException nfe) {
 				nfe.printStackTrace();
 			} catch (ParseException pe) {
@@ -264,9 +265,6 @@ public class BACStorePanel extends JPanel
 		return action;
 	}
 
-	/**
-	 * Delete the selected entry from the store (and thus from the table).
-	 */
 	private Action getMoveUpAction() {
 		Action action = new AbstractAction() {
 

@@ -27,15 +27,17 @@ import java.awt.FlowLayout;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.File;
 import java.io.Serializable;
-import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.StringTokenizer;
 import java.util.Map.Entry;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
@@ -54,8 +56,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.sourceforge.scuba.swing.DirectoryBrowser;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.swing.URIListEditor;
 
 /**
  * Preferences panel.
@@ -79,13 +80,13 @@ public class PreferencesPanel extends JPanel
 	private PreferencesState state;
 	private PreferencesState changedState;
 
-	private String cscaStoreLocation;
-	private URL cvcaStoreLocation;
 	private Preferences preferences;
 
 	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
 	private Map<ReadingMode, JRadioButton> readingModeRadioButtonMap;
 	private JCheckBox apduTracingCheckBox;
+
+	private URIListEditor cscaLocationsDisplay, cvcaLocationsDisplay;
 
 	private Collection<ChangeListener> changeListeners;
 
@@ -95,21 +96,21 @@ public class PreferencesPanel extends JPanel
 	 * @param cm the card manager
 	 * @param preferencesFile file for storing preferences
 	 */
-	public PreferencesPanel(Map<CardTerminal, Boolean> cm, String cscaStore, URL cvcaStore, Class<?> applicationClass) {
+	public PreferencesPanel(Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
 		super(new BorderLayout());
 		this.changeListeners = new ArrayList<ChangeListener>();
-		this.cscaStoreLocation = cscaStore;
-		this.cvcaStoreLocation = cvcaStore;
+
 		this.preferences = Preferences.userNodeForPackage(applicationClass);
 		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
 		this.state = new PreferencesState();
 		update();
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
-		jtb.addTab("Certificate Files", createCertificatesPanel());
+		jtb.addTab("Certificates", createCertificatesPanel());
 		add(jtb, BorderLayout.CENTER);
 
 		this.changedState = new PreferencesState(state);
+		updateGUIFromState(state);
 	}
 
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
@@ -155,43 +156,32 @@ public class PreferencesPanel extends JPanel
 		northPanel.add(readingModePreferencesPanel);
 		northPanel.add(apduTracePreferencesPanel);
 		terminalSettingsTab.add(northPanel, BorderLayout.NORTH);
-		terminalSettingsTab.add(cardTerminalsPreferencesPanel, BorderLayout.CENTER);
+		terminalSettingsTab.add(cardTerminalsPreferencesPanel, BorderLayout.SOUTH);
 		return terminalSettingsTab;
 	}
 
 	private JComponent createCertificatesPanel() {
-		state.setCSCAStore(cscaStoreLocation);
-		state.setCVCAStore(cvcaStoreLocation);
 		final JPanel panel = new JPanel(new GridLayout(2,1));
-		panel.setBorder(BorderFactory.createTitledBorder("Certificate and key stores"));
-		final DirectoryBrowser cscaPanel = new DirectoryBrowser("CSCA store", new File(cscaStoreLocation));
-		cscaPanel.addActionListener(new ActionListener() {
+		cscaLocationsDisplay = new URIListEditor("Document validation", state.getCSCAStoreLocations());
+		cscaLocationsDisplay.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				File newDirectory = cscaPanel.getDirectory();
-				try {
-					URL url = (newDirectory.toURI().toURL());
-					state.setCVCAStore(url);
-				} catch (MalformedURLException mfue) {
-					mfue.printStackTrace();
-				}
-			}
-		});
-		final DirectoryBrowser cvcaPanel = new DirectoryBrowser("CVCA store", Files.toFile(cvcaStoreLocation));
-		cvcaPanel.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				File newDirectory = cvcaPanel.getDirectory();
-//				try {
-					// URL url = newDirectory.toURI().toURL();
-					state.setCSCAStore(newDirectory.getAbsolutePath());
-//				} catch (MalformedURLException mfue) {
-//					mfue.printStackTrace();
-//				}
-
+				List<URI> uriList = cscaLocationsDisplay.getURIList();
+				changedState.setCSCAStoreLocations(uriList);
 			}
 		});
 
-		panel.add(cscaPanel);
-		panel.add(cvcaPanel);
+		panel.add(cscaLocationsDisplay);
+
+		cvcaLocationsDisplay = new URIListEditor("Access to biometrics", state.getCVCAStoreLocations());
+		cvcaLocationsDisplay.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				List<URI> uriList = cvcaLocationsDisplay.getURIList();
+				changedState.setCVCAStoreLocations(uriList);
+			}
+		});
+
+		panel.add(cvcaLocationsDisplay);
+
 		return panel;
 	}
 
@@ -242,6 +232,8 @@ public class PreferencesPanel extends JPanel
 			radioButton.setSelected(mode.equals(state.getReadingMode()));
 		}
 		apduTracingCheckBox.setSelected(state.isAPDUTracing());
+
+		cscaLocationsDisplay.setURIList(state.getCSCAStoreLocations());
 	}
 
 	public Action getSetTerminalAction(final CardTerminal terminal, final JCheckBox checkBox) {
@@ -262,12 +254,28 @@ public class PreferencesPanel extends JPanel
 		return state.getBACStoreLocation();
 	}
 
-	public String getCSCAStoreLocation() {
-		return state.getCSCAStoreLocation();
+	public List<URI> getCSCAStoreLocations() {
+		return state.getCSCAStoreLocations();
 	}
 
-	public URL getCVCAStoreLocation() {
-		return state.getCVCAStoreLocation();
+	public List<URI> getCVCAStoreLocations() {
+		return state.getCVCAStoreLocations();
+	}
+
+	public URI getCVCAStoreLocation() {
+		try {
+			List<URI> uriList = getCVCAStoreLocations();
+			if (uriList != null && uriList.size() >= 1) {
+
+				URI uri = uriList.get(0);
+				if (uri != null) {
+					return uri;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public Action getSetModeAction(final ReadingMode mode) {
@@ -409,29 +417,54 @@ public class PreferencesPanel extends JPanel
 			properties.put(JMRTDApp.CSCA_STORE_KEY, url.toString());
 		}
 
-		public String getCSCAStoreLocation() {
-			return (String)properties.get(JMRTDApp.CSCA_STORE_KEY);
+		public List<URI> getCSCAStoreLocations() {
+			return parseURIList((String)properties.get(JMRTDApp.CSCA_STORE_KEY));
 		}
 
-		public void setCSCAStore(String location) {
-			if (location == null) { return; }
-			properties.put(JMRTDApp.CSCA_STORE_KEY, location.toString());
+		public List<URI> getCVCAStoreLocations() {
+			return parseURIList((String)properties.get(JMRTDApp.CVCA_STORE_KEY));
 		}
 
-		public URL getCVCAStoreLocation() {
-			try {
-				String value = (String)properties.get(JMRTDApp.CVCA_STORE_KEY);
-				if (value == null) { return null; }
-				return new URL(value);
-			} catch (MalformedURLException mfue) {
-				mfue.printStackTrace();
-				return null;
+		private List<URI> parseURIList(String value) {
+			List<URI> result = new ArrayList<URI>();
+			if (value == null) { return result; }
+			if (!value.startsWith("[") || !value.endsWith("]")) {
+				try {
+					result.add(new URI(value.trim()));
+				} catch (URISyntaxException use) {
+					use.printStackTrace();
+				}
+				return result;
+			}
+			value = value.substring(1, value.length() - 1);
+			StringTokenizer tokenizer = new StringTokenizer(value, ", ");
+			while (tokenizer.hasMoreTokens()) {
+				String token = tokenizer.nextToken();
+				try {
+					result.add(new URI(token));
+				} catch (URISyntaxException use) {
+					use.printStackTrace();
+				}
+			}
+			return result;
+		}
+
+		public void addCSCAStoreLocation(URI location) {
+			List<URI> locations = getCSCAStoreLocations();
+			if (!locations.contains(location)) {
+				locations.add(location);
+				setCSCAStoreLocations(locations);
 			}
 		}
 
-		public void setCVCAStore(URL url) {
-			if (url == null) { return; }
-			properties.put(JMRTDApp.CVCA_STORE_KEY, url.toString());
+		public void setCSCAStoreLocations(List<URI> locations) {
+			if (locations == null) { return; }
+			properties.put(JMRTDApp.CSCA_STORE_KEY, locations.toString());
+		}
+
+		public void setCVCAStoreLocations(List<URI> locations) {
+			if (locations == null) { return; }
+			properties.put(JMRTDApp.CVCA_STORE_KEY, locations.toString());
 		}
 
 		public void load(Preferences preferences) {

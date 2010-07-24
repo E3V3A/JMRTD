@@ -46,6 +46,7 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
@@ -94,7 +95,7 @@ import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.CSCAStore;
+import org.jmrtd.TrustStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
@@ -1058,8 +1059,14 @@ public class PassportEditFrame extends JFrame
 					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 					SODFile	sod = new SODFile(sodIn);
 					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-					CSCAStore cscaStore = passport.getCSCAStore();
-					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(docSigningCertificate);
+					X509Certificate countrySigningCert = null;
+					List<TrustStore> cscaStores = passport.getCSCAStores();
+					for (TrustStore cscaStore: cscaStores) {
+						List<Certificate> chain = cscaStore.getCertificateChain(docSigningCertificate);
+						if (chain.size() > 1) {
+							countrySigningCert = (X509Certificate)chain.get(1);
+						}
+					}
 
 					if (countrySigningCert == null) {
 						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);

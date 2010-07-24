@@ -22,12 +22,12 @@
 
 package org.jmrtd;
 
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -38,8 +38,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import net.sourceforge.scuba.util.Files;
+import java.util.logging.Logger;
 
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
@@ -74,25 +73,17 @@ public class CVCAStore
 		}
 	};
 
-	/** This is slightly more flexible than "/home/sos/woj/terminals" ;) -- MO. */
-	private static final File
-	JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
-	DEFAULT_CVCA_DIR = new File(JMRTD_USER_DIR, "cvca");
-
-	private File location;
+	private URI location;
 
 	private final Map<String, List<CVCertificate>> certificateListsMap;
 	private final Map<String, PrivateKey> keysMap;
 
-	public CVCAStore() {
+	private Logger logger = Logger.getLogger("org.jmrtd");
+
+	public CVCAStore(URI location) {
 		certificateListsMap = new HashMap<String, List<CVCertificate>>();
 		keysMap = new HashMap<String, PrivateKey>();
-		try {
-			URL url = DEFAULT_CVCA_DIR.toURI().toURL();
-			setLocation(url);
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
-		}
+		setLocation(location);	
 	}
 
 	/**
@@ -112,24 +103,21 @@ public class CVCAStore
 		keysMap.put(alias, privateKey);
 	}
 
-	public URL getLocation() {
-		try {
-			return location.toURI().toURL();
-		} catch (MalformedURLException mfue) {
-			mfue.printStackTrace();
-			return null;
-		}
+	public URI getLocation() {
+		return location;
 	}
 
-	public void setLocation(URL url) {
-		this.location = Files.toFile(url);;
-		if (!location.isDirectory()) {
-			String message = "File " + location.getAbsolutePath() + " is not a directory.";
-			System.err.println("WARNING: " + message);
-			// throw new IllegalArgumentException(message);
+	public void setLocation(URI location) {
+		this.location = location;
+		if (location.getScheme() != "file") {
+			throw new IllegalArgumentException("CVCAStore can only be a directory");
+		}
+		File directory = new File(location);
+		if (!directory.isDirectory()) {
+			logger.warning("File " + directory.getAbsolutePath() + " is not a directory.");
 			return;
 		}
-		File[] dirs = location.listFiles(DIRECTORY_FILE_FILTER);
+		File[] dirs = directory.listFiles(DIRECTORY_FILE_FILTER);
 		try {
 			for (File f : dirs) { scanOneDirectory(f); }
 		} catch (Exception e) {
@@ -148,14 +136,15 @@ public class CVCAStore
 		List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
 		String keyAlgName = "RSA";
 		for (File file : certFiles) {
-			System.out.println("Found certificate file: "+file);
+			System.out.println("Found certificate file: " + file);
 			CVCertificate cvCertificate = readCVCertificateFromFile(file);
 			if (cvCertificate == null) { throw new IOException(); }
 			terminalCertificates.add(cvCertificate);
 			try {
 				keyAlgName = cvCertificate.getCertificateBody().getPublicKey().getAlgorithm();
 			} catch (NoSuchFieldException nsfe) {
-				/* FIXME: why silent? */
+				/* FIXME: Woj, this was silent?!? */
+				nsfe.printStackTrace();
 			}
 		}
 		if (keyFiles.length != 1) { throw new IOException(); }
@@ -226,31 +215,12 @@ public class CVCAStore
 	}
 
 	private static byte[] loadFile(File file) throws IOException {
-		byte[] dataBuffer = null;
-		FileInputStream inStream = null;
-		try {
-			// Simple file loader...
-			int length = (int) file.length();
-			dataBuffer = new byte[length];
-			inStream = new FileInputStream(file);
-
-			int offset = 0;
-			int readBytes = 0;
-			boolean readMore = true;
-			while (readMore) {
-				readBytes = inStream.read(dataBuffer, offset, length - offset);
-				offset += readBytes;
-				readMore = readBytes > 0 && offset != length;
-			}
-		} finally {
-			try {
-				if (inStream != null)
-					inStream.close();
-			} catch (IOException e1) {
-				System.out.println("loadFile - error when closing: " + e1);
-			}
-		}
-		return dataBuffer;
+		DataInputStream in = null;
+		byte[] result = new byte[(int)file.length()];
+		in = new DataInputStream(new FileInputStream(file));
+		in.readFully(result);
+		in.close();
+		return result;
 	}
 
 	private static CVCertificate readCVCertificateFromFile(File f) {

@@ -30,7 +30,6 @@ import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
 import org.jmrtd.PassportService;
 
-
 /**
  * Super class for passport files (EF_COM, EF_SOD, and data groups).
  * 

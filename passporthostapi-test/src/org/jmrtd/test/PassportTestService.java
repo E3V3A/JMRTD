@@ -2,6 +2,7 @@ package org.jmrtd.test;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -102,8 +103,7 @@ public class PassportTestService extends PassportService {
 	private static CVCAStore certDir = null;
 	static {
 		try {
-			certDir = new CVCAStore();
-			certDir.setLocation(new File("/home/sos/woj/terminals").toURI().toURL());
+			certDir = new CVCAStore(new URI("file:/home/sos/woj/terminals"));
 		} catch(Exception e) {
 			System.out.println("Could not load EAC terminal certificates/keys!");
 		}

@@ -23,17 +23,17 @@
 package org.jmrtd.pkd;
 
 import java.io.ByteArrayInputStream;
-import java.security.KeyStoreException;
+import java.net.URI;
+import java.security.Key;
 import java.security.Provider;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Map;
 import java.util.StringTokenizer;
 
 import javax.naming.Context;
@@ -53,74 +53,90 @@ import javax.security.auth.x500.X500Principal;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
 
-import org.jmrtd.CSCAStore;
+import org.jmrtd.TrustStore;
 
-public class PKDCSCAStore extends CSCAStore
+public class PKDCertificateStore extends TrustStore
 {
 	/** We may need this provider... */
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	//	private static final String DEFAULT_PKD_SERVER = "ldap://motest:389/";
-	//	private static final String DEFAULT_BASE_DN = "dc=data,dc=pkdDownload";
+	private static final String DEFAULT_BASE_DN = "dc=data,dc=pkdDownload";
 
 	private static final String COUNTRY_ATTRIBUTE_NAME = "c";
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 
-	private String server;
+	private URI location;
 	private DirContext context;
 	private String baseDN;
 
-	private Map<Country, List<Certificate>> countryCertificateMap;
-
-	public PKDCSCAStore(String server, String baseDN) {
-		setLocation(server);
-		setBaseDN(baseDN);
-		countryCertificateMap = new HashMap<Country, List<Certificate>>();
-		List<Country> countries = searchCountries();
-		for (Country country: countries) {
-			List<Certificate> certificates = searchCertificates(country);
-			countryCertificateMap.put(country, certificates);
-		}
+	private List<Certificate> certificates;
+	
+	public PKDCertificateStore(URI server) {
+		this(server, DEFAULT_BASE_DN);
 	}
 
-	public String getLocation() {
-		return server;
+	public PKDCertificateStore(URI server, String baseDN) {
+		this.location = server;
+		setBaseDN(baseDN);
+		certificates = new ArrayList<Certificate>();
+		new Thread(new Runnable() {
+			public void run() {
+				connect();
+				loadCertificates();
+			}
+		}).start();
+	}
+
+	public Collection<Certificate> getCertificates() {
+		return certificates;
 	}
 	
+	public Collection<Key> getKeys() {
+		return null;
+	}
+
+	public URI getLocation() {
+		return location;
+	}
+	
+	public void setLocation(URI server) {
+		this.location = server;
+		new Thread(new Runnable() {
+			public void run() {
+				connect();
+				loadCertificates();
+			}
+		}).start();
+	}
+
 	public String getBaseDN() {
 		return baseDN;
 	}
 
-	public void setLocation(String server) {
-		try {
-			this.server = server;
-			Hashtable<String, String> env = new Hashtable<String, String>();
-			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-			env.put(Context.PROVIDER_URL, server);
-			context = new InitialDirContext(env);
-		} catch (NamingException ne) {
-			ne.printStackTrace();
-			throw new IllegalArgumentException("Could not connect to server \"" + server + "\"");
-		}
-	}
-	
 	public void setBaseDN(String baseDN) {
 		this.baseDN = baseDN;
 	}
 
-	public Certificate getCertificate(Certificate docCertificate) throws KeyStoreException {
-		Country country = getIssuerCountry(docCertificate);
-		List<Certificate> certificates = countryCertificateMap.get(country);
-		for (Certificate certificate: certificates) {
-			if (docCertificate instanceof X509Certificate && certificate instanceof X509Certificate) {
-				X500Principal docIssuer = ((X509Certificate)docCertificate).getIssuerX500Principal();
-				X500Principal certSubject = ((X509Certificate)certificate).getSubjectX500Principal();
-				if (certSubject.equals(docIssuer) || certificate.equals(docCertificate)) {
-					return certificate;
-				}
-			}
+	private synchronized void connect() {
+		try {
+			context = null;
+			Hashtable<String, String> env = new Hashtable<String, String>();
+			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+			env.put(Context.PROVIDER_URL, location.toString());
+			context = new InitialDirContext(env);
+		} catch (NamingException ne) {
+			ne.printStackTrace();
+			throw new IllegalArgumentException("Could not connect to server \"" + location + "\"");
 		}
-		return null;
+	}
+
+	private synchronized void loadCertificates() {
+		List<Country> countries = searchCountries();
+		for (Country country: countries) {
+			List<Certificate> countryCertificates = searchCertificates(country);
+			certificates.addAll(countryCertificates);
+		}
 	}
 
 	private List<Country> searchCountries() {

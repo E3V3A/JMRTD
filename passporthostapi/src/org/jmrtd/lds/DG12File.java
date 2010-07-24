@@ -28,6 +28,7 @@ import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 import net.sourceforge.scuba.util.Hex;
@@ -69,6 +70,8 @@ public class DG12File extends DataGroup
 	private Date dateAndTimeOfPersonalization;
 	private String personalizationSystemSerialNumber;
 
+	private Logger logger = Logger.getLogger("org.jmrtd");
+	
 	/**
 	 * Constructs a new file.
 	 *
@@ -122,7 +125,7 @@ public class DG12File extends DataGroup
 			tagList[i] = tag;
 		}
 		for (int t: tagList) {
-			System.out.println("DEBUG: DG12 tagList entry " + Integer.toHexString(t));
+			logger.info("DG12 tagList entry " + Integer.toHexString(t));
 		}
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);

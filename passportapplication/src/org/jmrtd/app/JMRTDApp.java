@@ -31,14 +31,16 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.URI;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
 import javax.smartcardio.CardException;
@@ -71,9 +73,9 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.BACStore;
-import org.jmrtd.CSCAStore;
 import org.jmrtd.CVCAStore;
-import org.jmrtd.PKCS12CSCAStore;
+import org.jmrtd.TrustStore;
+import org.jmrtd.PKCS12FileStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
@@ -81,7 +83,7 @@ import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.lds.MRZInfo;
-import org.jmrtd.pkd.PKDCSCAStore;
+import org.jmrtd.pkd.PKDCertificateStore;
 
 /**
  * Simple graphical application to demonstrate the
@@ -109,7 +111,8 @@ public class JMRTDApp  implements PassportListener
 
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-	public static final String READING_MODE_KEY = "mode.reading",
+	public static final String
+	READING_MODE_KEY = "mode.reading",
 	TERMINAL_KEY_PREFIX = "terminal.",
 	APDU_TRACING_KEY = "trace.apdu",
 	BAC_STORE_KEY = "location.bac",
@@ -123,10 +126,12 @@ public class JMRTDApp  implements PassportListener
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
 	private BACStore bacStore;
-	private CSCAStore cscaStore;
+	private List<TrustStore> cscaStores;
 	private CVCAStore cvcaStore;
 
 	private APDUTraceFrame apduTraceFrame;
+	
+	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	/**
 	 * Constructs the GUI.
@@ -140,10 +145,8 @@ public class JMRTDApp  implements PassportListener
 			PassportManager passportManager = PassportManager.getInstance();
 
 			this.bacStore = new BACStore();
-			this.cscaStore = new PKCS12CSCAStore();
-			this.cvcaStore = new CVCAStore();
 
-			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), cscaStore.getLocation(), cvcaStore.getLocation(), this.getClass());
+			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), this.getClass());
 			preferencesPanel.addChangeListener(new ChangeListener() {
 				public void stateChanged(ChangeEvent e) {
 					updateFromPreferences();
@@ -208,9 +211,28 @@ public class JMRTDApp  implements PassportListener
 				apduTraceFrame = null;
 			}
 		}
+		this.cscaStores = new ArrayList<TrustStore>();
+		List<URI> cscaStoreLocations = preferencesPanel.getCSCAStoreLocations();
+		if (cscaStoreLocations != null) {
+			for (URI location: cscaStoreLocations) {
+				if (location == null) { logger.warning("DEBUG: location == null"); continue; }
+				TrustStore store = null;
 
-		cvcaStore.setLocation(preferencesPanel.getCVCAStoreLocation());
-		cscaStore.setLocation(preferencesPanel.getCSCAStoreLocation());
+				String scheme = location.getScheme();
+				if (scheme == null) { logger.warning("DEBUG: scheme == null, location = " + location); continue; }
+				if (scheme != null && scheme.equals("ldap")) {
+					store = new PKDCertificateStore(location);
+				} else {
+					/* TODO: Should we check that scheme is "file" or "http"? */
+					store = new PKCS12FileStore(location);
+				}
+				if (store != null) {
+					cscaStores.add(store);
+				}
+			}
+		}
+
+		this.cvcaStore = new CVCAStore(preferencesPanel.getCVCAStoreLocation());
 	}
 
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {
@@ -269,7 +291,7 @@ public class JMRTDApp  implements PassportListener
 	 * @throws CardServiceException
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
-		Passport passport = new Passport(service, cscaStore, cvcaStore, bacStore);
+		Passport passport = new Passport(service, cscaStores, cvcaStore, bacStore);
 		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
 	}
 
@@ -360,17 +382,7 @@ public class JMRTDApp  implements PassportListener
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						Passport passport = null; // new Passport(file, cscaStore);
-
-						/* BEGIN TEST TEST TEST */
-						try {
-							String pkdURL = "ldap://motest:389/";
-							String pkdBaseDN = "dc=data,dc=pkdDownload";
-							cscaStore = new PKDCSCAStore(pkdURL, pkdBaseDN);
-							passport = new Passport(file, cscaStore);
-						} catch (Exception ex) {
-							ex.printStackTrace();
-						}
-						/* END TEST TEST TEST */
+						passport = new Passport(file, cscaStores);
 
 						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
@@ -433,7 +445,7 @@ public class JMRTDApp  implements PassportListener
 								/* NOTE: skip this terminal */
 							} catch (Exception e) {
 								e.printStackTrace();
-								System.out.println("DEBUG: skipping " + terminal.getName() + ", cannot open because of " + e.toString());
+								logger.warning("DEBUG: skipping " + terminal.getName() + ", cannot open because of " + e.toString());
 							}
 						}
 					})).start();

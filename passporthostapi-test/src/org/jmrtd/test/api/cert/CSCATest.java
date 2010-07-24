@@ -26,8 +26,8 @@ import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
 
-import org.jmrtd.CSCAStore;
-import org.jmrtd.PKCS12CSCAStore;
+import org.jmrtd.TrustStore;
+import org.jmrtd.PKCS12FileStore;
 
 public class CSCATest extends TestCase
 {
@@ -60,7 +60,7 @@ public class CSCATest extends TestCase
 	}
 
 	private void writeAllToStore() {
-		CSCAStore cscaStore = new PKCS12CSCAStore();
+		TrustStore cscaStore = new PKCS12FileStore();
 		cscaMap = new HashMap<Country, List<Certificate>>();
 		for (String c: EASY_COUNTRIES) { readCountryFromCertFile(c, cscaStore); }
 		for (String c: CZ_COUNTRIES) { readCountryFromCertFile(c, cscaStore); }
@@ -89,7 +89,7 @@ public class CSCATest extends TestCase
 		}
 	}
 
-	public void readCountryFromCertFile(String alias, CSCAStore cscaStore) {
+	public void readCountryFromCertFile(String alias, TrustStore cscaStore) {
 		try {
 			System.err.println("DEBUG: testing certificate for " + alias);
 			Certificate certificate = getCertificate(alias);

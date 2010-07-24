@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
@@ -71,7 +72,7 @@ import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.CSCAStore;
+import org.jmrtd.TrustStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
@@ -119,7 +120,7 @@ public class PassportViewFrame extends JFrame
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
 
-	private Logger logger = Logger.getLogger(getClass().getSimpleName());
+	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private DisplayPreviewPanel displayPreviewPanel;
 
@@ -674,8 +675,14 @@ public class PassportViewFrame extends JFrame
 					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 					SODFile	sod = new SODFile(sodIn);
 					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-					CSCAStore cscaStore = passport.getCSCAStore();
-					X509Certificate countrySigningCert = (X509Certificate)cscaStore.getCertificate(docSigningCertificate);
+					X509Certificate countrySigningCert = null;
+					List<TrustStore> cscaStores = passport.getCSCAStores();
+					for (TrustStore cscaStore: cscaStores) {
+						List<Certificate> chain = cscaStore.getCertificateChain(docSigningCertificate);
+						if (chain.size() > 1) {
+							countrySigningCert = (X509Certificate)chain.get(1);
+						}
+					}
 
 					if (countrySigningCert == null) {
 						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
@@ -696,6 +703,7 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.NAME, "CSCA Cert...");
 		return action;
 	}
+
 
 	private Action getViewAAPublicKeyAction() {
 		Action action = new AbstractAction() {

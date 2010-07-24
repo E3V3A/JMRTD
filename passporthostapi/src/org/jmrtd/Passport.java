@@ -39,6 +39,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -121,10 +122,10 @@ public class Passport
 
 	private PrivateKey aaPrivateKey;
 
-	private Logger logger = Logger.getLogger(getClass().getSimpleName());
+	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private BACKeySpec bacKeySpec;
-	private CSCAStore cscaStore;
+	private List<TrustStore> cscaStores;
 	private CVCAStore cvcaStore;
 
 	private PassportService service;
@@ -215,7 +216,7 @@ public class Passport
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
-	public Passport(PassportService service, CSCAStore cscaStore, CVCAStore cvcaStore, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, List<TrustStore> cscaStores, CVCAStore cvcaStore, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
 		try {
@@ -223,7 +224,7 @@ public class Passport
 		} catch (Exception e) {
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
-		this.cscaStore = cscaStore;
+		this.cscaStores = cscaStores;
 		this.cvcaStore = cvcaStore;
 		bacKeySpec = null;
 
@@ -288,9 +289,9 @@ public class Passport
 		readFromService(service, cvcaStore, bacKeySpec);
 	}
 
-	public Passport(File file, CSCAStore cscaStore) throws IOException {
+	public Passport(File file, List<TrustStore> cscaStores) throws IOException {
 		this();
-		this.cscaStore = cscaStore;
+		this.cscaStores = cscaStores;
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -596,8 +597,8 @@ public class Passport
 		return docSigningPrivateKey;
 	}
 
-	public CSCAStore getCSCAStore() {
-		return cscaStore;
+	public List<TrustStore> getCSCAStores() {
+		return cscaStores;
 	}
 
 	public CVCAStore getCVCAStore() {
@@ -738,8 +739,8 @@ public class Passport
 		verifyBAC();
 		verifyEAC();
 		verifyAA(service);
-		verifyDS(service);
-		verifyCS(service);
+		verifyDS();
+		verifyCS();
 	}
 
 	/** Checks whether BAC was used. */
@@ -788,7 +789,7 @@ public class Passport
 	}
 
 	/** Checks hashes in the SOd correspond to hashes we compute. */
-	private void verifyDS(PassportService service) {
+	private void verifyDS() {
 		try {
 			InputStream comIn = getInputStream(PassportService.EF_COM);
 			COMFile com = new COMFile(comIn);
@@ -858,6 +859,12 @@ public class Passport
 			}
 
 			X509Certificate docSigningCert = sod.getDocSigningCertificate();
+			if (docSigningCert == null) {
+				logger.warning("Could not get document signer certificate from EF.SOd.");
+				// FIXME: We search for it in CSCAStore. See note at verifyCS.
+				X500Principal issuer = sod.getIssuerX500Principal();
+				BigInteger serialNumber = sod.getSerialNumber();
+			}
 			if (sod.checkDocSignature(docSigningCert)) {
 				verificationStatus.setDS(Verdict.SUCCEEDED);
 			} else {
@@ -874,10 +881,15 @@ public class Passport
 		}
 	}
 
-	/** Checks country signer certificate, if known. */
-	private void verifyCS(PassportService service) {
+	/**
+	 * Checks country signer certificate, if known.
+	 * 
+	 * FIXME: Check chain generically. Get rid of distinction verifyDS, verifyCS.
+	 */
+	private void verifyCS() {
 		try {
-			if (cscaStore == null) {
+			if (cscaStores == null) {
+				logger.warning("No certificate stores found.");
 				verificationStatus.setCS(Verdict.FAILED);
 				return;
 			}
@@ -888,21 +900,39 @@ public class Passport
 				verificationStatus.setCS(Verdict.FAILED);
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
+			X500Principal issuer = sod.getIssuerX500Principal();
+			BigInteger sodSerialNumber = sod.getSerialNumber();
 			X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			X509Certificate certificateFromStore = null;
-			certificateFromStore = (X509Certificate)cscaStore.getCertificate(docSigningCertificate);
-
-			if (certificateFromStore == null) {
-				logger.warning("Could not find certificate in store to check \"" + docIssuer + "\"");
-				verificationStatus.setCS(Verdict.FAILED);
-				return;
+			if (docSigningCertificate != null) {
+				X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
+				if (!issuer.equals(docIssuer)) {
+					logger.warning("Security object issuer principal is different from embedded DS certificate issuer!");
+					verificationStatus.setCS(Verdict.FAILED);
+				}
 			}
+			List<Certificate> chain = null;
+			for (TrustStore cscaStore: cscaStores) {
+				chain = cscaStore.getCertificateChain(docSigningCertificate);
+				chain = cscaStore.getCertificateChain(issuer, sodSerialNumber);
+				if (chain != null && chain.size() > 0) {
+					break;
+				}
+			}
+			int chainDepth = 0;
+			if (chain != null) { chainDepth = chain.size(); }
+			if (chainDepth < 1) {
+				logger.warning("Could not find certificate in store to check \"" + issuer + "\". Chain depth = " + chainDepth + ".");
+				verificationStatus.setCS(Verdict.FAILED);
+				return;				
+			}
+			
+			X509Certificate certificateFromStore = (X509Certificate)chain.get(0);
 
 			if (docSigningCertificate.equals(certificateFromStore)) {
-				logger.info("Document signer found in store.");
+				logger.info("Document signer found in store. Chain depth = " + chainDepth + ".");
 				verificationStatus.setCS(Verdict.SUCCEEDED);
 			} else {
+				logger.info("Country signer found in store. Chain depth = " + chainDepth + ". Checking signature.");
 				docSigningCertificate.verify(certificateFromStore.getPublicKey());
 				verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
 			}

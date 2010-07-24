@@ -40,6 +40,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -108,6 +109,8 @@ public class SODFile extends PassportFile
 	private static final DERObjectIdentifier IEEE_P1363_SHA1_OID = new DERObjectIdentifier("1.3.14.3.2.26");
 
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	
+	private Logger logger = Logger.getLogger("org.jmrtd");
 	
 	private SignedData signedData;
 
@@ -291,6 +294,7 @@ public class SODFile extends PassportFile
 	throws IOException, CertificateException {
 		byte[] certSpec = null;
 		ASN1Set certs = signedData.getCertificates();
+		if (certs == null || certs.size() <= 0) { return null; }
 		if (certs.size() != 1) {
 			System.err.println("WARNING: found " + certs.size() + " certificates");
 		}
@@ -372,8 +376,8 @@ public class SODFile extends PassportFile
 			+ "withRSA";
 		}
 
-		System.err.println("INFO: DEBUG: OID = " + encAlgId);
-		System.err.println("INFO: DEBUG: encAlgJavaString = " + encAlgJavaString);
+		logger.info("OID = " + encAlgId);
+		logger.info("encAlgJavaString = " + encAlgJavaString);
 
 		Signature sig = null;
 		try {
@@ -533,6 +537,26 @@ public class SODFile extends PassportFile
 			}
 			return attributesBytes;
 		}
+	}
+	
+	private IssuerAndSerialNumber getIssuerAndSerialNumber() {
+		SignerInfo signerInfo = getSignerInfo(signedData);
+		SignerIdentifier signerIdentifier = signerInfo.getSID();
+		DERSequence idSeq = (DERSequence)signerIdentifier.getId();
+		IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(idSeq);
+		return issuerAndSerialNumber;
+	}
+
+	public X500Principal getIssuerX500Principal() {
+		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
+		X509Name name = issuerAndSerialNumber.getName();
+		return new X500Principal(name.getDEREncoded());
+	}
+
+	public BigInteger getSerialNumber() {
+		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
+		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
+		return serialNumber;
 	}
 
 	/**
