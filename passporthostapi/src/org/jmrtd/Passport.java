@@ -908,12 +908,16 @@ public class Passport
 				if (!issuer.equals(docIssuer)) {
 					logger.warning("Security object issuer principal is different from embedded DS certificate issuer!");
 					verificationStatus.setCS(Verdict.FAILED);
+					return;
 				}
 			}
 			List<Certificate> chain = null;
 			for (TrustStore cscaStore: cscaStores) {
-				chain = cscaStore.getCertificateChain(docSigningCertificate);
-				chain = cscaStore.getCertificateChain(issuer, sodSerialNumber);
+				if (docSigningCertificate != null) {
+					chain = cscaStore.getCertificateChain(docSigningCertificate);
+				} else {
+					chain = cscaStore.getCertificateChain(issuer, sodSerialNumber);
+				}
 				if (chain != null && chain.size() > 0) {
 					break;
 				}
@@ -925,7 +929,7 @@ public class Passport
 				verificationStatus.setCS(Verdict.FAILED);
 				return;				
 			}
-			
+
 			X509Certificate certificateFromStore = (X509Certificate)chain.get(0);
 
 			if (docSigningCertificate.equals(certificateFromStore)) {
