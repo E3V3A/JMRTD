@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -24,16 +25,14 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
-import org.ejbca.cvc.CVCObject;
-import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CertificateParser;
+import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cvc.JMRTDCVCProvider;
 
 public abstract class PassportTesterBase extends TestCase implements
 		APDUListener {
 
 	static {
-		Security
-				.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
 	}
 
 	protected PassportTestService service = null;
@@ -113,17 +112,14 @@ public abstract class PassportTesterBase extends TestCase implements
 	}
 
     /** Reads in a CVCertficate object from a file */
-    protected static CVCertificate readCVCertificateFromFile(File f) {
-        try {
-            byte[] data = loadFile(f);
-            CVCObject parsedObject = CertificateParser.parseCertificate(data);
-            CVCertificate c = (CVCertificate) parsedObject;
-            return c;
-        } catch (Exception e) {
-            return null;
-        }
-
-    }
+	protected static CVCertificate readCVCertificateFromFile(File f) {
+		try {
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDCVCProvider());
+			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
+		} catch (Exception e) {
+			return null;
+		}
+	}
 
     /** Reads in a key file (ECDSA) */
     protected static PrivateKey readKeyFromFile(File f) {

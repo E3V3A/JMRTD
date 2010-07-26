@@ -88,19 +88,17 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-import org.ejbca.cvc.CVCObject;
-import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CertificateParser;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.TrustStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
+import org.jmrtd.TrustStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.cvc.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -819,7 +817,7 @@ public class PassportEditFrame extends JFrame
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					X509Certificate cert = readCertFromFile(file);
+					X509Certificate cert = (X509Certificate)readCertFromFile(file, "X509");
 					if(cert != null) {
 						passport.updateCOMSODFile(cert);
 					}
@@ -855,7 +853,7 @@ public class PassportEditFrame extends JFrame
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					CVCertificate cert = readCVCertFromFile(file);
+					CVCertificate cert = (CVCertificate)readCertFromFile(file, "CVC");
 					if(cert != null) {
 						passport.setCVCertificate(cert);
 					}
@@ -1233,11 +1231,10 @@ public class PassportEditFrame extends JFrame
 
 	private static PrivateKey readPrivateRSAKeyFromFile(File file) {
 		try {
-			InputStream fl = fullStream(file);
-			byte[] key = new byte[fl.available()];
+			byte[] key = new byte[(int)file.length()];
+			DataInputStream in = new DataInputStream(new FileInputStream(file));
+			in.readFully(key);
 			KeyFactory kf = KeyFactory.getInstance("RSA");
-			fl.read(key, 0, fl.available());
-			fl.close();
 			PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
 			return kf.generatePrivate(keysp);
 		} catch (Exception e) {
@@ -1248,11 +1245,10 @@ public class PassportEditFrame extends JFrame
 
 	private static PublicKey readPublicRSAKeyFromFile(File file) {
 		try {
-			InputStream fl = fullStream(file);
-			byte[] key = new byte[fl.available()];
 			KeyFactory kf = KeyFactory.getInstance("RSA");
-			fl.read(key, 0, fl.available());
-			fl.close();
+			byte[] key = new byte[(int)file.length()];
+			DataInputStream in = new DataInputStream(new FileInputStream(file));
+			in.readFully(key);
 			X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
 			return kf.generatePublic(keysp);
 		} catch (Exception e) {
@@ -1261,37 +1257,13 @@ public class PassportEditFrame extends JFrame
 		}
 	}
 
-	private static X509Certificate readCertFromFile(File file) {
+	private static Certificate readCertFromFile(File file, String algorithmName) {
 		try {
-			CertificateFactory cf = CertificateFactory.getInstance("X509");
-			InputStream certstream = fullStream(file);
-			return (X509Certificate) cf.generateCertificate(certstream);
+			CertificateFactory cf = CertificateFactory.getInstance(algorithmName);
+			return cf.generateCertificate(new FileInputStream(file));
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
 		}
-	}
-
-	private static CVCertificate readCVCertFromFile(File f) {
-		try {
-			InputStream fl = fullStream(f);
-			byte[] data = new byte[fl.available()];
-			fl.read(data);
-			CVCObject parsedObject = CertificateParser.parseCertificate(data);
-			CVCertificate c = (CVCertificate) parsedObject;
-			return c;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static InputStream fullStream(File f) throws IOException {
-		DataInputStream dis = new DataInputStream(new FileInputStream(f));
-		byte[] bytes = new byte[(int)f.length()];
-		dis.readFully(bytes);
-		ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-		dis.close();
-		return bais; /* FIXME: Why do we need this? Why not use BufferedInputStream? -- MO */
 	}
 }

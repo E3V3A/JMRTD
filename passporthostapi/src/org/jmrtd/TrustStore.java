@@ -21,12 +21,16 @@ public abstract class TrustStore
 	 * @return all certificates in this store
 	 */
 	public abstract Collection<Certificate> getCertificates();
-	
+
 	public abstract Collection<Key> getKeys();
-	
+
 	/**
 	 * Gets the certification chain for the argument certificate.
-	 * Returns a list of length 1 is the argument certificate itself occurs
+	 * It remains the caller's responsibility to check the validity of the chain.
+	 * Returns a list of length greater than or equal to 1 if the certificate itself or
+	 * the certificate's issuer's certificate occurs in this store.
+	 * Returns a list of length 0 if neither occur in this store.
+	 * 
 	 * @param docCertificate
 	 * @return
 	 */
@@ -44,11 +48,12 @@ public abstract class TrustStore
 			return chain;
 		}
 		X509Certificate issuerCertificate = getSignerCertificate(x509DocCertificate);
-		if (issuerCertificate == null) {
-			return chain;
+		if (issuerCertificate != null) {
+			if (!chain.contains(docCertificate)) {
+				chain.add(docCertificate);
+			}
+			chain.addAll(getCertificateChain(issuerCertificate)); /* NOTE: recursion! */
 		}
-		chain.add(docCertificate);
-		chain.addAll(getCertificateChain(issuerCertificate)); /* NOTE: recursion! */
 		return chain;
 	}
 

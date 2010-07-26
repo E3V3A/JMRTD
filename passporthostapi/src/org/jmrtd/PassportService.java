@@ -61,8 +61,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
-import org.ejbca.cvc.AlgorithmUtil;
-import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.cvc.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
 
@@ -434,22 +433,18 @@ public class PassportService extends PassportApduService implements Serializable
 			for (CVCertificate cert : terminalCertificates) {
 				try{
 					if(certRef == null) {
-						certRef = wrapDO((byte) 0x83, cert.getCertificateBody()
-								.getAuthorityReference().getConcatenated().getBytes());
+						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes());
 					}
 					sendMSEDST(wrapper, certRef);
-					byte[] body = getCertBodyData(cert);
-					byte[] sig = getCertSignatureData(cert);
+					byte[] body = cert.getCertBodyData();
+					byte[] sig = cert.getCertSignatureData();
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
 					// certificate
 					// is too big to fit into one APDU).
 					sendPSOExtendedLengthMode(wrapper, body, sig);
-					sigAlg = AlgorithmUtil.getAlgorithmName(cert
-							.getCertificateBody().getPublicKey()
-							.getObjectIdentifier());
-					certRef = wrapDO((byte) 0x83, cert.getCertificateBody()
-							.getHolderReference().getConcatenated().getBytes());
+					sigAlg = cert.getPublicKey().getAlgorithm();
+					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes());
 				} catch (Exception e) {
 					throw new CardServiceException(e.getMessage());
 				}
@@ -488,9 +483,7 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-	public synchronized byte[] doTA(String caReference,
-			List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
-			byte[] caKeyHash, String documentNumber)
+	public synchronized byte[] doTA(String caReference, List<CVCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
 	throws CardServiceException {
 		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
@@ -566,38 +559,7 @@ public class PassportService extends PassportApduService implements Serializable
 		return result;
 	}
 
-	private byte[] getCertBodyData(CVCertificate cert) throws IOException,
-	NoSuchFieldException {
-		return cert.getCertificateBody().getDEREncoded();
 
-	}
-
-	// TODO: this is a nasty hack, but unfortunately the cv-cert lib does not
-	// provide a proper API
-	// call for this
-	private byte[] getCertSignatureData(CVCertificate cert) throws IOException,
-	NoSuchFieldException {
-		byte[] data = cert.getDEREncoded();
-		byte[] body = cert.getCertificateBody().getDEREncoded();
-		int index = 0;
-		byte b1 = body[0];
-		byte b2 = body[1];
-		while (index < data.length) {
-			if (data[index] == b1 && data[index + 1] == b2) {
-				break;
-			}
-			index++;
-		}
-		index += body.length;
-		if (index < data.length) {
-			byte[] result = new byte[data.length - index];
-			System.arraycopy(data, index, result, 0, result.length);
-			// Sanity check:
-			assert result[0] == (byte) 0x5F && result[1] == (byte) 0x37;
-			return result;
-		}
-		return null;
-	}
 
 	/**
 	 * Adds an authentication event listener.

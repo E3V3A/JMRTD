@@ -47,7 +47,7 @@ import net.sourceforge.scuba.swing.KeyPanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.ejbca.cvc.CVCertificate;
+import org.jmrtd.cvc.CVCertificate;
 
 /**
  * Frame for displaying (and saving to file) a public card verifiable certificate.
@@ -126,7 +126,7 @@ public class CVCertificateFrame extends JFrame
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
 						FileOutputStream out = new FileOutputStream(file);
-						out.write(certificatePanel.getCertificate().getDEREncoded());
+						out.write(certificatePanel.getCertificate().getEncoded());
 						out.flush();
 						out.close();
 					} catch (Exception ex) {
@@ -167,13 +167,13 @@ public class CVCertificateFrame extends JFrame
 			StringBuffer result = new StringBuffer();
 			CVCertificate cert = (CVCertificate)certificate;
 			result.append("subject: " );
-			result.append(cert.getCertificateBody().getHolderReference().getConcatenated());
+			result.append(cert.getHolderReference().getName());
 			result.append('\n');
 			result.append("issuer: ");
-			result.append(cert.getCertificateBody().getAuthorityReference().getConcatenated());
+			result.append(cert.getAuthorityReference().getName());
 			result.append('\n');
-			result.append("Not before: " + cert.getCertificateBody().getValidFrom() + "\n");
-			result.append("Not after: " +  cert.getCertificateBody().getValidTo()+ "\n");
+			result.append("Not before: " + cert.getNotBefore() + "\n");
+			result.append("Not after: " +  cert.getNotAfter()+ "\n");
 			return result.toString();
 		}catch (Exception ex) {
 			ex.printStackTrace();
@@ -196,7 +196,7 @@ public class CVCertificateFrame extends JFrame
 				area.append(certificateToString(certificate));
 				area.setEditable(false);
 				add(new JScrollPane(area), BorderLayout.CENTER);
-				add(new KeyPanel(certificate.getCertificateBody().getPublicKey()), BorderLayout.SOUTH);
+				add(new KeyPanel(certificate.getPublicKey()), BorderLayout.SOUTH);
 			} catch(Exception ex) {
 				ex.printStackTrace();
 			}

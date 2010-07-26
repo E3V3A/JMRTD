@@ -20,7 +20,7 @@
  * $Id: $
  */
 
-package org.jmrtd;
+package org.jmrtd.test.api.cert;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -51,11 +51,11 @@ import org.ejbca.cvc.HolderReferenceField;
  */
 public class PassportCertificateGenerator {
 
-	public static final String filenameCA = "/home/sos/woj/terminals/cacert.cvcert";
+	public static final String filenameCA = "/c:/cacert.cvcert";
 
-	public static final String filenameTerminal = "/home/sos/woj/terminals/terminalcert.cvcert";
+	public static final String filenameTerminal = "/c:/terminalcert.cvcert";
 
-	public static final String filenameKey = "/home/sos/woj/terminals/terminalkey.der";
+	public static final String filenameKey = "/c:/terminalkey.der";
 
 	public static void main(String[] args) {
 		try {

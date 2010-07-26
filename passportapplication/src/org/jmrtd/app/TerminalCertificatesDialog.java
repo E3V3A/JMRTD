@@ -29,9 +29,9 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.security.cert.CertificateFactory;
 import java.util.List;
 
 import javax.swing.DefaultListModel;
@@ -44,8 +44,7 @@ import javax.swing.JScrollPane;
 
 import net.sourceforge.scuba.util.Files;
 
-import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CertificateParser;
+import org.jmrtd.cvc.CVCertificate;
 
 public class TerminalCertificatesDialog extends JDialog implements ActionListener
 {
@@ -113,8 +112,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		DefaultListModel model = new DefaultListModel();
 		try {
 			for (CVCertificate cert : certificates) {
-				model.addElement(cert.getCertificateBody().getHolderReference()
-						.getConcatenated());
+				model.addElement(cert.getHolderReference().getName());
 			}
 		} catch (Exception e) {
 			/* FIXME: silent?!? */
@@ -139,8 +137,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		} else if (C_VIEW.equals(e.getActionCommand())) {
 			int index = list.getSelectedIndex();
 			if (index != -1) {
-				CVCertificateFrame f = new CVCertificateFrame(
-						"Terminal Certificate", certificates.get(index));
+				CVCertificateFrame f = new CVCertificateFrame("Terminal Certificate", certificates.get(index));
 				f.pack();
 				f.setVisible(true);
 			}
@@ -175,12 +172,9 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		case JFileChooser.APPROVE_OPTION:
 			try {
 				File file = fileChooser.getSelectedFile();
-				byte[] certData = new byte[(int) file.length()];
-				DataInputStream in = new DataInputStream(new FileInputStream(file));
-				in.readFully(certData);
-				in.close();
-				cert = (CVCertificate) CertificateParser.parseCertificate(certData);
-				name = cert.getCertificateBody().getHolderReference().getConcatenated();
+				CertificateFactory cf = CertificateFactory.getInstance("CVC");
+				cert = (CVCertificate)cf.generateCertificate(new FileInputStream(file));
+				name = cert.getHolderReference().getName();
 			} catch (Exception ex) {
 				ex.printStackTrace();
 				/* TODO: handle this somehow */

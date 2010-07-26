@@ -40,6 +40,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,8 +68,8 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
-import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.VerificationStatus.Verdict;
+import org.jmrtd.cvc.CVCertificate;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
@@ -581,11 +582,10 @@ public class Passport
 	public void setCVCertificate(CVCertificate cert) {
 		this.cvcaCertificate = cert;
 		try {
-			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getCertificateBody().getHolderReference().getConcatenated());
+			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getHolderReference().getName());
 			putFile(cvcaFID, cvcaFile.getEncoded());
-		} catch (NoSuchFieldException ex) {
-			ex.printStackTrace();
-			/* FIXME: Woj, this was silent? -- MO */
+		} catch (CertificateException ce) {
+			ce.printStackTrace();
 		}
 	}
 

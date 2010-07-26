@@ -1,6 +1,5 @@
 package org.jmrtd.test;
 
-import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
@@ -25,12 +24,12 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
-import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
+import org.jmrtd.cvc.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;

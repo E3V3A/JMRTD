@@ -67,16 +67,16 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-import org.ejbca.cvc.CVCertificate;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.TrustStore;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
+import org.jmrtd.TrustStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.cvc.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;

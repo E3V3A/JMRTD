@@ -74,13 +74,13 @@ import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.BACStore;
 import org.jmrtd.CVCAStore;
-import org.jmrtd.TrustStore;
 import org.jmrtd.PKCS12FileStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
+import org.jmrtd.TrustStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.pkd.PKDCertificateStore;

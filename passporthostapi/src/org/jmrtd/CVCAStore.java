@@ -30,6 +30,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,9 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.ejbca.cvc.CVCObject;
-import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CertificateParser;
+import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cvc.JMRTDCVCProvider;
 
 /**
  * Stores terminal CV certificate and keys.
@@ -140,22 +141,17 @@ public class CVCAStore
 			CVCertificate cvCertificate = readCVCertificateFromFile(file);
 			if (cvCertificate == null) { throw new IOException(); }
 			terminalCertificates.add(cvCertificate);
-			try {
-				keyAlgName = cvCertificate.getCertificateBody().getPublicKey().getAlgorithm();
-			} catch (NoSuchFieldException nsfe) {
-				/* FIXME: Woj, this was silent?!? */
-				nsfe.printStackTrace();
-			}
+			keyAlgName = cvCertificate.getPublicKey().getAlgorithm();
 		}
 		if (keyFiles.length != 1) { throw new IOException(); }
 		System.out.println("Found key file: " + keyFiles[0]);
 		PrivateKey k = readKeyFromFile(keyFiles[0], keyAlgName);
 		if (k == null) { throw new IOException(); }
 		try {
-			String ref = terminalCertificates.get(0).getCertificateBody().getAuthorityReference().getConcatenated();
+			String ref = terminalCertificates.get(0).getAuthorityReference().getName();
 			addEntry(ref, terminalCertificates, k);
-		} catch (NoSuchFieldException e) {
-			throw new IOException();
+		} catch (CertificateException ce) {
+			throw new IOException(ce.getMessage());
 		}
 	}
 
@@ -225,10 +221,8 @@ public class CVCAStore
 
 	private static CVCertificate readCVCertificateFromFile(File f) {
 		try {
-			byte[] data = loadFile(f);
-			CVCObject parsedObject = CertificateParser.parseCertificate(data);
-			CVCertificate c = (CVCertificate) parsedObject;
-			return c;
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDCVCProvider());
+			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;
 		}

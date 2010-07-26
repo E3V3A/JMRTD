@@ -12,18 +12,16 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.ejbca.cvc.AccessRightEnum;
-import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.AuthorizationRoleEnum;
-import org.ejbca.cvc.CAReferenceField;
-import org.ejbca.cvc.CVCPublicKey;
-import org.ejbca.cvc.CVCertificate;
-import org.ejbca.cvc.CVCertificateBody;
-import org.ejbca.cvc.CertificateGenerator;
-import org.ejbca.cvc.HolderReferenceField;
 import org.jmrtd.PassportService;
+import org.jmrtd.cvc.CVCPrincipal;
+import org.jmrtd.cvc.CVCPublicKey;
+import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cvc.CVCertificateGenerator;
 import org.jmrtd.lds.CVCAFile;
 
 public class PassportEACTester extends PassportTesterBase {
@@ -341,7 +339,7 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c2.getCertificateBody().getValidFrom();
+          from = c2.getNotBefore();
           to = addDay(currentDate, -1);
         }catch(Exception e) {
             fail();
@@ -364,7 +362,7 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c2.getCertificateBody().getValidFrom();
+          from = c2.getNotBefore();
           to = addDay(currentDate, -1);
         }catch(Exception e) {
             fail();
@@ -389,7 +387,7 @@ public class PassportEACTester extends PassportTesterBase {
         Date from = null; Date to = null;
         try {
           from = addDay(currentDate, 1);
-          to = c2.getCertificateBody().getValidTo();
+          to = c2.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -415,7 +413,7 @@ public class PassportEACTester extends PassportTesterBase {
         Date from = null; Date to = null;
         try {
           from = addDay(currentDate, 1);
-          to = c2.getCertificateBody().getValidTo();
+          to = c2.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -443,7 +441,7 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c1.getCertificateBody().getValidFrom();
+          from = c1.getNotBefore();
           to = addDay(currentDate, -1);
         }catch(Exception e) {
             fail();
@@ -467,7 +465,7 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c1.getCertificateBody().getValidFrom();
+          from = c1.getNotBefore();
           to = addDay(currentDate, -1);
         }catch(Exception e) {
             fail();
@@ -493,7 +491,7 @@ public class PassportEACTester extends PassportTesterBase {
         Date from = null; Date to = null;
         try {
           from = addDay(currentDate, 1);
-          to = c2.getCertificateBody().getValidTo();
+          to = c2.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -520,7 +518,7 @@ public class PassportEACTester extends PassportTesterBase {
         Date from = null; Date to = null;
         try {
           from = addDay(currentDate, 1);
-          to = c2.getCertificateBody().getValidTo();
+          to = c2.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -554,12 +552,12 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(newCVCA);
         boolean putNewTrustPoint = true;
         try {
-          if(cvcaFile.getCAReference().equals(newCVCA.getCertificateBody().getHolderReference().getConcatenated())) {
+          if(cvcaFile.getCAReference().equals(newCVCA.getHolderReference().getName())) {
             putNewTrustPoint = false;
-            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());                        
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getHolderReference().getName());                        
           }else{
             assertNull(cvcaFile.getAltCAReference());
-            assertEquals(cvcaFile.getCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());            
+            assertEquals(cvcaFile.getCAReference(), origCVCA.getHolderReference().getName());            
           }
         }catch(Exception e) {
             fail();
@@ -581,8 +579,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(cvcaFile);
         System.out.println("New CVCA file: "+cvcaFile);
         try {
-            assertEquals(cvcaFile.getCAReference(), newCVCA.getCertificateBody().getHolderReference().getConcatenated());
-            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getCertificateBody().getHolderReference().getConcatenated());
+            assertEquals(cvcaFile.getCAReference(), newCVCA.getHolderReference().getName());
+            assertEquals(cvcaFile.getAltCAReference(), origCVCA.getHolderReference().getName());
         }catch(Exception e) {
             fail();  
         }
@@ -673,8 +671,8 @@ public class PassportEACTester extends PassportTesterBase {
        
         Date from = null; Date to = null;
         try {
-          from = addDay(oldRoot.getCertificateBody().getValidTo(), 1);
-          to = c0.getCertificateBody().getValidTo();
+          from = addDay(oldRoot.getNotAfter(), 1);
+          to = c0.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -706,8 +704,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(k);
         Date from = null; Date to = null;
         try {
-          from = c2.getCertificateBody().getValidFrom();
-          to = c2.getCertificateBody().getValidTo();
+          from = c2.getNotBefore();
+          to = c2.getNotAfter();
         }catch(Exception e) {
             fail();
         }
@@ -750,7 +748,7 @@ public class PassportEACTester extends PassportTesterBase {
         // then this date may be off...
         if(verify) {
             try {
-              from = c1.getCertificateBody().getValidFrom();
+              from = c1.getNotBefore();
               to = addDay(middleDate, -1);
             }catch(Exception e) {
                 fail();
@@ -796,13 +794,13 @@ public class PassportEACTester extends PassportTesterBase {
     public static CertsKeyPair createNewCertificate(CVCertificate oldCert,
             PrivateKey privateKey, int type) {
         try {
-            CVCertificateBody body = oldCert.getCertificateBody();
+//            CVCertificateBody body = oldCert.getCertificateBody();
 
-            CAReferenceField caRef = body.getAuthorityReference();
-            HolderReferenceField holderRef = body.getHolderReference();
-            Date validFrom = body.getValidFrom();
-            Date validTo = body.getValidTo();
-            AuthorizationRoleEnum role = body.getAuthorizationTemplate()
+            CVCPrincipal caRef = oldCert.getAuthorityReference();
+            CVCPrincipal holderRef = oldCert.getHolderReference();
+            Date validFrom = oldCert.getNotBefore();
+            Date validTo = oldCert.getNotAfter();
+            AuthorizationRoleEnum role = oldCert.getAuthorizationTemplate()
                     .getAuthorizationField().getRole();
             if (type == 0) {
                 role = AuthorizationRoleEnum.DV_D;
@@ -811,19 +809,16 @@ public class PassportEACTester extends PassportTesterBase {
             } else if (type == 2) {
                 role = AuthorizationRoleEnum.IS;
             }
-            AccessRightEnum rights = body.getAuthorizationTemplate()
+            AccessRightEnum rights = oldCert.getAuthorizationTemplate()
                     .getAuthorizationField().getAccessRight();
-            CVCPublicKey publicKey = body.getPublicKey();
-            String algName = AlgorithmUtil.getAlgorithmName(publicKey
-                    .getObjectIdentifier());
+            CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+            String algName = publicKey.getAlgorithm();
 
-            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA",
-                    "BC");
-            keyGen.initialize(((ECPrivateKey) privateKey).getParams(),
-                    new SecureRandom());
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
+            keyGen.initialize(((ECPrivateKey) privateKey).getParams(), new SecureRandom());
             KeyPair keyPair = keyGen.generateKeyPair();
 
-            CVCertificate newCert = CertificateGenerator.createCertificate(
+            CVCertificate newCert = CVCertificateGenerator.createCertificate(
                     keyPair.getPublic(), privateKey, algName, caRef, holderRef,
                     role, rights, validFrom, validTo, "BC");
             return new CertsKeyPair(newCert, keyPair.getPrivate());
@@ -851,24 +846,23 @@ public class PassportEACTester extends PassportTesterBase {
             PrivateKey privateKey, String dvPattern, int chainLengthIS) {
         try {
             List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
-            CAReferenceField caRef = null;
+            CVCPrincipal caRef = null;
             CVCertificate prevCert = null;
             PublicKey prevKey = null;
             for (CVCertificate oldCert : oldCerts) {
-                int chainLength = oldCert.getCertificateBody().getAuthorizationTemplate().getAuthorizationField().getRole() == AuthorizationRoleEnum.IS ? chainLengthIS : dvPattern.length();
+                int chainLength = oldCert.getAuthorizationTemplate().getAuthorizationField().getRole() == AuthorizationRoleEnum.IS ? chainLengthIS : dvPattern.length();
                 for (int i = 0; i < chainLength; i++) {
-                    CVCertificateBody body = oldCert.getCertificateBody();
+                    // CVCertificateBody body = oldCert.getCertificateBody();
                     if (caRef == null) {
-                        caRef = body.getAuthorityReference();
+                        caRef = oldCert.getAuthorityReference();
                     }
-                    HolderReferenceField holderRef = body.getHolderReference();
-                    if (holderRef.getConcatenated().equals(
-                            caRef.getConcatenated())) {
+                    CVCPrincipal holderRef = oldCert.getHolderReference();
+                    if (holderRef.getName().equals(caRef.getName())) {
                         holderRef = increase(holderRef);
                     }
-                    Date validFrom = body.getValidFrom();
-                    Date validTo = body.getValidTo();
-                    AuthorizationRoleEnum role = body
+                    Date validFrom = oldCert.getNotBefore();
+                    Date validTo = oldCert.getNotAfter();
+                    AuthorizationRoleEnum role = oldCert
                             .getAuthorizationTemplate().getAuthorizationField()
                             .getRole();
                     
@@ -884,26 +878,24 @@ public class PassportEACTester extends PassportTesterBase {
                         default:
                         }
                     }
-                    AccessRightEnum rights = body.getAuthorizationTemplate()
+                    AccessRightEnum rights = oldCert.getAuthorizationTemplate()
                             .getAuthorizationField().getAccessRight();
-                    CVCPublicKey publicKey = body.getPublicKey();
-                    String algName = AlgorithmUtil.getAlgorithmName(publicKey
-                            .getObjectIdentifier());
+                    CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+                    String algName = publicKey.getAlgorithm();
 
-                    KeyPairGenerator keyGen = KeyPairGenerator.getInstance(
-                            "ECDSA", "BC");
+                    KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
                     keyGen.initialize(((ECPrivateKey) privateKey).getParams(),
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CertificateGenerator
+                    CVCertificate newCert = CVCertificateGenerator
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef, role, rights,
                                     validFrom, validTo, "BC");
                     newCerts.add(newCert);
                     privateKey = keyPair.getPrivate();
-                    caRef = new CAReferenceField(holderRef.getCountry(),
-                            holderRef.getMnemonic(), holderRef.getSequence());
+                    caRef = new CVCPrincipal(holderRef.getCountry(),
+                            holderRef.getMnemonic(), holderRef.getSeqNumber());
                     oldCert = newCert;
                     // We want to make sure that the chain that we created is correct:
                     if(prevCert != null) {
@@ -938,14 +930,14 @@ public class PassportEACTester extends PassportTesterBase {
             CVCertificate prevCert = null;
             PublicKey prevKey = null;
             for (CVCertificate oldCert : oldCerts) {
-                    CVCertificateBody body = oldCert.getCertificateBody();
-                    CAReferenceField caRef = body.getAuthorityReference();
-                    HolderReferenceField holderRef = body.getHolderReference();
-                    AuthorizationRoleEnum role = body
+//                    CVCertificateBody body = oldCert.getCertificateBody();
+                    CVCPrincipal caRef = oldCert.getAuthorityReference();
+                    CVCPrincipal holderRef = oldCert.getHolderReference();
+                    AuthorizationRoleEnum role = oldCert
                             .getAuthorizationTemplate().getAuthorizationField()
                             .getRole();
-                    Date validFrom = body.getValidFrom();
-                    Date validTo = body.getValidTo();                    
+                    Date validFrom = oldCert.getNotBefore();
+                    Date validTo = oldCert.getNotAfter();                    
                     if (role == AuthorizationRoleEnum.DV_D && makeForeign) {
                         role = AuthorizationRoleEnum.DV_F;
                     }
@@ -953,11 +945,10 @@ public class PassportEACTester extends PassportTesterBase {
                         validFrom = from;
                         validTo = to;
                     }
-                    AccessRightEnum rights = body.getAuthorizationTemplate()
+                    AccessRightEnum rights = oldCert.getAuthorizationTemplate()
                             .getAuthorizationField().getAccessRight();
-                    CVCPublicKey publicKey = body.getPublicKey();
-                    String algName = AlgorithmUtil.getAlgorithmName(publicKey
-                            .getObjectIdentifier());
+                    CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+                    String algName = publicKey.getAlgorithm();
 
                     KeyPairGenerator keyGen = KeyPairGenerator.getInstance(
                             "ECDSA", "BC");
@@ -965,7 +956,7 @@ public class PassportEACTester extends PassportTesterBase {
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CertificateGenerator
+                    CVCertificate newCert = CVCertificateGenerator
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef, role, rights,
                                     validFrom, validTo, "BC");
@@ -997,27 +988,27 @@ public class PassportEACTester extends PassportTesterBase {
             PrivateKey oldRootPrivateKey, long timeShift, CVCertificate oldDVDCert,
             CVCertificate oldISCert) {
         try {
-        CVCertificateBody body = oldRootCert.getCertificateBody();
-        CVCPublicKey publicKey = body.getPublicKey();
-        String country = body.getAuthorityReference().getCountry();
-        String mnemonic = body.getAuthorityReference().getMnemonic();
-        String sequence = body.getAuthorityReference().getSequence();
-        CAReferenceField caRef = new CAReferenceField(country,mnemonic,sequence);
+//        CVCertificateBody body = oldRootCert.getCertificateBody();
+        CVCPublicKey publicKey = (CVCPublicKey)oldRootCert.getPublicKey();
+        Country country = oldRootCert.getAuthorityReference().getCountry();
+        String mnemonic = oldRootCert.getAuthorityReference().getMnemonic();
+        String sequence = oldRootCert.getAuthorityReference().getSeqNumber();
+        CVCPrincipal caRef = new CVCPrincipal(country, mnemonic, sequence);
         sequence = increase(sequence);
-        HolderReferenceField holderRef = new HolderReferenceField(country,mnemonic,sequence);
-        Date validFrom = body.getValidFrom();
-        Date validTo = body.getValidTo();
+        CVCPrincipal holderRef = new CVCPrincipal(country, mnemonic, sequence);
+        Date validFrom = oldRootCert.getNotBefore();
+        Date validTo = oldRootCert.getNotAfter();
         validFrom.setTime((long)(validFrom.getTime() + timeShift));
         validTo.setTime((long)(validTo.getTime() + timeShift));
-        AuthorizationRoleEnum role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
-        AccessRightEnum rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
-        String algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+        AuthorizationRoleEnum role = oldRootCert.getAuthorizationTemplate().getAuthorizationField().getRole();
+        AccessRightEnum rights = oldRootCert.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        String algName = publicKey.getAlgorithm();
 
         KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newRootKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newRootCertificate = CertificateGenerator.createCertificate(
+        CVCertificate newRootCertificate = CVCertificateGenerator.createCertificate(
                 newRootKeyPair.getPublic(), oldRootPrivateKey,
                 algName, caRef, holderRef, role, rights, validFrom,
                 validTo, "BC");
@@ -1026,56 +1017,56 @@ public class PassportEACTester extends PassportTesterBase {
         
         // do not overwrite!
         if(!newCVCAcert.exists()) {
-          writeFile(newCVCAcert, newRootCertificate.getDEREncoded());
+          writeFile(newCVCAcert, newRootCertificate.getEncoded());
         }
         if(!newCVCAkey.exists()) {
           writeFile(newCVCAkey, newRootKeyPair.getPrivate().getEncoded());
         }
         
         
-        body = oldDVDCert.getCertificateBody();
-        publicKey = body.getPublicKey();
-        caRef = new CAReferenceField(country, mnemonic, sequence);
-        holderRef = body.getHolderReference();
-        validFrom = body.getValidFrom();
-        validTo = body.getValidTo();
-        role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
-        rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
-        algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+//        body = oldDVDCert.getCertificateBody();
+        publicKey = (CVCPublicKey)oldDVDCert.getPublicKey();
+        caRef = new CVCPrincipal(country, mnemonic, sequence);
+        holderRef = oldDVDCert.getHolderReference();
+        validFrom = oldDVDCert.getNotBefore();
+        validTo = oldDVDCert.getNotAfter();
+        role = oldDVDCert.getAuthorizationTemplate().getAuthorizationField().getRole();
+        rights = oldDVDCert.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        algName = publicKey.getAlgorithm();
 
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newDVDKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newDVDCertificate = CertificateGenerator.createCertificate(
+        CVCertificate newDVDCertificate = CVCertificateGenerator.createCertificate(
                 newDVDKeyPair.getPublic(), newRootKeyPair.getPrivate(),
                 algName, caRef, holderRef, role, rights, validFrom,
                 validTo, "BC");
         if(!newDVDcert.exists()) {
-            writeFile(newDVDcert, newDVDCertificate.getDEREncoded());
+            writeFile(newDVDcert, newDVDCertificate.getEncoded());
           }
 
         System.out.println("newDVD: "+newDVDCertificate);
         
 
-        body = oldISCert.getCertificateBody();
-        publicKey = body.getPublicKey();
-        caRef = body.getAuthorityReference();
-        holderRef = body.getHolderReference();
-        validFrom = body.getValidFrom();
-        validTo = body.getValidTo();
-        role = body.getAuthorizationTemplate().getAuthorizationField().getRole();
-        rights = body.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
-        algName = AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
+//        body = oldISCert.getCertificateBody();
+        publicKey = (CVCPublicKey)oldISCert.getPublicKey();
+        caRef = oldISCert.getAuthorityReference();
+        holderRef = oldISCert.getHolderReference();
+        validFrom = oldISCert.getNotBefore();
+        validTo = oldISCert.getNotAfter();
+        role = oldISCert.getAuthorizationTemplate().getAuthorizationField().getRole();
+        rights = oldISCert.getAuthorizationTemplate().getAuthorizationField().getAccessRight();
+        algName = publicKey.getAlgorithm();
 
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newISKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newISCertificate = CertificateGenerator.createCertificate(
+        CVCertificate newISCertificate = CVCertificateGenerator.createCertificate(
                 newISKeyPair.getPublic(), newDVDKeyPair.getPrivate(),
                 algName, caRef, holderRef, role, rights, validFrom,
                 validTo, "BC");
         if(!newIScert.exists()) {
-            writeFile(newIScert, newISCertificate.getDEREncoded());
+            writeFile(newIScert, newISCertificate.getEncoded());
           }
         if(!newISkey.exists()) {
             writeFile(newISkey, newISKeyPair.getPrivate().getEncoded());
@@ -1105,7 +1096,7 @@ public class PassportEACTester extends PassportTesterBase {
         long from = 0;
         long now = 0;
         try {
-          from = rootCert.getCertificateBody().getValidFrom().getTime();
+          from = rootCert.getNotBefore().getTime();
           now = currentPassportDate.getTime();
         }catch(Exception e) {
           fail();  
@@ -1115,20 +1106,12 @@ public class PassportEACTester extends PassportTesterBase {
         newCVCAkey.exists());
     }
     
-    private static CAReferenceField increase(CAReferenceField f) {
-        String c = f.getCountry();
+    private static CVCPrincipal increase(CVCPrincipal f) {
+        Country c = f.getCountry();
         String m = f.getMnemonic();
-        String s = f.getSequence();
+        String s = f.getSeqNumber();
         s = increase(s);
-        return new CAReferenceField(c, m, s);
-    }
-
-    private static HolderReferenceField increase(HolderReferenceField f) {
-        String c = f.getCountry();
-        String m = f.getMnemonic();
-        String s = f.getSequence();
-        s = increase(s);
-        return new HolderReferenceField(c, m, s);
+        return new CVCPrincipal(c, m, s);
     }
 
     private static String increase(String c) {
