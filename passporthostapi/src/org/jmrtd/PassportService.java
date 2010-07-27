@@ -55,6 +55,7 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.FileInfo;
 import net.sourceforge.scuba.smartcards.FileSystemStructured;
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -192,6 +193,8 @@ public class PassportService extends PassportApduService implements Serializable
 	public static final byte SF_CVCA = 0x1C;
 
 	public static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	
+	private final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
 	/**
 	 * The file read block size, some passports cannot handle large values
@@ -437,7 +440,7 @@ public class PassportService extends PassportApduService implements Serializable
 					}
 					sendMSEDST(wrapper, certRef);
 					byte[] body = cert.getCertBodyData();
-					byte[] sig = cert.getCertSignatureData();
+					byte[] sig = (new BERTLVObject(TAG_CVCERTIFICATE_SIGNATURE, cert.getSignature())).getEncoded();
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
 					// certificate

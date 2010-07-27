@@ -15,13 +15,16 @@ import java.util.Date;
 
 import net.sourceforge.scuba.data.ISOCountry;
 
-import org.ejbca.cvc.CVCAuthorizationTemplate;
 import org.ejbca.cvc.ReferenceField;
 
 /**
  * CVCertificates as specified in TR 03110.
- * Just a wrapper around <code>org.ejbca.cvc.CVCertificate</code> so that we can subclass
- * <code>java.security.cert.Certificate</code>.
+ * 
+ * Just a wrapper around <code>org.ejbca.cvc.CVCertificate</code> by Keijo Kurkinen of EJBCA.org,
+ * so that we can subclass <code>java.security.cert.Certificate</code>.
+ * 
+ * We also hide some of the internal structure (no more calls to get the "body" just to get some
+ * attributes).
  */
 public class CVCertificate extends Certificate
 {
@@ -78,39 +81,6 @@ public class CVCertificate extends Certificate
 		cvCertificate.verify(key, provider);
 	}
 
-	// TODO: this is a nasty hack, but unfortunately the cv-cert lib does not
-	// provide a proper API
-	// call for this
-	//
-	// Woj, this used to live in PassportService. Moved it here... -- MO
-	public byte[] getCertSignatureData() throws IOException,
-	CertificateException {
-		try {
-			byte[] data = cvCertificate.getDEREncoded();
-			byte[] body = cvCertificate.getCertificateBody().getDEREncoded();
-			int index = 0;
-			byte b1 = body[0];
-			byte b2 = body[1];
-			while (index < data.length) {
-				if (data[index] == b1 && data[index + 1] == b2) {
-					break;
-				}
-				index++;
-			}
-			index += body.length;
-			if (index < data.length) {
-				byte[] result = new byte[data.length - index];
-				System.arraycopy(data, index, result, 0, result.length);
-				// Sanity check:
-				assert result[0] == (byte) 0x5F && result[1] == (byte) 0x37;
-				return result;
-			}
-			return null;
-		} catch (NoSuchFieldException nsfe) {
-			throw new CertificateException(nsfe.getMessage());
-		}
-	}
-
 	public byte[] getCertBodyData() throws CertificateException, IOException {
 		try {
 			return cvCertificate.getCertificateBody().getDEREncoded();
@@ -161,15 +131,43 @@ public class CVCertificate extends Certificate
 		}
 	}
 
-	public CVCAuthorizationTemplate getAuthorizationTemplate() throws NoSuchFieldException {
-		return (CVCAuthorizationTemplate)cvCertificate.getCertificateBody().getAuthorizationTemplate();
+	/**
+	 * Gets the holder authorization template.
+	 * 
+	 * @return the holder authorization template
+	 * @throws CertificateException
+	 */
+	public CVCAuthorizationTemplate getAuthorizationTemplate() throws CertificateException {
+		try {
+			org.ejbca.cvc.CVCAuthorizationTemplate template = cvCertificate.getCertificateBody().getAuthorizationTemplate();
+			return new CVCAuthorizationTemplate(template);
+		} catch (NoSuchFieldException nsfe) {
+			throw new CertificateException(nsfe.getMessage());
+		}
 	}
 
-//	public org.ejbca.cvc.CVCertificateBody getCertificateBody() throws NoSuchFieldException {
-//		return cvCertificate.getCertificateBody();
-//	}
+	/**
+	 * Returns the signature (just the value, without the <code>0x5F37</code> tag).
+	 * @return the signature bytes
+	 * 
+	 * @throws CertificateException if certificate doesn't contain a signature
+	 */
+	public byte[] getSignature() throws CertificateException {
+		try {
+			return cvCertificate.getSignature();
+		} catch (NoSuchFieldException nsfe) {
+			throw new CertificateException(nsfe.getMessage());
+		}
+	}
 
-	public byte[] getSignature() throws NoSuchFieldException {
-		return cvCertificate.getSignature();
+	public boolean equals(Object otherObj) {
+		if (otherObj == null) { return false; }
+		if (this == otherObj) { return true; }
+		if (!this.getClass().equals(otherObj.getClass())) { return false; }
+		return this.cvCertificate.equals(((CVCertificate)otherObj).cvCertificate);
+	}
+
+	public int hashCode() {
+		return cvCertificate.hashCode() * 2 - 1030507011;
 	}
 }
