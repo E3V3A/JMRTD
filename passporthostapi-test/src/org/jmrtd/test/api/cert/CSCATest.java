@@ -26,8 +26,8 @@ import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
 
-import org.jmrtd.PKCS12FileStore;
-import org.jmrtd.TrustStore;
+import org.jmrtd.cert.PKCS12FileStore;
+import org.jmrtd.cert.TrustStore;
 
 public class CSCATest extends TestCase
 {

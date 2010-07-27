@@ -1,9 +1,11 @@
-package org.jmrtd;
+package org.jmrtd.cert;
 
 import java.math.BigInteger;
 import java.net.URI;
 import java.security.Key;
+import java.security.cert.CertSelector;
 import java.security.cert.Certificate;
+import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -13,6 +15,7 @@ import javax.security.auth.x500.X500Principal;
 
 public abstract class TrustStore
 {
+	
 	public abstract URI getLocation();
 
 	/**
@@ -20,8 +23,8 @@ public abstract class TrustStore
 	 * 
 	 * @return all certificates in this store
 	 */
-	public abstract Collection<Certificate> getCertificates();
-
+	public abstract Collection<? extends Certificate> getCertificates(CertSelector selector);
+	
 	public abstract Collection<Key> getKeys();
 
 	/**
@@ -34,8 +37,10 @@ public abstract class TrustStore
 	 * @param docCertificate
 	 * @return
 	 */
-	public List<Certificate> getCertificateChain(Certificate docCertificate) {
-		Collection<Certificate> certificates = getCertificates();
+	public List<Certificate> getCertPath(Certificate docCertificate) {
+		X509CertSelector selector = new X509CertSelector();
+		selector.setSubject(((X509Certificate)docCertificate).getSubjectX500Principal());
+		Collection<? extends Certificate> certificates = getCertificates(selector);
 		List<Certificate> chain = new LinkedList<Certificate>();
 		if (certificates.contains(docCertificate)) {
 			chain.add(docCertificate);
@@ -52,14 +57,14 @@ public abstract class TrustStore
 			if (!chain.contains(docCertificate)) {
 				chain.add(docCertificate);
 			}
-			chain.addAll(getCertificateChain(issuerCertificate)); /* NOTE: recursion! */
+			chain.addAll(getCertPath(issuerCertificate)); /* NOTE: recursion! */
 		}
 		return chain;
 	}
 
 	public List<Certificate> getCertificateChain(X500Principal issuer, BigInteger serialNumber) {
 		X509Certificate issuerCertificate = (X509Certificate)getSignerCertificate(issuer, serialNumber);
-		List<Certificate> chain = getCertificateChain(issuerCertificate);
+		List<Certificate> chain = getCertPath(issuerCertificate);
 		return chain;
 	}
 
@@ -70,7 +75,14 @@ public abstract class TrustStore
 	 * @return
 	 */
 	private Certificate getSignerCertificate(X500Principal docIssuer, BigInteger serialNumber) {
-		Collection<Certificate> certificates = getCertificates();
+		X509CertSelector selector = new X509CertSelector();
+		selector.setIssuer(docIssuer);
+		selector.setSerialNumber(serialNumber);
+		
+		Collection<? extends Certificate> certificates = getCertificates(selector);
+		
+		System.out.println("DEBUG: certificates.size() == " + certificates.size());
+		
 		for (Certificate certificate: certificates) {
 			if (certificate instanceof X509Certificate) {
 				X509Certificate x509Certificate = (X509Certificate)certificate;
@@ -85,8 +97,10 @@ public abstract class TrustStore
 	}
 
 	private X509Certificate getSignerCertificate(X509Certificate docSignerCertificate) {
-		Collection<Certificate> certificates = getCertificates();
 		X500Principal docIssuer = docSignerCertificate.getIssuerX500Principal();
+		X509CertSelector selector = new X509CertSelector();
+		selector.setIssuer(docIssuer);
+		Collection<? extends Certificate> certificates = getCertificates(selector);
 		for (Certificate certificate: certificates) {
 			if (certificate instanceof X509Certificate) {
 				X509Certificate x509Certificate = (X509Certificate)certificate;

@@ -16,13 +16,13 @@ import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.jmrtd.PassportService;
-import org.jmrtd.cvc.CVCAuthorizationTemplate;
-import org.jmrtd.cvc.CVCPrincipal;
-import org.jmrtd.cvc.CVCPublicKey;
-import org.jmrtd.cvc.CVCertificate;
-import org.jmrtd.cvc.CVCertificateGenerator;
-import org.jmrtd.cvc.CVCAuthorizationTemplate.Permission;
-import org.jmrtd.cvc.CVCAuthorizationTemplate.Role;
+import org.jmrtd.cert.CVCAuthorizationTemplate;
+import org.jmrtd.cert.CVCPrincipal;
+import org.jmrtd.cert.CVCPublicKey;
+import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CVCertificateBuilder;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.lds.CVCAFile;
 
 public class PassportEACTester extends PassportTesterBase {
@@ -815,7 +815,7 @@ public class PassportEACTester extends PassportTesterBase {
             keyGen.initialize(((ECPrivateKey) privateKey).getParams(), new SecureRandom());
             KeyPair keyPair = keyGen.generateKeyPair();
 
-            CVCertificate newCert = CVCertificateGenerator.createCertificate(
+            CVCertificate newCert = CVCertificateBuilder.createCertificate(
                     keyPair.getPublic(), privateKey, algName, caRef, holderRef,
                     new CVCAuthorizationTemplate(role, rights), validFrom, validTo, "BC");
             return new CertsKeyPair(newCert, keyPair.getPrivate());
@@ -882,7 +882,7 @@ public class PassportEACTester extends PassportTesterBase {
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CVCertificateGenerator
+                    CVCertificate newCert = CVCertificateBuilder
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef, new CVCAuthorizationTemplate(role, rights),
                                     validFrom, validTo, "BC");
@@ -950,7 +950,7 @@ public class PassportEACTester extends PassportTesterBase {
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CVCertificateGenerator
+                    CVCertificate newCert = CVCertificateBuilder
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef,
                                     new CVCAuthorizationTemplate(role, rights),
@@ -1003,7 +1003,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newRootKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newRootCertificate = CVCertificateGenerator.createCertificate(
+        CVCertificate newRootCertificate = CVCertificateBuilder.createCertificate(
                 newRootKeyPair.getPublic(), oldRootPrivateKey,
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights), validFrom,
@@ -1033,7 +1033,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newDVDKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newDVDCertificate = CVCertificateGenerator.createCertificate(
+        CVCertificate newDVDCertificate = CVCertificateBuilder.createCertificate(
                 newDVDKeyPair.getPublic(), newRootKeyPair.getPrivate(),
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights),
@@ -1058,7 +1058,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newISKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newISCertificate = CVCertificateGenerator.createCertificate(
+        CVCertificate newISCertificate = CVCertificateBuilder.createCertificate(
                 newISKeyPair.getPublic(), newDVDKeyPair.getPrivate(),
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights),

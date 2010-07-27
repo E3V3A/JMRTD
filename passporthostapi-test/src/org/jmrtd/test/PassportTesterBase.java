@@ -25,8 +25,8 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.cvc.CVCertificate;
-import org.jmrtd.cvc.JMRTDCVCProvider;
+import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.JMRTDSecurityProvider;
 
 public abstract class PassportTesterBase extends TestCase implements
 		APDUListener {
@@ -114,7 +114,7 @@ public abstract class PassportTesterBase extends TestCase implements
     /** Reads in a CVCertficate object from a file */
 	protected static CVCertificate readCVCertificateFromFile(File f) {
 		try {
-			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDCVCProvider());
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDSecurityProvider());
 			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;

@@ -47,7 +47,7 @@ import net.sourceforge.scuba.swing.KeyPanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 
 /**
  * Frame for displaying (and saving to file) a public card verifiable certificate.

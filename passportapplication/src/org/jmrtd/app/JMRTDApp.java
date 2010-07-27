@@ -74,16 +74,16 @@ import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.BACStore;
 import org.jmrtd.CVCAStore;
-import org.jmrtd.PKCS12FileStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
-import org.jmrtd.TrustStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.cert.PKCS12FileStore;
+import org.jmrtd.cert.PKDCertStore;
+import org.jmrtd.cert.TrustStore;
 import org.jmrtd.lds.MRZInfo;
-import org.jmrtd.pkd.PKDCertificateStore;
 
 /**
  * Simple graphical application to demonstrate the
@@ -221,7 +221,7 @@ public class JMRTDApp  implements PassportListener
 				String scheme = location.getScheme();
 				if (scheme == null) { logger.warning("DEBUG: scheme == null, location = " + location); continue; }
 				if (scheme != null && scheme.equals("ldap")) {
-					store = new PKDCertificateStore(location);
+					store = new PKDCertStore(location);
 				} else {
 					/* TODO: Should we check that scheme is "file" or "http"? */
 					store = new PKCS12FileStore(location);

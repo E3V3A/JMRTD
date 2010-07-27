@@ -62,7 +62,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
 

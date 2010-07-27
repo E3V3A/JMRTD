@@ -42,8 +42,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.jmrtd.cvc.CVCertificate;
-import org.jmrtd.cvc.JMRTDCVCProvider;
+import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.JMRTDSecurityProvider;
 
 /**
  * Stores terminal CV certificate and keys.
@@ -222,7 +222,7 @@ public class CVCAStore
 
 	private static CVCertificate readCVCertificateFromFile(File f) {
 		try {
-			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDCVCProvider());
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDSecurityProvider());
 			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;

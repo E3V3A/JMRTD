@@ -29,7 +29,7 @@ import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;

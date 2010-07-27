@@ -20,7 +20,7 @@
  * $Id: $
  */
 
-package org.jmrtd;
+package org.jmrtd.cert;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -32,6 +32,7 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.UnrecoverableEntryException;
+import java.security.cert.CertSelector;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -75,21 +76,23 @@ public class PKCS12FileStore extends TrustStore
 		}
 	}
 
-	public Collection<Certificate> getCertificates() {
+	public Collection<? extends Certificate> getCertificates(CertSelector selector) {
 		List<Certificate> result = new ArrayList<Certificate>();
 		try {
 			Enumeration<String> aliases = keyStore.aliases();
 			while (aliases.hasMoreElements()) {
 				String alias = (String)aliases.nextElement();
 				Certificate certificate = keyStore.getCertificate(alias);
-				result.add(certificate);
+				if (selector.match(certificate)) {
+					result.add(certificate);
+				}
 			}
 		} catch (KeyStoreException kse) {
 			kse.printStackTrace();
 		}
 		return result;
 	}
-	
+
 	public Collection<Key> getKeys() {
 		List<Key> result = new ArrayList<Key>();
 		try {

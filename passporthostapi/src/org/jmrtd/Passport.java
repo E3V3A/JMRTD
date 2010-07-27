@@ -69,7 +69,8 @@ import net.sourceforge.scuba.util.Hex;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.VerificationStatus.Verdict;
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.TrustStore;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
@@ -914,7 +915,7 @@ public class Passport
 			List<Certificate> chain = null;
 			for (TrustStore cscaStore: cscaStores) {
 				if (docSigningCertificate != null) {
-					chain = cscaStore.getCertificateChain(docSigningCertificate);
+					chain = cscaStore.getCertPath(docSigningCertificate);
 				} else {
 					chain = cscaStore.getCertificateChain(issuer, sodSerialNumber);
 				}

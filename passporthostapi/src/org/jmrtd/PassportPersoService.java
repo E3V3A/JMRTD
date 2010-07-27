@@ -53,7 +53,7 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.MRZInfo;
 

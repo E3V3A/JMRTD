@@ -96,9 +96,9 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
-import org.jmrtd.TrustStore;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.TrustStore;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -1060,7 +1060,7 @@ public class PassportEditFrame extends JFrame
 					X509Certificate countrySigningCert = null;
 					List<TrustStore> cscaStores = passport.getCSCAStores();
 					for (TrustStore cscaStore: cscaStores) {
-						List<Certificate> chain = cscaStore.getCertificateChain(docSigningCertificate);
+						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
 						if (chain.size() > 1) {
 							countrySigningCert = (X509Certificate)chain.get(1);
 						}

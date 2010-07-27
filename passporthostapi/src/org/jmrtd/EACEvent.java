@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 
 /**
  * Event to indicate EAC protocol was executed.

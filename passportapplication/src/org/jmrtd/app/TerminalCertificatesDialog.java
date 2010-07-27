@@ -44,7 +44,7 @@ import javax.swing.JScrollPane;
 
 import net.sourceforge.scuba.util.Files;
 
-import org.jmrtd.cvc.CVCertificate;
+import org.jmrtd.cert.CVCertificate;
 
 public class TerminalCertificatesDialog extends JDialog implements ActionListener
 {

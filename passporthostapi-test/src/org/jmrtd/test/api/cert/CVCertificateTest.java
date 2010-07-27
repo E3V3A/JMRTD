@@ -13,7 +13,7 @@ import java.security.cert.CertificateFactory;
 
 import junit.framework.TestCase;
 
-import org.jmrtd.cvc.JMRTDCVCProvider;
+import org.jmrtd.cert.JMRTDSecurityProvider;
 
 public class CVCertificateTest extends TestCase
 {
@@ -26,7 +26,7 @@ public class CVCertificateTest extends TestCase
 	public static final String filenameKey = "/c:/terminalkey.der";
 
 	public CVCertificateTest() {
-		Security.insertProviderAt(new JMRTDCVCProvider(), 3);
+		Security.insertProviderAt(new JMRTDSecurityProvider(), 3);
 	}
 
 	private InputStream readTestFile() throws FileNotFoundException  {
