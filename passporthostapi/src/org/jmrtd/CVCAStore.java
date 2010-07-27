@@ -111,7 +111,8 @@ public class CVCAStore
 	public void setLocation(URI location) {
 		this.location = location;
 		if (location.getScheme() != "file") {
-			throw new IllegalArgumentException("CVCAStore can only be a directory");
+			logger.warning("CVCAStore can only be a directory");
+//			throw new IllegalArgumentException("CVCAStore can only be a directory");
 		}
 		File directory = new File(location);
 		if (!directory.isDirectory()) {

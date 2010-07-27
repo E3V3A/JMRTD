@@ -36,6 +36,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.StringTokenizer;
 
+import javax.naming.CommunicationException;
 import javax.naming.Context;
 import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
@@ -71,27 +72,21 @@ public class PKDCertificateStore extends TrustStore
 	private String baseDN;
 
 	private List<Certificate> certificates;
-	
+
 	public PKDCertificateStore(URI server) {
 		this(server, DEFAULT_BASE_DN);
 	}
 
 	public PKDCertificateStore(URI server, String baseDN) {
-		this.location = server;
 		setBaseDN(baseDN);
 		certificates = new ArrayList<Certificate>();
-		new Thread(new Runnable() {
-			public void run() {
-				connect();
-				loadCertificates();
-			}
-		}).start();
+		setLocation(server);
 	}
 
 	public Collection<Certificate> getCertificates() {
 		return certificates;
 	}
-	
+
 	public Collection<Key> getKeys() {
 		return null;
 	}
@@ -99,13 +94,18 @@ public class PKDCertificateStore extends TrustStore
 	public URI getLocation() {
 		return location;
 	}
-	
+
 	public void setLocation(URI server) {
 		this.location = server;
 		new Thread(new Runnable() {
 			public void run() {
-				connect();
-				loadCertificates();
+				try {
+					connect();
+					loadCertificates();
+				} catch (CommunicationException ce) {
+					ce.printStackTrace();
+					return;
+				}
 			}
 		}).start();
 	}
@@ -118,7 +118,7 @@ public class PKDCertificateStore extends TrustStore
 		this.baseDN = baseDN;
 	}
 
-	private synchronized void connect() {
+	private synchronized void connect() throws CommunicationException {
 		try {
 			context = null;
 			Hashtable<String, String> env = new Hashtable<String, String>();
