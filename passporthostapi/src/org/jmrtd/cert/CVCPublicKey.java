@@ -7,6 +7,8 @@ import org.ejbca.cvc.OIDField;
 
 public class CVCPublicKey implements PublicKey {
 
+	private static final long serialVersionUID = -3329395619057945924L;
+
 	private org.ejbca.cvc.CVCPublicKey publicKey;
 	
 	protected CVCPublicKey(org.ejbca.cvc.CVCPublicKey publicKey) {

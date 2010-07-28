@@ -17,7 +17,7 @@ import org.jmrtd.JMRTDSecurityProvider;
 
 public class CVCertificateTest extends TestCase
 {
-	private static final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
+//	private static final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
 	public static final String filenameCA = "/c:/cacert.cvcert";
 
