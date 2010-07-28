@@ -36,7 +36,6 @@ import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +75,6 @@ import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.cert.CVCertificate;
-import org.jmrtd.cert.TrustStore;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -94,7 +92,6 @@ import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PassportFile;
-import org.jmrtd.lds.SODFile;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.
@@ -393,9 +390,9 @@ public class PassportViewFrame extends JFrame
 		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
 		/* View CS Certificate... */
-		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-		menu.add(viewCountrySignerCertificate);
-		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
+//		JMenuItem viewCountrySignerCertificate = new JMenuItem();
+//		menu.add(viewCountrySignerCertificate);
+//		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
 
 		/* View AA public key */
 		JMenuItem viewAAPublicKey = new JMenuItem();
@@ -648,11 +645,16 @@ public class PassportViewFrame extends JFrame
 
 			public void actionPerformed(ActionEvent e) {
 				try{
-					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-					SODFile	sod = new SODFile(sodIn);
-					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
-					certificateFrame.pack();
-					certificateFrame.setVisible(true);
+					List<Certificate> chain = passport.getCertificateChain();
+					for (Certificate certificate: chain) {
+						JFrame certificateFrame = new CertificateFrame("Certificate", certificate);
+						certificateFrame.pack();
+						certificateFrame.setVisible(true);					
+					}
+//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
+//					SODFile	sod = new SODFile(sodIn);
+//					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
+
 				}catch(Exception ex) {
 					ex.printStackTrace();
 				}
@@ -660,49 +662,49 @@ public class PassportViewFrame extends JFrame
 		};
 		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "View Document Signer Certificate");
-		action.putValue(Action.NAME, "Doc. Cert...");
+		action.putValue(Action.SHORT_DESCRIPTION, "View Document Certificate Chain");
+		action.putValue(Action.NAME, "Cert. chain...");
 		return action;
 	}
 
-	private Action getViewCountrySignerCertificateAction() {
-		Action action = new AbstractAction() {	
-
-			private static final long serialVersionUID = -7115158536366060439L;
-
-			public void actionPerformed(ActionEvent e) {
-				try {
-					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-					SODFile	sod = new SODFile(sodIn);
-					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-					X509Certificate countrySigningCert = null;
-					List<TrustStore> cscaStores = passport.getCSCAStores();
-					for (TrustStore cscaStore: cscaStores) {
-						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
-						if (chain.size() > 1) {
-							countrySigningCert = (X509Certificate)chain.get(1);
-						}
-					}
-
-					if (countrySigningCert == null) {
-						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-					} else {
-						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
-						certificateFrame.pack();
-						certificateFrame.setVisible(true);
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-
-			}
-		};
-		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
-		action.putValue(Action.NAME, "CSCA Cert...");
-		return action;
-	}
+//	private Action getViewCountrySignerCertificateAction() {
+//		Action action = new AbstractAction() {	
+//
+//			private static final long serialVersionUID = -7115158536366060439L;
+//
+//			public void actionPerformed(ActionEvent e) {
+//				try {
+//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
+//					SODFile	sod = new SODFile(sodIn);
+//					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
+//					X509Certificate countrySigningCert = null;
+//					List<TrustStore> cscaStores = passport.getCSCAStores();
+//					for (TrustStore cscaStore: cscaStores) {
+//						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
+//						if (chain.size() > 1) {
+//							countrySigningCert = (X509Certificate)chain.get(1);
+//						}
+//					}
+//
+//					if (countrySigningCert == null) {
+//						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
+//					} else {
+//						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
+//						certificateFrame.pack();
+//						certificateFrame.setVisible(true);
+//					}
+//				} catch (Exception ex) {
+//					ex.printStackTrace();
+//				}
+//
+//			}
+//		};
+//		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+//		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+//		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
+//		action.putValue(Action.NAME, "CSCA Cert...");
+//		return action;
+//	}
 
 
 	private Action getViewAAPublicKeyAction() {

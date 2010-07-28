@@ -34,8 +34,12 @@ import java.io.File;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.CertStore;
+import java.security.cert.CertStoreParameters;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -80,9 +84,8 @@ import org.jmrtd.PassportListener;
 import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
-import org.jmrtd.cert.PKCS12FileStore;
-import org.jmrtd.cert.PKDCertStore;
-import org.jmrtd.cert.TrustStore;
+import org.jmrtd.cert.KeyStoreCertStoreParameters;
+import org.jmrtd.cert.PKDCertStoreParameters;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -108,8 +111,10 @@ public class JMRTDApp  implements PassportListener
 
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
-
-	private static final Provider BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	
+	private static final Provider
+	JMRTD_PROVIDER = new org.jmrtd.JMRTDSecurityProvider(),
+	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	public static final String
 	READING_MODE_KEY = "mode.reading",
@@ -126,7 +131,7 @@ public class JMRTDApp  implements PassportListener
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
 	private BACStore bacStore;
-	private List<TrustStore> cscaStores;
+	private List<CertStore> cscaStores;
 	private CVCAStore cvcaStore;
 
 	private APDUTraceFrame apduTraceFrame;
@@ -141,6 +146,7 @@ public class JMRTDApp  implements PassportListener
 	public JMRTDApp() {
 		try {
 			Security.insertProviderAt(BC_PROVIDER, 4);
+			Security.insertProviderAt(JMRTD_PROVIDER, 5);
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
 
@@ -211,23 +217,34 @@ public class JMRTDApp  implements PassportListener
 				apduTraceFrame = null;
 			}
 		}
-		this.cscaStores = new ArrayList<TrustStore>();
+		this.cscaStores = new ArrayList<CertStore>();
 		List<URI> cscaStoreLocations = preferencesPanel.getCSCAStoreLocations();
 		if (cscaStoreLocations != null) {
-			for (URI location: cscaStoreLocations) {
-				if (location == null) { logger.warning("DEBUG: location == null"); continue; }
-				TrustStore store = null;
-
-				String scheme = location.getScheme();
-				if (scheme == null) { logger.warning("DEBUG: scheme == null, location = " + location); continue; }
-				if (scheme != null && scheme.equals("ldap")) {
-					store = new PKDCertStore(location);
-				} else {
-					/* TODO: Should we check that scheme is "file" or "http"? */
-					store = new PKCS12FileStore(location);
-				}
-				if (store != null) {
-					cscaStores.add(store);
+			for (URI uri: cscaStoreLocations) {
+				if (uri == null) { logger.warning("DEBUG: location == null"); continue; }
+				CertStore store = null;
+				String scheme = uri.getScheme();
+				if (scheme == null) { logger.warning("DEBUG: scheme == null, location = " + uri); continue; }
+				try {
+					if (scheme != null && scheme.equals("ldap")) {
+						String server = uri.getHost();
+						int port = uri.getPort();
+						CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
+						store = CertStore.getInstance("PKD", params);
+					} else {
+						/* TODO: Should we check that scheme is "file" or "http"? */
+						try {
+							CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "PKCS12");
+							store = CertStore.getInstance("PKCS12", params);
+						} catch (KeyStoreException kse) {
+							kse.printStackTrace();
+						}
+					}
+					if (store != null) {
+						cscaStores.add(store);
+					}
+				} catch (GeneralSecurityException gse) {
+					gse.printStackTrace();
 				}
 			}
 		}

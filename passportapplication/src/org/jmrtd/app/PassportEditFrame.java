@@ -98,7 +98,6 @@ import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.cert.CVCertificate;
-import org.jmrtd.cert.TrustStore;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -434,11 +433,6 @@ public class PassportEditFrame extends JFrame
 		JMenuItem viewDocumentSignerKey = new JMenuItem();
 		menu.add(viewDocumentSignerKey);
 		viewDocumentSignerKey.setAction(getViewDocumentSignerKeyAction());
-
-		/* View CS Certificate... */
-		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-		menu.add(viewCountrySignerCertificate);
-		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
 
 		/* View AA public key */
 		JMenuItem viewAAPublicKey = new JMenuItem();
@@ -1044,45 +1038,6 @@ public class PassportEditFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Document Signer Certificate");
 		action.putValue(Action.NAME, "Doc. Cert...");
-		return action;
-	}
-
-	private Action getViewCountrySignerCertificateAction() {
-		Action action = new AbstractAction() {	
-
-			private static final long serialVersionUID = -7115158536366060439L;
-
-			public void actionPerformed(ActionEvent e) {
-				try {
-					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-					SODFile	sod = new SODFile(sodIn);
-					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-					X509Certificate countrySigningCert = null;
-					List<TrustStore> cscaStores = passport.getCSCAStores();
-					for (TrustStore cscaStore: cscaStores) {
-						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
-						if (chain.size() > 1) {
-							countrySigningCert = (X509Certificate)chain.get(1);
-						}
-					}
-
-					if (countrySigningCert == null) {
-						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-					} else {
-						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
-						certificateFrame.pack();
-						certificateFrame.setVisible(true);
-					}
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-
-			}
-		};
-		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
-		action.putValue(Action.NAME, "CSCA Cert...");
 		return action;
 	}
 

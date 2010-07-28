@@ -23,7 +23,6 @@
 package org.jmrtd.cert;
 
 import java.io.ByteArrayInputStream;
-import java.net.URI;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.CRL;
@@ -260,9 +259,12 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
+	/**
+	 * FIXME: get CRLs.
+	 */
 	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
 	throws CertStoreException {
-		// TODO Auto-generated method stub
-		return null;
+		List<CRL> result = new ArrayList<CRL>(0);
+		return result;
 	}
 }
