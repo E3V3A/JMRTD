@@ -24,18 +24,21 @@ package org.jmrtd.cert;
 
 import java.io.ByteArrayInputStream;
 import java.net.URI;
-import java.security.Key;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
+import java.security.cert.CRL;
+import java.security.cert.CRLSelector;
 import java.security.cert.CertSelector;
+import java.security.cert.CertStoreException;
+import java.security.cert.CertStoreParameters;
+import java.security.cert.CertStoreSpi;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import javax.naming.CommunicationException;
@@ -51,60 +54,37 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
 
-public class PKDCertStore extends TrustStore
+public class PKDCertStoreSpi extends CertStoreSpi
 {
 	/** We may need this provider... */
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	//	private static final String DEFAULT_PKD_SERVER = "ldap://motest:389/";
-	private static final String DEFAULT_BASE_DN = "dc=data,dc=pkdDownload";
 
 	private static final String COUNTRY_ATTRIBUTE_NAME = "c";
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 
-	private URI location;
 	private DirContext context;
+	private String server;
+	private int port;
 	private String baseDN;
-	
+
 	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private List<Certificate> certificates;
 
-	public PKDCertStore(URI server) {
-		this(server, DEFAULT_BASE_DN);
-	}
-
-	public PKDCertStore(URI server, String baseDN) {
-		setBaseDN(baseDN);
+	public PKDCertStoreSpi(CertStoreParameters params) throws InvalidAlgorithmParameterException {
+		super(params);
+		if (params == null) { throw new InvalidAlgorithmParameterException("Input was null."); }
+		if (!(params instanceof PKDCertStoreParameters)) { throw new InvalidAlgorithmParameterException("Expected PKDCertStoreParameters, found " + params.getClass().getCanonicalName()); }
+		this.server = ((PKDCertStoreParameters)params).getServerName();
+		this.port = ((PKDCertStoreParameters)params).getPort();
+		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
 		certificates = new ArrayList<Certificate>();
-		setLocation(server);
-	}
-
-	public Collection<? extends Certificate> getCertificates(CertSelector selector) {
-		List<Certificate> result = new ArrayList<Certificate>();
-		for (Certificate certificate: certificates) {
-			if (selector.match(certificate)) {
-				result.add(certificate);
-			}
-		}
-		return result;
-	}
-
-	public Collection<Key> getKeys() {
-		return null;
-	}
-
-	public URI getLocation() {
-		return location;
-	}
-
-	public void setLocation(URI server) {
-		this.location = server;
 		new Thread(new Runnable() {
 			public void run() {
 				try {
@@ -118,12 +98,19 @@ public class PKDCertStore extends TrustStore
 		}).start();
 	}
 
-	public String getBaseDN() {
-		return baseDN;
+	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
+		List<Certificate> result = new ArrayList<Certificate>();
+		for (Certificate certificate: certificates) {
+			if (selector.match(certificate)) {
+				result.add(certificate);
+			}
+		}
+		return result;
 	}
 
-	public void setBaseDN(String baseDN) {
-		this.baseDN = baseDN;
+
+	public String getBaseDN() {
+		return baseDN;
 	}
 
 	private synchronized void connect() throws CommunicationException {
@@ -131,11 +118,11 @@ public class PKDCertStore extends TrustStore
 			context = null;
 			Hashtable<String, String> env = new Hashtable<String, String>();
 			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-			env.put(Context.PROVIDER_URL, location.toString());
+			env.put(Context.PROVIDER_URL, "ldap://" + server + ":" + port);
 			context = new InitialDirContext(env);
 		} catch (NamingException ne) {
 			ne.printStackTrace();
-			throw new IllegalArgumentException("Could not connect to server \"" + location + "\"");
+			throw new IllegalArgumentException("Could not connect to server \"" + server + "\"");
 		}
 	}
 
@@ -273,20 +260,9 @@ public class PKDCertStore extends TrustStore
 		return result;
 	}
 
-	private Country getIssuerCountry(Certificate certificate) {
-		if (certificate == null || !(certificate instanceof X509Certificate)) {
-			throw new IllegalArgumentException("Was expecting a non-null X509Certificate");
-		}
-		X500Principal issuer = ((X509Certificate)certificate).getIssuerX500Principal();
-		String issuerName = issuer.getName(X500Principal.RFC2253);
-		StringTokenizer st = new StringTokenizer(issuerName, ",");
-		while (st.hasMoreTokens()) {
-			String token = st.nextToken();
-			if (token.toUpperCase().startsWith("C=")) {
-				String countryString = token.substring(token.indexOf('=') + 1, token.length()).toUpperCase();
-				return ISOCountry.getInstance(countryString);
-			}
-		}
+	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
+	throws CertStoreException {
+		// TODO Auto-generated method stub
 		return null;
 	}
 }
