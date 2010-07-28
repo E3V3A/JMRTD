@@ -31,7 +31,7 @@ public class CVCertificate extends Certificate
 	private org.ejbca.cvc.CVCertificate cvCertificate;
 
 	protected CVCertificate(org.ejbca.cvc.CVCertificate cvCertificate) {
-		super("CV");
+		super("CVC");
 		this.cvCertificate = cvCertificate;
 	}
 

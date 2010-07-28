@@ -27,6 +27,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -58,6 +59,8 @@ public class FingerInfo extends DisplayedImageInfo
 
 	private DataInputStream dataIn;
 
+	private Logger logger = Logger.getLogger("org.jmrtd");
+	
 	private FingerInfo() {
 		super(TYPE_FINGER);
 	}
@@ -102,7 +105,7 @@ public class FingerInfo extends DisplayedImageInfo
 				long posAfterImage =  iis.getStreamPosition();
 				if ((posAfterImage - posBeforeImage) != imageLength) {
 					/* FIXME: send this to a logger instead of stdout. */
-					System.out.println("WARNING: image may not have been correctly read");
+					logger.warning("Image may not have been correctly read");
 				}
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */

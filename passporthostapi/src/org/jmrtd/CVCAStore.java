@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -43,7 +44,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import org.jmrtd.cert.CVCertificate;
-import org.jmrtd.cert.JMRTDSecurityProvider;
 
 /**
  * Stores terminal CV certificate and keys.
@@ -73,6 +73,8 @@ public class CVCAStore
 					&& pathname.getName().equals("terminalkey.der"));
 		}
 	};
+	
+	private static final Provider JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	private URI location;
 
@@ -111,13 +113,12 @@ public class CVCAStore
 	public void setLocation(URI location) {
 		this.location = location;
 		if (location.getScheme() != "file") {
-			logger.warning("CVCAStore can only be a directory");
-//			throw new IllegalArgumentException("CVCAStore can only be a directory");
+//			logger.warning("CVCAStore can only be a directory");
+			throw new IllegalArgumentException("CVCAStore \"" + location + "\" is not a directory.");
 		}
 		File directory = new File(location);
 		if (!directory.isDirectory()) {
-			logger.warning("File " + directory.getAbsolutePath() + " is not a directory.");
-			return;
+			throw new IllegalArgumentException("CVCAStore \"" + directory.getAbsolutePath() + "\" is not a directory.");
 		}
 		File[] dirs = directory.listFiles(DIRECTORY_FILE_FILTER);
 		try {
@@ -222,7 +223,7 @@ public class CVCAStore
 
 	private static CVCertificate readCVCertificateFromFile(File f) {
 		try {
-			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDSecurityProvider());
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", JMRTD_PROVIDER);
 			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;

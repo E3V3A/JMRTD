@@ -25,8 +25,8 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
+import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CVCertificate;
-import org.jmrtd.cert.JMRTDSecurityProvider;
 
 public abstract class PassportTesterBase extends TestCase implements
 		APDUListener {

@@ -13,7 +13,7 @@ import java.security.cert.CertificateFactory;
 
 import junit.framework.TestCase;
 
-import org.jmrtd.cert.JMRTDSecurityProvider;
+import org.jmrtd.JMRTDSecurityProvider;
 
 public class CVCertificateTest extends TestCase
 {

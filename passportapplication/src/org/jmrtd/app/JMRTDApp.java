@@ -109,7 +109,7 @@ public class JMRTDApp  implements PassportListener
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
 
-	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
 	public static final String
 	READING_MODE_KEY = "mode.reading",
@@ -130,7 +130,7 @@ public class JMRTDApp  implements PassportListener
 	private CVCAStore cvcaStore;
 
 	private APDUTraceFrame apduTraceFrame;
-	
+
 	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	/**
@@ -140,7 +140,7 @@ public class JMRTDApp  implements PassportListener
 	 */
 	public JMRTDApp() {
 		try {
-			Security.insertProviderAt(PROVIDER, 4);
+			Security.insertProviderAt(BC_PROVIDER, 4);
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
 
@@ -170,9 +170,9 @@ public class JMRTDApp  implements PassportListener
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
-			updateFromPreferences();
 
 			passportManager.addPassportListener(this);
+			updateFromPreferences();
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */
 			e.printStackTrace();
@@ -232,7 +232,11 @@ public class JMRTDApp  implements PassportListener
 			}
 		}
 
-		this.cvcaStore = new CVCAStore(preferencesPanel.getCVCAStoreLocation());
+		try {
+			this.cvcaStore = new CVCAStore(preferencesPanel.getCVCAStoreLocation());
+		} catch (Exception e) {
+			logger.warning("Could not initialize CVCA: " + e.getMessage());
+		}
 	}
 
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {

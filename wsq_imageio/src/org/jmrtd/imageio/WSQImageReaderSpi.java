@@ -14,7 +14,7 @@ public class WSQImageReaderSpi extends ImageReaderSpi
 	static final String readerClassName = "org.jmrtd.imageio.WSQImageReader";
 	static final String[] names = { "WSQ FBI" };
 	static final String[] suffixes = { "wsq" };
-	static final String[] MIMETypes = { "images/x-wsq" };
+	static final String[] MIMETypes = { "image/x-wsq" };
 	static final String[] writerSpiNames = { };
 
 	// Metadata formats, more information below
