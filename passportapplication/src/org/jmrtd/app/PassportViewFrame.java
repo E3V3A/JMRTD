@@ -390,9 +390,9 @@ public class PassportViewFrame extends JFrame
 		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
 
 		/* View CS Certificate... */
-//		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-//		menu.add(viewCountrySignerCertificate);
-//		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
+		//		JMenuItem viewCountrySignerCertificate = new JMenuItem();
+		//		menu.add(viewCountrySignerCertificate);
+		//		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
 
 		/* View AA public key */
 		JMenuItem viewAAPublicKey = new JMenuItem();
@@ -431,10 +431,10 @@ public class PassportViewFrame extends JFrame
 
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
-		
+
 		JMenuItem openEditorItem = new JMenuItem();
 		openEditorItem.setAction(getOpenEditorAction());
-	
+
 		menu.add(openEditorItem);
 		return menu;
 	}
@@ -448,7 +448,7 @@ public class PassportViewFrame extends JFrame
 				JFrame editorFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
 				dispose();
 			}
-			
+
 		};
 		action.putValue(Action.SMALL_ICON, OPEN_EDITOR_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, OPEN_EDITOR_ICON);
@@ -457,7 +457,7 @@ public class PassportViewFrame extends JFrame
 
 		return action;
 	}
-	
+
 	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
 		Action action = new AbstractAction() {
 			private static final long serialVersionUID = -2671362506812399044L;
@@ -646,15 +646,9 @@ public class PassportViewFrame extends JFrame
 			public void actionPerformed(ActionEvent e) {
 				try{
 					List<Certificate> chain = passport.getCertificateChain();
-					for (Certificate certificate: chain) {
-						JFrame certificateFrame = new CertificateFrame("Certificate", certificate);
-						certificateFrame.pack();
-						certificateFrame.setVisible(true);					
-					}
-//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-//					SODFile	sod = new SODFile(sodIn);
-//					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
-
+					JFrame certificateFrame = new CertificateFrame("Certificate", chain);
+					certificateFrame.pack();
+					certificateFrame.setVisible(true);					
 				}catch(Exception ex) {
 					ex.printStackTrace();
 				}
@@ -667,44 +661,44 @@ public class PassportViewFrame extends JFrame
 		return action;
 	}
 
-//	private Action getViewCountrySignerCertificateAction() {
-//		Action action = new AbstractAction() {	
-//
-//			private static final long serialVersionUID = -7115158536366060439L;
-//
-//			public void actionPerformed(ActionEvent e) {
-//				try {
-//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-//					SODFile	sod = new SODFile(sodIn);
-//					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-//					X509Certificate countrySigningCert = null;
-//					List<TrustStore> cscaStores = passport.getCSCAStores();
-//					for (TrustStore cscaStore: cscaStores) {
-//						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
-//						if (chain.size() > 1) {
-//							countrySigningCert = (X509Certificate)chain.get(1);
-//						}
-//					}
-//
-//					if (countrySigningCert == null) {
-//						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-//					} else {
-//						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
-//						certificateFrame.pack();
-//						certificateFrame.setVisible(true);
-//					}
-//				} catch (Exception ex) {
-//					ex.printStackTrace();
-//				}
-//
-//			}
-//		};
-//		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-//		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-//		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
-//		action.putValue(Action.NAME, "CSCA Cert...");
-//		return action;
-//	}
+	//	private Action getViewCountrySignerCertificateAction() {
+	//		Action action = new AbstractAction() {	
+	//
+	//			private static final long serialVersionUID = -7115158536366060439L;
+	//
+	//			public void actionPerformed(ActionEvent e) {
+	//				try {
+	//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
+	//					SODFile	sod = new SODFile(sodIn);
+	//					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
+	//					X509Certificate countrySigningCert = null;
+	//					List<TrustStore> cscaStores = passport.getCSCAStores();
+	//					for (TrustStore cscaStore: cscaStores) {
+	//						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
+	//						if (chain.size() > 1) {
+	//							countrySigningCert = (X509Certificate)chain.get(1);
+	//						}
+	//					}
+	//
+	//					if (countrySigningCert == null) {
+	//						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
+	//					} else {
+	//						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
+	//						certificateFrame.pack();
+	//						certificateFrame.setVisible(true);
+	//					}
+	//				} catch (Exception ex) {
+	//					ex.printStackTrace();
+	//				}
+	//
+	//			}
+	//		};
+	//		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+	//		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+	//		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
+	//		action.putValue(Action.NAME, "CSCA Cert...");
+	//		return action;
+	//	}
 
 
 	private Action getViewAAPublicKeyAction() {

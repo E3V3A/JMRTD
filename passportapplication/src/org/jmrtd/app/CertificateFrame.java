@@ -30,6 +30,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.util.Collections;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Icon;
@@ -67,6 +69,14 @@ public class CertificateFrame extends JFrame
 	}
 
 	public CertificateFrame(String title, Certificate certificate) {
+		this(title, Collections.singletonList(certificate));		
+	}
+	
+	public CertificateFrame(List<Certificate> certificates) {
+		this("Certificates", certificates);
+	}
+
+	public CertificateFrame(String title, List<Certificate> certificates) {
 		super(title);
 		setIconImage(JMRTD_ICON);
 
@@ -76,7 +86,7 @@ public class CertificateFrame extends JFrame
 		setJMenuBar(menuBar);
 
 		/* Frame content */
-		certificatePanel = new CertificatePanel(certificate);
+		certificatePanel = new CertificatePanel(certificates);
 		Container cp = getContentPane();
 		cp.add(certificatePanel);
 	}
