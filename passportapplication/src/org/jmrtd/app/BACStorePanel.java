@@ -32,6 +32,7 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JOptionPane;
@@ -72,9 +73,11 @@ public class BACStorePanel extends JPanel
 	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_delete"));
 	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
 	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
-
+	
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
 
+	private ActionMap actionMap;
+	
 	private final BACStore store;
 	private BACStoreTable table;
 	private BACEntryField entryField;
@@ -89,6 +92,7 @@ public class BACStorePanel extends JPanel
 	public BACStorePanel(BACStore store)  {
 		super(new BorderLayout());
 		this.store = store;
+		actionMap = new ActionMap();
 
 		table = new BACStoreTable();
 		entryField = new BACEntryField();
@@ -203,7 +207,9 @@ public class BACStorePanel extends JPanel
 	 * Add the entry in the entryField to the store (and thus to the table).
 	 */
 	private Action getAddAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Add");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7053795260898666446L;
 
@@ -223,6 +229,7 @@ public class BACStorePanel extends JPanel
 		action.putValue(Action.LARGE_ICON_KEY, TABLE_ROW_INSERT_LARGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Add BAC Entry");
 		action.putValue(Action.NAME, "Add");
+		actionMap.put("Add", action);
 		return action;
 	}
 
@@ -230,7 +237,9 @@ public class BACStorePanel extends JPanel
 	 * Delete the selected entry from the store (and thus from the table).
 	 */
 	private Action getDeleteAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Delete");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 8299630020852663643L;
 
@@ -248,11 +257,14 @@ public class BACStorePanel extends JPanel
 		action.putValue(Action.LARGE_ICON_KEY, TABLE_ROW_DELETE_LARGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Delete BAC Entry");
 		action.putValue(Action.NAME, "Delete");
+		actionMap.put("Delete", action);
 		return action;
 	}
 
 	private Action getMoveUpAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("MoveUp");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4661297725569163924L;
 
@@ -274,11 +286,14 @@ public class BACStorePanel extends JPanel
 		action.putValue(Action.LARGE_ICON_KEY, UP_LARGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Move BAC Entry Up");
 		action.putValue(Action.NAME, "Up");
+		actionMap.put("MoveUp", action);
 		return action;
 	}
 
 	private Action getMoveDownAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("MoveDown");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4995808660508497602L;
 
@@ -300,6 +315,7 @@ public class BACStorePanel extends JPanel
 		action.putValue(Action.LARGE_ICON_KEY, DOWN_LARGE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Move BAC Entry Down");
 		action.putValue(Action.NAME, "Down");
+		actionMap.put("MoveDown", action);
 		return action;
 	}
 }

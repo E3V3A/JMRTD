@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +50,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -94,6 +96,7 @@ import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.SODFile;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.
@@ -119,6 +122,8 @@ public class PassportViewFrame extends JFrame
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
 
+	private ActionMap actionMap;
+	
 	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private DisplayPreviewPanel displayPreviewPanel;
@@ -136,6 +141,7 @@ public class PassportViewFrame extends JFrame
 	public PassportViewFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
 		logger.setLevel(Level.ALL);
+		actionMap = new ActionMap();
 		this.passport = passport;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
@@ -157,7 +163,7 @@ public class PassportViewFrame extends JFrame
 				}
 			}
 		});
-//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
+		//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
 		westPanel.add(displayPreviewPanel);
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
@@ -359,53 +365,20 @@ public class PassportViewFrame extends JFrame
 	/* Menu stuff below... */
 
 	private JMenu createFileMenu() {
-		JMenu fileMenu = new JMenu("File");
-
-		/* Save As...*/
-		JMenuItem saveAsItem = new JMenuItem("Save As...");
-		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(getSaveAsAction());
-
-		/* Close */
-		JMenuItem closeItem = new JMenuItem("Close");
-		fileMenu.add(closeItem);
-		closeItem.setAction(getCloseAction());
-
-		return fileMenu;
+		JMenu menu = new JMenu("File");
+		menu.add(getSaveAsAction());
+		menu.add(getCloseAction());
+		return menu;
 	}
 
 	private JMenu createViewMenu() {
 		JMenu menu = new JMenu("View");
-
-		/* View portrait at full size... */
-		JMenuItem viewImageAtOriginalSize = new JMenuItem();
-		menu.add(viewImageAtOriginalSize);
-		viewImageAtOriginalSize.setAction(getViewPortraitAtOriginalSizeAction());
-
-		/* View fingerprints (if any) at full size... */
-		JMenuItem viewFingerPrints = new JMenuItem();
-		menu.add(viewFingerPrints);
-		viewFingerPrints.setAction(getViewFingerPrintsAction());
-
+		menu.add(getViewPortraitAtOriginalSizeAction());
+		menu.add(getViewFingerPrintsAction());
 		menu.addSeparator();
-
-		/* View DS Certificate... */
-		JMenuItem viewDocumentSignerCertificate = new JMenuItem();
-		menu.add(viewDocumentSignerCertificate);
-		viewDocumentSignerCertificate.setAction(getViewDocumentSignerCertificateAction());
-
-		/* View CS Certificate... */
-		//		JMenuItem viewCountrySignerCertificate = new JMenuItem();
-		//		menu.add(viewCountrySignerCertificate);
-		//		viewCountrySignerCertificate.setAction(getViewCountrySignerCertificateAction());
-
-		/* View AA public key */
-		JMenuItem viewAAPublicKey = new JMenuItem();
-		menu.add(viewAAPublicKey);
-		viewAAPublicKey.setAction(getViewAAPublicKeyAction());
-
+		menu.add(getViewDocumentSignerCertificateAction());
+		menu.add(getViewAAPublicKeyAction());
 		viewMenu = menu;
-
 		return menu;
 	}
 
@@ -436,18 +409,16 @@ public class PassportViewFrame extends JFrame
 
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
-
-		JMenuItem openEditorItem = new JMenuItem();
-		openEditorItem.setAction(getOpenEditorAction());
-
-		menu.add(openEditorItem);
+		menu.add(getOpenEditorAction());
 		return menu;
 	}
 
 	/* Menu item actions below... */
 
 	private Action getOpenEditorAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("OpenEditor");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			public void actionPerformed(ActionEvent e) {
 				JFrame editorFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
@@ -459,7 +430,7 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, OPEN_EDITOR_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Open passport in editor");
 		action.putValue(Action.NAME, "Open in editor");
-
+		actionMap.put("OpenEditor", action);
 		return action;
 	}
 
@@ -520,7 +491,9 @@ public class PassportViewFrame extends JFrame
 
 
 	private Action getCloseAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Close");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4351062033708816679L;
 
@@ -532,12 +505,15 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
+		actionMap.put("Close", action);
 		return action;
 	}
 
 	private Action getSaveAsAction() {
+		Action action = actionMap.get("SaveAs");
+		if (action != null) { return action; }
 		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 9113082315691234764L;
 
@@ -583,11 +559,14 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save passport to file");
 		action.putValue(Action.NAME, "Save As...");
+		actionMap.put("SaveAs", action);
 		return action;
 	}
 
 	private Action getViewPortraitAtOriginalSizeAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewPortraitAtOrginalSize");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7141975907898754026L;
 
@@ -599,6 +578,7 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
 		action.putValue(Action.NAME, "Portrait at 100%...");
+		actionMap.put("ViewPortraitAtOrginalSize", action);
 		return action;
 	}
 
@@ -623,7 +603,9 @@ public class PassportViewFrame extends JFrame
 	}
 
 	private Action getViewFingerPrintsAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewFingerPrints");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7141975907858754026L;
 
@@ -640,21 +622,35 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, FINGERPRINT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
 		action.putValue(Action.NAME, "Fingerprints...");
+		actionMap.put("ViewFingerPrints", action);
 		return action;
 	}
 
 	private Action getViewDocumentSignerCertificateAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewDocumentSignerCertificate");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 3937090454142759317L;
 
 			public void actionPerformed(ActionEvent e) {
 				try{
 					List<Certificate> chain = passport.getCertificateChain();
-					JFrame certificateFrame = new CertificateFrame("Certificate", chain);
-					certificateFrame.pack();
-					certificateFrame.setVisible(true);					
-				}catch(Exception ex) {
+					JFrame certificateFrame = null;
+					if (chain != null && chain.size() > 0) {
+						certificateFrame = new CertificateFrame("Certificate", chain, true);
+					} else {
+						SODFile sod = new SODFile(passport.getInputStream(PassportService.EF_SOD));
+						X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
+						if (docSigningCertificate != null) {
+							certificateFrame = new CertificateFrame(docSigningCertificate, false);
+						}
+					}
+					if (certificateFrame != null) {
+						certificateFrame.pack();
+						certificateFrame.setVisible(true);
+					}
+				} catch(Exception ex) {
 					ex.printStackTrace();
 				}
 			}
@@ -663,51 +659,14 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Document Certificate Chain");
 		action.putValue(Action.NAME, "Cert. chain...");
+		actionMap.put("ViewDocumentSignerCertificate", action);
 		return action;
 	}
 
-	//	private Action getViewCountrySignerCertificateAction() {
-	//		Action action = new AbstractAction() {	
-	//
-	//			private static final long serialVersionUID = -7115158536366060439L;
-	//
-	//			public void actionPerformed(ActionEvent e) {
-	//				try {
-	//					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
-	//					SODFile	sod = new SODFile(sodIn);
-	//					X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
-	//					X509Certificate countrySigningCert = null;
-	//					List<TrustStore> cscaStores = passport.getCSCAStores();
-	//					for (TrustStore cscaStore: cscaStores) {
-	//						List<Certificate> chain = cscaStore.getCertPath(docSigningCertificate);
-	//						if (chain.size() > 1) {
-	//							countrySigningCert = (X509Certificate)chain.get(1);
-	//						}
-	//					}
-	//
-	//					if (countrySigningCert == null) {
-	//						JOptionPane.showMessageDialog(getContentPane(), "CSCA certificate not found", "CSCA not found...", JOptionPane.ERROR_MESSAGE);
-	//					} else {
-	//						JFrame certificateFrame = new CertificateFrame("Country Signer Certificate (from store)", countrySigningCert);
-	//						certificateFrame.pack();
-	//						certificateFrame.setVisible(true);
-	//					}
-	//				} catch (Exception ex) {
-	//					ex.printStackTrace();
-	//				}
-	//
-	//			}
-	//		};
-	//		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-	//		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-	//		action.putValue(Action.SHORT_DESCRIPTION, "View Country Signer Certificate");
-	//		action.putValue(Action.NAME, "CSCA Cert...");
-	//		return action;
-	//	}
-
-
 	private Action getViewAAPublicKeyAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewAAPublicKey");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -3064369119565468811L;
 
@@ -724,6 +683,7 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, KEY_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Active Authentication Public Key");
 		action.putValue(Action.NAME, "AA Pub. Key...");
+		actionMap.put("ViewAAPublicKey", action);
 		return action;
 	}
 }

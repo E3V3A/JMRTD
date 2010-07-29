@@ -1026,7 +1026,7 @@ public class PassportEditFrame extends JFrame
 				try{
 					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 					SODFile	sod = new SODFile(sodIn);
-					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate());
+					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate(), false);
 					certificateFrame.pack();
 					certificateFrame.setVisible(true);
 				}catch(Exception ex) {

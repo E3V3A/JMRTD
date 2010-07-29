@@ -22,18 +22,22 @@
 
 package org.jmrtd.app;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.prefs.Preferences;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
@@ -45,6 +49,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.JToolBar;
 
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
@@ -74,9 +79,11 @@ public class PortraitFrame extends JFrame
 
 	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
+	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("page_white_text"));
 	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
 
+	private ActionMap actionMap;
+	
 	private FaceInfo info;
 	private ImagePanel imagePanel;
 
@@ -88,6 +95,8 @@ public class PortraitFrame extends JFrame
 		super(title);
 		this.info = info;
 		setIconImage(JMRTD_ICON);
+	
+		actionMap = new ActionMap();
 		
 		info.addImageReadUpdateListener(new ImageReadUpdateListener() {
 			public void passComplete(BufferedImage image, double percentage) {
@@ -102,13 +111,22 @@ public class PortraitFrame extends JFrame
 		menuBar.add(createViewMenu());
 		setJMenuBar(menuBar);
 
+		JToolBar toolBar = new JToolBar();
+		toolBar.add(getSaveAsAction());
+//		toolBar.add(getCloseAction());
+		toolBar.addSeparator();
+		toolBar.add(getViewImageInfoAction());
+//		toolBar.add(getViewFeaturePointsAction());
+		
 		/* Frame content */
 		try {
 			Image image = info.getImage();
 			imagePanel = new ImagePanel();
 			imagePanel.setImage(image);
 			Container cp = getContentPane();
-			cp.add(imagePanel);
+			cp.setLayout(new BorderLayout());
+			cp.add(toolBar, BorderLayout.NORTH);
+			cp.add(new JScrollPane(imagePanel), BorderLayout.CENTER);
 			imagePanel.revalidate(); repaint();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -148,8 +166,10 @@ public class PortraitFrame extends JFrame
 	}
 
 	private Action getSaveAsAction() {
+		Action action = actionMap.get("SaveAs");
+		if (action != null) { return action; }
 		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4810689890241792533L;
 
@@ -188,6 +208,7 @@ public class PortraitFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_PNG_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save image as bitmap");
 		action.putValue(Action.NAME, "Save As...");
+		actionMap.put("SaveAs", action);
 		return action;
 	}
 
@@ -210,7 +231,9 @@ public class PortraitFrame extends JFrame
 	}
 
 	private Action getViewFeaturePointsAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewFeaturePoints");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -5878482281301204061L;
 
@@ -237,11 +260,14 @@ public class PortraitFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, FEATURE_POINTS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View Feature Points");
 		action.putValue(Action.NAME, "Feature Points");
+		actionMap.put("ViewFeaturePoints", action);
 		return action;
 	}
 
 	private Action getCloseAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Close");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 893441969514204179L;
 
@@ -253,6 +279,7 @@ public class PortraitFrame extends JFrame
 		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
+		actionMap.put("Close", action);
 		return action;
 	}
 }

@@ -22,6 +22,7 @@
 
 package org.jmrtd.app;
 
+import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -34,6 +35,8 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -41,6 +44,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JToolBar;
 import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.swing.CertificatePanel;
@@ -62,33 +66,43 @@ public class CertificateFrame extends JFrame
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
+	private ActionMap actionMap;
+
 	private CertificatePanel certificatePanel;
 
-	public CertificateFrame(Certificate certificate) {
-		this("Certificate", certificate);
+	public CertificateFrame(Certificate certificate, boolean isValid) {
+		this("Certificate", certificate, isValid);
 	}
 
-	public CertificateFrame(String title, Certificate certificate) {
-		this(title, Collections.singletonList(certificate));		
-	}
-	
-	public CertificateFrame(List<Certificate> certificates) {
-		this("Certificates", certificates);
+	public CertificateFrame(String title, Certificate certificate, boolean isValid) {
+		this(title, Collections.singletonList(certificate), isValid);		
 	}
 
-	public CertificateFrame(String title, List<Certificate> certificates) {
+	public CertificateFrame(List<Certificate> certificates, boolean isValid) {
+		this("Certificates", certificates, isValid);
+	}
+
+	public CertificateFrame(String title, List<Certificate> certificates, boolean isValid) {
 		super(title);
 		setIconImage(JMRTD_ICON);
+
+		actionMap = new ActionMap();
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
 		menuBar.add(createFileMenu());
 		setJMenuBar(menuBar);
 
+		JToolBar toolBar = new JToolBar();
+		toolBar.add(getSaveAsAction());
+		toolBar.add(getCloseAction());
+
 		/* Frame content */
-		certificatePanel = new CertificatePanel(certificates);
+		certificatePanel = new CertificatePanel(certificates, isValid);
 		Container cp = getContentPane();
-		cp.add(certificatePanel);
+		cp.setLayout(new BorderLayout());
+		cp.add(toolBar, BorderLayout.NORTH);
+		cp.add(certificatePanel, BorderLayout.CENTER);
 	}
 
 	private JMenu createFileMenu() {
@@ -97,12 +111,12 @@ public class CertificateFrame extends JFrame
 		/* Save As...*/
 		JMenuItem saveAsItem = new JMenuItem("Save As...");
 		fileMenu.add(saveAsItem);
-		saveAsItem.setAction(new SaveAsAction());
+		saveAsItem.setAction(getSaveAsAction());
 
 		/* Close */
 		JMenuItem closeItem = new JMenuItem("Close");
 		fileMenu.add(closeItem);
-		closeItem.setAction(new CloseAction());
+		closeItem.setAction(getCloseAction());
 
 		return fileMenu;
 	}
@@ -113,62 +127,66 @@ public class CertificateFrame extends JFrame
 	 * Use <code>openssl x509 -inform DER -in &lt;file&gt;</code>
 	 * to print the resulting file.
 	 */
-	private class SaveAsAction extends AbstractAction
-	{
-		private static final long serialVersionUID = -7143003047380922518L;
+	private Action getSaveAsAction() {
+		Action action = actionMap.get("SaveAs");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+			private static final long serialVersionUID = -7143003047380922518L;
 
-		public SaveAsAction() {
-			putValue(SMALL_ICON, SAVE_AS_ICON);
-			putValue(LARGE_ICON_KEY, SAVE_AS_ICON);
-			putValue(SHORT_DESCRIPTION, "Save certificate to file");
-			putValue(NAME, "Save As...");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setFileFilter(new FileFilter() {
-				public boolean accept(File f) { return f.isDirectory()
-					|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
-					|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
-					|| f.getName().endsWith("der") || f.getName().endsWith("DER")
-					|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
-					|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
-				public String getDescription() { return "Certificate files"; }				
-			});
-			int choice = fileChooser.showSaveDialog(getContentPane());
-			switch (choice) {
-			case JFileChooser.APPROVE_OPTION:
-				try {
-					File file = fileChooser.getSelectedFile();
-					FileOutputStream out = new FileOutputStream(file);
-					/* FIXME: This is DER encoding? */
-					out.write(certificatePanel.getCertificate().getEncoded());
-					out.flush();
-					out.close();
-				} catch (CertificateEncodingException cee) {
-					cee.printStackTrace();
-				} catch (IOException fnfe) {
-					fnfe.printStackTrace();
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setFileFilter(new FileFilter() {
+					public boolean accept(File f) { return f.isDirectory()
+						|| f.getName().endsWith("pem") || f.getName().endsWith("PEM")
+						|| f.getName().endsWith("cer") || f.getName().endsWith("CER")
+						|| f.getName().endsWith("der") || f.getName().endsWith("DER")
+						|| f.getName().endsWith("crt") || f.getName().endsWith("CRT")
+						|| f.getName().endsWith("cert") || f.getName().endsWith("CERT"); }
+					public String getDescription() { return "Certificate files"; }				
+				});
+				int choice = fileChooser.showSaveDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					try {
+						File file = fileChooser.getSelectedFile();
+						FileOutputStream out = new FileOutputStream(file);
+						/* FIXME: This is DER encoding? */
+						out.write(certificatePanel.getCertificate().getEncoded());
+						out.flush();
+						out.close();
+					} catch (CertificateEncodingException cee) {
+						cee.printStackTrace();
+					} catch (IOException fnfe) {
+						fnfe.printStackTrace();
+					}
+					break;
+				default: break;
 				}
-				break;
-			default: break;
 			}
-		}
+		};
+		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Save certificate to file");
+		action.putValue(Action.NAME, "Save As...");
+		actionMap.put("SaveAs", action);
+		return action;
 	}
 
-	private class CloseAction extends AbstractAction
-	{
-		private static final long serialVersionUID = 5279413086163111656L;
+	private Action getCloseAction() {
+		Action action = actionMap.get("Close");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+			private static final long serialVersionUID = 5279413086163111656L;
 
-		public CloseAction() {
-			putValue(SMALL_ICON, CLOSE_ICON);
-			putValue(LARGE_ICON_KEY, CLOSE_ICON);
-			putValue(SHORT_DESCRIPTION, "Close Window");
-			putValue(NAME, "Close");
-		}
-
-		public void actionPerformed(ActionEvent e) {
-			dispose();
-		}
+			public void actionPerformed(ActionEvent e) {
+				dispose();
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CLOSE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
+		action.putValue(Action.NAME, "Close");
+		actionMap.put("Close", action);
+		return action;
 	}
 }

@@ -127,6 +127,8 @@ public class JMRTDApp  implements PassportListener
 	IMAGE_FILES_DIR_KEY = "location.imagefiles",
 	CERT_AND_KEY_FILES_DIR_KEY = "location.certfiles";
 
+	private ActionMap actionMap;
+	
 	private Container contentPane;
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
@@ -147,6 +149,7 @@ public class JMRTDApp  implements PassportListener
 		try {
 			Security.insertProviderAt(BC_PROVIDER, 4);
 			Security.insertProviderAt(JMRTD_PROVIDER, 5);
+			actionMap = new ActionMap();
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
 
@@ -362,7 +365,9 @@ public class JMRTDApp  implements PassportListener
 	}
 
 	private Action getNewAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("New");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 2866114377708028964L;
 
@@ -381,12 +386,15 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, NEW_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Create new passport");
 		action.putValue(Action.NAME, "New");
+		actionMap.put("New", action);
 		return action;
 	}
 
 	private Action getOpenAction() {
+		Action action = actionMap.get("Open");
+		if (action != null) { return action; }
 		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
+		action = new AbstractAction() {
 			private static final long serialVersionUID = -9209238098024027906L;
 
 			public void actionPerformed(ActionEvent e) {
@@ -420,11 +428,14 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, OPEN_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Read passport from file");
 		action.putValue(Action.NAME, "Open File...");
+		actionMap.put("Open", action);
 		return action;
 	}
 
 	private Action getExitAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Exit");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -6229877165532173683L;
 
@@ -436,11 +447,14 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, EXIT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Exit application");
 		action.putValue(Action.NAME, "Exit");
+		actionMap.put("Exit", action);
 		return action;
 	}
 
 	private Action getReloadAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Reload");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 7099324456389820159L;
 
@@ -477,11 +491,14 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, RELOAD_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Reload any connected cards");
 		action.putValue(Action.NAME, "Reload cards");
+		actionMap.put("Reload", action);
 		return action;
 	}
 
 	private Action getPreferencesAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Preferences");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 11962156923823504L;
 
@@ -500,11 +517,14 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, PREFERENCES_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Open the preferences dialog");
 		action.putValue(Action.NAME, "Preferences...");
+		actionMap.put("Preferences", action);
 		return action;
 	}
 
 	private Action getAboutAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("About");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 1528395261878587434L;
 
@@ -543,6 +563,7 @@ public class JMRTDApp  implements PassportListener
 		action.putValue(Action.LARGE_ICON_KEY, INFORMATION_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Display information about this application");
 		action.putValue(Action.NAME, "About...");
+		actionMap.put("About", action);
 		return action;
 	}
 
