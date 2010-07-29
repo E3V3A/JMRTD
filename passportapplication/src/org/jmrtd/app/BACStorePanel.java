@@ -34,7 +34,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JButton;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -101,24 +100,11 @@ public class BACStorePanel extends JPanel
 		addAction = getAddAction();
 		
 		JToolBar toolBar = new JToolBar();
-		JButton upButton = new JButton();
-		toolBar.add(upButton);
-
-		JButton downButton = new JButton();
-		toolBar.add(downButton);
-
+		toolBar.add(moveUpAction);
+		toolBar.add(moveDownAction);
 		toolBar.addSeparator();
-
-		JButton addButton = new JButton();
-		toolBar.add(addButton);
-
-		JButton deleteButton = new JButton();
-		toolBar.add(deleteButton);
-
-		upButton.setAction(moveUpAction);
-		downButton.setAction(moveDownAction);
-		addButton.setAction(addAction);
-		deleteButton.setAction(deleteAction);
+		toolBar.add(addAction);
+		toolBar.add(deleteAction);
 		add(toolBar, BorderLayout.NORTH);
 	}
 

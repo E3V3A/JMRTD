@@ -1,14 +1,17 @@
 JMRTD/SCUBA TODO (it's not a changelog, it's not a roadmap, it's a TODO file)
 
+
 VERSION 0.0.1 (2006-08-17)
 --------------------------
 
 + Initial release of the host API. 
 
+
 VERSION 0.0.2 (2007-12-31)
 --------------------------
 
 + Second release of the passport reader.
+
 
 VERSION 0.3 (2008-08-05)
 ------------------------
@@ -16,10 +19,12 @@ VERSION 0.3 (2008-08-05)
 + Intermediate release to fix some bugs.
 + Oops. 0.3? That was supposed to be 0.0.3.
 
+
 VERSION 0.4.1 (2008-11-23)
 --------------------------
 
 + New GUI with preview of face image.
+
 
 VERSION 0.4.2 (2009-02-06)
 --------------------------
@@ -27,6 +32,7 @@ VERSION 0.4.2 (2009-02-06)
 + Added a preferences panel to the GUI
 + Non PCSC card terminals discovery by reflection
 + Progressive jpeg2k seems to work (if jai-imageio is installed) 
+
 
 VERSION 0.4.3 (2009-04-17)
 --------------------------
@@ -37,6 +43,7 @@ VERSION 0.4.3 (2009-04-17)
   other projects (Woj's driving license, Woj's PKI applet host application) to use it
 + Some minor bug fixes (like, oh, initial select APDU was not according to spec :S.. Thanks to Jean-Francois Houzard for
   bringing this to our attention.) 
+
 
 VERSION 0.4.4 (2010-02-13)
 --------------------------
@@ -61,79 +68,105 @@ Dependencies
 + Latest Bouncy Castle 1.45
 
 Code quality
++ Check JavaDoc
 + Run Findbugs.
 
-Web site (jmrtd.org)
+Web site and documentation
 + Check new docs on ICAO site, update links.
 + Fix scmmicro.com broken links in install.shtml.
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
 
-VERSION 0.4.5
--------------
+
+VERSION 0.4.5 (FUTURE)
+----------------------
 
 General
-+ Use of PKCS12 keystores instead of directories with flat files?
++ Use JSR 55 (Certification Path API) for searching for SOD validation
++ LDAP interface (JNDI) to PKD? Tested with downloadable ldif from https://pkddownloadsg.icao.int/ on openldap.
++ Implement CSCA as CertStore (and for local files as PKCS12 KeyStore with CertStore interface).
+- Implement CVCA as KeyStore.
 + Move BAC logic from PassportFrame to Passport class.
 + Move readFromService logic from PassportFrame to the Passport class.
 + Move the verifySecurity logic from PassportFrame to Passport class.
 + Get DG3 (finger) bio template I/O to the same level as DG2 (face)
 + ImageIO support for WSQ finger print images, using JNI wrapping around C files (http://sourceforge.net/ffpis).
-+ LDAP interface (JNDI) to PKD? Tested with downloadable ldif from https://pkddownloadsg.icao.int/ with openldap. (Still needs some work to hack this into GUI though...)
-- Implement DG3, DG4, FingerInfo, IrisInfo (and related classes and interfaces).
-- Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
-  FaceInfo for DG2, but a list of lists).
-- getEncoded() implementations for all *File and *Info in lds package.
-- Uniform handling of BAC, CSCA, CVCA stores.
-- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
-- Copy default files from distribution jar into .jmrtd/ (e.g. CSCA certs) so that a standard profile is created.
++ Implement DG3, DG4, FingerInfo, IrisInfo (and related classes and interfaces).
+- Copy default files (e.g. CSCA certificates) to standard places during installation.
 
 GUI
 + Only go to editor mode if user explicitly indicates (default display mode should be not editable).
 - Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
-- When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
-  Currently it's hardcoded to ID-1.
-- In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
-- Check the Da Costa presentation at BlackHat 2010.
 
 Bugs/temporary fixes
-- Remove image method in DisplayPreviewPanel only targets DG2 (displayed images could also be in DG3 - DG7, ...?)
++ Remove image method in DisplayPreviewPanel only targets DG2 (displayed images could also be in DG3 - DG7, ...?)
++ Fixed some algorithmName guessing/heuristics based on OID in SODFile.
+
+Dependencies
++ Wrapper around cert-cvc so that CVCertificates subclass java.security.cert.Certificate.
+- cert-cvc latest. Need EAC samples to test. Woj still has samples?
+- Check/update README and Web site to reflect correct version numbers.
+- Latest JAI ImageIO 1.2
+- Latest Bouncy Castle 1.45
+
+Code quality
+- Check JavaDoc
+- Findbugs
+
+Website and documentation
++ Simpler front page (move stuff to "about")
+
+
+VERSION 0.4.6 (FUTURE)
+----------------------
+
+General
+- CRL validity checking
+- Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
+  FaceInfo for DG2, but a list of lists).
+- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
+- Implement BAC as KeyStore?
+- getEncoded() implementations for all *File and *Info in org.jmrtd.lds package.
+
+GUI
+- When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
+  Currently it's hardcoded to ID-1.
+- Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
+  Perhaps even allow ASN.1 tree in a JTree.
+
+Bugs/temporary fixes
 - Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
 
 Dependencies
-- cert-cvc latest. Need EAC samples to test. Woj still has samples?
-- Check/update README and Web site to reflect correct version numbers.
+- Latest JAI ImageIO 1.2
+- Latest Bouncy Castle 1.45
 
 Code quality
+- Check JavaDoc
 - Findbugs
 
-Website
-+ Simpler front page (move stuff to "about")
 
-VERSION 0.5.0
--------------
+VERSION 0.5.x (FUTURE)
+----------------------
 
 General
 - Support for certificate revocation lists
 - Check and compare date (current) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
+- Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 
 GUI
 - Show progress during BAC testing in PassportFrame constructor
   (especially since some MRTDs now wait for a long time after failed attempt).
+- In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
   
 Code quality
-- Findbugs
-- Profiling (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 - Check JavaDoc
+- Findbugs
+- Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
 ASN.1 parsing
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
 - ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
-
-User interface
-- Alternative view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
-  Perhaps even allow ASN.1 tree in a JTree.
 
 SCUBA support (for exotic card readers, etc.)
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
@@ -144,8 +177,8 @@ Website and documentation
 - A FAQ would be nice
 - Compile-it-yourself instructions
 
-VERSION 0.9.x
--------------
+VERSION 0.9.x (FUTURE)
+-----------------------
 
 Features
 - Webcam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
@@ -154,8 +187,11 @@ Features
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 
 Code quality
+- Check JavaDoc
+- Findbugs
+- Profiler
 - ESC/Java2
 
-Documentation
+Website and documentation
 - Proper system documentation
 - Proper user documentation

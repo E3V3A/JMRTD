@@ -23,6 +23,7 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -48,6 +49,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -106,7 +108,7 @@ public class PassportViewFrame extends JFrame
 
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportViewFrame.class);
 	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
-	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
+	private static final Dimension PREFERRED_SIZE = new Dimension(640, 420);
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
@@ -121,7 +123,7 @@ public class PassportViewFrame extends JFrame
 
 	private DisplayPreviewPanel displayPreviewPanel;
 
-	private JPanel panel, centerPanel, southPanel;
+	private JPanel panel, westPanel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
@@ -137,9 +139,11 @@ public class PassportViewFrame extends JFrame
 		this.passport = passport;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
+		westPanel = new JPanel();
 		centerPanel = new JPanel(new BorderLayout());
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
+		panel.add(westPanel, BorderLayout.WEST);
 		panel.add(centerPanel, BorderLayout.CENTER);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
@@ -153,7 +157,8 @@ public class PassportViewFrame extends JFrame
 				}
 			}
 		});
-		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
+//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
+		westPanel.add(displayPreviewPanel);
 		getContentPane().add(panel);
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
@@ -446,7 +451,7 @@ public class PassportViewFrame extends JFrame
 
 			public void actionPerformed(ActionEvent e) {
 				JFrame editorFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
-				dispose();
+				// dispose();
 			}
 
 		};

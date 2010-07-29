@@ -22,20 +22,27 @@
 
 package org.jmrtd.app;
 
+import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
+import javax.swing.JToolBar;
 
+import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.ImageReadUpdateListener;
@@ -57,8 +64,9 @@ public class DisplayPreviewPanel extends JPanel
 	private static final Icon FACE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("user"));
 	private static final Icon FINGER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("thumb_up"));
 	private static final Icon IRIS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("eye"));
+	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon WRITTEN_SIGNATURE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("text_signature"));
-
+	
 	private int width, height;
 	private JTabbedPane tabbedPane;
 	private List<DisplayedImageInfo> infos;
@@ -70,12 +78,12 @@ public class DisplayPreviewPanel extends JPanel
 	 * @param height height of this component
 	 */
 	public DisplayPreviewPanel(int width, int height) {
-		super(new FlowLayout());
+		super(new BorderLayout());
 		this.width = width;
 		this.height = height;
 		infos = new ArrayList<DisplayedImageInfo>();
 		tabbedPane = new JTabbedPane(JTabbedPane.LEFT);
-		add(tabbedPane);
+		add(tabbedPane, BorderLayout.CENTER);
 	}
 
 	/**
