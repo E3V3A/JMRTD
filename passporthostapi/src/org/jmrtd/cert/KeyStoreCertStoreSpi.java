@@ -53,21 +53,23 @@ public class KeyStoreCertStoreSpi extends CertStoreSpi
 
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) throws CertStoreException {
 		try {
-			List<Certificate> result = new ArrayList<Certificate>(keyStore.size());
+			List<Certificate> certificates = new ArrayList<Certificate>(keyStore.size());
 			Enumeration<String> aliases = keyStore.aliases();
 			while (aliases.hasMoreElements()) {
 				String alias = (String)aliases.nextElement();
-				Certificate certificate = keyStore.getCertificate(alias);
-				if (selector.match(certificate)) {
-					result.add(certificate);
+				if (keyStore.isCertificateEntry(alias)) {
+					Certificate certificate = keyStore.getCertificate(alias);
+					if (selector.match(certificate)) {
+						certificates.add(certificate);
+					}
 				}
 			}
-			return result;
+			return certificates;
 		} catch (KeyStoreException kse) {
 			throw new CertStoreException(kse.getMessage());
 		}
 	}
-	
+
 	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector) throws CertStoreException {
 		List<CRL> result = new ArrayList<CRL>(0);
 		return result;

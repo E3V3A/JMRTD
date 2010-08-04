@@ -13,6 +13,10 @@ import junit.framework.TestCase;
 public class CertStoreTest extends TestCase
 {
 	public void testLDAPCertStore() {
+//		connectLDAPCertStore();
+	}
+	
+	private void connectLDAPCertStore() {
 		try {
 			CertStoreParameters params = new LDAPCertStoreParameters("motest");
 			CertStore cs = CertStore.getInstance("LDAP", params);

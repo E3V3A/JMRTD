@@ -19,11 +19,11 @@ public class CVCertificateTest extends TestCase
 {
 //	private static final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
-	public static final String filenameCA = "/c:/cacert.cvcert";
+	public static final String filenameCA = "/d:/ca/cvcert/cacert.cvcert";
 
-	public static final String filenameTerminal = "/c:/terminalcert.cvcert";
+	public static final String filenameTerminal = "/d:/ca/cvcert/terminalcert.cvcert";
 
-	public static final String filenameKey = "/c:/terminalkey.der";
+	public static final String filenameKey = "/d:/ca/cvcert/terminalkey.der";
 
 	public CVCertificateTest() {
 		Security.insertProviderAt(new JMRTDSecurityProvider(), 3);
@@ -42,6 +42,7 @@ public class CVCertificateTest extends TestCase
 			CertificateFactory factory = CertificateFactory.getInstance("CVC");
 			Certificate certificate = factory.generateCertificate(readTestFile());
 		} catch(Exception e) {
+			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
@@ -60,6 +61,7 @@ public class CVCertificateTest extends TestCase
 			assertEquals(c1, c2);
 			System.out.println("DEBUG: ks\n" + ks.size());
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
@@ -84,6 +86,7 @@ public class CVCertificateTest extends TestCase
 			System.out.println("DEBUG: pubKey.getAlgorithm() = " + pubKey.getAlgorithm());
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}

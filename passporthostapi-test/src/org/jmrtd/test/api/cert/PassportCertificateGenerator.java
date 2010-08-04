@@ -45,17 +45,23 @@ import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
 
 /**
- * FIXME: Should this class still be here? Move it to passporthostapi-test project? -- MO
+ * FIXME: Moved this to passporthostapi-test project? -- MO
  * 
  * @author woj
  */
 public class PassportCertificateGenerator {
 
-	public static final String filenameCA = "/c:/cacert.cvcert";
+//	public static final String filenameCA = "/c:/cacert.cvcert";
+//
+//	public static final String filenameTerminal = "/c:/terminalcert.cvcert";
+//
+//	public static final String filenameKey = "/c:/terminalkey.der";
+	
+	public static final String filenameCA = "/d:/ca/cvcert/cacert.cvcert";
 
-	public static final String filenameTerminal = "/c:/terminalcert.cvcert";
+	public static final String filenameTerminal = "/d:/ca/cvcert/terminalcert.cvcert";
 
-	public static final String filenameKey = "/c:/terminalkey.der";
+	public static final String filenameKey = "/d:/ca/cvcert/terminalkey.der";
 
 	public static void main(String[] args) {
 		try {
