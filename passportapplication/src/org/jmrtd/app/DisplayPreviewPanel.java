@@ -25,24 +25,18 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.Graphics2D;
-import java.awt.event.ActionEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
-import javax.swing.JToolBar;
 
-import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.ImageReadUpdateListener;

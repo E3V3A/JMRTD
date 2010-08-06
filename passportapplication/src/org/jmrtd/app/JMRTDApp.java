@@ -31,10 +31,13 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
@@ -77,7 +80,6 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
 import org.jmrtd.BACStore;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
@@ -111,7 +113,7 @@ public class JMRTDApp  implements PassportListener
 
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
-	
+
 	private static final Provider
 	JMRTD_PROVIDER = new org.jmrtd.JMRTDSecurityProvider(),
 	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
@@ -128,13 +130,13 @@ public class JMRTDApp  implements PassportListener
 	CERT_AND_KEY_FILES_DIR_KEY = "location.certfiles";
 
 	private ActionMap actionMap;
-	
+
 	private Container contentPane;
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
 	private BACStore bacStore;
 	private List<CertStore> cscaStores;
-	private CVCAStore cvcaStore;
+	private List<KeyStore> cvcaStores;
 
 	private APDUTraceFrame apduTraceFrame;
 
@@ -147,8 +149,8 @@ public class JMRTDApp  implements PassportListener
 	 */
 	public JMRTDApp() {
 		try {
-			Security.insertProviderAt(BC_PROVIDER, 4);
-			Security.insertProviderAt(JMRTD_PROVIDER, 5);
+			Security.insertProviderAt(BC_PROVIDER, 1);
+			Security.addProvider(JMRTD_PROVIDER);
 			actionMap = new ActionMap();
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
@@ -220,8 +222,8 @@ public class JMRTDApp  implements PassportListener
 				apduTraceFrame = null;
 			}
 		}
-		this.cscaStores = new ArrayList<CertStore>();
 		List<URI> cscaStoreLocations = preferencesPanel.getCSCAStoreLocations();
+		this.cscaStores = new ArrayList<CertStore>(cscaStoreLocations.size());
 		if (cscaStoreLocations != null) {
 			for (URI uri: cscaStoreLocations) {
 				if (uri == null) { logger.warning("DEBUG: location == null"); continue; }
@@ -237,8 +239,8 @@ public class JMRTDApp  implements PassportListener
 					} else {
 						/* TODO: Should we check that scheme is "file" or "http"? */
 						try {
-							CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "PKCS12");
-							store = CertStore.getInstance("PKCS12", params);
+							CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
+							store = CertStore.getInstance("JKS", params);
 						} catch (KeyStoreException kse) {
 							kse.printStackTrace();
 						}
@@ -252,10 +254,19 @@ public class JMRTDApp  implements PassportListener
 			}
 		}
 
-		try {
-			this.cvcaStore = new CVCAStore(preferencesPanel.getCVCAStoreLocation());
-		} catch (Exception e) {
-			logger.warning("Could not initialize CVCA: " + e.getMessage());
+		List<URI> cvcaStoreLocations = preferencesPanel.getCVCAStoreLocations();
+		this.cvcaStores = new ArrayList<KeyStore>(cvcaStoreLocations.size());
+		for (URI uri: cvcaStoreLocations) {
+			try {
+				System.out.println("DEBUG: cvca uri = " + uri);
+				KeyStore cvcaStore = KeyStore.getInstance("JKS");
+				URLConnection uc = uri.toURL().openConnection();
+				InputStream in = uc.getInputStream();
+				cvcaStore.load(in, "".toCharArray());
+				cvcaStores.add(cvcaStore);
+			} catch (Exception e) {
+				logger.warning("Could not initialize CVCA: " + e.getMessage());
+			}
 		}
 	}
 
@@ -315,7 +326,7 @@ public class JMRTDApp  implements PassportListener
 	 * @throws CardServiceException
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
-		Passport passport = new Passport(service, cscaStores, cvcaStore, bacStore);
+		Passport passport = new Passport(service, cscaStores, cvcaStores, bacStore);
 		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
 	}
 

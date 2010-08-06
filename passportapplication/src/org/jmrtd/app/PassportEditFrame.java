@@ -97,7 +97,7 @@ import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -328,7 +328,7 @@ public class PassportEditFrame extends JFrame
 		DG14File dg14 = new DG14File(dg14in);
 		if (dg14 == null) { return; }
 		PrivateKey terminalKey = null;
-		List<CVCertificate> cvCertificates = null;
+		List<CardVerifiableCertificate> cvCertificates = null;
 		Map<Integer, PublicKey> publicKeyMap = null;
 		int cardPublicKeyId = 0;
 		if (eacEvent != null) {
@@ -449,7 +449,7 @@ public class PassportEditFrame extends JFrame
 		return menu;
 	}
 
-	private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates,
+	private void createEACMenus(PrivateKey terminalKey, List<CardVerifiableCertificate> terminalCertificates,
 			Map<Integer, PublicKey> passportEACKeys, Integer usedId) {		
 		Set<Map.Entry<Integer, PublicKey>> entries = passportEACKeys != null ? passportEACKeys.entrySet() : new HashSet<Map.Entry<Integer, PublicKey>>();
 		int pubKeysCount = passportEACKeys != null ? passportEACKeys.size() : 0;
@@ -539,7 +539,7 @@ public class PassportEditFrame extends JFrame
 
 	/* Menu item actions below... */
 
-	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
+	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CardVerifiableCertificate> terminalCertificates) {
 		Action action = new AbstractAction() {
 			private static final long serialVersionUID = -2671362506812399044L;
 
@@ -847,7 +847,7 @@ public class PassportEditFrame extends JFrame
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					CVCertificate cert = (CVCertificate)readCertFromFile(file, "CVC");
+					CardVerifiableCertificate cert = (CardVerifiableCertificate)readCertFromFile(file, "CVC");
 					if(cert != null) {
 						passport.setCVCertificate(cert);
 					}

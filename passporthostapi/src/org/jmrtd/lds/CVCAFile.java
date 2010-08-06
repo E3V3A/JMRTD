@@ -25,6 +25,9 @@ package org.jmrtd.lds;
 import java.io.DataInputStream;
 import java.io.InputStream;
 
+
+/* TODO: Use CVCPrincipal instead of String for references? */
+
 public class CVCAFile extends PassportFile
 {
 	public static final byte CAR_TAG = 0x42;

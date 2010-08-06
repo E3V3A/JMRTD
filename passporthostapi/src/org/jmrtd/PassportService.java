@@ -62,7 +62,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
 
@@ -382,8 +382,8 @@ public class PassportService extends PassportApduService implements Serializable
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.bouncycastle.jce.interfaces.ECPublicKey k = (org.bouncycastle.jce.interfaces.ECPublicKey) keyPair
-				.getPublic();
+				org.bouncycastle.jce.interfaces.ECPublicKey k =
+					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = k.getQ().getEncoded();
 				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
 				if (t[0] == 0) {
@@ -422,7 +422,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * for verification.
 	 */
 	public synchronized byte[] doTA(String caReference,
-			List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
+			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg,
 			byte[] caKeyHash, String documentNumber)
 	throws CardServiceException {
@@ -433,7 +433,7 @@ public class PassportService extends PassportApduService implements Serializable
 			}
 			String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
 			byte[] certRef = null;
-			for (CVCertificate cert : terminalCertificates) {
+			for (CardVerifiableCertificate cert : terminalCertificates) {
 				try{
 					if(certRef == null) {
 						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes());
@@ -486,7 +486,7 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-	public synchronized byte[] doTA(String caReference, List<CVCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
+	public synchronized byte[] doTA(String caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
 	throws CardServiceException {
 		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
@@ -516,7 +516,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 *             on error
 	 */
 	public synchronized void doEAC(int keyId, PublicKey key,
-			String caReference, List<CVCertificate> terminalCertificates,
+			String caReference, List<CardVerifiableCertificate> terminalCertificates,
 			PrivateKey terminalKey, String documentNumber)
 	throws CardServiceException {
 		KeyPair keyPair = doCA(keyId, key);

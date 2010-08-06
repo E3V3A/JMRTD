@@ -29,7 +29,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
  * Event to indicate EAC protocol was executed.
@@ -49,7 +49,7 @@ public class EACEvent extends EventObject {
 
     private String caReference;
 
-    private List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
+    private List<CardVerifiableCertificate> terminalCertificates = new ArrayList<CardVerifiableCertificate>();
 
     private PrivateKey terminalKey;
 
@@ -71,7 +71,7 @@ public class EACEvent extends EventObject {
      */
     public EACEvent(PassportService service, int keyId, PublicKey cardKey,
             KeyPair keyPair, String caReference,
-            List<CVCertificate> terminalCertificates, PrivateKey terminalKey,
+            List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
             String documentNumber, byte[] cardChallenge, boolean success) {
         super(service);
         this.service = service;
@@ -80,7 +80,7 @@ public class EACEvent extends EventObject {
         this.keyPair = keyPair;
         this.success = success;
         this.caReference = caReference;
-        for (CVCertificate c : terminalCertificates) {
+        for (CardVerifiableCertificate c : terminalCertificates) {
             this.terminalCertificates.add(c);
         }
         this.terminalKey = terminalKey;
@@ -131,7 +131,7 @@ public class EACEvent extends EventObject {
      * @return the chain of CVCertificates used to authenticate the terminal to
      *         the card
      */
-    public List<CVCertificate> getCVCertificates() {
+    public List<CardVerifiableCertificate> getCVCertificates() {
         return terminalCertificates;
     }
 

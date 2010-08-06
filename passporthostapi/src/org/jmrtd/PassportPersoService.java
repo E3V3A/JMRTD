@@ -53,7 +53,7 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.MRZInfo;
 
@@ -276,7 +276,7 @@ public class PassportPersoService extends CardService {
      * @throws CardServiceException
      *             on error.
      */
-    public void putCVCertificate(CVCertificate certificate)
+    public void putCVCertificate(CardVerifiableCertificate certificate)
             throws CardServiceException {
         try {
             putData((byte) 1, CVCERTIFICATE_TAG, certificate.getCertBodyData());

@@ -262,22 +262,6 @@ public class PreferencesPanel extends JPanel
 		return state.getCVCAStoreLocations();
 	}
 
-	public URI getCVCAStoreLocation() {
-		try {
-			List<URI> uriList = getCVCAStoreLocations();
-			if (uriList != null && uriList.size() >= 1) {
-
-				URI uri = uriList.get(0);
-				if (uri != null) {
-					return uri;
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return null;
-	}
-
 	public Action getSetModeAction(final ReadingMode mode) {
 		Action action = new AbstractAction() {
 

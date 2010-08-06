@@ -19,8 +19,8 @@ import org.jmrtd.PassportService;
 import org.jmrtd.cert.CVCAuthorizationTemplate;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CVCPublicKey;
-import org.jmrtd.cert.CVCertificate;
 import org.jmrtd.cert.CVCertificateBuilder;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.lds.CVCAFile;
@@ -48,8 +48,8 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC1() {
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testISkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -57,7 +57,7 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -76,7 +76,7 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertFalse(service.doTA(new CVCertificate[] {}, k, "SHA224WITHECDSA"));
+        assertFalse(service.doTA(new CardVerifiableCertificate[] {}, k, "SHA224WITHECDSA"));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -93,10 +93,10 @@ public class PassportEACTester extends PassportTesterBase {
         // one, in the next test we try the foreign one
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
         assertNotNull(dvCert);
         CertsKeyPair ck = createNewCertificate(dvCert, k, 0);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -118,10 +118,10 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC2c() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
         assertNotNull(dvCert);
         CertsKeyPair ck = createNewCertificate(dvCert, k, 1);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -141,10 +141,10 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC3() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         assertNotNull(isCert);
         CertsKeyPair ck = createNewCertificate(isCert, k, 2);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -164,13 +164,13 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC4a() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         assertNotNull(dvCert);
         assertNotNull(isCert);
-        CertsKeyPair ck = createNewCertificates(new CVCertificate[] { dvCert,
+        CertsKeyPair ck = createNewCertificates(new CardVerifiableCertificate[] { dvCert,
                 isCert }, k, "d", 1);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -191,13 +191,13 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC4b() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         assertNotNull(dvCert);
         assertNotNull(isCert);
-        CertsKeyPair ck = createNewCertificates(new CVCertificate[] { dvCert,
+        CertsKeyPair ck = createNewCertificates(new CardVerifiableCertificate[] { dvCert,
                 isCert }, k, "f", 1);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -229,13 +229,13 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC5a() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         assertNotNull(dvCert);
         assertNotNull(isCert);
-        CertsKeyPair ck = createNewCertificates(new CVCertificate[] { dvCert,
+        CertsKeyPair ck = createNewCertificates(new CardVerifiableCertificate[] { dvCert,
                 isCert }, k, "dd", 1);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -251,13 +251,13 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC5b() {
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(k);
-        CVCertificate dvCert = readCVCertificateFromFile(testDVDcert);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate dvCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         assertNotNull(dvCert);
         assertNotNull(isCert);
-        CertsKeyPair ck = createNewCertificates(new CVCertificate[] { dvCert,
+        CertsKeyPair ck = createNewCertificates(new CardVerifiableCertificate[] { dvCert,
                 isCert }, k, "d", 2);
-        for(CVCertificate c : ck.certs) {
+        for(CardVerifiableCertificate c : ck.certs) {
             assertNotNull(c);
         }
         assertNotNull(ck.key);
@@ -278,8 +278,8 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC6() {
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testISkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -292,10 +292,10 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertFalse(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertFalse(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         c2 = readCVCertificateFromFile(testIScert);
         assertNotNull(c2);
-        assertFalse(service.doTA(new CVCertificate[] { c2 }, k));
+        assertFalse(service.doTA(new CardVerifiableCertificate[] { c2 }, k));
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -305,8 +305,8 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     public void testEAC6a() {
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testISkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -319,10 +319,10 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertFalse(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertFalse(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         c2 = readCVCertificateFromFile(testIScert);
         assertNotNull(c2);
-        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -332,8 +332,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7a() {
         Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -346,7 +346,7 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, false);
         assertFalse(verifyCerts(ck));
     }
 
@@ -355,8 +355,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7b() {
         Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -369,7 +369,7 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, true);
         assertFalse(verifyCerts(ck));
     }
 
@@ -379,8 +379,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7c() {
         Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -393,7 +393,7 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, true);
         assertTrue(verifyCerts(ck));
         Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
@@ -405,8 +405,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7d() {
         Date currentDate = findPassportDate(true);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -419,7 +419,7 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, false);
         assertTrue(verifyCerts(ck));
         Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
@@ -434,8 +434,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7e() {
         Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -448,8 +448,8 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false, true);
-        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, false, true);
+        ck = new CertsKeyPair(new CardVerifiableCertificate[]{ck.certs[0]}, null);
         assertFalse(verifyCerts(ck));
     }
 
@@ -458,8 +458,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7f() {
         Date currentDate = findPassportDate(false);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -472,8 +472,8 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true, true);
-        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, true, true);
+        ck = new CertsKeyPair(new CardVerifiableCertificate[]{ck.certs[0]}, null);
         assertFalse(verifyCerts(ck));
     }
 
@@ -483,8 +483,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7g() {
         Date currentDate = findPassportDate(true);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -497,8 +497,8 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true, true);
-        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, true, true);
+        ck = new CertsKeyPair(new CardVerifiableCertificate[]{ck.certs[0]}, null);
         assertTrue(verifyCerts(ck));
         Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
@@ -510,8 +510,8 @@ public class PassportEACTester extends PassportTesterBase {
     public void testEAC7h() {
         Date currentDate = findPassportDate(true);
         System.out.println("Current passport date is: "+PassportService.SDF.format(currentDate));
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -524,8 +524,8 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false, true);
-        ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, false, true);
+        ck = new CertsKeyPair(new CardVerifiableCertificate[]{ck.certs[0]}, null);
         assertTrue(verifyCerts(ck));
         Date newDate = findPassportDate(false);
         System.out.println("Current new date is: "+PassportService.SDF.format(newDate));
@@ -547,8 +547,8 @@ public class PassportEACTester extends PassportTesterBase {
         CVCAFile cvcaFile = service.getCVCAFile();
         assertNotNull(cvcaFile);
         System.out.println("cvca: "+cvcaFile);
-        CVCertificate origCVCA = readCVCertificateFromFile(testCVCAcert);
-        CVCertificate newCVCA = readCVCertificateFromFile(newCVCAcert);
+        CardVerifiableCertificate origCVCA = readCVCertificateFromFile(testCVCAcert);
+        CardVerifiableCertificate newCVCA = readCVCertificateFromFile(newCVCAcert);
         assertNotNull(origCVCA);
         assertNotNull(newCVCA);
         boolean putNewTrustPoint = true;
@@ -568,7 +568,7 @@ public class PassportEACTester extends PassportTesterBase {
           assertTrue(service.doBAC());
           assertTrue(service.doCA());
           traceApdu = true;
-          assertTrue(service.doTA(new CVCertificate[]{newCVCA}, null));
+          assertTrue(service.doTA(new CardVerifiableCertificate[]{newCVCA}, null));
           traceApdu = false;
           try {
             resetCard();
@@ -601,8 +601,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(cvcaFile);
         assertNotNull(cvcaFile.getAltCAReference());
         
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testISkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -610,7 +610,7 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -626,8 +626,8 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(cvcaFile);
         assertNotNull(cvcaFile.getAltCAReference());
 
-        CVCertificate c1 = readCVCertificateFromFile(newDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(newIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(newDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(newIScert);
         PrivateKey k = readKeyFromFile(newISkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -635,7 +635,7 @@ public class PassportEACTester extends PassportTesterBase {
         service.doBAC();
         assertFalse(service.canReadFile(PassportService.EF_DG3, true));
         assertTrue(service.doCA());
-        assertTrue(service.doTA(new CVCertificate[] { c1, c2 }, k));
+        assertTrue(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
 
@@ -660,15 +660,15 @@ public class PassportEACTester extends PassportTesterBase {
         assertNotNull(cvcaFile);
         assertNotNull(cvcaFile.getAltCAReference());
 
-        CVCertificate c0 = readCVCertificateFromFile(newCVCAcert);
-        CVCertificate c1 = readCVCertificateFromFile(newDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(newIScert);        
+        CardVerifiableCertificate c0 = readCVCertificateFromFile(newCVCAcert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(newDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(newIScert);        
         PrivateKey k = readKeyFromFile(newCVCAkey);
         assertNotNull(c0);
         assertNotNull(c1);
         assertNotNull(c2);
         assertNotNull(k);
-        CVCertificate oldRoot = readCVCertificateFromFile(testCVCAcert);
+        CardVerifiableCertificate oldRoot = readCVCertificateFromFile(testCVCAcert);
        
         Date from = null; Date to = null;
         try {
@@ -678,7 +678,7 @@ public class PassportEACTester extends PassportTesterBase {
             fail();
         }
         System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, false, true);
+        CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, false, true);
         assertTrue(verifyCerts(ck));
         
         try {  resetCard(); }catch(Exception e) {fail();}
@@ -697,8 +697,8 @@ public class PassportEACTester extends PassportTesterBase {
      * 
      */
     private Date findPassportDate(boolean verify) {
-        CVCertificate c1 = readCVCertificateFromFile(testDVDcert);
-        CVCertificate c2 = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
         PrivateKey k = readKeyFromFile(testCVCAkey);
         assertNotNull(c1);
         assertNotNull(c2);
@@ -715,8 +715,8 @@ public class PassportEACTester extends PassportTesterBase {
         Date middleDate = null;
         while(!finished) {
             middleDate = new Date((long)(from.getTime() + (long)((long)(to.getTime()-from.getTime())/2)));
-            CertsKeyPair ck1 = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, middleDate, true);
-            CertsKeyPair ck2 = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, middleDate, to, true);
+            CertsKeyPair ck1 = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, middleDate, true);
+            CertsKeyPair ck2 = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, middleDate, to, true);
             
             boolean result1 = verifyCerts(ck1);
             if(!result1) {
@@ -755,8 +755,8 @@ public class PassportEACTester extends PassportTesterBase {
                 fail();
             }
             System.out.println("Test dates: "+PassportService.SDF.format(from)+ " "+PassportService.SDF.format(to));
-            CertsKeyPair ck = createCertificatesToSearchChangeDate(new CVCertificate[] { c1, c2}, k, from, to, true, true);
-            ck = new CertsKeyPair(new CVCertificate[]{ck.certs[0]}, null);
+            CertsKeyPair ck = createCertificatesToSearchChangeDate(new CardVerifiableCertificate[] { c1, c2}, k, from, to, true, true);
+            ck = new CertsKeyPair(new CardVerifiableCertificate[]{ck.certs[0]}, null);
             assertFalse(verifyCerts(ck));
         }
         return middleDate;
@@ -792,7 +792,7 @@ public class PassportEACTester extends PassportTesterBase {
      * be valid when the old one expired and is valid for 3 years - the holder
      * reference counter is increased by 1
      */
-    public static CertsKeyPair createNewCertificate(CVCertificate oldCert,
+    public static CertsKeyPair createNewCertificate(CardVerifiableCertificate oldCert,
             PrivateKey privateKey, int type) {
         try {
 //            CVCertificateBody body = oldCert.getCertificateBody();
@@ -815,7 +815,7 @@ public class PassportEACTester extends PassportTesterBase {
             keyGen.initialize(((ECPrivateKey) privateKey).getParams(), new SecureRandom());
             KeyPair keyPair = keyGen.generateKeyPair();
 
-            CVCertificate newCert = CVCertificateBuilder.createCertificate(
+            CardVerifiableCertificate newCert = CVCertificateBuilder.createCertificate(
                     keyPair.getPublic(), privateKey, algName, caRef, holderRef,
                     new CVCAuthorizationTemplate(role, rights), validFrom, validTo, "BC");
             return new CertsKeyPair(newCert, keyPair.getPrivate());
@@ -839,14 +839,14 @@ public class PassportEACTester extends PassportTesterBase {
      *            
      * @return CertsKeyPair structure with new certificates and new private key
      */
-    public static CertsKeyPair createNewCertificates(CVCertificate[] oldCerts,
+    public static CertsKeyPair createNewCertificates(CardVerifiableCertificate[] oldCerts,
             PrivateKey privateKey, String dvPattern, int chainLengthIS) {
         try {
-            List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
+            List<CardVerifiableCertificate> newCerts = new ArrayList<CardVerifiableCertificate>();
             CVCPrincipal caRef = null;
-            CVCertificate prevCert = null;
+            CardVerifiableCertificate prevCert = null;
             PublicKey prevKey = null;
-            for (CVCertificate oldCert : oldCerts) {
+            for (CardVerifiableCertificate oldCert : oldCerts) {
                 int chainLength = oldCert.getAuthorizationTemplate().getRole() == Role.IS ? chainLengthIS : dvPattern.length();
                 for (int i = 0; i < chainLength; i++) {
                     // CVCertificateBody body = oldCert.getCertificateBody();
@@ -882,7 +882,7 @@ public class PassportEACTester extends PassportTesterBase {
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CVCertificateBuilder
+                    CardVerifiableCertificate newCert = CVCertificateBuilder
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef, new CVCAuthorizationTemplate(role, rights),
                                     validFrom, validTo, "BC");
@@ -909,21 +909,21 @@ public class PassportEACTester extends PassportTesterBase {
 
 
     public static CertsKeyPair createCertificatesToSearchChangeDate(
-            CVCertificate[] oldCerts,
+            CardVerifiableCertificate[] oldCerts,
             PrivateKey privateKey, 
             Date from, Date to, boolean makeForeign) {
         return createCertificatesToSearchChangeDate(oldCerts, privateKey, from, to, makeForeign, false);
     }
     
     public static CertsKeyPair createCertificatesToSearchChangeDate(
-            CVCertificate[] oldCerts,
+            CardVerifiableCertificate[] oldCerts,
             PrivateKey privateKey, 
             Date from, Date to, boolean makeForeign, boolean applyDatesDomestic) {
         try {
-            List<CVCertificate> newCerts = new ArrayList<CVCertificate>();
-            CVCertificate prevCert = null;
+            List<CardVerifiableCertificate> newCerts = new ArrayList<CardVerifiableCertificate>();
+            CardVerifiableCertificate prevCert = null;
             PublicKey prevKey = null;
-            for (CVCertificate oldCert : oldCerts) {
+            for (CardVerifiableCertificate oldCert : oldCerts) {
 //                    CVCertificateBody body = oldCert.getCertificateBody();
                     CVCPrincipal caRef = oldCert.getAuthorityReference();
                     CVCPrincipal holderRef = oldCert.getHolderReference();
@@ -950,7 +950,7 @@ public class PassportEACTester extends PassportTesterBase {
                             new SecureRandom());
                     KeyPair keyPair = keyGen.generateKeyPair();
 
-                    CVCertificate newCert = CVCertificateBuilder
+                    CardVerifiableCertificate newCert = CVCertificateBuilder
                             .createCertificate(keyPair.getPublic(), privateKey,
                                     algName, caRef, holderRef,
                                     new CVCAuthorizationTemplate(role, rights),
@@ -979,9 +979,9 @@ public class PassportEACTester extends PassportTesterBase {
     private static final File newCVCAkey = new File("certs/keyCVCA_new.der");
  
 
-    private static void createNewRootCertificateChain(CVCertificate oldRootCert, 
-            PrivateKey oldRootPrivateKey, long timeShift, CVCertificate oldDVDCert,
-            CVCertificate oldISCert) {
+    private static void createNewRootCertificateChain(CardVerifiableCertificate oldRootCert, 
+            PrivateKey oldRootPrivateKey, long timeShift, CardVerifiableCertificate oldDVDCert,
+            CardVerifiableCertificate oldISCert) {
         try {
 //        CVCertificateBody body = oldRootCert.getCertificateBody();
         CVCPublicKey publicKey = (CVCPublicKey)oldRootCert.getPublicKey();
@@ -1003,7 +1003,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newRootKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newRootCertificate = CVCertificateBuilder.createCertificate(
+        CardVerifiableCertificate newRootCertificate = CVCertificateBuilder.createCertificate(
                 newRootKeyPair.getPublic(), oldRootPrivateKey,
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights), validFrom,
@@ -1033,7 +1033,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newDVDKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newDVDCertificate = CVCertificateBuilder.createCertificate(
+        CardVerifiableCertificate newDVDCertificate = CVCertificateBuilder.createCertificate(
                 newDVDKeyPair.getPublic(), newRootKeyPair.getPrivate(),
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights),
@@ -1058,7 +1058,7 @@ public class PassportEACTester extends PassportTesterBase {
         keyGen.initialize(((ECPrivateKey) oldRootPrivateKey).getParams(), new SecureRandom());
         KeyPair newISKeyPair = keyGen.generateKeyPair();
         
-        CVCertificate newISCertificate = CVCertificateBuilder.createCertificate(
+        CardVerifiableCertificate newISCertificate = CVCertificateBuilder.createCertificate(
                 newISKeyPair.getPublic(), newDVDKeyPair.getPrivate(),
                 algName, caRef, holderRef,
                 new CVCAuthorizationTemplate(role, rights),
@@ -1088,9 +1088,9 @@ public class PassportEACTester extends PassportTesterBase {
         }
         Date currentPassportDate = findPassportDate(true);
         PrivateKey rootKey = readKeyFromFile(testCVCAkey);
-        CVCertificate rootCert = readCVCertificateFromFile(testCVCAcert);
-        CVCertificate dvdCert = readCVCertificateFromFile(testDVDcert);
-        CVCertificate isCert = readCVCertificateFromFile(testIScert);
+        CardVerifiableCertificate rootCert = readCVCertificateFromFile(testCVCAcert);
+        CardVerifiableCertificate dvdCert = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate isCert = readCVCertificateFromFile(testIScert);
         long from = 0;
         long now = 0;
         try {
@@ -1126,16 +1126,16 @@ public class PassportEACTester extends PassportTesterBase {
     }
 
     private static class CertsKeyPair {
-        CVCertificate[] certs;
+        CardVerifiableCertificate[] certs;
 
         PrivateKey key;
 
-        CertsKeyPair(CVCertificate cert, PrivateKey key) {
-            this.certs = new CVCertificate[] { cert };
+        CertsKeyPair(CardVerifiableCertificate cert, PrivateKey key) {
+            this.certs = new CardVerifiableCertificate[] { cert };
             this.key = key;
         }
 
-        CertsKeyPair(CVCertificate[] certs, PrivateKey key) {
+        CertsKeyPair(CardVerifiableCertificate[] certs, PrivateKey key) {
             this.certs = certs;
             this.key = key;
         }

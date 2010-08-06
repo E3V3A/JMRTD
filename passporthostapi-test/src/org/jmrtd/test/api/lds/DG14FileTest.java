@@ -51,7 +51,7 @@ public class DG14FileTest extends TestCase {
 			Security.addProvider(BC_PROV);
 
 			/* Using BC here, since SunJCE doesn't support EC. */
-			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", "BC");
+			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", BC_PROV);
 			keyGen1.initialize(192);
 			KeyPair keyPair1 = keyGen1.generateKeyPair();
 
@@ -66,11 +66,15 @@ public class DG14FileTest extends TestCase {
 			
 			System.out.println("DEBUG: DG14FileTest: Generating key pair 2");
 			KeyPair keyPair2 = keyGen2.generateKeyPair();
+			
 			PublicKey publicKey1 = keyPair1.getPublic();
 			PublicKey publicKey2 = keyPair2.getPublic();
 
 			keys.put(1, publicKey1);
 			keys.put(2, publicKey2);
+			
+			System.out.println("DEBUG: publicKey1.getAlgorithm() = " + publicKey1.getAlgorithm());
+			System.out.println("DEBUG: publicKey2.getAlgorithm() = " + publicKey2.getAlgorithm());
 
 			Map<Integer, DERObjectIdentifier> algs = new TreeMap<Integer, DERObjectIdentifier>();
 			algs.put(1, EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC);

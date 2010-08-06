@@ -29,7 +29,7 @@ import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
@@ -111,7 +111,7 @@ public class PassportTestService extends PassportService {
 	private int keyId = -1;
 	private PublicKey cardKey;
 	private String caReference = "NLCVCAA00001";
-	private List<CVCertificate> terminalCertificates;
+	private List<CardVerifiableCertificate> terminalCertificates;
 	private PrivateKey terminalKey;
 	/** The last challenge received, if any **/
 	private byte[] lastChallenge;
@@ -445,10 +445,10 @@ public class PassportTestService extends PassportService {
 	 * 
 	 * @return whether this succeeded
 	 */
-	public boolean doTA(CVCertificate[] certs, PrivateKey key) {
+	public boolean doTA(CardVerifiableCertificate[] certs, PrivateKey key) {
 		try {
-			List<CVCertificate> cs = new ArrayList<CVCertificate>();
-			for(CVCertificate c : certs) {
+			List<CardVerifiableCertificate> cs = new ArrayList<CardVerifiableCertificate>();
+			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
 			super.doTA(caReference, cs, key, null, documentNumber);
@@ -465,10 +465,10 @@ public class PassportTestService extends PassportService {
 	 * 
 	 * @return whether this succeeded
 	 */
-	public boolean doTA(CVCertificate[] certs, PrivateKey key, String taSigAlg) {
+	public boolean doTA(CardVerifiableCertificate[] certs, PrivateKey key, String taSigAlg) {
 		try {
-			List<CVCertificate> cs = new ArrayList<CVCertificate>();
-			for(CVCertificate c : certs) {
+			List<CardVerifiableCertificate> cs = new ArrayList<CardVerifiableCertificate>();
+			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
 			super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);

@@ -33,7 +33,7 @@ public class CVCertificateFactorySpi extends CertificateFactorySpi
 			byte[] data = (new BERTLVObject(tag, value)).getEncoded();
 
 			CVCObject parsedObject = CertificateParser.parseCertificate(data);
-			return new CVCertificate((org.ejbca.cvc.CVCertificate)parsedObject);
+			return new CardVerifiableCertificate((org.ejbca.cvc.CVCertificate)parsedObject);
 		} catch (IOException ioe) {
 			throw new CertificateException(ioe.getMessage());
 		} catch (ConstructionException ce) {

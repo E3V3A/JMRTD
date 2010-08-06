@@ -23,7 +23,6 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
@@ -51,7 +50,6 @@ import java.util.zip.ZipOutputStream;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
-import javax.swing.BorderFactory;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -78,7 +76,7 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
@@ -309,7 +307,7 @@ public class PassportViewFrame extends JFrame
 		DG14File dg14 = new DG14File(dg14in);
 		if (dg14 == null) { return; }
 		PrivateKey terminalKey = null;
-		List<CVCertificate> cvCertificates = null;
+		List<CardVerifiableCertificate> cvCertificates = null;
 		Map<Integer, PublicKey> publicKeyMap = null;
 		int cardPublicKeyId = 0;
 		if (eacEvent != null) {
@@ -382,7 +380,7 @@ public class PassportViewFrame extends JFrame
 		return menu;
 	}
 
-	private void createEACMenus(PrivateKey terminalKey, List<CVCertificate> terminalCertificates,
+	private void createEACMenus(PrivateKey terminalKey, List<CardVerifiableCertificate> terminalCertificates,
 			Map<Integer, PublicKey> passportEACKeys, Integer usedId) {		
 		Set<Map.Entry<Integer, PublicKey>> entries = passportEACKeys != null ? passportEACKeys.entrySet() : new HashSet<Map.Entry<Integer, PublicKey>>();
 		int pubKeysCount = passportEACKeys != null ? passportEACKeys.size() : 0;
@@ -434,7 +432,7 @@ public class PassportViewFrame extends JFrame
 		return action;
 	}
 
-	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CVCertificate> terminalCertificates) {
+	private Action getViewTerminalCertificateAction(final JFrame frame, final List<CardVerifiableCertificate> terminalCertificates) {
 		Action action = new AbstractAction() {
 			private static final long serialVersionUID = -2671362506812399044L;
 

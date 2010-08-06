@@ -47,7 +47,7 @@ import net.sourceforge.scuba.swing.KeyPanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
  * Frame for displaying (and saving to file) a public card verifiable certificate.
@@ -67,11 +67,11 @@ public class CVCertificateFrame extends JFrame
 
 	private CVCertificatePanel certificatePanel;
 
-	public CVCertificateFrame(CVCertificate certificate) {
+	public CVCertificateFrame(CardVerifiableCertificate certificate) {
 		this("CV Certificate", certificate);
 	}
 
-	public CVCertificateFrame(String title, CVCertificate certificate) {
+	public CVCertificateFrame(String title, CardVerifiableCertificate certificate) {
 		super(title);
 		setIconImage(JMRTD_ICON);
 
@@ -161,11 +161,11 @@ public class CVCertificateFrame extends JFrame
 		return action;
 	}
 
-	private static String certificateToString(CVCertificate certificate) {
+	private static String certificateToString(CardVerifiableCertificate certificate) {
 		try{
 			if (certificate == null) { return "null"; }
 			StringBuffer result = new StringBuffer();
-			CVCertificate cert = (CVCertificate)certificate;
+			CardVerifiableCertificate cert = (CardVerifiableCertificate)certificate;
 			result.append("subject: " );
 			result.append(cert.getHolderReference().getName());
 			result.append('\n');
@@ -185,10 +185,10 @@ public class CVCertificateFrame extends JFrame
 	{
 		private static final long serialVersionUID = 2109469067988004311L;
 
-		private CVCertificate certificate;
+		private CardVerifiableCertificate certificate;
 		private JTextArea area;
 
-		public CVCertificatePanel(CVCertificate certificate) {
+		public CVCertificatePanel(CardVerifiableCertificate certificate) {
 			super(new BorderLayout());
 			try{
 				this.certificate = certificate;
@@ -202,7 +202,7 @@ public class CVCertificateFrame extends JFrame
 			}
 		}
 
-		public CVCertificate getCertificate() {
+		public CardVerifiableCertificate getCertificate() {
 			return certificate;
 		}
 

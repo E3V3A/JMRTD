@@ -16,15 +16,17 @@ public class CVCPublicKey implements PublicKey {
 	}
 	
 	public String getAlgorithm() {
+		String algorithm = null;
+		algorithm = publicKey.getAlgorithm();
+		if (algorithm != null) { return algorithm; }
 		OIDField oid = null;
 		try {
 			oid = publicKey.getObjectIdentifier();
 			return AlgorithmUtil.getAlgorithmName(publicKey.getObjectIdentifier());
 		} catch (Exception e) {
-			String superAlg = publicKey.getAlgorithm();
-			if (superAlg != null) {
-				return superAlg;
-			}
+			e.printStackTrace();
+			algorithm = publicKey.getAlgorithm();
+			if (algorithm != null) { return algorithm; }
 			return oid.getAsText();
 		}
 	}

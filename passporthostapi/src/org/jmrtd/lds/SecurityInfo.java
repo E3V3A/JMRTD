@@ -46,7 +46,7 @@ public abstract class SecurityInfo
 	 * 
 	 * @return a DER object with this SecurityInfo data
 	 */
-	public abstract DERObject getDERObject();
+	abstract DERObject getDERObject();
 
 	/**
 	 * Returns the object identifier of this SecurityInfo
@@ -62,7 +62,7 @@ public abstract class SecurityInfo
 	 * 
 	 * @return a concrete security info object
 	 */
-	public static SecurityInfo createSecurityInfo(DERObject obj) {
+	static SecurityInfo createSecurityInfo(DERObject obj) {
 		try {
 //			DERObject obj = new ASN1InputStream(in).readObject();
 			DERSequence sequence = (DERSequence)obj;

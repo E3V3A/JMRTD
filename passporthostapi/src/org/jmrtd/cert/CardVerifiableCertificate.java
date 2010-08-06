@@ -1,7 +1,9 @@
 package org.jmrtd.cert;
 
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Provider;
@@ -11,6 +13,8 @@ import java.security.SignatureException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
 import net.sourceforge.scuba.data.ISOCountry;
@@ -18,7 +22,7 @@ import net.sourceforge.scuba.data.ISOCountry;
 import org.ejbca.cvc.ReferenceField;
 
 /**
- * CVCertificates as specified in TR 03110.
+ * Card verifiable certificates as specified in TR 03110.
  * 
  * Just a wrapper around <code>org.ejbca.cvc.CVCertificate</code> by Keijo Kurkinen of EJBCA.org,
  * so that we can subclass <code>java.security.cert.Certificate</code>.
@@ -26,12 +30,20 @@ import org.ejbca.cvc.ReferenceField;
  * We also hide some of the internal structure (no more calls to get the "body" just to get some
  * attributes).
  */
-public class CVCertificate extends Certificate
+public class CardVerifiableCertificate extends Certificate
 {
 	private org.ejbca.cvc.CVCertificate cvCertificate;
 
-	protected CVCertificate(org.ejbca.cvc.CVCertificate cvCertificate) {
+	private KeyFactory rsaKeyFactory;
+
+	protected CardVerifiableCertificate(org.ejbca.cvc.CVCertificate cvCertificate) {
 		super("CVC");
+		try {
+			rsaKeyFactory = KeyFactory.getInstance("RSA");
+		} catch (NoSuchAlgorithmException nsae) {
+			/* NOTE: never happens, RSA will be provided. */
+			nsae.printStackTrace();
+		}
 		this.cvCertificate = cvCertificate;
 	}
 
@@ -45,7 +57,18 @@ public class CVCertificate extends Certificate
 
 	public PublicKey getPublicKey() {
 		try {
-			return new CVCPublicKey(cvCertificate.getCertificateBody().getPublicKey());
+			org.ejbca.cvc.CVCPublicKey publicKey = cvCertificate.getCertificateBody().getPublicKey();
+			if (publicKey.getAlgorithm().equals("RSA")) { // TODO: something similar for EC / ECDSA?
+				RSAPublicKey rsaPublicKey = (RSAPublicKey)publicKey;
+				try {
+					return rsaKeyFactory.generatePublic(new RSAPublicKeySpec(rsaPublicKey.getModulus(), rsaPublicKey.getPublicExponent()));
+				} catch (GeneralSecurityException gse) {
+					gse.printStackTrace();
+					return new CVCPublicKey(publicKey);
+				}
+			}
+			System.out.println("DEBUG: pubkey type = " + publicKey.getAlgorithm());
+			return new CVCPublicKey(publicKey);
 		} catch (NoSuchFieldException nsfe) {
 			nsfe.printStackTrace();
 			return null;
@@ -164,7 +187,7 @@ public class CVCertificate extends Certificate
 		if (otherObj == null) { return false; }
 		if (this == otherObj) { return true; }
 		if (!this.getClass().equals(otherObj.getClass())) { return false; }
-		return this.cvCertificate.equals(((CVCertificate)otherObj).cvCertificate);
+		return this.cvCertificate.equals(((CardVerifiableCertificate)otherObj).cvCertificate);
 	}
 
 	public int hashCode() {

@@ -17,13 +17,13 @@ import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 
 public class CVCertificateBuilder
 {
-	public static CVCertificate createCertificate(PublicKey publicKey,
+	public static CardVerifiableCertificate createCertificate(PublicKey publicKey,
 			PrivateKey signerKey, String algorithmName, CVCPrincipal caRef,
 			CVCPrincipal holderRef, CVCAuthorizationTemplate authZTemplate, Date validFrom, Date validTo,
 			String provider) throws IOException, NoSuchAlgorithmException,
 			NoSuchProviderException, InvalidKeyException, SignatureException,
 			ConstructionException {
-		return new CVCertificate(org.ejbca.cvc.CertificateGenerator
+		return new CardVerifiableCertificate(org.ejbca.cvc.CertificateGenerator
 				.createCertificate(publicKey, signerKey, algorithmName,
 						new CAReferenceField(caRef.getCountry().toAlpha2Code(),
 								caRef.getMnemonic(), caRef.getSeqNumber()),

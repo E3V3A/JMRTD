@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
  * Stores terminal CV certificate and keys.
@@ -78,13 +78,13 @@ public class CVCAStore
 
 	private URI location;
 
-	private final Map<String, List<CVCertificate>> certificateListsMap;
+	private final Map<String, List<CardVerifiableCertificate>> certificateListsMap;
 	private final Map<String, PrivateKey> keysMap;
 
 	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	public CVCAStore(URI location) {
-		certificateListsMap = new HashMap<String, List<CVCertificate>>();
+		certificateListsMap = new HashMap<String, List<CardVerifiableCertificate>>();
 		keysMap = new HashMap<String, PrivateKey>();
 		setLocation(location);	
 	}
@@ -96,13 +96,13 @@ public class CVCAStore
 	 * @param certificates public key certificates to add
 	 * @param privateKey private key to add
 	 */
-	public void addEntry(String alias, List<CVCertificate> certificates, PrivateKey privateKey) {
+	public void addEntry(String alias, List<CardVerifiableCertificate> certificates, PrivateKey privateKey) {
 		if (alias == null) { throw new IllegalArgumentException("Alias should not be null"); }
 		if (certificateListsMap.containsKey(alias)) { throw new IllegalArgumentException("Alias already present"); }
 		if (certificates == null || privateKey == null || certificates.size() == 0) {
 			throw new IllegalArgumentException();
 		}
-		certificateListsMap.put(alias, new ArrayList<CVCertificate>(certificates));
+		certificateListsMap.put(alias, new ArrayList<CardVerifiableCertificate>(certificates));
 		keysMap.put(alias, privateKey);
 	}
 
@@ -136,11 +136,11 @@ public class CVCAStore
 		File[] certFiles = dir.listFiles(TERMINAL_CERT_FILE_FILTER);
 		File[] keyFiles = dir.listFiles(TERMINAL_KEY_FILE_FILTER);
 		certFiles = sortFiles(certFiles);
-		List<CVCertificate> terminalCertificates = new ArrayList<CVCertificate>();
+		List<CardVerifiableCertificate> terminalCertificates = new ArrayList<CardVerifiableCertificate>();
 		String keyAlgName = "RSA";
 		for (File file : certFiles) {
 			System.out.println("Found certificate file: " + file);
-			CVCertificate cvCertificate = readCVCertificateFromFile(file);
+			CardVerifiableCertificate cvCertificate = readCVCertificateFromFile(file);
 			if (cvCertificate == null) { throw new IOException(); }
 			terminalCertificates.add(cvCertificate);
 			keyAlgName = cvCertificate.getPublicKey().getAlgorithm();
@@ -164,7 +164,7 @@ public class CVCAStore
 	 * 
 	 * @return the certificates associated with the given alias
 	 */
-	public List<CVCertificate> getCertificates(String alias) {
+	public List<CardVerifiableCertificate> getCertificates(String alias) {
 		return certificateListsMap.get(alias);
 	}
 
@@ -212,29 +212,23 @@ public class CVCAStore
 		return files;
 	}
 
-	private static byte[] loadFile(File file) throws IOException {
-		DataInputStream in = null;
-		byte[] result = new byte[(int)file.length()];
-		in = new DataInputStream(new FileInputStream(file));
-		in.readFully(result);
-		in.close();
-		return result;
-	}
-
-	private static CVCertificate readCVCertificateFromFile(File f) {
+	private static CardVerifiableCertificate readCVCertificateFromFile(File f) {
 		try {
 			CertificateFactory cf = CertificateFactory.getInstance("CVC", JMRTD_PROVIDER);
-			return (CVCertificate)cf.generateCertificate(new FileInputStream(f));
+			return (CardVerifiableCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;
 		}
 	}
 
-	private static PrivateKey readKeyFromFile(File f, String algName) {
+	private static PrivateKey readKeyFromFile(File file, String algorithm) {
 		try {
-			byte[] data = loadFile(f);
+			byte[] data = new byte[(int)file.length()];
+			DataInputStream in = new DataInputStream(new FileInputStream(file));
+			in.readFully(data);
+			in.close();
 			PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(data);
-			KeyFactory gen = KeyFactory.getInstance(algName);
+			KeyFactory gen = KeyFactory.getInstance(algorithm);
 			return gen.generatePrivate(spec);
 		} catch (Exception e) {
 			return null;

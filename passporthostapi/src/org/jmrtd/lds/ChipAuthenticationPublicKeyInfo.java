@@ -82,25 +82,23 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 	 * @param keyId
 	 *            the key identifier or -1 if not present
 	 */
-	public ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo, int keyId) {
+	ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo, int keyId) {
 		this.oid = oid;
 		this.subjectPublicKeyInfo = publicKeyInfo;
 		this.keyId = keyId;
 		checkFields();
 	}
-	
-	public ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo) {
+
+	ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo) {
 		this(oid, publicKeyInfo, -1);
 	}
-	
-	public ChipAuthenticationPublicKeyInfo(String oid, PublicKey publicKey, int keyId) {
-		this(oid, getSubjectPublicKeyInfo(publicKey), keyId);
-	}
-	
-	public ChipAuthenticationPublicKeyInfo(String oid, PublicKey publicKey) {
-		this(oid, getSubjectPublicKeyInfo(publicKey), -1);
-	}
-	
+
+	/**
+	 * Creates a public key info structure.
+	 * 
+	 * @param publicKey Either a DH public key or an EC public key
+	 * @param keyId
+	 */
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, int keyId) {
 		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
 	}
@@ -156,8 +154,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new IllegalArgumentException(
-			"Malformed ChipAuthenticationInfo.");
+			throw new IllegalArgumentException("Malformed ChipAuthenticationInfo.");
 		}
 	}
 
@@ -202,7 +199,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 			return null;
 		}
 	}
-	
+
 	/*
 	 * Woj, I moved this here from DG14File, seemed more appropriate here. -- MO
 	 */
@@ -214,36 +211,47 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 		// Bouncy Castle does by default. But we first have to check if this is
 		// the case.
 		try {
-			if (publicKey instanceof ECPublicKey) {
+			if (publicKey.getAlgorithm().equals("EC")) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
-				SubjectPublicKeyInfo vInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
 				asn1In.close();
-				DERObject parameters = vInfo.getAlgorithmId().getParameters().getDERObject();
+				DERObject derEncodedParams = subjectPublicKeyInfo.getAlgorithmId().getParameters().getDERObject();
 				X9ECParameters params = null;
-				if (parameters instanceof DERObjectIdentifier) {
-					params = X962NamedCurves.getByOID((DERObjectIdentifier)parameters);
-					org.bouncycastle.math.ec.ECPoint p = params.getG();
-					p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), false);
-					params = new X9ECParameters(params.getCurve(), p, params.getN(), params.getH(), params.getSeed());
+				if (derEncodedParams instanceof DERObjectIdentifier) {
+					DERObjectIdentifier oid = (DERObjectIdentifier)derEncodedParams;
+					
+					/* It's a named curve from X9.62. */
+					params = X962NamedCurves.getByOID(oid);					
+					if (params == null) { throw new IllegalArgumentException("Cannot find X9.62 named curve for OID " + oid.getId()); }
+					
+					/* Reconstruct the parameters. */
+					org.bouncycastle.math.ec.ECPoint generator = params.getG();
+					org.bouncycastle.math.ec.ECCurve curve = generator.getCurve();
+					generator = curve.createPoint(generator.getX().toBigInteger(), generator.getY().toBigInteger(), false);
+					params = new X9ECParameters(params.getCurve(), generator, params.getN(), params.getH(), params.getSeed());
 				} else {
-					return vInfo;
+					/* It's not a named curve, we can just return the decoded public key info. */
+					return subjectPublicKeyInfo;
 				}
 
-				org.bouncycastle.jce.interfaces.ECPublicKey pub = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
-				AlgorithmIdentifier id = new AlgorithmIdentifier(vInfo.getAlgorithmId().getObjectId(), params.getDERObject());
-				org.bouncycastle.math.ec.ECPoint p = pub.getQ();
-				// In case we would like to compress the point:
-				// p = p.getCurve().createPoint(p.getX().toBigInteger(),
-				// p.getY().toBigInteger(), true);
-				vInfo = new SubjectPublicKeyInfo(id, p.getEncoded());
-				return vInfo;
-			} else if (publicKey instanceof DHPublicKey) {
-				DHPublicKey dhKey = ((DHPublicKey)publicKey);
-				DHParameterSpec dhSpec = dhKey.getParams();
+				if (publicKey instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
+					org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
+					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithmId().getObjectId(), params.getDERObject());
+					org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
+					// In case we would like to compress the point:
+					// p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
+					subjectPublicKeyInfo = new SubjectPublicKeyInfo(id, q.getEncoded());
+					return subjectPublicKeyInfo;
+				} else {
+					return subjectPublicKeyInfo;
+				}
+			} else if (publicKey.getAlgorithm().equals("DH")) {
+				DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
+				DHParameterSpec dhSpec = dhPublicKey.getParams();
 				return new SubjectPublicKeyInfo(
-				    new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
-				             new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
-				             new DERInteger(dhKey.getY()));
+						new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
+								new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
+								new DERInteger(dhPublicKey.getY()));
 			} else {
 				throw new IllegalArgumentException("Unrecognized key type, should be DH or EC");
 			}
@@ -252,7 +260,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 			return null;
 		}
 	}
-	
+
 	private static String inferProtocolIdentifier(PublicKey publicKey) {
 		// FIXME: Couldn't we use PublicKey.getAlgorithm() here?
 		if (publicKey instanceof ECPublicKey) {

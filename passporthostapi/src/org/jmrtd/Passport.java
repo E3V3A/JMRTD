@@ -35,6 +35,7 @@ import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -64,7 +65,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
@@ -82,7 +82,7 @@ import net.sourceforge.scuba.util.Hex;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.VerificationStatus.Verdict;
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
@@ -131,7 +131,7 @@ public class Passport
 	private boolean hasEACSupport = false;
 
 	private PrivateKey docSigningPrivateKey;
-	private CVCertificate cvcaCertificate;
+	private CardVerifiableCertificate cvcaCertificate;
 	private PrivateKey eacPrivateKey;
 
 	private PrivateKey aaPrivateKey;
@@ -140,7 +140,7 @@ public class Passport
 
 	private BACKeySpec bacKeySpec;
 	private List<CertStore> cscaStores;
-	private CVCAStore cvcaStore;
+	private List<KeyStore> cvcaStores;
 
 	private PassportService service;
 
@@ -230,7 +230,7 @@ public class Passport
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
-	public Passport(PassportService service, List<CertStore> cscaStores, CVCAStore cvcaStore, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, List<CertStore> cscaStores, List<KeyStore> cvcaStores, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
 		try {
@@ -238,9 +238,9 @@ public class Passport
 		} catch (Exception e) {
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
+		this.bacKeySpec = null;
 		this.cscaStores = cscaStores;
-		this.cvcaStore = cvcaStore;
-		bacKeySpec = null;
+		this.cvcaStores = cvcaStores;
 
 		/* Find out whether this passport supports BAC. */
 		boolean isBACPassport = false;
@@ -253,7 +253,7 @@ public class Passport
 			isBACPassport = true;
 		} catch (IOException e) {
 			e.printStackTrace();
-			// FIXME: now what?
+			/* NOTE: Now what? */
 		}
 
 		/* Try entries from BACStore. */
@@ -291,16 +291,16 @@ public class Passport
 			throw new CardServiceException("Basic Access denied!");
 		}
 		try {
-			readFromService(service, cvcaStore, bacKeySpec);
+			readFromService(service, bacKeySpec, cvcaStores);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			throw new CardServiceException(ioe.getMessage());
 		}
 	}
 
-	public Passport(PassportService service, CVCAStore cvcaStore, BACKeySpec bacKeySpec) throws IOException, CardServiceException {
+	public Passport(PassportService service, BACKeySpec bacKeySpec, List<KeyStore> cvcaStores) throws IOException, CardServiceException {
 		this();
-		readFromService(service, cvcaStore, bacKeySpec);
+		readFromService(service, bacKeySpec, cvcaStores);
 	}
 
 	public Passport(File file, List<CertStore> cscaStores) throws IOException {
@@ -332,7 +332,7 @@ public class Passport
 							&& !fileName.endsWith(".BIN")
 							&& !fileName.endsWith(".dat")
 							&& !fileName.endsWith(".DAT")) {
-						System.err.println("WARNING: skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
+						logger.warning("Skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
 						continue;					
 					}
 				}
@@ -358,7 +358,7 @@ public class Passport
 					fid = tagBasedFID;
 				}
 				if (fid != tagBasedFID) {
-					System.err.println("WARNING: file name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
+					logger.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
 				}
 				totalLength += fileLength;
 				fileLengths.put((short)fid, fileLength);
@@ -385,7 +385,7 @@ public class Passport
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	private void readFromService(PassportService service, CVCAStore cvcaStore, BACKeySpec bacKeySpec) throws IOException, CardServiceException {	
+	private void readFromService(PassportService service, BACKeySpec bacKeySpec, List<KeyStore> cvcaStores) throws IOException, CardServiceException {	
 		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : null;
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
@@ -393,90 +393,100 @@ public class Passport
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new HashMap<Short, Boolean>();
-		BufferedInputStream bufferedIn = preReadFile(service, PassportService.EF_COM);
-		comFile = new COMFile(bufferedIn);
-		bufferedIn.reset();
+		InputStream comIn = preReadFile(service, PassportService.EF_COM);
+		comFile = new COMFile(comIn);
+		List<Integer> comTagList = comFile.getTagList();
+		InputStream sodIn = preReadFile(service, PassportService.EF_SOD);
+		sodFile = new SODFile(sodIn);
 
-		// For now save the EAC fids (DG3/DG4) and deal with them later
-		// Also, deal with DG14 in a special way, like with COM/SOD
-		List<Short> eacFids = new ArrayList<Short>();
-		DG14File dg14file = null;
+		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;
-		for (int tag: comFile.getTagList()) {
+		if (comTagList.contains(PassportFile.EF_DG14_TAG)) {
+			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
+			dg14File = new DG14File(dg14In);
+
+			/* Now try to deal with EF.CVCA */
+			List<Integer> cvcafids = dg14File.getCVCAFileIds();
+			if (cvcafids != null && cvcafids.size() != 0) {
+				if (cvcafids.size() > 1) { logger.warning("More than one CVCA file id present in DG14."); }
+				cvcaFID = cvcafids.get(0).shortValue();
+			}
+			InputStream cvcaIn = preReadFile(service, cvcaFID);
+			cvcaFile = new CVCAFile(cvcaIn);
+
+			/* Try to do EAC. */
+			for (KeyStore cvcaStore: cvcaStores) {
+				// FIXME: Try with all cvcaStores?
+				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
+			}
+		}
+
+		/* Start reading each of the files. */
+		for (int tag: comTagList) {
 			short fid = PassportFile.lookupFIDByTag(tag);
-			if (fid == PassportService.EF_DG14) {
-				bufferedIn = preReadFile(service, PassportService.EF_DG14);
-				dg14file = new DG14File(bufferedIn);
-				bufferedIn.reset();
-				// Now try to deal with EF.CVCA
-				List<Integer> cvcafids = dg14file.getCVCAFileIds();
-				if(cvcafids != null && cvcafids.size() != 0) {
-					if(cvcafids.size() > 1) { System.err.println("Warning: more than one CVCA file id present in DG14."); }
-					cvcaFID = cvcafids.get(0).shortValue();
-				}
-				bufferedIn = preReadFile(service, cvcaFID);
-				cvcaFile = new CVCAFile(bufferedIn);
-				bufferedIn.reset();
-			} else {
+			try {
+				setupFile(service, fid);
+			} catch(CardServiceException ex) {
+				/* Most likely EAC protected file. */               
+			}
+		}
+	}
+
+	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
+		hasEACSupport = true;
+		List<List<CardVerifiableCertificate>> termCerts = new ArrayList<List<CardVerifiableCertificate>>();
+		List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
+		List<String> caRefs = new ArrayList<String>();
+		for(String caRef: new String[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
+			if (caRef != null) {
 				try {
-					setupFile(service, fid);
-				} catch(CardServiceException ex) {
-					// Most likely EAC protected file: 
-					eacFids.add(fid);                  
+					System.out.println("DEBUG: caRef = " + caRef);
+					List<String> aliases = Collections.list(cvcaStore.aliases());
+					System.out.println("DEBUG: aliases = " + aliases);
+
+					PrivateKey caPrivateKey = (PrivateKey)cvcaStore.getKey(caRef, "".toCharArray());
+					Certificate[] certPath = cvcaStore.getCertificateChain(caRef);
+					if (caPrivateKey != null && certPath != null) {
+						List<CardVerifiableCertificate> certList = new ArrayList<CardVerifiableCertificate>();
+						for (Certificate certificate: certPath) {
+							System.out.println("DEBUG: cert in certPath = " + certificate);
+							certList.add((CardVerifiableCertificate)certificate);
+						}
+						termCerts.add(certList);
+						termKeys.add(caPrivateKey);
+						caRefs.add(caRef);
+					}
+				} catch (Exception e) {
+					e.printStackTrace();
+					logger.warning("Inside doEAC: " + e.getMessage());
 				}
 			}
 		}
-		bufferedIn = preReadFile(service, PassportService.EF_SOD);
-		sodFile = new SODFile(bufferedIn);
-		bufferedIn.reset();
-		/* Try to do EAC, if DG14File present. */
-		if(dg14file != null) {
-			hasEACSupport = true;
-			List<List<CVCertificate>> termCerts = new ArrayList<List<CVCertificate>>();
-			List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
-			List<String> caRefs = new ArrayList<String>();
-			for(String caRef : new String[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
-				if (caRef != null && cvcaStore != null) {
-					try {
-						List<CVCertificate> t = cvcaStore.getCertificates(caRef);
-						if(t != null) {
-							termCerts.add(t);
-							termKeys.add(cvcaStore.getPrivateKey(caRef));
-							caRefs.add(caRef);
-						}
-					} catch (NoSuchElementException nsee) { /* FIXME: Why silent? -- MO */ }
-				}
-			}
-			if(termCerts.size() == 0) {
-				// no luck, passport has EAC, but we don't have the certificates
-				return;
-			}
-			// Try EAC
-			if (documentNumber == null) {
-				// Try DG1 if document number was not supplied
-				bufferedIn = preReadFile(service, PassportService.EF_DG1);
-				documentNumber = new DG1File(bufferedIn).getMRZInfo().getDocumentNumber();
-				bufferedIn.reset();
-			}
+		if (termCerts.size() == 0) {
+			/* No luck, passport has EAC, but we don't have the certificates. */
+			return;
+		}
 
-			Map<Integer, PublicKey> cardKeys = dg14file.getPublicKeys();
-			Set<Integer> keyIds = cardKeys.keySet();
-			for(int i : keyIds) {
-				if (verificationStatus.getEAC() == Verdict.SUCCEEDED) { break; }
-				for(int termIndex=0; termIndex<termCerts.size(); termIndex++) {
-					try {
-						service.doEAC(i, cardKeys.get(i), caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber);
-						verificationStatus.setEAC(Verdict.SUCCEEDED);
-						break;
-					}catch(CardServiceException cse) {
-						cse.printStackTrace();
-					}
-				}
-			}
-			if (verificationStatus.getEAC() == Verdict.SUCCEEDED) {
-				// setup DG3 and/or DG4 for reading
-				for (Short fid : eacFids) {
-					setupFile(service, fid);
+		/* Try EAC. */
+		if (documentNumber == null) {
+			/* Try DG1 if document number was not supplied */
+			InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
+			documentNumber = new DG1File(dg1In).getMRZInfo().getDocumentNumber();
+		}
+
+		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
+		for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
+			int i = entry.getKey();
+			PublicKey publicKey = entry.getValue();
+			if (verificationStatus.getEAC() == Verdict.SUCCEEDED) { break; }
+			for (int termIndex = 0; termIndex < termCerts.size(); termIndex++) {
+				try {
+					service.doEAC(i, publicKey, caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber);
+					verificationStatus.setEAC(Verdict.SUCCEEDED);
+					break;
+				} catch(CardServiceException cse) {
+					cse.printStackTrace();
+					/* NOTE: Failed, try next index. */
 				}
 			}
 		}
@@ -497,6 +507,8 @@ public class Passport
 				in = new ByteArrayInputStream(file);
 				in.mark(file.length + 1);
 			} else {
+				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
+
 				/* Maybe partially read? Use the buffered stream. */
 				in = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
 				if (in != null && in.markSupported()) { in.reset(); }
@@ -592,7 +604,7 @@ public class Passport
 		updateCOMSODFile(newCertificate);
 	}
 
-	public void setCVCertificate(CVCertificate cert) {
+	public void setCVCertificate(CardVerifiableCertificate cert) {
 		this.cvcaCertificate = cert;
 		try {
 			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getHolderReference().getName());
@@ -602,7 +614,7 @@ public class Passport
 		}
 	}
 
-	public CVCertificate getCVCertificate() {
+	public CardVerifiableCertificate getCVCertificate() {
 		return cvcaCertificate;
 	}
 
@@ -614,8 +626,8 @@ public class Passport
 		return cscaStores;
 	}
 
-	public CVCAStore getCVCAStore() {
-		return cvcaStore;
+	public List<KeyStore> getCVCAStores() {
+		return cvcaStores;
 	}
 
 	public void setEACPrivateKey(PrivateKey privateKey) {
@@ -660,6 +672,129 @@ public class Passport
 		return result;
 	}
 
+	/**
+	 * Verifies the passport using the security related mechanisms.
+	 * Adjusts the verificationIndicator to show the user the verification status.
+	 * 
+	 * Assumes passport object is non-null and read from the service.
+	 * 
+	 * FIXME: move this to passporthostapi's Passport class.
+	 * 
+	 * @param service
+	 */
+	public void verifySecurity() {
+		if (verificationStatus == null) { verificationStatus = new VerificationStatus(); }
+		verifyBAC();
+		verifyEAC();
+		verifyAA(service);
+		verifyDS();
+		verifyCS();
+	}
+
+	public List<Certificate> getCertificateChain() {
+		if (cscaStores == null) {
+			logger.warning("No certificate stores found.");
+			return null;
+		}
+		SODFile sod = null;
+		try {
+			InputStream sodIn = getInputStream(PassportService.EF_SOD);
+			sod = new SODFile(sodIn);
+
+		} catch (IOException ioe) {
+			logger.warning("Error opening SOD file");
+			return null;
+		}
+		if (sod == null) {
+			logger.warning("Cannot check certificate chain: missing SOD file");
+			return null;
+		}
+		X500Principal sodIssuer = sod.getIssuerX500Principal();
+		BigInteger sodSerialNumber = sod.getSerialNumber();
+		X509Certificate docSigningCertificate = null;
+		try {
+			docSigningCertificate = sod.getDocSigningCertificate();
+		} catch (Exception e) {
+			logger.warning("Error getting document signing certificate: " + e.getMessage());
+		}
+		if (docSigningCertificate != null) {
+			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
+			if (!sodIssuer.equals(docIssuer)) {
+				logger.warning("Security object issuer principal is different from embedded DS certificate issuer!");
+				return null;
+			}
+		}
+
+		List<Certificate> chainCertificates = null;
+
+		/*
+		 * Build the anchor set by adding all certificates in the trusted stores.
+		 * If the target certificate is an anchor we're done.
+		 */
+		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
+		for (CertStore trustStore: cscaStores) {
+			try {
+				final CertSelector allSelector = new X509CertSelector() {
+					public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
+					public Object clone() { return this; }
+				};
+				Collection<? extends Certificate> storeCertificates = trustStore.getCertificates(allSelector);
+
+				if (docSigningCertificate != null && storeCertificates.contains(docSigningCertificate)) {
+					chainCertificates = Collections.singletonList((Certificate)docSigningCertificate);
+					return chainCertificates;
+				}
+				anchors.addAll(getAsAnchors(storeCertificates));
+			} catch (CertStoreException cse) {
+				/* NOTE: skip this store. */
+			}
+		}
+
+		/*
+		 * If the target certificate is not an anchor we have PKIX build a chain to an anchor.
+		 */
+		X509CertSelector selector = new X509CertSelector();
+		try {
+			if (docSigningCertificate != null) {
+				selector.setCertificate(docSigningCertificate);
+			} else {
+				selector.setIssuer(sodIssuer);
+				//				selector.setSerialNumber(sodSerialNumber);
+			}
+
+			CertStoreParameters docStoreParams =
+				new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
+			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
+
+			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(anchors, selector);
+			buildParams.addCertStore(docStore);
+			for (CertStore trustStore: cscaStores) {
+				buildParams.addCertStore(trustStore);
+			}
+			buildParams.setRevocationEnabled(false);
+			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+			if (result != null) {
+				CertPath chain = result.getCertPath();
+				chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
+				if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
+					/* NOTE: if target certificate not in list, we add it ourselves. */
+					logger.warning("Adding target certificate after PKIXBuilder finished");
+					chainCertificates.add(docSigningCertificate);
+				}
+				Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
+				if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
+					chainCertificates.add(anchorCert);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			logger.info("Building a chain failed (" + e.getMessage() + ").");
+		}
+
+		return chainCertificates;
+	}
+
 	/* Only private methods below. */
 
 	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
@@ -682,18 +817,23 @@ public class Passport
 	}
 
 	private void setupFile(PassportService service, short fid) throws CardServiceException {
-		CardFileInputStream in = service.readFile(fid);
-		int fileLength = in.getFileLength();
-		in.mark(fileLength + 1);
-		rawStreams.put(fid, in);
+		if (rawStreams.containsKey(fid)) {
+			logger.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
+			return;
+		}
+		CardFileInputStream cardIn = service.readFile(fid);
+		int fileLength = cardIn.getFileLength();
+		cardIn.mark(fileLength + 1);
+		rawStreams.put(fid, cardIn);
 		totalLength += fileLength;
 		fileLengths.put(fid, fileLength);        
 	}
 
 	/**
-	 * Starts a thread to read the raw inputstream.
+	 * Starts a thread to read the raw (unbuffered) inputstream and copy its bytes into a buffer
+	 * so that clients can read from those.
 	 *
-	 * @param fid
+	 * @param fid indicates the file to copy
 	 * @throws IOException
 	 */
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
@@ -701,7 +841,7 @@ public class Passport
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
 			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
-			System.err.println("WARNING: " + message + " (not starting thread)");
+			logger.warning(message + " (not starting thread)");
 			couldNotRead.put(fid, true);
 			return;
 		}
@@ -735,25 +875,6 @@ public class Passport
 				}
 			}
 		})).start();
-	}
-
-	/**
-	 * Verifies the passport using the security related mechanisms.
-	 * Adjusts the verificationIndicator to show the user the verification status.
-	 * 
-	 * Assumes passport object is non-null and read from the service.
-	 * 
-	 * FIXME: move this to passporthostapi's Passport class.
-	 * 
-	 * @param service
-	 */
-	public void verifySecurity() {
-		if (verificationStatus == null) { verificationStatus = new VerificationStatus(); }
-		verifyBAC();
-		verifyEAC();
-		verifyAA(service);
-		verifyDS();
-		verifyCS();
 	}
 
 	/** Checks whether BAC was used. */
@@ -894,114 +1015,11 @@ public class Passport
 		}
 	}
 
-	public List<Certificate> getCertificateChain() {
-		if (cscaStores == null) {
-			logger.warning("No certificate stores found.");
-			return null;
-		}
-		SODFile sod = null;
-		try {
-			InputStream sodIn = getInputStream(PassportService.EF_SOD);
-			sod = new SODFile(sodIn);
-
-		} catch (IOException ioe) {
-			logger.warning("Error opening SOD file");
-			return null;
-		}
-		if (sod == null) {
-			logger.warning("Cannot check certificate chain: missing SOD file");
-			return null;
-		}
-		X500Principal issuer = sod.getIssuerX500Principal();
-		BigInteger sodSerialNumber = sod.getSerialNumber();
-		X509Certificate docSigningCertificate = null;
-		try {
-			docSigningCertificate = sod.getDocSigningCertificate();
-		} catch (Exception e) {
-			logger.warning("Error getting document signing certificate: " + e.getMessage());
-		}
-		if (docSigningCertificate != null) {
-			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			if (!issuer.equals(docIssuer)) {
-				logger.warning("Security object issuer principal is different from embedded DS certificate issuer!");
-				return null;
-			}
-		}
-
-		List<Certificate> chainCertificates = null;
-
-		/*
-		 * Build the anchor set by adding all certificates in the trusted stores.
-		 * If the target certificate is an anchor we're done.
-		 */
-		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
-		for (CertStore trustStore: cscaStores) {
-			try {
-				final CertSelector allSelector = new X509CertSelector() {
-					public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
-					public Object clone() { return this; }
-				};
-				Collection<? extends Certificate> storeCertificates = trustStore.getCertificates(allSelector);
-
-				if (docSigningCertificate != null && storeCertificates.contains(docSigningCertificate)) {
-					chainCertificates = Collections.singletonList((Certificate)docSigningCertificate);
-					return chainCertificates;
-				}
-				anchors.addAll(getAsAnchors(storeCertificates));
-			} catch (CertStoreException cse) {
-				/* NOTE: skip this store. */
-			}
-		}
-
-		/*
-		 * If the target certificate is not an anchor we have PKIX build a chain to an anchor.
-		 */
-		X509CertSelector selector = new X509CertSelector();
-		try {
-			if (docSigningCertificate != null) {
-				selector.setCertificate(docSigningCertificate);
-			} else {
-				selector.setIssuer(issuer);
-//				selector.setSerialNumber(sodSerialNumber);
-			}
-
-			CertStoreParameters docStoreParams =
-				new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
-			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
-
-			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
-			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(anchors, selector);
-			buildParams.addCertStore(docStore);
-			for (CertStore trustStore: cscaStores) {
-				buildParams.addCertStore(trustStore);
-			}
-			buildParams.setRevocationEnabled(false);
-			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
-			if (result != null) {
-				CertPath chain = result.getCertPath();
-				chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
-				if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
-					/* NOTE: if target certificate not in list, we add it ourselves. */
-					logger.warning("Adding target certificate after PKIXBuilder finished");
-					chainCertificates.add(docSigningCertificate);
-				}
-				Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
-				if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
-					chainCertificates.add(anchorCert);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			logger.info("Building a chain failed (" + e.getMessage() + ").");
-		}
-
-		return chainCertificates;
-	}
 
 	/**
 	 * Checks the certificate chain.
 	 * 
-	 * FIXME: Check chain generically. Rename this method (it does more than just CS -> DS checking).
+	 * FIXME: Rename this method (it does more than just CS -> DS checking).
 	 */
 	private void verifyCS() {
 		try {
@@ -1018,7 +1036,7 @@ public class Passport
 				return;				
 			}
 
-			/* FIXME: This is no longer necessary after PKIX has done its job. */
+			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
 				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
 				logger.info("Document signer certificate found in store. Chain depth = " + chainDepth + ".");

@@ -44,7 +44,7 @@ import javax.swing.JScrollPane;
 
 import net.sourceforge.scuba.util.Files;
 
-import org.jmrtd.cert.CVCertificate;
+import org.jmrtd.cert.CardVerifiableCertificate;
 
 public class TerminalCertificatesDialog extends JDialog implements ActionListener
 {
@@ -56,11 +56,11 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 	C_VIEW = "view",
 	C_CLOSE = "close";
 
-	private List<CVCertificate> certificates;
+	private List<CardVerifiableCertificate> certificates;
 
 	private JList list;
 
-	public TerminalCertificatesDialog(Frame parent, List<CVCertificate> certificates, boolean writeMode) {
+	public TerminalCertificatesDialog(Frame parent, List<CardVerifiableCertificate> certificates, boolean writeMode) {
 		super(parent);
 		setTitle("Terminal Certificates");
 		this.certificates = certificates;
@@ -111,7 +111,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 
 		DefaultListModel model = new DefaultListModel();
 		try {
-			for (CVCertificate cert : certificates) {
+			for (CardVerifiableCertificate cert : certificates) {
 				model.addElement(cert.getHolderReference().getName());
 			}
 		} catch (Exception e) {
@@ -163,7 +163,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 	}
 
 	private void actionAdd(int index) {
-		CVCertificate cert = null;
+		CardVerifiableCertificate cert = null;
 		String name = null;
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
@@ -173,7 +173,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 			try {
 				File file = fileChooser.getSelectedFile();
 				CertificateFactory cf = CertificateFactory.getInstance("CVC");
-				cert = (CVCertificate)cf.generateCertificate(new FileInputStream(file));
+				cert = (CardVerifiableCertificate)cf.generateCertificate(new FileInputStream(file));
 				name = cert.getHolderReference().getName();
 			} catch (Exception ex) {
 				ex.printStackTrace();
