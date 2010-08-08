@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.DataInputStream;
 import java.io.InputStream;
 
+import org.jmrtd.cert.CVCPrincipal;
 
 /* TODO: Use CVCPrincipal instead of String for references? */
 
@@ -102,7 +103,7 @@ public class CVCAFile extends PassportFile
 	public byte[] getEncoded() {
 		byte[] result = new byte[LENGTH];
 		result[0] = CAR_TAG;
-		result[1] = (byte) caReference.length();
+		result[1] = (byte)caReference.length();
 		System.arraycopy(caReference.getBytes(), 0, result, 2, result[1]);
 		if (altCaReference != null) {
 			int index = result[1] + 2;
@@ -119,8 +120,8 @@ public class CVCAFile extends PassportFile
 	 * 
 	 * @return the CA Certificate identifier
 	 */
-	public String getCAReference() {
-		return caReference;
+	public CVCPrincipal getCAReference() {
+		return caReference == null ? null : new CVCPrincipal(caReference);
 	}
 
 	/**
@@ -129,8 +130,8 @@ public class CVCAFile extends PassportFile
 	 * 
 	 * @return the second (alternative) CA Certificate identifier
 	 */
-	public String getAltCAReference() {
-		return altCaReference;
+	public CVCPrincipal getAltCAReference() {
+		return altCaReference == null ? null : new CVCPrincipal(altCaReference);
 	}
 
 	public String toString() {

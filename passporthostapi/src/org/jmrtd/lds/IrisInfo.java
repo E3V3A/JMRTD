@@ -27,6 +27,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -49,6 +50,8 @@ import javax.imageio.stream.ImageInputStream;
  */
 public class IrisInfo extends DisplayedImageInfo
 {
+	private Logger logger = Logger.getLogger("org.jmrtd");
+
 	public static final int
 	IMAGEFORMAT_MONO_RAW = 2, /* (0x0002) */
 	IMAGEFORMAT_RGB_RAW = 4, /* (0x0004) */
@@ -116,8 +119,7 @@ public class IrisInfo extends DisplayedImageInfo
 				image = reader.read(0);
 				long posAfterImage =  iis.getStreamPosition();
 				if ((posAfterImage - posBeforeImage) != imageLength) {
-					/* FIXME: send this to a logger instead of stdout. */
-					System.out.println("WARNING: image may not have been correctly read");
+					logger.warning("Image may not have been correctly read");
 				}
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */

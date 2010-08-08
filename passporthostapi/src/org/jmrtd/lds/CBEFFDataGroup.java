@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.BERTLVInputStream;
 
@@ -44,6 +45,8 @@ import net.sourceforge.scuba.tlv.BERTLVInputStream;
  */
 abstract class CBEFFDataGroup extends DataGroup
 {
+	private Logger logger = Logger.getLogger("org.jmrtd");
+
 	static final int BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG = 0x7F61;
 	static final int BIOMETRIC_INFORMATION_TEMPLATE_TAG = 0x7F60;
 
@@ -130,7 +133,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
 		if (headerTemplateTag != expectedBioHeaderTemplateTag) {
 			String warning = "Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(headerTemplateTag);
-			System.out.println(warning);
+			logger.warning(warning);
 			// throw new IllegalArgumentException(warning);
 		}
 		/* We'll just skip this header for now. */
