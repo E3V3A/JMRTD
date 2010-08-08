@@ -62,6 +62,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
@@ -193,7 +194,7 @@ public class PassportService extends PassportApduService implements Serializable
 	public static final byte SF_CVCA = 0x1C;
 
 	public static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
-	
+
 	private final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
 	/**
@@ -421,7 +422,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * passport, sign it with terminal private key, and send back to the card
 	 * for verification.
 	 */
-	public synchronized byte[] doTA(String caReference,
+	public synchronized byte[] doTA(CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg,
 			byte[] caKeyHash, String documentNumber)
@@ -449,6 +450,7 @@ public class PassportService extends PassportApduService implements Serializable
 					sigAlg = cert.getPublicKey().getAlgorithm();
 					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes());
 				} catch (Exception e) {
+					/* FIXME: Does this mean we failed to authenticate? -- MO */
 					throw new CardServiceException(e.getMessage());
 				}
 			}
@@ -486,7 +488,7 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-	public synchronized byte[] doTA(String caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
+	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
 	throws CardServiceException {
 		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
@@ -516,16 +518,21 @@ public class PassportService extends PassportApduService implements Serializable
 	 *             on error
 	 */
 	public synchronized void doEAC(int keyId, PublicKey key,
-			String caReference, List<CardVerifiableCertificate> terminalCertificates,
+			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
 			PrivateKey terminalKey, String documentNumber)
 	throws CardServiceException {
-		KeyPair keyPair = doCA(keyId, key);
-		byte[] rpicc = doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
-		state = EAC_AUTHENTICATED_STATE;
-		EACEvent event = new EACEvent(this, keyId, key, keyPair,
-				caReference, terminalCertificates, terminalKey,
-				documentNumber, rpicc, true);
-		notifyEACPerformed(event);
+		KeyPair keyPair = null;
+		byte[] rpicc = null;
+		try {
+			keyPair = doCA(keyId, key);
+			rpicc = doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
+			state = EAC_AUTHENTICATED_STATE;
+		} finally {
+			EACEvent event = new EACEvent(this, keyId, key, keyPair,
+					caReference, terminalCertificates, terminalKey,
+					documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
+			notifyEACPerformed(event);
+		}
 	}
 
 	// For ECDSA the EAC 1.11 specification requires the signature to be
@@ -535,7 +542,7 @@ public class PassportService extends PassportApduService implements Serializable
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
 			DERSequence obj = (DERSequence) asn1In.readObject();
-			
+
 			Enumeration<DERObject> e = obj.getObjects();
 			while (e.hasMoreElements()) {
 				DERInteger i = (DERInteger) e.nextElement();

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.EventObject;
 import java.util.List;
 
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
@@ -40,23 +41,14 @@ import org.jmrtd.cert.CardVerifiableCertificate;
 public class EACEvent extends EventObject {
 
     private PassportService service;
-
     private int keyId;
-
     private PublicKey cardKey;
-
     private KeyPair keyPair;
-
-    private String caReference;
-
+    private CVCPrincipal caReference;
     private List<CardVerifiableCertificate> terminalCertificates = new ArrayList<CardVerifiableCertificate>();
-
     private PrivateKey terminalKey;
-
     private boolean success;
-
     private String documentNumber;
-
     private byte[] cardChallenge;
 
     /**
@@ -70,7 +62,7 @@ public class EACEvent extends EventObject {
      *            status of protocol
      */
     public EACEvent(PassportService service, int keyId, PublicKey cardKey,
-            KeyPair keyPair, String caReference,
+            KeyPair keyPair, CVCPrincipal caReference,
             List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
             String documentNumber, byte[] cardChallenge, boolean success) {
         super(service);
@@ -120,7 +112,7 @@ public class EACEvent extends EventObject {
      * 
      * @return CA certificate's reference
      */
-    public String getCAReference() {
+    public CVCPrincipal getCAReference() {
         return caReference;
     }
 

@@ -23,6 +23,7 @@
 package org.jmrtd;
 
 import java.security.GeneralSecurityException;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -68,6 +69,8 @@ public class PassportApduService extends CardService
 	/** Initialization vector used by the cipher below. */
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
 			new byte[8]);
+	
+//	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	/** The service we decorate. */
 	private CardService service;
@@ -145,8 +148,8 @@ public class PassportApduService extends CardService
 			throws CardServiceException {
 		/*
 		 * ResponseAPDU r = service.transmit(capdu);
-		 * System.out.println("C: "+Hex.bytesToHexString(capdu.getBytes()));
-		 * System.out.println("R: "+Hex.bytesToHexString(r.getBytes())); return
+		 * logger.info("C: "+Hex.bytesToHexString(capdu.getBytes()));
+		 * logger.info("R: "+Hex.bytesToHexString(r.getBytes())); return
 		 * r;
 		 */
 		return service.transmit(capdu);

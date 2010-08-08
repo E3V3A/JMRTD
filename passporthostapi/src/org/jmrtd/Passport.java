@@ -82,6 +82,7 @@ import net.sourceforge.scuba.util.Hex;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.VerificationStatus.Verdict;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
@@ -127,6 +128,7 @@ public class Passport
 	// Our local copies of the COM and SOD files:
 	private COMFile comFile;
 	private SODFile sodFile;
+	private DG1File dg1File;
 
 	private boolean hasEACSupport = false;
 
@@ -386,7 +388,6 @@ public class Passport
 	 * @throws CardServiceException on error
 	 */
 	private void readFromService(PassportService service, BACKeySpec bacKeySpec, List<KeyStore> cvcaStores) throws IOException, CardServiceException {	
-		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : null;
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
@@ -398,9 +399,14 @@ public class Passport
 		List<Integer> comTagList = comFile.getTagList();
 		InputStream sodIn = preReadFile(service, PassportService.EF_SOD);
 		sodFile = new SODFile(sodIn);
+		InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
+		dg1File = new DG1File(dg1In);
+		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
 		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;
+
+		/* Find out if we need to do EAC. */
 		if (comTagList.contains(PassportFile.EF_DG14_TAG)) {
 			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
 			dg14File = new DG14File(dg14In);
@@ -427,66 +433,51 @@ public class Passport
 			try {
 				setupFile(service, fid);
 			} catch(CardServiceException ex) {
-				/* Most likely EAC protected file. */               
+				/* NOTE: Most likely EAC protected file. */
+				logger.info("Could not read file with FID " + Integer.toHexString(fid)
+						+ ": " + ex.getMessage());
 			}
 		}
 	}
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
-		List<List<CardVerifiableCertificate>> termCerts = new ArrayList<List<CardVerifiableCertificate>>();
-		List<PrivateKey> termKeys = new ArrayList<PrivateKey>();
-		List<String> caRefs = new ArrayList<String>();
-		for(String caRef: new String[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
+		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
+		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 			if (caRef != null) {
 				try {
-					System.out.println("DEBUG: caRef = " + caRef);
 					List<String> aliases = Collections.list(cvcaStore.aliases());
-					System.out.println("DEBUG: aliases = " + aliases);
+					for (String alias: aliases) {
+						if (cvcaStore.isCertificateEntry(alias)) {
+							CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
+							CVCPrincipal authRef = certificate.getAuthorityReference();
+							CVCPrincipal holderRef = certificate.getHolderReference();
+							if (caRef.equals(authRef)) {
+								/* See if we have a private key for that certificate. */
+								PrivateKey privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
+								Certificate[] certPath = cvcaStore.getCertificateChain(holderRef.getName());
+								if (privateKey != null) {
+									List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(certPath.length);
+									for (Certificate c: certPath) { terminalCerts.add((CardVerifiableCertificate)c); }
 
-					PrivateKey caPrivateKey = (PrivateKey)cvcaStore.getKey(caRef, "".toCharArray());
-					Certificate[] certPath = cvcaStore.getCertificateChain(caRef);
-					if (caPrivateKey != null && certPath != null) {
-						List<CardVerifiableCertificate> certList = new ArrayList<CardVerifiableCertificate>();
-						for (Certificate certificate: certPath) {
-							System.out.println("DEBUG: cert in certPath = " + certificate);
-							certList.add((CardVerifiableCertificate)certificate);
+									for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
+										int i = entry.getKey();
+										PublicKey publicKey = entry.getValue();
+										try {
+											service.doEAC(i, publicKey, caRef, terminalCerts, privateKey, documentNumber);
+											verificationStatus.setEAC(Verdict.SUCCEEDED);
+											break;
+										} catch(CardServiceException cse) {
+											cse.printStackTrace();
+											/* NOTE: Failed, too bad, try next public key. */
+										}
+									}
+								}
+							}				
 						}
-						termCerts.add(certList);
-						termKeys.add(caPrivateKey);
-						caRefs.add(caRef);
 					}
 				} catch (Exception e) {
 					e.printStackTrace();
-					logger.warning("Inside doEAC: " + e.getMessage());
-				}
-			}
-		}
-		if (termCerts.size() == 0) {
-			/* No luck, passport has EAC, but we don't have the certificates. */
-			return;
-		}
-
-		/* Try EAC. */
-		if (documentNumber == null) {
-			/* Try DG1 if document number was not supplied */
-			InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
-			documentNumber = new DG1File(dg1In).getMRZInfo().getDocumentNumber();
-		}
-
-		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
-		for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
-			int i = entry.getKey();
-			PublicKey publicKey = entry.getValue();
-			if (verificationStatus.getEAC() == Verdict.SUCCEEDED) { break; }
-			for (int termIndex = 0; termIndex < termCerts.size(); termIndex++) {
-				try {
-					service.doEAC(i, publicKey, caRefs.get(termIndex), termCerts.get(termIndex), termKeys.get(termIndex), documentNumber);
-					verificationStatus.setEAC(Verdict.SUCCEEDED);
-					break;
-				} catch(CardServiceException cse) {
-					cse.printStackTrace();
-					/* NOTE: Failed, try next index. */
 				}
 			}
 		}
