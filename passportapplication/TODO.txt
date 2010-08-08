@@ -77,14 +77,14 @@ Web site and documentation
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
 
 
-VERSION 0.4.5 (FUTURE)
-----------------------
+VERSION 0.4.5 (2010 FUTURE)
+---------------------------
 
 General
 + Use JSR 55 (Certification Path API) for searching for SOD validation
 + LDAP interface (JNDI) to PKD? Tested with downloadable ldif from https://pkddownloadsg.icao.int/ on openldap.
-+ Implement CSCA as CertStore (and for local files as PKCS12 KeyStore with CertStore interface).
-- Implement CVCA as KeyStore.
++ Implement CSCA as CertStore (and for local files as KeyStore with CertStore interface).
++ Implement CVCA as KeyStore.
 + Move BAC logic from PassportFrame to Passport class.
 + Move readFromService logic from PassportFrame to the Passport class.
 + Move the verifySecurity logic from PassportFrame to Passport class.
@@ -95,7 +95,7 @@ General
 
 GUI
 + Only go to editor mode if user explicitly indicates (default display mode should be not editable).
-- Display EAC information (now it only does this if DG14 present _and_ succesful EAC event.
+- Display EAC information (now it only does this if DG14 present _and_ succesful EAC event).
 
 Bugs/temporary fixes
 + Remove image method in DisplayPreviewPanel only targets DG2 (displayed images could also be in DG3 - DG7, ...?)
@@ -103,10 +103,10 @@ Bugs/temporary fixes
 
 Dependencies
 + Wrapper around cert-cvc so that CVCertificates subclass java.security.cert.Certificate.
-- cert-cvc latest. Need EAC samples to test. Woj still has samples?
++ cert-cvc latest.
 - Check/update README and Web site to reflect correct version numbers.
 - Latest JAI ImageIO 1.2
-- Latest Bouncy Castle 1.45
++ Latest Bouncy Castle 1.45
 
 Code quality
 - Check JavaDoc
@@ -120,12 +120,12 @@ VERSION 0.4.6 (FUTURE)
 ----------------------
 
 General
-- CRL validity checking
+- CRL validity checking, PKD and local storage
 - Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
   FaceInfo for DG2, but a list of lists).
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Implement BAC as KeyStore?
-- getEncoded() implementations for all *File and *Info in org.jmrtd.lds package.
+- getEncoded() implementations for all classes in org.jmrtd.lds package.
 
 GUI
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
@@ -149,7 +149,6 @@ VERSION 0.5.x (FUTURE)
 ----------------------
 
 General
-- Support for certificate revocation lists
 - Check and compare date (current) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
@@ -160,6 +159,7 @@ GUI
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
   
 Code quality
+- Need EAC samples to test with.
 - Check JavaDoc
 - Findbugs
 - Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
@@ -178,7 +178,7 @@ Website and documentation
 - Compile-it-yourself instructions
 
 VERSION 0.9.x (FUTURE)
------------------------
+----------------------
 
 Features
 - Webcam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
