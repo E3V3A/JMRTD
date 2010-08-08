@@ -1,10 +1,13 @@
 package org.jmrtd.test;
 
+import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,7 +28,6 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
@@ -100,10 +102,11 @@ public class PassportTestService extends PassportService {
 
 	/** Data needed for EAC **/
 
-	private static CVCAStore certDir = null;
+	private static KeyStore certDir = null;
 	static {
 		try {
-			certDir = new CVCAStore(new URI("file:/home/sos/woj/terminals"));
+			certDir = KeyStore.getInstance("JSK");
+			certDir.load(new FileInputStream("file:/home/sos/woj/terminals/certs.ks"), "".toCharArray());
 		} catch(Exception e) {
 			System.out.println("Could not load EAC terminal certificates/keys!");
 		}
@@ -326,17 +329,25 @@ public class PassportTestService extends PassportService {
 		if(cardKey != null) {
 			return true;
 		}
-		terminalCertificates = certDir.getCertificates(caReference.getName());
-		terminalKey = certDir.getPrivateKey(caReference.getName());
-		doBAC();
-		short fid = PassportService.EF_DG14;
 		try {
+			terminalKey = (PrivateKey)certDir.getKey(caReference.getName(), "".toCharArray());
+			Certificate[] chain = certDir.getCertificateChain(caReference.getName());
+			terminalCertificates = new ArrayList<CardVerifiableCertificate>();
+			for (Certificate c: chain) {
+				terminalCertificates.add((CardVerifiableCertificate)c);
+			}
+			doBAC();
+			short fid = PassportService.EF_DG14;
+
 			sendSelectFile(getWrapper(), fid);
 			CardFileInputStream in = readFile(fid);
 			DG14File dg14 = new DG14File(in);
 			cardKey = dg14.getPublicKeys().get(-1);
 			resetCard();
-		}catch(CardServiceException e) {
+		} catch (CardServiceException e) {
+			return false;
+		} catch (Exception e) {
+			e.printStackTrace();
 			return false;
 		}
 		return true;
