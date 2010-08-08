@@ -91,7 +91,7 @@ public class CVCAStoreGenerator extends TestCase
 			keyGen.initialize(1024, random);
 			KeyPair terminalKeyPair = keyGen.generateKeyPair();
 
-			CAReferenceField caRef = new CAReferenceField("NL", "MYDL-CVCA", "00001");
+			CAReferenceField caRef = new CAReferenceField("NL", "CVCA0", "00002");
 			HolderReferenceField holderRef = new HolderReferenceField(caRef
 					.getCountry(), caRef.getMnemonic(), caRef.getSequence());
 

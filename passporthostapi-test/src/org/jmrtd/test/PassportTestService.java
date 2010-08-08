@@ -29,6 +29,7 @@ import org.jmrtd.CVCAStore;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG14File;
@@ -110,7 +111,7 @@ public class PassportTestService extends PassportService {
 
 	private int keyId = -1;
 	private PublicKey cardKey;
-	private String caReference = "NLCVCAA00001";
+	private CVCPrincipal caReference = new CVCPrincipal("NLCVCAA00001");
 	private List<CardVerifiableCertificate> terminalCertificates;
 	private PrivateKey terminalKey;
 	/** The last challenge received, if any **/
@@ -325,8 +326,8 @@ public class PassportTestService extends PassportService {
 		if(cardKey != null) {
 			return true;
 		}
-		terminalCertificates = certDir.getCertificates(caReference);
-		terminalKey = certDir.getPrivateKey(caReference);
+		terminalCertificates = certDir.getCertificates(caReference.getName());
+		terminalKey = certDir.getPrivateKey(caReference.getName());
 		doBAC();
 		short fid = PassportService.EF_DG14;
 		try {
