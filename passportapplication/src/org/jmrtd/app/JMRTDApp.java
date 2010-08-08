@@ -258,7 +258,6 @@ public class JMRTDApp  implements PassportListener
 		this.cvcaStores = new ArrayList<KeyStore>(cvcaStoreLocations.size());
 		for (URI uri: cvcaStoreLocations) {
 			try {
-				System.out.println("DEBUG: cvca uri = " + uri);
 				KeyStore cvcaStore = KeyStore.getInstance("JKS");
 				URLConnection uc = uri.toURL().openConnection();
 				InputStream in = uc.getInputStream();

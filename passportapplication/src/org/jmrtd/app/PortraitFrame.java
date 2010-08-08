@@ -26,6 +26,8 @@ import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -84,6 +86,7 @@ public class PortraitFrame extends JFrame
 	
 	private FaceInfo info;
 	private ImagePanel imagePanel;
+	private JCheckBoxMenuItem viewFeaturePointsItem;
 
 	public PortraitFrame(FaceInfo info) {
 		this("Portrait", info);
@@ -120,6 +123,12 @@ public class PortraitFrame extends JFrame
 		try {
 			Image image = info.getImage();
 			imagePanel = new ImagePanel();
+			imagePanel.addMouseListener(new MouseAdapter() {
+				public void mouseClicked(MouseEvent e) {
+					super.mouseClicked(e);
+					if (e.getClickCount() > 1) { toggleViewFeaturePoints(!imagePanel.isSomePointHighlighted()); }
+				}
+			});
 			imagePanel.setImage(image);
 			Container cp = getContentPane();
 			cp.setLayout(new BorderLayout());
@@ -156,9 +165,9 @@ public class PortraitFrame extends JFrame
 		viewImageInfo.setAction(getViewImageInfoAction());
 
 		/* Feature Points */
-		JCheckBoxMenuItem viewFeaturePoints = new JCheckBoxMenuItem();
-		viewMenu.add(viewFeaturePoints);
-		viewFeaturePoints.setAction(getViewFeaturePointsAction());
+		viewFeaturePointsItem = new JCheckBoxMenuItem();
+		viewMenu.add(viewFeaturePointsItem);
+		viewFeaturePointsItem.setAction(getViewFeaturePointsAction());
 
 		return viewMenu;
 	}
@@ -239,18 +248,7 @@ public class PortraitFrame extends JFrame
 				Object src = e.getSource();
 				if (src instanceof AbstractButton) {
 					AbstractButton button = (AbstractButton)src;
-					FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
-					if (button.isSelected()) {
-						for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
-							String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
-							imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
-						}
-					} else {
-						for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
-							String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
-							imagePanel.deHighlightPoint(key);
-						}
-					}
+					toggleViewFeaturePoints(button.isSelected());
 				}
 			}			
 		};
@@ -260,6 +258,22 @@ public class PortraitFrame extends JFrame
 		action.putValue(Action.NAME, "Feature Points");
 		actionMap.put("ViewFeaturePoints", action);
 		return action;
+	}
+	
+	private void toggleViewFeaturePoints(boolean showPoints) {
+		FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+		viewFeaturePointsItem.setSelected(showPoints);
+		if (showPoints) {
+			for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+				String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+				imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
+			}
+		} else {
+			for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+				String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
+				imagePanel.deHighlightPoint(key);
+			}
+		}
 	}
 
 	private Action getCloseAction() {

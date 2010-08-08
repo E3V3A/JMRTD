@@ -1161,7 +1161,7 @@ public class PassportEditFrame extends JFrame
 						persoService.close();
 						// TODO: to see when it is done
 						// Proper progress bar should be implemented
-						System.out.println("Passport uploaded.");
+						logger.info("Passport uploaded.");
 						//					} catch (IOException ioe) {
 						//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {

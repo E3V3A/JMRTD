@@ -68,9 +68,7 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.AAEvent;
-import org.jmrtd.AuthListener;
-import org.jmrtd.BACEvent;
+import org.jmrtd.AuthAdapter;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
@@ -121,7 +119,7 @@ public class PassportViewFrame extends JFrame
 	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
 
 	private ActionMap actionMap;
-	
+
 	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private DisplayPreviewPanel displayPreviewPanel;
@@ -174,11 +172,7 @@ public class PassportViewFrame extends JFrame
 		setVisible(true);
 
 		try {
-			passport.addAuthenticationListener(new AuthListener() {
-				public void performedAA(AAEvent ae) { /* NOTE: do nothing */ }
-
-				public void performedBAC(BACEvent be) { /* NOTE: do nothing */ }
-
+			passport.addAuthenticationListener(new AuthAdapter() {
 				public void performedEAC(EACEvent ee) {
 					eacEvent = ee;
 					updateViewMenu();
