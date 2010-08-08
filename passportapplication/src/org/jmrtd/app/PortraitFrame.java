@@ -126,7 +126,7 @@ public class PortraitFrame extends JFrame
 			imagePanel.addMouseListener(new MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
 					super.mouseClicked(e);
-					if (e.getClickCount() > 1) { toggleViewFeaturePoints(!imagePanel.isSomePointHighlighted()); }
+					if (e.getClickCount() > 1) { toggleViewFeaturePoints(!viewFeaturePointsItem.isSelected()); }
 				}
 			});
 			imagePanel.setImage(image);
