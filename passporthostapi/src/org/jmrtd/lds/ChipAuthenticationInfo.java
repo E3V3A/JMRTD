@@ -140,4 +140,8 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 		return derOID.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
 		|| derOID.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
 	}
+	
+	public String toString() {
+		return  "ChipAuthenticationInfo [oid = " + oid + ", version = " + version + ", keyId = " + keyId + "]";
+	}
 }

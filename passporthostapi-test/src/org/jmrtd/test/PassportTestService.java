@@ -2,7 +2,6 @@ package org.jmrtd.test;
 
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;

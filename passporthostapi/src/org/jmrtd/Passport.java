@@ -668,10 +668,6 @@ public class Passport
 	 * Adjusts the verificationIndicator to show the user the verification status.
 	 * 
 	 * Assumes passport object is non-null and read from the service.
-	 * 
-	 * FIXME: move this to passporthostapi's Passport class.
-	 * 
-	 * @param service
 	 */
 	public void verifySecurity() {
 		if (verificationStatus == null) { verificationStatus = new VerificationStatus(); }

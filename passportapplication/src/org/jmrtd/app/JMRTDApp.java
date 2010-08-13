@@ -163,6 +163,24 @@ public class JMRTDApp  implements PassportListener
 					updateFromPreferences();
 				}
 			});
+			if (preferencesPanel.isBackingStoreNew()) {
+				/*
+				 * If there are no previously saved preferences, we have some
+				 * suggestions, e.g. certificates for document verification that
+				 * came with the installation of JMRTD.
+				 */
+				URI defaultCSCAURI = null;
+				File defaultCSCAFile = new File(new File(System.getProperty("user.dir")).getParentFile(), "csca.ks");
+				if (defaultCSCAFile.exists()) {
+					defaultCSCAURI = defaultCSCAFile.toURI();
+				} else {
+					URI baseDir = Files.getBaseDirAsURI(this.getClass());
+					defaultCSCAURI = baseDir.resolve("csca.ks");
+				}
+				logger.info("Adding " + defaultCSCAURI.toString() + " as CSCA store.");
+				preferencesPanel.addCSCAStoreLocation(defaultCSCAURI);
+				/* NOTE: GUI will perhaps need updating, delay until end of constructor. */
+			}
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
 			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
@@ -226,10 +244,10 @@ public class JMRTDApp  implements PassportListener
 		this.cscaStores = new ArrayList<CertStore>(cscaStoreLocations.size());
 		if (cscaStoreLocations != null) {
 			for (URI uri: cscaStoreLocations) {
-				if (uri == null) { logger.warning("DEBUG: location == null"); continue; }
+				if (uri == null) { logger.severe("location == null"); continue; }
 				CertStore store = null;
 				String scheme = uri.getScheme();
-				if (scheme == null) { logger.warning("DEBUG: scheme == null, location = " + uri); continue; }
+				if (scheme == null) { logger.severe("scheme == null, location = " + uri); continue; }
 				try {
 					if (scheme != null && scheme.equals("ldap")) {
 						String server = uri.getHost();
@@ -490,7 +508,7 @@ public class JMRTDApp  implements PassportListener
 								/* NOTE: skip this terminal */
 							} catch (Exception e) {
 								e.printStackTrace();
-								logger.warning("DEBUG: skipping " + terminal.getName() + ", cannot open because of " + e.toString());
+								logger.warning("skipping " + terminal.getName() + ", cannot open because of " + e.toString());
 							}
 						}
 					})).start();

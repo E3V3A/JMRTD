@@ -81,6 +81,7 @@ public class PreferencesPanel extends JPanel
 	private PreferencesState changedState;
 
 	private Preferences preferences;
+	private boolean existsBackingStore;
 
 	private Map<CardTerminal, JCheckBox> cardTerminalPollingCheckBoxMap;
 	private Map<ReadingMode, JRadioButton> readingModeRadioButtonMap;
@@ -92,15 +93,20 @@ public class PreferencesPanel extends JPanel
 
 	/**
 	 * Creates the preferences panel.
-	 *
-	 * @param cm the card manager
-	 * @param preferencesFile file for storing preferences
+	 * 
+	 * @param cm the terminal map
+	 * @param applicationClass the class used as an identifier for the preferences
 	 */
 	public PreferencesPanel(Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
 		super(new BorderLayout());
 		this.changeListeners = new ArrayList<ChangeListener>();
-
 		this.preferences = Preferences.userNodeForPackage(applicationClass);
+		try {
+			existsBackingStore = false;
+			existsBackingStore = (preferences.keys() != null && preferences.keys().length > 0);
+		} catch (BackingStoreException bse) {
+			/* NOTE it probably doesn't exist */
+		}
 		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
 		this.state = new PreferencesState();
 		update();
@@ -250,6 +256,17 @@ public class PreferencesPanel extends JPanel
 		return action;
 	}
 
+	/**
+	 * Returns <code>true</code> if the preferences backing store did
+	 * not exist during construction of this preferences panel.
+	 *
+	 * @return the state of existance of the preferences' backing store
+	 *         during construction of this preferences panel
+	 */
+	public boolean isBackingStoreNew() {
+		return !existsBackingStore;
+	}
+
 	public URL getBACStoreLocation() {
 		return state.getBACStoreLocation();
 	}
@@ -262,7 +279,13 @@ public class PreferencesPanel extends JPanel
 		return state.getCVCAStoreLocations();
 	}
 
-	public Action getSetModeAction(final ReadingMode mode) {
+	public void addCSCAStoreLocation(URI uri) {
+		changedState.addCSCAStoreLocation(uri);
+		updateGUIFromState(changedState);
+		commit();
+	}
+
+	private Action getSetModeAction(final ReadingMode mode) {
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7253305323528439137L;
@@ -409,46 +432,22 @@ public class PreferencesPanel extends JPanel
 			return parseURIList((String)properties.get(JMRTDApp.CVCA_STORE_KEY));
 		}
 
-		private List<URI> parseURIList(String value) {
-			List<URI> result = new ArrayList<URI>();
-			if (value == null) { return result; }
-			if (!value.startsWith("[") || !value.endsWith("]")) {
-				try {
-					result.add(new URI(value.trim()));
-				} catch (URISyntaxException use) {
-					use.printStackTrace();
-				}
-				return result;
-			}
-			value = value.substring(1, value.length() - 1);
-			StringTokenizer tokenizer = new StringTokenizer(value, ", ");
-			while (tokenizer.hasMoreTokens()) {
-				String token = tokenizer.nextToken();
-				try {
-					result.add(new URI(token));
-				} catch (URISyntaxException use) {
-					use.printStackTrace();
-				}
-			}
-			return result;
-		}
-
-		public void addCSCAStoreLocation(URI location) {
+		public void addCSCAStoreLocation(URI uri) {
 			List<URI> locations = getCSCAStoreLocations();
-			if (!locations.contains(location)) {
-				locations.add(location);
+			if (!locations.contains(uri)) {
+				locations.add(uri);
 				setCSCAStoreLocations(locations);
 			}
 		}
 
-		public void setCSCAStoreLocations(List<URI> locations) {
-			if (locations == null) { return; }
-			properties.put(JMRTDApp.CSCA_STORE_KEY, locations.toString());
+		public void setCSCAStoreLocations(List<URI> uris) {
+			if (uris == null) { return; }
+			properties.put(JMRTDApp.CSCA_STORE_KEY, uris.toString());
 		}
 
-		public void setCVCAStoreLocations(List<URI> locations) {
-			if (locations == null) { return; }
-			properties.put(JMRTDApp.CVCA_STORE_KEY, locations.toString());
+		public void setCVCAStoreLocations(List<URI> uris) {
+			if (uris == null) { return; }
+			properties.put(JMRTDApp.CVCA_STORE_KEY, uris.toString());
 		}
 
 		public void load(Preferences preferences) {
@@ -472,5 +471,29 @@ public class PreferencesPanel extends JPanel
 				preferences.put(key, value);
 			}
 		}
+	}
+
+	private static List<URI> parseURIList(String value) {
+		List<URI> result = new ArrayList<URI>();
+		if (value == null) { return result; }
+		if (!value.startsWith("[") || !value.endsWith("]")) {
+			try {
+				result.add(new URI(value.trim()));
+			} catch (URISyntaxException use) {
+				use.printStackTrace();
+			}
+			return result;
+		}
+		value = value.substring(1, value.length() - 1);
+		StringTokenizer tokenizer = new StringTokenizer(value, ", ");
+		while (tokenizer.hasMoreTokens()) {
+			String token = tokenizer.nextToken();
+			try {
+				result.add(new URI(token));
+			} catch (URISyntaxException use) {
+				use.printStackTrace();
+			}
+		}
+		return result;
 	}
 }

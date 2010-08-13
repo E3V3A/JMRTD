@@ -67,7 +67,6 @@ public class CardVerifiableCertificate extends Certificate
 					return new CVCPublicKey(publicKey);
 				}
 			}
-			System.out.println("DEBUG: pubkey type = " + publicKey.getAlgorithm());
 			return new CVCPublicKey(publicKey);
 		} catch (NoSuchFieldException nsfe) {
 			nsfe.printStackTrace();

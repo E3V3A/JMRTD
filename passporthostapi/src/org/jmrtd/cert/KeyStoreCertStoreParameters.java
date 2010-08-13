@@ -52,11 +52,9 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 			KeyStore ks = null;
 			try {
 				ks = KeyStore.getInstance(keyStoreType, BC_PROVIDER);
-				System.out.println("DEBUG: using BC provider to create keystore of type " + keyStoreType);
 			} catch (Exception e1) {
 				try {
 					ks = KeyStore.getInstance(keyStoreType);
-					System.out.println("DEBUG: using whatever provider to create keystore of type " + keyStoreType);
 				} catch (Exception e2) {
 					throw e1;
 				}

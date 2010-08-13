@@ -74,6 +74,7 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
@@ -93,6 +94,7 @@ import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
+import org.jmrtd.lds.SecurityInfo;
 
 /**
  * Frame for displaying a passport while (and after) it is being read.
@@ -302,14 +304,13 @@ public class PassportViewFrame extends JFrame
 		if (dg14 == null) { return; }
 		PrivateKey terminalKey = null;
 		List<CardVerifiableCertificate> cvCertificates = null;
-		Map<Integer, PublicKey> publicKeyMap = null;
-		int cardPublicKeyId = 0;
+		Map<Integer, PublicKey> publicKeyMap = dg14.getPublicKeys();
+		int cardPublicKeyId = -1;
 		if (eacEvent != null) {
 			terminalKey = eacEvent.getTerminalKey();
 			cvCertificates = eacEvent.getCVCertificates();
-			publicKeyMap = dg14.getPublicKeys();
 			cardPublicKeyId = eacEvent.getCardPublicKeyId();
-		} // TODO: else { default values }
+		}
 		createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
 	}
 
@@ -370,6 +371,7 @@ public class PassportViewFrame extends JFrame
 		menu.addSeparator();
 		menu.add(getViewDocumentSignerCertificateAction());
 		menu.add(getViewAAPublicKeyAction());
+		menu.add(getViewEACInfoAction());
 		viewMenu = menu;
 		return menu;
 	}
@@ -615,6 +617,46 @@ public class PassportViewFrame extends JFrame
 		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
 		action.putValue(Action.NAME, "Fingerprints...");
 		actionMap.put("ViewFingerPrints", action);
+		return action;
+	}
+
+	private Action getViewEACInfoAction() {
+		Action action = actionMap.get("ViewEACInfo");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+			private static final long serialVersionUID = 8408771892967788142L;
+
+			public void actionPerformed(ActionEvent e) {
+				JTextArea area = new JTextArea(15, 45);
+				try {
+					// FIXME: make a special frame for viewing this? (Includes certificates, etc.)
+					InputStream dg14In =  passport.getInputStream(PassportService.EF_DG14);
+					DG14File dg14 = new DG14File(dg14In);
+					List<SecurityInfo> securityInfos = dg14.getSecurityInfos();
+					for (SecurityInfo si: securityInfos) {
+						area.append(si.getClass().getSimpleName() + ":\n");
+						area.append("   " + si.toString() + "\n");
+					}
+					InputStream cvcaIn = passport.getInputStream(PassportService.EF_CVCA);
+					CVCAFile cvca = new CVCAFile(cvcaIn);
+					CVCPrincipal caReference = cvca.getCAReference();
+					CVCPrincipal altCAReference = cvca.getAltCAReference();
+					if (caReference != null) { area.append("CA reference:\n   " + caReference.toString() + "\n"); }
+					if (altCAReference != null) { area.append("Alt. CA reference:\n  " + altCAReference.toString() + "\n"); }
+					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "EAC information (card)", JOptionPane.PLAIN_MESSAGE, null);
+				} catch (Exception ex) {
+					area.append("Could not get EAC information from this card!\n");
+//					area.append("   " + ex.getMessage() + "\n");
+					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "EAC information (card)", JOptionPane.PLAIN_MESSAGE, null);
+
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "View EAC information");
+		action.putValue(Action.NAME, "EAC card info...");
+		actionMap.put("ViewEACInfo", action);
 		return action;
 	}
 

@@ -213,11 +213,11 @@ public class DG14File extends DataGroup
 	 */
 	public Map<Integer, DERObjectIdentifier> getChipAuthenticationInfos() {
 		Map<Integer, DERObjectIdentifier> map = new TreeMap<Integer, DERObjectIdentifier>();
-		for (SecurityInfo si : securityInfos) {
-			if (si instanceof ChipAuthenticationInfo) {
-				ChipAuthenticationInfo i = (ChipAuthenticationInfo) si;
-				map.put(i.getKeyId(), new DERObjectIdentifier(i.getObjectIdentifier()));
-				if (i.getKeyId() == -1) {
+		for (SecurityInfo securityInfo : securityInfos) {
+			if (securityInfo instanceof ChipAuthenticationInfo) {
+				ChipAuthenticationInfo chipAuthNInfo = (ChipAuthenticationInfo)securityInfo;
+				map.put(chipAuthNInfo.getKeyId(), new DERObjectIdentifier(chipAuthNInfo.getObjectIdentifier()));
+				if (chipAuthNInfo.getKeyId() == -1) {
 					return map;
 				}
 			}
@@ -243,6 +243,10 @@ public class DG14File extends DataGroup
 		}
 		if (!foundOne) { throw new IllegalStateException("No keys?"); }
 		return publicKeys;
+	}
+	
+	public List<SecurityInfo> getSecurityInfos() {
+		return securityInfos;
 	}
 
 	public String toString() {

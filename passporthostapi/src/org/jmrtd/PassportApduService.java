@@ -23,7 +23,6 @@
 package org.jmrtd;
 
 import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;

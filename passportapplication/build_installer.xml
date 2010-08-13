@@ -102,6 +102,7 @@
 		<!-- Copy license, etc. -->
 		<copy todir="${dist}">
 			<fileset dir="." includes="LICENSE" />
+			<fileset dir="." includes="csca.ks" />
 		</copy>
 
 		<!-- Create the distribution jar file -->
@@ -122,7 +123,6 @@
 			<fileset dir="${jcopprovider_build}/" includes="**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
 			<fileset dir="${scuba_gui_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
-			<fileset dir="${passporthostapi_base}" includes="csca.ks" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
 		</jar>	
 	</target>
@@ -247,8 +247,8 @@
 				windowtitle="${lib_title}"
 				header="${lib_title}"
 				packagenames="org.jmrtd,net.sourceforge.scuba.data,net.sourceforge.scuba.smartcards,net.sourceforge.scuba.tlv">
-			<link href="http://java.sun.com/javase/6/docs/api/" />
-			<link href="http://java.sun.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
+			<link href="http://download.oracle.com/javase/6/docs/api/" />
+			<link href="http://download.oracle.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
 			<link href="http://www.bouncycastle.org/docs/docs1.6" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
