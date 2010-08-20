@@ -20,6 +20,7 @@ import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
@@ -96,7 +97,9 @@ public abstract class PassportTesterBase extends TestCase implements
 
 	protected boolean traceApdu = false;
 
-	public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+	public void exchangedAPDU(APDUEvent e) {
+		CommandAPDU capdu = e.getCommandAPDU();
+		ResponseAPDU rapdu = e.getResponseAPDU();
 		last_rapdu = rapdu;
 		if (traceApdu) {
 			System.out.println("C: " + Hex.bytesToHexString(capdu.getBytes()));
