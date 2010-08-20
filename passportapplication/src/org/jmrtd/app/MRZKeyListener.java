@@ -27,6 +27,7 @@ import java.awt.event.KeyListener;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.lds.MRZInfo;
@@ -44,6 +45,8 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 {
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final int TIMEOUT = 3000;
 	private BACStorePanel store;
 	private char[] buffer;
@@ -68,7 +71,7 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 		char c = e.getKeyChar();
 		appendToBuffer(c);
 		heartBeat = System.currentTimeMillis();
-		System.out.print(Character.toString(c));
+//		LOGGER.info("Typed: " + Character.toString(c));
 		tryAndAddBACStoreEntry();
 	}
 

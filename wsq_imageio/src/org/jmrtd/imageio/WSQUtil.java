@@ -14,7 +14,6 @@ class WSQUtil
 		getBaseDir(WSQUtil.class)
 	};
 
-
 	private boolean isLibraryLoaded;
 
 	private WSQUtil() {
@@ -31,7 +30,6 @@ class WSQUtil
 			for (String location: LOCATIONS) {
 				String localLibFileName = System.mapLibraryName(LIBRARY_NAME);
 				try {
-					System.out.println("DEBUG: trying " + location);
 					System.load(location + separator + localLibFileName);
 					INSTANCE.isLibraryLoaded = true;
 					break;

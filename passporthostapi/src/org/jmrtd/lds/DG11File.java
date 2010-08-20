@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
@@ -86,6 +87,8 @@ public class DG11File extends DataGroup
 	private static final int CUSTODY_INFORMATION_TAG = 0x5F18;
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private String fullNamePrimaryIdentifier;
 	private List<String> fullNameSecondaryIdentifiers;
@@ -264,8 +267,8 @@ public class DG11File extends DataGroup
 	private void parseFullName(String in) {
 		String delim = "<<";
 		int delimIndex = in.indexOf(delim);
-		if (delimIndex < 0) { // FIXME: logger instead of stderr!
-			System.err.println("WARNING: Input does not contain primary identifier delimited by \"<<\", input was \"" + in + "\"");
+		if (delimIndex < 0) {
+			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + in + "\"");
 			delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
 			delimIndex = in.indexOf(delim);
 		}

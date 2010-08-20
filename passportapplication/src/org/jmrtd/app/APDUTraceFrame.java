@@ -30,6 +30,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.util.Hex;
 
@@ -50,7 +51,9 @@ public class APDUTraceFrame extends JFrame implements APDUListener
 		getContentPane().add(new JScrollPane(area));
 	}
 
-	public void exchangedAPDU(CommandAPDU capdu, ResponseAPDU rapdu) {
+	public void exchangedAPDU(APDUEvent e) {
+		CommandAPDU capdu = e.getCommandAPDU();
+		ResponseAPDU rapdu = e.getResponseAPDU();
 		area.append("C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
 		area.append("R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
 		area.setCaretPosition(area.getDocument().getLength() - 1);

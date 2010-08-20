@@ -140,7 +140,7 @@ public class JMRTDApp  implements PassportListener
 
 	private APDUTraceFrame apduTraceFrame;
 
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/**
 	 * Constructs the GUI.
@@ -177,7 +177,7 @@ public class JMRTDApp  implements PassportListener
 					URI baseDir = Files.getBaseDirAsURI(this.getClass());
 					defaultCSCAURI = baseDir.resolve("csca.ks");
 				}
-				logger.info("Adding " + defaultCSCAURI.toString() + " as CSCA store.");
+				LOGGER.info("Adding " + defaultCSCAURI.toString() + " as CSCA store.");
 				preferencesPanel.addCSCAStoreLocation(defaultCSCAURI);
 				/* NOTE: GUI will perhaps need updating, delay until end of constructor. */
 			}
@@ -244,10 +244,10 @@ public class JMRTDApp  implements PassportListener
 		this.cscaStores = new ArrayList<CertStore>(cscaStoreLocations.size());
 		if (cscaStoreLocations != null) {
 			for (URI uri: cscaStoreLocations) {
-				if (uri == null) { logger.severe("location == null"); continue; }
+				if (uri == null) { LOGGER.severe("location == null"); continue; }
 				CertStore store = null;
 				String scheme = uri.getScheme();
-				if (scheme == null) { logger.severe("scheme == null, location = " + uri); continue; }
+				if (scheme == null) { LOGGER.severe("scheme == null, location = " + uri); continue; }
 				try {
 					if (scheme != null && scheme.equals("ldap")) {
 						String server = uri.getHost();
@@ -282,7 +282,7 @@ public class JMRTDApp  implements PassportListener
 				cvcaStore.load(in, "".toCharArray());
 				cvcaStores.add(cvcaStore);
 			} catch (Exception e) {
-				logger.warning("Could not initialize CVCA: " + e.getMessage());
+				LOGGER.warning("Could not initialize CVCA: " + e.getMessage());
 			}
 		}
 	}
@@ -508,7 +508,7 @@ public class JMRTDApp  implements PassportListener
 								/* NOTE: skip this terminal */
 							} catch (Exception e) {
 								e.printStackTrace();
-								logger.warning("skipping " + terminal.getName() + ", cannot open because of " + e.toString());
+								LOGGER.warning("skipping " + terminal.getName() + ", cannot open because of " + e.toString());
 							}
 						}
 					})).start();

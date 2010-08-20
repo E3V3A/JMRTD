@@ -72,7 +72,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private int port;
 	private String baseDN;
 
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private List<Certificate> certificates;
 
@@ -146,7 +146,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			try {
 				answer = context.search(baseDN, filter, controls);
 			} catch (NamingException ne) {
-				logger.warning("No matches found for while searching for countries!");
+				LOGGER.warning("No matches found for while searching for countries!");
 			}
 			int resultCount = 0;
 			for (; answer != null && answer.hasMore(); resultCount++) {
@@ -160,7 +160,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 					/* Name */
 					String attributeName = attribute.getID();
 					if (!attributeName.equalsIgnoreCase(COUNTRY_ATTRIBUTE_NAME)) {
-						logger.warning("Search result contains attribute \"" + attributeName + ", was expecting \"" + COUNTRY_ATTRIBUTE_NAME + "\"");
+						LOGGER.warning("Search result contains attribute \"" + attributeName + ", was expecting \"" + COUNTRY_ATTRIBUTE_NAME + "\"");
 					}
 
 					/* Values */
@@ -173,7 +173,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 						}
 					}
 					if (attributeValueCount != 1) {
-						logger.warning("Search found object with more than 1 country value");
+						LOGGER.warning("Search found object with more than 1 country value");
 					}
 				}
 			}
@@ -220,7 +220,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 					/* Name */
 					String attributeName = attribute.getID();
 					if (!attributeName.startsWith(CERTIFICATE_ATTRIBUTE_NAME)) {
-						System.err.println("WARNING: search found \"" + attributeName + "\", was expecting \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
+						LOGGER.warning("Search found \"" + attributeName + "\", was expecting \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
 					}
 
 					/* Values */
@@ -246,11 +246,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 						}
 					}
 					if (attributeValueCount != 1) {
-						logger.warning("More than 1 value for \"" + attributeName + "\"");
+						LOGGER.warning("More than 1 value for \"" + attributeName + "\"");
 					}
 				}
 				if (attributeCount != 1) {
-					logger.warning("More than 1 attribute found in an object with attribute \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
+					LOGGER.warning("More than 1 attribute found in an object with attribute \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
 				}
 			}
 		} catch (NamingException e) {

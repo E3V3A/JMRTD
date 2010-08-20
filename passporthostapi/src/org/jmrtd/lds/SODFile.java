@@ -110,7 +110,7 @@ public class SODFile extends PassportFile
 
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 	
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	private SignedData signedData;
 
@@ -296,7 +296,7 @@ public class SODFile extends PassportFile
 		ASN1Set certs = signedData.getCertificates();
 		if (certs == null || certs.size() <= 0) { return null; }
 		if (certs.size() != 1) {
-			System.err.println("WARNING: found " + certs.size() + " certificates");
+			LOGGER.warning("Found " + certs.size() + " certificates");
 		}
 		X509CertificateObject certObject = null;
 		for (int i = 0; i < certs.size(); i++) {
@@ -376,8 +376,8 @@ public class SODFile extends PassportFile
 			+ "withRSA";
 		}
 
-		logger.info("OID = " + encAlgId);
-		logger.info("encAlgJavaString = " + encAlgJavaString);
+		LOGGER.info("OID = " + encAlgId);
+		LOGGER.info("encAlgJavaString = " + encAlgJavaString);
 
 		Signature sig = null;
 		try {
@@ -441,7 +441,7 @@ public class SODFile extends PassportFile
 	private static SignerInfo getSignerInfo(SignedData signedData)  {
 		ASN1Set signerInfos = signedData.getSignerInfos();
 		if (signerInfos.size() > 1) {
-			System.err.println("WARNING: found " + signerInfos.size() + " signerInfos");
+			LOGGER.warning("Found " + signerInfos.size() + " signerInfos");
 		}
 		for (int i = 0; i < signerInfos.size(); i++) {
 			SignerInfo info = new SignerInfo((DERSequence)signerInfos.getObjectAt(i));
@@ -470,7 +470,7 @@ public class SODFile extends PassportFile
 			Object nextObject = in.readObject();
 
 			if (nextObject != null) {
-				System.err.println("WARNING: extra object found after LDSSecurityObject...");
+				LOGGER.warning("extra object found after LDSSecurityObject...");
 			}
 			return sod;
 		} catch (IOException ioe) {
@@ -519,21 +519,21 @@ public class SODFile extends PassportFile
 					if (attrType.equals(RFC_3369_MESSAGE_DIGEST_OID)) {
 						ASN1Set attrValuesSet = attribute.getAttrValues();
 						if (attrValuesSet.size() != 1) {
-							System.err.println("WARNING: expected only one attribute value in signedAttribute message digest in eContent!");
+							LOGGER.warning("Expected only one attribute value in signedAttribute message digest in eContent!");
 						}
 						storedDigestedContent = ((DEROctetString)attrValuesSet.getObjectAt(0)).getOctets();
 					}
 				}
 				if (storedDigestedContent == null) {
-					System.err.println("WARNING: error extracting signedAttribute message digest in eContent!");
+					LOGGER.warning("Error extracting signedAttribute message digest in eContent!");
 				}	
 				MessageDigest dig = MessageDigest.getInstance(digAlg);
 				byte[] computedDigestedContent = dig.digest(contentBytes);
 				if (!Arrays.equals(storedDigestedContent, computedDigestedContent)) {
-					System.err.println("WARNING: error checking signedAttribute message digest in eContent!");
+					LOGGER.warning("Error checking signedAttribute message digest in eContent!");
 				}
 			} catch (NoSuchAlgorithmException nsae) {
-				System.err.println("WARNING: error checking signedAttribute in eContent! No such algorithm " + digAlg);
+				LOGGER.warning("Error checking signedAttribute in eContent! No such algorithm " + digAlg);
 			}
 			return attributesBytes;
 		}

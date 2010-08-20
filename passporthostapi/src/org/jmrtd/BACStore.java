@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 
 import net.sourceforge.scuba.util.Files;
 
@@ -51,6 +52,8 @@ public class BACStore
 		DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private File location;
 
@@ -81,11 +84,11 @@ public class BACStore
 				File parent = location.getParentFile();
 				if (!parent.isDirectory()) { 
 					if (!parent.mkdirs()) {
-						System.err.println("WARNING: could not create directory for bacDBFile \"" + parent.getCanonicalPath() + "\"");
+						LOGGER.warning("Could not create directory for bacDBFile \"" + parent.getCanonicalPath() + "\"");
 					}
 				}
 				if (!location.createNewFile()) {
-					System.err.println("WARNING: could not create bacDBFile \"" + location.getCanonicalPath() + "\"");
+					LOGGER.warning("Could not create bacDBFile \"" + location.getCanonicalPath() + "\"");
 				}
 			}
 		} catch (IOException ioe) {

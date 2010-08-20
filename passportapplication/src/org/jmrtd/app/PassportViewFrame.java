@@ -63,6 +63,7 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
+import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
@@ -242,6 +243,9 @@ public class PassportViewFrame extends JFrame
 					break;
 				case PassportService.EF_DG3:
 					DG3File dg3 = new DG3File(in);
+					if (eacEvent == null || !eacEvent.isSuccess()) {
+						logger.warning("Starting to read DG3, but eacEvent = " + eacEvent);
+					}
 					List<FingerInfo> fingers = dg3.getFingerInfos();
 					for (FingerInfo finger: fingers) { displayPreviewPanel.addDisplayedImage(finger, isProgressiveMode); }
 					break;
@@ -287,7 +291,7 @@ public class PassportViewFrame extends JFrame
 					}
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 				}
-			} catch (IOException ioe) {
+			} catch (Exception ioe) {
 				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
 				+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
 				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
@@ -298,23 +302,28 @@ public class PassportViewFrame extends JFrame
 	}
 
 	private void updateViewMenu() {
-		InputStream dg14in = passport.getInputStream(PassportService.EF_DG14);
-		if (dg14in == null) { return; }
-		DG14File dg14 = new DG14File(dg14in);
-		if (dg14 == null) { return; }
-		PrivateKey terminalKey = null;
-		List<CardVerifiableCertificate> cvCertificates = null;
-		Map<Integer, PublicKey> publicKeyMap = dg14.getPublicKeys();
-		int cardPublicKeyId = -1;
-		if (eacEvent != null) {
-			terminalKey = eacEvent.getTerminalKey();
-			cvCertificates = eacEvent.getCVCertificates();
-			cardPublicKeyId = eacEvent.getCardPublicKeyId();
+		try {
+			InputStream dg14in = passport.getInputStream(PassportService.EF_DG14);
+			if (dg14in == null) { return; }
+			DG14File dg14 = new DG14File(dg14in);
+			if (dg14 == null) { return; }
+			PrivateKey terminalKey = null;
+			List<CardVerifiableCertificate> cvCertificates = null;
+			Map<Integer, PublicKey> publicKeyMap = dg14.getPublicKeys();
+			int cardPublicKeyId = -1;
+			if (eacEvent != null) {
+				terminalKey = eacEvent.getTerminalKey();
+				cvCertificates = eacEvent.getCVCertificates();
+				cardPublicKeyId = eacEvent.getCardPublicKeyId();
+			}
+			createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
+		} catch (CardServiceException cse) {
+			cse.printStackTrace();
 		}
-		createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
 	}
 
 	private void displayHolderInfo() throws IOException {
+		try {
 		InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
 		DG1File dg1 = new DG1File(dg1In);
 		MRZInfo mrzInfo = dg1.getMRZInfo();
@@ -331,6 +340,10 @@ public class PassportViewFrame extends JFrame
 		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 		centerPanel.revalidate();
 		centerPanel.repaint();
+		} catch (CardServiceException cse) {
+			logger.severe("Could not read DG1 for displaying.");
+			cse.printStackTrace();
+		}
 	}
 
 	/**
@@ -528,14 +541,18 @@ public class PassportViewFrame extends JFrame
 						ZipOutputStream zipOut = new ZipOutputStream(fileOut);
 						for (short fid: passport.getFileList()) {
 							String entryName = Hex.shortToHexString(fid) + ".bin";
-							InputStream dg = passport.getInputStream(fid);
-							zipOut.putNextEntry(new ZipEntry(entryName));
-							int bytesRead;
-							byte[] dgBytes = new byte[1024];
-							while((bytesRead = dg.read(dgBytes)) > 0){
-								zipOut.write(dgBytes, 0, bytesRead);
+							try {
+								InputStream dg = passport.getInputStream(fid);
+								zipOut.putNextEntry(new ZipEntry(entryName));
+								int bytesRead;
+								byte[] dgBytes = new byte[1024];
+								while((bytesRead = dg.read(dgBytes)) > 0){
+									zipOut.write(dgBytes, 0, bytesRead);
+								}
+								zipOut.closeEntry();
+							} catch (CardServiceException cse) {
+								logger.warning("Skipping entry " + entryName);
 							}
-							zipOut.closeEntry();
 						}
 						zipOut.finish();
 						zipOut.close();
@@ -604,12 +621,16 @@ public class PassportViewFrame extends JFrame
 			private static final long serialVersionUID = -7141975907858754026L;
 
 			public void actionPerformed(ActionEvent e) {
-				InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
-				DG3File dg3 = new DG3File(dg3In);
-				List<FingerInfo> fingerPrints = dg3.getFingerInfos();
-				FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
-				fingerPrintFrame.setVisible(true);
-				fingerPrintFrame.pack();
+				try {
+					InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
+					DG3File dg3 = new DG3File(dg3In);
+					List<FingerInfo> fingerPrints = dg3.getFingerInfos();
+					FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
+					fingerPrintFrame.setVisible(true);
+					fingerPrintFrame.pack();
+				} catch (CardServiceException cse) {
+					cse.printStackTrace();
+				}
 			}
 		};
 		action.putValue(Action.SMALL_ICON, FINGERPRINT_ICON);
@@ -646,7 +667,7 @@ public class PassportViewFrame extends JFrame
 					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "EAC information (card)", JOptionPane.PLAIN_MESSAGE, null);
 				} catch (Exception ex) {
 					area.append("Could not get EAC information from this card!\n");
-//					area.append("   " + ex.getMessage() + "\n");
+					//					area.append("   " + ex.getMessage() + "\n");
 					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "EAC information (card)", JOptionPane.PLAIN_MESSAGE, null);
 
 				}
@@ -705,12 +726,16 @@ public class PassportViewFrame extends JFrame
 			private static final long serialVersionUID = -3064369119565468811L;
 
 			public void actionPerformed(ActionEvent e) {
-				InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-				DG15File dg15 = new DG15File(dg15In);
-				PublicKey pubKey = dg15.getPublicKey();
-				KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
-				keyFrame.pack();
-				keyFrame.setVisible(true);
+				try {
+					InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
+					DG15File dg15 = new DG15File(dg15In);
+					PublicKey pubKey = dg15.getPublicKey();
+					KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
+					keyFrame.pack();
+					keyFrame.setVisible(true);
+				} catch (CardServiceException cse) {
+					cse.printStackTrace();
+				}
 			}
 		};
 		action.putValue(Action.SMALL_ICON, KEY_ICON);

@@ -411,9 +411,13 @@ public class PassportApduService extends CardService
             if (wrapper != null) {
                 rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
             }
-            if (rapdu.getSW() == ISO7816.SW_END_OF_FILE) {
+            int sw = rapdu.getSW();
+            if (sw == ISO7816.SW_END_OF_FILE) {
                 le--;
                 repeatOnEOF = true;
+            }
+            if (sw == ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED) {
+            	throw new CardServiceException("Security status not satisfied", sw);
             }
         } while (repeatOnEOF);
         byte[] r = rapdu.getData();

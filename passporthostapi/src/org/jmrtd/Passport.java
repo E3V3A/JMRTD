@@ -117,7 +117,7 @@ public class Passport
 	private Map<Short, InputStream> bufferedStreams;
 	private Map<Short, byte[]> filesBytes;
 	private Map<Short, Integer> fileLengths;
-	private Map<Short, Boolean> couldNotRead;
+	private Collection<Short> couldNotRead;
 	private int bytesRead;
 	private int totalLength;
 
@@ -167,7 +167,7 @@ public class Passport
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
-		couldNotRead = new HashMap<Short, Boolean>();
+		couldNotRead = new ArrayList<Short>();
 
 		/* EF.COM */
 		List<Integer> tagList = new ArrayList<Integer>();
@@ -312,7 +312,7 @@ public class Passport
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
-		couldNotRead = new HashMap<Short, Boolean>();
+		couldNotRead = new ArrayList<Short>();
 
 		ZipFile zipFile = new ZipFile(file);
 		Enumeration<? extends ZipEntry> entries = zipFile.entries();
@@ -393,7 +393,7 @@ public class Passport
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
-		couldNotRead = new HashMap<Short, Boolean>();
+		couldNotRead = new ArrayList<Short>();
 		InputStream comIn = preReadFile(service, PassportService.EF_COM);
 		comFile = new COMFile(comIn);
 		List<Integer> comTagList = comFile.getTagList();
@@ -489,7 +489,10 @@ public class Passport
 	 * @param fid
 	 * @return an inputstream for <code>fid</code>
 	 */
-	public synchronized InputStream getInputStream(final short fid) {
+	public synchronized InputStream getInputStream(final short fid) throws CardServiceException {
+		if (couldNotRead.contains(fid)) {
+			throw new CardServiceException("Could not read " + Integer.toHexString(fid));
+		}
 		try {
 			InputStream in = null;
 			byte[] file = filesBytes.get(fid);
@@ -566,20 +569,26 @@ public class Passport
 	public byte[] getFileBytes(short fid) {
 		byte[] result = filesBytes.get(fid);
 		if (result != null) { return result; }
-		InputStream in = getInputStream(fid);
-		if (in == null) { return null; }
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		byte[] buf = new byte[256];
-		while (true) {
-			try {
-				int bytesRead = in.read(buf);
-				if (bytesRead < 0) { break; }
-				out.write(buf, 0, bytesRead);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
+		try {
+			InputStream in = getInputStream(fid);
+			if (in == null) { return null; }
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] buf = new byte[256];
+			while (true) {
+				try {
+					int bytesRead = in.read(buf);
+					if (bytesRead < 0) { break; }
+					out.write(buf, 0, bytesRead);
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
 			}
+			return out.toByteArray();
+		} catch (CardServiceException cse) {
+			return null;
 		}
-		return out.toByteArray();
+
 	}
 
 	public BACKeySpec getBACKeySpec() {
@@ -673,9 +682,16 @@ public class Passport
 		if (verificationStatus == null) { verificationStatus = new VerificationStatus(); }
 		verifyBAC();
 		verifyEAC();
-		verifyAA(service);
 		verifyDS();
 		verifyCS();
+		verifyAA(service);
+		/*
+		 * FIXME: The verifyAA call used to be right after verifyEAC
+		 * but that seems to generate a security status not satisfied
+		 * if in SAFE_MODE on my EAC NIK. It seems to work fine in
+		 * PROGRESSIVE_MODE though. Some kind of synchronization error?
+		 * -- MO
+		 */
 	}
 
 	public List<Certificate> getCertificateChain() {
@@ -689,6 +705,9 @@ public class Passport
 			sod = new SODFile(sodIn);
 
 		} catch (IOException ioe) {
+			logger.warning("Error opening SOD file");
+			return null;
+		} catch (CardServiceException cse) {
 			logger.warning("Error opening SOD file");
 			return null;
 		}
@@ -825,11 +844,12 @@ public class Passport
 	 */
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
 		final Passport passport = this;
+		if (couldNotRead.contains(fid)) { return; }
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
 			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
 			logger.warning(message + " (not starting thread)");
-			couldNotRead.put(fid, true);
+			couldNotRead.add(fid);
 			return;
 		}
 		final int fileLength = fileLengths.get(fid);
@@ -859,6 +879,8 @@ public class Passport
 				} catch (IOException ioe) {
 					ioe.printStackTrace();
 					/* FIXME: what if something goes wrong inside this thread? */
+					couldNotRead.add(fid);
+					return;
 				}
 			}
 		})).start();
@@ -891,6 +913,7 @@ public class Passport
 				return;
 			}
 			InputStream dg15In = getInputStream(PassportService.EF_DG15);
+			if (dg15In == null) { logger.severe("dg15In == null in Passport.verifyAA"); }
 			if (dg15In != null && service != null) {
 				DG15File dg15 = new DG15File(dg15In);
 				PublicKey pubKey = dg15.getPublicKey();
@@ -953,7 +976,12 @@ public class Passport
 					dgIn = null;
 					ex = e;
 				}
-				if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+				if (dgIn == null) {
+					logger.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
+					continue;
+				}
+				if (hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+					logger.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
 					continue;
 				} else if (ex != null) {
 					throw ex;
