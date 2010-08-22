@@ -101,4 +101,8 @@ public class CVCAuthorizationTemplate
 		CVCAuthorizationTemplate otherTemplate = (CVCAuthorizationTemplate)otherObj;
 		return this.role == otherTemplate.role && this.accessRight == otherTemplate.accessRight;
 	}
+	
+	public int hashCode() {
+		return 2 * role.value + 3 * accessRight.value + 61;
+	}
 }

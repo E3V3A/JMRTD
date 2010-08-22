@@ -77,7 +77,7 @@ Web site and documentation
 + Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
 
 
-VERSION 0.4.5 (2010 FUTURE)
+VERSION 0.4.5 (2010-08-22)
 ---------------------------
 
 General
@@ -103,13 +103,13 @@ Bugs/temporary fixes
 Dependencies
 + Wrapper around cert-cvc so that CVCertificates subclass java.security.cert.Certificate.
 + cert-cvc latest.
-- Check/update README and Web site to reflect correct version numbers.
-- Latest JAI ImageIO 1.2
++ Check/update README and Web site to reflect correct version numbers.
++ Latest JAI ImageIO 1.2
 + Latest Bouncy Castle 1.45
 
 Code quality
-- Check JavaDoc
-- Findbugs
++ Check JavaDoc
++ Findbugs
 
 Website and documentation
 + Simpler front page (move stuff to "about")
