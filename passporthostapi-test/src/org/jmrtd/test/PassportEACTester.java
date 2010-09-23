@@ -60,7 +60,50 @@ public class PassportEACTester extends PassportTesterBase {
         assertTrue(service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k));
         assertTrue(service.canReadFile(PassportService.EF_DG3, true));
     }
+    /**
+     * Tests the normal EAC behavior: sends the original certificates to the
+     * passport and tests reading out DG3.
+     * 
+     */
 
+    /**
+     *  Test EAC multiple times to see whether there any abnormalities in 
+     *  ECC implementation. With 1024 iterations takes almost an hour to
+     *  finish.
+     */
+    public void testEACMultiple() {
+        List<Integer> failed = new ArrayList<Integer>();
+        CardVerifiableCertificate c1 = readCVCertificateFromFile(testDVDcert);
+        CardVerifiableCertificate c2 = readCVCertificateFromFile(testIScert);
+        PrivateKey k = readKeyFromFile(testISkey);
+        assertNotNull(c1);
+        assertNotNull(c2);
+        assertNotNull(k);
+        int totalTests = 1024;
+        int taFailures = 0;
+        for(int t = 0;t<totalTests;t++) {
+          try {
+            System.out.print("Test "+t+" ");
+            resetCard();
+          } catch (CardServiceException e) {
+            assertTrue(false);
+          }
+          service.doBAC();
+          assertTrue(service.doCA());
+          boolean resultTa = service.doTA(new CardVerifiableCertificate[] { c1, c2 }, k);
+          if(!resultTa) {
+              System.out.println("Failed attempt #"+t);
+              taFailures++;
+              failed.add(t);
+          }
+        }
+        System.out.println("Out of "+totalTests+" tries TA failed "+taFailures+" times.");
+        System.out.println("Failed test #-s "+failed);
+        assertTrue(failed.size() == 0);
+    }
+
+    
+    
     /**
      * This test tries to authenticate with CVCA private key and then
      * immediately read DG3. That is, the certificate chain down to IS is not
