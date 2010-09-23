@@ -62,6 +62,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
@@ -387,12 +388,7 @@ public class PassportService extends PassportApduService implements Serializable
 					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = k.getQ().getEncoded();
 				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
-				if (t[0] == 0) {
-					eacKeyHash = new byte[t.length - 1];
-					System.arraycopy(t, 1, eacKeyHash, 0, eacKeyHash.length);
-				} else {
-					eacKeyHash = t;
-				}
+				eacKeyHash = alignKeyDataToSize(t, k.getParameters().getCurve().getFieldSize() / 8);
 			}
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId != -1) {
@@ -475,7 +471,7 @@ public class PassportService extends PassportApduService implements Serializable
 			sig.update(dtbs.toByteArray());
 			byte[] signature = sig.sign();
 			if (sigAlg.endsWith("ECDSA")) {
-				signature = getRawECDSASignature(signature);
+				signature = getRawECDSASignature(signature, ((ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8);
 			}
 
 			sendMSEAT(wrapper, certRef); // shouldn't this be before the
@@ -537,7 +533,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 	// For ECDSA the EAC 1.11 specification requires the signature to be
 	// stripped down from any ASN.1 wrappers, as so:
-	private byte[] getRawECDSASignature(byte[] signature) throws IOException {
+	private byte[] getRawECDSASignature(byte[] signature, int keySize) throws IOException {
 		ASN1InputStream asn1In = new ASN1InputStream(signature);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
@@ -547,11 +543,8 @@ public class PassportService extends PassportApduService implements Serializable
 			while (e.hasMoreElements()) {
 				DERInteger i = (DERInteger) e.nextElement();
 				byte[] t = i.getValue().toByteArray();
-				if (t[0] == 0) {
-					out.write(t, 1, t.length - 1);
-				} else {
-					out.write(t);
-				}
+				t = alignKeyDataToSize(t, keySize);
+				out.write(t);
 			}
 			out.flush();
 			return out.toByteArray();
@@ -561,6 +554,15 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
+       private byte[] alignKeyDataToSize(byte[] keyData, int size) {
+            byte[] result = new byte[size];
+            if(keyData.length < size) size = keyData.length;
+            System.arraycopy(keyData, keyData.length - size, result, result.length-size, size);
+            return result;
+       }
+	        
+
+	
 	private byte[] wrapDO(byte tag, byte[] data) {
 		byte[] result = new byte[data.length + 2];
 		result[0] = tag;
