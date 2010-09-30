@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
+import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
 /**
@@ -93,12 +94,12 @@ public class FingerInfo extends DisplayedImageInfo
 
 		long imageLength = fingerDataBlockLength - 14;
 
-		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
+                ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
+                Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
 		image = null;
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = (ImageReader)readers.next();
-				ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
 				long posBeforeImage = iis.getStreamPosition();
 				reader.setInput(iis);
 				image = reader.read(0);
