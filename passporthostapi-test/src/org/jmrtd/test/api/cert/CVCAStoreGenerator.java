@@ -40,9 +40,6 @@ import org.ejbca.cvc.HolderReferenceField;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
-import sun.security.util.DerInputStream;
-import sun.security.util.DerValue;
-
 public class CVCAStoreGenerator extends TestCase
 {
 	private static final Provider
