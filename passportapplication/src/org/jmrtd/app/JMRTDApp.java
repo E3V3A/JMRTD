@@ -50,6 +50,9 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.spi.ImageReaderSpi;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
@@ -88,6 +91,7 @@ import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
 import org.jmrtd.cert.PKDCertStoreParameters;
+import org.jmrtd.imageio.test.WSQTest;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -149,7 +153,7 @@ public class JMRTDApp  implements PassportListener
 	 */
 	public JMRTDApp() {
 		try {
-		        // Do that BC stuff knows about CVC certificates
+		        // So that BC stuff knows about CVC certificates
                         BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
 			Security.insertProviderAt(BC_PROVIDER, 1);
 			Security.addProvider(JMRTD_PROVIDER);
