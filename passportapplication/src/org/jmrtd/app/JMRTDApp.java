@@ -149,6 +149,8 @@ public class JMRTDApp  implements PassportListener
 	 */
 	public JMRTDApp() {
 		try {
+		        // Do that BC stuff knows about CVC certificates
+                        BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
 			Security.insertProviderAt(BC_PROVIDER, 1);
 			Security.addProvider(JMRTD_PROVIDER);
 			actionMap = new ActionMap();
@@ -274,16 +276,21 @@ public class JMRTDApp  implements PassportListener
 
 		List<URI> cvcaStoreLocations = preferencesPanel.getCVCAStoreLocations();
 		this.cvcaStores = new ArrayList<KeyStore>(cvcaStoreLocations.size());
+		// We have to try both store types, only Bouncy Castle Store (BKS) 
+		// knows about unnamed EC keys
+		String[] storeTypes = new String[] {"JKS", "BKS" }; 
 		for (URI uri: cvcaStoreLocations) {
-			try {
-				KeyStore cvcaStore = KeyStore.getInstance("JKS");
+		        for(String storeType : storeTypes) {
+		            try {
+				KeyStore cvcaStore = KeyStore.getInstance(storeType);
 				URLConnection uc = uri.toURL().openConnection();
 				InputStream in = uc.getInputStream();
 				cvcaStore.load(in, "".toCharArray());
 				cvcaStores.add(cvcaStore);
-			} catch (Exception e) {
+		            } catch (Exception e) {
 				LOGGER.warning("Could not initialize CVCA: " + e.getMessage());
-			}
+		            }
+		        }
 		}
 	}
 
