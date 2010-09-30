@@ -91,7 +91,6 @@ import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
 import org.jmrtd.cert.PKDCertStoreParameters;
-import org.jmrtd.imageio.test.WSQTest;
 import org.jmrtd.lds.MRZInfo;
 
 /**
