@@ -442,6 +442,8 @@ public class Passport
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
+		if(verificationStatus == null)
+		   verificationStatus = new VerificationStatus();
 		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
 		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 			if (caRef != null) {
