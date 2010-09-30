@@ -5,6 +5,7 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -38,6 +39,9 @@ import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
+
+import sun.security.util.DerInputStream;
+import sun.security.util.DerValue;
 
 public class CVCAStoreGenerator extends TestCase
 {
@@ -175,6 +179,64 @@ public class CVCAStoreGenerator extends TestCase
 			e.printStackTrace();
 		}
 	}
+	
+        public void testCreateKeyStore2() {
+            try {
+                    Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
+                    URI certsDirURI = new URI("file:/home/sos/woj/terminals/nltest");
+                    File certsDir = new File(certsDirURI.getPath());
+                    if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
+                    String[] certFiles = certsDir.list(new FilenameFilter(){
+                    public boolean accept(File dir, String name) {
+                        return name.endsWith(".cvcert") || name.endsWith(".CVCERT"); 
+                    }
+                        
+                    });
+                    String[] keyFiles = certsDir.list(new FilenameFilter(){
+                        public boolean accept(File dir, String name) {
+                            return name.endsWith(".der") || name.endsWith(".DER"); 
+                        }
+                            
+                        });
+                    KeyStore outStore = KeyStore.getInstance("BKS");
+                    outStore.load(null);
+                    String keyAlgName = "RSA";
+                    for (String fileName: certFiles) {
+                            File file = new File(certsDir, fileName);
+                            System.out.println("DEBUG: reading cert from file " + file.getName() + " size " + file.length());
+                            Certificate certificate =
+                               CertificateFactory.getInstance("CVC", JMRTD_PROVIDER).generateCertificate(new FileInputStream(file));
+                            System.out.println("DEBUG: cert = " + toString(certificate));
+                            outStore.setCertificateEntry(fileName, certificate);
+                            keyAlgName = certificate.getPublicKey().getAlgorithm();
+                    }
+                    for (String fileName: keyFiles) {
+                        File file = new File(certsDir, fileName);
+                        System.out.println("DEBUG: reading key from file " + file.getName() + " size " + file.length());
+                        byte[] keyBytes = new byte[(int)file.length()];
+                        (new DataInputStream(new FileInputStream(file))).readFully(keyBytes);
+                        PrivateKey key =
+                              KeyFactory.getInstance(keyAlgName).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+                        System.out.println("DEBUG: key = " + key);
+                        Certificate terminalCertificate = outStore.getCertificate("terminalcert1.cvcert");
+                        Certificate dvCertificate = outStore.getCertificate("terminalcert0.cvcert");
+                        String keyEntryAlias = ((CardVerifiableCertificate)dvCertificate).getHolderReference().getName();
+                        System.out.println("DEBUG: alias: "+keyEntryAlias);
+                        outStore.setKeyEntry(keyEntryAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), new Certificate[] { dvCertificate, terminalCertificate });
+                }
+
+                    
+                    System.out.println("DEBUG: entries in outStore: " + outStore.size());
+                    File outFile = new File(new URI("file:/home/sos/woj/terminals/nltest.ks").getPath());
+                    FileOutputStream out = new FileOutputStream(outFile);
+                    outStore.store(out, STORE_PASSWORD.toCharArray());
+                    out.flush();
+                    out.close();
+            } catch (Exception e) {
+                    e.printStackTrace();
+            }
+    }
+
 
 	public void testReadFromKeyStore() {
 		try {
