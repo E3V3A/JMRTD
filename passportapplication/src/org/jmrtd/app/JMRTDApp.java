@@ -50,9 +50,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.spi.ImageReaderSpi;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
