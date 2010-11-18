@@ -26,6 +26,8 @@ import java.awt.Component;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -54,6 +56,8 @@ import org.jmrtd.lds.MRZInfo;
 public class HolderEditPanel extends JPanel
 {
 	private static final long serialVersionUID = -6169486570387029561L;
+
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");	
 	
 	private enum Field {
 		SURNAME,
@@ -65,7 +69,7 @@ public class HolderEditPanel extends JPanel
 		DATE_OF_BIRTH,
 		DATE_OF_EXPIRY,
 		GENDER;
-		
+
 		public String toString() {
 			String s = super.toString();
 			s = s.replace('_', ' ');
@@ -78,9 +82,9 @@ public class HolderEditPanel extends JPanel
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 
 	private MRZInfo info;
-	
+
 	private Collection<ActionListener> listeners;
-	
+
 	public HolderEditPanel(MRZInfo nfo) {
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
@@ -119,7 +123,7 @@ public class HolderEditPanel extends JPanel
 		c.setFont(KEY_FONT);
 		return c;
 	}
-	
+
 	private Component makeValueComp(Field field, MRZInfo nfo) {
 		switch(field) {
 		case SURNAME: {
@@ -192,7 +196,7 @@ public class HolderEditPanel extends JPanel
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfBirth());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDateOfBirth(tf.getDate());
+					info.setDateOfBirth(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
 					notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
 				}
 			});
@@ -202,7 +206,7 @@ public class HolderEditPanel extends JPanel
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfExpiry());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDateOfExpiry(tf.getDate());
+					info.setDateOfExpiry(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
 					notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
 				}
 			});
@@ -222,10 +226,15 @@ public class HolderEditPanel extends JPanel
 		return null;
 	}
 
-	private DateEntryField makeDateEntryField(Date date) {
-		DateEntryField tf = new DateEntryField(date);
-		tf.setFont(VALUE_FONT);
-		return tf;
+	private DateEntryField makeDateEntryField(String date) {
+		try {
+			DateEntryField tf = new DateEntryField(date);
+			tf.setFont(VALUE_FONT);
+			return tf;
+		} catch (ParseException e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException("Illegal date " + date);
+		}
 	}
 
 	private MRZEntryField makeMRZEntryField(String value) {

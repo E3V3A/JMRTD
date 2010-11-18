@@ -22,6 +22,7 @@
 
 package org.jmrtd.app;
 
+import java.text.ParseException;
 import java.util.Date;
 
 import javax.swing.Box;
@@ -50,8 +51,8 @@ public class BACEntryField extends Box implements BACEntrySource
 	public BACEntryField() {
 		super(BoxLayout.X_AXIS);
 		docNrTF = new MRZEntryField(9);
-		dateOfBirthField = new DateEntryField();
-		dateOfExpiryField = new DateEntryField();
+		dateOfBirthField = new DateEntryField(DateEntryField.YEAR_MODE_2_DIGITS);
+		dateOfExpiryField = new DateEntryField(DateEntryField.YEAR_MODE_2_DIGITS);
 		add(new JLabel("Doc.nr.: "));
 		add(Box.createHorizontalStrut(5));
 		add(docNrTF);
@@ -67,12 +68,27 @@ public class BACEntryField extends Box implements BACEntrySource
 
 	public BACEntryField(BACKeySpec bacEntry) {
 		this();
-		setValue(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+		try {
+			setValue(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
+		} catch (ParseException e) {
+			throw new IllegalArgumentException(e.getMessage());
+		}
+	}
+
+	public BACEntryField(String documentNumber, String dateOfBirth, String dateOfExpiry) throws ParseException {
+		this();
+		setValue(documentNumber, dateOfBirth, dateOfExpiry);
 	}
 
 	public BACEntryField(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		this();
 		setValue(documentNumber, dateOfBirth, dateOfExpiry);
+	}
+
+	private void setValue(String documentNumber, String dateOfBirth, String dateOfExpiry) throws ParseException {
+		docNrTF.setText(documentNumber);
+		dateOfBirthField.setDate(dateOfBirth);
+		dateOfExpiryField.setDate(dateOfExpiry);
 	}
 
 	private void setValue(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {

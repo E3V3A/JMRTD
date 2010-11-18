@@ -192,8 +192,8 @@ public class BACStorePanel extends JPanel
 			BACKeySpec entry = entries.get(rowIndex);
 			switch(columnIndex) {
 			case 0: return entry.getDocumentNumber();
-			case 1: return SDF.format(entry.getDateOfBirth());
-			case 2: return SDF.format(entry.getDateOfExpiry());
+			case 1: return entry.getDateOfBirth();
+			case 2: return entry.getDateOfExpiry();
 			default: return null;
 			}
 		}

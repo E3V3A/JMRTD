@@ -25,6 +25,7 @@ package org.jmrtd.app;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.text.ParseException;
 import java.util.Date;
 
 import javax.swing.JLabel;
@@ -168,10 +169,15 @@ public class HolderViewPanel extends JPanel
 		return null;
 	}
 
-	private DateLabel makeDateLabel(Date date) {
-		DateLabel tf = new DateLabel(date);
-		tf.setFont(VALUE_FONT);
-		return tf;
+	private DateLabel makeDateLabel(String date) {
+		try {
+			DateLabel tf = new DateLabel(date);
+			tf.setFont(VALUE_FONT);
+			return tf;
+		} catch (ParseException e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException("Invalid date");
+		}
 	}
 
 	private JLabel makeMRZLabel(String value) {
