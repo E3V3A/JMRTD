@@ -83,6 +83,7 @@ public class DG1FileTest extends TestCase
 			file = new DG1File(in);
 			assertEquals(file.getMRZInfo().toString().replace("\n", "").trim(), loesInfo);			
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}

@@ -23,6 +23,7 @@ package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
@@ -134,6 +135,9 @@ public class SODFileTest extends TestCase {
 			X509Certificate cert = sodFile.getDocSigningCertificate();
 			System.out.println(cert.toString());
 			System.out.println(cert.getSerialNumber());
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return; // inconclusive!
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
@@ -147,6 +151,9 @@ public class SODFileTest extends TestCase {
 			X509Certificate sodcert = sodFile.getDocSigningCertificate();
 			boolean result = sodFile.checkDocSignature(sodcert);
 			System.out.println("DEBUG: result = " + result);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return; // inconclusive!
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

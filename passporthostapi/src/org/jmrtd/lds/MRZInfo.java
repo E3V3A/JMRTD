@@ -259,7 +259,7 @@ public class MRZInfo implements Serializable
 	}
 
 	private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
-		dataOut.write(SDF.format(dateOfExpiry).getBytes("UTF-8"));
+		dataOut.write(dateOfExpiry.getBytes("UTF-8"));
 	}
 
 	private void writeGender(DataOutputStream dataOut) throws IOException {
@@ -267,7 +267,7 @@ public class MRZInfo implements Serializable
 	}
 
 	private void writeDateOfBirth(DataOutputStream dataOut) throws IOException {
-		dataOut.write(SDF.format(dateOfBirth).getBytes("UTF-8"));
+		dataOut.write(dateOfBirth.getBytes("UTF-8"));
 	}
 
 	private void writeNationality(DataOutputStream dataOut) throws IOException {
@@ -728,10 +728,10 @@ public class MRZInfo implements Serializable
 			out.append("<"); // FIXME: not sure... maybe check digit?
 			// out.append(checkDigit(personalNumber));
 			out.append("\n");
-			out.append(SDF.format(dateOfBirth));
+			out.append(dateOfBirth);
 			out.append(dateOfBirthCheckDigit);
 			out.append(genderToString());
-			out.append(SDF.format(dateOfExpiry));
+			out.append(dateOfExpiry);
 			out.append(dateOfExpiryCheckDigit);
 			out.append(nationality.toAlpha3Code());
 			out.append(optionalData2);
@@ -747,10 +747,10 @@ public class MRZInfo implements Serializable
 			out.append(documentNumber);
 			out.append(documentNumberCheckDigit);
 			out.append(nationality.toAlpha3Code());
-			out.append(SDF.format(dateOfBirth));
+			out.append(dateOfBirth);
 			out.append(dateOfBirthCheckDigit);
 			out.append(genderToString());
-			out.append(SDF.format(dateOfExpiry));
+			out.append(dateOfExpiry);
 			out.append(dateOfExpiryCheckDigit);
 			out.append(mrzFormat(personalNumber, 14));
 			out.append(personalNumberCheckDigit);
@@ -783,8 +783,8 @@ public class MRZInfo implements Serializable
 
 	private void checkDigit() {
 		this.documentNumberCheckDigit = checkDigit(documentNumber);
-		this.dateOfBirthCheckDigit = checkDigit(SDF.format(dateOfBirth));
-		this.dateOfExpiryCheckDigit = checkDigit(SDF.format(dateOfExpiry));
+		this.dateOfBirthCheckDigit = checkDigit(dateOfBirth);
+		this.dateOfExpiryCheckDigit = checkDigit(dateOfExpiry);
 		this.personalNumberCheckDigit = checkDigit(mrzFormat(personalNumber, 14));
 		StringBuffer composite = new StringBuffer();
 		if (documentType == DOC_TYPE_ID1) {
@@ -794,17 +794,17 @@ public class MRZInfo implements Serializable
 			composite.append(documentNumber);
 			composite.append(documentNumberCheckDigit);
 			composite.append(mrzFormat(personalNumber, 15));
-			composite.append(SDF.format(dateOfBirth));
+			composite.append(dateOfBirth);
 			composite.append(dateOfBirthCheckDigit);
-			composite.append(SDF.format(dateOfExpiry));
+			composite.append(dateOfExpiry);
 			composite.append(dateOfExpiryCheckDigit);
 			composite.append(optionalData2);
 		} else {
 			composite.append(documentNumber);
 			composite.append(documentNumberCheckDigit);
-			composite.append(SDF.format(dateOfBirth));
+			composite.append(dateOfBirth);
 			composite.append(dateOfBirthCheckDigit);
-			composite.append(SDF.format(dateOfExpiry));
+			composite.append(dateOfExpiry);
 			composite.append(dateOfExpiryCheckDigit);
 			composite.append(mrzFormat(personalNumber, 14));
 			composite.append(personalNumberCheckDigit);
