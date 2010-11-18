@@ -40,29 +40,33 @@ public class BACKeySpec implements KeySpec
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private String documentNumber;
-	private Date dateOfBirth;
-	private Date dateOfExpiry;
+	private String dateOfBirth;
+	private String dateOfExpiry;
 
-	public BACKeySpec(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+	public BACKeySpec(String documentNumber, String dateOfBirth, String dateOfExpiry) {
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth;
 		this.dateOfExpiry = dateOfExpiry;
+	}
+	
+	public BACKeySpec(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
+		this(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
 	}
 
 	public String getDocumentNumber() {
 		return documentNumber;
 	}
 
-	public Date getDateOfBirth() {
+	public String getDateOfBirth() {
 		return dateOfBirth;
 	}
 
-	public Date getDateOfExpiry() {
+	public String getDateOfExpiry() {
 		return dateOfExpiry;
 	}
 
 	public String toString() {
-		return documentNumber + ", " + SDF.format(dateOfBirth) + ", " + SDF.format(dateOfExpiry);
+		return documentNumber + ", " + dateOfBirth + ", " + dateOfExpiry;
 	}
 
 	public int hashCode() {

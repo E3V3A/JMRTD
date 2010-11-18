@@ -402,12 +402,12 @@ public class PassportPersoService extends CardService {
 	 *            the date of expiry of the passport
 	 * @throws CardServiceException
 	 */
-	public void setBAC(String documentNumber, Date dateOfBirth, Date dateOfExpiry)
+	public void setBAC(String documentNumber, String dateOfBirth, String dateOfExpiry)
 	throws CardServiceException {
 		try {
 			byte[] docNr = documentNumber.trim().toUpperCase().getBytes("UTF-8");
-			byte[] dob = (SDF.format(dateOfBirth)).getBytes("UTF-8");
-			byte[] doe = (SDF.format(dateOfExpiry)).getBytes("UTF-8");
+			byte[] dob = dateOfBirth.getBytes("UTF-8");
+			byte[] doe = dateOfExpiry.getBytes("UTF-8");
 			BERTLVObject mrzObject = new BERTLVObject(MRZ_TAG,
 					new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, docNr));
 			mrzObject.addSubObject(new BERTLVObject(

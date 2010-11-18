@@ -22,6 +22,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -35,6 +36,9 @@ import org.jmrtd.lds.MRZInfo;
 
 public class MRZInfoTest extends TestCase
 {
+	private static final SimpleDateFormat SDF =
+		new SimpleDateFormat("yyMMdd");
+	
 	public MRZInfoTest(String name) {
 		super(name);
 	}
@@ -63,10 +67,10 @@ public class MRZInfoTest extends TestCase
 		Country nationality = ISOCountry.NL;
 		Calendar cal = Calendar.getInstance();
 		cal.set(1971, 10 - 1, 19);
-		Date dateOfBirth = cal.getTime();
+		String dateOfBirth = SDF.format(cal.getTime());
 		Gender gender = Gender.FEMALE;
 		cal.set(2011, 8 - 1, 28);
-		Date dateOfExpiry = cal.getTime();
+		String dateOfExpiry = SDF.format(cal.getTime());
 		String personalNumber = "123456782";
 		return new MRZInfo(documentType, issuingState, primaryIdentifier, secondaryIdentifiers, documentNumber, nationality, dateOfBirth, gender, dateOfExpiry, personalNumber);
 	}

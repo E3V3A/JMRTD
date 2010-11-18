@@ -54,6 +54,7 @@ import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -113,6 +114,10 @@ public class Passport
 
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
 
+	private static final Calendar CALENDAR = Calendar.getInstance(); 
+
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	
 	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
 	private Map<Short, byte[]> filesBytes;
@@ -138,7 +143,7 @@ public class Passport
 
 	private PrivateKey aaPrivateKey;
 
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private BACKeySpec bacKeySpec;
 	private List<CertStore> cscaStores;
@@ -181,10 +186,10 @@ public class Passport
 		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
 
 		/* EF.DG1 */
-		Date today = Calendar.getInstance().getTime();
+		Date today = CALENDAR.getTime();
 		String primaryIdentifier = "";
 		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, today, Gender.MALE, today, "");
+		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, SDF.format(today), Gender.MALE, SDF.format(today), "");
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		fileLength = dg1Bytes.length;
@@ -271,7 +276,7 @@ public class Passport
 						for (BACKeySpec otherBACKeySpec: bacEntries) {
 							try {
 								if (!triedBACEntries.contains(otherBACKeySpec)) {
-									logger.info("BAC: " + otherBACKeySpec);
+									LOGGER.info("BAC: " + otherBACKeySpec);
 									service.doBAC(otherBACKeySpec);
 									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
 									bacKeySpec = otherBACKeySpec;
@@ -334,7 +339,7 @@ public class Passport
 							&& !fileName.endsWith(".BIN")
 							&& !fileName.endsWith(".dat")
 							&& !fileName.endsWith(".DAT")) {
-						logger.warning("Skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
+						LOGGER.warning("Skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
 						continue;					
 					}
 				}
@@ -360,7 +365,7 @@ public class Passport
 					fid = tagBasedFID;
 				}
 				if (fid != tagBasedFID) {
-					logger.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
+					LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
 				}
 				totalLength += fileLength;
 				fileLengths.put((short)fid, fileLength);
@@ -414,7 +419,7 @@ public class Passport
 			/* Now try to deal with EF.CVCA */
 			List<Integer> cvcafids = dg14File.getCVCAFileIds();
 			if (cvcafids != null && cvcafids.size() != 0) {
-				if (cvcafids.size() > 1) { logger.warning("More than one CVCA file id present in DG14."); }
+				if (cvcafids.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
 				cvcaFID = cvcafids.get(0).shortValue();
 			}
 			InputStream cvcaIn = preReadFile(service, cvcaFID);
@@ -434,7 +439,7 @@ public class Passport
 				setupFile(service, fid);
 			} catch(CardServiceException ex) {
 				/* NOTE: Most likely EAC protected file. */
-				logger.info("Could not read file with FID " + Integer.toHexString(fid)
+				LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
 						+ ": " + ex.getMessage());
 			}
 		}
@@ -698,7 +703,7 @@ public class Passport
 
 	public List<Certificate> getCertificateChain() {
 		if (cscaStores == null) {
-			logger.warning("No certificate stores found.");
+			LOGGER.warning("No certificate stores found.");
 			return null;
 		}
 		SODFile sod = null;
@@ -707,14 +712,14 @@ public class Passport
 			sod = new SODFile(sodIn);
 
 		} catch (IOException ioe) {
-			logger.warning("Error opening SOD file");
+			LOGGER.warning("Error opening SOD file");
 			return null;
 		} catch (CardServiceException cse) {
-			logger.warning("Error opening SOD file");
+			LOGGER.warning("Error opening SOD file");
 			return null;
 		}
 		if (sod == null) {
-			logger.warning("Cannot check certificate chain: missing SOD file");
+			LOGGER.warning("Cannot check certificate chain: missing SOD file");
 			return null;
 		}
 		X500Principal sodIssuer = sod.getIssuerX500Principal();
@@ -723,12 +728,12 @@ public class Passport
 		try {
 			docSigningCertificate = sod.getDocSigningCertificate();
 		} catch (Exception e) {
-			logger.warning("Error getting document signing certificate: " + e.getMessage());
+			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
 		}
 		if (docSigningCertificate != null) {
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
 			if (!sodIssuer.equals(docIssuer)) {
-				logger.warning("Security object issuer principal is different from embedded DS certificate issuer!");
+				LOGGER.warning("Security object issuer principal is different from embedded DS certificate issuer!");
 				return null;
 			}
 		}
@@ -787,7 +792,7 @@ public class Passport
 				chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
 				if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
 					/* NOTE: if target certificate not in list, we add it ourselves. */
-					logger.warning("Adding target certificate after PKIXBuilder finished");
+					LOGGER.warning("Adding target certificate after PKIXBuilder finished");
 					chainCertificates.add(docSigningCertificate);
 				}
 				Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
@@ -797,7 +802,7 @@ public class Passport
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.info("Building a chain failed (" + e.getMessage() + ").");
+			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
 
 		return chainCertificates;
@@ -826,7 +831,7 @@ public class Passport
 
 	private void setupFile(PassportService service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {
-			logger.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
+			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
 			return;
 		}
 		CardFileInputStream cardIn = service.readFile(fid);
@@ -850,7 +855,7 @@ public class Passport
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
 			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
-			logger.warning(message + " (not starting thread)");
+			LOGGER.warning(message + " (not starting thread)");
 			couldNotRead.add(fid);
 			return;
 		}
@@ -915,7 +920,7 @@ public class Passport
 				return;
 			}
 			InputStream dg15In = getInputStream(PassportService.EF_DG15);
-			if (dg15In == null) { logger.severe("dg15In == null in Passport.verifyAA"); }
+			if (dg15In == null) { LOGGER.severe("dg15In == null in Passport.verifyAA"); }
 			if (dg15In != null && service != null) {
 				DG15File dg15 = new DG15File(dg15In);
 				PublicKey pubKey = dg15.getPublicKey();
@@ -956,7 +961,7 @@ public class Passport
 			tagsOfHashes.addAll(hashes.keySet());
 			Collections.sort(tagsOfHashes);
 			if (!tagsOfHashes.equals(comDGList)) {
-				logger.warning("Found mismatch between EF.COM and EF.SOd");
+				LOGGER.warning("Found mismatch between EF.COM and EF.SOd");
 				verificationStatus.setDS(Verdict.FAILED);
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
@@ -979,18 +984,18 @@ public class Passport
 					ex = e;
 				}
 				if (dgIn == null) {
-					logger.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
+					LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
 					continue;
 				}
 				if (hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-					logger.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
+					LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
 					continue;
 				} else if (ex != null) {
 					throw ex;
 				}
 
 				if (dgIn == null) {
-					logger.warning("Authentication of DG" + dgNumber + " failed");
+					LOGGER.warning("Authentication of DG" + dgNumber + " failed");
 					verificationStatus.setDS(Verdict.FAILED);
 					return;
 				}
@@ -1003,7 +1008,7 @@ public class Passport
 				}
 				byte[] computedHash = digest.digest();
 				if (!Arrays.equals(storedHash, computedHash)) {
-					logger.warning("Authentication of DG" + dgNumber + " failed");
+					LOGGER.warning("Authentication of DG" + dgNumber + " failed");
 					verificationStatus.setDS(Verdict.FAILED);
 					return; /* NOTE: Serious enough to not perform other checks, leave method. */
 				}
@@ -1011,7 +1016,7 @@ public class Passport
 
 			X509Certificate docSigningCert = sod.getDocSigningCertificate();
 			if (docSigningCert == null) {
-				logger.warning("Could not get document signer certificate from EF.SOd.");
+				LOGGER.warning("Could not get document signer certificate from EF.SOd.");
 				// FIXME: We search for it in CSCAStore. See note at verifyCS.
 				X500Principal issuer = sod.getIssuerX500Principal();
 				BigInteger serialNumber = sod.getSerialNumber();
@@ -1019,7 +1024,7 @@ public class Passport
 			if (sod.checkDocSignature(docSigningCert)) {
 				verificationStatus.setDS(Verdict.SUCCEEDED);
 			} else {
-				logger.warning("DS Signature incorrect");
+				LOGGER.warning("DS Signature incorrect");
 				verificationStatus.setDS(Verdict.FAILED);
 			}
 		} catch (NoSuchAlgorithmException nsae) {
@@ -1048,7 +1053,7 @@ public class Passport
 
 			int chainDepth = chainCertificates.size();
 			if (chainDepth < 1) {
-				logger.warning("Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth + ".");
+				LOGGER.warning("Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth + ".");
 				verificationStatus.setCS(Verdict.FAILED);
 				return;				
 			}
@@ -1056,18 +1061,18 @@ public class Passport
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
 				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				logger.info("Document signer certificate found in store. Chain depth = " + chainDepth + ".");
+				LOGGER.info("Document signer certificate found in store. Chain depth = " + chainDepth + ".");
 				verificationStatus.setCS(Verdict.SUCCEEDED);
 			} else if (chainDepth == 2) {
 				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
 				X509Certificate countrySigningCertificate = (X509Certificate)chainCertificates.get(1);
-				logger.info("Country signer certificate found in store. Chain depth = " + chainDepth + ". Checking signature.");
+				LOGGER.info("Country signer certificate found in store. Chain depth = " + chainDepth + ". Checking signature.");
 				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
 				verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			logger.warning("CSCA certificate check failed!" + e.getMessage());
+			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
 		}
 	}

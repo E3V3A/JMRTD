@@ -65,8 +65,7 @@ public class MRZInfo implements Serializable
 
 	private static final Calendar CALENDAR = Calendar.getInstance(); 
 
-	private static final SimpleDateFormat SDF =
-		new SimpleDateFormat("yyMMdd");
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private int documentType;
 	private Country issuingState;
@@ -75,9 +74,9 @@ public class MRZInfo implements Serializable
 	private Country nationality;
 	private String documentNumber;
 	private String personalNumber;
-	private Date dateOfBirth;
+	private String dateOfBirth;
 	private Gender gender;
-	private Date dateOfExpiry;
+	private String dateOfExpiry;
 	private char documentNumberCheckDigit;
 	private char dateOfBirthCheckDigit;
 	private char dateOfExpiryCheckDigit;
@@ -101,8 +100,8 @@ public class MRZInfo implements Serializable
 	 */
 	public MRZInfo(int documentType, Country issuingState,
 			String primaryIdentifier, String[] secondaryIdentifiers,
-			String documentNumber, Country nationality, Date dateOfBirth,
-			Gender gender, Date dateOfExpiry, String personalNumber) {
+			String documentNumber, Country nationality, String dateOfBirth,
+			Gender gender, String dateOfExpiry, String personalNumber) {
 		this.documentType = documentType;
 		this.issuingState = issuingState;
 		this.primaryIdentifier = primaryIdentifier;
@@ -442,11 +441,10 @@ public class MRZInfo implements Serializable
 	 * @throws IOException if something goes wrong
 	 * @throws NumberFormatException if a data could not be constructed
 	 */
-	private Date readDateOfBirth(DataInputStream in) throws IOException, NumberFormatException {
+	private String readDateOfBirth(DataInputStream in) throws IOException, NumberFormatException {
 		byte[] data = new byte[6];
 		in.readFully(data);
-		String dateString = new String(data).trim();
-		return parseDateInRecentPast(dateString);
+		return new String(data).trim(); // parseDateInRecentPast(new String(data).trim());
 	}
 
 	/**
@@ -460,61 +458,61 @@ public class MRZInfo implements Serializable
 	 * @throws IOException if something goes wrong
 	 * @throws NumberFormatException if a date could not be constructed
 	 */
-	private Date readDateOfExpiry(DataInputStream in) throws IOException, NumberFormatException {
+	private String readDateOfExpiry(DataInputStream in) throws IOException, NumberFormatException {
 		byte[] data = new byte[6];
 		in.readFully(data);
-		return parseDateInNearFuture(new String(data).trim());
+		return new String(data).trim(); // parseDateInNearFuture(new String(data).trim());
 	}
 
-	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
-		Date today = CALENDAR.getTime();
-		int thisYear = CALENDAR.get(Calendar.YEAR);
-		int currentBaseYear = (thisYear / 100) * 100;
-		int pastBaseYear = currentBaseYear - 100;
-		int futureBaseYear = currentBaseYear + 100;
-		
-		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-		
-		if (parsedDate3.before(today)) { return parsedDate3; }
-		else if (parsedDate2.before(today)) { return parsedDate2; }
-		else { return parsedDate1; }
-	}
-	
-	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
-		Date today = CALENDAR.getTime();
-		int thisYear = CALENDAR.get(Calendar.YEAR);
-		int currentBaseYear = (thisYear / 100) * 100;
-		int pastBaseYear = currentBaseYear - 100;
-		int futureBaseYear = currentBaseYear + 100;
-		
-		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-		
-		if (parsedDate1.after(today)) { return parsedDate1; }
-		else if (parsedDate2.after(today)) { return parsedDate2; }
-		else { return parsedDate3; }
-	}
+//	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
+//		Date today = CALENDAR.getTime();
+//		int thisYear = CALENDAR.get(Calendar.YEAR);
+//		int currentBaseYear = (thisYear / 100) * 100;
+//		int pastBaseYear = currentBaseYear - 100;
+//		int futureBaseYear = currentBaseYear + 100;
+//		
+//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+//		
+//		if (parsedDate3.before(today)) { return parsedDate3; }
+//		else if (parsedDate2.before(today)) { return parsedDate2; }
+//		else { return parsedDate1; }
+//	}
+//	
+//	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
+//		Date today = CALENDAR.getTime();
+//		int thisYear = CALENDAR.get(Calendar.YEAR);
+//		int currentBaseYear = (thisYear / 100) * 100;
+//		int pastBaseYear = currentBaseYear - 100;
+//		int futureBaseYear = currentBaseYear + 100;
+//		
+//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+//		
+//		if (parsedDate1.after(today)) { return parsedDate1; }
+//		else if (parsedDate2.after(today)) { return parsedDate2; }
+//		else { return parsedDate3; }
+//	}
 
-	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
-		if (dateString.length() != 6) {
-			throw new NumberFormatException("Wrong date format!");
-		}
-		int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
-		int month = Integer.parseInt(dateString.substring(2, 4));
-		int day = Integer.parseInt(dateString.substring(4, 6));
-		GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
-		return cal.getTime();
-	}
+//	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
+//		if (dateString.length() != 6) {
+//			throw new NumberFormatException("Wrong date format!");
+//		}
+//		int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
+//		int month = Integer.parseInt(dateString.substring(2, 4));
+//		int day = Integer.parseInt(dateString.substring(4, 6));
+//		GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
+//		return cal.getTime();
+//	}
 
 	/**
 	 * Gets the date of birth of the passport holder.
 	 * 
 	 * @return date of birth (with 1900 as base year)
 	 */
-	public Date getDateOfBirth() {
+	public String getDateOfBirth() {
 		return dateOfBirth;
 	}
 
@@ -523,7 +521,7 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param dateOfBirth new date of birth
 	 */
-	public void setDateOfBirth(Date dateOfBirth) {
+	public void setDateOfBirth(String dateOfBirth) {
 		this.dateOfBirth = dateOfBirth;
 		checkDigit();
 	}
@@ -533,7 +531,7 @@ public class MRZInfo implements Serializable
 	 * 
 	 * @return date of expiry (with 2000 as base year)
 	 */
-	public Date getDateOfExpiry() {
+	public String getDateOfExpiry() {
 		return dateOfExpiry;
 	}
 
@@ -542,7 +540,7 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param dateOfExpiry new date of expiry
 	 */
-	public void setDateOfExpiry(Date dateOfExpiry) {
+	public void setDateOfExpiry(String dateOfExpiry) {
 		this.dateOfExpiry = dateOfExpiry;
 		checkDigit();
 	}
