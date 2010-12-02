@@ -203,7 +203,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @deprecated hack
 	 */
-	public static int maxBlockSize = 255;
+	public static int maxBlockSize = 223;
 
 	private static final int SESSION_STOPPED_STATE = 0;
 
@@ -554,15 +554,15 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-       private byte[] alignKeyDataToSize(byte[] keyData, int size) {
-            byte[] result = new byte[size];
-            if(keyData.length < size) size = keyData.length;
-            System.arraycopy(keyData, keyData.length - size, result, result.length-size, size);
-            return result;
-       }
-	        
+	private byte[] alignKeyDataToSize(byte[] keyData, int size) {
+		byte[] result = new byte[size];
+		if(keyData.length < size) size = keyData.length;
+		System.arraycopy(keyData, keyData.length - size, result, result.length-size, size);
+		return result;
+	}
 
-	
+
+
 	private byte[] wrapDO(byte tag, byte[] data) {
 		byte[] result = new byte[data.length + 2];
 		result[0] = tag;
@@ -618,7 +618,7 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	/**
-	 * s * Performs the <i>Active Authentication</i> protocol.
+	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
 	 * @param publicKey
 	 *            the public key to use (usually read from the card)
