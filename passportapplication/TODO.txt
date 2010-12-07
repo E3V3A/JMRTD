@@ -142,6 +142,7 @@ Dependencies
 - Latest Bouncy Castle 1.45
 
 Code quality
+- Exception handling (e.g. re-throwing more general exception types, quelling, ... see open discussion on sf https://sourceforge.net/projects/jmrtd/forums/forum/580232/topic/3999263)
 - Check JavaDoc
 - Findbugs
 
