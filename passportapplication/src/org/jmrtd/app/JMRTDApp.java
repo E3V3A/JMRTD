@@ -79,7 +79,7 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.BACStore;
+import org.jmrtd.*;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;
@@ -157,7 +157,7 @@ public class JMRTDApp  implements PassportListener
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
 
-			this.bacStore = new BACStore();
+			this.bacStore = new FileBACStore();
 
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), this.getClass());
 			preferencesPanel.addChangeListener(new ChangeListener() {

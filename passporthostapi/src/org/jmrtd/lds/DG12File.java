@@ -52,8 +52,8 @@ public class DG12File extends DataGroup
 	private static final int TAX_OR_EXIT_REQUIREMENTS_TAG = 0x5F1C;
 	private static final int IMAGE_OF_FRONT_TAG = 0x5F1D; // Image per ISO/IEC 10918
 	private static final int IMAGE_OF_REAR_TAG = 0x5F1E; // Image per ISO/IEC 10918
-	private static final int DATE_AND_TIME_OF_PERSONALIZATION = 0x5F85; // yyyymmddhhmmss
-	private static final int PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG = 0x5F86;
+	private static final int DATE_AND_TIME_OF_PERSONALIZATION = 0x5F55; // yyyymmddhhmmss
+	private static final int PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG = 0x5F56;
 	private static final int OTHER_PEOPLE_OBJECT_TAG = 0xA0; // FIXME: alternative to 5F1A?
 	private static final int OTHER_PEOPLE_COUNT_TAG = 0x02;
 

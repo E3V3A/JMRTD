@@ -302,7 +302,8 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
-			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
+//			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
+			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), bacKey.getDateOfBirth(), bacKey.getDateOfExpiry());
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();
