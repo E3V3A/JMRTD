@@ -32,8 +32,6 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.StringTokenizer;
 
 import net.sourceforge.scuba.data.Country;
@@ -68,7 +66,7 @@ public class MRZInfo implements Serializable
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private int documentType;
-    private String documentCode;
+	private String documentCode;
 	private Country issuingState;
 	private String primaryIdentifier;
 	private String[] secondaryIdentifiers;
@@ -85,16 +83,15 @@ public class MRZInfo implements Serializable
 	private char compositeCheckDigit;
 	private String optionalData2; // FIXME: Last field on line 2 of ID3 MRZ.
 
-   	public MRZInfo(int documentType, Country issuingState,
-    		String primaryIdentifier, String[] secondaryIdentifiers,
+	public MRZInfo(int documentType, Country issuingState,
+			String primaryIdentifier, String[] secondaryIdentifiers,
 			String documentNumber, Country nationality, String dateOfBirth,
 			Gender gender, String dateOfExpiry, String personalNumber) {
-           // FIXME: documentCode = null not valid?
-            this(documentType, null, issuingState,
-                    primaryIdentifier, secondaryIdentifiers,
-                    documentNumber, nationality, dateOfBirth,
-                    gender, dateOfExpiry, personalNumber);
-    }
+		this(documentType == DOC_TYPE_ID3 ? "P<" : "I<", issuingState,
+				primaryIdentifier, secondaryIdentifiers,
+				documentNumber, nationality, dateOfBirth,
+				gender, dateOfExpiry, personalNumber);
+	}
 
 	/**
 	 * Creates a new MRZ.
@@ -110,12 +107,12 @@ public class MRZInfo implements Serializable
 	 * @param dateOfExpiry date of expiry
 	 * @param personalNumber personal number
 	 */
-	public MRZInfo(int documentType, String documentCode, Country issuingState,
+	public MRZInfo(String documentCode, Country issuingState,
 			String primaryIdentifier, String[] secondaryIdentifiers,
 			String documentNumber, Country nationality, String dateOfBirth,
 			Gender gender, String dateOfExpiry, String personalNumber) {
-		this.documentType = documentType;
-        this.documentCode = documentCode;
+		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
+		this.documentCode = documentCode;
 		this.issuingState = issuingState;
 		this.primaryIdentifier = primaryIdentifier;
 		this.secondaryIdentifiers = secondaryIdentifiers;
@@ -139,16 +136,8 @@ public class MRZInfo implements Serializable
 	public MRZInfo(InputStream in) {
 		try {
 			DataInputStream dataIn = new DataInputStream(in);
-            this.documentCode = readDocumentCode(dataIn);
-            if (this.documentCode.startsWith("A") ||
-                    this.documentCode.startsWith("C") ||
-                    this.documentCode.startsWith("I")) {
-                this.documentType = DOC_TYPE_ID1;
-            } else if (this.documentCode.startsWith("P")) {
-                this.documentType = DOC_TYPE_ID3;
-            } else {
-                this.documentType = DOC_TYPE_UNSPECIFIED;
-            }
+			this.documentCode = readDocumentCode(dataIn);
+			this.documentType = getDocumentTypeFromDocumentCode(this.documentCode);
 			if (documentType == DOC_TYPE_ID1) {
 				this.issuingState = readCountry(dataIn);
 				this.documentNumber = readString(dataIn, 9);
@@ -267,9 +256,9 @@ public class MRZInfo implements Serializable
 		}
 	}
 
-    private void writeString(String string, DataOutputStream dataOut, int width) throws IOException {
-        dataOut.write(mrzFormat(string, width).getBytes("UTF-8"));
-    }
+	private void writeString(String string, DataOutputStream dataOut, int width) throws IOException {
+		dataOut.write(mrzFormat(string, width).getBytes("UTF-8"));
+	}
 	private void writeIssuingState(DataOutputStream dataOut) throws IOException {
 		dataOut.write(issuingState.toAlpha3Code().getBytes("UTF-8"));
 	}
@@ -317,15 +306,15 @@ public class MRZInfo implements Serializable
 		return mrzFormat(name.toString(), width);
 	}
 
-    private String readString(DataInputStream in, int count) throws IOException {
-        byte[] data = new byte[count];
-        in.readFully(data);
-        return new String(data).trim();
-    }
+	private String readString(DataInputStream in, int count) throws IOException {
+		byte[] data = new byte[count];
+		in.readFully(data);
+		return new String(data).trim();
+	}
 
-    private String readStringWithFillers(DataInputStream in, int count) throws IOException {
-        return trimFillerChars(readString(in, count));
-    }
+	private String readStringWithFillers(DataInputStream in, int count) throws IOException {
+		return trimFillerChars(readString(in, count));
+	}
 
 	/**
 	 * Reads the type of document.
@@ -347,13 +336,13 @@ public class MRZInfo implements Serializable
 	 * @throws IOException if something goes wrong
 	 */
 	private Country readCountry(DataInputStream in) throws IOException {
-        String dataString = readString(in, 3);
-        try {
-            return ISOCountry.getInstance(dataString);
-        } catch (IllegalArgumentException e) {
-            return ICAOCountry.valueOf(dataString);
-        }
-    }
+		String dataString = readString(in, 3);
+		try {
+			return ISOCountry.getInstance(dataString);
+		} catch (IllegalArgumentException e) {
+			return ICAOCountry.valueOf(dataString);
+		}
+	}
 
 	/**
 	 * Reads the 1 letter gender information.
@@ -405,48 +394,48 @@ public class MRZInfo implements Serializable
 		return readString(in, 6);
 	}
 
-//	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
-//		Date today = CALENDAR.getTime();
-//		int thisYear = CALENDAR.get(Calendar.YEAR);
-//		int currentBaseYear = (thisYear / 100) * 100;
-//		int pastBaseYear = currentBaseYear - 100;
-//		int futureBaseYear = currentBaseYear + 100;
-//		
-//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-//		
-//		if (parsedDate3.before(today)) { return parsedDate3; }
-//		else if (parsedDate2.before(today)) { return parsedDate2; }
-//		else { return parsedDate1; }
-//	}
-//	
-//	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
-//		Date today = CALENDAR.getTime();
-//		int thisYear = CALENDAR.get(Calendar.YEAR);
-//		int currentBaseYear = (thisYear / 100) * 100;
-//		int pastBaseYear = currentBaseYear - 100;
-//		int futureBaseYear = currentBaseYear + 100;
-//		
-//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-//		
-//		if (parsedDate1.after(today)) { return parsedDate1; }
-//		else if (parsedDate2.after(today)) { return parsedDate2; }
-//		else { return parsedDate3; }
-//	}
+	//	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
+	//		Date today = CALENDAR.getTime();
+	//		int thisYear = CALENDAR.get(Calendar.YEAR);
+	//		int currentBaseYear = (thisYear / 100) * 100;
+	//		int pastBaseYear = currentBaseYear - 100;
+	//		int futureBaseYear = currentBaseYear + 100;
+	//		
+	//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+	//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+	//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+	//		
+	//		if (parsedDate3.before(today)) { return parsedDate3; }
+	//		else if (parsedDate2.before(today)) { return parsedDate2; }
+	//		else { return parsedDate1; }
+	//	}
+	//	
+	//	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
+	//		Date today = CALENDAR.getTime();
+	//		int thisYear = CALENDAR.get(Calendar.YEAR);
+	//		int currentBaseYear = (thisYear / 100) * 100;
+	//		int pastBaseYear = currentBaseYear - 100;
+	//		int futureBaseYear = currentBaseYear + 100;
+	//		
+	//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
+	//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
+	//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
+	//		
+	//		if (parsedDate1.after(today)) { return parsedDate1; }
+	//		else if (parsedDate2.after(today)) { return parsedDate2; }
+	//		else { return parsedDate3; }
+	//	}
 
-//	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
-//		if (dateString.length() != 6) {
-//			throw new NumberFormatException("Wrong date format!");
-//		}
-//		int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
-//		int month = Integer.parseInt(dateString.substring(2, 4));
-//		int day = Integer.parseInt(dateString.substring(4, 6));
-//		GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
-//		return cal.getTime();
-//	}
+	//	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
+	//		if (dateString.length() != 6) {
+	//			throw new NumberFormatException("Wrong date format!");
+	//		}
+	//		int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
+	//		int month = Integer.parseInt(dateString.substring(2, 4));
+	//		int day = Integer.parseInt(dateString.substring(4, 6));
+	//		GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
+	//		return cal.getTime();
+	//	}
 
 	/**
 	 * Gets the date of birth of the passport holder.
@@ -514,11 +503,11 @@ public class MRZInfo implements Serializable
 		return documentType;
 	}
 
-    public String getDocumentCode() {
-        return documentCode;
-    }
+	public String getDocumentCode() {
+		return documentCode;
+	}
 
-    /**
+	/**
 	 * Gets the issuing state
 	 *
 	 * @return issuing state
@@ -628,15 +617,15 @@ public class MRZInfo implements Serializable
 		checkDigit();
 	}
 
-    public String getOptionalData2() {
-        return optionalData2;
-    }
+	public String getOptionalData2() {
+		return optionalData2;
+	}
 
-    public void setOptionalData2(String optionalData2) {
-        this.optionalData2 = optionalData2;
-    }
+	public void setOptionalData2(String optionalData2) {
+		this.optionalData2 = optionalData2;
+	}
 
-    /**
+	/**
 	 * Gets the passport holder's gender.
 	 *
 	 * @return gender
@@ -789,6 +778,17 @@ public class MRZInfo implements Serializable
 			result.append("<");
 		}
 		return result.toString();
+	}
+
+	private static int getDocumentTypeFromDocumentCode(String documentCode) {
+		if (documentCode.startsWith("A")
+				|| documentCode.startsWith("C")
+				|| documentCode.startsWith("I")) {
+			return DOC_TYPE_ID1;
+		} else if (documentCode.startsWith("P")) {
+			return DOC_TYPE_ID3;
+		}
+		return DOC_TYPE_UNSPECIFIED;
 	}
 
 	/**
