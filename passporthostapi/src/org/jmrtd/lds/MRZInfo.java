@@ -65,7 +65,9 @@ public class MRZInfo implements Serializable
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
+	/** @deprecated to be replaced with documentCode */
 	private int documentType;
+
 	private String documentCode;
 	private Country issuingState;
 	private String primaryIdentifier;
@@ -87,7 +89,7 @@ public class MRZInfo implements Serializable
 			String primaryIdentifier, String[] secondaryIdentifiers,
 			String documentNumber, Country nationality, String dateOfBirth,
 			Gender gender, String dateOfExpiry, String personalNumber) {
-		this(documentType == DOC_TYPE_ID3 ? "P<" : "I<", issuingState,
+		this(getDocumentCodeFromDocumentType(documentType), issuingState,
 				primaryIdentifier, secondaryIdentifiers,
 				documentNumber, nationality, dateOfBirth,
 				gender, dateOfExpiry, personalNumber);
@@ -96,7 +98,7 @@ public class MRZInfo implements Serializable
 	/**
 	 * Creates a new MRZ.
 	 *
-	 * @param documentType document type
+	 * @param documentCode document type
 	 * @param issuingState issuing state
 	 * @param primaryIdentifier card holder name
 	 * @param secondaryIdentifiers card holder name
@@ -503,6 +505,11 @@ public class MRZInfo implements Serializable
 		return documentType;
 	}
 
+	/**
+	 * Gets the document type.
+	 *
+	 * @return document type
+	 */
 	public String getDocumentCode() {
 		return documentCode;
 	}
@@ -662,7 +669,7 @@ public class MRZInfo implements Serializable
 			 * FIXME: some composite check digit
 			 *        should go into this one as well...
 			 */
-			out.append(documentCode);
+			out.append(mrzFormat(documentCode, 2));
 			out.append(issuingState.toAlpha3Code());
 			out.append(documentNumber);
 			out.append(documentNumberCheckDigit);
@@ -682,7 +689,7 @@ public class MRZInfo implements Serializable
 			out.append(nameToString(30));
 			out.append("\n");
 		} else {
-			out.append(documentCode);
+			out.append(mrzFormat(documentCode, 2));
 			out.append(issuingState.toAlpha3Code());
 			out.append(nameToString(39));
 			out.append("\n");
@@ -789,6 +796,10 @@ public class MRZInfo implements Serializable
 			return DOC_TYPE_ID3;
 		}
 		return DOC_TYPE_UNSPECIFIED;
+	}
+	
+	private static String getDocumentCodeFromDocumentType(int documentType) {
+		return (documentType == DOC_TYPE_ID3) ? "P<" : "I<";
 	}
 
 	/**
