@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.CRL;
+import java.security.cert.CRLException;
 import java.security.cert.CRLSelector;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStoreException;
@@ -66,6 +67,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 	private static final String COUNTRY_ATTRIBUTE_NAME = "c";
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
+	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";
 
 	private DirContext context;
 	private String server;
@@ -75,6 +77,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private List<Certificate> certificates;
+	private List<CRL> crls;
 
 	public PKDCertStoreSpi(CertStoreParameters params) throws InvalidAlgorithmParameterException {
 		super(params);
@@ -84,11 +87,14 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		this.port = ((PKDCertStoreParameters)params).getPort();
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
 		certificates = new ArrayList<Certificate>();
+		crls = new ArrayList<CRL>();
 		new Thread(new Runnable() {
 			public void run() {
 				try {
 					connect();
-					loadCertificates();
+					List<Country> countries = searchCountries();
+					loadCertificates(countries);
+					loadCRLs(countries);
 				} catch (CommunicationException ce) {
 					ce.printStackTrace();
 					return;
@@ -107,6 +113,16 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
+	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
+	throws CertStoreException {
+		List<CRL> result = new ArrayList<CRL>();
+		for (CRL crl: crls) {
+			if (selector.match(crl)) {
+				result.add(crl);
+			}
+		}
+		return result;
+	}
 
 	public String getBaseDN() {
 		return baseDN;
@@ -125,13 +141,19 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 	}
 
-	private synchronized void loadCertificates() {
-		List<Country> countries = searchCountries();
+	private synchronized void loadCertificates(List<Country> countries) {
 		for (Country country: countries) {
 			List<Certificate> countryCertificates = searchCertificates(country);
 			certificates.addAll(countryCertificates);
 		}
 	}
+	
+	private synchronized void loadCRLs(List<Country> countries) {
+		for (Country country: countries) {
+			List<CRL> countryCRLs = searchCRLs(country);
+			crls.addAll(countryCRLs);
+		}
+	}	
 
 	private List<Country> searchCountries() {
 		List<Country> countries = new ArrayList<Country>();
@@ -146,7 +168,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			try {
 				answer = context.search(baseDN, filter, controls);
 			} catch (NamingException ne) {
-				LOGGER.warning("No matches found for while searching for countries!");
+				LOGGER.warning("No matches found while searching for countries!");
 			}
 			int resultCount = 0;
 			for (; answer != null && answer.hasMore(); resultCount++) {
@@ -185,25 +207,73 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	private List<Certificate> searchCertificates(Country country) {
-		List<Certificate> result = new ArrayList<Certificate>();
+		List<byte[]> binaries = searchAttributes("Certificates", country.toAlpha2Code().toUpperCase(), CERTIFICATE_ATTRIBUTE_NAME);
+		if (binaries == null) { return null; }
+		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
+		for (byte[] valueBytes: binaries) {
+			Certificate certificate = null;
+			try {
+				CertificateFactory factory = CertificateFactory.getInstance("X509");
+				certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
+			} catch (Exception e) {
+				try {
+					CertificateFactory factory = CertificateFactory.getInstance("X509", PROVIDER);
+					certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
+				}  catch (CertificateException ce) {
+					ce.printStackTrace();
+					certificate = null;
+				}
+			}
+			result.add(certificate);
+		}
+		return result;
+	}
+	
+	private List<CRL> searchCRLs(Country country) {
+		List<byte[]> binaries = searchAttributes("Certificates", country.toAlpha2Code().toUpperCase(), CRL_ATTRIBUTE_NAME);
+		if (binaries == null) { return null; }
+		List<CRL> result = new ArrayList<CRL>(binaries.size());
+		for (byte[] valueBytes: binaries) {
+			CRL crl = null;
+			try {
+				CertificateFactory factory = CertificateFactory.getInstance("X509");
+				crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
+			} catch (Exception e) {
+				try {
+					CertificateFactory factory = CertificateFactory.getInstance("X509", PROVIDER);
+					crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
+				}  catch (CRLException crle) {
+					crle.printStackTrace();
+					crl = null;
+				}  catch (CertificateException ce) {
+					ce.printStackTrace();
+					crl = null;
+				}
+			}
+			result.add(crl);
+		}
+		return result;
+	}
+	
+	private List<byte[]> searchAttributes(String oValue,String countryCode, String attributeName) {
+		List<byte[]> result = new ArrayList<byte[]>();
 		try {
-			String countryCertificatesDN = "o=Certificates,c="
-				+ country.toAlpha2Code().toUpperCase() + "," + baseDN;
+			String countrySpecificDN = "o="+ oValue + ",c=" + countryCode + "," + baseDN;
 
 			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
-			String[] attrIDs = { CERTIFICATE_ATTRIBUTE_NAME };
+			String[] attrIDs = { attributeName };
 
-			matchAttrs.put(new BasicAttribute(CERTIFICATE_ATTRIBUTE_NAME));
-			if (!CERTIFICATE_ATTRIBUTE_NAME.endsWith(";binary")) {
-				String certificateAttributeNameBinary = CERTIFICATE_ATTRIBUTE_NAME + ";binary";
+			matchAttrs.put(new BasicAttribute(attributeName));
+			if (!attributeName.endsWith(";binary")) {
+				String certificateAttributeNameBinary = attributeName + ";binary";
 				matchAttrs.put(new BasicAttribute(certificateAttributeNameBinary));
-				attrIDs = new String[]{ CERTIFICATE_ATTRIBUTE_NAME, certificateAttributeNameBinary };
+				attrIDs = new String[]{ attributeName, certificateAttributeNameBinary };
 			}
 
 			/* Search for objects that have those matching attributes. */
 			NamingEnumeration<?> answer = null;
 			try {
-				answer = context.search(countryCertificatesDN, matchAttrs, attrIDs);
+				answer = context.search(countrySpecificDN, matchAttrs, attrIDs);
 			} catch (NameNotFoundException nnfe) {
 				/* NOTE: No certificates found for this country. Maybe they just publish CRL through PKD. Fine. */
 			}
@@ -218,9 +288,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 					Attribute attribute = (Attribute)ae.next();
 
 					/* Name */
-					String attributeName = attribute.getID();
-					if (!attributeName.startsWith(CERTIFICATE_ATTRIBUTE_NAME)) {
-						LOGGER.warning("Search found \"" + attributeName + "\", was expecting \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
+					String foundAttributeName = attribute.getID();
+					if (!foundAttributeName.startsWith(attributeName)) {
+						LOGGER.warning("Search found \"" + foundAttributeName + "\", was expecting \"" + attributeName + "\"");
 					}
 
 					/* Values */
@@ -229,42 +299,20 @@ public class PKDCertStoreSpi extends CertStoreSpi
 						Object value = attrValueEnum.next();						
 						if (value instanceof byte[]) {
 							byte[] valueBytes = (byte[])value;
-							Certificate certificate = null;
-							try {
-								CertificateFactory factory = CertificateFactory.getInstance("X509");
-								certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
-							} catch (Exception e) {
-								try {
-									CertificateFactory factory = CertificateFactory.getInstance("X509", PROVIDER);
-									certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
-								}  catch (CertificateException ce) {
-									ce.printStackTrace();
-									certificate = null;
-								}
-							}
-							result.add(certificate);
+							result.add(valueBytes);
 						}
 					}
 					if (attributeValueCount != 1) {
-						LOGGER.warning("More than 1 value for \"" + attributeName + "\"");
+						LOGGER.warning("More than 1 value for \"" + foundAttributeName + "\"");
 					}
 				}
 				if (attributeCount != 1) {
-					LOGGER.warning("More than 1 attribute found in an object with attribute \"" + CERTIFICATE_ATTRIBUTE_NAME + "\"");
+					LOGGER.warning("More than 1 attribute found in an object with attribute \"" + attributeName + "\"");
 				}
 			}
 		} catch (NamingException e) {
 			e.printStackTrace();
 		}
-		return result;
-	}
-
-	/**
-	 * FIXME: get CRLs.
-	 */
-	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
-	throws CertStoreException {
-		List<CRL> result = new ArrayList<CRL>(0);
 		return result;
 	}
 }

@@ -81,6 +81,7 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.VerificationStatus.Verdict;
 import org.jmrtd.cert.CVCPrincipal;
@@ -701,7 +702,14 @@ public class Passport
 		 */
 	}
 
-	public List<Certificate> getCertificateChain() {
+	/**
+	 * PKIX algorithm to build certificate chain.
+	 * 
+	 * @return a list of certificates
+	 * 
+	 * @throws ExtCertPathValidatorException if CRL could not be checked
+	 */
+	public List<Certificate> getCertificateChain() throws ExtCertPathValidatorException {
 		if (cscaStores == null) {
 			LOGGER.warning("No certificate stores found.");
 			return null;
@@ -710,7 +718,6 @@ public class Passport
 		try {
 			InputStream sodIn = getInputStream(PassportService.EF_SOD);
 			sod = new SODFile(sodIn);
-
 		} catch (IOException ioe) {
 			LOGGER.warning("Error opening SOD file");
 			return null;
@@ -785,7 +792,7 @@ public class Passport
 			for (CertStore trustStore: cscaStores) {
 				buildParams.addCertStore(trustStore);
 			}
-			buildParams.setRevocationEnabled(false);
+			buildParams.setRevocationEnabled(false); /* NOTE: CRL checking disabled. */
 			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
 			if (result != null) {
 				CertPath chain = result.getCertPath();

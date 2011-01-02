@@ -162,6 +162,7 @@ public class SODFile extends PassportFile
 				privateKey,
 				docSigningCertificate, provider);
 	}
+
 	/**
 	 * Constructs a Security Object data structure.
 	 *
@@ -410,6 +411,18 @@ public class SODFile extends PassportFile
 		 */
 	}
 
+	public X500Principal getIssuerX500Principal() {
+		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
+		X509Name name = issuerAndSerialNumber.getName();
+		return new X500Principal(name.getDEREncoded());
+	}
+
+	public BigInteger getSerialNumber() {
+		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
+		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
+		return serialNumber;
+	}
+	
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -545,18 +558,6 @@ public class SODFile extends PassportFile
 		DERSequence idSeq = (DERSequence)signerIdentifier.getId();
 		IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(idSeq);
 		return issuerAndSerialNumber;
-	}
-
-	public X500Principal getIssuerX500Principal() {
-		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
-		X509Name name = issuerAndSerialNumber.getName();
-		return new X500Principal(name.getDEREncoded());
-	}
-
-	public BigInteger getSerialNumber() {
-		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
-		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
-		return serialNumber;
 	}
 
 	/**
