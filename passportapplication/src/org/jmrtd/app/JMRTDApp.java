@@ -79,7 +79,8 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
-import org.jmrtd.*;
+import org.jmrtd.BACStore;
+import org.jmrtd.FileBACStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportEvent;
 import org.jmrtd.PassportListener;

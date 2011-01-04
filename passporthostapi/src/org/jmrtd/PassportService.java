@@ -156,43 +156,26 @@ public class PassportService extends PassportApduService implements Serializable
 
 	/** Short file identifiers for the DGs */
 
-	public static final byte SF_DG1 = 0x01;
-
-	public static final byte SF_DG2 = 0x02;
-
-	public static final byte SF_DG3 = 0x03;
-
-	public static final byte SF_DG4 = 0x04;
-
-	public static final byte SF_DG5 = 0x05;
-
-	public static final byte SF_DG6 = 0x06;
-
-	public static final byte SF_DG7 = 0x07;
-
-	public static final byte SF_DG8 = 0x08;
-
-	public static final byte SF_DG9 = 0x09;
-
-	public static final byte SF_DG10 = 0x0a;
-
-	public static final byte SF_DG11 = 0x0b;
-
-	public static final byte SF_DG12 = 0x0c;
-
-	public static final byte SF_DG13 = 0x0d;
-
-	public static final byte SF_DG14 = 0x0e;
-
-	public static final byte SF_DG15 = 0x0f;
-
-	public static final byte SF_DG16 = 0x10;
-
-	public static final byte SF_COM = 0x1E;
-
-	public static final byte SF_SOD = 0x1D;
-
-	public static final byte SF_CVCA = 0x1C;
+	public static final byte
+	SF_DG1 = 0x01,
+	SF_DG2 = 0x02,
+	SF_DG3 = 0x03,
+	SF_DG4 = 0x04,
+	SF_DG5 = 0x05,
+	SF_DG6 = 0x06,
+	SF_DG7 = 0x07,
+	SF_DG8 = 0x08,
+	SF_DG9 = 0x09,
+	SF_DG10 = 0x0A,
+	SF_DG11 = 0x0B,
+	SF_DG12 = 0x0C,
+	SF_DG13 = 0x0D,
+	SF_DG14 = 0x0E,
+	SF_DG15 = 0x0F,
+	SF_DG16 = 0x10,
+	SF_COM = 0x1E,
+	SF_SOD = 0x1D,
+	SF_CVCA = 0x1C;
 
 	public static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
@@ -233,9 +216,9 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	protected SecureMessagingWrapper wrapper;
 
-	private Signature aaSignature;
-	private MessageDigest aaDigest;
-	private Cipher aaCipher;
+	private transient Signature aaSignature;
+	private transient MessageDigest aaDigest;
+	private transient Cipher aaCipher;
 	protected Random random;
 	private PassportFileSystem fs;
 
@@ -741,10 +724,8 @@ public class PassportService extends PassportApduService implements Serializable
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
 
-	private class PassportFileSystem implements FileSystemStructured, Serializable
+	private class PassportFileSystem implements FileSystemStructured
 	{
-		private static final long serialVersionUID = -8273017272522947990L;
-
 		private PassportFileInfo selectedFile;
 
 		public synchronized byte[] readBinary(int offset, int length)
@@ -759,11 +740,11 @@ public class PassportService extends PassportApduService implements Serializable
 			selectedFile = new PassportFileInfo(fid, getFileLength());
 		}
 
-		public FileInfo[] getSelectedPath() {
+		public synchronized FileInfo[] getSelectedPath() {
 			return new PassportFileInfo[]{ selectedFile };
 		}
 
-		public void selectFile(short[] path) throws CardServiceException {
+		public synchronized void selectFile(short[] path) throws CardServiceException {
 			if (path == null) { throw new CardServiceException("Path is null"); }
 			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
 			short fid = path[path.length - 1];

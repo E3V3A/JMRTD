@@ -137,7 +137,8 @@ abstract class CBEFFDataGroup extends DataGroup
 			// throw new IllegalArgumentException(warning);
 		}
 		/* We'll just skip this header for now. */
-		tlvIn.skip(headerTemplateLength);		
+		long skippedBytes = 0;
+		while (skippedBytes < headerTemplateLength) { skippedBytes += tlvIn.skip(headerTemplateLength); }
 	}
 
 	/**
@@ -172,12 +173,14 @@ abstract class CBEFFDataGroup extends DataGroup
 			return tlvIn.readValue();
 		case SMT_DO_CC /* 0x8E */:
 			/* NOTE: payload contains a MAC */
-			tlvIn.skip(doLength);
-			break; /* FIXME: FindBugs told me to insert this break, pls check -- MO */
+			long skippedBytes = 0;
+			while (skippedBytes < doLength) { skippedBytes += tlvIn.skip(doLength); }
+			break;
 		case SMT_DO_DS /* 0x9E */:
 			/* NOTE: payload contains a signature */
-			tlvIn.skip(doLength);
-			break; /* FIXME: FindBugs told me to insert this break, pls check -- MO */
+			skippedBytes = 0;
+			while (skippedBytes < doLength) { skippedBytes += tlvIn.skip(doLength); }
+			break;
 		}
 		return null;
 	}

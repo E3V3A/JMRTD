@@ -163,7 +163,7 @@ public class Passport
 	 */
 	public Passport(int docType) throws GeneralSecurityException {
 		this();
-		switch (docType) {
+		switch (docType) { // FIXME: use docCode of type String here?
 		case MRZInfo.DOC_TYPE_ID1: break;
 		case MRZInfo.DOC_TYPE_ID2: break;
 		case MRZInfo.DOC_TYPE_ID3: break;
@@ -188,9 +188,10 @@ public class Passport
 
 		/* EF.DG1 */
 		Date today = CALENDAR.getTime();
+		String todayString = SDF.format(today);
 		String primaryIdentifier = "";
 		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, SDF.format(today), Gender.MALE, SDF.format(today), "");
+		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, todayString, Gender.MALE, todayString, "");
 		DG1File dg1 = new DG1File(mrzInfo);
 		byte[] dg1Bytes = dg1.getEncoded();
 		fileLength = dg1Bytes.length;
@@ -725,10 +726,6 @@ public class Passport
 			LOGGER.warning("Error opening SOD file");
 			return null;
 		}
-		if (sod == null) {
-			LOGGER.warning("Cannot check certificate chain: missing SOD file");
-			return null;
-		}
 		X500Principal sodIssuer = sod.getIssuerX500Principal();
 		BigInteger sodSerialNumber = sod.getSerialNumber();
 		X509Certificate docSigningCertificate = null;
@@ -999,12 +996,6 @@ public class Passport
 					continue;
 				} else if (ex != null) {
 					throw ex;
-				}
-
-				if (dgIn == null) {
-					LOGGER.warning("Authentication of DG" + dgNumber + " failed");
-					verificationStatus.setDS(Verdict.FAILED);
-					return;
 				}
 
 				byte[] buf = new byte[4096];

@@ -24,7 +24,6 @@ package org.jmrtd.test.api.lds;
 import java.io.ByteArrayInputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Country;

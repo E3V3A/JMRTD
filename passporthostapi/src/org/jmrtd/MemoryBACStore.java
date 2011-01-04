@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,7 +30,9 @@ import java.util.List;
  *
  * Contributed by Aleksandar Kamburov (wise_guybg).
  *
- * @version $Rev$
+ * @author JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
  */
 public class MemoryBACStore implements BACStore {
     private List<BACKeySpec> entries;

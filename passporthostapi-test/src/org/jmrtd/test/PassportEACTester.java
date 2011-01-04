@@ -17,12 +17,12 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.cert.CVCAuthorizationTemplate;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CVCPublicKey;
 import org.jmrtd.cert.CVCertificateBuilder;
 import org.jmrtd.cert.CardVerifiableCertificate;
-import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
-import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.lds.CVCAFile;
 
 public class PassportEACTester extends PassportTesterBase {

@@ -267,7 +267,8 @@ public class FaceInfo extends DisplayedImageInfo
 		   byte featurePoint = dataIn.readByte();
 		   int x = dataIn.readUnsignedShort();
 		   int y = dataIn.readUnsignedShort();
-		   dataIn.skip(2); // 2 bytes reserved
+		   long skippedBytes = 0;
+		   while (skippedBytes < 2) { skippedBytes += dataIn.skip(2); } // 2 bytes reserved
 		   featurePoints[i] = new FeaturePoint(featureType, featurePoint, x, y);
 	   }
 

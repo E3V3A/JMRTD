@@ -38,8 +38,11 @@ import org.jmrtd.cert.CardVerifiableCertificate;
  * 
  * @author Wojciech Mostowski <woj@cs.ru.nl>
  * 
+ * @version $Revision: $
  */
 public class EACEvent extends EventObject {
+
+	private static final long serialVersionUID = 6992383777555486463L;
 
 	private PassportService service;
 	private int keyId;

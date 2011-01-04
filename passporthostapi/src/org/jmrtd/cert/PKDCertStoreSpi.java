@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id:  $
  */
 
 package org.jmrtd.cert;
@@ -86,6 +86,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		this.server = ((PKDCertStoreParameters)params).getServerName();
 		this.port = ((PKDCertStoreParameters)params).getPort();
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
+	}
+
+	private void start() {
 		certificates = new ArrayList<Certificate>();
 		crls = new ArrayList<CRL>();
 		new Thread(new Runnable() {
@@ -102,8 +105,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			}
 		}).start();
 	}
-
+	
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
+		if (certificates == null) {
+			start();
+		}
 		List<Certificate> result = new ArrayList<Certificate>();
 		for (Certificate certificate: certificates) {
 			if (selector.match(certificate)) {
@@ -115,6 +121,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
 	throws CertStoreException {
+		if (crls == null) {
+			start();
+		}
 		List<CRL> result = new ArrayList<CRL>();
 		for (CRL crl: crls) {
 			if (selector.match(crl)) {
@@ -128,6 +137,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return baseDN;
 	}
 
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private synchronized void connect() throws CommunicationException {
 		try {
 			context = null;
@@ -155,7 +166,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 	}	
 
-	private List<Country> searchCountries() {
+	private synchronized List<Country> searchCountries() {
 		List<Country> countries = new ArrayList<Country>();
 		try {
 			String filter = "(&(objectClass=country)(entryDN=*))";

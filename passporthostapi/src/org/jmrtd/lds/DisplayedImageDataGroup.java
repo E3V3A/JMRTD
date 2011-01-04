@@ -95,7 +95,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 				displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
 			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
 		}
-		int displayedImageLength = tlvIn.readLength();
+		/* int displayedImageLength = */ tlvIn.readLength();
 		/* Displayed Facial Image: ISO 10918, JFIF option
 		 * Displayed Finger: ANSI/NIST-ITL 1-2000
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option

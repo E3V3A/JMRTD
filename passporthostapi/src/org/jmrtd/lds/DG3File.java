@@ -89,12 +89,12 @@ public class DG3File extends CBEFFDataGroup
 		/* int captureDeviceID = */ dataIn.readUnsignedShort();
 		/* int imageAcquisitionLevel = */ dataIn.readUnsignedShort();
 		int fingerCount = dataIn.readUnsignedByte();
-		int scaleUnits = dataIn.readUnsignedByte(); /* 1 -> PPI, 2 -> PPCM */
-		int scanResH = dataIn.readUnsignedShort();
-		int scanResV = dataIn.readUnsignedShort();
-		int imgResH = dataIn.readUnsignedShort(); /* should be <= scanResH */
-		int imgResV = dataIn.readUnsignedShort(); /* should be <= scanResV */
-		int depth = dataIn.readUnsignedByte(); /* 1 - 16 bits, i.e. 2 - 65546 gray levels */
+		/* int scaleUnits = */ dataIn.readUnsignedByte(); /* 1 -> PPI, 2 -> PPCM */
+		/* int scanResH = */ dataIn.readUnsignedShort();
+		/* int scanResV = */ dataIn.readUnsignedShort();
+		/* int imgResH = */ dataIn.readUnsignedShort(); /* should be <= scanResH */
+		/* int imgResV = */ dataIn.readUnsignedShort(); /* should be <= scanResV */
+		/* int depth = */ dataIn.readUnsignedByte(); /* 1 - 16 bits, i.e. 2 - 65546 gray levels */
 		int compressionAlg = dataIn.readUnsignedByte(); /* 0 Uncompressed – no bit packing
 														   1 Uncompressed – bit packed
 														   2 Compressed – WSQ

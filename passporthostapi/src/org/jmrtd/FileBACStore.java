@@ -41,8 +41,9 @@ import net.sourceforge.scuba.util.Files;
 /**
  * Flat file based database for BAC entries.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)  *
- * @version $Rev$
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
  */
 public class FileBACStore implements BACStore
 {
@@ -72,11 +73,11 @@ public class FileBACStore implements BACStore
 		this(Files.toFile(location));
 	}
 
-	public File getLocation() {
+	public synchronized File getLocation() {
 		return location;
 	}
 
-	public void setLocation(File location) {
+	public synchronized void setLocation(File location) {
 		this.location = location;
 		try {
 			if (!location.exists()) {

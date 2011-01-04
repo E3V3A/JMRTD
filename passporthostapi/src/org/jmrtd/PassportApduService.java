@@ -75,10 +75,10 @@ public class PassportApduService extends CardService
 	private CardService service;
 
 	/** DESede encryption/decryption cipher. */
-	private Cipher cipher;
+	private transient Cipher cipher;
 
 	/** ISO9797Alg3Mac. */
-	private Mac mac;
+	private transient Mac mac;
 
 	/**
 	 * Creates a new passport apdu sending service.

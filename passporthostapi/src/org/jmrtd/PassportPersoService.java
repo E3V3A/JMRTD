@@ -38,7 +38,6 @@ import java.security.interfaces.ECPrivateKey;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -61,9 +60,11 @@ import org.jmrtd.lds.MRZInfo;
  * Service for initializing blank passport reference applets.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
- * 
  */
 public class PassportPersoService extends CardService {
+	
+	private static final long serialVersionUID = 4975606132249105202L;
+	
 	private static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
 	private static final short AAPRIVKEY_FID = 0x0001;
 	private static final byte INS_PUT_DATA = (byte) 0xda;;

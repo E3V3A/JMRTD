@@ -108,14 +108,15 @@ public class DG4File extends CBEFFDataGroup
 		/* long length = */ dataIn.readInt(); /* & 0x00000000FFFFFFFFL (4) */;
 		/* int captureDeviceID = */ dataIn.readUnsignedShort(); /* (2) */
 		int irisFeatureCount = dataIn.readUnsignedByte(); /* (1) */
-		int recordHeaderLength = dataIn.readUnsignedShort(); /* Should be 61? (2) */
-		int imagePropertiesBits = dataIn.readUnsignedShort(); /* (2) */
-		int irisDiameter = dataIn.readUnsignedShort(); /* (2) */
+		/* int recordHeaderLength = */ dataIn.readUnsignedShort(); /* Should be 61? (2) */
+		/* int imagePropertiesBits = */ dataIn.readUnsignedShort(); /* (2) */
+		/* int irisDiameter = */ dataIn.readUnsignedShort(); /* (2) */
 		int imageFormat = dataIn.readUnsignedShort(); /* (2) */
-		int rawImageWidth = dataIn.readUnsignedShort(); /* (2) */
-		int rawImageHeight = dataIn.readUnsignedShort(); /* (2) */
-		int intensityDepth = dataIn.readUnsignedByte(); /* (1) */
-		int imageTransform = dataIn.readUnsignedByte(); /* (1) */
+		/* int rawImageWidth = */ dataIn.readUnsignedShort(); /* (2) */
+		/* int rawImageHeight = */ dataIn.readUnsignedShort(); /* (2) */
+		/* int intensityDepth = */ dataIn.readUnsignedByte(); /* (1) */
+		/* int imageTransform = */ dataIn.readUnsignedByte(); /* (1) */
+
 		/*
 		 * A 16 character string uniquely identifying the
 		 * device or source of the data. This data can be
@@ -139,7 +140,7 @@ public class DG4File extends CBEFFDataGroup
 	
 	private void readIrisFeature(DataInputStream dataIn, int featureIndex, int imageFormat) throws IOException {
 		/* Iris feature header */
-		int featureID = dataIn.readUnsignedByte();
+		/* int featureID = */ dataIn.readUnsignedByte();
 		int imageCount = dataIn.readUnsignedShort();
 		
 

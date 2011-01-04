@@ -28,6 +28,7 @@ import net.sourceforge.scuba.data.Country;
  * Contributed by Aleksandar Kamburov (wise_guybg).
  */
 public enum ICAOCountry implements Country {
+
 	GBD("GB","GBD","British Dependent territories citizen"),
 	GBN("GB","GBN","British National (Overseas)"),
 	GBO("GB","GBO","British Overseas citizen"),

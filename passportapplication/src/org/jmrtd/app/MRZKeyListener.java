@@ -32,7 +32,6 @@ import java.util.logging.Logger;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.lds.MRZInfo;
 
-
 /**
  * A key listener that will recognize relevant parts of MRZ
  * data being entered.

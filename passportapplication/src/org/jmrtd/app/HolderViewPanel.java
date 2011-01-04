@@ -26,7 +26,6 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.text.ParseException;
-import java.util.Date;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;

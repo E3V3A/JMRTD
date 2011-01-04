@@ -258,7 +258,7 @@ public class DG14File extends DataGroup
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG14File other = (DG14File)obj;
 		return (securityInfos == null && other.securityInfos == null)
-			|| securityInfos.equals(other.securityInfos);
+			|| (securityInfos != null && securityInfos.equals(other.securityInfos));
 	}
 
 	public int hashCode() {

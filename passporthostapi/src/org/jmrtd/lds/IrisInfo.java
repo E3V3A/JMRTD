@@ -86,8 +86,9 @@ public class IrisInfo extends DisplayedImageInfo
 		dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		String mimeType = getMimeType(imageFormat);
 
-		int imageNumber = dataIn.readUnsignedShort();
-		int quality = dataIn.readUnsignedByte();
+		/* int imageNumber = */ dataIn.readUnsignedShort();
+		/* int quality = */ dataIn.readUnsignedByte();
+
 		/*
 		 * (65536*angle/360) modulo 65536
 		 * ROT_ANGLE_UNDEF = 0xFFFF
@@ -96,7 +97,8 @@ public class IrisInfo extends DisplayedImageInfo
 		 * Used only for rectilinear images. For polar images
 		 * entry shall be ROT_ANGLE_UNDEF
 		 */
-		int rotAngleEye = dataIn.readShort();
+		/* int rotAngleEye = */ dataIn.readShort();
+
 		/*
 		 * Rotation uncertainty = (unsigned short) round
 		 * (65536 * uncertainty/180)
@@ -105,7 +107,8 @@ public class IrisInfo extends DisplayedImageInfo
 		 * Where uncertainty is measured in degrees and is
 		 * the absolute value of maximum error
 		 */
-		int rotUncertainty = dataIn.readUnsignedShort();
+		/* int rotUncertainty = */ dataIn.readUnsignedShort();
+		
 		long imageLength = dataIn.readInt() & 0xFFFFFFFFL;
 
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
