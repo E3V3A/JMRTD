@@ -115,27 +115,13 @@ Website and documentation
 + Simpler front page (move stuff to "about")
 
 
-VERSION 0.4.6 (FUTURE)
+VERSION 0.4.6 (NEAR FUTURE)
 ----------------------
 
 General
-- CRL validity checking, PKD and local storage
-- Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
-  FaceInfo for DG2, but a list of lists).
-- Get DG3 (finger) and DG4 (iris) bio template I/O to the same level as DG2 (face)
-- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Implement BAC as KeyStore?
-- getEncoded() implementations for all classes in org.jmrtd.lds package.
-
-GUI
-- When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
-  Currently it's hardcoded to ID-1.
-- Implement editor mode.
-- Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
-  Perhaps even allow ASN.1 tree in a JTree.
-
-Bugs/temporary fixes
-- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
++ Use String instead of Data in BAC / MRZ entry.
+- CSCA Master List via PKD cert store
+- CRL validity checking for PKD cert store
 
 Dependencies
 - Latest JAI ImageIO 1.2
@@ -147,18 +133,31 @@ Code quality
 - Findbugs
 
 
-VERSION 0.5.x (FUTURE)
-----------------------
+VERSION 0.4.7 / 0.5.x (FUTURE)
+------------------------------
 
 General
 - Check and compare date (current) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
+- Make distinction between feature and image in CBEFF groups and reflect this in the data type (i.e. not a list of
+  FaceInfo for DG2, but a list of lists).
+- Get DG3 (finger) and DG4 (iris) bio template I/O to the same level as DG2 (face)
+- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
+- Implement BAC as KeyStore?
+- getEncoded() implementations for all classes in org.jmrtd.lds package.
 
 GUI
 - Show progress during BAC testing in PassportFrame constructor
   (especially since some MRTDs now wait for a long time after failed attempt).
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
+- When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
+  Currently it's hardcoded to ID-1.
+- Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
+  Perhaps even present ASN.1 tree in a JTree.
+  
+Bugs/temporary fixes
+- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
   
 Code quality
 - Need EAC samples to test with.
@@ -178,6 +177,7 @@ SCUBA support (for exotic card readers, etc.)
 Website and documentation
 - A FAQ would be nice
 - Compile-it-yourself instructions
+
 
 VERSION 0.9.x (FUTURE)
 ----------------------
