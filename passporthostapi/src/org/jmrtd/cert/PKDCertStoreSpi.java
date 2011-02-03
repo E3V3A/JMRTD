@@ -57,6 +57,7 @@ import javax.naming.directory.SearchResult;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
+import net.sourceforge.scuba.util.Hex;
 
 public class PKDCertStoreSpi extends CertStoreSpi
 {
@@ -74,6 +75,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private int port;
 	private String baseDN;
 
+	private CertificateFactory factory;
+	
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private List<Certificate> certificates;
@@ -86,26 +89,28 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		this.server = ((PKDCertStoreParameters)params).getServerName();
 		this.port = ((PKDCertStoreParameters)params).getPort();
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
+		try {
+			factory = CertificateFactory.getInstance("X509");
+		} catch (CertificateException ce) {
+			throw new IllegalStateException("Could not create an X.509 certificate factory\n" + ce.toString());
+		}
 	}
 
 	private void start() {
 		certificates = new ArrayList<Certificate>();
 		crls = new ArrayList<CRL>();
-		new Thread(new Runnable() {
-			public void run() {
-				try {
-					connect();
-					List<Country> countries = searchCountries();
-					loadCertificates(countries);
-					loadCRLs(countries);
-				} catch (CommunicationException ce) {
-					ce.printStackTrace();
-					return;
-				}
-			}
-		}).start();
+		try {
+			connect();
+			List<Country> countries = searchCountries();
+			loadCSCACertificates();
+			loadCertificates(countries);
+			loadCRLs(countries);
+		} catch (CommunicationException ce) {
+			ce.printStackTrace();
+			return;
+		}
 	}
-	
+
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
 		if (certificates == null) {
 			start();
@@ -138,7 +143,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	/* ONLY PRIVATE METHODS BELOW */
-	
+
 	private synchronized void connect() throws CommunicationException {
 		try {
 			context = null;
@@ -157,6 +162,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			List<Certificate> countryCertificates = searchCertificates(country);
 			certificates.addAll(countryCertificates);
 		}
+	}
+
+	private synchronized void loadCSCACertificates() {
+		List<Certificate> cscaCertificates = searchCSCACertificates();
+		certificates.addAll(cscaCertificates);
 	}
 	
 	private synchronized void loadCRLs(List<Country> countries) {
@@ -218,17 +228,17 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	private List<Certificate> searchCertificates(Country country) {
-		List<byte[]> binaries = searchAttributes("Certificates", country.toAlpha2Code().toUpperCase(), CERTIFICATE_ATTRIBUTE_NAME);
+		String countrySpecificDN = "o=" + "Certificates" + ",c=" + country.toAlpha2Code().toUpperCase() + "," + baseDN;
+		List<byte[]> binaries = searchAttributes(countrySpecificDN, CERTIFICATE_ATTRIBUTE_NAME);
 		if (binaries == null) { return null; }
 		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			Certificate certificate = null;
 			try {
-				CertificateFactory factory = CertificateFactory.getInstance("X509");
 				certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
 			} catch (Exception e) {
 				try {
-					CertificateFactory factory = CertificateFactory.getInstance("X509", PROVIDER);
+					factory = CertificateFactory.getInstance("X509", PROVIDER);
 					certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
 				}  catch (CertificateException ce) {
 					ce.printStackTrace();
@@ -236,22 +246,34 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				}
 			}
 			result.add(certificate);
-		}
+		}		
 		return result;
 	}
 	
+	private List<Certificate> searchCSCACertificates() {
+		String pkdMLDN = "dc=CSCAMasterList,dc=pkdDownload";
+		LOGGER.info("DEBUG: pkdMLDN = " + pkdMLDN);
+		List<byte[]> binaries = searchAttributes(pkdMLDN, "CscaMasterListData");
+		for (byte[] binary: binaries) {
+			LOGGER.info("DEBUG: found CscaMasterListData"); // FIXME: WORK IN PROGRESS!
+			LOGGER.info(Hex.bytesToASCIIString(binary));
+		}
+		return new ArrayList<Certificate>(0); // FIXME
+	}
+
 	private List<CRL> searchCRLs(Country country) {
-		List<byte[]> binaries = searchAttributes("Certificates", country.toAlpha2Code().toUpperCase(), CRL_ATTRIBUTE_NAME);
+		String countrySpecificDN = "o="+ "CRLs" + ",c=" + country.toAlpha2Code().toUpperCase() + "," + baseDN;
+		
+		List<byte[]> binaries = searchAttributes(countrySpecificDN, CRL_ATTRIBUTE_NAME);
 		if (binaries == null) { return null; }
 		List<CRL> result = new ArrayList<CRL>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			CRL crl = null;
 			try {
-				CertificateFactory factory = CertificateFactory.getInstance("X509");
 				crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
 			} catch (Exception e) {
 				try {
-					CertificateFactory factory = CertificateFactory.getInstance("X509", PROVIDER);
+					factory = CertificateFactory.getInstance("X509", PROVIDER);
 					crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
 				}  catch (CRLException crle) {
 					crle.printStackTrace();
@@ -265,11 +287,10 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 		return result;
 	}
-	
-	private List<byte[]> searchAttributes(String oValue,String countryCode, String attributeName) {
+
+	private List<byte[]> searchAttributes(String specificDN, String attributeName) {
 		List<byte[]> result = new ArrayList<byte[]>();
 		try {
-			String countrySpecificDN = "o="+ oValue + ",c=" + countryCode + "," + baseDN;
 
 			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
 			String[] attrIDs = { attributeName };
@@ -284,7 +305,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			/* Search for objects that have those matching attributes. */
 			NamingEnumeration<?> answer = null;
 			try {
-				answer = context.search(countrySpecificDN, matchAttrs, attrIDs);
+				answer = context.search(specificDN, matchAttrs, attrIDs);
 			} catch (NameNotFoundException nnfe) {
 				/* NOTE: No certificates found for this country. Maybe they just publish CRL through PKD. Fine. */
 			}
