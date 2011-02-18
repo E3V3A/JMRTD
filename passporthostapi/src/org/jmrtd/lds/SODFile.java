@@ -55,7 +55,6 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -67,6 +66,7 @@ import org.bouncycastle.asn1.cms.SignerIdentifier;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.icao.DataGroupHash;
 import org.bouncycastle.asn1.icao.LDSSecurityObject;
+import org.bouncycastle.asn1.icao.LDSVersionInfo;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -74,7 +74,6 @@ import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
-import org.bouncycastle.asn1.icao.LDSVersionInfo;
 
 /**
  * File structure for the EF_SOD file.
@@ -113,9 +112,9 @@ public class SODFile extends PassportFile
 	private static final DERObjectIdentifier IEEE_P1363_SHA1_OID = new DERObjectIdentifier("1.3.14.3.2.26");
 
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
-	
+
 	private SignedData signedData;
 
 	/**
@@ -169,30 +168,30 @@ public class SODFile extends PassportFile
 
 
 	/**
-    * Constructs a Security Object data structure using a specified signature provider.
-     *
-     * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
-     * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
-     * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
-     * @param privateKey private key to sign the data
-     * @param docSigningCertificate the document signing certificate
-     * @param provider specific signature provider that should be used to create the signature
-     *
-     * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
-     * @throws CertificateException if the document signing certificate cannot be used
-     */
-    public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes,
-            PrivateKey privateKey,
-            X509Certificate docSigningCertificate, String provider,
-            String ldsVersion, String unicodeVersion)
-    throws NoSuchAlgorithmException, CertificateException {
-        signedData = createSignedData(digestAlgorithm,
-                digestEncryptionAlgorithm,
-                dataGroupHashes,
-                privateKey,
-                docSigningCertificate, provider, ldsVersion, unicodeVersion);
-    }
+	 * Constructs a Security Object data structure using a specified signature provider.
+	 *
+	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
+	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
+	 * @param privateKey private key to sign the data
+	 * @param docSigningCertificate the document signing certificate
+	 * @param provider specific signature provider that should be used to create the signature
+	 *
+	 * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
+	 * @throws CertificateException if the document signing certificate cannot be used
+	 */
+	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			PrivateKey privateKey,
+			X509Certificate docSigningCertificate, String provider,
+			String ldsVersion, String unicodeVersion)
+	throws NoSuchAlgorithmException, CertificateException {
+		signedData = createSignedData(digestAlgorithm,
+				digestEncryptionAlgorithm,
+				dataGroupHashes,
+				privateKey,
+				docSigningCertificate, provider, ldsVersion, unicodeVersion);
+	}
 
 	/**
 	 * Constructs a Security Object data structure.
@@ -317,30 +316,30 @@ public class SODFile extends PassportFile
 	 * Gets the version of the LDS if stored in the Security Object (SOd).
 	 *
 	 * @return the version of the LDS in "aabb" format or null if LDS &lt; V1.8
-         * @since LDS V1.8
+	 * @since LDS V1.8
 	 */
 	public String getLdsVersion() {
-            LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
-            if (ldsVersionInfo == null) {
-                return null;
-            } else {
-                return ldsVersionInfo.getLdsVersion();
-            }
+		LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
+		if (ldsVersionInfo == null) {
+			return null;
+		} else {
+			return ldsVersionInfo.getLdsVersion();
+		}
 	}
 
-        /**
+	/**
 	 * Gets the version of unicode if stored in the Security Object (SOd).
 	 *
 	 * @return the unicode version in "aabbcc" format or null if LDS &lt; V1.8
-         * @since LDS V1.8
+	 * @since LDS V1.8
 	 */
 	public String getUnicodeVersion() {
-            LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
-            if (ldsVersionInfo == null) {
-                return null;
-            } else {
-                return ldsVersionInfo.getUnicodeVersion();
-            }
+		LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
+		if (ldsVersionInfo == null) {
+			return null;
+		} else {
+			return ldsVersionInfo.getUnicodeVersion();
+		}
 	}
 
 	/**
@@ -483,7 +482,7 @@ public class SODFile extends PassportFile
 		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
 		return serialNumber;
 	}
-	
+
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -612,7 +611,7 @@ public class SODFile extends PassportFile
 			return attributesBytes;
 		}
 	}
-	
+
 	private IssuerAndSerialNumber getIssuerAndSerialNumber() {
 		SignerInfo signerInfo = getSignerInfo(signedData);
 		SignerIdentifier signerIdentifier = signerInfo.getSID();
@@ -656,20 +655,20 @@ public class SODFile extends PassportFile
 			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
 			X509Certificate docSigningCertificate, String provider)
 	throws NoSuchAlgorithmException, CertificateException {
-        return createSignedData(digestAlgorithm, digestEncryptionAlgorithm,
-                dataGroupHashes, privateKey, docSigningCertificate, provider,
-                null, null);
-    }
+		return createSignedData(digestAlgorithm, digestEncryptionAlgorithm,
+				dataGroupHashes, privateKey, docSigningCertificate, provider,
+				null, null);
+	}
 
-    private static SignedData createSignedData(String digestAlgorithm,
-            String digestEncryptionAlgorithm,
-            Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
-            X509Certificate docSigningCertificate, String provider,
-            String ldsVersion, String unicodeVersion)
-            throws NoSuchAlgorithmException, CertificateException {
+	private static SignedData createSignedData(String digestAlgorithm,
+			String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
+			X509Certificate docSigningCertificate, String provider,
+			String ldsVersion, String unicodeVersion)
+	throws NoSuchAlgorithmException, CertificateException {
 		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
 		ContentInfo contentInfo = createContentInfo(digestAlgorithm,
-                dataGroupHashes, ldsVersion, unicodeVersion);
+				dataGroupHashes, ldsVersion, unicodeVersion);
 		byte[] content = ((DEROctetString) contentInfo.getContent())
 		.getOctets();
 
@@ -724,14 +723,14 @@ public class SODFile extends PassportFile
 			String digestAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes)
 	throws NoSuchAlgorithmException {
-            return createContentInfo(digestAlgorithm, dataGroupHashes, null,
-                    null);
-        }
+		return createContentInfo(digestAlgorithm, dataGroupHashes, null,
+				null);
+	}
 
 	private static ContentInfo createContentInfo(
 			String digestAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes,
-                        String ldsVersion, String unicodeVersion)
+			String ldsVersion, String unicodeVersion)
 	throws NoSuchAlgorithmException {
 		DataGroupHash[] dataGroupHashesArray = new DataGroupHash[dataGroupHashes.size()];
 		int i = 0;
@@ -741,14 +740,14 @@ public class SODFile extends PassportFile
 			dataGroupHashesArray[i++] = hash;
 		}
 		AlgorithmIdentifier digestAlgorithmIdentifier = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm));
-                LDSVersionInfo ldsVersionInfo;
-                if (ldsVersion == null) {
-                    ldsVersionInfo = null;
-                } else {
-                    ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
-//                            new DERPrintableString(ldsVersion, true),
-//                            new DERPrintableString(unicodeVersion, true));
-                }
+		LDSVersionInfo ldsVersionInfo;
+		if (ldsVersion == null) {
+			ldsVersionInfo = null;
+		} else {
+			ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
+			//                            new DERPrintableString(ldsVersion, true),
+			//                            new DERPrintableString(unicodeVersion, true));
+		}
 		LDSSecurityObject sObject2 = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
 		return new ContentInfo(ICAO_SOD_OID, new DEROctetString(sObject2));
 	}
