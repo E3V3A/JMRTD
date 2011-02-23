@@ -118,9 +118,9 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${acrprovider_build}/" includes="**/*.class" />
-			<fileset dir="${crefprovider_build}/" includes="**/*.class" />
-			<fileset dir="${jcopprovider_build}/" includes="**/*.class" />
+			<fileset dir="${acrprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${crefprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${jcopprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
 			<fileset dir="${scuba_gui_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
