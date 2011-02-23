@@ -106,6 +106,11 @@ import org.jmrtd.lds.SecurityInfo;
  * A passport object is basically a collection of buffered input streams for the
  * data groups, combined with some status information (progress).
  * 
+ * Contains methods for creating instances from scratch, from file, and from
+ * card service.
+ * 
+ * Also contains the document verification logic.
+ * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
@@ -131,7 +136,7 @@ public class Passport
 
 	private short cvcaFID = PassportService.EF_CVCA;
 
-	// Our local copies of the COM and SOD files:
+	/* Our local copies of the COM and SOD files: */
 	private COMFile comFile;
 	private SODFile sodFile;
 	private DG1File dg1File;
@@ -597,7 +602,6 @@ public class Passport
 		} catch (CardServiceException cse) {
 			return null;
 		}
-
 	}
 
 	public BACKeySpec getBACKeySpec() {
@@ -704,7 +708,8 @@ public class Passport
 	}
 
 	/**
-	 * PKIX algorithm to build certificate chain.
+	 * Builds certificate chain from SOd to CSCA.
+	 * Uses PKIX algorithm.
 	 * 
 	 * @return a list of certificates
 	 * 
@@ -808,10 +813,31 @@ public class Passport
 			e.printStackTrace();
 			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
-
 		return chainCertificates;
 	}
 
+	/**
+	 * Adds an authentication listener to this MRTD.
+	 * 
+	 * @param l an authentication listener
+	 */
+	public void addAuthenticationListener(AuthListener l) {
+		if (service != null) {
+			service.addAuthenticationListener(l);
+		}
+	}
+
+	/**
+	 * Gets the verification status of this MRTD.
+	 * 
+	 * @return a verification status
+	 * 
+	 * @see {@link VerificationStatus}
+	 */
+	public VerificationStatus getVerificationStatus() {
+		return verificationStatus;
+	}
+	
 	/* Only private methods below. */
 
 	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
@@ -943,7 +969,12 @@ public class Passport
 		}
 	}
 
-	/** Checks hashes in the SOd correspond to hashes we compute. */
+	/**
+	 * Checks hashes in the SOd correspond to hashes we compute, 
+	 * checks the security object's signature.
+	 * 
+	 * TODO: Check the cert stores (notably PKD) to fetch document signer certificate (if not embedded in SOd) and check its validity before checking the signature.
+	 */
 	private void verifyDS() {
 		try {
 			InputStream comIn = getInputStream(PassportService.EF_COM);
@@ -961,8 +992,7 @@ public class Passport
 			verificationStatus.setDS(Verdict.UNKNOWN);
 
 			/* Jeroen van Beek sanity check */
-			List<Integer> tagsOfHashes = new ArrayList<Integer>();
-			tagsOfHashes.addAll(hashes.keySet());
+			List<Integer> tagsOfHashes = new ArrayList<Integer>(hashes.keySet());
 			Collections.sort(tagsOfHashes);
 			if (!tagsOfHashes.equals(comDGList)) {
 				LOGGER.warning("Found mismatch between EF.COM and EF.SOd");
@@ -1015,7 +1045,7 @@ public class Passport
 			X509Certificate docSigningCert = sod.getDocSigningCertificate();
 			if (docSigningCert == null) {
 				LOGGER.warning("Could not get document signer certificate from EF.SOd.");
-				// FIXME: We search for it in CSCAStore. See note at verifyCS.
+				// FIXME: We search for it in cert stores. See note at verifyCS.
 				X500Principal issuer = sod.getIssuerX500Principal();
 				BigInteger serialNumber = sod.getSerialNumber();
 			}
@@ -1034,7 +1064,6 @@ public class Passport
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 	}
-
 
 	/**
 	 * Checks the certificate chain.
@@ -1075,19 +1104,16 @@ public class Passport
 		}
 	}
 
-	public void addAuthenticationListener(AuthListener l) {
-		if (service != null) {
-			service.addAuthenticationListener(l);
-		}
-	}
-
-	public VerificationStatus getVerificationStatus() {
-		return verificationStatus;
-	}
-
-	private Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> storeCertificates) {
-		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(storeCertificates.size());
-		for (Certificate certificate: storeCertificates) {
+	/**
+	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
+	 * 
+	 * @param certificates a collection of X509 certificates
+	 * 
+	 * @return a set of trust anchors
+	 */
+	private Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> certificates) {
+		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(certificates.size());
+		for (Certificate certificate: certificates) {
 			if (certificate instanceof X509Certificate) {
 				anchors.add(new TrustAnchor((X509Certificate)certificate, null));
 			}
