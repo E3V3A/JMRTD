@@ -166,7 +166,7 @@ Bugs/temporary fixes
   
 Code quality
 - Need EAC samples to test with
-- Need biometrics (DG3, DG4) to test with
+- Need biometrics samples (DG3, DG4) to test with
 - Unit tests
 - Check JavaDoc
 - Findbugs
