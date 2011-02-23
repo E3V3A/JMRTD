@@ -30,7 +30,7 @@ import java.util.List;
 
 /**
  * File structure for the EF_DG4 file.
- * Based on ISO/IEC FCD 19794-6 (Biometric Data Interchange Formats –
+ * Based on ISO/IEC FCD 19794-6 (Biometric Data Interchange Formats.
  * Part 6: Iris Image Data) aka Annex E.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -124,7 +124,7 @@ public class DG4File extends CBEFFDataGroup
 		 * Device Serial number, identified by the first character "D"
 		 * Host PC Mac address, identified by the first character "M"
 		 * Host PC processor ID, identified by the first character "P"
-		 * No serial number, identified by all zero’s
+		 * No serial number, identified by all zeros
 		 */
 		byte[] deviceUniqueID = new byte[16]; /* (16) */
 		dataIn.readFully(deviceUniqueID);

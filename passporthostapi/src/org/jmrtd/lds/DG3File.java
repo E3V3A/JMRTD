@@ -95,11 +95,11 @@ public class DG3File extends CBEFFDataGroup
 		/* int imgResH = */ dataIn.readUnsignedShort(); /* should be <= scanResH */
 		/* int imgResV = */ dataIn.readUnsignedShort(); /* should be <= scanResV */
 		/* int depth = */ dataIn.readUnsignedByte(); /* 1 - 16 bits, i.e. 2 - 65546 gray levels */
-		int compressionAlg = dataIn.readUnsignedByte(); /* 0 Uncompressed – no bit packing
-														   1 Uncompressed – bit packed
-														   2 Compressed – WSQ
-														   3 Compressed – JPEG
-														   4 Compressed – JPEG2000
+		int compressionAlg = dataIn.readUnsignedByte(); /* 0 Uncompressed, no bit packing
+														   1 Uncompressed, bit packed
+														   2 Compressed, WSQ
+														   3 Compressed, JPEG
+														   4 Compressed, JPEG2000
 														   5 PNG
 		 */
 		/* int RFU = */ dataIn.readUnsignedShort(); /* Should be 0x0000 */

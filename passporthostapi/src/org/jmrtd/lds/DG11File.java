@@ -76,14 +76,14 @@ public class DG11File extends DataGroup
 	private static final int FULL_NAME_TAG = 0x5F0E;
 	private static final int PERSONAL_NUMBER_TAG = 0x5F10;
 	private static final int FULL_DATE_OF_BIRTH_TAG = 0x5F2B; // In 'CCYYMMDD' format.
-	private static final int PLACE_OF_BIRTH_TAG = 0x5F11; // Fields separated by ‘<’
-	private static final int PERMANENT_ADDRESS_TAG = 0x5F42; // Fields separated by ‘<’
+	private static final int PLACE_OF_BIRTH_TAG = 0x5F11; // Fields separated by '<'
+	private static final int PERMANENT_ADDRESS_TAG = 0x5F42; // Fields separated by '<'
 	private static final int TELEPHONE_TAG = 0x5F12;
 	private static final int PROFESSION_TAG = 0x5F13;
 	private static final int TITLE_TAG = 0x5F14;
 	private static final int PERSONAL_SUMMARY_TAG = 0x5F15;
 	private static final int PROOF_OF_CITIZENSHIP_TAG = 0x5F16; // Compressed image per ISO/IEC 10918 
-	private static final int OTHER_VALID_TD_NUMBERS_TAG = 0x5F17; // Separated by ‘<’
+	private static final int OTHER_VALID_TD_NUMBERS_TAG = 0x5F17; // Separated by '<'
 	private static final int CUSTODY_INFORMATION_TAG = 0x5F18;
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");

@@ -830,9 +830,7 @@ public class Passport
 	/**
 	 * Gets the verification status of this MRTD.
 	 * 
-	 * @return a verification status
-	 * 
-	 * @see {@link VerificationStatus}
+	 * @return a {@link VerificationStatus}
 	 */
 	public VerificationStatus getVerificationStatus() {
 		return verificationStatus;
