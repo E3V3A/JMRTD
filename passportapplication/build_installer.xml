@@ -32,7 +32,7 @@
 
 	<property name="wsq_imageio_dir" location="${basedir}/../wsq_imageio" />
 	<property name="wsq_imageio_jar" value="wsq_imageio.jar" />
-	<property name="wsq_imageio_lib" value="j2wsq.dll" />
+	<!-- property name="wsq_imageio_lib" value="j2wsq.dll" / -->
 
 	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards_j2se/src" />
 	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
