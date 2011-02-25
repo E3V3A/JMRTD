@@ -274,53 +274,63 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private List<Certificate> searchCSCACertificates() {
 		String pkdMLDN = "dc=CSCAMasterList,dc=pkdDownload";
 		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "CscaMasterListData");
-		List<Certificate> certificates = new ArrayList<Certificate>();
+		List<Certificate> result = new ArrayList<Certificate>();
 
 		for (byte[] binary: binaries) {
 			try {
 				DERSequence derSequence = (DERSequence)DERSequence.getInstance(binary);
 				List<SignedData> signedDataList = getSignedDataFromDERObject(derSequence, null);
 				for (SignedData signedData: signedDataList) {
-					certificates.addAll(getCertificatesFromDERObject(signedData, null));
+					
+					//			ASN1Set certificatesASN1Set = signedData.getCertificates();
+					//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
+					//			while (certificatesEnum.hasMoreElements()) {
+					//				Object certificateObject = certificatesEnum.nextElement();
+					//				// TODO: interpret certificateObject, and check signature
+					//			}
+
+					ContentInfo contentInfo = signedData.getContentInfo();
+					Object content = contentInfo.getContent();
+					List<Certificate> certificates = getCertificatesFromDERObject(content, null);
+					result.addAll(certificates);
 				}
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		LOGGER.info("DEBUG: found " + certificates.size() + " CSCA certificates");
-		return certificates;
+		LOGGER.info("DEBUG: found " + result.size() + " CSCA certificates");
+		return result;
 	}
 
-	private List<SignedData> getSignedDataFromDERObject(Object o, List<SignedData> signedDataList) {
-
-		if (signedDataList == null) { signedDataList = new ArrayList<SignedData>(); }
+	private List<SignedData> getSignedDataFromDERObject(Object o, List<SignedData> result) {
+		if (result == null) { result = new ArrayList<SignedData>(); }
 
 		try {
 			SignedData signedData = SignedData.getInstance(o);
 			if (signedData != null) {
-				signedDataList.add(signedData);
+				result.add(signedData);
 			}
-			return signedDataList;
+			return result;
 		} catch (Exception e) {
 		}
 
 		if (o instanceof DERTaggedObject) {
 			DERObject childObject = ((DERTaggedObject)o).getObject();
-			return getSignedDataFromDERObject(childObject, signedDataList);
+			return getSignedDataFromDERObject(childObject, result);
 		} else if (o instanceof DERSequence) {
 			Enumeration derObjects = ((DERSequence)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
-				signedDataList = getSignedDataFromDERObject(nextObject, signedDataList);
+				result = getSignedDataFromDERObject(nextObject, result);
 			}
-			return signedDataList;
+			return result;
 		} else if (o instanceof DERSet) {
 			Enumeration derObjects = ((DERSet)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
-				signedDataList = getSignedDataFromDERObject(nextObject, signedDataList);
+				result = getSignedDataFromDERObject(nextObject, result);
 			}
-			return signedDataList;
+			return result;
 		} else if (o instanceof DEROctetString) {
 			DEROctetString derOctetString = (DEROctetString)o;
 			byte[] octets = derOctetString.getOctets();
@@ -329,14 +339,14 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				while (true) {
 					DERObject derObject = derInputStream.readObject();
 					if (derObject == null) { break; }
-					signedDataList = getSignedDataFromDERObject(derObject, signedDataList);
+					result = getSignedDataFromDERObject(derObject, result);
 				}
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 			}
-			return signedDataList;
+			return result;
 		}
-		return signedDataList;
+		return result;
 	}
 
 	private List<Certificate> getCertificatesFromDERObject(Object o, List<Certificate> certificates) {
@@ -353,14 +363,14 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			DERObject childObject = ((DERTaggedObject)o).getObject();
 			return getCertificatesFromDERObject(childObject, certificates);
 		} else if (o instanceof DERSequence) {
-			Enumeration derObjects = ((DERSequence)o).getObjects();
+			Enumeration<?> derObjects = ((DERSequence)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				certificates = getCertificatesFromDERObject(nextObject, certificates);
 			}
 			return certificates;
 		} else if (o instanceof DERSet) {
-			Enumeration derObjects = ((DERSet)o).getObjects();
+			Enumeration<?> derObjects = ((DERSet)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				certificates = getCertificatesFromDERObject(nextObject, certificates);
@@ -386,7 +396,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
 			//			while (certificatesEnum.hasMoreElements()) {
 			//				Object certificateObject = certificatesEnum.nextElement();
-			//				explore(indent + 1, certificateObject);
+			//				// TODO: interpret certificateObject, and check signature
 			//			}
 
 			ContentInfo contentInfo = signedData.getContentInfo();
@@ -394,112 +404,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			return getCertificatesFromDERObject(content, certificates);
 		}
 		return certificates;
-	}
-
-
-	private void explore(int indent, Object o) {
-		if (o instanceof SignedData) {
-			SignedData signedData = (SignedData)o;
-			LOGGER.info("DEBUG: " + indent(indent) + "signedData");
-			//			ASN1Set certificatesASN1Set = signedData.getCertificates();
-			//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
-			//			while (certificatesEnum.hasMoreElements()) {
-			//				Object certificateObject = certificatesEnum.nextElement();
-			//				explore(indent + 1, certificateObject);
-			//			}
-
-			ContentInfo contentInfo = signedData.getContentInfo();
-			Object content = contentInfo.getContent();
-			explore(indent + 1, content);
-			return;
-		}
-
-		if (o instanceof X509CertificateStructure) {
-			X509CertificateStructure cert = (X509CertificateStructure)o;
-			LOGGER.info("DEBUG: " + indent(indent) + "X509CertificateStructure " + cert.getSubject());
-			return;
-		}
-
-		if (tryToParseAsSignedData(indent, o)) {
-			explore(indent, SignedData.getInstance(o));
-			return;
-		}
-		if (tryToParseAsX509Certificate(indent, o)) {
-			explore(indent, X509CertificateStructure.getInstance(o));
-			return;
-		}
-		if (o instanceof DEROctetString) {
-			DEROctetString derOctetString = (DEROctetString)o;
-			byte[] octets = derOctetString.getOctets();
-			LOGGER.info("DEBUG: " + indent(indent) + "DEROctetString (" + octets.length + "): " + Hex.bytesToHexString(octets, 0, 10) + "...");
-			ASN1InputStream derInputStream = new ASN1InputStream(new ByteArrayInputStream(octets));
-			try {
-				while (true) {
-					DERObject derObject = derInputStream.readObject();
-					if (derObject == null) { break; }
-					explore(indent + 1, derObject);
-				}
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-		} else if (o instanceof DERObjectIdentifier) {
-			DERObjectIdentifier oid = (DERObjectIdentifier)o;
-			LOGGER.info("DEBUG: " + indent(indent) + "DERObjectIdentifier " + oid.getId());
-		} else if (o instanceof DERSequence) {
-			DERSequence derSequence = (DERSequence)o;
-			LOGGER.info("DEBUG: " + indent(indent) + "derSequence (" + derSequence.size() + ")");
-			Enumeration derObjects = derSequence.getObjects();
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				explore(indent + 1, nextObject);
-			}
-		} else if (o instanceof DERSet) {
-			DERSet derSet = (DERSet)o;
-			Enumeration derObjects = derSet.getObjects();
-			LOGGER.info("DEBUG: " + indent(indent) + "derSeT (" + derSet.size() + ")");
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				explore(indent + 1, nextObject);
-			}
-		} else if (o instanceof DERTaggedObject) {
-			DERTaggedObject taggedObject = (DERTaggedObject)o;
-			int tag = taggedObject.getTagNo();
-			DERObject childObject = taggedObject.getObject();
-			LOGGER.info("DEBUG: " + indent(indent) + "DERTaggedObject with tag " + Integer.toHexString(tag));
-			explore(indent + 1, childObject);
-		} else {
-			LOGGER.info("DEBUG: " + indent(indent) + "unknown of type " + o.getClass().getSimpleName());
-		}
-	}
-
-
-	private boolean tryToParseAsSignedData(int indent, Object o) {
-		try {
-			SignedData signedData = SignedData.getInstance(o);
-			LOGGER.warning("DEBUG: " + indent(indent) + "Found signedData at depth " + indent + ": " + signedData);
-			return true;
-		} catch (Exception e) {
-			// LOGGER.warning("DEBUG: " + indent(indent) + "Failed to parse as signedData");
-			return false;
-		}
-	}
-
-	private boolean tryToParseAsX509Certificate(int indent, Object o) {
-		try {
-			X509CertificateStructure x509CertificateObject = X509CertificateStructure.getInstance(o);
-			return true;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-
-	private String indent(int level) {
-		StringBuffer result = new StringBuffer();
-		for (int i = 0; i < level; i++) {
-			result.append(" ");
-		}
-		return result.toString();
 	}
 
 	private List<CRL> searchCRLs(Country country) {
@@ -543,9 +447,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		List<byte[]> result = new ArrayList<byte[]>();
 		try {
 			// Search for objects using the filter
-			LOGGER.info("context.search(" + specificDN + ", " + filter + ", " + controls);
 			NamingEnumeration<?> answer = context.search(specificDN, filter, controls);
-			toList(answer, attributeName, result);
+			addToList(answer, attributeName, result);
 		} catch (NamingException ne) {
 			ne.printStackTrace();
 		}
@@ -574,15 +477,14 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				/* NOTE: No results found. Fine. */
 			}
 
-			toList(answer, attributeName, result);
-
+			addToList(answer, attributeName, result);
 		} catch (NamingException e) {
 			e.printStackTrace();
 		}
 		return result;
 	}
 
-	private void toList(NamingEnumeration<?> answer, String attributeName, List<byte[]> result) throws NamingException {
+	private void addToList(NamingEnumeration<?> answer, String attributeName, List<byte[]> result) throws NamingException {
 		int resultCount = 0;
 		for (; answer != null && answer.hasMore(); resultCount++) {
 			SearchResult searchResult = (SearchResult)answer.next();
@@ -625,8 +527,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			if (attributeCount != 1) {
 				LOGGER.warning("More than 1 attribute found in an object with attribute \"" + attributeName + "\"");
 			}
-			//			LOGGER.info("DEBUG: attributeCount = " + attributeCount);
 		}
-		//		LOGGER.info("DEBUG: resultCount = " + resultCount);
 	}
 }
