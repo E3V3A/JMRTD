@@ -23,6 +23,7 @@
 package org.jmrtd.lds;
 
 import java.io.DataInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import org.jmrtd.cert.CVCPrincipal;
@@ -67,7 +68,7 @@ public class CVCAFile extends PassportFile
 				if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
 				tag = dataIn.read();
 			}
-		} catch (Exception e) {
+		} catch (IOException e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Malformed input data");
 		}

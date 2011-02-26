@@ -61,11 +61,9 @@ import javax.naming.directory.SearchResult;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
-import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
@@ -281,7 +279,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				DERSequence derSequence = (DERSequence)DERSequence.getInstance(binary);
 				List<SignedData> signedDataList = getSignedDataFromDERObject(derSequence, null);
 				for (SignedData signedData: signedDataList) {
-					
+
 					//			ASN1Set certificatesASN1Set = signedData.getCertificates();
 					//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
 					//			while (certificatesEnum.hasMoreElements()) {

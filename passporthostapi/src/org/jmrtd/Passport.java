@@ -123,6 +123,24 @@ public class Passport
 	private static final Calendar CALENDAR = Calendar.getInstance(); 
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+
+	private static final CertSelector IS_X509_CERT_SELECTOR = new X509CertSelector() {
+		public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
+		
+		public Object clone() { return this; }
+	};
+	
+	private static final CertSelector IS_SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
+		public boolean match(Certificate cert) {
+			if (!(cert instanceof X509Certificate)) { return false; }
+			X509Certificate x509Cert = (X509Certificate)cert;
+			X500Principal issuer = x509Cert.getIssuerX500Principal();
+			X500Principal subject = x509Cert.getSubjectX500Principal();
+			return (issuer == null && subject == null) || subject.equals(issuer);
+		}
+		
+		public Object clone() { return this; }		
+	};
 	
 	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
@@ -738,6 +756,7 @@ public class Passport
 			docSigningCertificate = sod.getDocSigningCertificate();
 		} catch (Exception e) {
 			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
+			// FIXME: search for it in cert stores?
 		}
 		if (docSigningCertificate != null) {
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
@@ -756,11 +775,8 @@ public class Passport
 		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
 		for (CertStore trustStore: cscaStores) {
 			try {
-				final CertSelector allSelector = new X509CertSelector() {
-					public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
-					public Object clone() { return this; }
-				};
-				Collection<? extends Certificate> storeCertificates = trustStore.getCertificates(allSelector);
+				final CertSelector trustAnchorSelector = IS_SELF_SIGNED_X509_CERT_SELECTOR; // IS_X509_CERT_SELECTOR;
+				Collection<? extends Certificate> storeCertificates = trustStore.getCertificates(trustAnchorSelector);
 
 				if (docSigningCertificate != null && storeCertificates.contains(docSigningCertificate)) {
 					chainCertificates = Collections.singletonList((Certificate)docSigningCertificate);
