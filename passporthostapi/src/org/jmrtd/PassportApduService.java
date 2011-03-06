@@ -62,14 +62,11 @@ public class PassportApduService extends CardService
 	private static final long serialVersionUID = 2451509825132976178L;
 
 	/** The applet we select when we start a session. */
-	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02,
-			0x47, 0x10, 0x01 };
+	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
 	/** Initialization vector used by the cipher below. */
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
 			new byte[8]);
-	
-//	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	/** The service we decorate. */
 	private CardService service;
@@ -531,7 +528,7 @@ public class PassportApduService extends CardService
 				throw new CardServiceException(
 						"Mutual authentication failed: expected length: 42, actual length: "
 								+ rapduBytes.length + ", error code: "
-								+ errorCode);
+								+ errorCode, rapdu.getSW());
 			}
 
 			/*
@@ -770,5 +767,4 @@ public class PassportApduService extends CardService
 				| (last ? 0x00 : 0x10), ISO7816.INS_PSO, p1, p2, data);
 		return apdu;
 	}
-
 }
