@@ -25,7 +25,7 @@ package org.jmrtd.cert;
 import java.security.cert.CertStoreParameters;
 
 public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
-{
+{	
 	private static final String DEFAULT_SERVER_NAME = "localhost";
 	private static final int DEFAULT_PORT = 389;
 	private static final String DEFAULT_BASE_DN = "dc=data,dc=pkdDownload";
@@ -77,12 +77,14 @@ public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
 		return baseDN;
 	}
 
+	/**
+	 * Makes a shallow copy of this object as this
+	 * class is immutable.
+	 * 
+	 * @retun a shallow copy of this object
+	 */
 	public Object clone() {
-		try {
-			return super.clone();
-		} catch (CloneNotSupportedException e) {
-			return this;
-		}
+		return this;
 	}
 
 	public String toString() {

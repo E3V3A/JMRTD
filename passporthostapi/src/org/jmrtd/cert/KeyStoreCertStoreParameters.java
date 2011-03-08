@@ -38,7 +38,7 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 	private static final char[] DEFAULT_PASSWORD = "".toCharArray();
 
 	private KeyStore keyStore;
-
+	
 	public KeyStoreCertStoreParameters(URI uri) throws KeyStoreException {
 		this(uri, DEFAULT_ALGORITHM, DEFAULT_PASSWORD);
 	}
@@ -63,12 +63,14 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 		return keyStore;
 	}
 
+	/**
+	 * Makes a shallow copy of this object as this
+	 * class is immutable.
+	 * 
+	 * @retun a shallow copy of this object
+	 */
 	public Object clone() {
-		try {
-			return super.clone();
-		} catch (CloneNotSupportedException e) {
-			return this;
-		}
+		return this;
 	}
 
 	private static KeyStore readKeyStore(URI location, String keyStoreType, char[] password) throws KeyStoreException {

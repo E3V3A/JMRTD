@@ -126,10 +126,10 @@ public class Passport
 
 	private static final CertSelector IS_X509_CERT_SELECTOR = new X509CertSelector() {
 		public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
-		
+
 		public Object clone() { return this; }
 	};
-	
+
 	private static final CertSelector IS_SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
 		public boolean match(Certificate cert) {
 			if (!(cert instanceof X509Certificate)) { return false; }
@@ -138,10 +138,10 @@ public class Passport
 			X500Principal subject = x509Cert.getSubjectX500Principal();
 			return (issuer == null && subject == null) || subject.equals(issuer);
 		}
-		
+
 		public Object clone() { return this; }		
 	};
-	
+
 	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
 	private Map<Short, byte[]> filesBytes;
@@ -473,7 +473,7 @@ public class Passport
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
 		if(verificationStatus == null)
-		   verificationStatus = new VerificationStatus();
+			verificationStatus = new VerificationStatus();
 		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
 		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 			if (caRef != null) {
@@ -766,22 +766,14 @@ public class Passport
 			}
 		}
 
-		List<Certificate> chainCertificates = null;
-
 		/*
 		 * Build the anchor set by adding all certificates in the trusted stores.
 		 * If the target certificate is an anchor we're done.
 		 */
 		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
-		for (CertStore trustStore: cscaStores) {
+		for (CertStore certStore: cscaStores) {
 			try {
-				final CertSelector trustAnchorSelector = IS_SELF_SIGNED_X509_CERT_SELECTOR; // IS_X509_CERT_SELECTOR;
-				Collection<? extends Certificate> storeCertificates = trustStore.getCertificates(trustAnchorSelector);
-
-				if (docSigningCertificate != null && storeCertificates.contains(docSigningCertificate)) {
-					chainCertificates = Collections.singletonList((Certificate)docSigningCertificate);
-					return chainCertificates;
-				}
+				Collection<? extends Certificate> storeCertificates = certStore.getCertificates(IS_SELF_SIGNED_X509_CERT_SELECTOR);
 				anchors.addAll(getAsAnchors(storeCertificates));
 			} catch (CertStoreException cse) {
 				/* NOTE: skip this store. */
@@ -789,7 +781,7 @@ public class Passport
 		}
 
 		/*
-		 * If the target certificate is not an anchor we have PKIX build a chain to an anchor.
+		 * We have PKIX build a chain to an anchor.
 		 */
 		X509CertSelector selector = new X509CertSelector();
 		try {
@@ -812,24 +804,24 @@ public class Passport
 			}
 			buildParams.setRevocationEnabled(false); /* NOTE: CRL checking disabled. */
 			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
-			if (result != null) {
-				CertPath chain = result.getCertPath();
-				chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
-				if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
-					/* NOTE: if target certificate not in list, we add it ourselves. */
-					LOGGER.warning("Adding target certificate after PKIXBuilder finished");
-					chainCertificates.add(docSigningCertificate);
-				}
-				Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
-				if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
-					chainCertificates.add(anchorCert);
-				}
+			if (result == null) { return null; }
+			CertPath chain = result.getCertPath();
+			List<Certificate> chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
+			if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
+				/* NOTE: if target certificate not in list, we add it ourselves. */
+				LOGGER.warning("Adding target certificate after PKIXBuilder finished");
+				chainCertificates.add(docSigningCertificate);
 			}
+			Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
+			if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
+				chainCertificates.add(anchorCert);
+			}
+			return chainCertificates;
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
-		return chainCertificates;
+		return null;
 	}
 
 	/**
@@ -851,7 +843,7 @@ public class Passport
 	public VerificationStatus getVerificationStatus() {
 		return verificationStatus;
 	}
-	
+
 	/* Only private methods below. */
 
 	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {

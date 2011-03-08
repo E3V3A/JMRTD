@@ -316,14 +316,14 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			DERObject childObject = ((DERTaggedObject)o).getObject();
 			return getSignedDataFromDERObject(childObject, result);
 		} else if (o instanceof DERSequence) {
-			Enumeration derObjects = ((DERSequence)o).getObjects();
+			Enumeration<?> derObjects = ((DERSequence)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				result = getSignedDataFromDERObject(nextObject, result);
 			}
 			return result;
 		} else if (o instanceof DERSet) {
-			Enumeration derObjects = ((DERSet)o).getObjects();
+			Enumeration<?> derObjects = ((DERSet)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				result = getSignedDataFromDERObject(nextObject, result);
