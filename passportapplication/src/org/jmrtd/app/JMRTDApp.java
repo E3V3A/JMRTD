@@ -89,6 +89,7 @@ import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
 import org.jmrtd.cert.PKDCertStoreParameters;
+import org.jmrtd.cert.PKDMasterListCertStoreParameters;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -248,7 +249,7 @@ public class JMRTDApp  implements PassportListener
 		if (cscaStoreLocations != null) {
 			for (URI uri: cscaStoreLocations) {
 				if (uri == null) { LOGGER.severe("location == null"); continue; }
-				CertStore store = null;
+//				CertStore store = null;
 				String scheme = uri.getScheme();
 				if (scheme == null) { LOGGER.severe("scheme == null, location = " + uri); continue; }
 				try {
@@ -256,18 +257,20 @@ public class JMRTDApp  implements PassportListener
 						String server = uri.getHost();
 						int port = uri.getPort();
 						CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
-						store = CertStore.getInstance("PKD", params);
+						CertStoreParameters cscaParams = port < 0 ? new PKDMasterListCertStoreParameters(server) : new PKDMasterListCertStoreParameters(server, port);
+						CertStore certStore = CertStore.getInstance("PKD", params);
+						if (certStore != null) { cscaStores.add(certStore); }
+						CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
+						if (cscaStore != null) { cscaStores.add(cscaStore); }
 					} else {
 						/* TODO: Should we check that scheme is "file" or "http"? */
 						try {
 							CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
-							store = CertStore.getInstance("JKS", params);
+							CertStore certStore = CertStore.getInstance("JKS", params);
+							cscaStores.add(certStore);
 						} catch (KeyStoreException kse) {
 							kse.printStackTrace();
 						}
-					}
-					if (store != null) {
-						cscaStores.add(store);
 					}
 				} catch (GeneralSecurityException gse) {
 					gse.printStackTrace();

@@ -767,7 +767,7 @@ public class Passport
 		}
 
 		/*
-		 * Build the anchor set by adding all certificates in the trusted stores.
+		 * Build the anchor set by adding all self-signed certificates in the trusted stores.
 		 * If the target certificate is an anchor we're done.
 		 */
 		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();

@@ -32,7 +32,7 @@ public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
 
 	private String serverName;
 	private int port;
-	private String baseDN;
+	private String baseDN;	
 
 	public PKDCertStoreParameters() {
 		this(DEFAULT_SERVER_NAME, DEFAULT_PORT, DEFAULT_BASE_DN);

@@ -123,7 +123,8 @@ General
 + CSCA Master List via PKD cert store
 - More efficient use of filters based on selector in PKD cert store impl
 - CRL validity checking via PKD cert store
-- TODOs in Passport and SODFile
+- Many small FIXMEs, primarily in Passport and SODFile
++ SCUBA cardmanager uses Lock/Condition primitives instead of synchronized/wait
 
 Dependencies
 + Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken)

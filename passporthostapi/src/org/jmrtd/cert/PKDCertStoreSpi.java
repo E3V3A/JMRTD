@@ -24,6 +24,7 @@ package org.jmrtd.cert;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.CRL;
@@ -58,6 +59,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
@@ -84,10 +86,12 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";
 
+	private PKDCertStoreParameters params;
 	private DirContext context;
 	private String server;
 	private int port;
 	private String baseDN;
+	private boolean isMasterListStore;
 
 	private CertificateFactory factory;
 
@@ -101,6 +105,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		LOGGER.setLevel(Level.ALL); /* FIXME: only uncomment for debugging. */
 		if (params == null) { throw new InvalidAlgorithmParameterException("Input was null."); }
 		if (!(params instanceof PKDCertStoreParameters)) { throw new InvalidAlgorithmParameterException("Expected PKDCertStoreParameters, found " + params.getClass().getCanonicalName()); }
+		this.params = (PKDCertStoreParameters)params;
+		isMasterListStore = (params instanceof PKDMasterListCertStoreParameters);
 		this.server = ((PKDCertStoreParameters)params).getServerName();
 		this.port = ((PKDCertStoreParameters)params).getPort();
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
@@ -111,27 +117,38 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 	}
 
-	private void start() {
-		certificates = new ArrayList<Certificate>();
-		crls = new ArrayList<CRL>();
-		try {
-			connect();
-			List<Country> countries = searchCountries();
-			loadCSCACertificates();
-			loadCertificates(countries);
-			loadCRLs(countries);
-		} catch (CommunicationException ce) {
-			ce.printStackTrace();
-			return;
-		}
-	}
-
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
 		if (selector instanceof X509CertSelector) {
+			X500Principal issuer = ((X509CertSelector)selector).getIssuer();
+			BigInteger serialNumber = ((X509CertSelector)selector).getSerialNumber();
 			// TODO: use getIssuer and getSerial on selector to limit the set of certs to get from LDAP
 		}
 		if (certificates == null) {
-			start();
+			certificates = new ArrayList<Certificate>();
+			try {
+				if (context == null) { connect(); }
+				/* 
+				 * TODO:
+				 * either get the CSCAMasterList certs, or get the doc signing certificates,
+				 * depending on value of isMasterListStore.
+				 */
+				if (isMasterListStore) {
+					List<Certificate> cscaCertificates = searchCSCACertificates();
+					certificates.addAll(cscaCertificates);
+				} else {
+					List<Certificate> certificates = searchCertificates();
+					certificates.addAll(certificates);
+					
+//					
+//					List<Country> countries = searchCountries();
+//					for (Country country: countries) {
+//						List<Certificate> countryCertificates = searchCertificates(country);
+//						certificates.addAll(countryCertificates);
+//					}
+				}
+			} catch (CommunicationException ce) {
+				ce.printStackTrace();
+			}
 		}
 		List<Certificate> result = new ArrayList<Certificate>();
 		for (Certificate certificate: certificates) {
@@ -145,7 +162,17 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
 	throws CertStoreException {
 		if (crls == null) {
-			start();
+			crls = new ArrayList<CRL>();
+			try {
+				if (context == null) { connect(); }
+				List<Country> countries = searchCountries();
+				for (Country country: countries) {
+					List<CRL> countryCRLs = searchCRLs(country);
+					crls.addAll(countryCRLs);
+				}
+			} catch (CommunicationException ce) {
+				ce.printStackTrace();
+			}
 		}
 		List<CRL> result = new ArrayList<CRL>();
 		for (CRL crl: crls) {
@@ -175,25 +202,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			throw new IllegalArgumentException("Could not connect to server \"" + server + "\"");
 		}
 	}
-
-	private synchronized void loadCertificates(List<Country> countries) {
-		for (Country country: countries) {
-			List<Certificate> countryCertificates = searchCertificates(country);
-			certificates.addAll(countryCertificates);
-		}
-	}
-
-	private synchronized void loadCSCACertificates() {
-		List<Certificate> cscaCertificates = searchCSCACertificates();
-		certificates.addAll(cscaCertificates);
-	}
-
-	private synchronized void loadCRLs(List<Country> countries) {
-		for (Country country: countries) {
-			List<CRL> countryCRLs = searchCRLs(country);
-			crls.addAll(countryCRLs);
-		}
-	}	
 
 	private synchronized List<Country> searchCountries() {
 		List<Country> countries = new ArrayList<Country>();
@@ -246,10 +254,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return countries;
 	}
 
-	private List<Certificate> searchCertificates(Country country) {
-		String countrySpecificDN = "o=" + "Certificates" + ",c=" + country.toAlpha2Code().toUpperCase() + "," + baseDN;
-		List<byte[]> binaries = searchAttributes(countrySpecificDN, CERTIFICATE_ATTRIBUTE_NAME);
-		if (binaries == null) { return null; }
+	private List<Certificate> searchCertificates() {
+		String pkdDN = params.getBaseDN();
+		List<byte[]> binaries = searchAllAttributes(pkdDN, CERTIFICATE_ATTRIBUTE_NAME, "inetOrgPerson");
 		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			Certificate certificate = null;
@@ -268,11 +275,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}		
 		return result;
 	}
-
+	
 	private List<Certificate> searchCSCACertificates() {
-		String pkdMLDN = "dc=CSCAMasterList,dc=pkdDownload";
-		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "CscaMasterListData");
-		List<Certificate> result = new ArrayList<Certificate>();
+		String pkdMLDN = params.getBaseDN();
+		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "CscaMasterListData", "CscaMasterList");
+		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 
 		for (byte[] binary: binaries) {
 			try {
@@ -431,9 +438,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private List<byte[]> searchAllAttributes(String specificDN, String attributeName) {
+	private List<byte[]> searchAllAttributes(String specificDN, String attributeName, String objectClass) {
 		SearchControls controls = new SearchControls();
-		String[] attrIDs = { "CscaMasterListData" };
+		String[] attrIDs = { attributeName };
 		//		if (!attributeName.endsWith(";binary")) {
 		//			String attributeNameBinary = attributeName + ";binary";
 		//			attrIDs = new String[]{ attributeName, attributeNameBinary };
@@ -441,7 +448,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 		controls.setReturningAttributes(attrIDs);
 		controls.setReturningObjFlag(true);
-		String filter = "(&(objectclass=CscaMasterList))";
+		String filter = "(&(objectclass=" + objectClass + "))";
 		List<byte[]> result = new ArrayList<byte[]>();
 		try {
 			// Search for objects using the filter
