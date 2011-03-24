@@ -309,7 +309,7 @@ public class JMRTDApp  implements PassportListener
 			}
 		}
 	}
-	
+
 	private void updateCVCACertStoresFromPreferences() {
 		List<URI> cvcaStoreLocations = preferencesPanel.getCVCAStoreLocations();
 		this.cvcaStores = new ArrayList<KeyStore>(cvcaStoreLocations.size());
