@@ -41,15 +41,24 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
+import java.security.cert.Certificate;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import javax.security.auth.x500.X500Principal;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.swing.AbstractAction;
@@ -105,6 +114,18 @@ public class JMRTDApp  implements PassportListener
 {
 	private static final String MAIN_FRAME_TITLE = "JMRTD";
 
+	private static final CertSelector SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
+		public boolean match(Certificate cert) {
+			if (!(cert instanceof X509Certificate)) { return false; }
+			X509Certificate x509Cert = (X509Certificate)cert;
+			X500Principal issuer = x509Cert.getIssuerX500Principal();
+			X500Principal subject = x509Cert.getSubjectX500Principal();
+			return (issuer == null && subject == null) || subject.equals(issuer);
+		}
+
+		public Object clone() { return this; }		
+	};
+	
 	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", JMRTDApp.class);
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
@@ -137,6 +158,7 @@ public class JMRTDApp  implements PassportListener
 	private CardManager cardManager;
 	private PreferencesPanel preferencesPanel;
 	private BACStore bacStore;
+	private Set<TrustAnchor> cscaAnchors;
 	private List<CertStore> cscaStores;
 	private List<KeyStore> cvcaStores;
 
@@ -151,8 +173,8 @@ public class JMRTDApp  implements PassportListener
 	 */
 	public JMRTDApp() {
 		try {
-		        // So that BC stuff knows about CVC certificates
-                        BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
+			/* So that BC stuff knows about CVC certificates */
+			BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
 			Security.insertProviderAt(BC_PROVIDER, 1);
 			Security.addProvider(JMRTD_PROVIDER);
 			actionMap = new ActionMap();
@@ -244,12 +266,17 @@ public class JMRTDApp  implements PassportListener
 				apduTraceFrame = null;
 			}
 		}
+		updateCSCACertStoresFromPreferences();
+		updateCVCACertStoresFromPreferences();
+	}
+	
+	private void updateCSCACertStoresFromPreferences() {
 		List<URI> cscaStoreLocations = preferencesPanel.getCSCAStoreLocations();
 		this.cscaStores = new ArrayList<CertStore>(cscaStoreLocations.size());
+		if (cscaAnchors == null) { cscaAnchors = new HashSet<TrustAnchor>(); }
 		if (cscaStoreLocations != null) {
 			for (URI uri: cscaStoreLocations) {
 				if (uri == null) { LOGGER.severe("location == null"); continue; }
-//				CertStore store = null;
 				String scheme = uri.getScheme();
 				if (scheme == null) { LOGGER.severe("scheme == null, location = " + uri); continue; }
 				try {
@@ -262,12 +289,16 @@ public class JMRTDApp  implements PassportListener
 						if (certStore != null) { cscaStores.add(certStore); }
 						CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
 						if (cscaStore != null) { cscaStores.add(cscaStore); }
+						Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+						cscaAnchors.addAll(getAsAnchors(rootCerts));
 					} else {
 						/* TODO: Should we check that scheme is "file" or "http"? */
 						try {
 							CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
 							CertStore certStore = CertStore.getInstance("JKS", params);
 							cscaStores.add(certStore);
+							Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+							cscaAnchors.addAll(getAsAnchors(rootCerts));
 						} catch (KeyStoreException kse) {
 							kse.printStackTrace();
 						}
@@ -277,24 +308,26 @@ public class JMRTDApp  implements PassportListener
 				}
 			}
 		}
-
+	}
+	
+	private void updateCVCACertStoresFromPreferences() {
 		List<URI> cvcaStoreLocations = preferencesPanel.getCVCAStoreLocations();
 		this.cvcaStores = new ArrayList<KeyStore>(cvcaStoreLocations.size());
 		// We have to try both store types, only Bouncy Castle Store (BKS) 
 		// knows about unnamed EC keys
 		String[] storeTypes = new String[] {"JKS", "BKS" }; 
 		for (URI uri: cvcaStoreLocations) {
-		        for(String storeType : storeTypes) {
-		            try {
-				KeyStore cvcaStore = KeyStore.getInstance(storeType);
-				URLConnection uc = uri.toURL().openConnection();
-				InputStream in = uc.getInputStream();
-				cvcaStore.load(in, "".toCharArray());
-				cvcaStores.add(cvcaStore);
-		            } catch (Exception e) {
-				LOGGER.warning("Could not initialize CVCA: " + e.getMessage());
-		            }
-		        }
+			for(String storeType : storeTypes) {
+				try {
+					KeyStore cvcaStore = KeyStore.getInstance(storeType);
+					URLConnection uc = uri.toURL().openConnection();
+					InputStream in = uc.getInputStream();
+					cvcaStore.load(in, "".toCharArray());
+					cvcaStores.add(cvcaStore);
+				} catch (Exception e) {
+					LOGGER.warning("Could not initialize CVCA: " + e.getMessage());
+				}
+			}
 		}
 	}
 
@@ -354,7 +387,7 @@ public class JMRTDApp  implements PassportListener
 	 * @throws CardServiceException
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
-		Passport passport = new Passport(service, cscaStores, cvcaStores, bacStore);
+		Passport passport = new Passport(service, cscaAnchors, cscaStores, cvcaStores, bacStore);
 		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
 	}
 
@@ -449,8 +482,7 @@ public class JMRTDApp  implements PassportListener
 					try {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport passport = null; // new Passport(file, cscaStore);
-						passport = new Passport(file, cscaStores);
+						Passport passport = new Passport(file, cscaAnchors, cscaStores);
 
 						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
@@ -606,6 +638,23 @@ public class JMRTDApp  implements PassportListener
 		return action;
 	}
 
+	/**
+	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
+	 * 
+	 * @param certificates a collection of X509 certificates
+	 * 
+	 * @return a set of trust anchors
+	 */
+	private Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> certificates) {
+		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(certificates.size());
+		for (Certificate certificate: certificates) {
+			if (certificate instanceof X509Certificate) {
+				anchors.add(new TrustAnchor((X509Certificate)certificate, null));
+			}
+		}
+		return anchors;
+	}
+	
 	/**
 	 * Main method creates an instance.
 	 *

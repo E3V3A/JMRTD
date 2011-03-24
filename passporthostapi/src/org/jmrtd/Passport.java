@@ -124,23 +124,7 @@ public class Passport
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
-	private static final CertSelector IS_X509_CERT_SELECTOR = new X509CertSelector() {
-		public boolean match(Certificate cert) { return (cert instanceof X509Certificate); }
 
-		public Object clone() { return this; }
-	};
-
-	private static final CertSelector IS_SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
-		public boolean match(Certificate cert) {
-			if (!(cert instanceof X509Certificate)) { return false; }
-			X509Certificate x509Cert = (X509Certificate)cert;
-			X500Principal issuer = x509Cert.getIssuerX500Principal();
-			X500Principal subject = x509Cert.getSubjectX500Principal();
-			return (issuer == null && subject == null) || subject.equals(issuer);
-		}
-
-		public Object clone() { return this; }		
-	};
 
 	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
@@ -170,6 +154,7 @@ public class Passport
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private BACKeySpec bacKeySpec;
+	private Set<TrustAnchor> cscaAnchors;
 	private List<CertStore> cscaStores;
 	private List<KeyStore> cvcaStores;
 
@@ -262,7 +247,7 @@ public class Passport
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
-	public Passport(PassportService service, List<CertStore> cscaStores, List<KeyStore> cvcaStores, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, Set<TrustAnchor> cscaAnchors, List<CertStore> cscaStores, List<KeyStore> cvcaStores, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
 		try {
@@ -271,6 +256,7 @@ public class Passport
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
 		this.bacKeySpec = null;
+		this.cscaAnchors = cscaAnchors;
 		this.cscaStores = cscaStores;
 		this.cvcaStores = cvcaStores;
 
@@ -335,9 +321,10 @@ public class Passport
 		readFromService(service, bacKeySpec, cvcaStores);
 	}
 
-	public Passport(File file, List<CertStore> cscaStores) throws IOException {
+	public Passport(File file, Set<TrustAnchor> cscaAnchors, List<CertStore> cscaStores) throws IOException {
 		this();
 		this.cscaStores = cscaStores;
+		this.cscaAnchors = cscaAnchors;
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -765,21 +752,7 @@ public class Passport
 				return null;
 			}
 		}
-
-		/*
-		 * Build the anchor set by adding all self-signed certificates in the trusted stores.
-		 * If the target certificate is an anchor we're done.
-		 */
-		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>();
-		for (CertStore certStore: cscaStores) {
-			try {
-				Collection<? extends Certificate> storeCertificates = certStore.getCertificates(IS_SELF_SIGNED_X509_CERT_SELECTOR);
-				anchors.addAll(getAsAnchors(storeCertificates));
-			} catch (CertStoreException cse) {
-				/* NOTE: skip this store. */
-			}
-		}
-
+		
 		/*
 		 * We have PKIX build a chain to an anchor.
 		 */
@@ -795,9 +768,9 @@ public class Passport
 			CertStoreParameters docStoreParams =
 				new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
 			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
-
+			
 			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
-			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(anchors, selector);
+			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(cscaAnchors, selector);
 			buildParams.addCertStore(docStore);
 			for (CertStore trustStore: cscaStores) {
 				buildParams.addCertStore(trustStore);
@@ -1108,22 +1081,5 @@ public class Passport
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
 		}
-	}
-
-	/**
-	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
-	 * 
-	 * @param certificates a collection of X509 certificates
-	 * 
-	 * @return a set of trust anchors
-	 */
-	private Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> certificates) {
-		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(certificates.size());
-		for (Certificate certificate: certificates) {
-			if (certificate instanceof X509Certificate) {
-				anchors.add(new TrustAnchor((X509Certificate)certificate, null));
-			}
-		}
-		return anchors;
 	}
 }

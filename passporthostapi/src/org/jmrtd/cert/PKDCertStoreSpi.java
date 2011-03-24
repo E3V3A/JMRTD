@@ -127,16 +127,12 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			certificates = new ArrayList<Certificate>();
 			try {
 				if (context == null) { connect(); }
-				/* 
-				 * TODO:
-				 * either get the CSCAMasterList certs, or get the doc signing certificates,
-				 * depending on value of isMasterListStore.
-				 */
 				if (isMasterListStore) {
 					List<Certificate> cscaCertificates = searchCSCACertificates();
 					certificates.addAll(cscaCertificates);
 				} else {
 					List<Certificate> certificates = searchCertificates();
+					LOGGER.info("DEBUG: found " + certificates.size() + " DSC certs");
 					certificates.addAll(certificates);
 					
 //					
