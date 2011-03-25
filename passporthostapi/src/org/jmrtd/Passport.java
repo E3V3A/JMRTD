@@ -42,16 +42,13 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
-import java.security.cert.CertStoreException;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
-import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
@@ -63,10 +60,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -154,9 +149,7 @@ public class Passport
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private BACKeySpec bacKeySpec;
-	private Set<TrustAnchor> cscaAnchors;
-	private List<CertStore> cscaStores;
-	private List<KeyStore> cvcaStores;
+	private MRTDTrustStore trustManager;
 
 	private PassportService service;
 
@@ -247,7 +240,7 @@ public class Passport
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
-	public Passport(PassportService service, Set<TrustAnchor> cscaAnchors, List<CertStore> cscaStores, List<KeyStore> cvcaStores, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
 		try {
@@ -256,9 +249,7 @@ public class Passport
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
 		this.bacKeySpec = null;
-		this.cscaAnchors = cscaAnchors;
-		this.cscaStores = cscaStores;
-		this.cvcaStores = cvcaStores;
+		this.trustManager = null;
 
 		/* Find out whether this passport supports BAC. */
 		boolean isBACPassport = false;
@@ -309,22 +300,22 @@ public class Passport
 			throw new CardServiceException("Basic Access denied!");
 		}
 		try {
-			readFromService(service, bacKeySpec, cvcaStores);
+			readFromService(service, bacKeySpec, trustManager);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			throw new CardServiceException(ioe.getMessage());
 		}
 	}
 
-	public Passport(PassportService service, BACKeySpec bacKeySpec, List<KeyStore> cvcaStores) throws IOException, CardServiceException {
+	public Passport(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {
 		this();
-		readFromService(service, bacKeySpec, cvcaStores);
+		this.trustManager = trustManager;
+		readFromService(service, bacKeySpec, trustManager);
 	}
 
-	public Passport(File file, Set<TrustAnchor> cscaAnchors, List<CertStore> cscaStores) throws IOException {
+	public Passport(File file, MRTDTrustStore trustManager) throws IOException {
 		this();
-		this.cscaStores = cscaStores;
-		this.cscaAnchors = cscaAnchors;
+		this.trustManager = trustManager;
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -404,7 +395,7 @@ public class Passport
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	private void readFromService(PassportService service, BACKeySpec bacKeySpec, List<KeyStore> cvcaStores) throws IOException, CardServiceException {	
+	private void readFromService(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
@@ -438,7 +429,7 @@ public class Passport
 			cvcaFile = new CVCAFile(cvcaIn);
 
 			/* Try to do EAC. */
-			for (KeyStore cvcaStore: cvcaStores) {
+			for (KeyStore cvcaStore: trustManager.getCVCAStores()) {
 				// FIXME: Try with all cvcaStores?
 				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
 			}
@@ -640,12 +631,8 @@ public class Passport
 		return docSigningPrivateKey;
 	}
 
-	public List<CertStore> getCSCAStores() {
-		return cscaStores;
-	}
-
-	public List<KeyStore> getCVCAStores() {
-		return cvcaStores;
+	public MRTDTrustStore getTrustManager() {
+		return trustManager;
 	}
 
 	public void setEACPrivateKey(PrivateKey privateKey) {
@@ -721,6 +708,7 @@ public class Passport
 	 * @throws ExtCertPathValidatorException if CRL could not be checked
 	 */
 	public List<Certificate> getCertificateChain() throws ExtCertPathValidatorException {
+		List<CertStore> cscaStores = trustManager.getCSCAStores();
 		if (cscaStores == null) {
 			LOGGER.warning("No certificate stores found.");
 			return null;
@@ -770,7 +758,7 @@ public class Passport
 			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
 			
 			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
-			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(cscaAnchors, selector);
+			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(trustManager.getCSCAAnchors(), selector);
 			buildParams.addCertStore(docStore);
 			for (CertStore trustStore: cscaStores) {
 				buildParams.addCertStore(trustStore);

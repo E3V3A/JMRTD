@@ -67,6 +67,8 @@ import net.sourceforge.scuba.swing.URIListEditor;
  */
 public class PreferencesPanel extends JPanel
 {
+
+	
 	public enum ReadingMode {
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
