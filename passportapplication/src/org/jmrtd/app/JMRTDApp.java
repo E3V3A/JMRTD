@@ -144,13 +144,14 @@ public class JMRTDApp  implements PassportListener
 			BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
 			Security.insertProviderAt(BC_PROVIDER, 1);
 			Security.addProvider(JMRTD_PROVIDER);
+			
 			actionMap = new ActionMap();
+			
 			cardManager = CardManager.getInstance();
 			PassportManager passportManager = PassportManager.getInstance();
-
 			this.bacStore = new FileBACStore();
-
 			trustManager = new MRTDTrustStore();
+
 			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), this.getClass());
 			preferencesPanel.addChangeListener(new ChangeListener() {
 				public void stateChanged(ChangeEvent e) {
@@ -354,7 +355,7 @@ public class JMRTDApp  implements PassportListener
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3);
+					Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, trustManager);
 					PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);

@@ -211,7 +211,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 		// Bouncy Castle does by default. But we first have to check if this is
 		// the case.
 		try {
-			if (publicKey.getAlgorithm().equals("EC")) {
+			if (publicKey.getAlgorithm().equals("ECDH")) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
 				asn1In.close();

@@ -38,11 +38,14 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CertSelector;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -118,35 +121,29 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
-		if (selector instanceof X509CertSelector) {
-			X500Principal issuer = ((X509CertSelector)selector).getIssuer();
-			BigInteger serialNumber = ((X509CertSelector)selector).getSerialNumber();
-			// TODO: use getIssuer and getSerial on selector to limit the set of certs to get from LDAP
-		}
-		if (certificates == null) {
-			certificates = new ArrayList<Certificate>();
-			try {
-				if (context == null) { connect(); }
-				if (isMasterListStore) {
-					List<Certificate> cscaCertificates = searchCSCACertificates();
-					certificates.addAll(cscaCertificates);
-				} else {
-					List<Certificate> certificates = searchCertificates();
-					LOGGER.info("DEBUG: found " + certificates.size() + " DSC certs");
-					certificates.addAll(certificates);
-					
-//					
-//					List<Country> countries = searchCountries();
-//					for (Country country: countries) {
-//						List<Certificate> countryCertificates = searchCertificates(country);
-//						certificates.addAll(countryCertificates);
-//					}
-				}
-			} catch (CommunicationException ce) {
-				ce.printStackTrace();
+		/* TODO: use getIssuer and getSerial on selector to limit the set of certs to get from LDAP */
+//		if (selector instanceof X509CertSelector) {
+//			X500Principal issuer = ((X509CertSelector)selector).getIssuer();
+//			BigInteger serialNumber = ((X509CertSelector)selector).getSerialNumber();
+//		}
+
+		List<Certificate> certificates = new ArrayList<Certificate>();
+		try {
+			if (context == null) { connect(); }
+			if (isMasterListStore) {
+				List<Certificate> cscaCertificates = searchCSCACertificates();
+				certificates.addAll(cscaCertificates);
+			} else {
+				List<Certificate> dscCertificates = searchCertificates();
+				LOGGER.info("DEBUG: found " + dscCertificates.size() + " DSC certs");
+				certificates.addAll(dscCertificates);
 			}
+		} catch (CommunicationException ce) {
+			ce.printStackTrace();
 		}
-		List<Certificate> result = new ArrayList<Certificate>();
+
+		/* Manually filter using the selector */
+		Set<Certificate> result = new HashSet<Certificate>();
 		for (Certificate certificate: certificates) {
 			if (selector.match(certificate)) {
 				result.add(certificate);
@@ -268,10 +265,10 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				}
 			}
 			result.add(certificate);
-		}		
+		}
 		return result;
 	}
-	
+
 	private List<Certificate> searchCSCACertificates() {
 		String pkdMLDN = params.getBaseDN();
 		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "CscaMasterListData", "CscaMasterList");

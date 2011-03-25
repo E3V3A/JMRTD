@@ -42,6 +42,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
+import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
@@ -119,8 +120,6 @@ public class Passport
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
-
-
 	private Map<Short, InputStream> rawStreams;
 	private Map<Short, InputStream> bufferedStreams;
 	private Map<Short, byte[]> filesBytes;
@@ -162,8 +161,9 @@ public class Passport
 	 * @param docType either <code>MRZInfo.DOC_TYPE_ID1</code> or <code>MRZInfo.DOC_TYPE_ID3</code>
 	 * @throws GeneralSecurityException if something wrong
 	 */
-	public Passport(int docType) throws GeneralSecurityException {
+	public Passport(int docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
 		this();
+		this.trustManager = trustManager;
 		switch (docType) { // FIXME: use docCode of type String here?
 		case MRZInfo.DOC_TYPE_ID1: break;
 		case MRZInfo.DOC_TYPE_ID2: break;
@@ -700,7 +700,7 @@ public class Passport
 	}
 
 	/**
-	 * Builds certificate chain from SOd to CSCA.
+	 * Builds certificate chain from SOd to CSCA anchor.
 	 * Uses PKIX algorithm.
 	 * 
 	 * @return a list of certificates
@@ -736,31 +736,45 @@ public class Passport
 		if (docSigningCertificate != null) {
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
 			if (!sodIssuer.equals(docIssuer)) {
-				LOGGER.warning("Security object issuer principal is different from embedded DS certificate issuer!");
+				LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
 				return null;
 			}
+			BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
+			if (!sodSerialNumber.equals(docSerialNumber)) {
+				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
+			}
 		}
-		
-		/*
-		 * We have PKIX build a chain to an anchor.
-		 */
+		return getCertificateChain(null, sodIssuer, sodSerialNumber);
+	}
+
+	/**
+	 * Builds a certificate chain to an anchor using the PKIX algorithm.
+	 * 
+	 * @param docSigningCertificate the start certificate
+	 * @param sodIssuer the issuer of the start certificate (ignored unless <code>docSigningCertificate</code> is <code>null</code>)
+	 * @param sodSerialNumber the serial number of the start certificate (ignored unless <code>docSigningCertificate</code> is <code>null</code>)
+	 * 
+	 * @return the certificate chain
+	 */
+	private List<Certificate> getCertificateChain(X509Certificate docSigningCertificate, final X500Principal sodIssuer, final BigInteger sodSerialNumber) {
+		LOGGER.info("getCertificateChain called with issuer " + sodIssuer + " and SN " + sodSerialNumber);
 		X509CertSelector selector = new X509CertSelector();
 		try {
 			if (docSigningCertificate != null) {
 				selector.setCertificate(docSigningCertificate);
 			} else {
 				selector.setIssuer(sodIssuer);
-				//				selector.setSerialNumber(sodSerialNumber);
+				selector.setSerialNumber(sodSerialNumber);
 			}
-
+			
 			CertStoreParameters docStoreParams =
 				new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
 			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
-			
+
 			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
 			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(trustManager.getCSCAAnchors(), selector);
 			buildParams.addCertStore(docStore);
-			for (CertStore trustStore: cscaStores) {
+			for (CertStore trustStore: trustManager.getCSCAStores()) {
 				buildParams.addCertStore(trustStore);
 			}
 			buildParams.setRevocationEnabled(false); /* NOTE: CRL checking disabled. */
@@ -770,13 +784,13 @@ public class Passport
 			List<Certificate> chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
 			if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
 				/* NOTE: if target certificate not in list, we add it ourselves. */
-				LOGGER.warning("Adding target certificate after PKIXBuilder finished");
-				chainCertificates.add(docSigningCertificate);
+				LOGGER.warning("Adding start certificate after PKIXBuilder finished");
+				chainCertificates.add(0, docSigningCertificate);
 			}
 			Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
 			if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
 				chainCertificates.add(anchorCert);
-			}
+			}			
 			return chainCertificates;
 		} catch (Exception e) {
 			e.printStackTrace();

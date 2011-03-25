@@ -140,6 +140,11 @@ public class MRTDTrustStore {
 		cscaAnchors.addAll(trustAnchors);
 	}
 
+	/**
+	 * Adds a certificate store for document validation based on a URI.
+	 * 
+	 * @param uri the URI
+	 */
 	public void addCSCAStore(URI uri) {
 		if (uri == null) { LOGGER.severe("uri == null"); return; }
 		String scheme = uri.getScheme();
@@ -173,6 +178,11 @@ public class MRTDTrustStore {
 		}
 	}
 
+	/**
+	 * Adds multiple certificate stores for document validation based on URIs.
+	 * 
+	 * @param uris the URIs
+	 */
 	public void addCSCAStores(List<URI> uris) {
 		if (uris == null) { LOGGER.severe("uris == null"); return; }
 		for (URI uri: uris) {
@@ -180,6 +190,11 @@ public class MRTDTrustStore {
 		}
 	}
 
+	/**
+	 * Adds a key store for access to EAC protected data groups based on a URI.
+	 * 
+	 * @param uri the URI
+	 */
 	public void addCVCAStore(URI uri) {
 		// We have to try both store types, only Bouncy Castle Store (BKS) 
 		// knows about unnamed EC keys
@@ -197,28 +212,58 @@ public class MRTDTrustStore {
 		}
 	}
 
+	/**
+	 * Adds multiple key stores for access to EAC protected data groups based on URIs.
+	 * 
+	 * @param uris the URIs
+	 */
 	public void addCVCAStores(List<URI> uris) {
 		for (URI uri: uris) {
 			addCVCAStore(uri);
 		}
 	}
 
+	/**
+	 * Adds a certificate store for document validation.
+	 * 
+	 * @param certStore the certificate store
+	 */
 	public void addCSCAStore(CertStore certStore) {
 		cscaStores.add(certStore);
 	}
 
+	/**
+	 * Adds a key store for access to EAC protected data groups.
+	 * 
+	 * @param keyStore the key store
+	 */
 	public void addCVCAStore(KeyStore keyStore) {
 		cvcaStores.add(keyStore);
 	}
 
+	/**
+	 * Removes a trust anchor for document validation.
+	 * 
+	 * @param trustAnchor the trust anchor
+	 */
 	public void removeCSCAAnchor(TrustAnchor trustAnchor) {
 		cscaAnchors.remove(trustAnchor);
 	}
 
+	/**
+	 * Removes a certificate store for document validation.
+	 * 
+	 * @param certStore the certificate store
+	 */
 	public void removeCSCAStore(CertStore certStore) {
 		cscaStores.remove(certStore);
 	}
 
+	/**
+	 * Removes a key store for access to EAC protected data groups.
+	 * 
+	 * @param keyStore the key store
+	 */
 	public void removeCVCAStore(KeyStore keyStore) {
 		cvcaStores.remove(keyStore);
 	}
