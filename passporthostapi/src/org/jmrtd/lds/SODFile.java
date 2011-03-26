@@ -535,15 +535,16 @@ public class SODFile extends PassportFile
 		try {
 			ContentInfo contentInfo = signedData.getEncapContentInfo();
 			byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-			ASN1InputStream in =
-				new ASN1InputStream(new ByteArrayInputStream(content)); 
-
-			LDSSecurityObject sod =
-				LDSSecurityObject.getInstance((DERSequence)in.readObject()); /* FIXME: test this. In Markus' original patch there was a 1 arg constructor of LDSSecurityObject here. */
+			ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(content));
+			
+			Object firstObject = in.readObject();
+			if (!(firstObject instanceof DERSequence)) {
+				LOGGER.severe("Expected DERSequence");
+			}
+			LDSSecurityObject sod = LDSSecurityObject.getInstance((DERSequence)firstObject);
 			Object nextObject = in.readObject();
-
 			if (nextObject != null) {
-				LOGGER.warning("extra object found after LDSSecurityObject...");
+				LOGGER.warning("Ignoring extra object found after LDSSecurityObject...");
 			}
 			return sod;
 		} catch (IOException ioe) {
@@ -741,15 +742,15 @@ public class SODFile extends PassportFile
 		}
 		AlgorithmIdentifier digestAlgorithmIdentifier = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm));
 		LDSVersionInfo ldsVersionInfo;
+		LDSSecurityObject securityObject = null;
 		if (ldsVersion == null) {
 			ldsVersionInfo = null;
+			securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray);
 		} else {
 			ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
-			//                            new DERPrintableString(ldsVersion, true),
-			//                            new DERPrintableString(unicodeVersion, true));
+			securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
 		}
-		LDSSecurityObject sObject2 = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
-		return new ContentInfo(ICAO_SOD_OID, new DEROctetString(sObject2));
+		return new ContentInfo(ICAO_SOD_OID, new DEROctetString(securityObject));
 	}
 
 	private static SignerInfo createSignerInfo(

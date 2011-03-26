@@ -27,6 +27,7 @@ import java.security.Security;
 import junit.framework.TestCase;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
 import org.jmrtd.lds.MRZInfo;
 
@@ -41,9 +42,19 @@ public class PassportTest extends TestCase
 
 	public void testInitNoException() {
 		try {
-			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3);
+			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, new MRTDTrustStore());
 			assertNotNull(passport);
 		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
+	
+	public void testNewMRTDVerify() {
+		try {
+			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, new MRTDTrustStore());
+			passport.verifySecurity();
+		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}

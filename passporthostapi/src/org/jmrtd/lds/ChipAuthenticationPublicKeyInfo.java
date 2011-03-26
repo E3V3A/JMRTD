@@ -211,7 +211,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 		// Bouncy Castle does by default. But we first have to check if this is
 		// the case.
 		try {
-			if (publicKey.getAlgorithm().equals("ECDH")) {
+			if (publicKey.getAlgorithm().equals("EC") || publicKey.getAlgorithm().equals("ECDH")) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
 				asn1In.close();
@@ -253,7 +253,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
 								new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
 								new DERInteger(dhPublicKey.getY()));
 			} else {
-				throw new IllegalArgumentException("Unrecognized key type, should be DH or EC");
+				throw new IllegalArgumentException("Unrecognized key type, found " + publicKey.getAlgorithm() + ", should be DH or ECDH");
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
