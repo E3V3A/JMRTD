@@ -42,7 +42,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
@@ -744,7 +743,7 @@ public class Passport
 				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
 			}
 		}
-		return getCertificateChain(null, sodIssuer, sodSerialNumber);
+		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
 	}
 
 	/**
@@ -757,7 +756,6 @@ public class Passport
 	 * @return the certificate chain
 	 */
 	private List<Certificate> getCertificateChain(X509Certificate docSigningCertificate, final X500Principal sodIssuer, final BigInteger sodSerialNumber) {
-		LOGGER.info("getCertificateChain called with issuer " + sodIssuer + " and SN " + sodSerialNumber);
 		X509CertSelector selector = new X509CertSelector();
 		try {
 			if (docSigningCertificate != null) {
