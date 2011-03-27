@@ -24,7 +24,6 @@ package org.jmrtd.app;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -40,14 +39,13 @@ import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileFilter;
 
-import net.sourceforge.scuba.swing.CertificatePanel;
+import net.sourceforge.scuba.swing.CertificateChainPanel;
 import net.sourceforge.scuba.util.Icons;
 
 /**
@@ -57,34 +55,31 @@ import net.sourceforge.scuba.util.Icons;
  *
  * @version $Revision: 893 $
  */
-public class CertificateFrame extends JFrame
+public class CertificateChainFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = 8218341538613049952L;
-
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", CertificateFrame.class);
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 
 	private ActionMap actionMap;
 
-	private CertificatePanel certificatePanel;
+	private CertificateChainPanel certificatePanel;
 
-	public CertificateFrame(Certificate certificate, boolean isValid) {
+	public CertificateChainFrame(Certificate certificate, boolean isValid) {
 		this("Certificate", certificate, isValid);
 	}
 
-	public CertificateFrame(String title, Certificate certificate, boolean isValid) {
+	public CertificateChainFrame(String title, Certificate certificate, boolean isValid) {
 		this(title, Collections.singletonList(certificate), isValid);		
 	}
 
-	public CertificateFrame(List<Certificate> certificates, boolean isValid) {
+	public CertificateChainFrame(List<Certificate> certificates, boolean isValid) {
 		this("Certificates", certificates, isValid);
 	}
 
-	public CertificateFrame(String title, List<Certificate> certificates, boolean isValid) {
+	public CertificateChainFrame(String title, List<Certificate> certificates, boolean isValid) {
 		super(title);
-		setIconImage(JMRTD_ICON);
 
 		actionMap = new ActionMap();
 
@@ -98,7 +93,7 @@ public class CertificateFrame extends JFrame
 		toolBar.add(getCloseAction());
 
 		/* Frame content */
-		certificatePanel = new CertificatePanel(certificates, isValid);
+		certificatePanel = new CertificateChainPanel(certificates, isValid);
 		Container cp = getContentPane();
 		cp.setLayout(new BorderLayout());
 		cp.add(toolBar, BorderLayout.NORTH);

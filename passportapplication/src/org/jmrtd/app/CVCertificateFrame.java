@@ -24,7 +24,6 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Font;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -35,7 +34,6 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -56,11 +54,9 @@ import org.jmrtd.cert.CardVerifiableCertificate;
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  */
-public class CVCertificateFrame extends JFrame
+public class CVCertificateFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = 2118341538613049952L;
-
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", CVCertificateFrame.class);
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -73,7 +69,6 @@ public class CVCertificateFrame extends JFrame
 
 	public CVCertificateFrame(String title, CardVerifiableCertificate certificate) {
 		super(title);
-		setIconImage(JMRTD_ICON);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();

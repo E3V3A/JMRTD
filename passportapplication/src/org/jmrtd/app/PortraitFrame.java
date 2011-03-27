@@ -42,7 +42,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -71,11 +70,9 @@ import org.jmrtd.lds.FaceInfo;
  * 
  * @version $Revision: 894 $
  */
-public class PortraitFrame extends JFrame
+public class PortraitFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -3718372037784854010L;
-
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PortraitFrame.class);
 
 	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -95,7 +92,6 @@ public class PortraitFrame extends JFrame
 	public PortraitFrame(String title, FaceInfo info) {
 		super(title);
 		this.info = info;
-		setIconImage(JMRTD_ICON);
 	
 		actionMap = new ActionMap();
 		

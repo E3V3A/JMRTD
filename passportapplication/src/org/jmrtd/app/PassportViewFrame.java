@@ -25,7 +25,6 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -104,12 +103,11 @@ import org.jmrtd.lds.SecurityInfo;
  *
  * @version $Revision: 894 $
  */
-public class PassportViewFrame extends JFrame
+public class PassportViewFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportViewFrame.class);
-	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
+	private static final String PASSPORT_FRAME_TITLE = "MRTD";
 	private static final Dimension PREFERRED_SIZE = new Dimension(640, 420);
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
@@ -170,7 +168,6 @@ public class PassportViewFrame extends JFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());
-		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
 
@@ -693,12 +690,12 @@ public class PassportViewFrame extends JFrame
 					List<Certificate> chain = passport.getCertificateChain();
 					JFrame certificateFrame = null;
 					if (chain != null && chain.size() > 0) {
-						certificateFrame = new CertificateFrame("Certificate", chain, true);
+						certificateFrame = new CertificateChainFrame("Certificate chain", chain, true);
 					} else {
 						SODFile sod = new SODFile(passport.getInputStream(PassportService.EF_SOD));
 						X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 						if (docSigningCertificate != null) {
-							certificateFrame = new CertificateFrame(docSigningCertificate, false);
+							certificateFrame = new CertificateChainFrame(docSigningCertificate, false);
 						}
 					}
 					if (certificateFrame != null) {

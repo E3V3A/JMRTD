@@ -23,7 +23,6 @@
 package org.jmrtd.app;
 
 import java.awt.Container;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -36,7 +35,6 @@ import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -52,11 +50,9 @@ import net.sourceforge.scuba.util.Icons;
  * 
  * @version $Revision: 893 $
  */
-public class KeyFrame extends JFrame
+public class KeyFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -514612440541711549L;
-
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", KeyFrame.class);
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -69,7 +65,6 @@ public class KeyFrame extends JFrame
 
 	public KeyFrame(String title, Key key) {
 		super(title);
-		setIconImage(JMRTD_ICON);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();

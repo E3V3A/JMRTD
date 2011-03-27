@@ -26,7 +26,6 @@ import java.awt.Font;
 
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
-import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
@@ -34,7 +33,7 @@ import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.util.Hex;
 
-public class APDUTraceFrame extends JFrame implements APDUListener
+public class APDUTraceFrame extends JMRTDFrame implements APDUListener
 {
 	private static final long serialVersionUID = -584060710792989841L;
 

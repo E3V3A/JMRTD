@@ -36,9 +36,14 @@ import java.net.URI;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
+import java.security.cert.Certificate;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -93,16 +98,16 @@ import org.jmrtd.lds.MRZInfo;
  */
 public class JMRTDApp  implements PassportListener
 {
-	private static final String MAIN_FRAME_TITLE = "JMRTD";
+	private static final String MAIN_FRAME_TITLE = "Main";
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", JMRTDApp.class);
+	private static final Icon CSCA_ANCHORS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("anchor"));
 	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
 	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
 	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
 	private static final Icon RELOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
 	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-
+	
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
 	
@@ -178,8 +183,7 @@ public class JMRTDApp  implements PassportListener
 			}
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
-			final JFrame mainFrame = new JFrame(MAIN_FRAME_TITLE);
-			mainFrame.setIconImage(JMRTD_ICON);
+			final JFrame mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
 			contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
@@ -327,6 +331,10 @@ public class JMRTDApp  implements PassportListener
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
+		JMenuItem cscaCertsItem = new JMenuItem();
+		cscaCertsItem.setAction(getCSCACertsAction());
+		menu.add(cscaCertsItem);
+		
 		JMenuItem reloadItem = new JMenuItem();
 		reloadItem.setAction(getReloadAction());
 		menu.add(reloadItem);
@@ -432,6 +440,34 @@ public class JMRTDApp  implements PassportListener
 		return action;
 	}
 
+	private Action getCSCACertsAction() {
+		Action action = actionMap.get("CSCAAnchors");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+
+			private static final long serialVersionUID = 6389151122469369737L;
+
+			public void actionPerformed(ActionEvent e) {
+				Set<TrustAnchor> anchors = trustManager.getCSCAAnchors();
+				List<Certificate> certificates = new ArrayList<Certificate>();
+				for (TrustAnchor anchor: anchors) {
+					X509Certificate certificate = anchor.getTrustedCert();
+					certificates.add(certificate);
+				}
+				JFrame frame = new CertificateListFrame("CSCA Anchors", certificates);
+				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+				frame.pack();
+				frame.setVisible(true);				
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, CSCA_ANCHORS_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CSCA_ANCHORS_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Show CSCA anchors");
+		action.putValue(Action.NAME, "CSCA anchors...");
+		actionMap.put("CSCAAnchorss", action);
+		return action;
+	}
+	
 	private Action getReloadAction() {
 		Action action = actionMap.get("Reload");
 		if (action != null) { return action; }

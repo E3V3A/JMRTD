@@ -41,10 +41,8 @@ import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,7 +59,6 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
@@ -129,7 +126,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				certificates.addAll(cscaCertificates);
 			} else {
 				List<Certificate> dscCertificates = searchCertificates(selector);
-				LOGGER.info("DEBUG: found " + dscCertificates.size() + " DSC certs");
 				certificates.addAll(dscCertificates);
 			}
 		} catch (CommunicationException ce) {
@@ -304,7 +300,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				e.printStackTrace();
 			}
 		}
-		LOGGER.info("DEBUG: found " + result.size() + " CSCA certificates");
 		return result;
 	}
 

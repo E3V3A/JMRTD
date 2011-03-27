@@ -32,7 +32,6 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -58,11 +57,9 @@ import org.jmrtd.lds.FingerInfo;
  * 
  * @version $Revision: 894 $
  */
-public class FingerPrintFrame extends JFrame
+public class FingerPrintFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -3718372037784454010L;
-
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", FingerPrintFrame.class);
 
 	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
@@ -79,7 +76,6 @@ public class FingerPrintFrame extends JFrame
 	public FingerPrintFrame(String title, List<FingerInfo> fingerPrints) {
 		super(title);
 		this.fingerPrints = new ArrayList<FingerInfo>(fingerPrints);
-		setIconImage(JMRTD_ICON);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();

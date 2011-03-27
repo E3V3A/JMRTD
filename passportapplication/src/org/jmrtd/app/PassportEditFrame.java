@@ -25,7 +25,6 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -126,12 +125,11 @@ import org.jmrtd.lds.SODFile;
  *
  * @version $Revision: 894 $
  */
-public class PassportEditFrame extends JFrame
+public class PassportEditFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -4624658204371014128L;
 
-	private static final Image JMRTD_ICON = Icons.getImage("jmrtd_logo-48x48", PassportEditFrame.class);
-	private static final String PASSPORT_FRAME_TITLE = "JMRTD - Passport";
+	private static final String PASSPORT_FRAME_TITLE = "Edit MRTD";
 	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
@@ -190,7 +188,6 @@ public class PassportEditFrame extends JFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());
-		setIconImage(JMRTD_ICON);
 		pack();
 		setVisible(true);
 
@@ -1054,7 +1051,7 @@ public class PassportEditFrame extends JFrame
 				try{
 					InputStream sodIn = passport.getInputStream(PassportService.EF_SOD);
 					SODFile	sod = new SODFile(sodIn);
-					JFrame certificateFrame = new CertificateFrame("Document Signer Certificate", sod.getDocSigningCertificate(), false);
+					JFrame certificateFrame = new CertificateChainFrame("Document Signer Certificate", sod.getDocSigningCertificate(), false);
 					certificateFrame.pack();
 					certificateFrame.setVisible(true);
 				}catch(Exception ex) {
