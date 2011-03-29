@@ -448,13 +448,7 @@ public class JMRTDApp  implements PassportListener
 			private static final long serialVersionUID = 6389151122469369737L;
 
 			public void actionPerformed(ActionEvent e) {
-				Set<TrustAnchor> anchors = trustManager.getCSCAAnchors();
-				List<Certificate> certificates = new ArrayList<Certificate>();
-				for (TrustAnchor anchor: anchors) {
-					X509Certificate certificate = anchor.getTrustedCert();
-					certificates.add(certificate);
-				}
-				JFrame frame = new CertificateListFrame("CSCA Anchors", certificates);
+				JFrame frame = new CertificateMasterListFrame("CSCA Anchors", trustManager.getCSCAAnchors());
 				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				frame.pack();
 				frame.setVisible(true);				

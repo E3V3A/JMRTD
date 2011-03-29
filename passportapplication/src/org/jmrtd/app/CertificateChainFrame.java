@@ -49,7 +49,7 @@ import net.sourceforge.scuba.swing.CertificateChainPanel;
 import net.sourceforge.scuba.util.Icons;
 
 /**
- * Frame for displaying (and saving to file) a public key certificate.
+ * Frame for displaying certifcate chains.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *

@@ -275,7 +275,7 @@ public class MRTDTrustStore {
 	 * 
 	 * @return a set of trust anchors
 	 */
-	private Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> certificates) {
+	private static Set<TrustAnchor> getAsAnchors(Collection<? extends Certificate> certificates) {
 		Set<TrustAnchor> anchors = new HashSet<TrustAnchor>(certificates.size());
 		for (Certificate certificate: certificates) {
 			if (certificate instanceof X509Certificate) {

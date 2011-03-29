@@ -80,8 +80,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	/** We may need this provider... */
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-	//	private static final String DEFAULT_PKD_SERVER = "ldap://motest:389/";
-
 	private static final String COUNTRY_ATTRIBUTE_NAME = "c";
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";

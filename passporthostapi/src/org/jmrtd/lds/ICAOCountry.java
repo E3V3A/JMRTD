@@ -22,6 +22,8 @@
 
 package org.jmrtd.lds;
 
+import java.io.Serializable;
+
 import net.sourceforge.scuba.data.Country;
 
 /**
