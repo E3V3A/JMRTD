@@ -30,7 +30,6 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -58,8 +57,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
@@ -87,8 +84,6 @@ public class CertificateMasterListFrame extends JMRTDFrame
 
 	private static final Font TREE_FONT = new Font("Sans-serif", Font.PLAIN, 12);
 
-	private List<Certificate> certificates;
-
 	private Map<Country, Collection<Certificate>> countryToCertificates;
 
 	private DefaultMutableTreeNode rootNode;
@@ -103,11 +98,10 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		super(title);
 		Container cp = getContentPane();
 		cp.setLayout(new BorderLayout());
-		this.certificates = new ArrayList<Certificate>(certs);
 		countryToCertificates = new HashMap<Country, Collection<Certificate>>();
-		for (Certificate certificate: certificates) {
+		for (Certificate certificate: certs) {
 			if (!(certificate instanceof X509Certificate)) { continue; }
-			Country country = getIssuerCountry((X509Certificate)certificate);
+			Country country = getCountry(((X509Certificate)certificate).getIssuerX500Principal());
 			Collection<Certificate> countryCertificates = countryToCertificates.get(country);
 			if (countryCertificates == null) {
 				countryCertificates = new HashSet<Certificate>();
@@ -196,7 +190,7 @@ public class CertificateMasterListFrame extends JMRTDFrame
 	}
 
 	private static Collection<Certificate> getAsCertificates(Collection<TrustAnchor> anchors) {
-		Collection<Certificate> certificates = new ArrayList<Certificate>(anchors.size());
+		Collection<Certificate> certificates = new HashSet<Certificate>(anchors.size());
 		for (TrustAnchor anchor: anchors) {
 			X509Certificate certificate = anchor.getTrustedCert();
 			if (certificate != null) {
@@ -206,9 +200,8 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		return certificates;
 	}
 
-	private static Country getIssuerCountry(X509Certificate certificate) {
-		X500Principal issuer = certificate.getIssuerX500Principal();
-		String issuerName = issuer.getName("RFC1779");
+	private static Country getCountry(X500Principal principal) {
+		String issuerName = principal.getName("RFC1779");
 		int startIndex = issuerName.indexOf("C=");
 		if (startIndex < 0) { throw new IllegalArgumentException("Could not get country from issuer name, " + issuerName); }
 		int endIndex = issuerName.indexOf(",", startIndex);
