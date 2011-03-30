@@ -41,8 +41,10 @@ import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -78,8 +80,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	/** We may need this provider... */
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
-	private static final String COUNTRY_ATTRIBUTE_NAME = "c";
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
+	private static final String CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME = "CscaMasterListData";
 	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";
 
 	private PKDCertStoreParameters params;
@@ -95,7 +97,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 	public PKDCertStoreSpi(CertStoreParameters params) throws InvalidAlgorithmParameterException {
 		super(params);
-		LOGGER.setLevel(Level.ALL); /* FIXME: only uncomment for debugging. */
+		// LOGGER.setLevel(Level.ALL); /* NOTE: only uncomment for debugging. */
 		if (params == null) { throw new InvalidAlgorithmParameterException("Input was null."); }
 		if (!(params instanceof PKDCertStoreParameters)) { throw new InvalidAlgorithmParameterException("Expected PKDCertStoreParameters, found " + params.getClass().getCanonicalName()); }
 		this.params = (PKDCertStoreParameters)params;
@@ -127,7 +129,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		} catch (CommunicationException ce) {
 			ce.printStackTrace();
 		}
-		return new ArrayList<Certificate>();
+		return new HashSet<Certificate>();
 	}
 
 
@@ -138,31 +140,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		} catch (CommunicationException ce) {
 			ce.printStackTrace();
 		}
-		return new ArrayList<CRL>();
+		return new HashSet<CRL>();
 	}
-
-	//	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector) throws CertStoreException {
-	//		if (crls == null) {
-	//			crls = new ArrayList<CRL>();
-	//			try {
-	//				if (context == null) { connect(); }
-	//				List<Country> countries = searchCountries();
-	//				for (Country country: countries) {
-	//					List<CRL> countryCRLs = searchCRLs(country);
-	//					crls.addAll(countryCRLs);
-	//				}
-	//			} catch (CommunicationException ce) {
-	//				ce.printStackTrace();
-	//			}
-	//		}
-	//		List<CRL> result = new ArrayList<CRL>();
-	//		for (CRL crl: crls) {
-	//			if (selector.match(crl)) {
-	//				result.add(crl);
-	//			}
-	//		}
-	//		return result;
-	//	}
 
 	public String getBaseDN() {
 		return baseDN;
@@ -177,7 +156,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		try {
 			context = null;
 			Hashtable<String, String> env = new Hashtable<String, String>();
-			env.put("java.naming.ldap.attributes.binary", "CscaMasterListData"); /* NOTE: otherwise master list data is returned as text. */
+			env.put("java.naming.ldap.attributes.binary", CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME); /* NOTE: otherwise master list data is returned as text. */
 			env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
 			env.put(Context.PROVIDER_URL, "ldap://" + server + ":" + port);
 			context = new InitialDirContext(env);
@@ -187,7 +166,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 	}
 
-	private List<Certificate> searchCertificates(CertSelector selector) {
+	private Collection<Certificate> searchCertificates(CertSelector selector) {
 		String specificDN = params.getBaseDN();
 		String filter = "(&(objectclass=inetOrgPerson))";
 
@@ -199,8 +178,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			}
 		}
 
-		List<byte[]> binaries = searchAllAttributes(specificDN, CERTIFICATE_ATTRIBUTE_NAME, filter);
-		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
+		Collection<byte[]> binaries = searchAllAttributes(specificDN, CERTIFICATE_ATTRIBUTE_NAME, filter);
+		Collection<Certificate> result = new HashSet<Certificate>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			Certificate certificate = null;
 			try {
@@ -223,10 +202,10 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private List<Certificate> searchCSCACertificates(CertSelector selector) {
+	private Collection<Certificate> searchCSCACertificates(CertSelector selector) {
 		String pkdMLDN = params.getBaseDN();
 		String filter = "(&(objectclass=CscaMasterList))";
-		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "CscaMasterListData", filter);
+		Collection<byte[]> binaries = searchAllAttributes(pkdMLDN, CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME, filter);
 		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 
 		for (byte[] binary: binaries) {
@@ -244,7 +223,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 					ContentInfo contentInfo = signedData.getContentInfo();
 					Object content = contentInfo.getContent();
-					List<Certificate> certificates = getCertificatesFromDERObject(content, null);
+					Collection<Certificate> certificates = getCertificatesFromDERObject(content, null);
 					for (Certificate certificate: certificates) {
 						if (selector.match(certificate)) {
 							result.add(certificate);
@@ -258,11 +237,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private List<CRL> searchCRLs(CRLSelector selector) {
+	private Collection<CRL> searchCRLs(CRLSelector selector) {
 		String pkdMLDN = params.getBaseDN();
 		String filter = "(&(objectclass=cRLDistributionPoint))";
-		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "certificateRevocationList", filter);
-		List<CRL> result = new ArrayList<CRL>(binaries.size());
+		Collection<byte[]> binaries = searchAllAttributes(pkdMLDN, CRL_ATTRIBUTE_NAME, filter);
+		Collection<CRL> result = new HashSet<CRL>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			CRL crl = null;
 			try {
@@ -332,7 +311,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private List<Certificate> getCertificatesFromDERObject(Object o, List<Certificate> certificates) {
+	private Collection<Certificate> getCertificatesFromDERObject(Object o, Collection<Certificate> certificates) {
 		if (certificates == null) { certificates = new ArrayList<Certificate>(); }
 
 		try {
@@ -389,7 +368,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return certificates;
 	}
 
-	private List<byte[]> searchAllAttributes(String specificDN, String attributeName, String filter) {
+	private Collection<byte[]> searchAllAttributes(String specificDN, String attributeName, String filter) {
 		SearchControls controls = new SearchControls();
 		String[] attrIDs = { attributeName };
 		//		if (!attributeName.endsWith(";binary")) {
@@ -399,7 +378,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 		controls.setReturningAttributes(attrIDs);
 		controls.setReturningObjFlag(true);
-		List<byte[]> result = new ArrayList<byte[]>();
+		Set<byte[]> result = new HashSet<byte[]>();
 		try {
 			// Search for objects using the filter
 			NamingEnumeration<?> answer = context.search(specificDN, filter, controls);
@@ -410,8 +389,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private List<byte[]> searchAttributes(String specificDN, String attributeName) {
-		List<byte[]> result = new ArrayList<byte[]>();
+	private Collection<byte[]> searchAttributes(String specificDN, String attributeName) {
+		Collection<byte[]> result = new HashSet<byte[]>();
 
 		try {
 			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
@@ -439,7 +418,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private void addToList(NamingEnumeration<?> answer, String attributeName, List<byte[]> result) throws NamingException {
+	private void addToList(NamingEnumeration<?> answer, String attributeName, Collection<byte[]> result) throws NamingException {
 		int resultCount = 0;
 		for (; answer != null && answer.hasMore(); resultCount++) {
 			SearchResult searchResult = (SearchResult)answer.next();

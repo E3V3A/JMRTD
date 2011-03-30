@@ -1,3 +1,25 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006 - 2011  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id:  $
+ */
+
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
@@ -6,6 +28,9 @@ import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -33,9 +58,12 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
@@ -43,6 +71,11 @@ import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.swing.CertificateChainPanel;
 import net.sourceforge.scuba.util.Icons;
 
+/**
+ * GUI to show the CSCA trust anchors, sorted by country.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class CertificateMasterListFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -1239469067988004321L;
@@ -90,7 +123,6 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		menuBar.add(createFileMenu());
 		setJMenuBar(menuBar);
 
-
 		rootNode = new DefaultMutableTreeNode("CSCA");
 
 		List<Country> sortedCountryList = new ArrayList<Country>(countryToCertificates.keySet());
@@ -113,6 +145,20 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		CountryAndCertRenderer countryAndCertRenderer = new CountryAndCertRenderer();
 		tree.setCellRenderer(countryAndCertRenderer);
+		tree.addMouseListener(new MouseAdapter() {
+			public void mouseClicked(MouseEvent e) {
+				if (e.getClickCount() <= 1) { return; }
+		        TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+		        if (selPath == null) { return; }
+		        DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
+				
+				Object userObject = node.getUserObject();
+				if (userObject instanceof Certificate) {
+					JPanel certificatePanel = new CertificateChainPanel((Certificate)userObject, true);
+					JOptionPane.showMessageDialog(tree, certificatePanel);
+				}
+			}
+		});
 		cp.add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
 
@@ -146,26 +192,6 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
 		actionMap.put("Close", action);
-		return action;
-	}
-
-	private Action getShowAction(final Component parent, final X509Certificate certificate) {
-		Action action = actionMap.get("showCertificate");
-		if (action != null) { return action; }
-		action = new AbstractAction() {
-
-			private static final long serialVersionUID = 1818703839607672072L;
-
-			public void actionPerformed(ActionEvent e) {
-				JPanel certificatePanel = new CertificateChainPanel(certificate, true);
-				JOptionPane.showMessageDialog(parent, certificatePanel);
-			}
-		};
-		action.putValue(Action.SMALL_ICON, CERTIFICATE_ICON);
-		action.putValue(Action.LARGE_ICON_KEY, CERTIFICATE_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Show certificate");
-		action.putValue(Action.NAME, "Show...");
-		actionMap.put("showCertificate", action);
 		return action;
 	}
 
@@ -220,7 +246,7 @@ public class CertificateMasterListFrame extends JMRTDFrame
 				if (userObject instanceof Country) {
 					Country country = (Country)userObject;
 					ImageIcon icon = new ImageIcon(Icons.getFlagImage(country));
-					label.setText(country.getName());
+					label.setText(country.toAlpha2Code() + " " + country.getName());
 					label.setIcon(icon);
 					setLabelSelected(selected);
 					return label;
