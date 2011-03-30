@@ -21,12 +21,15 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.ISOCountry;
@@ -35,8 +38,10 @@ import net.sourceforge.scuba.util.Icons;
 
 public class CertificateMasterListFrame extends JMRTDFrame
 {
+	private static final Icon CSCA_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("world"));
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
-	private static final Dimension PREFERRED_SIZE = new Dimension(600, 400);
+	
+	private static final Dimension PREFERRED_SIZE = new Dimension(480, 280);
 
 	private static final long serialVersionUID = -1239469067988004321L;
 
@@ -82,15 +87,51 @@ public class CertificateMasterListFrame extends JMRTDFrame
 			DefaultMutableTreeNode countryNode = new DefaultMutableTreeNode(country);
 			rootNode.add(countryNode);
 			for (Certificate certificate: certificates) {
-				String certName = certificate.toString();
-				if (certificate instanceof X509Certificate) {
-					certName = ((X509Certificate)certificate).getIssuerX500Principal().getName();
-				}
-				DefaultMutableTreeNode certificateNode = new DefaultMutableTreeNode(certName);
+				DefaultMutableTreeNode certificateNode = new DefaultMutableTreeNode(certificate);
 				countryNode.add(certificateNode);
 			}
 		}
 		final JTree tree = new JTree(new DefaultTreeModel(rootNode));
+		tree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		final DefaultTreeCellRenderer certRenderer = new DefaultTreeCellRenderer();
+		DefaultTreeCellRenderer countryAndCertRenderer = new DefaultTreeCellRenderer() {
+
+			private JLabel label = new JLabel();
+			
+			private static final long serialVersionUID = 2836699659593250321L;
+
+			public Component getTreeCellRendererComponent(JTree tree,
+					Object value, boolean selected, boolean expanded,
+					boolean leaf, int row, boolean hasFocus) {
+				DefaultTreeCellRenderer defaultComponent = (DefaultTreeCellRenderer)certRenderer.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus);
+				if (value instanceof DefaultMutableTreeNode) {
+					if (value == rootNode) {
+						label.setText(rootNode.getUserObject().toString());
+						label.setIcon(CSCA_ICON);
+						return label;
+					}
+					Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
+					if (userObject instanceof Country) {
+						Country country = (Country)userObject;
+						ImageIcon icon = new ImageIcon(Icons.getFlagImage(country));
+						label.setText(country.getName());
+						label.setIcon(icon);
+						return label;
+					} else if (userObject instanceof Certificate) {
+						Certificate certificate = (Certificate)userObject;
+						String certName = certificate.toString();
+						if (certificate instanceof X509Certificate) {
+							certName = ((X509Certificate)certificate).getIssuerX500Principal().getName();
+						}
+						label.setText(certName);
+						label.setIcon(CERTIFICATE_ICON);
+						return label;
+					}
+				}
+				return defaultComponent;
+			}	
+		};
+		tree.setCellRenderer(countryAndCertRenderer);
 
 		cp.add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
