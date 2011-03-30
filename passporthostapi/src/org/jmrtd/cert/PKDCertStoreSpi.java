@@ -60,8 +60,6 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -189,61 +187,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 	}
 
-	/**
-	 * 
-	 * @return
-	 * 
-	 * @deprecated Assumes structure in PKD tree.
-	 */
-	private synchronized List<Country> searchCountries() {
-		List<Country> countries = new ArrayList<Country>();
-		try {
-			String filter = "(&(objectClass=country)(entryDN=*))";
-			String[] attrIDs = { COUNTRY_ATTRIBUTE_NAME };
-			SearchControls controls = new SearchControls();
-			controls.setReturningAttributes(attrIDs);
-
-			NamingEnumeration<?> answer = null;
-			try {
-				answer = context.search(baseDN, filter, controls);
-			} catch (NamingException ne) {
-				LOGGER.warning("No matches found while searching for countries!");
-			}
-			int resultCount = 0;
-			for (; answer != null && answer.hasMore(); resultCount++) {
-				SearchResult searchResult = (SearchResult)answer.next();
-
-				int attributeCount = 0;
-				Attributes attributes = searchResult.getAttributes();
-				for (NamingEnumeration<?> ae = attributes.getAll(); ae.hasMore(); attributeCount++) {
-					Attribute attribute = (Attribute)ae.next();
-
-					/* Name */
-					String attributeName = attribute.getID();
-					if (!attributeName.equalsIgnoreCase(COUNTRY_ATTRIBUTE_NAME)) {
-						LOGGER.warning("Search result contains attribute \"" + attributeName + ", was expecting \"" + COUNTRY_ATTRIBUTE_NAME + "\"");
-					}
-
-					/* Values */
-					int attributeValueCount = 0;
-					for (NamingEnumeration<?> attrValueEnum = attribute.getAll(); attrValueEnum.hasMore(); attributeValueCount++) {
-						Object value = attrValueEnum.next();
-						if (value instanceof String && value != null) {
-							String countryCode = ((String)value).trim().toUpperCase();
-							countries.add(ISOCountry.getInstance(countryCode));
-						}
-					}
-					if (attributeValueCount != 1) {
-						LOGGER.warning("Search found object with more than 1 country value");
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return countries;
-	}
-
 	private List<Certificate> searchCertificates(CertSelector selector) {
 		String specificDN = params.getBaseDN();
 		String filter = "(&(objectclass=inetOrgPerson))";
@@ -339,35 +282,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			}
 		}
 		System.out.println("DEBUG: searchCRLs yielded " + result.size() + " CRLs");
-		return result;
-	}
-
-
-	private List<CRL> searchCRLs(Country country) {
-		/* FIXME: Also use selector instead of country here. */
-		String countrySpecificDN = "o="+ "CRLs" + ",c=" + country.toAlpha2Code().toUpperCase() + "," + baseDN;
-
-		List<byte[]> binaries = searchAttributes(countrySpecificDN, CRL_ATTRIBUTE_NAME);
-		if (binaries == null) { return null; }
-		List<CRL> result = new ArrayList<CRL>(binaries.size());
-		for (byte[] valueBytes: binaries) {
-			CRL crl = null;
-			try {
-				crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
-			} catch (Exception e) {
-				try {
-					factory = CertificateFactory.getInstance("X509", PROVIDER);
-					crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
-				}  catch (CRLException crle) {
-					crle.printStackTrace();
-					crl = null;
-				}  catch (CertificateException ce) {
-					ce.printStackTrace();
-					crl = null;
-				}
-			}
-			result.add(crl);
-		}
 		return result;
 	}
 

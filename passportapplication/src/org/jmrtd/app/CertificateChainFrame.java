@@ -59,9 +59,6 @@ public class CertificateChainFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = 8218341538613049952L;
 
-	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-
 	private ActionMap actionMap;
 
 	private CertificateChainPanel certificatePanel;

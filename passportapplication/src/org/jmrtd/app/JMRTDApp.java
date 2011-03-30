@@ -96,7 +96,7 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @version $Revision: 894 $
  */
-public class JMRTDApp  implements PassportListener
+public class JMRTDApp implements PassportListener
 {
 	private static final String MAIN_FRAME_TITLE = "Main";
 

@@ -61,8 +61,6 @@ public class FingerPrintFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -3718372037784454010L;
 
-	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
 	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
 	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
 
