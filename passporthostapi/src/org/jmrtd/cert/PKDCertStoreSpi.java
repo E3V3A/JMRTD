@@ -91,12 +91,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private String baseDN;
 	private boolean isMasterListStore;
 
-	private CertificateFactory factory;
+	private CertificateFactory factory, alternativeFactory;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
-
-	private List<Certificate> certificates;
-	private List<CRL> crls;
 
 	public PKDCertStoreSpi(CertStoreParameters params) throws InvalidAlgorithmParameterException {
 		super(params);
@@ -110,51 +107,64 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
 		try {
 			factory = CertificateFactory.getInstance("X509");
+			alternativeFactory = CertificateFactory.getInstance("X509", PROVIDER);
 		} catch (CertificateException ce) {
-			throw new IllegalStateException("Could not create an X.509 certificate factory\n" + ce.toString());
+			if (factory == null && alternativeFactory == null) {
+				throw new IllegalStateException("Could not create an X.509 certificate factory\n" + ce.toString());
+			}
+			if (factory == null && alternativeFactory != null) {
+				factory = alternativeFactory;
+			}
 		}
 	}
 
 	public Collection<? extends Certificate> engineGetCertificates(CertSelector selector) {
-		List<Certificate> certificates = new ArrayList<Certificate>();
 		try {
 			if (context == null) { connect(); }
 			if (isMasterListStore) {
-				List<Certificate> cscaCertificates = searchCSCACertificates(selector);
-				certificates.addAll(cscaCertificates);
+				return searchCSCACertificates(selector);
 			} else {
-				List<Certificate> dscCertificates = searchCertificates(selector);
-				certificates.addAll(dscCertificates);
+				return searchCertificates(selector);
 			}
 		} catch (CommunicationException ce) {
 			ce.printStackTrace();
 		}
-		return certificates;
+		return new ArrayList<Certificate>();
 	}
 
-	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector)
-	throws CertStoreException {
-		if (crls == null) {
-			crls = new ArrayList<CRL>();
-			try {
-				if (context == null) { connect(); }
-				List<Country> countries = searchCountries();
-				for (Country country: countries) {
-					List<CRL> countryCRLs = searchCRLs(country);
-					crls.addAll(countryCRLs);
-				}
-			} catch (CommunicationException ce) {
-				ce.printStackTrace();
-			}
+
+	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector) throws CertStoreException {
+		try {
+			if (context == null) { connect(); }
+			return searchCRLs(selector);
+		} catch (CommunicationException ce) {
+			ce.printStackTrace();
 		}
-		List<CRL> result = new ArrayList<CRL>();
-		for (CRL crl: crls) {
-			if (selector.match(crl)) {
-				result.add(crl);
-			}
-		}
-		return result;
+		return new ArrayList<CRL>();
 	}
+
+	//	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector) throws CertStoreException {
+	//		if (crls == null) {
+	//			crls = new ArrayList<CRL>();
+	//			try {
+	//				if (context == null) { connect(); }
+	//				List<Country> countries = searchCountries();
+	//				for (Country country: countries) {
+	//					List<CRL> countryCRLs = searchCRLs(country);
+	//					crls.addAll(countryCRLs);
+	//				}
+	//			} catch (CommunicationException ce) {
+	//				ce.printStackTrace();
+	//			}
+	//		}
+	//		List<CRL> result = new ArrayList<CRL>();
+	//		for (CRL crl: crls) {
+	//			if (selector.match(crl)) {
+	//				result.add(crl);
+	//			}
+	//		}
+	//		return result;
+	//	}
 
 	public String getBaseDN() {
 		return baseDN;
@@ -162,6 +172,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 	/* ONLY PRIVATE METHODS BELOW */
 
+	/**
+	 * Connects (binds) to the server.
+	 */
 	private synchronized void connect() throws CommunicationException {
 		try {
 			context = null;
@@ -232,7 +245,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	private List<Certificate> searchCertificates(CertSelector selector) {
-		String pkdDN = params.getBaseDN();
+		String specificDN = params.getBaseDN();
 		String filter = "(&(objectclass=inetOrgPerson))";
 
 		if (selector instanceof X509CertSelector) {
@@ -243,7 +256,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			}
 		}
 
-		List<byte[]> binaries = searchAllAttributes(pkdDN, CERTIFICATE_ATTRIBUTE_NAME, filter);
+		List<byte[]> binaries = searchAllAttributes(specificDN, CERTIFICATE_ATTRIBUTE_NAME, filter);
 		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			Certificate certificate = null;
@@ -251,8 +264,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
 			} catch (Exception e) {
 				try {
-					factory = CertificateFactory.getInstance("X509", PROVIDER);
-					certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
+					if (alternativeFactory != null) {
+						certificate = alternativeFactory.generateCertificate(new ByteArrayInputStream(valueBytes));
+					}
 				}  catch (CertificateException ce) {
 					ce.printStackTrace();
 					certificate = null;
@@ -301,6 +315,34 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
+	private List<CRL> searchCRLs(CRLSelector selector) {
+		String pkdMLDN = params.getBaseDN();
+		String filter = "(&(objectclass=cRLDistributionPoint))";
+		List<byte[]> binaries = searchAllAttributes(pkdMLDN, "certificateRevocationList", filter);
+		List<CRL> result = new ArrayList<CRL>(binaries.size());
+		for (byte[] valueBytes: binaries) {
+			CRL crl = null;
+			try {
+				crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
+			} catch (Exception e) {
+				try {
+					if (alternativeFactory != null) {
+						crl = alternativeFactory.generateCRL(new ByteArrayInputStream(valueBytes));
+					}
+				}  catch (CRLException crle) {
+					crle.printStackTrace();
+					crl = null;
+				}
+			}
+			if (crl != null && selector.match(crl)) {
+				result.add(crl);
+			}
+		}
+		System.out.println("DEBUG: searchCRLs yielded " + result.size() + " CRLs");
+		return result;
+	}
+
+
 	private List<CRL> searchCRLs(Country country) {
 		/* FIXME: Also use selector instead of country here. */
 		String countrySpecificDN = "o="+ "CRLs" + ",c=" + country.toAlpha2Code().toUpperCase() + "," + baseDN;
@@ -328,7 +370,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 		return result;
 	}
-	
+
 	private List<SignedData> getSignedDataFromDERObject(Object o, List<SignedData> result) {
 		if (result == null) { result = new ArrayList<SignedData>(); }
 
