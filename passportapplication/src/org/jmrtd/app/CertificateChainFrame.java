@@ -36,8 +36,6 @@ import java.util.List;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
-import javax.swing.Icon;
-import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -46,7 +44,6 @@ import javax.swing.JToolBar;
 import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.swing.CertificateChainPanel;
-import net.sourceforge.scuba.util.Icons;
 
 /**
  * Frame for displaying certifcate chains.

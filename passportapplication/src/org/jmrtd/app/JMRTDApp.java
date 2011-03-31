@@ -36,14 +36,9 @@ import java.net.URI;
 import java.net.URL;
 import java.security.Provider;
 import java.security.Security;
-import java.security.cert.Certificate;
-import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
@@ -239,6 +234,7 @@ public class JMRTDApp implements PassportListener
 				apduTraceFrame = null;
 			}
 		}
+		trustManager.clear();
 		trustManager.addCSCAStores(preferencesPanel.getCSCAStoreLocations());
 		trustManager.addCVCAStores(preferencesPanel.getCVCAStoreLocations());
 	}

@@ -22,21 +22,30 @@
 
 package org.jmrtd;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
+import java.security.cert.CertStoreException;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -97,6 +106,12 @@ public class MRTDTrustStore {
 		this.cvcaStores = cvcaStores;
 	}
 
+	public void clear() {
+		this.cscaAnchors = new HashSet<TrustAnchor>();
+		this.cscaStores = new ArrayList<CertStore>();
+		this.cvcaStores = new ArrayList<KeyStore>();
+	}
+
 	/**
 	 * Gets the root certificates for document validation.
 	 * 
@@ -150,32 +165,61 @@ public class MRTDTrustStore {
 		String scheme = uri.getScheme();
 		if (scheme == null) { LOGGER.severe("scheme == null, location = " + uri); return; }
 		try {
-			if (scheme != null && scheme.equals("ldap")) {
-				String server = uri.getHost();
-				int port = uri.getPort();
-				CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
-				CertStoreParameters cscaParams = port < 0 ? new PKDMasterListCertStoreParameters(server) : new PKDMasterListCertStoreParameters(server, port);
-				CertStore certStore = CertStore.getInstance("PKD", params);
-				if (certStore != null) { addCSCAStore(certStore); }
-				CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
-				if (cscaStore != null) { addCSCAStore(cscaStore); }
-				Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
-				addCSCAAnchors(getAsAnchors(rootCerts));
+			if (scheme.equalsIgnoreCase("ldap")) {
+				addAsPKDStoreCSCACertStore(uri);
 			} else {
-				/* TODO: Should we check that scheme is "file" or "http"? */
+				/* The scheme is probably "file" or "http"? Going to just open a connection. */
 				try {
-					CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
-					CertStore certStore = CertStore.getInstance("JKS", params);
-					addCSCAStore(certStore);
-					Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
-					addCSCAAnchors(getAsAnchors(rootCerts));
+					addAsKeyStoreCSCACertStore(uri);
 				} catch (KeyStoreException kse) {
-					kse.printStackTrace();
+					try {
+						addAsSingletonCSCACertStore(uri);
+					} catch (Exception e) {
+						LOGGER.warning("Failed to open " + uri.toASCIIString() + " both as a keystore and as a DER certificate file");
+						kse.printStackTrace();
+						e.printStackTrace();
+					}
 				}
 			}
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
 		}
+	}
+
+	private void addAsSingletonCSCACertStore(URI uri) throws MalformedURLException, IOException, CertificateException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {
+		URLConnection uc = uri.toURL().openConnection();
+		InputStream in = uc.getInputStream();
+		CertificateFactory cf = CertificateFactory.getInstance("X.509");
+		X509Certificate certificate = (X509Certificate)cf.generateCertificate(in);
+		in.close();
+		CertStoreParameters params = new CollectionCertStoreParameters(Collections.singleton(certificate));
+		CertStore cscaStore = CertStore.getInstance("Collection", params);
+		cscaStores.add(cscaStore);
+		Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+		addCSCAAnchors(getAsAnchors(rootCerts));
+
+	}
+
+	private void addAsPKDStoreCSCACertStore(URI uri) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, CertStoreException {
+		/* PKD store */
+		String server = uri.getHost();
+		int port = uri.getPort();
+		CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
+		CertStoreParameters cscaParams = port < 0 ? new PKDMasterListCertStoreParameters(server) : new PKDMasterListCertStoreParameters(server, port);
+		CertStore certStore = CertStore.getInstance("PKD", params);
+		if (certStore != null) { addCSCAStore(certStore); }
+		CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
+		if (cscaStore != null) { addCSCAStore(cscaStore); }
+		Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+		addCSCAAnchors(getAsAnchors(rootCerts));
+	}
+
+	private void addAsKeyStoreCSCACertStore(URI uri) throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {
+		CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
+		CertStore certStore = CertStore.getInstance("JKS", params);
+		addCSCAStore(certStore);
+		Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
 
 	/**
@@ -196,8 +240,10 @@ public class MRTDTrustStore {
 	 * @param uri the URI
 	 */
 	public void addCVCAStore(URI uri) {
-		// We have to try both store types, only Bouncy Castle Store (BKS) 
-		// knows about unnamed EC keys
+		/*
+		 * We have to try both store types, only Bouncy Castle Store (BKS) 
+		 * knows about unnamed EC keys.
+		 */
 		String[] storeTypes = new String[] {"JKS", "BKS" }; 
 		for(String storeType : storeTypes) {
 			try {
@@ -206,8 +252,9 @@ public class MRTDTrustStore {
 				InputStream in = uc.getInputStream();
 				cvcaStore.load(in, "".toCharArray());
 				addCVCAStore(cvcaStore);
+				return;
 			} catch (Exception e) {
-				LOGGER.warning("Could not initialize CVCA: " + e.getMessage());
+				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
 			}
 		}
 	}
