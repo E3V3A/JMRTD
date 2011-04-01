@@ -53,6 +53,12 @@ public class CVCAStoreGenerator extends TestCase
 	STORE_PASSWORD = "",
 	KEY_ENTRY_PASSWORD = "";
 
+	private static final String
+	WOJ_ROOT = "file:/home/sos/woj",
+//	 WOJ_ROOT = "file:/d:/cygwin/tmp/woj",
+	WOJ_DIR = WOJ_ROOT + "/terminals/nltest",
+	WOJ_KS = WOJ_ROOT + "/terminals/nltest.ks";
+
 	//	public static final String filenameCA = "/c:/cacert.cvcert";
 	//
 	//	public static final String filenameTerminal = "/c:/terminalcert.cvcert";
@@ -188,67 +194,69 @@ public class CVCAStoreGenerator extends TestCase
 			e.printStackTrace();
 		}
 	}
-	
-        public void testCreateKeyStore2() {
-            try {
-                    Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
-                    URI certsDirURI = new URI("file:/home/sos/woj/terminals/nltest");
-                    File certsDir = new File(certsDirURI.getPath());
-                    if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
-                    String[] certFiles = certsDir.list(new FilenameFilter(){
-                    public boolean accept(File dir, String name) {
-                        return name.endsWith(".cvcert") || name.endsWith(".CVCERT"); 
-                    }
-                        
-                    });
-                    String[] keyFiles = certsDir.list(new FilenameFilter(){
-                        public boolean accept(File dir, String name) {
-                            return name.endsWith(".der") || name.endsWith(".DER"); 
-                        }
-                            
-                        });
-                    KeyStore outStore = KeyStore.getInstance("BKS");
-                    outStore.load(null);
-                    String keyAlgName = "RSA";
-                    for (String fileName: certFiles) {
-                            File file = new File(certsDir, fileName);
-                            System.out.println("DEBUG: reading cert from file " + file.getName() + " size " + file.length());
-                            Certificate certificate =
-                               CertificateFactory.getInstance("CVC", JMRTD_PROVIDER).generateCertificate(new FileInputStream(file));
-                            System.out.println("DEBUG: cert = " + toString(certificate));
-                            outStore.setCertificateEntry(fileName, certificate);
-                            keyAlgName = certificate.getPublicKey().getAlgorithm();
-                    }
-                    for (String fileName: keyFiles) {
-                        File file = new File(certsDir, fileName);
-                        System.out.println("DEBUG: reading key from file " + file.getName() + " size " + file.length());
-                        byte[] keyBytes = new byte[(int)file.length()];
-                        (new DataInputStream(new FileInputStream(file))).readFully(keyBytes);
-                        PrivateKey key =
-                              KeyFactory.getInstance(keyAlgName).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
-                        System.out.println("DEBUG: key = " + key);
-                        Certificate terminalCertificate = outStore.getCertificate("terminalcert1.cvcert");
-                        Certificate dvCertificate = outStore.getCertificate("terminalcert0.cvcert");
-                        String keyEntryAlias = ((CardVerifiableCertificate)dvCertificate).getHolderReference().getName();
-                        System.out.println("DEBUG: alias: "+keyEntryAlias);
-                        outStore.setKeyEntry(keyEntryAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), new Certificate[] { dvCertificate, terminalCertificate });
-                }
 
-                    
-                    System.out.println("DEBUG: entries in outStore: " + outStore.size());
-                    File outFile = new File(new URI("file:/home/sos/woj/terminals/nltest.ks").getPath());
-                    FileOutputStream out = new FileOutputStream(outFile);
-                    outStore.store(out, STORE_PASSWORD.toCharArray());
-                    out.flush();
-                    out.close();
-            } catch (Exception e) {
-                    e.printStackTrace();
-            }
-    }
+	public void testCreateKeyStore2() {
+		try {
+			Security.removeProvider(BC_PROVIDER.getName());
+			Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
+			URI certsDirURI = new URI(WOJ_DIR);
+			File certsDir = new File(certsDirURI.getPath());
+			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
+			String[] certFiles = certsDir.list(new FilenameFilter(){
+				public boolean accept(File dir, String name) {
+					return name.endsWith(".cvcert") || name.endsWith(".CVCERT"); 
+				}
+
+			});
+			String[] keyFiles = certsDir.list(new FilenameFilter(){
+				public boolean accept(File dir, String name) {
+					return name.endsWith(".der") || name.endsWith(".DER"); 
+				}
+
+			});
+			KeyStore outStore = KeyStore.getInstance("BKS");
+			outStore.load(null);
+			String keyAlgName = "RSA";
+			for (String fileName: certFiles) {
+				File file = new File(certsDir, fileName);
+				System.out.println("DEBUG: reading cert from file " + file.getName() + " size " + file.length());
+				Certificate certificate =
+					CertificateFactory.getInstance("CVC", JMRTD_PROVIDER).generateCertificate(new FileInputStream(file));
+				System.out.println("DEBUG: cert = " + toString(certificate));
+				outStore.setCertificateEntry(fileName, certificate);
+				keyAlgName = certificate.getPublicKey().getAlgorithm();
+			}
+			for (String fileName: keyFiles) {
+				File file = new File(certsDir, fileName);
+				System.out.println("DEBUG: reading key from file " + file.getName() + " size " + file.length());
+				byte[] keyBytes = new byte[(int)file.length()];
+				(new DataInputStream(new FileInputStream(file))).readFully(keyBytes);
+				PrivateKey key =
+					KeyFactory.getInstance(keyAlgName).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+				System.out.println("DEBUG: key = " + key);
+				Certificate terminalCertificate = outStore.getCertificate("terminalcert1.cvcert");
+				Certificate dvCertificate = outStore.getCertificate("terminalcert0.cvcert");
+				String keyEntryAlias = ((CardVerifiableCertificate)dvCertificate).getHolderReference().getName();
+				System.out.println("DEBUG: alias: "+keyEntryAlias);
+				outStore.setKeyEntry(keyEntryAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), new Certificate[] { dvCertificate, terminalCertificate });
+			}
+
+
+			System.out.println("DEBUG: entries in outStore: " + outStore.size());
+			File outFile = new File(new URI(WOJ_KS).getPath());
+			FileOutputStream out = new FileOutputStream(outFile);
+			outStore.store(out, STORE_PASSWORD.toCharArray());
+			out.flush();
+			out.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
 
 	public void testReadFromKeyStore() {
 		try {
+			Security.removeProvider(BC_PROVIDER.getName());
 			Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
 			Security.addProvider(JMRTD_PROVIDER); // So that KeyStore knows about CVC certs
 			URI storeURI = new URI(TEST_CV_KEY_STORE);
@@ -323,7 +331,7 @@ public class CVCAStoreGenerator extends TestCase
 		byte[] dataBuffer = null;
 		FileInputStream inStream = null;
 		try {
-			// Simple file loader... <-- Woj, you call this simple? ;) -- MO
+			// Simple file loader... <-- Woj, you call this simple? Check DataInputStream.readFully(byte[]) ;) -- MO
 			int length = (int) file.length();
 			dataBuffer = new byte[length];
 			inStream = new FileInputStream(file);
@@ -376,7 +384,7 @@ public class CVCAStoreGenerator extends TestCase
 		BufferedOutputStream bout = null;
 		try {
 			outStream = new FileOutputStream(file);
-			bout = new BufferedOutputStream(outStream, 1000);
+			bout = new BufferedOutputStream(outStream, 1000); // Why buffer it? -- MO
 			bout.write(data);
 		} finally {
 			if (bout != null)

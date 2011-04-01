@@ -47,6 +47,7 @@ public class CSCAStoreGenerator extends TestCase
 
 	public void testImportX509Certificates() {
 		try {
+			Security.removeProvider(BC_PROVIDER.getName());
 			Security.insertProviderAt(BC_PROVIDER, 1);
 			URI certsDirURI = new URI(TEST_CERT_DIR);
 			File certsDir = new File(certsDirURI.getPath());
@@ -85,6 +86,8 @@ public class CSCAStoreGenerator extends TestCase
 	 */
 	public void testReadKeyStoreAsX509CertStore() {
 		try {
+			Security.removeProvider(BC_PROVIDER.getName());
+			Security.insertProviderAt(BC_PROVIDER, 1); /* TODO: Can we make KeyStoreCertStoreSpi such that this is not necessary? */
 			URI keyStore = new URI(TEST_SRC_KEY_STORE);
 			CertStore certStore = CertStore.getInstance("JKS", new KeyStoreCertStoreParameters(keyStore, "JKS", STORE_PASSWORD.toCharArray()), JMRTD_PROVIDER);
 			System.out.println("DEBUG: certStore =\n");
