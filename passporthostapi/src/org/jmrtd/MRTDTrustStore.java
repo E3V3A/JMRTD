@@ -244,7 +244,7 @@ public class MRTDTrustStore {
 		 * We have to try both store types, only Bouncy Castle Store (BKS) 
 		 * knows about unnamed EC keys.
 		 */
-		String[] storeTypes = new String[] {"JKS", "BKS" }; 
+		String[] storeTypes = new String[] {"JKS", "BKS" };
 		for(String storeType : storeTypes) {
 			try {
 				KeyStore cvcaStore = KeyStore.getInstance(storeType);
@@ -255,6 +255,7 @@ public class MRTDTrustStore {
 				return;
 			} catch (Exception e) {
 				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
+				e.printStackTrace();
 			}
 		}
 	}

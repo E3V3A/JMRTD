@@ -34,6 +34,7 @@ import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CVCertificate;
+import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
@@ -115,8 +116,7 @@ public class CVCAStoreGenerator extends TestCase
 			// Overwrites the files without question!!!
 			byte[] caCertData = caCvc.getDEREncoded();
 			byte[] terminalCertData = terminalCvc.getDEREncoded();
-			byte[] terminalPrivateKey = terminalKeyPair.getPrivate()
-			.getEncoded();
+			byte[] terminalPrivateKey = terminalKeyPair.getPrivate().getEncoded();
 
 			writeFile(new File(filenameCA), caCertData);
 			writeFile(new File(filenameTerminal), terminalCertData);
@@ -126,7 +126,19 @@ public class CVCAStoreGenerator extends TestCase
 			// spit out the certificates
 
 			CVCertificate c = readCVCertificateFromFile(new File(filenameCA));
-			System.out.println(c.getCertificateBody().getAsText());
+			if (c == null) {
+				fail("could not read filenameCA as CVCertificate");
+			}
+			CVCertificateBody body = c.getCertificateBody();
+			if (body == null) {
+				fail("c's body is null");
+			}
+			String bodyText = body.getAsText();
+			if (bodyText == null) {
+				fail("c's body as text is null");
+			}
+
+			System.out.println("DEBUG: " + bodyText);
 
 			c = readCVCertificateFromFile(new File(filenameTerminal));
 			System.out.println(c.getCertificateBody().getAsText());
