@@ -64,7 +64,6 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.swing.CertificateChainPanel;
 import net.sourceforge.scuba.util.Icons;
 

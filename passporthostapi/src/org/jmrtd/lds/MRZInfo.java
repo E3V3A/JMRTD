@@ -36,7 +36,6 @@ import java.util.StringTokenizer;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.data.ISOCountry;
 
 /**
  * Data structure for storing the MRZ information

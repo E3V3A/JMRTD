@@ -93,10 +93,6 @@ import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
-/*
- * TODO: Implement toString(), equals(), hashCode().
- */
-
 /**
  * A passport object is basically a collection of buffered input streams for the
  * data groups, combined with some status information (progress).
@@ -136,6 +132,7 @@ public class Passport
 	private SODFile sodFile;
 	private DG1File dg1File;
 
+	private boolean isPKIXRevocationCheckingEnabled = false;
 	private boolean hasEACSupport = false;
 
 	private PrivateKey docSigningPrivateKey;
@@ -704,7 +701,7 @@ public class Passport
 	 * 
 	 * @return a list of certificates
 	 * 
-	 * @throws ExtCertPathValidatorException if CRL could not be checked
+	 * @throws ExtCertPathValidatorException if  could not be checked
 	 */
 	public List<Certificate> getCertificateChain() throws ExtCertPathValidatorException {
 		List<CertStore> cscaStores = trustManager.getCSCAStores();
@@ -775,7 +772,7 @@ public class Passport
 			for (CertStore trustStore: trustManager.getCSCAStores()) {
 				buildParams.addCertStore(trustStore);
 			}
-			buildParams.setRevocationEnabled(false); /* NOTE: CRL checking disabled. */
+			buildParams.setRevocationEnabled(isPKIXRevocationCheckingEnabled); /* NOTE: set to false for checking disabled. */
 			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
 			if (result == null) { return null; }
 			CertPath chain = result.getCertPath();

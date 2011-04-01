@@ -45,18 +45,14 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import javax.naming.CommunicationException;
 import javax.naming.Context;
-import javax.naming.NameNotFoundException;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
-import javax.naming.directory.BasicAttribute;
-import javax.naming.directory.BasicAttributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
@@ -80,6 +76,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	/** We may need this provider... */
 	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
+	private static final long SERVER_TIMEOUT = 5000;
+	
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 	private static final String CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME = "CscaMasterListData";
 	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";
@@ -90,6 +88,10 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private int port;
 	private String baseDN;
 	private boolean isMasterListStore;
+	
+	private long heartBeat;
+	private Collection<CRL> crls;
+	private Collection<Certificate> certificates;
 
 	private CertificateFactory factory, alternativeFactory;
 
@@ -132,7 +134,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return new HashSet<Certificate>();
 	}
 
-
 	public Collection<? extends CRL> engineGetCRLs(CRLSelector selector) throws CertStoreException {
 		try {
 			if (context == null) { connect(); }
@@ -167,6 +168,10 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	}
 
 	private Collection<Certificate> searchCertificates(CertSelector selector) {
+		if (certificates != null && System.currentTimeMillis() - heartBeat < SERVER_TIMEOUT) {
+			heartBeat = System.currentTimeMillis();
+			return certificates;
+		}
 		String specificDN = params.getBaseDN();
 		String filter = "(&(objectclass=inetOrgPerson))";
 
@@ -199,10 +204,16 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				result.add(certificate);
 			}
 		}
+		certificates = result;
+		heartBeat = System.currentTimeMillis();
 		return result;
 	}
 
 	private Collection<Certificate> searchCSCACertificates(CertSelector selector) {
+		if (certificates != null && System.currentTimeMillis() - heartBeat < SERVER_TIMEOUT) {
+			heartBeat = System.currentTimeMillis();
+			return certificates;
+		}
 		String pkdMLDN = params.getBaseDN();
 		String filter = "(&(objectclass=CscaMasterList))";
 		Collection<byte[]> binaries = searchAllAttributes(pkdMLDN, CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME, filter);
@@ -234,10 +245,16 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				e.printStackTrace();
 			}
 		}
+		certificates = result;
+		heartBeat = System.currentTimeMillis();
 		return result;
 	}
 
 	private Collection<CRL> searchCRLs(CRLSelector selector) {
+		if (crls != null && System.currentTimeMillis() - heartBeat < SERVER_TIMEOUT) {
+			heartBeat = System.currentTimeMillis();
+			return crls;
+		}
 		String pkdMLDN = params.getBaseDN();
 		String filter = "(&(objectclass=cRLDistributionPoint))";
 		Collection<byte[]> binaries = searchAllAttributes(pkdMLDN, CRL_ATTRIBUTE_NAME, filter);
@@ -260,7 +277,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 				result.add(crl);
 			}
 		}
-		System.out.println("DEBUG: searchCRLs yielded " + result.size() + " CRLs");
+		heartBeat = System.currentTimeMillis();
+		crls = result;
 		return result;
 	}
 
@@ -389,34 +407,33 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-	private Collection<byte[]> searchAttributes(String specificDN, String attributeName) {
-		Collection<byte[]> result = new HashSet<byte[]>();
-
-		try {
-			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
-			String[] attrIDs = { attributeName };
-
-			matchAttrs.put(new BasicAttribute(attributeName));
-			if (!attributeName.endsWith(";binary")) {
-				String attributeNameBinary = attributeName + ";binary";
-				matchAttrs.put(new BasicAttribute(attributeNameBinary));
-				attrIDs = new String[]{ attributeName, attributeNameBinary };
-			}
-
-			/* Search for objects that have those matching attributes. */
-			NamingEnumeration<?> answer = null;
-			try {
-				answer = context.search(specificDN, matchAttrs, attrIDs);
-			} catch (NameNotFoundException nnfe) {
-				/* NOTE: No results found. Fine. */
-			}
-
-			addToList(answer, attributeName, result);
-		} catch (NamingException e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
+//	private Collection<byte[]> searchAttributes(String specificDN, String attributeName) {
+//		Collection<byte[]> result = new HashSet<byte[]>();
+//		try {
+//			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
+//			String[] attrIDs = { attributeName };
+//
+//			matchAttrs.put(new BasicAttribute(attributeName));
+//			if (!attributeName.endsWith(";binary")) {
+//				String attributeNameBinary = attributeName + ";binary";
+//				matchAttrs.put(new BasicAttribute(attributeNameBinary));
+//				attrIDs = new String[]{ attributeName, attributeNameBinary };
+//			}
+//
+//			/* Search for objects that have those matching attributes. */
+//			NamingEnumeration<?> answer = null;
+//			try {
+//				answer = context.search(specificDN, matchAttrs, attrIDs);
+//			} catch (NameNotFoundException nnfe) {
+//				/* NOTE: No results found. Fine. */
+//			}
+//
+//			addToList(answer, attributeName, result);
+//		} catch (NamingException e) {
+//			e.printStackTrace();
+//		}
+//		return result;
+//	}
 
 	private void addToList(NamingEnumeration<?> answer, String attributeName, Collection<byte[]> result) throws NamingException {
 		int resultCount = 0;
@@ -430,7 +447,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 				/* Name */
 				String foundAttributeName = attribute.getID();
-				//				LOGGER.info("DEBUG: found attributeName " + foundAttributeName);
 				if (!foundAttributeName.startsWith(attributeName)) {
 					LOGGER.warning("Search found \"" + foundAttributeName + "\", was expecting \"" + attributeName + "\"");
 				}
