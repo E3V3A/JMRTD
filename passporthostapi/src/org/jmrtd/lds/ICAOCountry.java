@@ -27,26 +27,46 @@ import net.sourceforge.scuba.data.Country;
 /**
  * Contributed by Aleksandar Kamburov (wise_guybg).
  */
-public enum ICAOCountry implements Country {
+public class ICAOCountry extends Country {
 
-	GBD("GB","GBD","British Dependent territories citizen"),
-	GBN("GB","GBN","British National (Overseas)"),
-	GBO("GB","GBO","British Overseas citizen"),
-	GBP("GB","GBP","British Protected person"),
-	GBS("GB","GBS","British Subject"),
-	UNO("UN","UNO","United Nations Organization"),
-	UNA("UN","UNA","United Nations Agency"),
-	UNK("UN","UNK","United Nations Interim Administration Mission in Kosovo"),
-	XOM("XO","XOM","Sovereign Military Order of Malta"),
-	XCC("XC","XCC","Carribean Community"),
-	XXA("XX","XXA","Stateless person"),
-	XXB("XX","XXB","Refugee"),
-	XXC("XX","XXC","Refugee (other)"),
-	XXX("XX","XXX","Unspecified");
+	private static final ICAOCountry
+	GBD = new ICAOCountry("GB","GBD","British Dependent territories citizen"),
+	GBN = new ICAOCountry("GB","GBN","British National (Overseas)"),
+	GBO = new ICAOCountry("GB","GBO","British Overseas citizen"),
+	GBP = new ICAOCountry("GB","GBP","British Protected person"),
+	GBS = new ICAOCountry("GB","GBS","British Subject"),
+	UNO = new ICAOCountry("UN","UNO","United Nations Organization"),
+	UNA = new ICAOCountry("UN","UNA","United Nations Agency"),
+	UNK = new ICAOCountry("UN","UNK","United Nations Interim Administration Mission in Kosovo"),
+	XOM = new ICAOCountry("XO","XOM","Sovereign Military Order of Malta"),
+	XCC = new ICAOCountry("XC","XCC","Carribean Community"),
+	XXA = new ICAOCountry("XX","XXA","Stateless person"),
+	XXB = new ICAOCountry("XX","XXB","Refugee"),
+	XXC = new ICAOCountry("XX","XXC","Refugee (other)"),
+	XXX = new ICAOCountry("XX","XXX","Unspecified");
 
+	private static ICAOCountry[] VALUES = {
+		GBD, GBN, GBO, GBP, GBS,
+		UNO, UNA, UNK,
+		XOM, XCC, XXA, XXB, XXC, XXX
+	};
+	
 	private String name;
 	private String alpha2Code;
 	private String alpha3Code;
+	
+	public static ICAOCountry getInstance(String alpha3Code) {
+		for (ICAOCountry country: VALUES) {
+			if (country.alpha3Code == alpha3Code) { return country; }
+		}
+		throw new IllegalArgumentException("Illegal ICAO country alpha 3 code " + alpha3Code);
+	}
+	
+	/**
+	 * Prevent caller from creating instance.
+	 */
+	private ICAOCountry() {
+	}
 
 	private ICAOCountry(String alpha2Code, String alpha3Code, String name) {
 		this.alpha2Code = alpha2Code;

@@ -207,7 +207,7 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		int endIndex = issuerName.indexOf(",", startIndex);
 		if (endIndex < 0) { endIndex = issuerName.length(); }
 		String countryCode = issuerName.substring(startIndex + 2, endIndex).trim().toUpperCase();
-		return ISOCountry.getInstance(countryCode);
+		return Country.getInstance(countryCode);
 	}
 
 	private class CountryAndCertRenderer extends DefaultTreeCellRenderer {

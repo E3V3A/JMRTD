@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.security.Principal;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.data.ISOCountry;
 
 public class CVCPrincipal implements Principal, Serializable
 {
@@ -41,7 +40,7 @@ public class CVCPrincipal implements Principal, Serializable
 			throw new IllegalArgumentException("Name should be <Country (2F)><Mnemonic (9V)><SeqNum (5F)> formatted, found "
 					+ name == null ? "null" : "\"" + name + "\"");
 		}
-		country = ISOCountry.getInstance(name.substring(0, 2).toUpperCase());
+		country = Country.getInstance(name.substring(0, 2).toUpperCase());
 		mnemonic = name.substring(2, name.length() - 5);
 		seqNumber = name.substring(name.length() - 5, name.length());
 	}

@@ -40,7 +40,6 @@ import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.data.ISOCountry;
 
 import org.ejbca.cvc.ReferenceField;
 
@@ -164,17 +163,7 @@ public class CardVerifiableCertificate extends Certificate
 		try  {
 			ReferenceField rf = cvCertificate.getCertificateBody().getAuthorityReference();
 			final String countryCode = rf.getCountry().toUpperCase();
-			Country country = null;
-			try {
-				country = ISOCountry.getInstance(countryCode);
-			} catch (IllegalArgumentException iae) {
-				country = new Country() {
-					public int valueOf() { return -1; }
-					public String getName() { if (countryCode.equals("UT")) { return "Utopia"; } else { return "Unspecified"; } }
-					public String toAlpha2Code() { return countryCode; }
-					public String toAlpha3Code() { if (countryCode.equals("UT")) { return "UTO"; } else { return "XXX"; } }
-				};
-			}
+			Country country = Country.getInstance(countryCode);
 			return new CVCPrincipal(country, rf.getMnemonic(), rf.getSequence());
 		} catch (NoSuchFieldException nsfe) {
 			throw new CertificateException(nsfe.getMessage());
@@ -184,7 +173,7 @@ public class CardVerifiableCertificate extends Certificate
 	public CVCPrincipal getHolderReference() throws CertificateException {
 		try  {
 			ReferenceField rf = cvCertificate.getCertificateBody().getHolderReference();
-			return new CVCPrincipal(ISOCountry.getInstance(rf.getCountry().toUpperCase()), rf.getMnemonic(), rf.getSequence());
+			return new CVCPrincipal(Country.getInstance(rf.getCountry().toUpperCase()), rf.getMnemonic(), rf.getSequence());
 		} catch (NoSuchFieldException nsfe) {
 			throw new CertificateException(nsfe.getMessage());
 		}

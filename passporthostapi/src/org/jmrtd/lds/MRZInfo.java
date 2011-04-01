@@ -340,9 +340,9 @@ public class MRZInfo implements Serializable
 	private Country readCountry(DataInputStream in) throws IOException {
 		String dataString = readString(in, 3);
 		try {
-			return ISOCountry.getInstance(dataString);
+			return Country.getInstance(dataString);
 		} catch (IllegalArgumentException e) {
-			return ICAOCountry.valueOf(dataString);
+			return ICAOCountry.getInstance(dataString);
 		}
 	}
 
