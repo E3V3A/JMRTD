@@ -60,19 +60,27 @@ public class CertificateChainFrame extends JMRTDFrame
 
 	private CertificateChainPanel certificatePanel;
 
+	public CertificateChainFrame(Certificate certificate) {
+		this("Certificate", Collections.singletonList(certificate), false, false);
+	}
+	
 	public CertificateChainFrame(Certificate certificate, boolean isValid) {
-		this("Certificate", certificate, isValid);
+		this("Certificate", Collections.singletonList(certificate), true, isValid);
 	}
 
 	public CertificateChainFrame(String title, Certificate certificate, boolean isValid) {
-		this(title, Collections.singletonList(certificate), isValid);		
+		this(title, Collections.singletonList(certificate), true, isValid);		
 	}
 
 	public CertificateChainFrame(List<Certificate> certificates, boolean isValid) {
-		this("Certificates", certificates, isValid);
+		this("Certificates", certificates, true, isValid);
 	}
 
 	public CertificateChainFrame(String title, List<Certificate> certificates, boolean isValid) {
+		this("Certificates", certificates, true, isValid);
+	}
+	
+	private CertificateChainFrame(String title, List<Certificate> certificates, boolean showValidity, boolean isValid) {
 		super(title);
 
 		actionMap = new ActionMap();
@@ -87,7 +95,11 @@ public class CertificateChainFrame extends JMRTDFrame
 		toolBar.add(getCloseAction());
 
 		/* Frame content */
-		certificatePanel = new CertificateChainPanel(certificates, isValid);
+		if (showValidity) {
+			certificatePanel = new CertificateChainPanel(certificates, isValid);
+		} else {
+			certificatePanel = new CertificateChainPanel(certificates);	
+		}
 		Container cp = getContentPane();
 		cp.setLayout(new BorderLayout());
 		cp.add(toolBar, BorderLayout.NORTH);

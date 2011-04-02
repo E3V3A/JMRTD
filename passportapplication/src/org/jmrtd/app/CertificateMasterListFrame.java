@@ -49,12 +49,11 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -64,7 +63,6 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.swing.CertificateChainPanel;
 import net.sourceforge.scuba.util.Icons;
 
 /**
@@ -86,7 +84,6 @@ public class CertificateMasterListFrame extends JMRTDFrame
 	private Map<Country, Collection<Certificate>> countryToCertificates;
 
 	private DefaultMutableTreeNode rootNode;
-
 	private ActionMap actionMap;
 
 	public CertificateMasterListFrame(String title, Set<TrustAnchor> anchors) {
@@ -147,8 +144,11 @@ public class CertificateMasterListFrame extends JMRTDFrame
 				
 				Object userObject = node.getUserObject();
 				if (userObject instanceof Certificate) {
-					JPanel certificatePanel = new CertificateChainPanel((Certificate)userObject, true);
-					JOptionPane.showMessageDialog(tree, certificatePanel);
+					JFrame certificateFrame = new CertificateChainFrame((Certificate)userObject);
+					certificateFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+					certificateFrame.pack();
+					certificateFrame.setVisible(true);
+//					JOptionPane.showMessageDialog(tree, certificatePanel);
 				}
 			}
 		});

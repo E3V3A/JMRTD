@@ -22,6 +22,8 @@
 
 package org.jmrtd;
 
+import java.io.DataInputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -29,9 +31,12 @@ import java.net.URI;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -43,6 +48,8 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -51,6 +58,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
+import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.security.auth.x500.X500Principal;
 
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
@@ -66,6 +74,10 @@ import org.jmrtd.cert.PKDMasterListCertStoreParameters;
  * @version $Revision: $
  */
 public class MRTDTrustStore {
+
+	private static final Provider
+	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider(),
+	JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -84,6 +96,7 @@ public class MRTDTrustStore {
 	private Set<TrustAnchor> cscaAnchors;
 	private List<CertStore> cscaStores;
 	private List<KeyStore> cvcaStores;
+	private KeyStore localCVCAStore; /* Used for singleton certs and keys. */
 
 	/**
 	 * Constructs an instance.
@@ -197,7 +210,6 @@ public class MRTDTrustStore {
 		cscaStores.add(cscaStore);
 		Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
 		addCSCAAnchors(getAsAnchors(rootCerts));
-
 	}
 
 	private void addAsPKDStoreCSCACertStore(URI uri) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, CertStoreException {
@@ -240,6 +252,14 @@ public class MRTDTrustStore {
 	 * @param uri the URI
 	 */
 	public void addCVCAStore(URI uri) {
+		try {
+			addAsCVCAKeyStore(uri);
+		} catch (Exception e) {
+			e.printStackTrace(); /* DEBUG */
+		}
+	}	
+
+	public void addAsCVCAKeyStore(URI uri) {
 		/*
 		 * We have to try both store types, only Bouncy Castle Store (BKS) 
 		 * knows about unnamed EC keys.
@@ -252,12 +272,14 @@ public class MRTDTrustStore {
 				InputStream in = uc.getInputStream();
 				cvcaStore.load(in, "".toCharArray());
 				addCVCAStore(cvcaStore);
+				in.close();
 				return;
 			} catch (Exception e) {
 				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
 				e.printStackTrace();
 			}
 		}
+		throw new IllegalArgumentException("Not a supported keystore");
 	}
 
 	/**
