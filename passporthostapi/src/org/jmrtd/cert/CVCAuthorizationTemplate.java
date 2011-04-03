@@ -37,8 +37,9 @@ public class CVCAuthorizationTemplate
 		}
 
 		/**
-		 * Returns the value as a bitmap
-		 * @return
+		 * Returns the value as a bitmap.
+		 * 
+		 * @return a bitmap
 		 */
 		public byte getValue(){
 			return value;
@@ -70,7 +71,8 @@ public class CVCAuthorizationTemplate
 
 		/**
 		 * Returns the tag as a bitmap
-		 * @return
+		 * 
+		 * @return a bitmap
 		 */
 		public byte getValue(){
 			return value;
@@ -80,6 +82,11 @@ public class CVCAuthorizationTemplate
 	private Role role;
 	private Permission accessRight;
 
+	/**
+	 * Constructs an authorization template based on an EJBCA authorization template.
+	 * 
+	 * @param template the authZ template to wrap
+	 */
 	protected CVCAuthorizationTemplate(org.ejbca.cvc.CVCAuthorizationTemplate template) {
 		try {
 			switch(template.getAuthorizationField().getRole()) {
@@ -99,23 +106,51 @@ public class CVCAuthorizationTemplate
 		}
 	}
 	
+	/**
+	 * Constructs an authorization template.
+	 * 
+	 * @param role the role
+	 * @param accessRight the access rights
+	 */
 	public CVCAuthorizationTemplate(Role role, Permission accessRight) {
 		this.role = role;
 		this.accessRight = accessRight;
 	}
 
+	/**
+	 * Gets the role.
+	 * 
+	 * @return the role
+	 */
 	public Role getRole() {
 		return role;
 	}
 
+	/**
+	 * Gets the access rights.
+	 * 
+	 * @return the access rights
+	 */
 	public Permission getAccessRight() {
 		return accessRight;
 	}
 	
+	/**
+	 * Gets a textual representation of this authorization template.
+	 * 
+	 * @return a textual representation of this authorization template
+	 */
 	public String toString() {
 		return role.toString() + accessRight.toString();
 	}
 	
+	/**
+	 * Checks equality.
+	 *
+	 * @param otherObj the other object
+	 * 
+	 * @return whether the other object is equal to this object
+	 */
 	public boolean equals(Object otherObj) {
 		if (otherObj == null) { return false; }
 		if (otherObj == this) { return true; }
@@ -124,6 +159,11 @@ public class CVCAuthorizationTemplate
 		return this.role == otherTemplate.role && this.accessRight == otherTemplate.accessRight;
 	}
 	
+	/**
+	 * Gets a hash code of this object.
+	 * 
+	 * @return the hash code
+	 */
 	public int hashCode() {
 		return 2 * role.value + 3 * accessRight.value + 61;
 	}

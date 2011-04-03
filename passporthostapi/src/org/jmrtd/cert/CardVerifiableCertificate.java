@@ -56,10 +56,16 @@ public class CardVerifiableCertificate extends Certificate
 {
 	private static final long serialVersionUID = -3585440601605666288L;
 
+	/** The EJBCA CVC that we wrap. */
 	private org.ejbca.cvc.CVCertificate cvCertificate;
 
 	private transient KeyFactory rsaKeyFactory;
 
+	/**
+	 * Constructs a wrapper.
+	 * 
+	 * @param cvCertificate the EJCBA CVC to wrap
+	 */
 	protected CardVerifiableCertificate(org.ejbca.cvc.CVCertificate cvCertificate) {
 		super("CVC");
 		try {
@@ -71,6 +77,16 @@ public class CardVerifiableCertificate extends Certificate
 		this.cvCertificate = cvCertificate;
 	}
 
+    /**
+     * Returns the encoded form of this certificate. It is
+     * assumed that each certificate type would have only a single
+     * form of encoding; for example, X.509 certificates would
+     * be encoded as ASN.1 DER.
+     *
+     * @return the encoded form of this certificate
+     *
+     * @exception CertificateEncodingException if an encoding error occurs.
+     */
 	public byte[] getEncoded() throws CertificateEncodingException {
 		try {
 			return cvCertificate.getDEREncoded();
@@ -79,6 +95,11 @@ public class CardVerifiableCertificate extends Certificate
 		}
 	}
 
+    /**
+     * Gets the public key from this certificate.
+     *
+     * @return the public key.
+     */
 	public PublicKey getPublicKey() {
 		try {
 			org.ejbca.cvc.CVCPublicKey publicKey = cvCertificate.getCertificateBody().getPublicKey();
@@ -98,10 +119,28 @@ public class CardVerifiableCertificate extends Certificate
 		}
 	}
 
+	/**
+	 * Returns a string representation of this certificate.
+	 *
+	 * @return a string representation of this certificate.
+	 */
 	public String toString() {
 		return cvCertificate.toString();
 	}
 
+	/**
+	 * Verifies that this certificate was signed using the
+	 * private key that corresponds to the specified public key.
+	 *
+	 * @param key the PublicKey used to carry out the verification.
+	 *
+	 * @exception NoSuchAlgorithmException on unsupported signature
+	 * algorithms.
+	 * @exception InvalidKeyException on incorrect key.
+	 * @exception NoSuchProviderException if there's no default provider.
+	 * @exception SignatureException on signature errors.
+	 * @exception CertificateException on encoding errors.
+	 */
 	public void verify(PublicKey key) throws CertificateException,
 	NoSuchAlgorithmException, InvalidKeyException,
 	NoSuchProviderException, SignatureException {
@@ -121,12 +160,36 @@ public class CardVerifiableCertificate extends Certificate
 		}
 	}
 
+
+	/**
+	 * Verifies that this certificate was signed using the
+	 * private key that corresponds to the specified public key.
+	 * This method uses the signature verification engine
+	 * supplied by the specified provider.
+	 *
+	 * @param key the PublicKey used to carry out the verification.
+	 * @param provider the name of the signature provider.
+	 *
+	 * @exception NoSuchAlgorithmException on unsupported signature algorithms.
+	 * @exception InvalidKeyException on incorrect key.
+	 * @exception NoSuchProviderException on incorrect provider.
+	 * @exception SignatureException on signature errors.
+	 * @exception CertificateException on encoding errors.
+	 */
 	public void verify(PublicKey key, String provider)
 	throws CertificateException, NoSuchAlgorithmException,
 	InvalidKeyException, NoSuchProviderException, SignatureException {
 		cvCertificate.verify(key, provider);
 	}
 
+	/**
+	 * The DER encoded certificate body.
+	 * 
+	 * @return DER encoded certificate body
+	 * 
+	 * @throws CertificateException on error
+	 * @throws IOException on error
+	 */
 	public byte[] getCertBodyData() throws CertificateException, IOException {
 		try {
 			return cvCertificate.getCertificateBody().getDEREncoded();
@@ -136,8 +199,9 @@ public class CardVerifiableCertificate extends Certificate
 	}
 
 	/**
-	 * Returns 'Effective Date' 
-	 * @returns
+	 * Returns 'Effective Date'.
+	 * 
+	 * @return the effective date
 	 */
 	public Date getNotBefore() throws CertificateException {
 		try {
@@ -148,8 +212,9 @@ public class CardVerifiableCertificate extends Certificate
 	}
 
 	/**
-	 * Returns 'Expiration Date' 
-	 * @return
+	 * Returns 'Expiration Date'.
+	 * 
+	 * @return the expiration date
 	 */
 	public Date getNotAfter() throws CertificateException {
 		try {
@@ -159,6 +224,13 @@ public class CardVerifiableCertificate extends Certificate
 		}
 	}
 
+	/**
+	 * Gets the authority reference.
+	 * 
+	 * @return the authority reference
+	 * 
+	 * @throws CertificateException if the authority reference field is not present
+	 */
 	public CVCPrincipal getAuthorityReference() throws CertificateException {
 		try  {
 			ReferenceField rf = cvCertificate.getCertificateBody().getAuthorityReference();
@@ -170,6 +242,13 @@ public class CardVerifiableCertificate extends Certificate
 		}
 	}
 
+	/**
+	 * Gets the holder reference.
+	 * 
+	 * @return the holder reference
+	 * 
+	 * @throws CertificateException if the authority reference field is not present
+	 */
 	public CVCPrincipal getHolderReference() throws CertificateException {
 		try  {
 			ReferenceField rf = cvCertificate.getCertificateBody().getHolderReference();

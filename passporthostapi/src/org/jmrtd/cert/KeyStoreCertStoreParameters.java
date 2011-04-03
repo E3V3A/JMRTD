@@ -67,7 +67,7 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 	 * Makes a shallow copy of this object as this
 	 * class is immutable.
 	 * 
-	 * @retun a shallow copy of this object
+	 * @return a shallow copy of this object
 	 */
 	public Object clone() {
 		return new KeyStoreCertStoreParameters(keyStore);
