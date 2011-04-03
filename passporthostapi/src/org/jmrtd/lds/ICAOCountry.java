@@ -57,7 +57,7 @@ public class ICAOCountry extends Country {
 	
 	public static ICAOCountry getInstance(String alpha3Code) {
 		for (ICAOCountry country: VALUES) {
-			if (country.alpha3Code == alpha3Code) { return country; }
+			if (country.alpha3Code.equals(alpha3Code)) { return country; }
 		}
 		throw new IllegalArgumentException("Illegal ICAO country alpha 3 code " + alpha3Code);
 	}

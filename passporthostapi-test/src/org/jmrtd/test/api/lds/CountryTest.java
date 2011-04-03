@@ -1,7 +1,7 @@
 package org.jmrtd.test.api.lds;
 
-import net.sourceforge.scuba.data.Country;
 import junit.framework.TestCase;
+import net.sourceforge.scuba.data.Country;
 
 public class CountryTest extends TestCase {
 

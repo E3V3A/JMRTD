@@ -48,6 +48,7 @@ public class PassportFileTest extends TestCase {
 	 * zipped collections of these.
 	 */
 	private static final String[] TEST_FILES = {
+		// "/t:/paspoort/test/"
 	};
 
 	private COMFileTest comFileTest;
@@ -104,6 +105,7 @@ public class PassportFileTest extends TestCase {
 				try {
 					testInputStream(name, zipFile.getInputStream(entry));
 				} catch (Exception e) {
+					e.printStackTrace();
 					fail(e.toString());
 				}
 			}

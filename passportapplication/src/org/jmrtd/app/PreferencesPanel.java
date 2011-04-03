@@ -337,7 +337,7 @@ public class PreferencesPanel extends JPanel
 	 * collects user changes in one instance while maintaining the original
 	 * settings in another instance.
 	 */
-	private class PreferencesState implements Cloneable, Serializable
+	private static class PreferencesState implements Cloneable, Serializable
 	{	
 		private static final long serialVersionUID = -256804944538594379L;
 

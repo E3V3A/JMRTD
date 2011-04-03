@@ -54,8 +54,8 @@ public class CVCAStoreGenerator extends TestCase
 	KEY_ENTRY_PASSWORD = "";
 
 	private static final String
-	WOJ_ROOT = "file:/home/sos/woj",
-//	 WOJ_ROOT = "file:/d:/cygwin/tmp/woj",
+//	WOJ_ROOT = "file:/home/sos/woj",
+	 WOJ_ROOT = "file:/d:/cygwin/tmp/woj",
 	WOJ_DIR = WOJ_ROOT + "/terminals/nltest",
 	WOJ_KS = WOJ_ROOT + "/terminals/nltest.ks";
 

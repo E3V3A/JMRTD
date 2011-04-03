@@ -123,7 +123,7 @@ General
 + CSCA Master List via PKD cert store
 + More efficient use of filters based on selector in PKD cert store impl
 + SCUBA cardmanager uses Lock/Condition primitives instead of synchronized/wait
-- Allow adding individual cert files (instead of keystores) to CSCA and CVCA trust stores
++ Allow adding individual cert files (instead of keystores) to CSCA trust store
 + Show CSCA Master List (trust anchors) in GUI
 + Many small FIXMEs, primarily in Passport and SODFile
 + Patches and feedback by various people (thanks!)

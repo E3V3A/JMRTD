@@ -74,8 +74,10 @@ public class DG14File extends DataGroup
 			tlvIn.readTag();
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
-			ASN1InputStream asn1in = new ASN1InputStream(value);
-			DERSet set = (DERSet)asn1in.readObject();
+			ASN1InputStream asn1In = new ASN1InputStream(value);
+			DERSet set = (DERSet)asn1In.readObject();
+			/* TODO: check if it contains additional objects? */
+			asn1In.close();
 			for (int i = 0; i < set.size(); i++) {
 				DERObject o = set.getObjectAt(i).getDERObject();
 				SecurityInfo si = SecurityInfo.createSecurityInfo(o);

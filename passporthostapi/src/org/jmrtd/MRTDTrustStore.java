@@ -22,8 +22,6 @@
 
 package org.jmrtd;
 
-import java.io.DataInputStream;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -31,11 +29,9 @@ import java.net.URI;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyFactory;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
@@ -48,8 +44,6 @@ import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -58,7 +52,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.security.auth.x500.X500Principal;
 
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
@@ -96,7 +89,6 @@ public class MRTDTrustStore {
 	private Set<TrustAnchor> cscaAnchors;
 	private List<CertStore> cscaStores;
 	private List<KeyStore> cvcaStores;
-	private KeyStore localCVCAStore; /* Used for singleton certs and keys. */
 
 	/**
 	 * Constructs an instance.

@@ -290,7 +290,7 @@ public class PassportViewFrame extends JMRTDFrame
 				}
 			} catch (Exception ioe) {
 				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
-				+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
+					+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
 				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
 				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
 				continue;
@@ -303,7 +303,6 @@ public class PassportViewFrame extends JMRTDFrame
 			InputStream dg14in = passport.getInputStream(PassportService.EF_DG14);
 			if (dg14in == null) { return; }
 			DG14File dg14 = new DG14File(dg14in);
-			if (dg14 == null) { return; }
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
 			Map<Integer, PublicKey> publicKeyMap = dg14.getPublicKeys();
@@ -666,7 +665,6 @@ public class PassportViewFrame extends JMRTDFrame
 					area.append("Could not get EAC information from this card!\n");
 					//					area.append("   " + ex.getMessage() + "\n");
 					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(area), "EAC information (card)", JOptionPane.PLAIN_MESSAGE, null);
-
 				}
 			}
 		};

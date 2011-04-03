@@ -84,7 +84,7 @@ public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
 	 * @retun a shallow copy of this object
 	 */
 	public Object clone() {
-		return this;
+		return new PKDCertStoreParameters(serverName, port, baseDN);
 	}
 
 	public String toString() {

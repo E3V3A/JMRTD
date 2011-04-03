@@ -1022,8 +1022,8 @@ public class Passport
 			if (docSigningCert == null) {
 				LOGGER.warning("Could not get document signer certificate from EF.SOd.");
 				// FIXME: We search for it in cert stores. See note at verifyCS.
-				X500Principal issuer = sod.getIssuerX500Principal();
-				BigInteger serialNumber = sod.getSerialNumber();
+				// X500Principal issuer = sod.getIssuerX500Principal();
+				// BigInteger serialNumber = sod.getSerialNumber();
 			}
 			if (sod.checkDocSignature(docSigningCert)) {
 				verificationStatus.setDS(Verdict.SUCCEEDED);
@@ -1063,7 +1063,7 @@ public class Passport
 
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
-				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
+				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
 				LOGGER.info("Document signer certificate found in store. Chain depth = " + chainDepth + ".");
 				verificationStatus.setCS(Verdict.SUCCEEDED);
 			} else if (chainDepth == 2) {

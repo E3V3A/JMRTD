@@ -28,7 +28,6 @@ import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertStoreParameters;
 
 public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParameters
@@ -71,7 +70,7 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 	 * @retun a shallow copy of this object
 	 */
 	public Object clone() {
-		return this;
+		return new KeyStoreCertStoreParameters(keyStore);
 	}
 
 	private static KeyStore readKeyStore(URI location, String keyStoreType, char[] password) throws KeyStoreException {

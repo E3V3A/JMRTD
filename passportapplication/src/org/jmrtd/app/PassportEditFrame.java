@@ -324,8 +324,6 @@ public class PassportEditFrame extends JMRTDFrame
 			InputStream dg14in = passport.getInputStream(PassportService.EF_DG14);
 			if (dg14in == null) { return; }
 			DG14File dg14 = new DG14File(dg14in);
-			if (dg14 == null) { return; }
-
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
 			Map<Integer, PublicKey> publicKeyMap = null;
@@ -1228,6 +1226,7 @@ public class PassportEditFrame extends JMRTDFrame
 			byte[] key = new byte[(int)file.length()];
 			DataInputStream in = new DataInputStream(new FileInputStream(file));
 			in.readFully(key);
+			in.close();
 			KeyFactory kf = KeyFactory.getInstance("RSA");
 			PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
 			return kf.generatePrivate(keysp);
@@ -1243,6 +1242,7 @@ public class PassportEditFrame extends JMRTDFrame
 			byte[] key = new byte[(int)file.length()];
 			DataInputStream in = new DataInputStream(new FileInputStream(file));
 			in.readFully(key);
+			in.close();
 			X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
 			return kf.generatePublic(keysp);
 		} catch (Exception e) {

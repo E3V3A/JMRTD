@@ -215,6 +215,8 @@ public class UploadOptionsChooser // extends JComponent
 
 		private Action getAASelectedAction() {
 			Action action = new AbstractAction() {
+				private static final long serialVersionUID = -3183754464759443671L;
+
 				public void actionPerformed(ActionEvent e) {
 					JToggleButton src = (JToggleButton)e.getSource();
 					fileTF.setEnabled(src.isSelected());

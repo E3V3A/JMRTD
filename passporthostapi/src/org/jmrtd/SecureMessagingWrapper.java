@@ -59,8 +59,8 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 			new byte[8]);
 
 	private SecretKey ksEnc, ksMac;
-	private Cipher cipher;
-	private Mac mac;
+	private transient Cipher cipher;
+	private transient Mac mac;
 	private long ssc;
 
 	/**

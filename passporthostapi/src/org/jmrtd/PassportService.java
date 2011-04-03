@@ -261,8 +261,10 @@ public class PassportService extends PassportApduService implements Serializable
 		if (isOpen()) {
 			return;
 		}
-		super.open();
-		state = SESSION_STARTED_STATE;
+		synchronized(this) {
+			super.open();
+			state = SESSION_STARTED_STATE;
+		}
 	}
 
 	/**
@@ -285,7 +287,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
-//			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
+			//			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
 			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), bacKey.getDateOfBirth(), bacKey.getDateOfExpiry());
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
@@ -390,7 +392,7 @@ public class PassportService extends PassportApduService implements Serializable
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
 			return keyPair;
-		} catch (Exception e) {
+		} catch (GeneralSecurityException e) {
 			throw new CardServiceException(e.toString());
 		}
 	}
@@ -724,8 +726,10 @@ public class PassportService extends PassportApduService implements Serializable
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
 
-	private class PassportFileSystem implements FileSystemStructured
+	private class PassportFileSystem implements FileSystemStructured, Serializable
 	{
+		private static final long serialVersionUID = -4357282016708205020L;
+		
 		private PassportFileInfo selectedFile;
 
 		public synchronized byte[] readBinary(int offset, int length)
