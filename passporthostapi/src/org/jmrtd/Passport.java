@@ -239,13 +239,13 @@ public class Passport
 	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
+		this.trustManager = trustManager;
 		try {
 			service.open();
 		} catch (Exception e) {
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
 		this.bacKeySpec = null;
-		this.trustManager = null;
 
 		/* Find out whether this passport supports BAC. */
 		boolean isBACPassport = false;
