@@ -41,6 +41,7 @@ import javax.smartcardio.ResponseAPDU;
 import net.sourceforge.scuba.smartcards.APDUWrapper;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
 
 /**
@@ -211,7 +212,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 
 			out.reset();
 			out.write(do85 ? (byte) 0x85 : (byte) 0x87);
-			out.write(BERTLVObject.getLengthAsBytes(ciphertext.length + (do85 ? 0 : 1)));
+			out.write(TLVUtil.getLengthAsBytes(ciphertext.length + (do85 ? 0 : 1)));
 			if(!do85) { out.write(0x01); };
 			out.write(ciphertext, 0, ciphertext.length);
 			do8587 = out.toByteArray();

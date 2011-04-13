@@ -23,7 +23,9 @@
 package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -36,7 +38,8 @@ import net.sourceforge.scuba.tlv.BERTLVInputStream;
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
  * Abstract super class for DG2 - DG4.
  * 
- * Some information based on ISO/IEC 7816-11:2004(E).
+ * Some information based on ISO/IEC 7816-11:2004(E) and/or
+ * NISTIR 6529-A.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -124,7 +127,7 @@ abstract class CBEFFDataGroup extends DataGroup
 			throw new IllegalArgumentException("Unsupported template tag: " + Integer.toHexString(headerTemplateTag));
 		}
 	}
-
+	
 	/**
 	 *  A1, A2, ...
 	 *  Will contain DOs as described in ISO 7816-11 Annex C.
@@ -210,6 +213,21 @@ abstract class CBEFFDataGroup extends DataGroup
 		dataIn.readFully(data);
 		if (templates == null) { templates = new ArrayList<byte[]>(); }
 		templates.add(data);
+	}
+	
+	/* EXPERMINTAL */
+
+	private void writeBIT(DataOutputStream out, int templateIndex) throws IOException {
+		out.write(BIOMETRIC_INFORMATION_TEMPLATE_TAG);
+		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+		writeBHT(new DataOutputStream(bOut), templateIndex);
+		byte[] bOutBytes = bOut.toByteArray();
+		out.write(bOutBytes.length);
+		out.write(bOutBytes);
+	}
+	
+	private void writeBHT(DataOutputStream out, int templateIndex) throws IOException {
+		
 	}
 
 	public abstract byte[] getEncoded();
