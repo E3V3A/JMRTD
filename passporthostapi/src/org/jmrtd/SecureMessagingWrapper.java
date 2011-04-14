@@ -40,7 +40,6 @@ import javax.smartcardio.ResponseAPDU;
 
 import net.sourceforge.scuba.smartcards.APDUWrapper;
 import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
 
@@ -191,7 +190,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 
 		byte[] paddedHeader = Util.pad(maskedHeader);
 
-		boolean do85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
+		boolean hasDO85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
 
 		byte[] do8587 = new byte[0];
 		/* byte[] do8E = new byte[0]; */ /* FIXME: FindBugs told me this is a dead store -- MO */
@@ -211,9 +210,9 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 			byte[] ciphertext = cipher.doFinal(data);
 
 			out.reset();
-			out.write(do85 ? (byte) 0x85 : (byte) 0x87);
-			out.write(TLVUtil.getLengthAsBytes(ciphertext.length + (do85 ? 0 : 1)));
-			if(!do85) { out.write(0x01); };
+			out.write(hasDO85 ? (byte) 0x85 : (byte) 0x87);
+			out.write(TLVUtil.getLengthAsBytes(ciphertext.length + (hasDO85 ? 0 : 1)));
+			if(!hasDO85) { out.write(0x01); };
 			out.write(ciphertext, 0, ciphertext.length);
 			do8587 = out.toByteArray();
 		}

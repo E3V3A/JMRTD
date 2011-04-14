@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -224,7 +224,7 @@ public class SODFile extends PassportFile
 	 * @throws IOException if something goes wrong
 	 */
 	public SODFile(InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+		TLVInputStream tlvIn = new TLVInputStream(in);
 		tlvIn.readTag();
 		tlvIn.readLength();
 		ASN1InputStream asn1in = new ASN1InputStream(in);

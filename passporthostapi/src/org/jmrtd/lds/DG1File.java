@@ -28,7 +28,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
@@ -67,7 +67,7 @@ public class DG1File extends DataGroup implements Serializable
 	 */
 	public DG1File(InputStream in) {
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			int tag = tlvIn.readTag();
 			if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
 			tlvIn.skipToTag(MRZ_INFO_TAG);

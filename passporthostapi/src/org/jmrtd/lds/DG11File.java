@@ -40,7 +40,7 @@ import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
@@ -145,7 +145,7 @@ public class DG11File extends DataGroup
 	}
 
 	public DG11File(InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+		TLVInputStream tlvIn = new TLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != PassportFile.EF_DG11_TAG) { throw new IllegalArgumentException("Expected EF_DG11_TAG"); }
 		int length = tlvIn.readLength();
@@ -165,7 +165,7 @@ public class DG11File extends DataGroup
 		}
 	}
 
-	private void readField(int fieldTag, BERTLVInputStream tlvIn) throws IOException {
+	private void readField(int fieldTag, TLVInputStream tlvIn) throws IOException {
 		int tag = tlvIn.readTag();
 		if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
 		tlvIn.readLength();

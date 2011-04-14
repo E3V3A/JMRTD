@@ -30,7 +30,7 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 
 /**
  * File structure for displayed image template files.
@@ -61,7 +61,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		super(in);
 		this.images = new ArrayList<DisplayedImageInfo>();
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			int countTag = tlvIn.readTag();
 			if (countTag != DISPLAYED_IMAGE_COUNT) { /* 02 */
 				throw new IllegalArgumentException("Expected tag 0x02 in displayed image structure, found " + Integer.toHexString(countTag));
@@ -89,7 +89,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */
-	private void readDisplayedImage(BERTLVInputStream tlvIn) throws IOException {
+	private void readDisplayedImage(TLVInputStream tlvIn) throws IOException {
 		int displayedImageTag = tlvIn.readTag();
 		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */ &&
 				displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {

@@ -25,7 +25,7 @@ package org.jmrtd.lds;
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.util.Hex;
 
 /**
@@ -56,7 +56,7 @@ public abstract class DataGroup extends PassportFile
 	 */
 	protected DataGroup(InputStream in) {
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
+			TLVInputStream tlvIn = new TLVInputStream(in);	
 			dataGroupTag = tlvIn.readTag();
 			dataGroupLength = tlvIn.readLength();
 		} catch (IOException ioe) {

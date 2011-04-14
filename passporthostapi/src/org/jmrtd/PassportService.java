@@ -54,7 +54,7 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.FileInfo;
 import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.util.Hex;
 
@@ -761,7 +761,7 @@ public class PassportService extends PassportApduService implements Serializable
 				/* Woj: no, not each, CVCA does not and has a fixed length */
 				byte[] prefix = readBinary(0, 8);
 				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
-				BERTLVInputStream tlvIn = new BERTLVInputStream(baIn);
+				TLVInputStream tlvIn = new TLVInputStream(baIn);
 				int tag = tlvIn.readTag();
 				if (tag == CVCAFile.CAR_TAG) {
 					return CVCAFile.LENGTH;

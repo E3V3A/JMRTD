@@ -26,7 +26,7 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 
 import org.jmrtd.PassportService;
 
@@ -99,7 +99,7 @@ public abstract class PassportFile
 	 * @throws IOException on reading error from the input stream
 	 */
 	public static PassportFile createPassportFile(InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 8));
+		TLVInputStream tlvIn = new TLVInputStream(new BufferedInputStream(in, 8));
 		tlvIn.mark(5);
 		int tag = tlvIn.readTag();
 		tlvIn.reset();

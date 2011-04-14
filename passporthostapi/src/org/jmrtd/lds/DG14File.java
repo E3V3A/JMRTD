@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -70,7 +70,7 @@ public class DG14File extends DataGroup
 	public DG14File(InputStream in) {
 		try {
 			securityInfos = new ArrayList<SecurityInfo>();
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			tlvIn.readTag();
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();

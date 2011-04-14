@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 
 /**
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
@@ -82,7 +82,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	public CBEFFDataGroup(InputStream in) {
 		super(in);
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);	
+			TLVInputStream tlvIn = new TLVInputStream(in);	
 			int bioInfoGroupTemplateTag = tlvIn.readTag();
 			if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
 				throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
@@ -107,7 +107,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		isSourceConsistent = false;
 	}
 
-	private void readBIT(BERTLVInputStream tlvIn, int templateIndex) throws IOException {
+	private void readBIT(TLVInputStream tlvIn, int templateIndex) throws IOException {
 		int bioInfoTemplateTag = tlvIn.readTag();
 		if (bioInfoTemplateTag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
 			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(bioInfoTemplateTag));
@@ -132,7 +132,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	 *  A1, A2, ...
 	 *  Will contain DOs as described in ISO 7816-11 Annex C.
 	 */
-	private void readBHT(int headerTemplateTag, int headerTemplateLength, int templateIndex, BERTLVInputStream tlvIn) throws IOException {
+	private void readBHT(int headerTemplateTag, int headerTemplateLength, int templateIndex, TLVInputStream tlvIn) throws IOException {
 		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
 		if (headerTemplateTag != expectedBioHeaderTemplateTag) {
 			String warning = "Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(headerTemplateTag);
@@ -155,16 +155,16 @@ abstract class CBEFFDataGroup extends DataGroup
 	 *
 	 * @throws IOException on failure
 	 */
-	private void readStaticallyProtectedBIT(int tag, int length, int templateIndex, BERTLVInputStream tlvIn) throws IOException {
-		BERTLVInputStream tlvBHTIn = new BERTLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
+	private void readStaticallyProtectedBIT(int tag, int length, int templateIndex, TLVInputStream tlvIn) throws IOException {
+		TLVInputStream tlvBHTIn = new TLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
 		int headerTemplateTag = tlvBHTIn.readTag();
 		int headerTemplateLength = tlvBHTIn.readLength();
 		readBHT(headerTemplateTag, headerTemplateLength, templateIndex, tlvBHTIn);
-		BERTLVInputStream tlvBiometricDataBlockIn = new BERTLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
+		TLVInputStream tlvBiometricDataBlockIn = new TLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
 		readBiometricDataBlock(tlvBiometricDataBlockIn);
 	}
 
-	private byte[] decodeSMTValue(BERTLVInputStream tlvIn) throws IOException {
+	private byte[] decodeSMTValue(TLVInputStream tlvIn) throws IOException {
 		int doTag = tlvIn.readTag();
 		int doLength = tlvIn.readLength();
 		switch (doTag) {
@@ -188,7 +188,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		return null;
 	}
 
-	private void readBiometricDataBlock(BERTLVInputStream tlvIn) throws IOException {
+	private void readBiometricDataBlock(TLVInputStream tlvIn) throws IOException {
 		int bioDataBlockTag = tlvIn.readTag();
 		if (bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */ &&
 				bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT /* 7F2E */) {

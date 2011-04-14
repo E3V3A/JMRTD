@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
@@ -99,7 +99,7 @@ public class COMFile extends PassportFile
 	 * @throws IOException if the input could not be decoded
 	 */
 	public COMFile(InputStream in) throws IOException {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			int tag = tlvIn.readTag();
 			if (tag != EF_COM_TAG) {
 				throw new IOException("Wrong tag!");

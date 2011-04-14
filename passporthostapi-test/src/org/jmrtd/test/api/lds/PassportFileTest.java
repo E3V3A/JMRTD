@@ -31,7 +31,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 
 import org.jmrtd.lds.PassportFile;
 
@@ -113,7 +113,7 @@ public class PassportFileTest extends TestCase {
 	}
 
 	private void testInputStream(String name, InputStream in) throws IOException {
-		BERTLVInputStream tlvIn = new BERTLVInputStream(new BufferedInputStream(in, 256));
+		TLVInputStream tlvIn = new TLVInputStream(new BufferedInputStream(in, 256));
 		tlvIn.mark(128);
 		int tag = tlvIn.readTag();
 		tlvIn.reset(); /* NOTE: Unread the tag... */

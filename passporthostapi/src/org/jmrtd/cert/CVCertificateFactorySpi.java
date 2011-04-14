@@ -31,7 +31,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactorySpi;
 import java.util.Collection;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 import org.ejbca.cvc.CVCObject;
@@ -47,7 +47,7 @@ public class CVCertificateFactorySpi extends CertificateFactorySpi
 	{
 		try {
 			/* Read certificate as byte[] */
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			int tag = tlvIn.readTag();
 			if (tag != CV_CERTIFICATE_TAG) { throw new CertificateException("Expected CV_CERTIFICATE_TAG, found " + Integer.toHexString(tag)); }
 			/* int length = */ tlvIn.readLength();

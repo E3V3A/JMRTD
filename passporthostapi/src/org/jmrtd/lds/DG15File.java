@@ -27,7 +27,7 @@ import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
-import net.sourceforge.scuba.tlv.BERTLVInputStream;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
 
 /**
@@ -54,7 +54,7 @@ public class DG15File extends DataGroup
 
 	public DG15File(InputStream in) {
 		try {
-			BERTLVInputStream tlvIn = new BERTLVInputStream(in);
+			TLVInputStream tlvIn = new TLVInputStream(in);
 			tlvIn.readTag();
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
