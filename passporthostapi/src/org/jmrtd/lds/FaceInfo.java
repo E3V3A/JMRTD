@@ -303,7 +303,7 @@ public class FaceInfo extends DisplayedImageInfo
          DataOutputStream dataOut = new DataOutputStream(out);
 
          /* Facial Information (20) */
-         // dataOut.writeInt((int)faceImageBlockLength);
+         // dataOut.writeInt((int)faceImageBlockLength); /* Is computed below! */
          dataOut.writeShort(featurePoints.length);
          dataOut.writeByte(gender.toInt());
          dataOut.writeByte(eyeColor.toInt());

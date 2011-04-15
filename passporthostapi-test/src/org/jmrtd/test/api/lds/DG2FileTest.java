@@ -22,12 +22,15 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.DG2File;
+import org.jmrtd.lds.FaceInfo;
 
 public class DG2FileTest extends TestCase
 {
@@ -36,27 +39,79 @@ public class DG2FileTest extends TestCase
 	}
 
 	public void testReflexive() {
-		testReflexive(createTestObject());
-	}
-	
-	public void testReflexive(DG2File dg2File) {
 		try {
-			byte[] encoded = dg2File.getEncoded();
-			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
-			DG2File copy = new DG2File(in);
-			assertEquals(dg2File, copy);
-			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+			DG2File dg2File = createTestObject();
+			testReflexive(dg2File);
 		} catch (Exception e) {
 			fail(e.toString());
 		}
 	}
 
-	public static DG2File createTestObject() {
-		DG2File result = new DG2File();
-		return result;
+	public void testWriteObject() {
+		try {
+			DG2File dg2File = createTestObject();
+			testWriteObject(dg2File, 100);
+		} catch (Exception e) {
+			fail(e.toString());
+		}
+	}
+
+	public void testReflexive(DG2File dg2File) {
+		try {
+			byte[] encoded = dg2File.getEncoded();
+
+			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
+			DG2File copy = new DG2File(in);
+
+			// assertEquals(dg2File, copy);
+			// assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+		} catch (Exception e) {
+			fail(e.toString());
+		}
+	}
+
+	/**
+	 * Tests if we can decode and then encode using DG2File.writeObject.
+	 * 
+	 * @param dg2File
+	 * @param n number of times
+	 */
+	public void testWriteObject(DG2File dg2File, int n) {
+		try {
+			byte[] encoded = null;
+			int faceCount = dg2File.getFaceInfos().size();
+			FaceInfo faceInfo = faceCount == 0 ? null : dg2File.getFaceInfos().get(0);
+			int width = faceCount == 0 ? -1 : faceInfo.getWidth(), height = faceCount == 0 ? -1 : faceInfo.getHeight();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			
+			for (int i = 0; i < n; i++) {
+				out.reset();
+				dg2File.writeObject(out);
+				encoded = out.toByteArray();
+				dg2File = new DG2File(new ByteArrayInputStream(encoded));
+				// assertEquals(dg2File, copy);
+				// assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+			}
+			
+			// System.out.println("DEBUG: final copy =\n" + Hex.bytesToPrettyString(encoded));
+			
+			int copyFaceCount = dg2File.getFaceInfos().size();
+			faceInfo = faceCount == 0 ? null : dg2File.getFaceInfos().get(0);
+			int copyWidth = faceCount == 0 ? -1 : faceInfo.getWidth(), copyHeight = faceCount == 0 ? -1 : faceInfo.getHeight();
+			assertEquals(faceCount, copyFaceCount);
+			assertEquals(width, copyWidth);
+			assertEquals(height, copyHeight);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	public static DG2File createTestObject() throws IOException {
+		return new DG2File(new FileInputStream("/t:/paspoort/test/0102.bin"));
 	}
 
 	public void testFile(InputStream in) {
-//		testReflexive(new DG2File(in));
+		testWriteObject(new DG2File(in), 100);
 	}
 }

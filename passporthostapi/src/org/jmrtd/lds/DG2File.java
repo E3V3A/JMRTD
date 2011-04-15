@@ -28,11 +28,13 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG2 file.
@@ -133,6 +135,46 @@ public class DG2File extends CBEFFDataGroup
 		return fmt;
 	}
 
+	public void writeObject(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = new TLVOutputStream(out);
+		tlvOut.writeTag(EF_DG2_TAG);
+		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
+		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
+		tlvOut.writeValue(new byte[] { (byte)faceInfos.size() });
+
+		byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
+		for (FaceInfo info: faceInfos) {
+
+			tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
+			tlvOut.writeTag(bioHeaderTag++ & 0xFF);
+			tlvOut.writeTag(FORMAT_OWNER_TAG);
+			tlvOut.writeValue(formatOwner(info.getImage()));
+
+			tlvOut.writeTag(FORMAT_TYPE_TAG);
+			tlvOut.writeValue(formatType(info.getImage()));
+
+			tlvOut.writeValueEnd(); /* bioHeaderTag */
+
+			tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
+			int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
+			short nrOfImagesInRecord = 1;
+
+			DataOutputStream dataOut = new DataOutputStream(tlvOut);
+			dataOut.write(FORMAT_IDENTIFIER);
+			dataOut.write(VERSION_NUMBER);
+			dataOut.writeInt(lengthOfRecord);
+			dataOut.writeShort(nrOfImagesInRecord);
+			dataOut.write(info.getEncoded());
+			dataOut.flush();
+
+			tlvOut.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
+			tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
+		}
+
+		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
+		tlvOut.writeValueEnd(); /* EF_DG2_TAG */
+	}
+
 	public byte[] getEncoded() {
 		if (isSourceConsistent) {
 			return sourceObject;
@@ -201,7 +243,7 @@ public class DG2File extends CBEFFDataGroup
 		return result.toString();
 
 	}
-	
+
 	public boolean equals(Object obj) {
 		if (obj == null) { return false; }
 		if (obj == this) { return true; }

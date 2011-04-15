@@ -23,6 +23,7 @@ package org.jmrtd.test.api.lds;
 
 import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,9 +48,14 @@ public class PassportFileTest extends TestCase {
 	 * Files containing individual MRTD files (such as COM, DG1, ..., SOd) or
 	 * zipped collections of these.
 	 */
-	private static final String[] TEST_FILES = {
-		// "/t:/paspoort/test/"
-	};
+	private static final File[] TEST_FILES = new File("/t:/paspoort/test").listFiles(new FileFilter() {
+
+		@Override
+		public boolean accept(File pathname) {
+			return pathname.getName().endsWith(".zip") || pathname.getName().endsWith(".ZIP");
+		}
+		
+	});
 
 	private COMFileTest comFileTest;
 	private DG1FileTest dg1FileTest;
@@ -69,9 +75,8 @@ public class PassportFileTest extends TestCase {
 	}
 
 	public void testFiles() {
-		for (String fileName: TEST_FILES) {
+		for (File file: TEST_FILES) {
 			try {
-				File file = new File(fileName);
 				testFile(file);
 			} catch (Exception e) {
 				fail(e.toString());

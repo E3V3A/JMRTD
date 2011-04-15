@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
@@ -215,19 +216,19 @@ abstract class CBEFFDataGroup extends DataGroup
 		templates.add(data);
 	}
 	
-	/* EXPERMINTAL */
+	/* EXPERIMENTAL */
 
-	private void writeBIT(DataOutputStream out, int templateIndex) throws IOException {
-		out.write(BIOMETRIC_INFORMATION_TEMPLATE_TAG);
-		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-		writeBHT(new DataOutputStream(bOut), templateIndex);
-		byte[] bOutBytes = bOut.toByteArray();
-		out.write(bOutBytes.length);
-		out.write(bOutBytes);
+	
+	/*		for (BioTemplateInfo bht: templates)  { */
+//	   		writeBHT(out, templateIndex);
+/*      } */
+	
+	private void writeBIT(TLVOutputStream out, int templateIndex) throws IOException {
+		out.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG);
 	}
 	
-	private void writeBHT(DataOutputStream out, int templateIndex) throws IOException {
-		
+	private void writeBHT(TLVOutputStream out, int templateIndex) throws IOException {
+		out.writeTag(BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex);
 	}
 
 	public abstract byte[] getEncoded();
