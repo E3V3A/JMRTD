@@ -22,25 +22,30 @@
 package org.jmrtd.test.api.lds;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 
 import junit.framework.TestCase;
+
+import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.FingerInfo;
 
 public class DG3FileTest extends TestCase
 {
+	private static final //			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
+	String TEST_FILE = "t:/paspoort/test/woj-dg3-top-secret-0103.bin";
+
 	public DG3FileTest(String name) {
 		super(name);
 	}
 
 	public void testFile() {
 		try {
-//			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
-			String testFile = "t:/paspoort/test/woj-dg3-top-secret-0103.bin";
-			FileInputStream in = new FileInputStream(testFile);
+			FileInputStream in = new FileInputStream(TEST_FILE);
 			DG3File dg3 = new DG3File(in);
 			for (FingerInfo fingerPrint: dg3.getFingerInfos()) {
 				BufferedImage image = fingerPrint.getImage();
@@ -51,4 +56,27 @@ public class DG3FileTest extends TestCase
 			fail(fnfe.getMessage());
 		}
 	}
+
+	public void testReflexive() {
+		try {
+			DG3File dg3 = new DG3File(new FileInputStream(TEST_FILE));
+			byte[] encoded = dg3.getEncoded();
+			assertNotNull(encoded);
+			
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
+			
+			DG3File copy = new DG3File(new ByteArrayInputStream(encoded));
+			byte[] encodedCopy = copy.getEncoded();
+			
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encodedCopy));
+
+			assertNotNull(encodedCopy);
+			assertEquals(dg3, copy);
+			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(encodedCopy));
+		} catch(IOException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 }
