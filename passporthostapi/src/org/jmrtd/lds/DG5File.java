@@ -22,7 +22,10 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
 import java.io.InputStream;
+
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG5 file.
@@ -33,23 +36,19 @@ import java.io.InputStream;
  */
 public class DG5File extends DisplayedImageDataGroup
 {
-	public DG5File() {
-	}
-
 	public DG5File(InputStream in) {
-		super(in);
+		super(in, EF_DG5_TAG);
 	}
 
 	public int getTag() {
 		return EF_DG5_TAG;
 	}
-	
-	public byte[] getEncoded() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	public String toString() {
 		return "DG5File";
+	}
+
+	protected void writeDisplayedImage(TLVOutputStream out) throws IOException {
+		// FIXME: which tag? See readDisplayedImage in DisplayedImageDataGroup
 	}
 }

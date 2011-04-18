@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_COM file.
@@ -43,7 +43,7 @@ import net.sourceforge.scuba.tlv.BERTLVObject;
  * 
  * @version $Revision$
  */
-public class COMFile extends PassportFile
+public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 {
 	private static final int TAG_LIST_TAG = 0x5C;
 	private static final int VERSION_UNICODE_TAG = 0x5F36;
@@ -99,48 +99,46 @@ public class COMFile extends PassportFile
 	 * @throws IOException if the input could not be decoded
 	 */
 	public COMFile(InputStream in) throws IOException {
-			TLVInputStream tlvIn = new TLVInputStream(in);
-			int tag = tlvIn.readTag();
-			if (tag != EF_COM_TAG) {
-				throw new IOException("Wrong tag!");
-			}
-			/* int length = */ tlvIn.readLength();
-
-			int versionLDSTag = tlvIn.readTag();
-			if (versionLDSTag != VERSION_LDS_TAG) {
-				throw new IllegalArgumentException("Excepected VERSION_LDS_TAG (" + Integer.toHexString(VERSION_LDS_TAG) + "), found " + Integer.toHexString(versionLDSTag));
-			}
-			int versionLDSLength = tlvIn.readLength();
-			if (versionLDSLength != 4) {
-				throw new IllegalArgumentException("Wrong length of LDS version object");
-			}
-			byte[] versionLDSBytes = tlvIn.readValue();
-			versionLDS = new String(versionLDSBytes, 0, 2);
-			updateLevelLDS = new String(versionLDSBytes, 2, 2);
-
-			int versionUnicodeTag = tlvIn.readTag();
-			if (versionUnicodeTag != VERSION_UNICODE_TAG) {
-				throw new IllegalArgumentException("Expected VERSION_UNICODE_TAG (" + Integer.toHexString(VERSION_UNICODE_TAG) + "), found " + Integer.toHexString(versionUnicodeTag));
-			}
-			int versionUnicodeLength = tlvIn.readLength();
-			if (versionUnicodeLength != 6) {
-				throw new IllegalArgumentException("Wrong length of LDS version object");
-			}
-			byte[] versionUnicodeBytes = tlvIn.readValue();
-			majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
-			minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
-			releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
-	
-			int tagListTag = tlvIn.readTag();
-			if (tagListTag != TAG_LIST_TAG) {
-				throw new IllegalArgumentException("Expected TAG_LIST_TAG (" + Integer.toHexString(TAG_LIST_TAG) + "), found " + Integer.toHexString(tagListTag));
-			}
-			/* int tagListLength = */ tlvIn.readLength();
-			byte[] tagBytes = tlvIn.readValue();
-			tagList = new ArrayList<Integer>();
-			for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }
+		super(in, EF_COM_TAG);
 	}
 
+	protected void readContent(TLVInputStream tlvIn) throws IOException {
+		int versionLDSTag = tlvIn.readTag();
+		if (versionLDSTag != VERSION_LDS_TAG) {
+			throw new IllegalArgumentException("Excepected VERSION_LDS_TAG (" + Integer.toHexString(VERSION_LDS_TAG) + "), found " + Integer.toHexString(versionLDSTag));
+		}
+		int versionLDSLength = tlvIn.readLength();
+		if (versionLDSLength != 4) {
+			throw new IllegalArgumentException("Wrong length of LDS version object");
+		}
+		byte[] versionLDSBytes = tlvIn.readValue();
+		versionLDS = new String(versionLDSBytes, 0, 2);
+		updateLevelLDS = new String(versionLDSBytes, 2, 2);
+
+		int versionUnicodeTag = tlvIn.readTag();
+		if (versionUnicodeTag != VERSION_UNICODE_TAG) {
+			throw new IllegalArgumentException("Expected VERSION_UNICODE_TAG (" + Integer.toHexString(VERSION_UNICODE_TAG) + "), found " + Integer.toHexString(versionUnicodeTag));
+		}
+		int versionUnicodeLength = tlvIn.readLength();
+		if (versionUnicodeLength != 6) {
+			throw new IllegalArgumentException("Wrong length of LDS version object");
+		}
+		byte[] versionUnicodeBytes = tlvIn.readValue();
+		majorVersionUnicode = new String(versionUnicodeBytes, 0, 2);
+		minorVersionUnicode = new String(versionUnicodeBytes, 2, 2);
+		releaseLevelUnicode = new String(versionUnicodeBytes, 4, 2);
+
+		int tagListTag = tlvIn.readTag();
+		if (tagListTag != TAG_LIST_TAG) {
+			throw new IllegalArgumentException("Expected TAG_LIST_TAG (" + Integer.toHexString(TAG_LIST_TAG) + "), found " + Integer.toHexString(tagListTag));
+		}
+		/* int tagListLength = */ tlvIn.readLength();
+		byte[] tagBytes = tlvIn.readValue();
+		tagList = new ArrayList<Integer>();
+		for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }
+
+	}
+	
 	/**
 	 * The tag byte of this file.
 	 * 
@@ -191,30 +189,42 @@ public class COMFile extends PassportFile
         Collections.sort(tagList);
 
     }
-
-	public byte[] getEncoded() {
-		try {
-			byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();
-			BERTLVObject versionLDSObject = new BERTLVObject(VERSION_LDS_TAG, versionLDSBytes);
-			byte[] versionUnicodeBytes =
-				(majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
-			BERTLVObject versionUnicodeObject = new BERTLVObject(VERSION_UNICODE_TAG, versionUnicodeBytes);
-			byte[] tagListAsBytes = new byte[tagList.size()];
-			for (int i = 0; i < tagList.size(); i++) {
-				int dgTag = tagList.get(i);
-				tagListAsBytes[i] = (byte)dgTag;
-			}
-			BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagListAsBytes);
-			BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
-			BERTLVObject ef011E =
-				new BERTLVObject(EF_COM_TAG, value);
-			ef011E.reconstructLength();
-			return ef011E.getEncoded();
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+	
+	protected void writeContent(TLVOutputStream out) throws IOException {
+		out.writeTag(VERSION_LDS_TAG);
+		out.writeValue((versionLDS + updateLevelLDS).getBytes());
+		out.writeTag(VERSION_UNICODE_TAG);
+		out.writeValue((majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes());
+		out.writeTag(TAG_LIST_TAG);
+		out.writeLength(tagList.size());
+		for (int tag: tagList) {
+			out.write((byte)tag);
 		}
 	}
+		
+//	public byte[] getEncoded() {
+//		try {
+//			byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();
+//			BERTLVObject versionLDSObject = new BERTLVObject(VERSION_LDS_TAG, versionLDSBytes);
+//			byte[] versionUnicodeBytes =
+//				(majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
+//			BERTLVObject versionUnicodeObject = new BERTLVObject(VERSION_UNICODE_TAG, versionUnicodeBytes);
+//			byte[] tagListAsBytes = new byte[tagList.size()];
+//			for (int i = 0; i < tagList.size(); i++) {
+//				int dgTag = tagList.get(i);
+//				tagListAsBytes[i] = (byte)dgTag;
+//			}
+//			BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagListAsBytes);
+//			BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
+//			BERTLVObject ef011E =
+//				new BERTLVObject(EF_COM_TAG, value);
+//			ef011E.reconstructLength();
+//			return ef011E.getEncoded();
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return null;
+//		}
+//	}
 
 	/**
 	 * Gets a textual representation of this file.

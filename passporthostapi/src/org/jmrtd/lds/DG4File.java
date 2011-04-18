@@ -64,15 +64,7 @@ public class DG4File extends CBEFFDataGroup
 	 * @param in an input stream
 	 */
 	public DG4File(InputStream in) {
-		super(in);
-		irisInfos = new ArrayList<IrisInfo>();
-	}
-
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
-		return null;
+		super(in, EF_DG4_TAG);
 	}
 	
 	public List<IrisInfo> getIrisInfos() {
@@ -143,12 +135,14 @@ public class DG4File extends CBEFFDataGroup
 		/* int featureID = */ dataIn.readUnsignedByte();
 		int imageCount = dataIn.readUnsignedShort();
 		
-
-		
 		/* Images */
 		for (int imageIndex = 0; imageIndex < imageCount; imageIndex++) {
-			IrisInfo info = new IrisInfo(dataIn, imageFormat);
-			irisInfos.add(info);
+			addIrisInfo(new IrisInfo(dataIn, imageFormat));
 		}
-	}	
+	}
+	
+	private void addIrisInfo(IrisInfo irisInfo) {
+		if (irisInfos == null) { irisInfos = new ArrayList<IrisInfo>(); }
+		irisInfos.add(irisInfo);
+	}
 }

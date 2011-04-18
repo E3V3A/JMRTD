@@ -24,9 +24,10 @@ package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.util.Hex;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * Super class for data group files.
@@ -39,12 +40,14 @@ public abstract class DataGroup extends PassportFile
 {
 	private int dataGroupTag;
 	private int dataGroupLength;
+	private boolean isLengthKnown;
 
 	/**
 	 * Constructs a datagroup. This constructor
 	 * is only visible to the other classes in this package.
 	 */
 	DataGroup() {
+		isLengthKnown = false;
 	}
 
 	/**
@@ -54,17 +57,47 @@ public abstract class DataGroup extends PassportFile
 	 * 
 	 * @param in an input stream
 	 */
-	protected DataGroup(InputStream in) {
+	protected DataGroup(InputStream in, int dataGroupTag) {
 		try {
-			TLVInputStream tlvIn = new TLVInputStream(in);	
-			dataGroupTag = tlvIn.readTag();
-			dataGroupLength = tlvIn.readLength();
+			this.dataGroupTag = dataGroupTag;
+			readObject(in);
 		} catch (IOException ioe) {
 			throw new IllegalArgumentException("Could not decode: " + ioe.toString());
 		}
 	}
 
-	public abstract byte[] getEncoded();
+	protected void readObject(InputStream in) throws IOException {
+		TLVInputStream tlvIn = new TLVInputStream(in);	
+		int tag = tlvIn.readTag();
+		if (tag != dataGroupTag) {
+			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
+		}
+		dataGroupLength = tlvIn.readLength();
+		isLengthKnown = true;
+		readContent(tlvIn);
+	}
+
+	protected void writeObject(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+		tlvOut.writeTag(getTag());
+		if (isLengthKnown) {
+			tlvOut.writeLength(getLength());
+			writeContent(tlvOut);
+		} else {
+			writeContent(tlvOut);
+			tlvOut.writeValueEnd(); /* dataGroupTag */
+		}
+	}
+
+	/*
+	 * Naive implementation would be to read dataGroupLength bytes from in into a byte[].
+	 */
+	protected abstract void readContent(TLVInputStream in) throws IOException;
+
+	/*
+	 * Naive implementation would be that byte[] to out.
+	 */
+	protected abstract void writeContent(TLVOutputStream out) throws IOException;
 
 	/**
 	 * Gets a textual representation of this file.
@@ -72,10 +105,7 @@ public abstract class DataGroup extends PassportFile
 	 * @return a textual representation of this file
 	 */
 	public String toString() {
-		if (isSourceConsistent) {
-			return Hex.bytesToHexString(sourceObject);
-		}
-		return super.toString();
+		return "DataGroup [" + Integer.toHexString(getTag()) + " (" + getLength() + ")]";
 	}
 
 	/**
@@ -93,6 +123,12 @@ public abstract class DataGroup extends PassportFile
 	 * @return the length of the value of the data group
 	 */
 	public int getLength() {
-		return dataGroupLength;
+		if (isLengthKnown) {
+			return dataGroupLength;
+		} else if (isSourceConsistent) {
+			return sourceObject.length;
+		} else {
+			throw new IllegalStateException("Length not yet known");
+		}
 	}
 }

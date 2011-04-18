@@ -54,8 +54,8 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.FileInfo;
 import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;

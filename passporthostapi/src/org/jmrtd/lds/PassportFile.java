@@ -23,8 +23,10 @@
 package org.jmrtd.lds;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 
@@ -67,8 +69,8 @@ public abstract class PassportFile
 	 * the same byte[] (messing up any cryptographic hash computations needed
 	 * to validate the security object). -- MO
 	 */
-	//   BERTLVObject sourceObject;
-	byte[] sourceObject; /* FIXME: always a byte[]? */
+
+	byte[] sourceObject;
 	boolean isSourceConsistent;
 
 	/**
@@ -87,7 +89,27 @@ public abstract class PassportFile
 	/*@ ensures
 	 *@    isSourceConsistent ==> \result.equals(sourceObject);
 	 */
-	public abstract byte[] getEncoded();
+	public byte[] getEncoded() {
+		if (isSourceConsistent) {
+			return sourceObject;
+		}
+		try {
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			writeObject(out);
+			out.flush();
+			out.close();
+			sourceObject = out.toByteArray();
+			isSourceConsistent = true;
+			return sourceObject;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			return null;
+		}
+	}
+	
+	protected abstract void readObject(InputStream in) throws IOException;
+	
+	protected abstract void writeObject(OutputStream out) throws IOException;
 
 	/**
 	 * Factory method for creating passport files for a given input stream.
@@ -125,7 +147,7 @@ public abstract class PassportFile
 			throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
 		}
 	}
-	
+
 	/**
 	 * Finds a file identifier for an ICAO tag.
 	 *

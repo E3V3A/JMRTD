@@ -31,8 +31,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactorySpi;
 import java.util.Collection;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CertificateParser;

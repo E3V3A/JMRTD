@@ -23,14 +23,21 @@
 package org.jmrtd.lds;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.logging.Logger;
 
+import javax.imageio.ImageIO;
+
 import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
 /**
@@ -70,8 +77,10 @@ public class DG12File extends DataGroup
 	private Date dateAndTimeOfPersonalization;
 	private String personalizationSystemSerialNumber;
 
+	private List<Integer> tagPresenceList;
+
 	private Logger logger = Logger.getLogger("org.jmrtd");
-	
+
 	/**
 	 * Constructs a new file.
 	 *
@@ -109,13 +118,13 @@ public class DG12File extends DataGroup
 	 * @throws IOException
 	 */
 	public DG12File(InputStream in) throws IOException {
-		TLVInputStream tlvIn = new TLVInputStream(in);
+		super(in, EF_DG12_TAG);
+	}
+
+	protected void readContent(TLVInputStream tlvIn) throws IOException {	
 		int tag = tlvIn.readTag();
-		if (tag != PassportFile.EF_DG12_TAG) { throw new IllegalArgumentException("Expected EF_DG12_TAG"); }
-		int length = tlvIn.readLength();		
-		tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
-		length = tlvIn.readLength();
+		int length = tlvIn.readLength();
 		int tagCount = length / 2;
 		int[] tagList = new int[tagCount];
 		for (int i = 0; i < tagCount; i++) {
@@ -130,6 +139,21 @@ public class DG12File extends DataGroup
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);
 		}
+	}
+
+	public List<Integer> getTagPresenceList() {
+		if (tagPresenceList != null) { return tagPresenceList; }
+		tagPresenceList = new ArrayList<Integer>(10);
+		if(issuingAuthority != null) { tagPresenceList.add(ISSUING_AUTHORITY_TAG); }
+		if(dateOfIssue != null) { tagPresenceList.add(DATE_OF_ISSUE_TAG); }
+		if(nameOfOtherPerson != null) { tagPresenceList.add(NAME_OF_OTHER_PERSON_TAG); }
+		if(endorseMentsAndObservations != null) { tagPresenceList.add(ENDORSEMENTS_AND_OBSERVATIONS_TAG); }
+		if(taxOrExitRequirements != null) { tagPresenceList.add(TAX_OR_EXIT_REQUIREMENTS_TAG); }
+		if(imageOfFront != null) { tagPresenceList.add(IMAGE_OF_FRONT_TAG); }
+		if(imageOfRear != null) { tagPresenceList.add(IMAGE_OF_REAR_TAG); }
+		if(dateAndTimeOfPersonalization != null) { tagPresenceList.add(DATE_AND_TIME_OF_PERSONALIZATION); }
+		if(personalizationSystemSerialNumber != null) { tagPresenceList.add(PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG); }
+		return tagPresenceList;
 	}
 
 	private void readField(int fieldTag, TLVInputStream tlvIn) throws IOException {
@@ -147,8 +171,7 @@ public class DG12File extends DataGroup
 		case IMAGE_OF_REAR_TAG: parseImageOfRear(value); break;
 		case DATE_AND_TIME_OF_PERSONALIZATION: parseDateAndTimeOfPersonalization(Hex.bytesToHexString(value)); break;
 		case PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG: parsePersonalizationSystemSerialNumber(new String(value)); break;
-		// case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value)); break;
-		default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));
+		default: throw new IllegalArgumentException("Unknown field tag in DG12: " + Integer.toHexString(tag));
 		}
 	}
 
@@ -166,13 +189,22 @@ public class DG12File extends DataGroup
 		}
 	}
 
-	private void parseImageOfRear(byte[] in) {
-		// TODO: parse jpeg
+	private void parseImageOfFront(byte[] value) {
+		try {
+			ByteArrayInputStream in = new ByteArrayInputStream(value);
+			imageOfFront =  ImageIO.read(in);
+		} catch (IOException ioe) {
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
-	private void parseImageOfFront(byte[] in) {
-		// TODO parse jpeg
-
+	private void parseImageOfRear(byte[] value) {
+		try {
+			ByteArrayInputStream in = new ByteArrayInputStream(value);
+			imageOfRear =  ImageIO.read(in);
+		} catch (IOException ioe) {
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 	private void parseTaxOrExitRequirements(String in) {
@@ -267,20 +299,53 @@ public class DG12File extends DataGroup
 	}
 
 	public int getTag() {
-		return EF_DG11_TAG;
+		return EF_DG12_TAG;
 	}
 
 	public String toString() {
-		return "DG11File";
+		return "DG12File";
 	}
 
-	/**
-	 * TODO: in progress.
-	 */
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
+	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
+		tlvOut.writeTag(TAG_LIST_TAG);
+		List<Integer> tags = getTagPresenceList();
+		DataOutputStream dataOut = new DataOutputStream(tlvOut);
+		for (int tag: tags) {
+			dataOut.writeShort(tag);
 		}
-		return null;
+		dataOut.flush();
+		tlvOut.writeValueEnd(); /* TAG_LIST_TAG */
+		for (int tag: tags) {
+			tlvOut.writeTag(tag);
+			switch (tag) {
+			case DATE_OF_ISSUE_TAG:
+				tlvOut.writeValue(Hex.hexStringToBytes(SDF.format(dateOfIssue)));
+				break;
+			case NAME_OF_OTHER_PERSON_TAG:
+				tlvOut.writeValue(nameOfOtherPerson.trim().replace(' ', '<').getBytes());
+				break; 
+			case ENDORSEMENTS_AND_OBSERVATIONS_TAG:
+				tlvOut.writeValue(endorseMentsAndObservations.trim().replace(' ', '<').getBytes());
+				break;
+			case TAX_OR_EXIT_REQUIREMENTS_TAG:
+				tlvOut.writeValue(taxOrExitRequirements.trim().replace(' ', '<').getBytes());
+				break;
+			case IMAGE_OF_FRONT_TAG:
+				ImageIO.write(imageOfFront, "image/jpeg", tlvOut);
+				tlvOut.writeValueEnd(); /* IMAGE_OF_FRONT_TAG */
+				break;
+			case IMAGE_OF_REAR_TAG:
+				ImageIO.write(imageOfRear, "image/jpeg", tlvOut);
+				tlvOut.writeValueEnd(); /* IMAGE_OF_REAR_TAG */
+				break;
+			case DATE_AND_TIME_OF_PERSONALIZATION:
+				tlvOut.writeValue(Hex.hexStringToBytes(SDTF.format(dateAndTimeOfPersonalization)));
+				break;
+			case PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG:
+				tlvOut.writeValue(personalizationSystemSerialNumber.trim().replace(' ', '<').getBytes());
+				break;
+			default: throw new IllegalArgumentException("Unknown field tag in DG12: " + Integer.toHexString(tag));
+			}
+		}
 	}
 }

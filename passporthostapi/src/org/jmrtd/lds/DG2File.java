@@ -23,17 +23,14 @@
 package org.jmrtd.lds;
 
 import java.awt.Image;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
@@ -76,8 +73,7 @@ public class DG2File extends CBEFFDataGroup
 	 * @param in an input stream
 	 */
 	public DG2File(InputStream in) {
-		super(in);
-		if (faceInfos == null) { faceInfos = new ArrayList<FaceInfo>(); }
+		super(in, EF_DG2_TAG);
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
@@ -88,8 +84,7 @@ public class DG2File extends CBEFFDataGroup
 		/* long length = */ dataIn.readInt() /* & 0x000000FFFFFFFFL */;
 		int faceCount = dataIn.readUnsignedShort();
 		for (int i = 0; i < faceCount; i++) {
-			FaceInfo faceInfo = new FaceInfo(dataIn);
-			addFaceInfo(faceInfo);
+			addFaceInfo(new FaceInfo(dataIn));
 		}
 	}
 
@@ -135,9 +130,7 @@ public class DG2File extends CBEFFDataGroup
 		return fmt;
 	}
 
-	public void writeObject(OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = new TLVOutputStream(out);
-		tlvOut.writeTag(EF_DG2_TAG);
+	public void writeContent(TLVOutputStream tlvOut) throws IOException {
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
 		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
 		tlvOut.writeValue(new byte[] { (byte)faceInfos.size() });
@@ -172,56 +165,55 @@ public class DG2File extends CBEFFDataGroup
 		}
 
 		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
-		tlvOut.writeValueEnd(); /* EF_DG2_TAG */
 	}
 
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
-		try {
-			/* FIXME: some of this should be moved to CBEFFDataGroup! */
-			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
-					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
-							(byte)faceInfos.size()));
-
-			group.reconstructLength();
-
-			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-			for (FaceInfo info: faceInfos) {
-				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
-						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
-				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
-
-				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */, header);
-
-				int lengthOfRecord =
-					FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
-				short nrOfImagesInRecord = 1;
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				DataOutputStream dataOut = new DataOutputStream(out);
-				dataOut.write(FORMAT_IDENTIFIER);
-				dataOut.write(VERSION_NUMBER);
-				dataOut.writeInt(lengthOfRecord);
-				dataOut.writeShort(nrOfImagesInRecord);
-				dataOut.write(info.getEncoded());
-				dataOut.flush();
-				byte[] facialRecord = out.toByteArray();
-
-				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */, facialRecord));
-				group.addSubObject(faceObject);
-			}
-			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
-			dg2.reconstructLength();
-			byte[] dg2bytes = dg2.getEncoded();
-			sourceObject = dg2bytes;
-			isSourceConsistent = true;
-			return dg2.getEncoded();
-		} catch (Exception ioe) {
-			ioe.printStackTrace();
-			return null;
-		}
-	}
+//	public byte[] getEncoded() {
+//		if (isSourceConsistent) {
+//			return sourceObject;
+//		}
+//		try {
+//			/* FIXME: some of this should be moved to CBEFFDataGroup! */
+//			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
+//					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
+//							(byte)faceInfos.size()));
+//
+//			group.reconstructLength();
+//
+//			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
+//			for (FaceInfo info: faceInfos) {
+//				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
+//						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
+//				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
+//
+//				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */, header);
+//
+//				int lengthOfRecord =
+//					FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
+//				short nrOfImagesInRecord = 1;
+//				ByteArrayOutputStream out = new ByteArrayOutputStream();
+//				DataOutputStream dataOut = new DataOutputStream(out);
+//				dataOut.write(FORMAT_IDENTIFIER);
+//				dataOut.write(VERSION_NUMBER);
+//				dataOut.writeInt(lengthOfRecord);
+//				dataOut.writeShort(nrOfImagesInRecord);
+//				dataOut.write(info.getEncoded());
+//				dataOut.flush();
+//				byte[] facialRecord = out.toByteArray();
+//
+//				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */, facialRecord));
+//				group.addSubObject(faceObject);
+//			}
+//			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
+//			dg2.reconstructLength();
+//			byte[] dg2bytes = dg2.getEncoded();
+//			sourceObject = dg2bytes;
+//			isSourceConsistent = true;
+//			return dg2.getEncoded();
+//		} catch (Exception ioe) {
+//			ioe.printStackTrace();
+//			return null;
+//		}
+//	}
 
 	/**
 	 * Gets a textual representation of this file.

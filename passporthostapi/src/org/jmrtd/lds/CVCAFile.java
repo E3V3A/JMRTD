@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.jmrtd.cert.CVCPrincipal;
 
@@ -45,33 +46,38 @@ public class CVCAFile extends PassportFile
 	 * @param in stream with the data to be parsed
 	 */
 	public CVCAFile(InputStream in) {
-		DataInputStream dataIn = new DataInputStream(in);
 		try {
-			int tag = dataIn.read();
-			if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
-			int length = dataIn.read();
-			if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
-			byte[] data = new byte[length];
-			dataIn.readFully(data);
-			caReference = new String(data);
-			tag = dataIn.read();
-			if (tag != 0) {
-				if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
-				length = dataIn.read();
-				if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
-				data = new byte[length];
-				dataIn.readFully(data);
-				altCaReference = new String(data);
-				tag = dataIn.read();
-			}
-			while (tag != -1) {
-				if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
-				tag = dataIn.read();
-			}
+			readObject(in);
 		} catch (IOException e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Malformed input data");
 		}
+	}
+
+	protected void readObject(InputStream in) throws IOException {
+		DataInputStream dataIn = new DataInputStream(in);
+		int tag = dataIn.read();
+		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+		int length = dataIn.read();
+		if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
+		byte[] data = new byte[length];
+		dataIn.readFully(data);
+		caReference = new String(data);
+		tag = dataIn.read();
+		if (tag != 0) {
+			if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+			length = dataIn.read();
+			if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
+			data = new byte[length];
+			dataIn.readFully(data);
+			altCaReference = new String(data);
+			tag = dataIn.read();
+		}
+		while (tag != -1) {
+			if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
+			tag = dataIn.read();
+		}
+
 	}
 
 	/**
@@ -101,7 +107,22 @@ public class CVCAFile extends PassportFile
 		this(caReference, null);
 	}
 
-	public byte[] getEncoded() {
+	//	public byte[] getEncoded() {
+	//		byte[] result = new byte[LENGTH];
+	//		result[0] = CAR_TAG;
+	//		result[1] = (byte)caReference.length();
+	//		System.arraycopy(caReference.getBytes(), 0, result, 2, result[1]);
+	//		if (altCaReference != null) {
+	//			int index = result[1] + 2;
+	//			result[index] = CAR_TAG;
+	//			result[index + 1] = (byte) altCaReference.length();
+	//			System.arraycopy(altCaReference.getBytes(), 0, result, index + 2,
+	//					result[index + 1]);
+	//		}
+	//		return result;
+	//	}
+
+	protected void writeObject(OutputStream out) throws IOException {
 		byte[] result = new byte[LENGTH];
 		result[0] = CAR_TAG;
 		result[1] = (byte)caReference.length();
@@ -113,7 +134,7 @@ public class CVCAFile extends PassportFile
 			System.arraycopy(altCaReference.getBytes(), 0, result, index + 2,
 					result[index + 1]);
 		}
-		return result;
+		out.write(result);
 	}
 
 	/**

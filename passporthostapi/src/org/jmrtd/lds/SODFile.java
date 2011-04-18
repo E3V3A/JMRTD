@@ -45,7 +45,7 @@ import java.util.logging.Logger;
 import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -84,7 +84,7 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
  * 
  * @version $Revision$
  */
-public class SODFile extends PassportFile
+public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 {
 	//	private static final DERObjectIdentifier SHA1_HASH_ALG_OID = new DERObjectIdentifier("1.3.14.3.2.26");
 	//	private static final DERObjectIdentifier SHA1_WITH_RSA_ENC_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
@@ -224,9 +224,10 @@ public class SODFile extends PassportFile
 	 * @throws IOException if something goes wrong
 	 */
 	public SODFile(InputStream in) throws IOException {
-		TLVInputStream tlvIn = new TLVInputStream(in);
-		tlvIn.readTag();
-		tlvIn.readLength();
+		super(in, EF_SOD_TAG);
+	}
+	
+	protected void readContent(TLVInputStream in) throws IOException {
 		ASN1InputStream asn1in = new ASN1InputStream(in);
 		DERSequence seq = (DERSequence)asn1in.readObject();
 		/* DERObjectIdentifier objectIdentifier = (DERObjectIdentifier) seq.getObjectAt(0); */ /* FIXME: do we need this? */
@@ -246,16 +247,23 @@ public class SODFile extends PassportFile
 		return EF_SOD_TAG;
 	}
 
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
-
-		/* TODO: where is that DERTaggedObject specified? */
+//	public byte[] getEncoded() {
+//		if (isSourceConsistent) {
+//			return sourceObject;
+//		}
+//
+//		/* TODO: where is that DERTaggedObject specified? */
+//		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
+//		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
+//		BERTLVObject sodFile = new BERTLVObject(EF_SOD_TAG, fileContentsObject.getDEREncoded());
+//		return sodFile.getEncoded();
+//	}
+	
+	protected void writeContent(TLVOutputStream out) throws IOException {
 		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
 		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
-		BERTLVObject sodFile = new BERTLVObject(EF_SOD_TAG, fileContentsObject.getDEREncoded());
-		return sodFile.getEncoded();
+		byte[] fileContentsBytes = fileContentsObject.getDEREncoded();
+		out.writeValue(fileContentsBytes);
 	}
 
 	/**

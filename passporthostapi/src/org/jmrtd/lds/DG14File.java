@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -30,7 +31,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -60,7 +61,7 @@ public class DG14File extends DataGroup
 	public DG14File(List<SecurityInfo> securityInfos) {
 		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
 	}
-	
+
 	/**
 	 * Constructs a new DG14 file from the data in <code>in</code>.
 	 * 
@@ -68,23 +69,20 @@ public class DG14File extends DataGroup
 	 *            the input stream to parse the data from
 	 */
 	public DG14File(InputStream in) {
-		try {
-			securityInfos = new ArrayList<SecurityInfo>();
-			TLVInputStream tlvIn = new TLVInputStream(in);
-			tlvIn.readTag();
-			tlvIn.readLength();
-			byte[] value = tlvIn.readValue();
-			ASN1InputStream asn1In = new ASN1InputStream(value);
-			DERSet set = (DERSet)asn1In.readObject();
-			/* TODO: check if it contains additional objects? */
-			asn1In.close();
-			for (int i = 0; i < set.size(); i++) {
-				DERObject o = set.getObjectAt(i).getDERObject();
-				SecurityInfo si = SecurityInfo.createSecurityInfo(o);
-				securityInfos.add(si);
-			}
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e.toString());
+		super(in, EF_DG14_TAG);
+	}
+
+	protected void readContent(TLVInputStream tlvIn) throws IOException {
+		securityInfos = new ArrayList<SecurityInfo>();
+		byte[] value = tlvIn.readValue();
+		ASN1InputStream asn1In = new ASN1InputStream(value);
+		DERSet set = (DERSet)asn1In.readObject();
+		/* TODO: check if it contains additional objects? */
+		asn1In.close();
+		for (int i = 0; i < set.size(); i++) {
+			DERObject o = set.getObjectAt(i).getDERObject();
+			SecurityInfo si = SecurityInfo.createSecurityInfo(o);
+			securityInfos.add(si);
 		}
 	}
 
@@ -149,24 +147,33 @@ public class DG14File extends DataGroup
 		}
 	}
 
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
+//	public byte[] getEncoded() {
+//		if (isSourceConsistent) {
+//			return sourceObject;
+//		}
+//		try {
+//			ASN1EncodableVector vector = new ASN1EncodableVector();
+//			for (SecurityInfo si : securityInfos) {
+//				vector.add(si.getDERObject());
+//			}
+//			DERSet derSet = new DERSet(vector);
+//			BERTLVObject secInfos = new BERTLVObject(EF_DG14_TAG, derSet.getDEREncoded());
+//			sourceObject = secInfos.getEncoded();
+//			isSourceConsistent = true;
+//			return sourceObject;
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return null;
+//		}
+//	}
+	
+	protected void writeContent(TLVOutputStream out) throws IOException {
+		ASN1EncodableVector vector = new ASN1EncodableVector();
+		for (SecurityInfo si : securityInfos) {
+			vector.add(si.getDERObject());
 		}
-		try {
-			ASN1EncodableVector vector = new ASN1EncodableVector();
-			for (SecurityInfo si : securityInfos) {
-				vector.add(si.getDERObject());
-			}
-			DERSet derSet = new DERSet(vector);
-			BERTLVObject secInfos = new BERTLVObject(PassportFile.EF_DG14_TAG, derSet.getDEREncoded());
-			sourceObject = secInfos.getEncoded();
-			isSourceConsistent = true;
-			return sourceObject;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+		DERSet derSet = new DERSet(vector);
+		out.writeValue(derSet.getDEREncoded());
 	}
 
 	/**
@@ -246,13 +253,13 @@ public class DG14File extends DataGroup
 		if (!foundOne) { throw new IllegalStateException("No keys?"); }
 		return publicKeys;
 	}
-	
+
 	public List<SecurityInfo> getSecurityInfos() {
 		return securityInfos;
 	}
 
 	public String toString() {
-		return "DG14File " + securityInfos.toString();
+		return "DG14File [" + securityInfos.toString() + "]";
 	}
 
 	public boolean equals(Object obj) {
@@ -260,7 +267,7 @@ public class DG14File extends DataGroup
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG14File other = (DG14File)obj;
 		return (securityInfos == null && other.securityInfos == null)
-			|| (securityInfos != null && securityInfos.equals(other.securityInfos));
+		|| (securityInfos != null && securityInfos.equals(other.securityInfos));
 	}
 
 	public int hashCode() {

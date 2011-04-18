@@ -56,6 +56,9 @@ public class DG11FileTest extends TestCase
 			if (dg11File == null) { fail("Input file is null"); }
 			byte[] encoded = dg11File.getEncoded();
 			if (encoded == null) { fail("Encoding of input file is null");	}
+			
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
+			
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG11File copy = new DG11File(in);
 			if (copy == null) { fail("Parsing from input stream resulted in null"); }
@@ -157,10 +160,10 @@ public class DG11FileTest extends TestCase
 		String custodyInformation = "";
 		return new DG11File(fullNamePrimaryIdentifier,
 				fullNamesecondaryIdentifiers,  personalNumber,
-				fullDateOfBirth,  placeOfBirth,  permanentAddress,
-				telephone,  profession,  title,
-				personalSummary,  proofOfCitizenship,
-				otherValidTDNumbers,  custodyInformation);
+				fullDateOfBirth, placeOfBirth,  permanentAddress,
+				telephone, profession, title,
+				personalSummary, proofOfCitizenship,
+				otherValidTDNumbers, custodyInformation);
 	}
 
 	public void testFile(InputStream in) {

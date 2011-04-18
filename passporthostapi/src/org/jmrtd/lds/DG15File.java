@@ -22,13 +22,16 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * File structure for the EF_DG15 file.
@@ -53,36 +56,42 @@ public class DG15File extends DataGroup
 	}
 
 	public DG15File(InputStream in) {
+		super(in, EF_DG15_TAG);
+	}
+	
+	protected void readContent(TLVInputStream tlvIn) throws IOException {
 		try {
-			TLVInputStream tlvIn = new TLVInputStream(in);
-			tlvIn.readTag();
-			tlvIn.readLength();
-			byte[] value = tlvIn.readValue();
+			byte[] value = tlvIn.readValue();			
 			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
 			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 			publicKey = keyFactory.generatePublic(pubKeySpec);
-		} catch (Exception e) {
+		} catch (GeneralSecurityException e) {
 			throw new IllegalArgumentException(e.toString());
 		}
 	}
-
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
-		}
-		try {
-			BERTLVObject ef010F =
-				new BERTLVObject(PassportFile.EF_DG15_TAG,
-						publicKey.getEncoded());
-			byte[] ef010Fbytes = ef010F.getEncoded();
-			sourceObject = ef010Fbytes; // FIXME: WAS: ef010F;
-			isSourceConsistent = true;
-			return ef010Fbytes;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
+	
+	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
+		byte[] publicKeyBytes = publicKey.getEncoded();
+		tlvOut.writeValue(publicKeyBytes);
 	}
+
+//	public byte[] getEncoded() {
+//		if (isSourceConsistent) {
+//			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
+//		}
+//		try {
+//			BERTLVObject ef010F =
+//				new BERTLVObject(PassportFile.EF_DG15_TAG,
+//						publicKey.getEncoded());
+//			byte[] ef010Fbytes = ef010F.getEncoded();
+//			sourceObject = ef010Fbytes; // FIXME: WAS: ef010F;
+//			isSourceConsistent = true;
+//			return ef010Fbytes;
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return null;
+//		}
+//	}
 
 	public int getTag() {
 		return EF_DG15_TAG;

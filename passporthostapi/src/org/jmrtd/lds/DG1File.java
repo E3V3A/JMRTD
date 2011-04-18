@@ -22,14 +22,12 @@
 
 package org.jmrtd.lds;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG1 file.
@@ -66,18 +64,14 @@ public class DG1File extends DataGroup implements Serializable
 	 * @throws IOException if something goes wrong
 	 */
 	public DG1File(InputStream in) {
-		try {
-			TLVInputStream tlvIn = new TLVInputStream(in);
-			int tag = tlvIn.readTag();
-			if (tag != PassportFile.EF_DG1_TAG) { throw new IOException("Expected EF_DG1_TAG"); }
-			tlvIn.skipToTag(MRZ_INFO_TAG);
-			tlvIn.readLength();
-			isSourceConsistent = false;
-			this.mrzInfo = new MRZInfo(tlvIn);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IllegalArgumentException(ioe.getMessage());
-		}
+		super(in, EF_DG1_TAG);
+	}
+	
+	protected void readContent(TLVInputStream tlvIn) throws IOException {
+		tlvIn.skipToTag(MRZ_INFO_TAG);
+		tlvIn.readLength();
+		isSourceConsistent = false;
+		this.mrzInfo = new MRZInfo(tlvIn);
 	}
 
 	/**
@@ -118,25 +112,9 @@ public class DG1File extends DataGroup implements Serializable
 		return 3 * mrzInfo.hashCode() + 57;
 	}
 
-	private void write(OutputStream out) throws IOException {
-		if (isSourceConsistent) {
-			out.write(sourceObject);
-			out.flush();
-		}
-
-		try {
-			BERTLVObject ef0101 =
-				new BERTLVObject(EF_DG1_TAG,
-						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
-
-			ef0101.reconstructLength();
-			byte[] ef0101bytes = ef0101.getEncoded();
-			sourceObject = ef0101bytes;
-			isSourceConsistent = true;
-			out.write(ef0101bytes);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+	protected void writeContent(TLVOutputStream out) throws IOException {
+		out.writeTag(MRZ_INFO_TAG);
+		out.writeValue(mrzInfo.getEncoded());
 	}
 
 	/**
@@ -145,14 +123,24 @@ public class DG1File extends DataGroup implements Serializable
 	 * 
 	 * @return a byte array containing the file
 	 */
-	public byte[] getEncoded() {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try {
-			write(out);
-			out.flush();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return out.toByteArray();
-	}
+	//	public byte[] getEncoded() {
+	//		if (isSourceConsistent) {
+	//			return sourceObject;
+	//		}
+	//
+	//		try {
+	//			BERTLVObject ef0101 =
+	//				new BERTLVObject(EF_DG1_TAG,
+	//						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
+	//
+	//			ef0101.reconstructLength();
+	//			byte[] ef0101bytes = ef0101.getEncoded();
+	//			sourceObject = ef0101bytes;
+	//			isSourceConsistent = true;
+	//			return ef0101bytes;
+	//		} catch (Exception e) {
+	//			e.printStackTrace();
+	//			return null;
+	//		}
+	//	}
 }

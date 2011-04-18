@@ -23,9 +23,7 @@
 package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -74,38 +72,29 @@ abstract class CBEFFDataGroup extends DataGroup
 
 	protected CBEFFDataGroup() {
 	}
-
-	/**
-	 * Constructs a data group structure by parsing <code>in</code>.
-	 * 
-	 * @param in a TLV encoded input stream
-	 */
-	public CBEFFDataGroup(InputStream in) {
-		super(in);
-		try {
-			TLVInputStream tlvIn = new TLVInputStream(in);	
-			int bioInfoGroupTemplateTag = tlvIn.readTag();
-			if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
-				throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
-			}
-			tlvIn.readLength();
-			int bioInfoCountTag = tlvIn.readTag();
-			if (bioInfoCountTag != BIOMETRIC_INFO_COUNT_TAG) { /* 02 */
-				throw new IllegalArgumentException("Expected tag BIOMETRIC_INFO_COUNT_TAG (" + Integer.toHexString(BIOMETRIC_INFO_COUNT_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoCountTag));
-			}
-			int tlvBioInfoCountLength = tlvIn.readLength();
-			if (tlvBioInfoCountLength != 1) {
-				throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1, found length " + tlvBioInfoCountLength);
-			}
-			int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
-			for (int i = 0; i < bioInfoCount; i++) {
-				readBIT(tlvIn, i);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("Could not decode: " + e.toString());
+	
+	CBEFFDataGroup(InputStream in, int tag) {
+		super(in, tag);
+	}
+	
+	protected void readContent(TLVInputStream tlvIn) throws IOException {	
+		int bioInfoGroupTemplateTag = tlvIn.readTag();
+		if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
 		}
-		isSourceConsistent = false;
+		tlvIn.readLength();
+		int bioInfoCountTag = tlvIn.readTag();
+		if (bioInfoCountTag != BIOMETRIC_INFO_COUNT_TAG) { /* 02 */
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFO_COUNT_TAG (" + Integer.toHexString(BIOMETRIC_INFO_COUNT_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoCountTag));
+		}
+		int tlvBioInfoCountLength = tlvIn.readLength();
+		if (tlvBioInfoCountLength != 1) {
+			throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1, found length " + tlvBioInfoCountLength);
+		}
+		int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
+		for (int i = 0; i < bioInfoCount; i++) {
+			readBIT(tlvIn, i);
+		}
 	}
 
 	private void readBIT(TLVInputStream tlvIn, int templateIndex) throws IOException {
@@ -216,22 +205,25 @@ abstract class CBEFFDataGroup extends DataGroup
 		templates.add(data);
 	}
 	
-	/* EXPERIMENTAL */
+	protected void writeContent(TLVOutputStream out) throws IOException {
+		out.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG);
+		out.writeTag(BIOMETRIC_INFO_COUNT_TAG);
+		out.writeValue(new byte[] { 1 });
+		/* FIXME for (..) writeBIT -> for (..) writeBHT */
 
+	}
 	
-	/*		for (BioTemplateInfo bht: templates)  { */
-//	   		writeBHT(out, templateIndex);
-/*      } */
+	/* EXPERIMENTAL */	
 	
 	private void writeBIT(TLVOutputStream out, int templateIndex) throws IOException {
-		out.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG);
 	}
 	
-	private void writeBHT(TLVOutputStream out, int templateIndex) throws IOException {
-		out.writeTag(BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex);
+	private void writeBiometricDataBlock(TLVOutputStream out) throws IOException {
+		
+	}
+	
+	protected void writeBiometricData(TLVOutputStream out) throws IOException {
+		
 	}
 
-	public abstract byte[] getEncoded();
-
-	public abstract String toString();
 }

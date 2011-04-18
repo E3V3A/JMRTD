@@ -207,7 +207,7 @@ public class MRZInfo implements Serializable
 	}
 
 	/**
-	 * Gets this MRZ info as byte array.
+	 * Gets this MRZ info as byte array (without the 5F1F tag).
 	 *
 	 * @return an encoded version of this MRZ info
 	 */

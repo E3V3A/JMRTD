@@ -34,6 +34,8 @@ import org.jmrtd.lds.FaceInfo;
 
 public class DG2FileTest extends TestCase
 {
+	private static final String TEST_FILE = "/t:/paspoort/test/0102.bin";
+	
 	public DG2FileTest(String name) {
 		super(name);
 	}
@@ -82,12 +84,9 @@ public class DG2FileTest extends TestCase
 			int faceCount = dg2File.getFaceInfos().size();
 			FaceInfo faceInfo = faceCount == 0 ? null : dg2File.getFaceInfos().get(0);
 			int width = faceCount == 0 ? -1 : faceInfo.getWidth(), height = faceCount == 0 ? -1 : faceInfo.getHeight();
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			
 			for (int i = 0; i < n; i++) {
-				out.reset();
-				dg2File.writeObject(out);
-				encoded = out.toByteArray();
+				encoded = dg2File.getEncoded();
 				dg2File = new DG2File(new ByteArrayInputStream(encoded));
 				// assertEquals(dg2File, copy);
 				// assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
@@ -108,7 +107,7 @@ public class DG2FileTest extends TestCase
 	}
 
 	public static DG2File createTestObject() throws IOException {
-		return new DG2File(new FileInputStream("/t:/paspoort/test/0102.bin"));
+		return new DG2File(new FileInputStream(TEST_FILE));
 	}
 
 	public void testFile(InputStream in) {

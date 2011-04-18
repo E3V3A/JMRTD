@@ -37,7 +37,6 @@ import java.util.List;
  */
 public class DG3File extends CBEFFDataGroup
 {
-
 	private List<FingerInfo> fingerInfos;
 
 	/**
@@ -46,14 +45,7 @@ public class DG3File extends CBEFFDataGroup
 	 * @param in an input stream
 	 */
 	public DG3File(InputStream in) {
-		super(in);
-	}
-
-	public byte[] getEncoded() {
-		if (isSourceConsistent) {
-			return sourceObject;
-		}
-		return null;
+		super(in, EF_DG3_TAG);
 	}
 
 	public int getTag() {
@@ -115,8 +107,7 @@ public class DG3File extends CBEFFDataGroup
 		}
 
 		for (int i = 0; i < fingerCount; i++) {
-			FingerInfo fingerInfo = new FingerInfo(dataIn, mimeType);
-			addFingerInfo(fingerInfo);
+			addFingerInfo(new FingerInfo(dataIn, mimeType));
 		}
 	}
 

@@ -44,11 +44,22 @@ public class DG15FileTest extends TestCase
 	}
 
 	public void testReflexive(DG15File dg15File) {
-		byte[] encoded = dg15File.getEncoded();
-		ByteArrayInputStream in = new ByteArrayInputStream(encoded);
-		DG15File copy = new DG15File(in);
-		assertEquals(dg15File, copy);
-		assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+		try {
+			byte[] encoded = dg15File.getEncoded();
+
+			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
+			DG15File copy = new DG15File(in);
+
+			assertEquals(dg15File, copy);
+			assertEquals(dg15File.getPublicKey(), copy.getPublicKey());
+
+			byte[] encodedCopy = copy.getEncoded();
+			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(encodedCopy));
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	public void testGetPublic() {

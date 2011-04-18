@@ -31,6 +31,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for displayed image template files.
@@ -51,34 +52,32 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	protected DisplayedImageDataGroup() {
 		this.images = new ArrayList<DisplayedImageInfo>();
 	}
+	
+	public DisplayedImageDataGroup(InputStream in, int tagToExpect) {
+		super(in, tagToExpect);
+	}
 
-	/**
-	 * Constructs a data group structure by parsing <code>in</code>.
-	 * 
-	 * @param in a TLV encoded input stream
-	 */
-	public DisplayedImageDataGroup(InputStream in) {
-		super(in);
-		this.images = new ArrayList<DisplayedImageInfo>();
-		try {
-			TLVInputStream tlvIn = new TLVInputStream(in);
-			int countTag = tlvIn.readTag();
-			if (countTag != DISPLAYED_IMAGE_COUNT) { /* 02 */
-				throw new IllegalArgumentException("Expected tag 0x02 in displayed image structure, found " + Integer.toHexString(countTag));
-			}
-			int countLength = tlvIn.readLength();
-			if (countLength != 1) {
-				throw new IllegalArgumentException("DISPLAYED_IMAGE_COUNT should have length 1");
-			}
-			int count = (tlvIn.readValue()[0] & 0xFF);
-			for (int i = 0; i < count; i++) {
-				readDisplayedImage(tlvIn);
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("Could not decode: " + e.toString());
+	protected void readContent(TLVInputStream tlvIn) throws IOException {
+		int countTag = tlvIn.readTag();
+		if (countTag != DISPLAYED_IMAGE_COUNT) { /* 02 */
+			throw new IllegalArgumentException("Expected tag 0x02 in displayed image structure, found " + Integer.toHexString(countTag));
 		}
-		isSourceConsistent = false;
+		int countLength = tlvIn.readLength();
+		if (countLength != 1) {
+			throw new IllegalArgumentException("DISPLAYED_IMAGE_COUNT should have length 1");
+		}
+		int count = (tlvIn.readValue()[0] & 0xFF);
+		for (int i = 0; i < count; i++) {
+			readDisplayedImage(tlvIn);
+		}
+	}
+	
+	protected void writeContent(TLVOutputStream out) throws IOException {
+		out.writeTag(DISPLAYED_IMAGE_COUNT);
+		out.writeValue(new byte[] { (byte)images.size() });
+		for (DisplayedImageInfo imageInfo: images) {
+			writeDisplayedImage(out);
+		}
 	}
 
 	/**
@@ -89,7 +88,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */
-	private void readDisplayedImage(TLVInputStream tlvIn) throws IOException {
+	protected void readDisplayedImage(TLVInputStream tlvIn) throws IOException {
 		int displayedImageTag = tlvIn.readTag();
 		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */ &&
 				displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
@@ -111,6 +110,8 @@ abstract class DisplayedImageDataGroup extends DataGroup
 			images.add(new DisplayedImageInfo(type, image));
 		}
 	}
+	
+	protected abstract void writeDisplayedImage(TLVOutputStream out) throws IOException;
 
 	/**
 	 * Gets the images.
@@ -120,11 +121,4 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	public List<DisplayedImageInfo> getImages() {
 		return images;
 	}
-
-	/**
-	 * TODO: can be concrete method here.
-	 */
-	public abstract byte[] getEncoded();
-
-	public abstract String toString();
 }
