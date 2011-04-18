@@ -52,7 +52,7 @@ public class DG2FileTest extends TestCase
 	public void testWriteObject() {
 		try {
 			DG2File dg2File = createTestObject();
-			testWriteObject(dg2File, 100);
+			testWriteObject(dg2File, 2);
 		} catch (Exception e) {
 			fail(e.toString());
 		}
@@ -68,6 +68,7 @@ public class DG2FileTest extends TestCase
 			// assertEquals(dg2File, copy);
 			// assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}
@@ -111,6 +112,6 @@ public class DG2FileTest extends TestCase
 	}
 
 	public void testFile(InputStream in) {
-		testWriteObject(new DG2File(in), 100);
+		testWriteObject(new DG2File(in), 3);
 	}
 }

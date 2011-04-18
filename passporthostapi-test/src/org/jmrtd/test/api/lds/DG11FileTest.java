@@ -47,6 +47,24 @@ public class DG11FileTest extends TestCase
 		assertEquals(dg11File.toString(), expectedResult);
 	}
 
+	public void testDecodeEncode() {
+		byte[] simpleDG11 = new byte[] {
+				0x6B, 0x30, 0x5C, 0x10, 0x5F, 0x0E, 0x5F, 0x10, 0x5F, 0x2B, 0x5F, 0x12, 0x5F, 0x13, 0x5F, 0x14,
+				0x5F, 0x15, 0x5F, 0x18, 0x5F, 0x0E, 0x02, 0x3C, 0x3C, 0x5F, 0x10, 0x00, 0x5F, 0x2B, 0x04, 0x19,
+				0x71, 0x10, 0x19, 0x5F, 0x12, 0x00, 0x5F, 0x13, 0x00, 0x5F, 0x14, 0x00, 0x5F, 0x15, 0x00, 0x5F,
+				0x18, 0x00
+		};
+				
+		try {
+			DG11File dg11File = new DG11File(new ByteArrayInputStream(simpleDG11));
+			byte[] encoded = dg11File.getEncoded();
+			assertEquals(Hex.bytesToHexString(simpleDG11), Hex.bytesToHexString(encoded));
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
 	public void testReflexive() {
 		testReflexive(createTestObject());
 	}
@@ -55,15 +73,21 @@ public class DG11FileTest extends TestCase
 		try {
 			if (dg11File == null) { fail("Input file is null"); }
 			byte[] encoded = dg11File.getEncoded();
-			if (encoded == null) { fail("Encoding of input file is null");	}
-			
+			assertNotNull(encoded);
 			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
-			
+
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			DG11File copy = new DG11File(in);
-			if (copy == null) { fail("Parsing from input stream resulted in null"); }
+
+			assertNotNull(copy);
 			assertEquals(dg11File, copy);
+			
+			byte[] encodedCopy = copy.getEncoded();
+			assertNotNull(encodedCopy);
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encodedCopy));
+
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());

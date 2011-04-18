@@ -39,15 +39,12 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
 public abstract class DataGroup extends PassportFile
 {
 	private int dataGroupTag;
-	private int dataGroupLength;
-	private boolean isLengthKnown;
 
 	/**
 	 * Constructs a datagroup. This constructor
 	 * is only visible to the other classes in this package.
 	 */
 	DataGroup() {
-		isLengthKnown = false;
 	}
 
 	/**
@@ -72,21 +69,15 @@ public abstract class DataGroup extends PassportFile
 		if (tag != dataGroupTag) {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
 		}
-		dataGroupLength = tlvIn.readLength();
-		isLengthKnown = true;
+		tlvIn.readLength();
 		readContent(tlvIn);
 	}
 
 	protected void writeObject(OutputStream out) throws IOException {
 		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
 		tlvOut.writeTag(getTag());
-		if (isLengthKnown) {
-			tlvOut.writeLength(getLength());
-			writeContent(tlvOut);
-		} else {
-			writeContent(tlvOut);
-			tlvOut.writeValueEnd(); /* dataGroupTag */
-		}
+		writeContent(tlvOut);
+		tlvOut.writeValueEnd(); /* dataGroupTag */
 	}
 
 	/*
@@ -123,9 +114,7 @@ public abstract class DataGroup extends PassportFile
 	 * @return the length of the value of the data group
 	 */
 	public int getLength() {
-		if (isLengthKnown) {
-			return dataGroupLength;
-		} else if (isSourceConsistent) {
+		if (isSourceConsistent) {
 			return sourceObject.length;
 		} else {
 			throw new IllegalStateException("Length not yet known");

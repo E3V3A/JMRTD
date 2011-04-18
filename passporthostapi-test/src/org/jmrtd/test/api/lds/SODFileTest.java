@@ -22,6 +22,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -123,15 +124,13 @@ public class SODFileTest extends TestCase {
 		return keyPairGenerator.generateKeyPair();
 	}
 
-	public void testDavidEid1() {
+	public void testSODInFile(File file) {
 		try {
 			Provider[] providers = 	Security.getProviders();
 			for (Provider provider: providers) {
 				System.out.println("Security provider: " + provider);
 			}
-
-			//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
-			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/david_eid_sod.bin"));
+			SODFile sodFile = new SODFile(new FileInputStream(file));
 			X509Certificate cert = sodFile.getDocSigningCertificate();
 			System.out.println(cert.toString());
 			System.out.println(cert.getSerialNumber());
@@ -139,23 +138,6 @@ public class SODFileTest extends TestCase {
 			e.printStackTrace();
 			return; // inconclusive!
 		} catch (Exception e) {
-			fail(e.getMessage());
-		}
-	}
-
-	public void testDavidEid2() {
-		try {
-			//			SODFile sodFile = new SODFile(new FileInputStream("/home/martijno/Downloads/SmartCard_EF.SOD.dat"));
-			//			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/DavidEid_falsified_EF.SOD.bin"));
-			SODFile sodFile = new SODFile(new FileInputStream("t:/paspoort/davideid3.bin"));
-			X509Certificate sodcert = sodFile.getDocSigningCertificate();
-			boolean result = sodFile.checkDocSignature(sodcert);
-			System.out.println("DEBUG: result = " + result);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return; // inconclusive!
-		} catch (Exception e) {
-			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}

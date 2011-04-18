@@ -51,11 +51,15 @@ public class COMFileTest extends TestCase
 	private void testReflexive(COMFile comFile) {
 		try {
 			byte[] encoded = comFile.getEncoded();
+			
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
+			
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			COMFile copy = new COMFile(in);
 			assertEquals(comFile, copy);
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}

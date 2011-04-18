@@ -39,7 +39,7 @@ public class DG3FileTest extends TestCase
 	public void testFile() {
 		try {
 //			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
-			String testFile = "t:/paspoort/woj-dg3-top-secret-0103.bin";
+			String testFile = "t:/paspoort/test/woj-dg3-top-secret-0103.bin";
 			FileInputStream in = new FileInputStream(testFile);
 			DG3File dg3 = new DG3File(in);
 			for (FingerInfo fingerPrint: dg3.getFingerInfos()) {
@@ -47,6 +47,7 @@ public class DG3FileTest extends TestCase
 				System.out.println("DEBUG: fingerprint " + image.getWidth() + " x " + image.getHeight());
 			}
 		} catch (FileNotFoundException fnfe) {
+			fnfe.printStackTrace();
 			fail(fnfe.getMessage());
 		}
 	}

@@ -196,35 +196,12 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		out.writeTag(VERSION_UNICODE_TAG);
 		out.writeValue((majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes());
 		out.writeTag(TAG_LIST_TAG);
+		
 		out.writeLength(tagList.size());
 		for (int tag: tagList) {
 			out.write((byte)tag);
 		}
 	}
-		
-//	public byte[] getEncoded() {
-//		try {
-//			byte[] versionLDSBytes = (versionLDS + updateLevelLDS).getBytes();
-//			BERTLVObject versionLDSObject = new BERTLVObject(VERSION_LDS_TAG, versionLDSBytes);
-//			byte[] versionUnicodeBytes =
-//				(majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes();
-//			BERTLVObject versionUnicodeObject = new BERTLVObject(VERSION_UNICODE_TAG, versionUnicodeBytes);
-//			byte[] tagListAsBytes = new byte[tagList.size()];
-//			for (int i = 0; i < tagList.size(); i++) {
-//				int dgTag = tagList.get(i);
-//				tagListAsBytes[i] = (byte)dgTag;
-//			}
-//			BERTLVObject tagListObject = new BERTLVObject(TAG_LIST_TAG, tagListAsBytes);
-//			BERTLVObject[] value = { versionLDSObject, versionUnicodeObject, tagListObject };
-//			BERTLVObject ef011E =
-//				new BERTLVObject(EF_COM_TAG, value);
-//			ef011E.reconstructLength();
-//			return ef011E.getEncoded();
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return null;
-//		}
-//	}
 
 	/**
 	 * Gets a textual representation of this file.

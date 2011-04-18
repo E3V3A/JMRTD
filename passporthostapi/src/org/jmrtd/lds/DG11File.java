@@ -100,7 +100,7 @@ public class DG11File extends DataGroup
 	private BufferedImage proofOfCitizenship;
 	private List<String> otherValidTDNumbers;
 	private String custodyInformation;
-	
+
 	private List<Integer> tagPresenceList;
 
 	/**
@@ -148,8 +148,7 @@ public class DG11File extends DataGroup
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
-		int 
-		tag = tlvIn.readTag();
+		int tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
 		int length = tlvIn.readLength();
 		int tagCount = length / 2;
@@ -181,6 +180,7 @@ public class DG11File extends DataGroup
 				/* NOTE: French encoding */
 				parseFullDateOfBirth(Hex.bytesToHexString(value));
 			}
+			break;
 		case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
 		case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(new String(value, "UTF-8")); break;
 		case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
@@ -293,7 +293,7 @@ public class DG11File extends DataGroup
 	public int getTag() {
 		return EF_DG11_TAG;
 	}
-	
+
 	/**
 	 * Gets list of tags present.
 	 * 
@@ -442,17 +442,17 @@ public class DG11File extends DataGroup
 		StringBuffer result = new StringBuffer();
 		result.append("DG11File [");
 		result.append(fullNamePrimaryIdentifier); result.append(", ");
-		result.append(fullNameSecondaryIdentifiers == null ? "" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
+		result.append(fullNameSecondaryIdentifiers == null || fullNameSecondaryIdentifiers.size() == 0 ? "[]" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
 		result.append(personalNumber); result.append(", ");
 		result.append(SDF.format(fullDateOfBirth)); result.append(", ");
-		result.append(placeOfBirth == null ? "" : placeOfBirth.toString()); result.append(", ");
-		result.append(permanentAddress == null ? "" : permanentAddress.toString()); result.append(", ");
+		result.append(placeOfBirth == null || placeOfBirth.size() == 0 ? "[]" : placeOfBirth.toString()); result.append(", ");
+		result.append(permanentAddress == null || permanentAddress.size() == 0 ? "[]" : permanentAddress.toString()); result.append(", ");
 		result.append(telephone); result.append(", ");
 		result.append(profession); result.append(", ");
 		result.append(title); result.append(", ");
 		result.append(personalSummary); result.append(", ");
 		result.append(proofOfCitizenship == null ? "" : proofOfCitizenship.getWidth() + "x" + proofOfCitizenship.getHeight()); result.append(", ");
-		result.append(otherValidTDNumbers == null ? "" : otherValidTDNumbers.toString()); result.append(", ");
+		result.append(otherValidTDNumbers == null || otherValidTDNumbers.size() == 0 ? "[]" : otherValidTDNumbers.toString()); result.append(", ");
 		result.append(custodyInformation);
 		result.append("]");
 		return result.toString();
@@ -463,20 +463,7 @@ public class DG11File extends DataGroup
 		if (obj == this) { return true; }
 		if (!obj.getClass().equals(this.getClass())) { return false; }
 		DG11File other = (DG11File)obj;
-		return (other.proofOfCitizenship == null && proofOfCitizenship == null && other.toString().equals(toString()) || (other.proofOfCitizenship != null && other.proofOfCitizenship.equals(proofOfCitizenship)));
-		//		other.fullNamePrimaryIdentifier.equals(fullNamePrimaryIdentifier) &&
-		//		other.fullNameSecondaryIdentifiers.equals(fullNameSecondaryIdentifiers) &&
-		//		other.personalNumber.equals(personalNumber) &&
-		//		other.fullDateOfBirth.equals(fullDateOfBirth) &&
-		//		other.placeOfBirth.equals(placeOfBirth) &&
-		//		other.permanentAddress.equals(permanentAddress) &&
-		//		other.telephone.equals(telephone) &&
-		//		other.profession.equals(profession) &&
-		//		other.title.equals(title) &&
-		//		other.personalSummary.equals(personalSummary) &&
-		//		other.proofOfCitizenship.equals(proofOfCitizenship) &&
-		//		other.otherValidTDNumbers.equals(otherValidTDNumbers) &&
-		//		other.custodyInformation.equals(custodyInformation);
+		return this.toString().equals(other.toString());
 	}
 
 	public int hashCode() {
