@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -68,7 +69,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	SMT_DO_CC = 0x8E,
 	SMT_DO_DS = 0x9E;
 
-	protected List<byte[]> templates;
+//	protected List<byte[]> templates;
 
 	protected CBEFFDataGroup() {
 	}
@@ -197,13 +198,14 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * @param length the length
 	 * @throws IOException if reading fails
 	 */
-	protected void readBiometricData(InputStream in, int length) throws IOException {
-		DataInputStream dataIn = new DataInputStream(in);
-		byte[] data = new byte[length];
-		dataIn.readFully(data);
-		if (templates == null) { templates = new ArrayList<byte[]>(); }
-		templates.add(data);
-	}
+	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
+//	{
+//		DataInputStream dataIn = new DataInputStream(in);
+//		byte[] data = new byte[length];
+//		dataIn.readFully(data);
+//		if (templates == null) { templates = new ArrayList<byte[]>(); }
+//		templates.add(data);
+//	}
 	
 	protected void writeContent(TLVOutputStream out) throws IOException {
 		out.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG);
@@ -222,8 +224,6 @@ abstract class CBEFFDataGroup extends DataGroup
 		
 	}
 	
-	protected void writeBiometricData(TLVOutputStream out) throws IOException {
-		
-	}
+//	protected abstract void writeBiometricData(OutputStream out) throws IOException;
 
 }

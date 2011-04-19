@@ -767,7 +767,7 @@ public class PassportEditFrame extends JMRTDFrame
 								FaceInfo.HAIR_COLOR_UNSPECIFIED,
 								FaceInfo.EXPRESSION_UNSPECIFIED,
 								FaceInfo.SOURCE_TYPE_UNSPECIFIED,
-								image);
+								image, "images/jpeg");
 						InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
 						DG2File dg2 = new DG2File(dg2In);
 						dg2.addFaceInfo(faceInfo);

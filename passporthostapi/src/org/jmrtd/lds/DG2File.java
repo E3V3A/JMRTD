@@ -27,6 +27,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,7 +78,7 @@ public class DG2File extends CBEFFDataGroup
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
-		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
+		DataInputStream dataIn = in instanceof DataInputStream ? (DataInputStream)in : new DataInputStream(in);
 		/* Facial Record Header (14) */
 		/* int fac0 = */ dataIn.readInt(); // header (e.g. "FAC", 0x00)
 		/* int version = */ dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)
@@ -133,87 +134,58 @@ public class DG2File extends CBEFFDataGroup
 	public void writeContent(TLVOutputStream tlvOut) throws IOException {
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
 		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
-		tlvOut.writeValue(new byte[] { (byte)faceInfos.size() });
+		int bioInfoCount = faceInfos.size();
+		tlvOut.writeValue(new byte[] { (byte)bioInfoCount });
 
-		byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-		for (FaceInfo info: faceInfos) {
-
-			tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
-			tlvOut.writeTag(bioHeaderTag++ & 0xFF);
-			tlvOut.writeTag(FORMAT_OWNER_TAG);
-			tlvOut.writeValue(formatOwner(info.getImage()));
-
-			tlvOut.writeTag(FORMAT_TYPE_TAG);
-			tlvOut.writeValue(formatType(info.getImage()));
-
-			tlvOut.writeValueEnd(); /* bioHeaderTag */
-
-			tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
-			int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
-			short nrOfImagesInRecord = 1;
-
-			DataOutputStream dataOut = new DataOutputStream(tlvOut);
-			dataOut.write(FORMAT_IDENTIFIER);
-			dataOut.write(VERSION_NUMBER);
-			dataOut.writeInt(lengthOfRecord);
-			dataOut.writeShort(nrOfImagesInRecord);
-			dataOut.write(info.getEncoded());
-			dataOut.flush();
-
-			tlvOut.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
-			tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
+		for (int index = 0; index < bioInfoCount; index++) {
+			writeBIT(tlvOut, index);
 		}
-
 		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
+
 	}
 
-//	public byte[] getEncoded() {
-//		if (isSourceConsistent) {
-//			return sourceObject;
-//		}
-//		try {
-//			/* FIXME: some of this should be moved to CBEFFDataGroup! */
-//			BERTLVObject group = new BERTLVObject(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG /* 7F61 */,
-//					new BERTLVObject(BIOMETRIC_INFO_COUNT_TAG /* 02 */,
-//							(byte)faceInfos.size()));
-//
-//			group.reconstructLength();
-//
-//			byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-//			for (FaceInfo info: faceInfos) {
-//				BERTLVObject header = new BERTLVObject(bioHeaderTag++ & 0xFF,
-//						new BERTLVObject(FORMAT_OWNER_TAG, formatOwner(info.getImage())));
-//				header.addSubObject(new BERTLVObject(FORMAT_TYPE_TAG, formatType(info.getImage())));
-//
-//				BERTLVObject faceObject = new BERTLVObject(BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */, header);
-//
-//				int lengthOfRecord =
-//					FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
-//				short nrOfImagesInRecord = 1;
-//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-//				DataOutputStream dataOut = new DataOutputStream(out);
-//				dataOut.write(FORMAT_IDENTIFIER);
-//				dataOut.write(VERSION_NUMBER);
-//				dataOut.writeInt(lengthOfRecord);
-//				dataOut.writeShort(nrOfImagesInRecord);
-//				dataOut.write(info.getEncoded());
-//				dataOut.flush();
-//				byte[] facialRecord = out.toByteArray();
-//
-//				faceObject.addSubObject(new BERTLVObject(BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */, facialRecord));
-//				group.addSubObject(faceObject);
-//			}
-//			BERTLVObject dg2 = new BERTLVObject(EF_DG2_TAG, group);
-//			dg2.reconstructLength();
-//			byte[] dg2bytes = dg2.getEncoded();
-//			sourceObject = dg2bytes;
-//			isSourceConsistent = true;
-//			return dg2.getEncoded();
-//		} catch (Exception ioe) {
-//			ioe.printStackTrace();
-//			return null;
-//		}
-//	}
+	private void writeBIT(TLVOutputStream tlvOut, int index) throws IOException {
+		FaceInfo info = faceInfos.get(index);
+
+		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
+		
+		byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
+		
+		tlvOut.writeTag(bioHeaderTag++ & 0xFF);
+		tlvOut.writeTag(FORMAT_OWNER_TAG);
+		tlvOut.writeValue(formatOwner(info.getImage()));
+
+		tlvOut.writeTag(FORMAT_TYPE_TAG);
+		tlvOut.writeValue(formatType(info.getImage()));
+
+		tlvOut.writeValueEnd(); /* bioHeaderTag */
+
+		writeBiometricData(tlvOut, new FaceInfo[] { info });
+
+		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
+	}
+
+	protected void writeBiometricData(TLVOutputStream out, FaceInfo[] infos) throws IOException {
+		if (infos == null || infos.length != 1) {
+			throw new IllegalArgumentException("Functionality is currently restricted to 1 image per biometric data block.");
+			/* TODO: allow multiple images per data block... */
+		}
+		
+		out.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
+
+		DataOutputStream dataOut = new DataOutputStream(out);
+
+		/** NOTE: Should be 14... */
+		int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
+		dataOut.write(FORMAT_IDENTIFIER);
+		dataOut.write(VERSION_NUMBER);
+		dataOut.writeInt(lengthOfRecord);
+		dataOut.writeShort(infos.length);
+		dataOut.write(infos[0].getEncoded());
+		dataOut.flush();
+		
+		out.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
+	}
 
 	/**
 	 * Gets a textual representation of this file.

@@ -59,11 +59,13 @@ public class DG3FileTest extends TestCase
 
 	public void testReflexive() {
 		try {
-			DG3File dg3 = new DG3File(new FileInputStream(TEST_FILE));
+			FileInputStream in = new FileInputStream(TEST_FILE);
+			DG3File dg3 = new DG3File(in);
+			
 			byte[] encoded = dg3.getEncoded();
 			assertNotNull(encoded);
 			
-			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
+			System.out.println("DEBUG: encoded =\n" + Hex.bytesToHexString(encoded, 0, 100));
 			
 			DG3File copy = new DG3File(new ByteArrayInputStream(encoded));
 			byte[] encodedCopy = copy.getEncoded();
@@ -73,7 +75,7 @@ public class DG3FileTest extends TestCase
 			assertNotNull(encodedCopy);
 			assertEquals(dg3, copy);
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(encodedCopy));
-		} catch(IOException e) {
+		} catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}

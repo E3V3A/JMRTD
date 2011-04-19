@@ -143,7 +143,7 @@ public class FaceInfo extends DisplayedImageInfo
                            FACE_IMAGE_TYPE_OTHER = 0x04;
    
    /** Image data type code based on Section 5.7.2 of ISO 19794-5. */
-   public enum ImageData { TYPE_JPEG, TYPE_JPEG2000 };
+   public enum ImageDataType { TYPE_JPEG, TYPE_JPEG2000 };
    private static final int IMAGE_DATA_TYPE_JPEG = 0x00,
                             IMAGE_DATA_TYPE_JPEG2000 = 0x01;
    
@@ -210,7 +210,7 @@ public class FaceInfo extends DisplayedImageInfo
     * @param image image
     */
    public FaceInfo(Gender gender, EyeColor eyeColor, int hairColor, short expression,
-		   int sourceType, BufferedImage image) {
+		   int sourceType, BufferedImage image, String mimeType) {
 	   this();
 	   this.faceImageBlockLength = 0L;
 	   this.gender = gender;
@@ -225,7 +225,7 @@ public class FaceInfo extends DisplayedImageInfo
 	   this.width = image.getWidth();
 	   this.height = image.getHeight();
 	   this.featurePoints = new FeaturePoint[0];
-	   this.imageDataType = IMAGE_DATA_TYPE_JPEG;
+	   this.imageDataType = fromMimeType(mimeType);
    }
 
    /**
@@ -237,6 +237,10 @@ public class FaceInfo extends DisplayedImageInfo
     */
    FaceInfo(InputStream in) throws IOException {
 	   this();
+	   readContent(in);
+   }
+   
+   protected void readContent(InputStream in) throws IOException {
 	   dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 
 	   /* Facial Information (20) */
@@ -299,91 +303,87 @@ public class FaceInfo extends DisplayedImageInfo
 
    public byte[] getEncoded() {
       try {
-         ByteArrayOutputStream out = new ByteArrayOutputStream();
-         DataOutputStream dataOut = new DataOutputStream(out);
-
-         /* Facial Information (20) */
-         // dataOut.writeInt((int)faceImageBlockLength); /* Is computed below! */
-         dataOut.writeShort(featurePoints.length);
-         dataOut.writeByte(gender.toInt());
-         dataOut.writeByte(eyeColor.toInt());
-         dataOut.writeByte(hairColor);
-         dataOut.writeByte((byte)((featureMask & 0xFF0000L) >> 16));
-         dataOut.writeByte((byte)((featureMask & 0x00FF00L) >> 8));
-         dataOut.writeByte((byte)(featureMask & 0x0000FFL));
-         dataOut.writeShort(expression);
-         for (int i = 0; i < 3; i++) {
-            int b = (0 <= poseAngle[i] && poseAngle[i] <= 180) ?
-                  poseAngle[i] / 2 + 1 : 181 + poseAngle[i] / 2;
-                  dataOut.writeByte(b);
-         }
-         for (int i = 0; i < 3; i++) {
-            dataOut.writeByte(poseAngleUncertainty[i]);
-         }
-
-         /* Feature Point(s) (optional) (8 * featurePointCount) */
-         for (int i = 0; i < featurePoints.length; i++) {
-            FeaturePoint fp = featurePoints[i];
-            dataOut.writeByte(fp.getType());
-            dataOut.writeByte((fp.getMajorCode() << 4) | fp.getMinorCode());
-            dataOut.writeShort(fp.getX());
-            dataOut.writeShort(fp.getY());
-            dataOut.writeShort(0x00); // 2 bytes reserved
-         }
-
-         /* Image Information */
-         dataOut.writeByte(faceImageType);
-         dataOut.writeByte(imageDataType);
-         dataOut.writeShort(width);
-         dataOut.writeShort(height);
-         dataOut.writeByte(imageColorSpace);
-         dataOut.writeByte(sourceType);
-         dataOut.writeShort(deviceType);
-         dataOut.writeShort(quality);
-
-         /*
-          * Read image data, image data type code based on Section 5.8.1
-          * ISO 19794-5
-          */
-         if (image == null) { getImage(); }
-         switch (imageDataType) {
-         case IMAGE_DATA_TYPE_JPEG:
-            writeImage(image, dataOut, "image/jpeg");
-            break;
-         case IMAGE_DATA_TYPE_JPEG2000:
-            writeImage(image, dataOut, "image/jpeg2000");
-            break;
-         default:
-            throw new IOException("Unknown image data type!");
-         }
-
-         dataOut.flush();
-         byte[] facialRecordData = out.toByteArray();
-         dataOut.close();
-
-         faceImageBlockLength = facialRecordData.length;
-
-         out = new ByteArrayOutputStream();
-         dataOut = new DataOutputStream(out);
-         dataOut.writeInt((int)faceImageBlockLength);
-         dataOut.write(facialRecordData);
-         dataOut.flush();
-         facialRecordData = out.toByteArray();
-         dataOut.close();
-
-         return facialRecordData;
-      } catch (IOException ioe) {
-         ioe.printStackTrace();
-         return null;
-      }
+    	  ByteArrayOutputStream out = new ByteArrayOutputStream();
+    	  writeContent(out);
+    	  out.flush();
+    	  out.close();
+    	  return out.toByteArray();
+       } catch (IOException ioe) {
+          ioe.printStackTrace();
+          return null;
+       }
    }
 
-   private BufferedImage processImage(InputStream in, String mimeType, boolean isProgressiveMode) {
+   public void writeContent(OutputStream out) throws IOException {
+	   ByteArrayOutputStream recordOut = new ByteArrayOutputStream();
+	   writeFacialRecordData(recordOut);
+	   byte[] facialRecordData = recordOut.toByteArray();
+	   faceImageBlockLength = facialRecordData.length;
+
+	   DataOutputStream dataOut = new DataOutputStream(out);
+	   dataOut.writeInt((int)faceImageBlockLength);
+	   dataOut.write(facialRecordData);
+	   dataOut.flush();
+   }
+   
+   private void writeFacialRecordData(OutputStream out) throws IOException {
+       DataOutputStream dataOut = new DataOutputStream(out);
+
+       /* Facial Information (20) */
+       // dataOut.writeInt((int)faceImageBlockLength); /* Is computed below! */
+       dataOut.writeShort(featurePoints.length);
+       dataOut.writeByte(gender.toInt());
+       dataOut.writeByte(eyeColor.toInt());
+       dataOut.writeByte(hairColor);
+       dataOut.writeByte((byte)((featureMask & 0xFF0000L) >> 16));
+       dataOut.writeByte((byte)((featureMask & 0x00FF00L) >> 8));
+       dataOut.writeByte((byte)(featureMask & 0x0000FFL));
+       dataOut.writeShort(expression);
+       for (int i = 0; i < 3; i++) {
+          int b = (0 <= poseAngle[i] && poseAngle[i] <= 180) ?
+                poseAngle[i] / 2 + 1 : 181 + poseAngle[i] / 2;
+                dataOut.writeByte(b);
+       }
+       for (int i = 0; i < 3; i++) {
+          dataOut.writeByte(poseAngleUncertainty[i]);
+       }
+
+       /* Feature Point(s) (optional) (8 * featurePointCount) */
+       for (int i = 0; i < featurePoints.length; i++) {
+          FeaturePoint fp = featurePoints[i];
+          dataOut.writeByte(fp.getType());
+          dataOut.writeByte((fp.getMajorCode() << 4) | fp.getMinorCode());
+          dataOut.writeShort(fp.getX());
+          dataOut.writeShort(fp.getY());
+          dataOut.writeShort(0x00); /* 2 bytes RFU */
+       }
+
+       /* Image Information */
+       dataOut.writeByte(faceImageType);
+       dataOut.writeByte(imageDataType);
+       dataOut.writeShort(width);
+       dataOut.writeShort(height);
+       dataOut.writeByte(imageColorSpace);
+       dataOut.writeByte(sourceType);
+       dataOut.writeShort(deviceType);
+       dataOut.writeShort(quality);
+
+       /*
+        * image data type code based on Section 5.8.1
+        * ISO 19794-5
+        */
+       if (image == null) { getImage(); }
+       writeImage(image, dataOut, toMimeType(imageDataType));
+       dataOut.flush();
+       dataOut.close();
+   }
+
+   private BufferedImage readImage(InputStream in, String mimeType, boolean isProgressiveMode) {
 	   Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 	   while (readers.hasNext()) {
 		   try {
 			   ImageReader reader = (ImageReader)readers.next();
-			   BufferedImage image = processImage(in, reader, isProgressiveMode);
+			   BufferedImage image = readImage(in, reader, isProgressiveMode);
 			   if (image != null) { return image; }
 		   } catch (Exception e) {
 			   /* NOTE: this reader doesn't work? Try next one... */
@@ -394,7 +394,7 @@ public class FaceInfo extends DisplayedImageInfo
 	   throw new IllegalArgumentException("Could not decode \"" + mimeType + "\" image!");
    }
 
-   private BufferedImage processImage(InputStream in, ImageReader reader, boolean isProgressiveMode) {
+   private BufferedImage readImage(InputStream in, ImageReader reader, boolean isProgressiveMode) {
 	   ImageReadParam pm = reader.getDefaultReadParam();
 	   pm.setSourceRegion(new Rectangle(0, 0, width, height));
 
@@ -492,10 +492,10 @@ public class FaceInfo extends DisplayedImageInfo
 	   if (image != null) { return image; }
 	   switch (imageDataType) {
 	   case IMAGE_DATA_TYPE_JPEG:
-		   resultImage = processImage(dataIn, "image/jpeg", isProgressiveMode);
+		   resultImage = readImage(dataIn, "image/jpeg", isProgressiveMode);
 		   break;
 	   case IMAGE_DATA_TYPE_JPEG2000:
-		   resultImage = processImage(dataIn, "image/jpeg2000", isProgressiveMode);
+		   resultImage = readImage(dataIn, "image/jpeg2000", isProgressiveMode);
 		   break;
 	   default:
 		   throw new IllegalStateException("Unknown image data type!");
@@ -855,7 +855,21 @@ public class FaceInfo extends DisplayedImageInfo
 		   l.passComplete(image, percentage);
 	   }
    }
-
+   
+	private String toMimeType(int compressionAlg) {
+		switch (compressionAlg) {
+		case IMAGE_DATA_TYPE_JPEG: return "image/jpeg";
+		case IMAGE_DATA_TYPE_JPEG2000: return "image/jpeg2000";
+		}
+		return null;
+	}
+	
+	private int fromMimeType(String mimeType) {
+		if ("image/jpeg".equals(mimeType)) { return IMAGE_DATA_TYPE_JPEG; }
+		if ("image/jpeg2000".equals(mimeType)) { return IMAGE_DATA_TYPE_JPEG2000; }
+		throw new IllegalArgumentException("Did not recognize mimeType");
+	}
+   
    /**
     * Feature points as described in Section 5.6.3 of ISO/IEC FCD 19794-5.
     * 
