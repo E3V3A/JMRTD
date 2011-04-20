@@ -34,6 +34,9 @@ public class DisplayedImageInfo
 
 	protected int type;
 	private BufferedImage image;
+	
+	private byte[] sourceObject; // FIXME
+	private boolean isSourceConsistent; // FIXME
 
 	public DisplayedImageInfo(int type) {
 		this.type = type;

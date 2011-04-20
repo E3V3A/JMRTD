@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -42,6 +42,8 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 public class DG3File extends CBEFFDataGroup
 {
+	/* FIXME: meaningful equals(), hashCode(), toString() */
+	
 	private static final byte[] FORMAT_IDENTIFIER = { 'F', 'I', 'R', 0x00 };
 	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
 
@@ -131,9 +133,7 @@ public class DG3File extends CBEFFDataGroup
 		FingerInfo info = fingerInfos.get(index);
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
 
-		byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-
-		tlvOut.writeTag(bioHeaderTag++ & 0xFF); /* A1++ */
+		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1++ */
 
 		tlvOut.writeTag(FORMAT_OWNER_TAG);
 		tlvOut.writeValue(formatOwner(info.getImage()));
@@ -141,7 +141,7 @@ public class DG3File extends CBEFFDataGroup
 		tlvOut.writeTag(FORMAT_TYPE_TAG);
 		tlvOut.writeValue(formatType(info.getImage()));
 
-		tlvOut.writeValueEnd(); /* bioHeaderTag */
+		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
 
 		writeBiometricData(tlvOut, new FingerInfo[] { info });
 
@@ -166,36 +166,33 @@ public class DG3File extends CBEFFDataGroup
 			/* TODO: allow multiple images per data block... */
 		}
 
-		tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
-
 		FingerInfo info = infos[0];
 
-		DataOutputStream dataOut = new DataOutputStream(tlvOut);
-		dataOut.write(FORMAT_IDENTIFIER);
-		dataOut.write(VERSION_NUMBER);
-
+		tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
+	
 		/* NOTE: Should be 32... */
 		long headerLength = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 2;
 
 		byte[] infoBytes = info.getEncoded();
 		long infoLength = infoBytes.length;
 
-		System.out.println("DEBUG: infoLength = " + infoLength + ", headerLength + infoLength = " + (headerLength + infoLength));
-
-		writeLong(headerLength + infoLength, dataOut, 6);
-		dataOut.writeInt(0); /* captureDeviceId */
-		dataOut.writeShort(0); /* imageAcquisitionLevel */
+		DataOutputStream dataOut = new DataOutputStream(tlvOut);
+		dataOut.write(FORMAT_IDENTIFIER); /* 4 */
+		dataOut.write(VERSION_NUMBER); /* + 4 = 8 */
+		writeLong(headerLength + infoLength, dataOut, 6); /* + 6 = 14 */
+		dataOut.writeShort(0); /* captureDeviceId */ /* + 2 = 16 */
+		dataOut.writeShort(0); /* imageAcquisitionLevel */ /* +2 = 18 */
 		int fingerCount = infos.length;
-		dataOut.writeByte(fingerCount);
-		dataOut.writeByte(1); /* scaleUnits, 1 -> PPI, 2 -> PPCM */
-		dataOut.writeShort(1); /* scanResH */
-		dataOut.writeShort(1); /* scanResV */
-		dataOut.writeShort(1); /* imgResH */
-		dataOut.writeShort(1); /* imgResV */
-		dataOut.writeByte(8); /* depth */
+		dataOut.writeByte(fingerCount); /* + 1 = 19 */
+		dataOut.writeByte(1); /* scaleUnits, 1 -> PPI, 2 -> PPCM */ /* + 1 = 20 */
+		dataOut.writeShort(1); /* scanResH */ /* + 2 = 22 */
+		dataOut.writeShort(1); /* scanResV */ /* + 2 = 24 */
+		dataOut.writeShort(1); /* imgResH */ /* + 2 = 26 */
+		dataOut.writeShort(1); /* imgResV */ /* + 2 = 28 */
+		dataOut.writeByte(8); /* depth */ /* + 1 = 29 */
 
-		dataOut.writeByte(fromMimeType(info.getMimeType()));
-		dataOut.writeShort(0x0000); /* RFU */
+		dataOut.writeByte(fromMimeType(info.getMimeType())); /* + 1 = 30 */
+		dataOut.writeShort(0x0000); /* RFU */ /* + 2 = 32 */
 		dataOut.write(infoBytes);
 		dataOut.flush();
 		

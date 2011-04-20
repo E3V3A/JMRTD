@@ -25,11 +25,9 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.util.List;
 
 import junit.framework.TestCase;
-
-import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.FingerInfo;
@@ -57,28 +55,32 @@ public class DG3FileTest extends TestCase
 		}
 	}
 
-	public void testReflexive() {
+	public void testDecodeEncode() {
 		try {
 			FileInputStream in = new FileInputStream(TEST_FILE);
 			DG3File dg3 = new DG3File(in);
 			
 			byte[] encoded = dg3.getEncoded();
 			assertNotNull(encoded);
-			
-			System.out.println("DEBUG: encoded =\n" + Hex.bytesToHexString(encoded, 0, 100));
-			
+						
 			DG3File copy = new DG3File(new ByteArrayInputStream(encoded));
 			byte[] encodedCopy = copy.getEncoded();
 			
-			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encodedCopy));
-
 			assertNotNull(encodedCopy);
-			assertEquals(dg3, copy);
-			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(encodedCopy));
+			List<FingerInfo> dg3Infos = dg3.getFingerInfos();
+			List<FingerInfo> copyInfos = copy.getFingerInfos();
+			assertEquals(dg3Infos.size(), copyInfos.size());
+			for (int i = 0; i < dg3Infos.size(); i++) {
+				FingerInfo dg3Info = dg3Infos.get(i);
+				FingerInfo copyInfo = copyInfos.get(i);
+				BufferedImage dg3Image = dg3Info.getImage();
+				BufferedImage copyImage = copyInfo.getImage();
+				assertEquals(dg3Image.getHeight(), copyImage.getHeight());
+				assertEquals(dg3Image.getWidth(), copyImage.getWidth());
+			}
 		} catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
 	}
-
 }

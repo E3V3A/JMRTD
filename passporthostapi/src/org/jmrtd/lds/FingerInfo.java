@@ -40,6 +40,8 @@ import javax.imageio.ImageWriter;
 import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
+import net.sourceforge.scuba.util.Hex;
+
 /**
  * Data structure for storing finger information as found in DG3.
  * Coding is based on ISO/IEC FCD 19794-4 aka Annex F.
@@ -142,6 +144,46 @@ public class FingerInfo extends DisplayedImageInfo
 		}
 	}
 
+	/**
+	 * Writes the biometric data to <code>out</code>.
+	 * 
+	 * This currently re-encodes the image, even if its source was a
+	 * binary representation.
+	 * 
+	 * @param out stream to write to
+	 * 
+	 * @throws IOException if writing to out fails
+	 */
+	protected void writeContent(OutputStream out) throws IOException {		
+		ByteArrayOutputStream imageOut = new ByteArrayOutputStream();
+		writeImage(image, imageOut, mimeType);
+		imageOut.flush();
+		byte[] imageBytes = imageOut.toByteArray();
+		
+		System.out.println("DEBUG: imageBytes = " + Hex.bytesToHexString(imageBytes, 0, 100));
+		
+		imageOut.close();
+
+		fingerDataBlockLength = imageBytes.length + 14;
+		
+		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
+		
+		/* Finger Information (14) */
+		dataOut.writeInt((int)(fingerDataBlockLength & 0xFFFFFFFFL));
+		System.out.println("DEBUG: FingerInfo.write fingerDataBlockLength = " + fingerDataBlockLength);
+		dataOut.writeByte(fingerOrPalmPostion);
+		dataOut.writeByte(viewCount);
+		dataOut.writeByte(viewNumber);
+		dataOut.writeByte(fingerOrPalmImageQuality);
+		dataOut.writeByte(impressionType);
+		dataOut.writeShort(lineLengthH);
+		dataOut.writeShort(lineLengthV);
+		dataOut.writeByte(0x00); /* RFU */
+
+		dataOut.write(imageBytes);
+		dataOut.flush();
+	}
+	
 	private void writeImage(BufferedImage image, OutputStream out, String mimeType)
 	throws IOException {
 		Iterator<ImageWriter> writers = ImageIO.getImageWritersByMIMEType(mimeType);
@@ -177,39 +219,6 @@ public class FingerInfo extends DisplayedImageInfo
 			ioe.printStackTrace();
 			return null;
 		}
-	}
-
-	protected void writeContent(OutputStream out) throws IOException {
-		ByteArrayOutputStream recordOut = new ByteArrayOutputStream();
-		writeFingerRecordData(recordOut);
-		byte[] recordData = recordOut.toByteArray();
-		int imageBlockLength = recordData.length;
-
-		DataOutputStream dataOut = new DataOutputStream(out);
-		dataOut.writeInt((int)imageBlockLength);
-		dataOut.write(recordData);
-		dataOut.flush();
-	}
-	
-	protected void writeFingerRecordData(OutputStream out) throws IOException {
-		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
-		
-		/* Finger Information (14) */
-		dataOut.writeInt((int)(fingerDataBlockLength & 0xFFFFFFFFL));
-		System.out.println("DEBUG: FingerInfo.write fingerDataBlockLength = " + fingerDataBlockLength);
-		dataOut.writeByte(fingerOrPalmPostion);
-		dataOut.writeByte(viewCount);
-		dataOut.writeByte(viewNumber);
-		dataOut.writeByte(fingerOrPalmImageQuality);
-		dataOut.writeByte(impressionType);
-		dataOut.writeShort(lineLengthH);
-		dataOut.writeShort(lineLengthV);
-		dataOut.writeByte(0x00); /* RFU */
-		dataOut.flush();
-		
-		/* Image data */
-		writeImage(image, dataOut, mimeType);
-		dataOut.flush();
 	}
 
 	/**

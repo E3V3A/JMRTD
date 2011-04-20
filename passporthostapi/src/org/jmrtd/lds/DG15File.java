@@ -31,7 +31,6 @@ import java.security.spec.X509EncodedKeySpec;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.util.Hex;
 
 /**
  * File structure for the EF_DG15 file.

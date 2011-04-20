@@ -27,7 +27,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -148,17 +147,15 @@ public class DG2File extends CBEFFDataGroup
 		FaceInfo info = faceInfos.get(index);
 
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
-		
-		byte bioHeaderTag = BIOMETRIC_HEADER_TEMPLATE_BASE_TAG; /* A1 */
-		
-		tlvOut.writeTag(bioHeaderTag++ & 0xFF);
+				
+		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1 + index */
 		tlvOut.writeTag(FORMAT_OWNER_TAG);
 		tlvOut.writeValue(formatOwner(info.getImage()));
 
 		tlvOut.writeTag(FORMAT_TYPE_TAG);
 		tlvOut.writeValue(formatType(info.getImage()));
 
-		tlvOut.writeValueEnd(); /* bioHeaderTag */
+		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
 
 		writeBiometricData(tlvOut, new FaceInfo[] { info });
 

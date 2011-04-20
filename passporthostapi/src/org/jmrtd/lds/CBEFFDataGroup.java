@@ -23,12 +23,8 @@
 package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
