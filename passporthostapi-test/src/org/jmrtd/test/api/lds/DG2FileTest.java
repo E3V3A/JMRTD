@@ -81,8 +81,8 @@ public class DG2FileTest extends TestCase
 	public void testWriteObject(DG2File dg2File, int n) {
 		try {
 			byte[] encoded = null;
-			int faceCount = dg2File.getFaceInfos().size();
-			FaceInfo faceInfo = faceCount == 0 ? null : dg2File.getFaceInfos().get(0);
+			int faceCount = dg2File.getBiometricTemplates().size();
+			FaceInfo faceInfo = faceCount == 0 ? null : dg2File.getBiometricTemplates().get(0);
 			int width = faceCount == 0 ? -1 : faceInfo.getWidth(), height = faceCount == 0 ? -1 : faceInfo.getHeight();
 			
 			for (int i = 0; i < n; i++) {
@@ -94,8 +94,8 @@ public class DG2FileTest extends TestCase
 			
 			// System.out.println("DEBUG: final copy =\n" + Hex.bytesToPrettyString(encoded));
 			
-			int copyFaceCount = dg2File.getFaceInfos().size();
-			faceInfo = faceCount == 0 ? null : dg2File.getFaceInfos().get(0);
+			int copyFaceCount = dg2File.getBiometricTemplates().size();
+			faceInfo = faceCount == 0 ? null : dg2File.getBiometricTemplates().get(0);
 			int copyWidth = faceCount == 0 ? -1 : faceInfo.getWidth(), copyHeight = faceCount == 0 ? -1 : faceInfo.getHeight();
 			assertEquals(faceCount, copyFaceCount);
 			assertEquals(width, copyWidth);

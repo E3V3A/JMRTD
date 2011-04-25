@@ -45,7 +45,7 @@ public class DG3FileTest extends TestCase
 		try {
 			FileInputStream in = new FileInputStream(TEST_FILE);
 			DG3File dg3 = new DG3File(in);
-			for (FingerInfo fingerPrint: dg3.getFingerInfos()) {
+			for (FingerInfo fingerPrint: dg3.getBiometricTemplates()) {
 				BufferedImage image = fingerPrint.getImage();
 				System.out.println("DEBUG: fingerprint " + image.getWidth() + " x " + image.getHeight());
 			}
@@ -67,8 +67,8 @@ public class DG3FileTest extends TestCase
 			byte[] encodedCopy = copy.getEncoded();
 			
 			assertNotNull(encodedCopy);
-			List<FingerInfo> dg3Infos = dg3.getFingerInfos();
-			List<FingerInfo> copyInfos = copy.getFingerInfos();
+			List<FingerInfo> dg3Infos = dg3.getBiometricTemplates();
+			List<FingerInfo> copyInfos = copy.getBiometricTemplates();
 			assertEquals(dg3Infos.size(), copyInfos.size());
 			for (int i = 0; i < dg3Infos.size(); i++) {
 				FingerInfo dg3Info = dg3Infos.get(i);

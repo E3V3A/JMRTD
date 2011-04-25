@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,23 +43,29 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 abstract class DisplayedImageDataGroup extends DataGroup
 {
-	private static final int DISPLAYED_IMAGE_COUNT = 0x02;
-	private static final int DISPLAYED_PORTRAIT_TAG = 0x5F40;
-	private static final int DISPLAYED_SIGNATURE_OR_MARK_TAG = 0x5F43;
+	protected static final int
+	DISPLAYED_PORTRAIT_TAG = 0x5F40,
+	DISPLAYED_SIGNATURE_OR_MARK_TAG = 0x5F43;
 
-	private List<DisplayedImageInfo> images;
+	private static final int DISPLAYED_IMAGE_COUNT_TAG = 0x02;
 
-	protected DisplayedImageDataGroup() {
-		this.images = new ArrayList<DisplayedImageInfo>();
+	protected int displayedImageTagToUseForEncoding;
+	
+	protected List<DisplayedImageInfo> images;
+
+	public DisplayedImageDataGroup(List<DisplayedImageInfo> images, int displayedImageTagToUseForEncoding) {
+		this.images = new ArrayList<DisplayedImageInfo>(images);
+		this.displayedImageTagToUseForEncoding = displayedImageTagToUseForEncoding;
 	}
 	
 	public DisplayedImageDataGroup(InputStream in, int tagToExpect) {
 		super(in, tagToExpect);
+		this.images = new ArrayList<DisplayedImageInfo>();
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
 		int countTag = tlvIn.readTag();
-		if (countTag != DISPLAYED_IMAGE_COUNT) { /* 02 */
+		if (countTag != DISPLAYED_IMAGE_COUNT_TAG) { /* 02 */
 			throw new IllegalArgumentException("Expected tag 0x02 in displayed image structure, found " + Integer.toHexString(countTag));
 		}
 		int countLength = tlvIn.readLength();
@@ -73,10 +79,10 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	}
 	
 	protected void writeContent(TLVOutputStream out) throws IOException {
-		out.writeTag(DISPLAYED_IMAGE_COUNT);
+		out.writeTag(DISPLAYED_IMAGE_COUNT_TAG);
 		out.writeValue(new byte[] { (byte)images.size() });
 		for (DisplayedImageInfo imageInfo: images) {
-			writeDisplayedImage(out);
+			writeDisplayedImage(imageInfo, out);
 		}
 	}
 
@@ -90,29 +96,50 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 */
 	protected void readDisplayedImage(TLVInputStream tlvIn) throws IOException {
 		int displayedImageTag = tlvIn.readTag();
-		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */ &&
-				displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
+		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */
+				&& displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
 			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
 		}
+		
+		int type = -1;
+		switch (displayedImageTag) {
+		case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
+		case DISPLAYED_SIGNATURE_OR_MARK_TAG: type = DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK; break;
+		default: throw new IllegalArgumentException("Cannot determine type in displayed image group (tag " + Integer.toHexString(displayedImageTag));
+		}
+		
+		displayedImageTagToUseForEncoding = displayedImageTag;
 		/* int displayedImageLength = */ tlvIn.readLength();
 		/* Displayed Facial Image: ISO 10918, JFIF option
 		 * Displayed Finger: ANSI/NIST-ITL 1-2000
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
 		 */
 		BufferedImage image = ImageIO.read(tlvIn);
-		int type = -1;
+
 		if (image != null) {
-			switch (displayedImageTag) {
-			case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
-			case DISPLAYED_SIGNATURE_OR_MARK_TAG: type = DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK; break;
-			default: throw new IllegalArgumentException("Unknown type in displayed image group (tag " + Integer.toHexString(displayedImageTag));
-			}
 			images.add(new DisplayedImageInfo(type, image));
 		}
 	}
-	
-	protected abstract void writeDisplayedImage(TLVOutputStream out) throws IOException;
 
+	protected void writeDisplayedImage(DisplayedImageInfo info, TLVOutputStream out) throws IOException {
+		out.writeTag(displayedImageTagToUseForEncoding);
+		ImageIO.write(info.getImage(), "jpg", out);
+		out.writeValueEnd();		
+	}
+
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		result.append(getClass().getSimpleName());
+		result.append(" [");
+		boolean isFirst = true;
+		for (DisplayedImageInfo info: images) {
+			if (isFirst) { isFirst = false; } else { result.append(", "); }
+			result.append(info.toString());
+		}
+		result.append("]");
+		return result.toString();
+	}
+	
 	/**
 	 * Gets the images.
 	 *

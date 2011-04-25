@@ -235,7 +235,7 @@ public class PassportViewFrame extends JMRTDFrame
 					break;
 				case PassportService.EF_DG2:
 					DG2File dg2 = new DG2File(in);
-					List<FaceInfo> faces = dg2.getFaceInfos();
+					List<FaceInfo> faces = dg2.getBiometricTemplates();
 					for (FaceInfo face: faces) { displayPreviewPanel.addDisplayedImage(face, isProgressiveMode); }
 					break;
 				case PassportService.EF_DG3:
@@ -243,7 +243,7 @@ public class PassportViewFrame extends JMRTDFrame
 					if (eacEvent == null || !eacEvent.isSuccess()) {
 						logger.warning("Starting to read DG3, but eacEvent = " + eacEvent);
 					}
-					List<FingerInfo> fingers = dg3.getFingerInfos();
+					List<FingerInfo> fingers = dg3.getBiometricTemplates();
 					for (FingerInfo finger: fingers) { displayPreviewPanel.addDisplayedImage(finger, isProgressiveMode); }
 					break;
 				case PassportService.EF_DG4:
@@ -620,7 +620,7 @@ public class PassportViewFrame extends JMRTDFrame
 				try {
 					InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
 					DG3File dg3 = new DG3File(dg3In);
-					List<FingerInfo> fingerPrints = dg3.getFingerInfos();
+					List<FingerInfo> fingerPrints = dg3.getBiometricTemplates();
 					FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
 					fingerPrintFrame.setVisible(true);
 					fingerPrintFrame.pack();

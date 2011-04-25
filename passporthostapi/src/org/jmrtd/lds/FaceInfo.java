@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,8 +55,10 @@ import org.jmrtd.ImageReadUpdateListener;
  *
  * @version $Revision$
  */
-public class FaceInfo extends DisplayedImageInfo
+public class FaceInfo extends DisplayedImageInfo implements BiometricTemplate
 {
+	public static final String DEFAULT_MIME_TYPE = "image/jpeg";
+	
    /* Gender code based on Section 5.5.3 of ISO 19794-5: See sos.data.Gender. */
 
     /** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
@@ -977,5 +979,9 @@ public class FaceInfo extends DisplayedImageInfo
 		   out.append(")");
 		   return out.toString();
 	   }
+   }
+
+   public String getMimeType() {
+	   return DEFAULT_MIME_TYPE; /* FIXME: allow caller to specify this, probably in DisplayedImageDataGroup. See FingerInfo. */
    }
 }

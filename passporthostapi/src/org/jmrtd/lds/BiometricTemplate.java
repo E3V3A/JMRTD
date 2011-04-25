@@ -17,45 +17,15 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id: CBEFFDataGroup.java 1319 2011-04-20 21:08:32Z martijno $
  */
 
 package org.jmrtd.lds;
 
-import java.awt.image.BufferedImage;
-
-public class DisplayedImageInfo
-{
-	public static final int
-	TYPE_PORTRAIT = 0,
-	TYPE_SIGNATURE_OR_MARK = 1,
-	TYPE_FINGER = 2,
-	TYPE_IRIS = 3;
-
-	protected int type;
-	private BufferedImage image;
+public interface BiometricTemplate {
 	
-	private byte[] sourceObject; // FIXME
-	private boolean isSourceConsistent; // FIXME
+	byte[] getEncoded(); // FIXME: temporary placeholder, template can contain several encodable entitities
 
-	public DisplayedImageInfo(int type) {
-		this.type = type;
-	}
-
-	public DisplayedImageInfo(int type, BufferedImage image) {
-		this(type);
-		this.image = image;
-	}
-
-	public int getType() {
-		return type;
-	}
-
-	public BufferedImage getImage() {
-		return getImage(false);
-	}
-
-	public BufferedImage getImage(boolean isProgressive) {
-		return image;
-	}
+	String getMimeType(); // FIXME: idem
+	
 }

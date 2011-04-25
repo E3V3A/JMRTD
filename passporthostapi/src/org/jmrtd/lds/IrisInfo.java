@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,9 +48,11 @@ import javax.imageio.stream.ImageInputStream;
  *
  * @version $Revision: $
  */
-public class IrisInfo extends DisplayedImageInfo
+public class IrisInfo extends DisplayedImageInfo implements BiometricTemplate
 {
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final String DEFAULT_MIME_TYPE = "image/jpeg";
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	public static final int
 	IMAGEFORMAT_MONO_RAW = 2, /* (0x0002) */
@@ -84,7 +86,7 @@ public class IrisInfo extends DisplayedImageInfo
 	IrisInfo(InputStream in, int imageFormat) throws IOException {
 		this();
 		dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
-		String mimeType = getMimeType(imageFormat);
+		String mimeType = toMimeType(imageFormat);
 
 		/* int imageNumber = */ dataIn.readUnsignedShort();
 		/* int quality = */ dataIn.readUnsignedByte();
@@ -122,7 +124,7 @@ public class IrisInfo extends DisplayedImageInfo
 				image = reader.read(0);
 				long posAfterImage =  iis.getStreamPosition();
 				if ((posAfterImage - posBeforeImage) != imageLength) {
-					logger.warning("Image may not have been correctly read");
+					LOGGER.warning("Image may not have been correctly read");
 				}
 			} catch (Exception e) {
 				/* NOTE: this reader doesn't work? Try next one... */
@@ -134,11 +136,6 @@ public class IrisInfo extends DisplayedImageInfo
 		if (image == null) {
 			throw new IOException("Could not decode \"" + mimeType + "\" image!");
 		}
-	}
-
-	public byte[] getEncoded() {
-		/* FIXME: TBD */
-		return null;
 	}
 
 	/**
@@ -160,7 +157,7 @@ public class IrisInfo extends DisplayedImageInfo
 		return image;
 	}
 
-	private static String getMimeType(int imageFormat) {
+	private static String toMimeType(int imageFormat) {
 		String mimeType = null;
 		switch (imageFormat) {
 		case IMAGEFORMAT_MONO_RAW:
@@ -173,5 +170,14 @@ public class IrisInfo extends DisplayedImageInfo
 		case IMAGEFORMAT_RGB_JPEG2000: mimeType = "image/jpeg2000"; break;
 		}
 		return mimeType;
+	}
+
+	public byte[] getEncoded() {
+		// TODO Auto-generated method stub
+		return null; // FIXME
+	}
+
+	public String getMimeType() {
+		return DEFAULT_MIME_TYPE; // FIXME
 	}
 }

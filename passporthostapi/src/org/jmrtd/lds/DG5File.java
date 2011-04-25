@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,10 +22,8 @@
 
 package org.jmrtd.lds;
 
-import java.io.IOException;
 import java.io.InputStream;
-
-import net.sourceforge.scuba.tlv.TLVOutputStream;
+import java.util.List;
 
 /**
  * File structure for the EF_DG5 file.
@@ -36,19 +34,15 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 public class DG5File extends DisplayedImageDataGroup
 {
+	public DG5File(List<DisplayedImageInfo> images) {
+		super(images, DISPLAYED_PORTRAIT_TAG);
+	}
+	
 	public DG5File(InputStream in) {
 		super(in, EF_DG5_TAG);
 	}
 
 	public int getTag() {
 		return EF_DG5_TAG;
-	}
-
-	public String toString() {
-		return "DG5File";
-	}
-
-	protected void writeDisplayedImage(TLVOutputStream out) throws IOException {
-		// FIXME: which tag? See readDisplayedImage in DisplayedImageDataGroup
 	}
 }

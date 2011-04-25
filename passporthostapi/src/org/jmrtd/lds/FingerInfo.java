@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,7 +55,7 @@ import net.sourceforge.scuba.util.Hex;
  *
  * @version $Revision: $
  */
-public class FingerInfo extends DisplayedImageInfo
+public class FingerInfo extends DisplayedImageInfo implements BiometricTemplate
 {	
 	private long fingerDataBlockLength;
 	private int fingerOrPalmPostion;

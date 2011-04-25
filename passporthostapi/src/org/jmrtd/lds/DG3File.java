@@ -22,7 +22,6 @@
 
 package org.jmrtd.lds;
 
-import java.awt.Image;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -62,10 +61,18 @@ public class DG3File extends CBEFFDataGroup
 		return EF_DG3_TAG;
 	}
 
-	public List<FingerInfo> getFingerInfos() {
+	public List<FingerInfo> getBiometricTemplates() {
 		return fingerInfos;
 	}
 
+	public BiometricTemplate getBiometricTemplate(int index) {
+		return fingerInfos.get(index);
+	}
+	
+	public int getBiometricTemplateCount() {
+		return fingerInfos == null ? 0 : fingerInfos.size();
+	}
+	
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -116,58 +123,7 @@ public class DG3File extends CBEFFDataGroup
 		}
 	}
 
-	public void writeContent(TLVOutputStream tlvOut) throws IOException {
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
-		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
-		int bioInfoCount = fingerInfos.size();
-		tlvOut.writeValue(new byte[] { (byte)bioInfoCount });
-
-		for (int index = 0; index < bioInfoCount; index++) {
-			writeBIT(tlvOut, index);
-		}
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
-	}
-
-	private void writeBIT(TLVOutputStream tlvOut, int index) throws IOException {
-		FingerInfo info = fingerInfos.get(index);
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
-
-		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1++ */
-
-		tlvOut.writeTag(FORMAT_OWNER_TAG);
-		tlvOut.writeValue(formatOwner(info.getImage()));
-
-		tlvOut.writeTag(FORMAT_TYPE_TAG);
-		tlvOut.writeValue(formatType(info.getImage()));
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
-
-		writeBiometricData(tlvOut, new FingerInfo[] { info });
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
-	}
-
-	private byte[] formatOwner(Image i) {
-		// FIXME
-		byte[] ownr = { 0x01, 0x01 };
-		return ownr;
-	}
-
-	private byte[] formatType(Image i) {
-		// FIXME
-		byte[] fmt = { 0x00, 0x08 };
-		return fmt;
-	}
-
-	protected void writeBiometricData(TLVOutputStream tlvOut, FingerInfo[] infos) throws IOException {
-		if (infos == null || infos.length != 1) {
-			throw new IllegalArgumentException("Functionality is currently restricted to 1 image per biometric data block.");
-			/* TODO: allow multiple images per data block... */
-		}
-
-		FingerInfo info = infos[0];
-
+	protected void writeBiometricData(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException {
 		tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
 	
 		/* NOTE: Should be 32... */
@@ -182,7 +138,7 @@ public class DG3File extends CBEFFDataGroup
 		writeLong(headerLength + infoLength, dataOut, 6); /* + 6 = 14 */
 		dataOut.writeShort(0); /* captureDeviceId */ /* + 2 = 16 */
 		dataOut.writeShort(0); /* imageAcquisitionLevel */ /* +2 = 18 */
-		int fingerCount = infos.length;
+		int fingerCount = 1;
 		dataOut.writeByte(fingerCount); /* + 1 = 19 */
 		dataOut.writeByte(1); /* scaleUnits, 1 -> PPI, 2 -> PPCM */ /* + 1 = 20 */
 		dataOut.writeShort(1); /* scanResH */ /* + 2 = 22 */

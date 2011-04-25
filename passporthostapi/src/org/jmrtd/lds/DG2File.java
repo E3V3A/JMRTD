@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,7 +22,6 @@
 
 package org.jmrtd.lds;
 
-import java.awt.Image;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -118,56 +117,7 @@ public class DG2File extends CBEFFDataGroup
 		isSourceConsistent = false;
 	}
 
-	private byte[] formatOwner(Image i) {
-		// FIXME
-		byte[] ownr = { 0x01, 0x01 };
-		return ownr;
-	}
-
-	private byte[] formatType(Image i) {
-		// FIXME
-		byte[] fmt = { 0x00, 0x08 };
-		return fmt;
-	}
-
-	public void writeContent(TLVOutputStream tlvOut) throws IOException {
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
-		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
-		int bioInfoCount = faceInfos.size();
-		tlvOut.writeValue(new byte[] { (byte)bioInfoCount });
-
-		for (int index = 0; index < bioInfoCount; index++) {
-			writeBIT(tlvOut, index);
-		}
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
-
-	}
-
-	private void writeBIT(TLVOutputStream tlvOut, int index) throws IOException {
-		FaceInfo info = faceInfos.get(index);
-
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
-				
-		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1 + index */
-		tlvOut.writeTag(FORMAT_OWNER_TAG);
-		tlvOut.writeValue(formatOwner(info.getImage()));
-
-		tlvOut.writeTag(FORMAT_TYPE_TAG);
-		tlvOut.writeValue(formatType(info.getImage()));
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
-
-		writeBiometricData(tlvOut, new FaceInfo[] { info });
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
-	}
-
-	protected void writeBiometricData(TLVOutputStream out, FaceInfo[] infos) throws IOException {
-		if (infos == null || infos.length != 1) {
-			throw new IllegalArgumentException("Functionality is currently restricted to 1 image per biometric data block.");
-			/* TODO: allow multiple images per data block... */
-		}
-		
+	protected void writeBiometricData(TLVOutputStream out, BiometricTemplate info) throws IOException {
 		out.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
 
 		DataOutputStream dataOut = new DataOutputStream(out);
@@ -177,8 +127,8 @@ public class DG2File extends CBEFFDataGroup
 		dataOut.write(FORMAT_IDENTIFIER);
 		dataOut.write(VERSION_NUMBER);
 		dataOut.writeInt(lengthOfRecord);
-		dataOut.writeShort(infos.length);
-		dataOut.write(infos[0].getEncoded());
+		dataOut.writeShort(1);
+		dataOut.write(info.getEncoded());
 		dataOut.flush();
 		
 		out.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
@@ -202,7 +152,6 @@ public class DG2File extends CBEFFDataGroup
 		}
 		result.append("]");
 		return result.toString();
-
 	}
 
 	public boolean equals(Object obj) {
@@ -224,7 +173,15 @@ public class DG2File extends CBEFFDataGroup
 	 *
 	 * @return the images
 	 */
-	public List<FaceInfo> getFaceInfos() {
+	public List<FaceInfo> getBiometricTemplates() {
 		return faceInfos;
+	}
+	
+	public BiometricTemplate getBiometricTemplate(int index) {
+		return faceInfos.get(index);
+	}
+	
+	public int getBiometricTemplateCount() {
+		return faceInfos == null ? 0 : faceInfos.size();
 	}
 }

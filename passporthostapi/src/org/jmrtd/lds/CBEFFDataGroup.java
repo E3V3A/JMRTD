@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
@@ -73,6 +74,12 @@ abstract class CBEFFDataGroup extends DataGroup
 	CBEFFDataGroup(InputStream in, int tag) {
 		super(in, tag);
 	}
+	
+	public abstract List<? extends BiometricTemplate> getBiometricTemplates();
+	
+	public abstract BiometricTemplate getBiometricTemplate(int index);
+	
+	public abstract int getBiometricTemplateCount();
 	
 	protected void readContent(TLVInputStream tlvIn) throws IOException {	
 		int bioInfoGroupTemplateTag = tlvIn.readTag();
@@ -203,23 +210,49 @@ abstract class CBEFFDataGroup extends DataGroup
 //		templates.add(data);
 //	}
 	
-	protected void writeContent(TLVOutputStream out) throws IOException {
-		out.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG);
-		out.writeTag(BIOMETRIC_INFO_COUNT_TAG);
-		out.writeValue(new byte[] { 1 });
-		/* FIXME for (..) writeBIT -> for (..) writeBHT */
+	private byte[] getFormatOwner() {
+		// FIXME
+		byte[] ownr = { 0x01, 0x01 };
+		return ownr;
+	}
+
+	private byte[] getFormatType() {
+		// FIXME
+		byte[] fmt = { 0x00, 0x08 };
+		return fmt;
+	}
+
+	public void writeContent(TLVOutputStream tlvOut) throws IOException {
+		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
+		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
+		int bioInfoCount = getBiometricTemplateCount();
+		tlvOut.writeValue(new byte[] { (byte)bioInfoCount });
+
+		for (int index = 0; index < bioInfoCount; index++) {
+			writeBIT(tlvOut, index);
+		}
+		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
 
 	}
-	
-	/* EXPERIMENTAL */	
-	
-	private void writeBIT(TLVOutputStream out, int templateIndex) throws IOException {
-	}
-	
-	private void writeBiometricDataBlock(TLVOutputStream out) throws IOException {
-		
-	}
-	
-//	protected abstract void writeBiometricData(OutputStream out) throws IOException;
 
+	private void writeBIT(TLVOutputStream tlvOut, int index) throws IOException {
+		BiometricTemplate info = getBiometricTemplate(index);
+
+		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
+				
+		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1 + index */
+		tlvOut.writeTag(FORMAT_OWNER_TAG);
+		tlvOut.writeValue(getFormatOwner());
+
+		tlvOut.writeTag(FORMAT_TYPE_TAG);
+		tlvOut.writeValue(getFormatType());
+
+		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
+
+		writeBiometricData(tlvOut, info);
+
+		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
+	}
+	
+	protected abstract void writeBiometricData(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException;
 }

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2011  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG4 file.
@@ -67,10 +69,18 @@ public class DG4File extends CBEFFDataGroup
 		super(in, EF_DG4_TAG);
 	}
 	
-	public List<IrisInfo> getIrisInfos() {
+	public List<IrisInfo> getBiometricTemplates() {
 		return irisInfos;
 	}
 
+	public int getBiometricTemplateCount() {
+		return irisInfos == null ? 0 : irisInfos.size();
+	}
+	
+	public BiometricTemplate getBiometricTemplate(int index) {
+		return irisInfos.get(index);
+	}
+	
 	public int getTag() {
 		return EF_DG4_TAG;
 	}
@@ -144,5 +154,11 @@ public class DG4File extends CBEFFDataGroup
 	private void addIrisInfo(IrisInfo irisInfo) {
 		if (irisInfos == null) { irisInfos = new ArrayList<IrisInfo>(); }
 		irisInfos.add(irisInfo);
+	}
+
+	protected void writeBiometricData(TLVOutputStream tlvOut,
+			BiometricTemplate info) throws IOException { // FIXME
+		// TODO Auto-generated method stub
+		
 	}
 }
