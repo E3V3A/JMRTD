@@ -59,6 +59,7 @@ public class DG14File extends DataGroup
 	 * @param securityInfos a list of security infos
 	 */
 	public DG14File(List<SecurityInfo> securityInfos) {
+		super(EF_DG14_TAG);
 		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
 	}
 
@@ -69,7 +70,7 @@ public class DG14File extends DataGroup
 	 *            the input stream to parse the data from
 	 */
 	public DG14File(InputStream in) {
-		super(in, EF_DG14_TAG);
+		super(EF_DG14_TAG, in);
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -107,6 +108,7 @@ public class DG14File extends DataGroup
 			Map<Integer, DERObjectIdentifier> chipInfoMap,
 			List<Integer> cvcaFileIdList,
 			Map<Integer, Integer> cvcaShortFileIdMap) {
+		super(EF_DG14_TAG);
 		if (publicKeys.size() == 0) {
 			throw new IllegalArgumentException("Need at least one key.");
 		}
@@ -146,26 +148,6 @@ public class DG14File extends DataGroup
 			}
 		}
 	}
-
-//	public byte[] getEncoded() {
-//		if (isSourceConsistent) {
-//			return sourceObject;
-//		}
-//		try {
-//			ASN1EncodableVector vector = new ASN1EncodableVector();
-//			for (SecurityInfo si : securityInfos) {
-//				vector.add(si.getDERObject());
-//			}
-//			DERSet derSet = new DERSet(vector);
-//			BERTLVObject secInfos = new BERTLVObject(EF_DG14_TAG, derSet.getDEREncoded());
-//			sourceObject = secInfos.getEncoded();
-//			isSourceConsistent = true;
-//			return sourceObject;
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return null;
-//		}
-//	}
 	
 	protected void writeContent(TLVOutputStream out) throws IOException {
 		ASN1EncodableVector vector = new ASN1EncodableVector();

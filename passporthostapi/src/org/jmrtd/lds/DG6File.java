@@ -34,10 +34,6 @@ import java.io.InputStream;
 public class DG6File extends DisplayedImageDataGroup
 {	
 	public DG6File(InputStream in) {
-		super(in, EF_DG6_TAG);
-	}
-	
-	public int getTag() {
-		return EF_DG6_TAG;
+		super(EF_DG6_TAG, in);
 	}
 }

@@ -71,6 +71,7 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 	public COMFile(String versionLDS, String updateLevelLDS,
 			String majorVersionUnicode, String minorVersionUnicode,
 			String releaseLevelUnicode, List<Integer> tagList) {
+		super(EF_COM_TAG);
 		if (versionLDS == null || versionLDS.length() != 2
 				|| updateLevelLDS == null || updateLevelLDS.length() != 2
 				|| majorVersionUnicode == null || majorVersionUnicode.length() != 2
@@ -99,7 +100,7 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * @throws IOException if the input could not be decoded
 	 */
 	public COMFile(InputStream in) throws IOException {
-		super(in, EF_COM_TAG);
+		super(EF_COM_TAG, in);
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -137,15 +138,6 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		tagList = new ArrayList<Integer>();
 		for (int i = 0; i < tagBytes.length; i++) { int dgTag = (tagBytes[i] & 0xFF); tagList.add(dgTag); }
 
-	}
-	
-	/**
-	 * The tag byte of this file.
-	 * 
-	 * @return the tag
-	 */
-	public int getTag() {
-		return EF_COM_TAG;
 	}
 
 	/**

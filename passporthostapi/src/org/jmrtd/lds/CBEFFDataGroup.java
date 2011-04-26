@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -66,13 +67,26 @@ abstract class CBEFFDataGroup extends DataGroup
 	SMT_DO_CC = 0x8E,
 	SMT_DO_DS = 0x9E;
 
-//	protected List<byte[]> templates;
+	private int biometricDataBlockTag;
 
-	protected CBEFFDataGroup() {
+	protected CBEFFDataGroup(int dataGroupTag, int biometricDataBlockTag) {
+		super(dataGroupTag);
+		if (biometricDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG && biometricDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT) {
+			throw new IllegalArgumentException("Biometric data group tag should be either " + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG) + " or " + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG_ALT) + ".");
+		}
+		this.biometricDataBlockTag = biometricDataBlockTag;
 	}
 	
-	CBEFFDataGroup(InputStream in, int tag) {
-		super(in, tag);
+	/**
+	 * Constructs a CBEFFDataGroup instance.
+	 * 
+	 * @param in an input stream
+	 * @param dataGroupTag the datagroup tag to use
+	 * @param biometricDataGroupTag the biometric data block tag to use (either <code>5F2E</code> or <code>7F2E</code>).
+	 */
+	CBEFFDataGroup(int dataGroupTag, InputStream in) {
+		super(dataGroupTag, in);
+		
 	}
 	
 	public abstract List<? extends BiometricTemplate> getBiometricTemplates();
@@ -188,6 +202,7 @@ abstract class CBEFFDataGroup extends DataGroup
 				bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT /* 7F2E */) {
 			throw new IllegalArgumentException("Expected tag BIOMETRIC_DATA_BLOCK_TAG (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG) + ") or BIOMETRIC_DATA_BLOCK_TAG_ALT (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG_ALT) + "), found " + Integer.toHexString(bioDataBlockTag));
 		}
+		this.biometricDataBlockTag = bioDataBlockTag;
 		int length = tlvIn.readLength();
 		readBiometricData(tlvIn, length);
 	}
@@ -202,13 +217,6 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * @throws IOException if reading fails
 	 */
 	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
-//	{
-//		DataInputStream dataIn = new DataInputStream(in);
-//		byte[] data = new byte[length];
-//		dataIn.readFully(data);
-//		if (templates == null) { templates = new ArrayList<byte[]>(); }
-//		templates.add(data);
-//	}
 	
 	private byte[] getFormatOwner() {
 		// FIXME
@@ -249,10 +257,16 @@ abstract class CBEFFDataGroup extends DataGroup
 
 		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
 
-		writeBiometricData(tlvOut, info);
+		writeBiometricDataBlock(tlvOut, info);
 
 		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
 	}
 	
-	protected abstract void writeBiometricData(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException;
+	private void writeBiometricDataBlock(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException {
+		tlvOut.writeTag(biometricDataBlockTag); /* 5F2E or 7F2E */
+		writeBiometricData(tlvOut, info);
+		tlvOut.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E or 7F2E */
+	}
+	
+	protected abstract void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException;
 }

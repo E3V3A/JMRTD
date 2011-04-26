@@ -51,11 +51,12 @@ public class DG15File extends DataGroup
 	 * @param publicKey the key to store in this file
 	 */
 	public DG15File(PublicKey publicKey) {
+		super(EF_DG15_TAG);
 		this.publicKey = publicKey;
 	}
 
 	public DG15File(InputStream in) {
-		super(in, EF_DG15_TAG);
+		super(EF_DG15_TAG, in);
 	}
 	
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -72,28 +73,6 @@ public class DG15File extends DataGroup
 	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
 		byte[] publicKeyBytes = publicKey.getEncoded();
 		tlvOut.writeValue(publicKeyBytes);
-	}
-
-//	public byte[] getEncoded() {
-//		if (isSourceConsistent) {
-//			return sourceObject; // FIXME: WAS: sourceObject.getEncoded();
-//		}
-//		try {
-//			BERTLVObject ef010F =
-//				new BERTLVObject(PassportFile.EF_DG15_TAG,
-//						publicKey.getEncoded());
-//			byte[] ef010Fbytes = ef010F.getEncoded();
-//			sourceObject = ef010Fbytes; // FIXME: WAS: ef010F;
-//			isSourceConsistent = true;
-//			return ef010Fbytes;
-//		} catch (Exception e) {
-//			e.printStackTrace();
-//			return null;
-//		}
-//	}
-
-	public int getTag() {
-		return EF_DG15_TAG;
 	}
 
 	/**

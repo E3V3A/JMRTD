@@ -127,7 +127,7 @@ public class DG11File extends DataGroup
 			String telephone, String profession, String title,
 			String personalSummary, BufferedImage proofOfCitizenship,
 			List<String> otherValidTDNumbers, String custodyInformation) {
-		super();
+		super(EF_DG11_TAG);
 		this.fullNamePrimaryIdentifier = fullNamePrimaryIdentifier;
 		this.fullNameSecondaryIdentifiers = fullNamesecondaryIdentifiers;
 		this.personalNumber = personalNumber;
@@ -144,7 +144,7 @@ public class DG11File extends DataGroup
 	}
 
 	public DG11File(InputStream in) throws IOException {
-		super(in, EF_DG11_TAG);
+		super(EF_DG11_TAG, in);
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -564,134 +564,4 @@ public class DG11File extends DataGroup
 			}
 		}
 	}
-
-	/**
-	 * Gets this file encoded as bytes, including ICAO tag.
-	 * 
-	 * @return this file as byte array.
-	 */
-	//	public byte[] getEncoded() {
-	//		if (isSourceConsistent) {
-	//			return sourceObject;
-	//		}
-	//		try {
-	//			List<BERTLVObject> dataElements = new LinkedList<BERTLVObject>();
-	//
-	//			if (fullNamePrimaryIdentifier != null || fullNameSecondaryIdentifiers != null) {
-	//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//				if (fullNamePrimaryIdentifier !=  null) {
-	//					//					out.write(fullNamePrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
-	//					out.write(fullNamePrimaryIdentifier.trim().getBytes("UTF-8"));
-	//				}
-	//				out.write("<<".getBytes("UTF-8"));
-	//				boolean isFirstOne = true;
-	//				if (fullNameSecondaryIdentifiers != null) {
-	//					for (String secondaryPrimaryIdentifier: fullNameSecondaryIdentifiers) {
-	//						if (secondaryPrimaryIdentifier != null) {
-	//							if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-	//							//							out.write(secondaryPrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
-	//							out.write(secondaryPrimaryIdentifier.trim().getBytes("UTF-8"));
-	//						}
-	//					}
-	//				}
-	//				out.flush();
-	//				dataElements.add(new BERTLVObject(FULL_NAME_TAG, out.toByteArray()));
-	//			}
-	//			if (personalNumber != null) {
-	//				//				dataElements.add(new BERTLVObject(PERSONAL_NUMBER_TAG, personalNumber.trim().replace(' ', '<').getBytes("UTF-8")));
-	//				dataElements.add(new BERTLVObject(PERSONAL_NUMBER_TAG, personalNumber.trim().getBytes("UTF-8")));
-	//			}
-	//			if (fullDateOfBirth != null) {
-	//				String fullDateOfBirthString = SDF.format(fullDateOfBirth);
-	//				//				byte[] fullDateOfBirthBytes = fullDateOfBirthString.getBytes("UTF-8");
-	//				byte[] fullDateOfBirthBytes = Hex.hexStringToBytes(fullDateOfBirthString);
-	//				dataElements.add(new BERTLVObject(FULL_DATE_OF_BIRTH_TAG, fullDateOfBirthBytes));
-	//			}
-	//			if (placeOfBirth != null) {
-	//				boolean isFirstOne = true;
-	//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//				for (String detail: placeOfBirth) {
-	//					if (detail != null) {
-	//						if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-	//						//						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
-	//						out.write(detail.trim().getBytes("UTF-8"));
-	//
-	//					}
-	//				}
-	//				out.flush();
-	//				dataElements.add(new BERTLVObject(PLACE_OF_BIRTH_TAG, out.toByteArray()));
-	//			}
-	//			if (permanentAddress != null) {
-	//				boolean isFirstOne = true;
-	//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//				for (String detail: permanentAddress) {
-	//					if (detail != null) {
-	//						if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-	//						//						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
-	//						out.write(detail.trim().getBytes("UTF-8"));
-	//					}
-	//				}
-	//				out.flush();
-	//				dataElements.add(new BERTLVObject(PERMANENT_ADDRESS_TAG, out.toByteArray()));
-	//			}
-	//			if (telephone != null) {
-	//				dataElements.add(new BERTLVObject(TELEPHONE_TAG, telephone.trim().replace(' ', '<').getBytes("UTF-8")));
-	//			}
-	//			if (profession != null) {
-	//				dataElements.add(new BERTLVObject(PROFESSION_TAG, profession.trim().replace(' ', '<').getBytes("UTF-8")));
-	//			}
-	//			if (title != null) {
-	//				dataElements.add(new BERTLVObject(TITLE_TAG, title.trim().replace(' ', '<').getBytes("UTF-8")));
-	//			}
-	//			if (personalSummary != null) {
-	//				dataElements.add(new BERTLVObject(PERSONAL_SUMMARY_TAG, personalSummary.trim().replace(' ', '<').getBytes("UTF-8")));
-	//			}
-	//			if (proofOfCitizenship != null) {
-	//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//				ImageIO.write(proofOfCitizenship, "image/jpeg", out);
-	//				dataElements.add(new BERTLVObject(PROOF_OF_CITIZENSHIP_TAG, out.toByteArray()));
-	//			}
-	//			if (otherValidTDNumbers != null) {
-	//				boolean isFirstOne = true;
-	//				ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//				for (String detail: otherValidTDNumbers) {
-	//					if (detail != null) {
-	//						if (isFirstOne) { isFirstOne = false; } else { out.write('<'); }
-	//						out.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
-	//					}
-	//				}
-	//				out.flush();
-	//				dataElements.add(new BERTLVObject(OTHER_VALID_TD_NUMBERS_TAG, out.toByteArray()));
-	//			}
-	//			if (custodyInformation != null) {
-	//				dataElements.add(new BERTLVObject(CUSTODY_INFORMATION_TAG, custodyInformation.trim().replace(' ', '<').getBytes("UTF-8")));
-	//			}
-	//
-	//			/* Create tag list */
-	//			ByteArrayOutputStream out = new ByteArrayOutputStream();
-	//			DataOutputStream dataOut = new DataOutputStream(out);
-	//			for (BERTLVObject dataElement: dataElements) {
-	//				try {
-	//					dataOut.writeShort(dataElement.getTag());
-	//				} catch (IOException ioe) {
-	//					/* NOTE: skip tag on error... */
-	//				}
-	//			}
-	//			BERTLVObject tagList = new BERTLVObject(TAG_LIST_TAG, out.toByteArray());
-	//			BERTLVObject dg11Object = new BERTLVObject(PassportFile.EF_DG11_TAG, tagList);
-	//			for (BERTLVObject dataElement: dataElements) {
-	//				dg11Object.addSubObject(dataElement);
-	//			}
-	//			byte[] result = dg11Object.getEncoded();
-	//			return result;
-	//		} catch (UnsupportedEncodingException uee) {
-	//			/* NOTE: UTF-8 always supported... */
-	//			uee.printStackTrace();
-	//			return null;
-	//		} catch (IOException ioe) {
-	//			/* NOTE: write or flush on ByteArrayOutputStream never fails... */ 
-	//			ioe.printStackTrace();
-	//			return null;
-	//		}
-	//	}
 }

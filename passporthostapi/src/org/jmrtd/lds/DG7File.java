@@ -35,14 +35,10 @@ import java.util.List;
 public class DG7File extends DisplayedImageDataGroup
 {
 	public DG7File(List<DisplayedImageInfo> images) {
-		super(images, DISPLAYED_SIGNATURE_OR_MARK_TAG);
+		super(EF_DG7_TAG, images, DISPLAYED_SIGNATURE_OR_MARK_TAG);
 	}
 	
 	public DG7File(InputStream in) {
-		super(in, EF_DG7_TAG);
-	}
-
-	public int getTag() {
-		return EF_DG7_TAG;
+		super(EF_DG7_TAG, in);
 	}
 }

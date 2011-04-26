@@ -53,6 +53,7 @@ public class DG1File extends DataGroup implements Serializable
 	 * @param mrzInfo the MRZ information to store in this file
 	 */
 	public DG1File(MRZInfo mrzInfo) {
+		super(EF_DG1_TAG);
 		this.mrzInfo = mrzInfo;
 	}
 
@@ -64,7 +65,7 @@ public class DG1File extends DataGroup implements Serializable
 	 * @throws IOException if something goes wrong
 	 */
 	public DG1File(InputStream in) {
-		super(in, EF_DG1_TAG);
+		super(EF_DG1_TAG, in);
 	}
 	
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -72,15 +73,6 @@ public class DG1File extends DataGroup implements Serializable
 		tlvIn.readLength();
 		isSourceConsistent = false;
 		this.mrzInfo = new MRZInfo(tlvIn);
-	}
-
-	/**
-	 * The data group tag.
-	 * 
-	 * @return the tag of the data group
-	 */
-	public int getTag() {
-		return EF_DG1_TAG;
 	}
 
 	/**

@@ -99,7 +99,7 @@ public class DG12File extends DataGroup
 			String taxOrExitRequirements, BufferedImage imageOfFront,
 			BufferedImage imageOfRear, Date dateAndTimeOfPersonalization,
 			String personalizationSystemSerialNumber) {
-		super();
+		super(EF_DG12_TAG);
 		this.issuingAuthority = issuingAuthority;
 		this.dateOfIssue = dateOfIssue;
 		this.nameOfOtherPerson = nameOfOtherPerson;
@@ -118,7 +118,7 @@ public class DG12File extends DataGroup
 	 * @throws IOException
 	 */
 	public DG12File(InputStream in) throws IOException {
-		super(in, EF_DG12_TAG);
+		super(EF_DG12_TAG, in);
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {	

@@ -26,11 +26,10 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG2 file.
@@ -62,6 +61,7 @@ public class DG2File extends CBEFFDataGroup
 	 * Creates a new file with zero images.
 	 */
 	public DG2File() {
+		super(EF_DG2_TAG, BIOMETRIC_DATA_BLOCK_TAG);
 		if (faceInfos == null) { faceInfos = new ArrayList<FaceInfo>(); }
 		isSourceConsistent = false;
 	}
@@ -72,7 +72,7 @@ public class DG2File extends CBEFFDataGroup
 	 * @param in an input stream
 	 */
 	public DG2File(InputStream in) {
-		super(in, EF_DG2_TAG);
+		super(EF_DG2_TAG, in);
 	}
 
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
@@ -85,15 +85,6 @@ public class DG2File extends CBEFFDataGroup
 		for (int i = 0; i < faceCount; i++) {
 			addFaceInfo(new FaceInfo(dataIn));
 		}
-	}
-
-	/**
-	 * The data group tag.
-	 * 
-	 * @return the tag of the data group
-	 */
-	public int getTag() {
-		return EF_DG2_TAG;
 	}
 
 	/**
@@ -117,10 +108,8 @@ public class DG2File extends CBEFFDataGroup
 		isSourceConsistent = false;
 	}
 
-	protected void writeBiometricData(TLVOutputStream out, BiometricTemplate info) throws IOException {
-		out.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
-
-		DataOutputStream dataOut = new DataOutputStream(out);
+	protected void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException {
+		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
 
 		/** NOTE: Should be 14... */
 		int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
@@ -129,9 +118,7 @@ public class DG2File extends CBEFFDataGroup
 		dataOut.writeInt(lengthOfRecord);
 		dataOut.writeShort(1);
 		dataOut.write(info.getEncoded());
-		dataOut.flush();
-		
-		out.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
+		dataOut.flush();	
 	}
 
 	/**

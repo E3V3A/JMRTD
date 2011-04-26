@@ -44,7 +44,8 @@ public abstract class DataGroup extends PassportFile
 	 * Constructs a datagroup. This constructor
 	 * is only visible to the other classes in this package.
 	 */
-	DataGroup() {
+	DataGroup(int dataGroupTag) {
+		this.dataGroupTag = dataGroupTag;
 	}
 
 	/**
@@ -54,7 +55,7 @@ public abstract class DataGroup extends PassportFile
 	 * 
 	 * @param in an input stream
 	 */
-	protected DataGroup(InputStream in, int dataGroupTag) {
+	protected DataGroup(int dataGroupTag, InputStream in) {
 		try {
 			this.dataGroupTag = dataGroupTag;
 			readObject(in);

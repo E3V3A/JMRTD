@@ -53,13 +53,14 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	
 	protected List<DisplayedImageInfo> images;
 
-	public DisplayedImageDataGroup(List<DisplayedImageInfo> images, int displayedImageTagToUseForEncoding) {
+	public DisplayedImageDataGroup(int dataGroupTag, List<DisplayedImageInfo> images, int displayedImageTagToUseForEncoding) {
+		super(dataGroupTag);
 		this.images = new ArrayList<DisplayedImageInfo>(images);
 		this.displayedImageTagToUseForEncoding = displayedImageTagToUseForEncoding;
 	}
 	
-	public DisplayedImageDataGroup(InputStream in, int tagToExpect) {
-		super(in, tagToExpect);
+	public DisplayedImageDataGroup(int tagToExpect, InputStream in) {
+		super(tagToExpect, in);
 		this.images = new ArrayList<DisplayedImageInfo>();
 	}
 

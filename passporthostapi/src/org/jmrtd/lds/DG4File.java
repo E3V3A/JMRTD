@@ -23,12 +23,12 @@
 package org.jmrtd.lds;
 
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG4 file.
@@ -41,6 +41,9 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 public class DG4File extends CBEFFDataGroup
 {	
+	private static final byte[] FORMAT_IDENTIFIER = { 'I', 'I', 'R', 0x00 };
+	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
+	
 	private static int
 	IMAGE_QUAL_UNDEF = 0xFE, /* (decimal 254) */
 	IMAGE_QUAL_LOW_LO = 0x1A,
@@ -61,12 +64,21 @@ public class DG4File extends CBEFFDataGroup
 	/* TODO: many more constants here, amongst others bitfields... */
 	
 	/**
+	 * Creates a new file with zero images.
+	 */
+	public DG4File() {
+		super(EF_DG4_TAG, BIOMETRIC_DATA_BLOCK_TAG);
+		if (irisInfos == null) { irisInfos = new ArrayList<IrisInfo>(); }
+		isSourceConsistent = false;
+	}
+	
+	/**
 	 * Constructs a new file based on an input stream.
 	 * 
 	 * @param in an input stream
 	 */
 	public DG4File(InputStream in) {
-		super(in, EF_DG4_TAG);
+		super(EF_DG4_TAG, in);
 	}
 	
 	public List<IrisInfo> getBiometricTemplates() {
@@ -79,10 +91,6 @@ public class DG4File extends CBEFFDataGroup
 	
 	public BiometricTemplate getBiometricTemplate(int index) {
 		return irisInfos.get(index);
-	}
-	
-	public int getTag() {
-		return EF_DG4_TAG;
 	}
 
 	/**
@@ -156,9 +164,45 @@ public class DG4File extends CBEFFDataGroup
 		irisInfos.add(irisInfo);
 	}
 
-	protected void writeBiometricData(TLVOutputStream tlvOut,
-			BiometricTemplate info) throws IOException { // FIXME
-		// TODO Auto-generated method stub
+	protected void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException { // FIXME
+		DataOutputStream dataOut = (out instanceof DataOutputStream) ? (DataOutputStream)out : new DataOutputStream(out);
+
+		/* Iris Record Header (61) */
+		dataOut.write(FORMAT_IDENTIFIER); /* header (e.g. "IIR", 0x00) (4) */
+		dataOut.write(VERSION_NUMBER); /* version in ASCII (e.g. "010" 0x00) (4) */
 		
+		long length = 0L; // FIXME
+		dataOut.write((int)length);
+		
+		int captureDeviceId = 0; // FIXME
+		int irisFeatureCount = 0; // FIXME
+		int recordHeaderLength = 0; // FIXME
+		int imagePropertiesBits = 0; // FIXME
+		int irisDiameter = 0; // FIXME
+		int imageFormat = 0; // FIXME
+		int rawImageWidth = 0; // FIXME
+		int rawImageHeight = 0; // FIXME
+		int intensityDepth = 0; // FIXME
+		int imageTransform = 0; // FIXME
+		byte[] deviceUniqueId = new byte[16];
+		byte[] globallyUniqueId = new byte[16];
+		
+		dataOut.writeShort(captureDeviceId);
+		dataOut.writeByte(irisFeatureCount);
+		dataOut.writeShort(recordHeaderLength);
+		dataOut.writeShort(imagePropertiesBits);
+		dataOut.writeShort(irisDiameter);
+		dataOut.writeShort(imageFormat);
+		dataOut.writeShort(rawImageWidth);
+		dataOut.writeShort(rawImageHeight);
+		dataOut.writeByte(intensityDepth);
+		dataOut.writeByte(imageTransform);
+		dataOut.write(deviceUniqueId); /* byte[] of length 16 */
+		dataOut.write(globallyUniqueId);  /* byte[] of length 16 */
+				
+		/* Features */
+		for (int featureIndex = 0; featureIndex < irisFeatureCount; featureIndex++) {
+//			writeIrisFeature(dataOut, featureIndex, imageFormat);
+		}
 	}
 }

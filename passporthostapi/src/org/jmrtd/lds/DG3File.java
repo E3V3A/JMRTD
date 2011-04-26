@@ -30,8 +30,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sourceforge.scuba.tlv.TLVOutputStream;
-
 /**
  * File structure for the EF_DG3 file.
  * 
@@ -49,16 +47,21 @@ public class DG3File extends CBEFFDataGroup
 	private List<FingerInfo> fingerInfos;
 
 	/**
+	 * Creates a new file with zero images.
+	 */
+	public DG3File() {
+		super(EF_DG3_TAG, BIOMETRIC_DATA_BLOCK_TAG);
+		if (fingerInfos == null) { fingerInfos = new ArrayList<FingerInfo>(); }
+		isSourceConsistent = false;
+	}
+	
+	/**
 	 * Creates a new file based on an input stream.
 	 *
 	 * @param in an input stream
 	 */
 	public DG3File(InputStream in) {
-		super(in, EF_DG3_TAG);
-	}
-
-	public int getTag() {
-		return EF_DG3_TAG;
+		super(EF_DG3_TAG, in);
 	}
 
 	public List<FingerInfo> getBiometricTemplates() {
@@ -123,16 +126,14 @@ public class DG3File extends CBEFFDataGroup
 		}
 	}
 
-	protected void writeBiometricData(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException {
-		tlvOut.writeTag(BIOMETRIC_DATA_BLOCK_TAG); /* 5F2E */
-	
+	protected void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException {
 		/* NOTE: Should be 32... */
 		long headerLength = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 2;
 
 		byte[] infoBytes = info.getEncoded();
 		long infoLength = infoBytes.length;
 
-		DataOutputStream dataOut = new DataOutputStream(tlvOut);
+		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
 		dataOut.write(FORMAT_IDENTIFIER); /* 4 */
 		dataOut.write(VERSION_NUMBER); /* + 4 = 8 */
 		writeLong(headerLength + infoLength, dataOut, 6); /* + 6 = 14 */
@@ -151,8 +152,6 @@ public class DG3File extends CBEFFDataGroup
 		dataOut.writeShort(0x0000); /* RFU */ /* + 2 = 32 */
 		dataOut.write(infoBytes);
 		dataOut.flush();
-		
-		tlvOut.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E */
 	}
 
 	private void addFingerInfo(FingerInfo fingerInfo) {

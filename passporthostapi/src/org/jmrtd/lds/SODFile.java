@@ -134,6 +134,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			byte[] encryptedDigest,
 			X509Certificate docSigningCertificate)
 	throws NoSuchAlgorithmException, CertificateException {
+		super(EF_SOD_TAG);
 		signedData = createSignedData(digestAlgorithm,
 				digestEncryptionAlgorithm,
 				dataGroupHashes,
@@ -159,6 +160,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			PrivateKey privateKey,
 			X509Certificate docSigningCertificate, String provider)
 	throws NoSuchAlgorithmException, CertificateException {
+		super(EF_SOD_TAG);
 		signedData = createSignedData(digestAlgorithm,
 				digestEncryptionAlgorithm,
 				dataGroupHashes,
@@ -186,6 +188,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			X509Certificate docSigningCertificate, String provider,
 			String ldsVersion, String unicodeVersion)
 	throws NoSuchAlgorithmException, CertificateException {
+		super(EF_SOD_TAG);
 		signedData = createSignedData(digestAlgorithm,
 				digestEncryptionAlgorithm,
 				dataGroupHashes,
@@ -210,6 +213,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			PrivateKey privateKey,
 			X509Certificate docSigningCertificate)
 	throws NoSuchAlgorithmException, CertificateException {
+		super(EF_SOD_TAG);
 		signedData = createSignedData(digestAlgorithm,
 				digestEncryptionAlgorithm,
 				dataGroupHashes,
@@ -224,7 +228,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * @throws IOException if something goes wrong
 	 */
 	public SODFile(InputStream in) throws IOException {
-		super(in, EF_SOD_TAG);
+		super(EF_SOD_TAG, in);
 	}
 	
 	protected void readContent(TLVInputStream in) throws IOException {
@@ -237,27 +241,6 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
 		this.signedData = new SignedData(s2);
 	}
-
-	/**
-	 * The tag of this file.
-	 * 
-	 * @return the tag
-	 */
-	public int getTag() {
-		return EF_SOD_TAG;
-	}
-
-//	public byte[] getEncoded() {
-//		if (isSourceConsistent) {
-//			return sourceObject;
-//		}
-//
-//		/* TODO: where is that DERTaggedObject specified? */
-//		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
-//		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
-//		BERTLVObject sodFile = new BERTLVObject(EF_SOD_TAG, fileContentsObject.getDEREncoded());
-//		return sodFile.getEncoded();
-//	}
 	
 	protected void writeContent(TLVOutputStream out) throws IOException {
 		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
