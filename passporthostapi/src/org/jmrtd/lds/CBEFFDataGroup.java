@@ -56,9 +56,9 @@ abstract class CBEFFDataGroup extends DataGroup
 	static final int BIOMETRIC_DATA_BLOCK_TAG = 0x5F2E;
 	static final int BIOMETRIC_DATA_BLOCK_TAG_ALT = 0x7F2E;
 
-	static final int FORMAT_OWNER_TAG = 0x87;
-	static final int FORMAT_TYPE_TAG = 0x88;
-
+	private static final int FORMAT_OWNER_TAG = 0x87, FORMAT_TYPE_TAG = 0x88;
+	private static final byte[] FORMAT_OWNER_VALUE = { 0x01, 0x01 }, FORMAT_TYPE_VALUE = { 0x00, 0x08 };
+	
 	/** From ISO7816-11: Secure Messaging Template tags. */
 	static final int
 	SMT_TAG = 0x7D,
@@ -110,6 +110,7 @@ abstract class CBEFFDataGroup extends DataGroup
 			throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1, found length " + tlvBioInfoCountLength);
 		}
 		int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
+		LOGGER.info("bioInfoCount = " + bioInfoCount);
 		for (int i = 0; i < bioInfoCount; i++) {
 			readBIT(tlvIn, i);
 		}
@@ -149,7 +150,7 @@ abstract class CBEFFDataGroup extends DataGroup
 		}
 		/* We'll just skip this header for now. */
 		long skippedBytes = 0;
-		while (skippedBytes < headerTemplateLength) { skippedBytes += tlvIn.skip(headerTemplateLength); }
+		while (skippedBytes < headerTemplateLength) { skippedBytes += tlvIn.skip(headerTemplateLength - skippedBytes); }
 	}
 
 	/**
@@ -208,7 +209,7 @@ abstract class CBEFFDataGroup extends DataGroup
 	}
 
 	/**
-	 * Reads the biometric data block. This method should be implemented by concrete
+	 * Reads the contents of the biometric data block. This method should be implemented by concrete
 	 * subclasses (DG2 - DG4 structures). It is assumed that the caller has already read
 	 * the biometric data block tag (5F2E or 7F2E) and the length.
 	 * 
@@ -217,18 +218,6 @@ abstract class CBEFFDataGroup extends DataGroup
 	 * @throws IOException if reading fails
 	 */
 	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
-	
-	private byte[] getFormatOwner() {
-		// FIXME
-		byte[] ownr = { 0x01, 0x01 };
-		return ownr;
-	}
-
-	private byte[] getFormatType() {
-		// FIXME
-		byte[] fmt = { 0x00, 0x08 };
-		return fmt;
-	}
 
 	public void writeContent(TLVOutputStream tlvOut) throws IOException {
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
@@ -250,10 +239,9 @@ abstract class CBEFFDataGroup extends DataGroup
 				
 		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1 + index */
 		tlvOut.writeTag(FORMAT_OWNER_TAG);
-		tlvOut.writeValue(getFormatOwner());
-
+		tlvOut.writeValue(FORMAT_OWNER_VALUE);
 		tlvOut.writeTag(FORMAT_TYPE_TAG);
-		tlvOut.writeValue(getFormatType());
+		tlvOut.writeValue(FORMAT_TYPE_VALUE);
 
 		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
 
