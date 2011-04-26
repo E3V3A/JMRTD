@@ -92,14 +92,16 @@ public class DG3File extends CBEFFDataGroup
 	 * TODO: work in progress... -- MO
 	 */
 	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
+		/* General record header according to Table 2 in Section 7.1 of 19794-4. */
+		
 		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
 		/* General Record Header (32) */
 		int fir0 = dataIn.readInt(); /* header (e.g. "FIR", 0x00) (4) */
 		if (fir0 != 0x46495200) { throw new IllegalArgumentException("'FIR0' marker expected! Found " + Integer.toHexString(fir0)); }
 		/* int version = */ dataIn.readInt(); /* version in ASCII (e.g. "010" 0x00) (4) */
-		long length = readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
-		System.out.println("DEBUG: DG3File.read length = " + length);
-		/* int captureDeviceID = */ dataIn.readUnsignedShort();
+		long recordLength = readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
+		System.out.println("DEBUG: DG3File.read length = " + recordLength);
+		/* int captureDeviceID = */ dataIn.readUnsignedShort(); /* all zeros means 'unreported', only lower 12-bits used, see 7.1.4 */
 		/* int imageAcquisitionLevel = */ dataIn.readUnsignedShort();
 		int fingerCount = dataIn.readUnsignedByte();
 		/* int scaleUnits = */ dataIn.readUnsignedByte(); /* 1 -> PPI, 2 -> PPCM */
@@ -185,6 +187,8 @@ public class DG3File extends CBEFFDataGroup
 	}
 
 	/**
+	 * Compression algorithm codes based on Table 3 in Section 7.1.13 of 19794-4.
+	 * 
 	 * 0 Uncompressed, no bit packing
 	 * 1 Uncompressed, bit packed
 	 * 2 Compressed, WSQ

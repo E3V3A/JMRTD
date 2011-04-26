@@ -34,13 +34,12 @@ import java.util.Iterator;
 import java.util.logging.Logger;
 
 import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 
 import net.sourceforge.scuba.util.Hex;
+import net.sourceforge.scuba.util.Images;
 
 /**
  * Data structure for storing finger information as found in DG3.
@@ -57,6 +56,8 @@ import net.sourceforge.scuba.util.Hex;
  */
 public class FingerInfo extends DisplayedImageInfo implements BiometricTemplate
 {	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private long fingerDataBlockLength;
 	private int fingerOrPalmPostion;
 	private int viewCount;
@@ -66,8 +67,6 @@ public class FingerInfo extends DisplayedImageInfo implements BiometricTemplate
 	private int lineLengthH, lineLengthV;
 	private String mimeType;
 	private BufferedImage image;
-
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private FingerInfo() {
 		super(TYPE_FINGER);
@@ -108,41 +107,10 @@ public class FingerInfo extends DisplayedImageInfo implements BiometricTemplate
 		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
 
 		long imageLength = fingerDataBlockLength - 14;
-		image = readImage(in, mimeType, imageLength, false);
+		image = Images.readImage(in, mimeType, imageLength, false);
 	}
 
-	private static BufferedImage readImage(InputStream in, String mimeType, long imageLength, boolean isProgressiveMode) {
-		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-		while (readers.hasNext()) {
-			try {
-				ImageReader reader = (ImageReader)readers.next();
-				BufferedImage image = readImage(in, reader, imageLength, isProgressiveMode);
-				if (image != null) { return image; }
-			} catch (Exception e) {
-				/* NOTE: this reader doesn't work? Try next one... */
-				continue;
-			}
-		}
-		/* Tried all readers */
-		throw new IllegalArgumentException("Could not decode \"" + mimeType + "\" image!");
-	}
 
-	private static BufferedImage readImage(InputStream in, ImageReader reader, long imageLength, boolean isProgressiveMode) {
-		try {
-			ImageInputStream iis = ImageIO.createImageInputStream(in);
-			long posBeforeImage = iis.getStreamPosition();
-			reader.setInput(iis);
-			BufferedImage image = reader.read(0);
-			long posAfterImage =  iis.getStreamPosition();
-			if ((posAfterImage - posBeforeImage) != imageLength) {
-				LOGGER.warning("Image may not have been correctly read");
-			}
-			return image;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return null;
-		}
-	}
 
 	/**
 	 * Writes the biometric data to <code>out</code>.

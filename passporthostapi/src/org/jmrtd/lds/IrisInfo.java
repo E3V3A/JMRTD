@@ -33,6 +33,8 @@ import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 
+import net.sourceforge.scuba.util.Images;
+
 /**
  * Data structure for storing iris image information as found in DG4.
  * Coding is based on ISO/IEC FCD 19794-6 aka Annex E.
@@ -113,25 +115,8 @@ public class IrisInfo extends DisplayedImageInfo implements BiometricTemplate
 		
 		long imageLength = dataIn.readInt() & 0xFFFFFFFFL;
 
-		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-		image = null;
-		while (readers.hasNext()) {
-			try {
-				ImageReader reader = (ImageReader)readers.next();
-				ImageInputStream iis = ImageIO.createImageInputStream(dataIn);
-				long posBeforeImage = iis.getStreamPosition();
-				reader.setInput(iis);
-				image = reader.read(0);
-				long posAfterImage =  iis.getStreamPosition();
-				if ((posAfterImage - posBeforeImage) != imageLength) {
-					LOGGER.warning("Image may not have been correctly read");
-				}
-			} catch (Exception e) {
-				/* NOTE: this reader doesn't work? Try next one... */
-				e.printStackTrace();
-				continue;
-			}
-		}
+		image = Images.readImage(in, mimeType, imageLength, false);
+		
 		/* Tried all readers */
 		if (image == null) {
 			throw new IOException("Could not decode \"" + mimeType + "\" image!");
