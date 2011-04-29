@@ -102,6 +102,8 @@ abstract class DisplayedImageDataGroup extends DataGroup
 			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
 		}
 		
+		/* FIXME: check whether displayedImageTag == displayedImageTagToUseForEncoding. */
+		
 		int type = -1;
 		switch (displayedImageTag) {
 		case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
