@@ -74,7 +74,7 @@ public class BACStorePanel extends JPanel
 	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
 	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
 	
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("dd MMM yyyy");
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("ddMMyy");
 
 	private ActionMap actionMap;
 	

@@ -145,7 +145,7 @@ public class PassportEditFrame extends JMRTDFrame
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
 
-	private Logger logger = Logger.getLogger(getClass().getSimpleName());
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private DisplayPreviewPanel displayPreviewPanel;
 
@@ -161,7 +161,7 @@ public class PassportEditFrame extends JMRTDFrame
 
 	public PassportEditFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
-		logger.setLevel(Level.ALL);
+		LOGGER.setLevel(Level.ALL);
 		this.passport = passport;
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
@@ -203,7 +203,7 @@ public class PassportEditFrame extends JMRTDFrame
 				}
 			});
 			long t = System.currentTimeMillis();
-			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
+			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 
 			displayProgressBar();
 			switch (readingMode) {
@@ -218,7 +218,7 @@ public class PassportEditFrame extends JMRTDFrame
 			}
 			passport.verifySecurity();
 			verificationIndicator.setStatus(passport.getVerificationStatus());
-			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
+			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dispose();
@@ -249,7 +249,7 @@ public class PassportEditFrame extends JMRTDFrame
 		for (short fid: passport.getFileList()) {
 			try {
 				InputStream in = passport.getInputStream(fid);
-				if (in == null) { logger.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
+				if (in == null) { LOGGER.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
 				switch (fid) {
 				case PassportService.EF_COM:
 					/* NOTE: Already processed this one. */
@@ -336,7 +336,7 @@ public class PassportEditFrame extends JMRTDFrame
 			} // TODO: else { default values }
 			createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
 		} catch (CardServiceException cse) {
-			logger.info("Could not read DG14. No EAC support.");
+			LOGGER.info("Could not read DG14. No EAC support.");
 		}
 	}
 
@@ -649,7 +649,7 @@ public class PassportEditFrame extends JMRTDFrame
 								zipOut.closeEntry();
 							} catch (CardServiceException cse) {
 								/* Skip this file. */
-								logger.warning("Skipping " + entryName);
+								LOGGER.warning("Skipping " + entryName);
 							}
 						}
 						zipOut.finish();
@@ -1198,7 +1198,7 @@ public class PassportEditFrame extends JMRTDFrame
 						persoService.close();
 						// TODO: to see when it is done
 						// Proper progress bar should be implemented
-						logger.info("Passport uploaded.");
+						LOGGER.info("Passport uploaded.");
 						//					} catch (IOException ioe) {
 						//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {

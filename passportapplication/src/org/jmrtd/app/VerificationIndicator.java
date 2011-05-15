@@ -50,7 +50,7 @@ public class VerificationIndicator extends Box
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
 	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, EAC_INDICATOR = 2, DS_INDICATOR = 3, CS_INDICATOR = 4;
 
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	private static final Image
 	SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
@@ -129,7 +129,7 @@ public class VerificationIndicator extends Box
 		case CS_INDICATOR: label = csLabel; icon = csIcon; break;
 		}
 		if (SUCCEEDED_ICON.equals(FAILED_ICON)) {
-			logger.warning("Icons not loaded correctly...");
+			LOGGER.warning("Icons not loaded correctly...");
 		}
 		switch (result) {
 		case SUCCEEDED:

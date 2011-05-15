@@ -50,7 +50,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	private static final int DISPLAYED_IMAGE_COUNT_TAG = 0x02;
 
 	protected int displayedImageTagToUseForEncoding;
-	
+
 	protected List<DisplayedImageInfo> images;
 
 	public DisplayedImageDataGroup(int dataGroupTag, List<DisplayedImageInfo> images, int displayedImageTagToUseForEncoding) {
@@ -58,10 +58,9 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		this.images = new ArrayList<DisplayedImageInfo>(images);
 		this.displayedImageTagToUseForEncoding = displayedImageTagToUseForEncoding;
 	}
-	
+
 	public DisplayedImageDataGroup(int tagToExpect, InputStream in) {
 		super(tagToExpect, in);
-		this.images = new ArrayList<DisplayedImageInfo>();
 	}
 
 	protected void readContent(TLVInputStream tlvIn) throws IOException {
@@ -78,7 +77,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 			readDisplayedImage(tlvIn);
 		}
 	}
-	
+
 	protected void writeContent(TLVOutputStream out) throws IOException {
 		out.writeTag(DISPLAYED_IMAGE_COUNT_TAG);
 		out.writeValue(new byte[] { (byte)images.size() });
@@ -101,26 +100,30 @@ abstract class DisplayedImageDataGroup extends DataGroup
 				&& displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
 			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
 		}
-		
+
 		/* FIXME: check whether displayedImageTag == displayedImageTagToUseForEncoding. */
-		
+
 		int type = -1;
 		switch (displayedImageTag) {
 		case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
 		case DISPLAYED_SIGNATURE_OR_MARK_TAG: type = DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK; break;
 		default: throw new IllegalArgumentException("Cannot determine type in displayed image group (tag " + Integer.toHexString(displayedImageTag));
 		}
-		
+
 		displayedImageTagToUseForEncoding = displayedImageTag;
 		/* int displayedImageLength = */ tlvIn.readLength();
 		/* Displayed Facial Image: ISO 10918, JFIF option
 		 * Displayed Finger: ANSI/NIST-ITL 1-2000
 		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
 		 */
-		BufferedImage image = ImageIO.read(tlvIn);
-
-		if (image != null) {
-			images.add(new DisplayedImageInfo(type, image));
+		try {
+			BufferedImage image = ImageIO.read(tlvIn);
+			if (image != null) {
+				add(new DisplayedImageInfo(type, image));
+			}
+		} catch (IOException ioe) {
+			// DEBUG
+			ioe.printStackTrace();
 		}
 	}
 
@@ -142,7 +145,7 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		result.append("]");
 		return result.toString();
 	}
-	
+
 	/**
 	 * Gets the images.
 	 *
@@ -150,5 +153,12 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	 */
 	public List<DisplayedImageInfo> getImages() {
 		return images;
+	}
+	
+	private void add(DisplayedImageInfo image) {
+		if (images == null) {
+			images = new ArrayList<DisplayedImageInfo>();
+		}
+		images.add(image);
 	}
 }

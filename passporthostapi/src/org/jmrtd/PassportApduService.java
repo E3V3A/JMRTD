@@ -150,6 +150,17 @@ public class PassportApduService extends CardService
 		 */
 		return service.transmit(capdu);
 	}
+	
+	private ResponseAPDU transmit(SecureMessagingWrapper wrapper, CommandAPDU capdu) throws CardServiceException {
+		if (wrapper != null) {
+			capdu = wrapper.wrap(capdu);
+		}
+		ResponseAPDU rapdu = transmit(capdu);
+		if (wrapper != null) {
+			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+		}
+		return rapdu;
+	}
 
 	public void close() {
 		if (service != null) {
@@ -329,16 +340,9 @@ public class PassportApduService extends CardService
 	 * @param fid
 	 *            the file to select
 	 */
-	public synchronized void sendSelectFile(SecureMessagingWrapper wrapper,
-			short fid) throws CardServiceException {
+	public synchronized void sendSelectFile(SecureMessagingWrapper wrapper, short fid) throws CardServiceException {
 		CommandAPDU capdu = createSelectFileAPDU(fid);
-		if (wrapper != null) {
-			capdu = wrapper.wrap(capdu);
-		}
-		ResponseAPDU rapdu = transmit(capdu);
-		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-		}
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		short sw = (short) rapdu.getSW();
 		if (sw == ISO7816.SW_FILE_NOT_FOUND) {
 			throw new CardServiceException("File not found.");
@@ -401,13 +405,7 @@ public class PassportApduService extends CardService
               if(le > 256) le = 256;
             }
             CommandAPDU capdu = createReadBinaryAPDU(offset, le, longRead);
-            if (wrapper != null) {
-                capdu = wrapper.wrap(capdu);
-            }
-            rapdu = transmit(capdu);
-            if (wrapper != null) {
-                rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-            }
+            rapdu = transmit(wrapper, capdu);
             int sw = rapdu.getSW();
             if (sw == ISO7816.SW_END_OF_FILE) {
                 le--;
@@ -449,16 +447,9 @@ public class PassportApduService extends CardService
 	 * 
 	 * @return a byte array of length 8 containing the challenge
 	 */
-	public synchronized byte[] sendGetChallenge(SecureMessagingWrapper wrapper)
-			throws CardServiceException {
+	public synchronized byte[] sendGetChallenge(SecureMessagingWrapper wrapper) throws CardServiceException {
 		CommandAPDU capdu = createGetChallengeAPDU();
-		if (wrapper != null) {
-			capdu = wrapper.wrap(capdu);
-		}
-		ResponseAPDU rapdu = transmit(capdu);
-		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-		}
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		return rapdu.getData();
 	}
 
@@ -476,13 +467,7 @@ public class PassportApduService extends CardService
 			SecureMessagingWrapper wrapper, byte[] rndIFD)
 			throws CardServiceException {
 		CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
-		if (wrapper != null) {
-			capdu = wrapper.wrap(capdu);
-		}
-		ResponseAPDU rapdu = transmit(capdu);
-		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-		}
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		return rapdu.getData();
 	}
 
@@ -566,15 +551,9 @@ public class PassportApduService extends CardService
 	public synchronized void sendMutualAuthenticate(
 			SecureMessagingWrapper wrapper, byte[] signature)
 			throws CardServiceException {
-		CommandAPDU c = createMutualAuthAPDU(signature);
-		if (wrapper != null) {
-			c = wrapper.wrap(c);
-		}
-		ResponseAPDU r = transmit(c);
-		if (wrapper != null) {
-			r = wrapper.unwrap(r, r.getBytes().length);
-		}
-		int sw = r.getSW();
+		CommandAPDU capdu = createMutualAuthAPDU(signature);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException(
 					"Sending External Authenticate failed.");
@@ -601,16 +580,9 @@ public class PassportApduService extends CardService
 		if (idData != null) {
 			System.arraycopy(idData, 0, data, keyData.length, idData.length);
 		}
-		CommandAPDU c = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE,
-				0x41, 0xA6, data);
-		if (wrapper != null) {
-			c = wrapper.wrap(c);
-		}
-		ResponseAPDU r = transmit(c);
-		if (wrapper != null) {
-			r = wrapper.unwrap(r, r.getBytes().length);
-		}
-		int sw = r.getSW();
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x41, 0xA6, data);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE KAT failed.");
 		}
@@ -628,16 +600,9 @@ public class PassportApduService extends CardService
 	 */
 	public synchronized void sendMSEDST(SecureMessagingWrapper wrapper,
 			byte[] data) throws CardServiceException {
-		CommandAPDU c = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE,
-				0x81, 0xB6, data);
-		if (wrapper != null) {
-			c = wrapper.wrap(c);
-		}
-		ResponseAPDU r = transmit(c);
-		if (wrapper != null) {
-			r = wrapper.unwrap(r, r.getBytes().length);
-		}
-		int sw = r.getSW();
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xB6, data);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE KAT failed.");
 		}
@@ -655,16 +620,9 @@ public class PassportApduService extends CardService
 	 */
 	public synchronized void sendMSEAT(SecureMessagingWrapper wrapper,
 			byte[] data) throws CardServiceException {
-		CommandAPDU c = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE,
-				0x81, 0xA4, data);
-		if (wrapper != null) {
-			c = wrapper.wrap(c);
-		}
-		ResponseAPDU r = transmit(c);
-		if (wrapper != null) {
-			r = wrapper.unwrap(r, r.getBytes().length);
-		}
-		int sw = r.getSW();
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xA4, data);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE AT failed.");
 		}
@@ -678,21 +636,14 @@ public class PassportApduService extends CardService
 		System.arraycopy(certBodyData, 0, certData, 0, certBodyData.length);
 		System.arraycopy(certSignatureData, 0, certData, certBodyData.length,
 				certSignatureData.length);
-        CommandAPDU c = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_PSO, 0, 0xBE, certData);
-   	    if (wrapper != null) {
-		   c = wrapper.wrap(c);
-        }
-   	    ResponseAPDU r = transmit(c);
-   	    if (wrapper != null) {
-   	        r = wrapper.unwrap(r, r.getBytes().length);
-   	    }
-   	    int sw = r.getSW();
+        CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_PSO, 0, 0xBE, certData);
+   	    ResponseAPDU rapdu = transmit(wrapper, capdu);
+   	    int sw = rapdu.getSW();
    	    if ((short) sw != ISO7816.SW_NO_ERROR) {
    	        throw new CardServiceException("Sending PSO failed.");
    	    }
 	}
 
-    
     public synchronized void sendPSOChainMode(SecureMessagingWrapper wrapper,
             byte[] certBodyData, byte[] certSignatureData)
             throws CardServiceException {
@@ -711,16 +662,9 @@ public class PassportApduService extends CardService
                 numBlock++;
             int i = 0;
             while (i < numBlock - 1) {
-                CommandAPDU c = createPSOAPDU(certData, offset, blockSize,
-                        false);
-                if (wrapper != null) {
-                    c = wrapper.wrap(c);
-                }
-                ResponseAPDU r = transmit(c);
-                if (wrapper != null) {
-                    r = wrapper.unwrap(r, r.getBytes().length);
-                }
-                int sw = r.getSW();
+                CommandAPDU capdu = createPSOAPDU(certData, offset, blockSize, false);
+                ResponseAPDU rapdu = transmit(wrapper, capdu);
+                int sw = rapdu.getSW();
                 if ((short) sw != ISO7816.SW_NO_ERROR) {
                     throw new CardServiceException("Sending PSO failed.");
                 }
@@ -729,15 +673,9 @@ public class PassportApduService extends CardService
                 i++;
             }
         }
-        CommandAPDU c = createPSOAPDU(certData, offset, length, true);
-        if (wrapper != null) {
-            c = wrapper.wrap(c);
-        }
-        ResponseAPDU r = transmit(c);
-        if (wrapper != null) {
-            r = wrapper.unwrap(r, r.getBytes().length);
-        }
-        int sw = r.getSW();
+        CommandAPDU capdu = createPSOAPDU(certData, offset, length, true);
+        ResponseAPDU rapdu = transmit(wrapper, capdu);
+        int sw = rapdu.getSW();
         if ((short) sw != ISO7816.SW_NO_ERROR) {
             throw new CardServiceException("Sending PSO failed.");
         }

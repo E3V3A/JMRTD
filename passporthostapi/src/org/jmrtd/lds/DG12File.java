@@ -52,7 +52,7 @@ public class DG12File extends DataGroup
 {
 	private static final int TAG_LIST_TAG = 0x5C;
 
-	private static final int ISSUING_AUTHORITY_TAG = 0x5F19; 
+	private static final int ISSUING_AUTHORITY_TAG = 0x5F19;
 	private static final int DATE_OF_ISSUE_TAG = 0x5F26;  // yyyymmdd
 	private static final int NAME_OF_OTHER_PERSON_TAG = 0x5F1A; // formatted per ICAO 9303 rules 
 	private static final int ENDORSEMENTS_AND_OBSERVATIONS_TAG = 0x5F1B;
@@ -79,7 +79,7 @@ public class DG12File extends DataGroup
 
 	private List<Integer> tagPresenceList;
 
-	private Logger logger = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/**
 	 * Constructs a new file.
@@ -134,7 +134,7 @@ public class DG12File extends DataGroup
 			tagList[i] = tag;
 		}
 		for (int t: tagList) {
-			logger.info("DG12 tagList entry " + Integer.toHexString(t));
+			LOGGER.info("DG12 tagList entry " + Integer.toHexString(t));
 		}
 		for (int i = 0; i < tagCount; i++) {
 			readField(tagList[i], tlvIn);

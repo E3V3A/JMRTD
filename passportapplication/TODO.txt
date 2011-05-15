@@ -151,6 +151,7 @@ General
 - In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; not try to convert to degrees.
 
 GUI
+- APDU tracing showing plain text APDUs when BAC based SM is used
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
   Currently it's hardcoded to ID-1.
 
@@ -175,8 +176,6 @@ General
 
 GUI
 - Improve certificate / trust store viewing and editing (both CSCA, CVCA)
-- Show progress during BAC testing in PassportFrame constructor
-  (especially since some MRTDs now wait for a long time after failed attempt)
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
 - Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
   Perhaps even present ASN.1 tree in a JTree.
@@ -215,6 +214,7 @@ Features
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 - WSQ image support in pure Java.
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
+- Android NFC support.
 
 Code quality
 - Unit tests

@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.smartcardio.TerminalFactory;
 
@@ -50,6 +51,8 @@ public class PassportManager
 {
 	private enum CardType { OTHER_CARD, PASSPORT };
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final PassportManager INSTANCE = new PassportManager();
 
 	private Map<CardService, CardType> cardTypes;
@@ -83,7 +86,8 @@ public class PassportManager
 			// cnfe.printStackTrace(); // TODO: comment out this printStackTrace();
 		} catch (Exception e) {
 			/* Ignore this provider */
-			e.printStackTrace();
+			LOGGER.warning("Skipping ACR120 provider");
+			// e.printStackTrace();
 		}
 		try {
 			Class<?> crefProviderClass = Class.forName("net.sourceforge.scuba.smartcards.CREFTerminalProvider");

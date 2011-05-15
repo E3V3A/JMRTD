@@ -114,6 +114,7 @@ public class JMRTDApp implements PassportListener
 	CSCA_STORE_KEY ="location.csca",
 	CVCA_STORE_KEY ="location.cvca",
 	PASSPORT_ZIP_FILES_DIR_KEY = "location.passportzipfiles",
+	PASSPORT_LOG_FILES_DIR_KEY = "location.passportlogfiles",
 	IMAGE_FILES_DIR_KEY = "location.imagefiles",
 	CERT_AND_KEY_FILES_DIR_KEY = "location.certfiles";
 

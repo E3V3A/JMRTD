@@ -36,6 +36,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -110,6 +111,8 @@ public class PassportViewFrame extends JMRTDFrame
 	private static final String PASSPORT_FRAME_TITLE = "MRTD";
 	private static final Dimension PREFERRED_SIZE = new Dimension(640, 420);
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
 	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
@@ -120,8 +123,6 @@ public class PassportViewFrame extends JMRTDFrame
 	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
 
 	private ActionMap actionMap;
-
-	private Logger logger = Logger.getLogger("org.jmrtd");
 
 	private DisplayPreviewPanel displayPreviewPanel;
 
@@ -137,7 +138,7 @@ public class PassportViewFrame extends JMRTDFrame
 
 	public PassportViewFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
-		logger.setLevel(Level.ALL);
+		LOGGER.setLevel(Level.ALL); // DEBUG
 		actionMap = new ActionMap();
 		this.passport = passport;
 		verificationIndicator = new VerificationIndicator();
@@ -167,7 +168,7 @@ public class PassportViewFrame extends JMRTDFrame
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
-		menuBar.add(createToolsMenu());
+		menuBar.add(createToolsMenu());		
 		pack();
 		setVisible(true);
 
@@ -179,7 +180,7 @@ public class PassportViewFrame extends JMRTDFrame
 				}
 			});
 			long t = System.currentTimeMillis();
-			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
+			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 
 			displayProgressBar();
 			switch (readingMode) {
@@ -194,7 +195,7 @@ public class PassportViewFrame extends JMRTDFrame
 			}
 			passport.verifySecurity();
 			verificationIndicator.setStatus(passport.getVerificationStatus());
-			logger.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
+			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
 			dispose();
@@ -225,7 +226,7 @@ public class PassportViewFrame extends JMRTDFrame
 		for (short fid: passport.getFileList()) {
 			try {
 				InputStream in = passport.getInputStream(fid);
-				if (in == null) { logger.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
+				if (in == null) { LOGGER.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
 				switch (fid) {
 				case PassportService.EF_COM:
 					/* NOTE: Already processed this one. */
@@ -241,7 +242,7 @@ public class PassportViewFrame extends JMRTDFrame
 				case PassportService.EF_DG3:
 					DG3File dg3 = new DG3File(in);
 					if (eacEvent == null || !eacEvent.isSuccess()) {
-						logger.warning("Starting to read DG3, but eacEvent = " + eacEvent);
+						LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
 					}
 					List<FingerInfo> fingers = dg3.getBiometricTemplates();
 					for (FingerInfo finger: fingers) { displayPreviewPanel.addDisplayedImage(finger, isProgressiveMode); }
@@ -253,7 +254,7 @@ public class PassportViewFrame extends JMRTDFrame
 					DG5File dg5 = new DG5File(in);
 					break;
 				case PassportService.EF_DG6:
-					DG6File dg6 = new DG6File(in);
+					/* DG6File dg6 = */ new DG6File(in);
 					break;
 				case PassportService.EF_DG7:
 					DG7File dg7 = new DG7File(in);
@@ -261,23 +262,23 @@ public class PassportViewFrame extends JMRTDFrame
 					for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info, isProgressiveMode); }
 					break;
 				case PassportService.EF_DG11:
-					DG11File dg11 = new DG11File(in);
+					/* DG11File dg11 = */ new DG11File(in);
 					break;
 				case PassportService.EF_DG12:
-					DG12File dg12 = new DG12File(in);
+					/* DG12File dg12 = */ new DG12File(in);
 					break;
 				case PassportService.EF_DG14:
-					DG14File dg14 = new DG14File(in);
+					/* DG14File dg14 = */ new DG14File(in);
 					updateViewMenu();
 					break;
 				case PassportService.EF_DG15:
-					DG15File dg15 = new DG15File(in);
+					/* DG15File dg15 = */ new DG15File(in);
 					break;
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
 					break;
 				case PassportService.EF_CVCA:
-					CVCAFile cvca = new CVCAFile(in);
+					/* CVCAFile cvca = */ new CVCAFile(in);
 					break;
 				default:
 					String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
@@ -337,7 +338,7 @@ public class PassportViewFrame extends JMRTDFrame
 		centerPanel.revalidate();
 		centerPanel.repaint();
 		} catch (CardServiceException cse) {
-			logger.severe("Could not read DG1 for displaying.");
+			LOGGER.severe("Could not read DG1 for displaying.");
 			cse.printStackTrace();
 		}
 	}
@@ -492,7 +493,6 @@ public class PassportViewFrame extends JMRTDFrame
 		return action;
 	}
 
-
 	private Action getCloseAction() {
 		Action action = actionMap.get("Close");
 		if (action != null) { return action; }
@@ -547,7 +547,7 @@ public class PassportViewFrame extends JMRTDFrame
 								}
 								zipOut.closeEntry();
 							} catch (CardServiceException cse) {
-								logger.warning("Skipping entry " + entryName);
+								LOGGER.warning("Skipping entry " + entryName);
 							}
 						}
 						zipOut.finish();
@@ -598,8 +598,14 @@ public class PassportViewFrame extends JMRTDFrame
 			portraitFrame.pack();
 			portraitFrame.setVisible(true);
 			break;
+		case DisplayedImageInfo.TYPE_FINGER:
+			FingerInfo fingerInfo = (FingerInfo)info;
+			FingerPrintFrame fingerFrame = new FingerPrintFrame(Arrays.asList(new FingerInfo[] { fingerInfo }));
+			fingerFrame.pack();
+			fingerFrame.setVisible(true);
+			break;
 		default:
-			JFrame frame = new JFrame("Image");
+			JFrame frame = new JMRTDFrame("Image");
 			ImagePanel imagePanel = new ImagePanel();
 			imagePanel.setImage(info.getImage());
 			frame.getContentPane().add(imagePanel);
