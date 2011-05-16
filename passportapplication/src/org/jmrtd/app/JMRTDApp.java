@@ -240,8 +240,6 @@ public class JMRTDApp implements PassportListener
 		trustManager.addCVCAStores(preferencesPanel.getCVCAStoreLocations());
 	}
 
-
-
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {
 		final Component component = frame;
 		final KeyListener keyListener = l;
