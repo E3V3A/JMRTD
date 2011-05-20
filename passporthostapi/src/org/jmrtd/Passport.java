@@ -971,7 +971,9 @@ public class Passport
 			List<Integer> tagsOfHashes = new ArrayList<Integer>(hashes.keySet());
 			Collections.sort(tagsOfHashes);
 			if (!tagsOfHashes.equals(comDGList)) {
-				LOGGER.warning("Found mismatch between EF.COM and EF.SOd");
+				LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
+						+ "tagsOfHashes = " + tagsOfHashes + "\n"
+						+ "comDGList = " + comDGList);
 				verificationStatus.setDS(Verdict.FAILED);
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}

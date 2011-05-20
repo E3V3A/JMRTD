@@ -169,6 +169,8 @@ public class PassportViewFrame extends JMRTDFrame
 		menuBar.add(createFileMenu());
 		menuBar.add(createViewMenu());
 		menuBar.add(createToolsMenu());		
+
+		/* FIXME: have caller call pack(), setVisible(), do the other stuff in a new thread */
 		pack();
 		setVisible(true);
 

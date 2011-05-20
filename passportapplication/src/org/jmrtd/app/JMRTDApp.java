@@ -298,6 +298,8 @@ public class JMRTDApp implements PassportListener
 	private void readPassport(PassportService service) throws CardServiceException {
 		Passport passport = new Passport(service, trustManager, bacStore);
 		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
+		passportFrame.pack();
+		passportFrame.setVisible(true);
 	}
 
 	private JMenu createFileMenu() {

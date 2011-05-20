@@ -21,9 +21,9 @@
 
 package org.jmrtd.test.api.lds;
 
-import org.jmrtd.lds.DG4File;
-
 import junit.framework.TestCase;
+
+import org.jmrtd.lds.DG4File;
 
 public class DG4FileTest extends TestCase
 {

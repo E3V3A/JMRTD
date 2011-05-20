@@ -46,6 +46,7 @@ import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -395,6 +396,9 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 
 		byte[] eContent = getEContent(signedData);      
 		byte[] signature = getEncryptedDigest(signedData);
+		
+		System.out.println("DEBUG: eContent = " + Hex.bytesToPrettyString(eContent));
+		System.out.println("DEBUG: signature = " + Hex.bytesToPrettyString(signature));
 
 		DERObjectIdentifier encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId();
 		String encAlgJavaString = lookupMnemonicByOID(encAlgId);
@@ -668,7 +672,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		try {
 			byte[] dataToBeSigned = createAuthenticatedAttributes(
 					digestAlgorithm, content).getDEREncoded();
-			Signature s;
+			Signature s = null;
 			if (provider != null) {
 				s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
 			} else {
@@ -677,6 +681,9 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			s.initSign(privateKey);
 			s.update(dataToBeSigned);
 			encryptedDigest = s.sign();
+			
+			System.out.println("DEBUG: encryptedDigest = " + Hex.bytesToPrettyString(encryptedDigest));
+			
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
