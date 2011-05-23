@@ -173,7 +173,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	/**
 	 * Constructs a Security Object data structure using a specified signature provider.
 	 *
-	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestAlgorithm a digest algorithm, such as "SHA-1" or "SHA-256"
 	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
 	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
 	 * @param privateKey private key to sign the data
@@ -279,7 +279,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	/**
 	 * Gets the name of the algorithm used in the data group hashes.
 	 * 
-	 * @return an algorithm string such as "SHA1" or "SHA256"
+	 * @return an algorithm string such as "SHA-1" or "SHA-256"
 	 */
 	public String getDigestAlgorithm() {
 		try {
@@ -775,6 +775,8 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 
 	private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes)
 	throws NoSuchAlgorithmException {
+		/* Check bug found by Paulo Assumpção. */
+		if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; LOGGER.warning("Replaced \"SHA256\" with \"SHA-256\"."); }
 		MessageDigest dig = MessageDigest.getInstance(digestAlgorithm);
 		byte[] digestedContentBytes = dig.digest(contentBytes);
 		ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
@@ -803,11 +805,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		if (oid.equals(X509ObjectIdentifiers.countryName)) { return "C"; }
 		if (oid.equals(X509ObjectIdentifiers.stateOrProvinceName)) { return "ST"; }
 		if (oid.equals(X509ObjectIdentifiers.localityName)) { return "L"; }
-		if(oid.equals(X509ObjectIdentifiers.id_SHA1)) { return "SHA1"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha224)) { return "SHA224"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha256)) { return "SHA256"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha384)) { return "SHA384"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha512)) { return "SHA512"; }
+		if(oid.equals(X509ObjectIdentifiers.id_SHA1)) { return "SHA-1"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha224)) { return "SHA-224"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha256)) { return "SHA-256"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha384)) { return "SHA-384"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha512)) { return "SHA-512"; }
 		if (oid.equals(X9_SHA1_WITH_ECDSA_OID)) { return "SHA1withECDSA"; }
 		if (oid.equals(X9_SHA224_WITH_ECDSA_OID)) { return "SHA224withECDSA"; }
 		if (oid.equals(X9_SHA256_WITH_ECDSA_OID)) { return "SHA256withECDSA"; }		
@@ -820,7 +822,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		if (oid.equals(PKCS1_SHA384_WITH_RSA_OID)) { return "SHA384withRSA"; }
 		if (oid.equals(PKCS1_SHA512_WITH_RSA_OID)) { return "SHA512withRSA"; }
 		if (oid.equals(PKCS1_SHA224_WITH_RSA_OID)) { return "SHA224withRSA"; }
-		if (oid.equals(IEEE_P1363_SHA1_OID)) { return "SHA1"; }
+		if (oid.equals(IEEE_P1363_SHA1_OID)) { return "SHA-1"; }
 		if (oid.equals(RSA_SA_PSS_OID)) { return "SAwithRSA/PSS"; }
 		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
@@ -832,11 +834,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		if (name.equals("C")) { return X509ObjectIdentifiers.countryName; }
 		if (name.equals("ST")) { return X509ObjectIdentifiers.stateOrProvinceName; }
 		if (name.equals("L")) { return X509ObjectIdentifiers.localityName; }
-		if(name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1; }
-		if(name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224; }
-		if(name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256; }
-		if(name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384; }
-		if(name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512; }
+		if(name.equalsIgnoreCase("SHA-1") || name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1; }
+		if(name.equalsIgnoreCase("SHA-224") || name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224; }
+		if(name.equalsIgnoreCase("SHA-256") || name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256; }
+		if(name.equalsIgnoreCase("SHA-384") || name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384; }
+		if(name.equalsIgnoreCase("SHA-512") || name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512; }
 		if (name.equalsIgnoreCase("RSA")) { return PKCS1_RSA_OID; }
 		if (name.equalsIgnoreCase("MD2withRSA")) { return PKCS1_MD2_WITH_RSA_OID; } 
 		if (name.equalsIgnoreCase("MD4withRSA")) { return PKCS1_MD4_WITH_RSA_OID; } 
