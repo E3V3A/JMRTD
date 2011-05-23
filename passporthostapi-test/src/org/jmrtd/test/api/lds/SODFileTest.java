@@ -57,7 +57,7 @@ import org.jmrtd.lds.SODFile;
 
 public class SODFileTest extends TestCase {
 
-	/** We need this for SHA256 (and probably more). */
+	/** We need this for SHA-256 (and probably more). */
 	private static final Provider PROVIDER =
 		new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
@@ -112,8 +112,8 @@ public class SODFileTest extends TestCase {
 			PrivateKey privateKey = keyPair.getPrivate();
 			Date dateOfIssuing = today;
 			Date dateOfExpiry = today;
-			String digestAlgorithm = "SHA1";
-			String signatureAlgorithm = "SHA1withRSA";
+			String digestAlgorithm = "SHA-256";
+			String signatureAlgorithm = "SHA256withRSA";
 			X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
 			certGenerator.setSerialNumber(new BigInteger("1"));
 			certGenerator.setIssuerDN(new X509Name("C=NL, O=State of the Netherlands, OU=Ministry of the Interior and Kingdom Relations, CN=CSCA NL"));
