@@ -423,13 +423,13 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		// For the RSA_SA_PSS 1. the default hash is SHA1, 2. The hash id is not encoded in OID
 		// So it has to be specified "manually"
 		if (encAlgId.equals(RSA_SA_PSS_OID)) {
-			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
-			+ "withRSA/PSS";
+			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId());
+			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA/PSS";
 		}
 
 		if (encAlgId.equals(PKCS1_RSA_OID)) {
-			encAlgJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId())
-			+ "withRSA";
+			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId());
+			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA";
 		}
 
 		LOGGER.info("OID = " + encAlgId);
