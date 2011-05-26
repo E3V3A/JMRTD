@@ -109,16 +109,23 @@ public class DG2File extends CBEFFDataGroup
 	}
 
 	protected void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException {
+		byte[] infoBytes = info.getEncoded();
+		
 		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
 
-		/** NOTE: Should be 14... */
-		int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2;
+		/** NOTE: Facial Record Header (5.4 of annex D). Should be 14... */
+		int lengthOfRecord = FORMAT_IDENTIFIER.length + VERSION_NUMBER.length + 4 + 2 + infoBytes.length;
 		dataOut.write(FORMAT_IDENTIFIER);
 		dataOut.write(VERSION_NUMBER);
-		dataOut.writeInt(lengthOfRecord);
-		dataOut.writeShort(1);
-		dataOut.write(info.getEncoded());
-		dataOut.flush();	
+		dataOut.writeInt(lengthOfRecord);	/* The (4 byte) Length of Record field shall
+											 * be the combined length in bytes for the record.
+											 * This is the entire length of the record including
+											 * the Facial Record Header and Facial Record Data.
+											 */
+
+		dataOut.writeShort(1); /* Number of facial images (fixed to 1 for now)... */
+		dataOut.write(infoBytes);
+		dataOut.flush();
 	}
 
 	/**

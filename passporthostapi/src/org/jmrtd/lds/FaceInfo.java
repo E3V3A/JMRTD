@@ -50,6 +50,8 @@ import org.jmrtd.ImageReadUpdateListener;
 /**
  * Data structure for storing face information as found in DG2.
  * Coding is based on ISO/IEC FCD 19794-5 (2004-03-22).
+ * 
+ * TODO: This class represents the facial record data.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
@@ -320,8 +322,7 @@ public class FaceInfo extends DisplayedImageInfo implements BiometricTemplate
 	   ByteArrayOutputStream recordOut = new ByteArrayOutputStream();
 	   writeFacialRecordData(recordOut);
 	   byte[] facialRecordData = recordOut.toByteArray();
-	   faceImageBlockLength = facialRecordData.length;
-
+	   faceImageBlockLength = facialRecordData.length + 4;
 	   DataOutputStream dataOut = new DataOutputStream(out);
 	   dataOut.writeInt((int)faceImageBlockLength);
 	   dataOut.write(facialRecordData);
