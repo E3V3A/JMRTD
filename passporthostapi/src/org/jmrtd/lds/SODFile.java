@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
@@ -44,41 +45,43 @@ import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1OctetString;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.cms.Attribute;
-import org.bouncycastle.asn1.cms.ContentInfo;
-import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
-import org.bouncycastle.asn1.cms.SignedData;
-import org.bouncycastle.asn1.cms.SignerIdentifier;
-import org.bouncycastle.asn1.cms.SignerInfo;
-import org.bouncycastle.asn1.icao.DataGroupHash;
-import org.bouncycastle.asn1.icao.LDSSecurityObject;
-import org.bouncycastle.asn1.icao.LDSVersionInfo;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.jce.provider.X509CertificateObject;
+import org.jmrtd.JMRTDSecurityProvider;
+import org.spongycastle.asn1.ASN1Encodable;
+import org.spongycastle.asn1.ASN1InputStream;
+import org.spongycastle.asn1.ASN1ObjectIdentifier;
+import org.spongycastle.asn1.ASN1OctetString;
+import org.spongycastle.asn1.ASN1Sequence;
+import org.spongycastle.asn1.ASN1Set;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DERObjectIdentifier;
+import org.spongycastle.asn1.DEROctetString;
+import org.spongycastle.asn1.DERSequence;
+import org.spongycastle.asn1.DERSet;
+import org.spongycastle.asn1.DERTaggedObject;
+import org.spongycastle.asn1.cms.Attribute;
+import org.spongycastle.asn1.cms.ContentInfo;
+import org.spongycastle.asn1.cms.IssuerAndSerialNumber;
+import org.spongycastle.asn1.cms.SignedData;
+import org.spongycastle.asn1.cms.SignerIdentifier;
+import org.spongycastle.asn1.cms.SignerInfo;
+import org.spongycastle.asn1.icao.DataGroupHash;
+import org.spongycastle.asn1.icao.LDSSecurityObject;
+import org.spongycastle.asn1.icao.LDSVersionInfo;
+import org.spongycastle.asn1.nist.NISTObjectIdentifiers;
+import org.spongycastle.asn1.x500.X500Name;
+import org.spongycastle.asn1.x509.AlgorithmIdentifier;
+import org.spongycastle.asn1.x509.X509CertificateStructure;
+import org.spongycastle.asn1.x509.X509ObjectIdentifiers;
+import org.spongycastle.jce.provider.X509CertificateObject;
 
 /**
- * File structure for the EF_SOD file.
- * This file contains the security object.
+ * File structure for the EF_SOD file (the Document Security Object).
+ * Based on Appendix 3 of Doc 9303 Part 1 Vol 2.
+ * 
+ * Basically the Document Security Object is a SignedData type as specified in
+ * <a href="http://www.ietf.org/rfc/rfc3369.txt">RFC 3369</a>.
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -87,32 +90,36 @@ import org.bouncycastle.jce.provider.X509CertificateObject;
  */
 public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 {
-	//	private static final DERObjectIdentifier SHA1_HASH_ALG_OID = new DERObjectIdentifier("1.3.14.3.2.26");
-	//	private static final DERObjectIdentifier SHA1_WITH_RSA_ENC_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
-	//	private static final DERObjectIdentifier SHA256_HASH_ALG_OID = new DERObjectIdentifier("2.16.840.1.101.3.4.2.1");
-	//	private static final DERObjectIdentifier E_CONTENT_TYPE_OID = new DERObjectIdentifier("1.2.528.1.1006.1.20.1");
+	//	private static final String SHA1_HASH_ALG_OID = "1.3.14.3.2.26";
+	//	private static final String SHA1_WITH_RSA_ENC_OID = "1.2.840.113549.1.1.5";
+	//	private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";
+	//	private static final String E_CONTENT_TYPE_OID = "1.2.528.1.1006.1.20.1";
 
-	private static final ASN1ObjectIdentifier ICAO_SOD_OID = new ASN1ObjectIdentifier("2.23.136.1.1.1");
-	private static final DERObjectIdentifier SIGNED_DATA_OID = new DERObjectIdentifier("1.2.840.113549.1.7.2");
-	private static final DERObjectIdentifier RFC_3369_CONTENT_TYPE_OID = new DERObjectIdentifier("1.2.840.113549.1.9.3");
-	private static final DERObjectIdentifier RFC_3369_MESSAGE_DIGEST_OID = new DERObjectIdentifier("1.2.840.113549.1.9.4");
-	private static final DERObjectIdentifier RSA_SA_PSS_OID = new DERObjectIdentifier("1.2.840.113549.1.1.10");
+	/** OID to indicate content-type in encapContentInfo. */
+	private static final String
+	ICAO_SOD_OID = "2.23.136.1.1.1",						/* id-icao-ldsSecurityObject OBJECT IDENTIFIER ::= { icao(2.23.136) mrtd(1) security(1) } */ /* FIXME: or should this be 1.3.2.23.136.1.1.1 (i.e. prefix with { iso(1) identified-organization(3) })? */
+	SDU_SOD_OID = "1.2.528.1.1006.1.20.1";
 
-	private static final DERObjectIdentifier PKCS1_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.1");
-	private static final DERObjectIdentifier PKCS1_MD2_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.2");
-	private static final DERObjectIdentifier PKCS1_MD4_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.3");
-	private static final DERObjectIdentifier PKCS1_MD5_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.4");
-	private static final DERObjectIdentifier PKCS1_SHA1_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.5");
-	private static final DERObjectIdentifier PKCS1_SHA256_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.11");
-	private static final DERObjectIdentifier PKCS1_SHA384_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.12");
-	private static final DERObjectIdentifier PKCS1_SHA512_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.13");
-	private static final DERObjectIdentifier PKCS1_SHA224_WITH_RSA_OID = new DERObjectIdentifier("1.2.840.113549.1.1.14");
-	private static final DERObjectIdentifier X9_SHA1_WITH_ECDSA_OID = new DERObjectIdentifier("1.2.840.10045.4.1");
-	private static final DERObjectIdentifier X9_SHA224_WITH_ECDSA_OID = new DERObjectIdentifier("1.2.840.10045.4.3.1");
-	private static final DERObjectIdentifier X9_SHA256_WITH_ECDSA_OID = new DERObjectIdentifier("1.2.840.10045.4.3.2");
-	private static final DERObjectIdentifier IEEE_P1363_SHA1_OID = new DERObjectIdentifier("1.3.14.3.2.26");
+	private static final String
+	RFC_3369_SIGNED_DATA_OID = "1.2.840.113549.1.7.2",		/* id-signedData OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) rsadsi(113549) pkcs(1) pkcs7(7) 2 } */
+	RFC_3369_CONTENT_TYPE_OID = "1.2.840.113549.1.9.3",
+	RFC_3369_MESSAGE_DIGEST_OID = "1.2.840.113549.1.9.4",
+	RSA_SA_PSS_OID = "1.2.840.113549.1.1.10",			
+	PKCS1_RSA_OID = "1.2.840.113549.1.1.1",
+	PKCS1_MD2_WITH_RSA_OID = "1.2.840.113549.1.1.2",
+	PKCS1_MD4_WITH_RSA_OID = "1.2.840.113549.1.1.3",
+	PKCS1_MD5_WITH_RSA_OID = "1.2.840.113549.1.1.4",
+	PKCS1_SHA1_WITH_RSA_OID = "1.2.840.113549.1.1.5",
+	PKCS1_SHA256_WITH_RSA_OID = "1.2.840.113549.1.1.11",
+	PKCS1_SHA384_WITH_RSA_OID = "1.2.840.113549.1.1.12",
+	PKCS1_SHA512_WITH_RSA_OID = "1.2.840.113549.1.1.13",
+	PKCS1_SHA224_WITH_RSA_OID = "1.2.840.113549.1.1.14",
+	X9_SHA1_WITH_ECDSA_OID = "1.2.840.10045.4.1",
+	X9_SHA224_WITH_ECDSA_OID = "1.2.840.10045.4.3.1",
+	X9_SHA256_WITH_ECDSA_OID = "1.2.840.10045.4.3.2",
+	IEEE_P1363_SHA1_OID = "1.3.14.3.2.26";
 
-	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -121,9 +128,9 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	/**
 	 * Constructs a Security Object data structure.
 	 *
-	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestAlgorithm a digest algorithm, such as "SHA-1" or "SHA-256"
 	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
-	 * @param dataGroupHashes maps datagroupnumbers (1 to 16) to hashes of the data groups
+	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
 	 * @param encryptedDigest ???
 	 * @param docSigningCertificate the document signing certificate
 	 * 
@@ -146,7 +153,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	/**
 	 * Constructs a Security Object data structure using a specified signature provider.
 	 *
-	 * @param digestAlgorithm a digest algorithm, such as "SHA1" or "SHA256"
+	 * @param digestAlgorithm a digest algorithm, such as "SHA-1" or "SHA-256"
 	 * @param digestEncryptionAlgorithm a digest encryption algorithm, such as "SHA256withRSA"
 	 * @param dataGroupHashes maps datagroup numbers (1 to 16) to hashes of the data groups
 	 * @param privateKey private key to sign the data
@@ -225,29 +232,40 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	/**
 	 * Constructs a Security Object data structure.
 	 *
-	 * @param in some inputstream
+	 * @param inputStream some inputstream
 	 * @throws IOException if something goes wrong
 	 */
-	public SODFile(InputStream in) throws IOException {
-		super(EF_SOD_TAG, in);
+	public SODFile(InputStream inputStream) throws IOException {
+		super(EF_SOD_TAG, inputStream);
 	}
-	
-	protected void readContent(TLVInputStream in) throws IOException {
-		ASN1InputStream asn1in = new ASN1InputStream(in);
-		DERSequence seq = (DERSequence)asn1in.readObject();
-		/* DERObjectIdentifier objectIdentifier = (DERObjectIdentifier) seq.getObjectAt(0); */ /* FIXME: do we need this? */
-		//DERTaggedObject o = (DERTaggedObject)seq.getObjectAt(1);
-		/* TODO: where is this tagNo specified? */
-		// int tagNo =  o.getTagNo();
-		DERSequence s2 = (DERSequence)((DERTaggedObject)seq.getObjectAt(1)).getObject();
-		this.signedData = new SignedData(s2);
+
+	protected void readContent(InputStream inputStream) throws IOException {
+		ASN1InputStream asn1in = new ASN1InputStream(inputStream);
+		DERSequence sequence = (DERSequence)asn1in.readObject();
+		if (sequence.size() != 2) {
+			throw new IOException("Was expecting a DER sequence of length 2, found a DER sequence of length " + sequence.size());
+		}
+		String contentTypeOID = ((DERObjectIdentifier)sequence.getObjectAt(0)).getId();
+		if (!RFC_3369_SIGNED_DATA_OID.equals(contentTypeOID)) {
+			throw new IOException("Was expecting signed-data content type OID (" + RFC_3369_SIGNED_DATA_OID + "), found " + contentTypeOID);
+		}
+		DERTaggedObject taggedContent = (DERTaggedObject)sequence.getObjectAt(1);
+		int tagNo = taggedContent.getTagNo();
+		if (tagNo != 0) {
+			throw new IOException("Was expecting tag 0, found " + Integer.toHexString(tagNo));
+		}		
+		DERObject content = taggedContent.getObject();
+		if (!(content instanceof ASN1Sequence)) {
+			throw new IOException("Was expecting an ASN.1 sequence as content");
+		}
+		this.signedData = new SignedData((ASN1Sequence)content);
 	}
-	
-	protected void writeContent(TLVOutputStream out) throws IOException {
-		ASN1Encodable[] fileContents = { SIGNED_DATA_OID, new DERTaggedObject(0, signedData) };
+
+	protected void writeContent(OutputStream out) throws IOException {
+		ASN1Encodable[] fileContents = { new ASN1ObjectIdentifier(RFC_3369_SIGNED_DATA_OID), new DERTaggedObject(0, signedData) };
 		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
 		byte[] fileContentsBytes = fileContentsObject.getDEREncoded();
-		out.writeValue(fileContentsBytes);
+		out.write(fileContentsBytes);
 	}
 
 	/**
@@ -256,7 +274,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * @return data group hashes indexed by data group numbers (1 to 16)
 	 */
 	public Map<Integer, byte[]> getDataGroupHashes() {
-		DataGroupHash[] hashObjects = getSecurityObject(signedData).getDatagroupHash();
+		DataGroupHash[] hashObjects = getLDSSecurityObject(signedData).getDatagroupHash();
 		Map<Integer, byte[]> hashMap = new HashMap<Integer, byte[]>(); /* HashMap... get it? :D */
 		for (int i = 0; i < hashObjects.length; i++) {
 			DataGroupHash hashObject = hashObjects[i];
@@ -275,6 +293,10 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	public byte[] getEncryptedDigest() {
 		return getEncryptedDigest(signedData);
 	}
+	
+	public byte[] getEContent() {
+		return getEContent(signedData);
+	}
 
 	/**
 	 * Gets the name of the algorithm used in the data group hashes.
@@ -283,7 +305,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 */
 	public String getDigestAlgorithm() {
 		try {
-			return lookupMnemonicByOID(getSecurityObject(signedData).getDigestAlgorithmIdentifier().getObjectId());      
+			return lookupMnemonicByOID(getLDSSecurityObject(signedData).getDigestAlgorithmIdentifier().getAlgorithm().getId());      
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
 			throw new IllegalStateException(nsae.toString());
@@ -297,7 +319,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 */
 	public String getDigestEncryptionAlgorithm() {
 		try {
-			return lookupMnemonicByOID(getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId());      
+			return lookupMnemonicByOID(getSignerInfo(signedData).getDigestEncryptionAlgorithm().getAlgorithm().getId());      
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
 			throw new IllegalStateException(nsae.toString());
@@ -308,10 +330,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * Gets the version of the LDS if stored in the Security Object (SOd).
 	 *
 	 * @return the version of the LDS in "aabb" format or null if LDS &lt; V1.8
+	 *
 	 * @since LDS V1.8
 	 */
-	public String getLdsVersion() {
-		LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
+	public String getLDSVersion() {
+		LDSVersionInfo ldsVersionInfo = getLDSSecurityObject(signedData).getVersionInfo();
 		if (ldsVersionInfo == null) {
 			return null;
 		} else {
@@ -323,10 +346,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * Gets the version of unicode if stored in the Security Object (SOd).
 	 *
 	 * @return the unicode version in "aabbcc" format or null if LDS &lt; V1.8
+	 * 
 	 * @since LDS V1.8
 	 */
 	public String getUnicodeVersion() {
-		LDSVersionInfo ldsVersionInfo = getSecurityObject(signedData).getVersionInfo();
+		LDSVersionInfo ldsVersionInfo = getLDSSecurityObject(signedData).getVersionInfo();
 		if (ldsVersionInfo == null) {
 			return null;
 		} else {
@@ -343,8 +367,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 *
 	 * @return the document signing certificate
 	 */
-	public X509Certificate getDocSigningCertificate()
-	throws IOException, CertificateException {
+	public X509Certificate getDocSigningCertificate() throws CertificateException {
 		byte[] certSpec = null;
 		ASN1Set certs = signedData.getCertificates();
 		if (certs == null || certs.size() <= 0) { return null; }
@@ -353,8 +376,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		}
 		X509CertificateObject certObject = null;
 		for (int i = 0; i < certs.size(); i++) {
-			X509CertificateStructure e =
-				new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
+			X509CertificateStructure e = new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
 			certObject = new X509CertificateObject(e);
 			certSpec = certObject.getEncoded();
 		}
@@ -369,9 +391,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			X509Certificate cert = (X509Certificate)factory.generateCertificate(new ByteArrayInputStream(certSpec));
 			return cert;
 		} catch (Exception e) {
-			/*
-			 * NOTE: Reconstructing using preferred provider didn't work?!?!
-			 */
+			/* NOTE: Reconstructing using preferred provider didn't work?!?! */
 			return certObject;
 		}
 	}
@@ -394,26 +414,22 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	public boolean checkDocSignature(Certificate docSigningCert)
 	throws GeneralSecurityException {
 
-		byte[] eContent = getEContent(signedData);      
+		byte[] eContent = getEContent(signedData);	
 		byte[] signature = getEncryptedDigest(signedData);
-		
-		System.out.println("DEBUG: eContent = " + Hex.bytesToPrettyString(eContent));
-		System.out.println("DEBUG: signature = " + Hex.bytesToPrettyString(signature));
 
-		DERObjectIdentifier encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getObjectId();
+		String encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getAlgorithm().getId();
 		String encAlgJavaString = lookupMnemonicByOID(encAlgId);
 
 		// For the cases where the signature is simply a digest (haven't seen a passport like this, 
 		// thus this is guessing)
 
-		if (encAlgId.getId() == null) {
-			String digestAlg = getSignerInfo(signedData).getDigestAlgorithm().getObjectId().getId();
+		if (encAlgId == null) {
+			String digestAlg = getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId();
 			MessageDigest digest = null;
 			try {
 				digest = MessageDigest.getInstance(digestAlg);
 			} catch (Exception e) {
-				/* FIXME: Warn client that they should perhaps add BC as provider? */
-				digest = MessageDigest.getInstance(digestAlg, PROVIDER);
+				digest = MessageDigest.getInstance(digestAlg, BC_PROVIDER);
 			}
 			digest.update(eContent);
 			byte[] digestBytes = digest.digest();
@@ -422,13 +438,13 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 
 		// For the RSA_SA_PSS 1. the default hash is SHA1, 2. The hash id is not encoded in OID
 		// So it has to be specified "manually"
-		if (encAlgId.equals(RSA_SA_PSS_OID)) {
-			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId());
+		if (RSA_SA_PSS_OID.equals(encAlgId)) {
+			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId());
 			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA/PSS";
 		}
 
-		if (encAlgId.equals(PKCS1_RSA_OID)) {
-			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getObjectId());
+		if (PKCS1_RSA_OID.equals(encAlgId)) {
+			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId());
 			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA";
 		}
 
@@ -440,7 +456,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			sig = Signature.getInstance(encAlgJavaString);
 		} catch (Exception e) {
 			/* FIXME: Warn client that they should perhaps add BC as provider? */
-			sig = Signature.getInstance(encAlgJavaString, PROVIDER);
+			sig = Signature.getInstance(encAlgJavaString, BC_PROVIDER);
 		}
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
@@ -469,7 +485,8 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	public X500Principal getIssuerX500Principal() {
 		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
 		X500Name name = issuerAndSerialNumber.getName();
-		return new X500Principal(name.getDEREncoded());
+		X500Principal x500Principal = new X500Principal(name.getDEREncoded());		
+		return x500Principal;
 	}
 
 	public BigInteger getSerialNumber() {
@@ -520,24 +537,31 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 
 	/**
 	 * Reads the security object (containing the hashes
-	 * of the data groups) found in the SOd on the passport.
+	 * of the data groups) found in the SignedData field.
 	 * 
 	 * @return the security object
 	 * 
 	 * @throws IOException
 	 */
-	private static LDSSecurityObject getSecurityObject(SignedData signedData) {
+	private static LDSSecurityObject getLDSSecurityObject(SignedData signedData) {
 		try {
-			ContentInfo contentInfo = signedData.getEncapContentInfo();
-			byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-			ASN1InputStream in = new ASN1InputStream(new ByteArrayInputStream(content));
-			
-			Object firstObject = in.readObject();
-			if (!(firstObject instanceof DERSequence)) {
-				LOGGER.severe("Expected DERSequence");
+			ContentInfo encapContentInfo = signedData.getEncapContentInfo();
+			String contentType = encapContentInfo.getContentType().getId();
+			DEROctetString eContent = (DEROctetString)encapContentInfo.getContent();
+			if (!ICAO_SOD_OID.equals(contentType)) {
+				if (!SDU_SOD_OID.equals(contentType)) {
+					/* This SDU_SOD_OID is used in some test MRTDs. */
+					LOGGER.warning("SignedData does not appear to contain an LDS SOd. (content type is " + contentType + ", was expecting " + ICAO_SOD_OID + ")");
+				}
 			}
-			LDSSecurityObject sod = LDSSecurityObject.getInstance((DERSequence)firstObject);
-			Object nextObject = in.readObject();
+			ASN1InputStream inputStream = new ASN1InputStream(new ByteArrayInputStream(eContent.getOctets()));
+
+			Object firstObject = inputStream.readObject();
+			if (!(firstObject instanceof DERSequence)) {
+				throw new IllegalStateException("Expected DERSequence, found " + firstObject.getClass().getSimpleName());
+			}
+			LDSSecurityObject sod = LDSSecurityObject.getInstance(firstObject);
+			Object nextObject = inputStream.readObject();
 			if (nextObject != null) {
 				LOGGER.warning("Ignoring extra object found after LDSSecurityObject...");
 			}
@@ -577,7 +601,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			/* Signed attributes present (i.e. a structure containing a hash of the content), return that structure to be signed... */
 			/* This option is taken by ICAO passports. */
 			byte[] attributesBytes = signedAttributesSet.getDEREncoded();
-			String digAlg = signerInfo.getDigestAlgorithm().getObjectId().getId();
+			String digAlg = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
 			try {
 				/* We'd better check that the content actually digests to the hash value contained! ;) */
 				Enumeration<?> attributes = signedAttributesSet.getObjects();
@@ -602,6 +626,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 					LOGGER.warning("Error checking signedAttribute message digest in eContent!");
 				}
 			} catch (NoSuchAlgorithmException nsae) {
+				nsae.printStackTrace();
 				LOGGER.warning("Error checking signedAttribute in eContent! No such algorithm " + digAlg);
 			}
 			return attributesBytes;
@@ -611,9 +636,10 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	private IssuerAndSerialNumber getIssuerAndSerialNumber() {
 		SignerInfo signerInfo = getSignerInfo(signedData);
 		SignerIdentifier signerIdentifier = signerInfo.getSID();
-		DERSequence idSeq = (DERSequence)signerIdentifier.getId();
-		IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(idSeq);
-		return issuerAndSerialNumber;
+		IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(signerIdentifier.getId());
+		X500Name issuer = issuerAndSerialNumber.getName();
+		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
+		return new IssuerAndSerialNumber(issuer, serialNumber);
 	}
 
 	/**
@@ -681,9 +707,6 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			s.initSign(privateKey);
 			s.update(dataToBeSigned);
 			encryptedDigest = s.sign();
-			
-			System.out.println("DEBUG: encryptedDigest = " + Hex.bytesToPrettyString(encryptedDigest));
-			
 		} catch (Exception e) {
 			e.printStackTrace();
 			return null;
@@ -698,7 +721,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	}
 
 	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
-		DERObjectIdentifier algorithmIdentifier = lookupOIDByMnemonic(digestAlgorithm);
+		ASN1ObjectIdentifier algorithmIdentifier = new ASN1ObjectIdentifier(lookupOIDByMnemonic(digestAlgorithm));
 		ASN1Encodable[] result = { algorithmIdentifier };
 		return new DERSequence(result);
 	}
@@ -748,7 +771,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 			ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
 			securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
 		}
-		return new ContentInfo(ICAO_SOD_OID, new DEROctetString(securityObject));
+		return new ContentInfo(new ASN1ObjectIdentifier(ICAO_SOD_OID), new DEROctetString(securityObject));
 	}
 
 	private static SignerInfo createSignerInfo(
@@ -760,7 +783,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	throws NoSuchAlgorithmException {
 		/* Get the issuer name (CN, O, OU, C) from the cert and put it in a SignerIdentifier struct. */
 		X500Principal docSignerPrincipal = ((X509Certificate)docSigningCertificate).getIssuerX500Principal();
-		X509Name docSignerName = new X509Name(true, docSignerPrincipal.getName()); // RFC 2253 format
+		X500Name docSignerName = new X500Name(docSignerPrincipal.getName(X500Principal.RFC2253));
 		BigInteger serial = ((X509Certificate)docSigningCertificate).getSerialNumber();
 		SignerIdentifier sid = new SignerIdentifier(new IssuerAndSerialNumber(docSignerName, serial));
 
@@ -775,41 +798,40 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 
 	private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes)
 	throws NoSuchAlgorithmException {
-		/* Check bug found by Paulo Assumpção. */
+		/* Check bug found by Paulo Assumpco. */
 		if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; LOGGER.warning("Replaced \"SHA256\" with \"SHA-256\"."); }
 		MessageDigest dig = MessageDigest.getInstance(digestAlgorithm);
 		byte[] digestedContentBytes = dig.digest(contentBytes);
 		ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
-		Attribute contentTypeAttribute = new Attribute(RFC_3369_CONTENT_TYPE_OID, createSingletonSet(ICAO_SOD_OID));
-		Attribute messageDigestAttribute = new Attribute(RFC_3369_MESSAGE_DIGEST_OID, createSingletonSet(digestedContent));
+		Attribute contentTypeAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_CONTENT_TYPE_OID), createSingletonSet(new ASN1ObjectIdentifier(ICAO_SOD_OID)));
+		Attribute messageDigestAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_MESSAGE_DIGEST_OID), createSingletonSet(digestedContent));
 		ASN1Encodable[] result = { contentTypeAttribute.toASN1Object(), messageDigestAttribute.toASN1Object() };
 		return new DERSet(result);
 	}
 
 	private static ASN1Set createSingletonSet(ASN1Encodable e) {
-		ASN1Encodable[] result = { e };
-		return new DERSet(result);
+		return new DERSet(new ASN1Encodable[] { e });
 	}
 
 	/**
 	 * Gets the common mnemonic string (such as "SHA1", "SHA256withRSA") given an OID.
 	 *
-	 * @param oid a BC OID
+	 * @param oid an OID
 	 *
 	 * @throws NoSuchAlgorithmException if the provided OID is not yet supported
 	 */
-	private static String lookupMnemonicByOID(DERObjectIdentifier oid) throws NoSuchAlgorithmException {
-		if (oid.equals(X509ObjectIdentifiers.organization)) { return "O"; }
-		if (oid.equals(X509ObjectIdentifiers.organizationalUnitName)) { return "OU"; }
-		if (oid.equals(X509ObjectIdentifiers.commonName)) { return "CN"; }
-		if (oid.equals(X509ObjectIdentifiers.countryName)) { return "C"; }
-		if (oid.equals(X509ObjectIdentifiers.stateOrProvinceName)) { return "ST"; }
-		if (oid.equals(X509ObjectIdentifiers.localityName)) { return "L"; }
-		if(oid.equals(X509ObjectIdentifiers.id_SHA1)) { return "SHA-1"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha224)) { return "SHA-224"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha256)) { return "SHA-256"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha384)) { return "SHA-384"; }
-		if(oid.equals(NISTObjectIdentifiers.id_sha512)) { return "SHA-512"; }
+	private static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {
+		if (oid.equals(X509ObjectIdentifiers.organization.getId())) { return "O"; }
+		if (oid.equals(X509ObjectIdentifiers.organizationalUnitName.getId())) { return "OU"; }
+		if (oid.equals(X509ObjectIdentifiers.commonName.getId())) { return "CN"; }
+		if (oid.equals(X509ObjectIdentifiers.countryName.getId())) { return "C"; }
+		if (oid.equals(X509ObjectIdentifiers.stateOrProvinceName.getId())) { return "ST"; }
+		if (oid.equals(X509ObjectIdentifiers.localityName.getId())) { return "L"; }
+		if(oid.equals(X509ObjectIdentifiers.id_SHA1.getId())) { return "SHA-1"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha224.getId())) { return "SHA-224"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha256.getId())) { return "SHA-256"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha384.getId())) { return "SHA-384"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha512.getId())) { return "SHA-512"; }
 		if (oid.equals(X9_SHA1_WITH_ECDSA_OID)) { return "SHA1withECDSA"; }
 		if (oid.equals(X9_SHA224_WITH_ECDSA_OID)) { return "SHA224withECDSA"; }
 		if (oid.equals(X9_SHA256_WITH_ECDSA_OID)) { return "SHA256withECDSA"; }		
@@ -827,18 +849,18 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
 
-	private static DERObjectIdentifier lookupOIDByMnemonic(String name) throws NoSuchAlgorithmException {
-		if (name.equals("O")) { return X509ObjectIdentifiers.organization; }
-		if (name.equals("OU")) { return X509ObjectIdentifiers.organizationalUnitName; }
-		if (name.equals("CN")) { return X509ObjectIdentifiers.commonName; }
-		if (name.equals("C")) { return X509ObjectIdentifiers.countryName; }
-		if (name.equals("ST")) { return X509ObjectIdentifiers.stateOrProvinceName; }
-		if (name.equals("L")) { return X509ObjectIdentifiers.localityName; }
-		if(name.equalsIgnoreCase("SHA-1") || name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1; }
-		if(name.equalsIgnoreCase("SHA-224") || name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224; }
-		if(name.equalsIgnoreCase("SHA-256") || name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256; }
-		if(name.equalsIgnoreCase("SHA-384") || name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384; }
-		if(name.equalsIgnoreCase("SHA-512") || name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512; }
+	private static String lookupOIDByMnemonic(String name) throws NoSuchAlgorithmException {
+		if (name.equals("O")) { return X509ObjectIdentifiers.organization.getId(); }
+		if (name.equals("OU")) { return X509ObjectIdentifiers.organizationalUnitName.getId(); }
+		if (name.equals("CN")) { return X509ObjectIdentifiers.commonName.getId(); }
+		if (name.equals("C")) { return X509ObjectIdentifiers.countryName.getId(); }
+		if (name.equals("ST")) { return X509ObjectIdentifiers.stateOrProvinceName.getId(); }
+		if (name.equals("L")) { return X509ObjectIdentifiers.localityName.getId(); }
+		if(name.equalsIgnoreCase("SHA-1") || name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1.getId(); }
+		if(name.equalsIgnoreCase("SHA-224") || name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224.getId(); }
+		if(name.equalsIgnoreCase("SHA-256") || name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256.getId(); }
+		if(name.equalsIgnoreCase("SHA-384") || name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384.getId(); }
+		if(name.equalsIgnoreCase("SHA-512") || name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512.getId(); }
 		if (name.equalsIgnoreCase("RSA")) { return PKCS1_RSA_OID; }
 		if (name.equalsIgnoreCase("MD2withRSA")) { return PKCS1_MD2_WITH_RSA_OID; } 
 		if (name.equalsIgnoreCase("MD4withRSA")) { return PKCS1_MD4_WITH_RSA_OID; } 

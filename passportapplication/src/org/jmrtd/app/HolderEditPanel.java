@@ -35,13 +35,13 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SpringLayout;
 
-import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.swing.CountryEntryField;
 import net.sourceforge.scuba.swing.DateEntryField;
 import net.sourceforge.scuba.swing.GenderEntryField;
 import net.sourceforge.scuba.swing.MRZEntryField;
 
+import org.jmrtd.lds.ICAOCountry;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -137,7 +137,7 @@ public class HolderEditPanel extends JPanel
 		}
 		case GIVEN_NAMES: {
 			StringBuffer nameStr = new StringBuffer();
-			String[] firstNames = nfo.getSecondaryIdentifiers();
+			String[] firstNames = nfo.getSecondaryIdentifierComponents();
 			for (int i = 0; i < firstNames.length; i++) {
 				nameStr.append(firstNames[i]);
 				if (i < (firstNames.length - 1)) { nameStr.append(" "); }
@@ -175,7 +175,7 @@ public class HolderEditPanel extends JPanel
 			final CountryEntryField tf = makeCountryField(nfo.getNationality());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setNationality(tf.getCountry());
+					info.setNationality(tf.getCountry().toAlpha3Code());
 					notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
 				}
 			});
@@ -185,7 +185,7 @@ public class HolderEditPanel extends JPanel
 			final CountryEntryField tf = makeCountryField(nfo.getIssuingState());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setIssuingState(tf.getCountry());
+					info.setIssuingState(tf.getCountry().toAlpha3Code());
 					notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
 				}
 			});
@@ -249,8 +249,8 @@ public class HolderEditPanel extends JPanel
 		return tf;
 	}
 
-	private CountryEntryField makeCountryField(Country country) {
-		final CountryEntryField tf =  new CountryEntryField(country);
+	private CountryEntryField makeCountryField(String country) {
+		final CountryEntryField tf =  new CountryEntryField(ICAOCountry.getInstance(country));
 		tf.setFont(VALUE_FONT);
 		return tf;
 	}

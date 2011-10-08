@@ -140,13 +140,18 @@ Code quality
 + Findbugs
 
 
-VERSION 0.4.7 (FUTURE)
+VERSION 0.4.7 (Q4 2011)
 ----------------------
 
 General
-- Make distinction between bio template and displayed image in CBEFF groups and reflect this in the data type (i.e. not a list of
-  FaceInfo for DG2, but a list of lists).
-- Get DG3 (finger) and DG4 (iris) bio template I/O to the same level as DG2 (face)
+- Move progressive mode stuff out of FaceInfo and into seperate ImageReader impl?
+- Abstraction of SCUBA smartcard layer.
+- Implementation of SCUBA smartcard layer for j2se and Android.
+
+LDS
+- Clean up CBEFF groups data groups and related types. Move to seperate package org.jmrtd.cbeff.
+- Map terminology from annex D, E, F to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo. Introduce *ImageInfo.
+- Get finger and iris bio template I/O to the same level as face.
 - getEncoded() implementations for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo.
 - In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; not try to convert to degrees.
 
@@ -154,6 +159,9 @@ GUI
 - APDU tracing showing plain text APDUs when BAC based SM is used
 - When creating a new passport from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
   Currently it's hardcoded to ID-1.
+
+Android
+- Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI)
 
 Code quality
 - Need biometrics samples (DG3, DG4) to test with...
@@ -179,14 +187,19 @@ GUI
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
 - Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
   Perhaps even present ASN.1 tree in a JTree.
-  
+
+Android
+- Full GUI
+- Cam based OCR
+- App in Market
+
 Bugs/temporary fixes
-- Fix padding error during AA on Omnikey 5121 on newer versions of NIK. Restore gracefully from session?
-  
+- Fix padding error during AA on Omnikey 5121 on newer versions of NL NIK. Restore gracefully from session?
+- Omnikey 5121 buggy (fails BAC) when read for second time after polling start
+
 Code quality
 - Exception handling (e.g. re-throwing more general exception types, quelling, ...
 - Need EAC samples to test with...
-- Need biometrics samples (DG3, DG4) to test with
 - Check unit tests
 - Check JavaDoc
 - Check Findbugs
@@ -210,7 +223,7 @@ VERSION 0.9.x (FUTURE)
 ----------------------
 
 Features
-- Webcam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
+- Webcam/phone cam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 - WSQ image support in pure Java.
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.

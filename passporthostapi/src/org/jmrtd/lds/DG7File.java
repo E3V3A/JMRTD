@@ -33,9 +33,9 @@ import java.util.List;
  * @version $Revision$
  */
 public class DG7File extends DisplayedImageDataGroup
-{
+{	
 	public DG7File(List<DisplayedImageInfo> images) {
-		super(EF_DG7_TAG, images, DISPLAYED_SIGNATURE_OR_MARK_TAG);
+		super(EF_DG7_TAG, images, DisplayedImageInfo.DISPLAYED_SIGNATURE_OR_MARK_TAG);
 	}
 	
 	public DG7File(InputStream in) {

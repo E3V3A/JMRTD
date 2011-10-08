@@ -28,7 +28,6 @@ import java.util.Date;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
@@ -44,10 +43,10 @@ import org.jmrtd.cert.CardVerifiableCertificate;
 public class CVCAStoreGenerator extends TestCase
 {
 	private static final Provider
-	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider(),
-	JMRTD_PROVIDER = new JMRTDSecurityProvider();
+	BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider(),
+	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
-	//	private static final String TEST_KEY_STORE = "file:/d:/csca.ks";
+	//	private static final String TEST_KEY_STORE = "file:/c:/csca.ks";
 
 	private static final String
 	STORE_PASSWORD = "",
@@ -55,7 +54,7 @@ public class CVCAStoreGenerator extends TestCase
 
 	private static final String
 //	WOJ_ROOT = "file:/home/sos/woj",
-	 WOJ_ROOT = "file:/d:/cygwin/tmp/woj",
+	 WOJ_ROOT = "file:/c:/cygwin/tmp/woj",
 	WOJ_DIR = WOJ_ROOT + "/terminals/nltest",
 	WOJ_KS = WOJ_ROOT + "/terminals/nltest.ks";
 
@@ -65,20 +64,20 @@ public class CVCAStoreGenerator extends TestCase
 	//
 	//	public static final String filenameKey = "/c:/terminalkey.der";
 
-	public static final String filenameCA = "/d:/ca/cvcert/cacert.cvcert";
+	public static final String filenameCA = "/t:/ca/cvcert/cacert.cvcert";
 
-	public static final String filenameTerminal = "/d:/ca/cvcert/terminalcert.cvcert";
+	public static final String filenameTerminal = "/t:/ca/cvcert/terminalcert.cvcert";
 
-	public static final String filenameKey = "/d:/ca/cvcert/terminalkey.der";
+	public static final String filenameKey = "/t:/ca/cvcert/terminalkey.der";
 
-	private static final String TEST_CV_CERT_DIR = "file:/d:/ca/cvcert";
+	private static final String TEST_CV_CERT_DIR = "file:/t:/ca/cvcert";
 
-	private static final String TEST_CV_KEY_STORE = "file:/d:/ca/cvcert/cvca.ks";
+	private static final String TEST_CV_KEY_STORE = "file:/t:/ca/cvcert/cvca.ks";
 
 	public void testGenerateDERFiles() {
 		try {
 			// Install BC as security provider
-			Security.addProvider(new BouncyCastleProvider());
+			Security.addProvider(BC_PROVIDER);
 
 			// Get the current time, and +3 months
 			Calendar cal1 = Calendar.getInstance();

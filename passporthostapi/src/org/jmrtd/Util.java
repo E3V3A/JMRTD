@@ -26,6 +26,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
+import java.security.Provider;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -49,6 +50,8 @@ import org.jmrtd.lds.MRZInfo;
  */
 public class Util
 {
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+
 	public static final int ENC_MODE = 1;
 	public static final int MAC_MODE = 2;
 
@@ -232,99 +235,5 @@ public class Util
 			return recoveredMessage;
 		}
 	}
-
-//	public static String printDERObject(byte[] derBytes) throws IOException {
-//		ASN1InputStream asn1 = new ASN1InputStream(derBytes);
-//		return printDERObject(asn1.readObject());
-//	}
-//
-//	public static String printDERObject(DERObject derObj) {
-//		if(derObj instanceof DERSequence) return printDERObject((DERSequence)derObj);
-//		if(derObj instanceof DERSet) return printDERObject((DERSet)derObj);
-//		if(derObj instanceof DERTaggedObject) return printDERObject((DERTaggedObject)derObj);
-//		if(derObj instanceof DERNull) return printDERObject((DERNull)derObj);
-//		if(derObj instanceof DERUnknownTag) return printDERObject((DERUnknownTag)derObj);
-//		if(derObj instanceof DERObjectIdentifier) return printDERObject((DERObjectIdentifier)derObj);
-//		if(derObj instanceof DERString) return printDERObject((DERString)derObj);
-//		if(derObj instanceof DEROctetString) return printDERObject((DEROctetString)derObj);
-//		if(derObj instanceof DERUTCTime) return printDERObject((DERUTCTime)derObj);
-//		if(derObj instanceof DERGeneralizedTime) return printDERObject((DERGeneralizedTime)derObj);
-//		if(derObj instanceof DEREnumerated) return printDERObject((DEREnumerated)derObj);
-//		if(derObj instanceof DERInteger) return printDERObject((DERInteger)derObj);
-//		if(derObj instanceof DERBoolean) return printDERObject((DERBoolean)derObj);
-//		if(derObj instanceof DERApplicationSpecific) return printDERObject((DERApplicationSpecific)derObj);
-//		return derObj.getClass().getSimpleName()+"?";        
-//	}
-//
-//	public static String printDERObject(DERSequence derSeq) {
-//		String r = "DERSequence:";
-//		for (Enumeration<DERObject> e = derSeq.getObjects() ; e.hasMoreElements() ;) {
-//			r = r + "\n  " + printDERObject(e.nextElement()).replaceAll("\n", "\n  ");
-//		}
-//		return r;
-//	}
-//
-//	public static String printDERObject(DERSet derSet) {
-//		String r = "DERSet:";
-//		for (Enumeration<DERObject> e = derSet.getObjects() ; e.hasMoreElements() ;) {
-//			r = r + "\n  " + printDERObject(e.nextElement()).replaceAll("\n", "\n  ");
-//		}
-//		return r;
-//	}
-//
-//	public static String printDERObject(DERTaggedObject derTaggedObject) {
-//		String r = "DERTaggedObject:";
-//		r = r + "\n  TagNum: " + derTaggedObject.getTagNo();
-//		r = r + "\n  Object: " + printDERObject(derTaggedObject.getObject()).replaceAll("\n", "\n  ");
-//		return r;
-//	}
-//
-//
-//	public static String printDERObject(DERNull derNull) {
-//		return "DERNull";
-//	}
-//
-//	public static String printDERObject(DERUnknownTag derUnknownTag) {
-//		return "DERUnknownTag: "+derUnknownTag.getTag();
-//	}
-//
-//	public static String printDERObject(DERObjectIdentifier derObjectIdentifier) {
-//		return "DERObjectIdentifier: "+derObjectIdentifier.getId();
-//	}
-//
-//	public static String printDERObject(DEROctetString derOctetString) {
-//		return "DEROctetString: "+Hex.bytesToHexString(derOctetString.getOctets());
-//	}
-//
-//	public static String printDERObject(DERString derString) {
-//		return derString.getClass().getSimpleName()+": "+derString.getString();
-//	}
-//
-//	public static String printDERObject(DERUTCTime derUTCTime) {
-//		return "DERUTCTime: "+derUTCTime.getAdjustedTime();
-//	}
-//
-//	public static String printDERObject(DERGeneralizedTime derGeneralizedTime) {
-//		return "DERGeneralizedTime: "+derGeneralizedTime.getTime();
-//	}
-//
-//	public static String printDERObject(DEREnumerated derEnumerated) {
-//		return "DEREnumerated: "+derEnumerated.getValue();
-//	}
-//
-//	public static String printDERObject(DERBoolean derBoolean) {
-//		return "DERBoolean: "+derBoolean.isTrue();
-//	}
-//
-//	public static String printDERObject(DERInteger derInteger) {
-//		return "DERInteger: "+derInteger.getValue();
-//	}
-//
-//	public static String printDERObject(DERApplicationSpecific derApplicationSpecific) {
-//		String r = "DERApplicationSpecific:";
-//		r = r + "\n  Application Tag: " + derApplicationSpecific.getApplicationTag();
-//		r = r + "\n  Contents:        " + Hex.bytesToHexString(derApplicationSpecific.getContents());
-//		return r;
-//	}
 }
 

@@ -39,7 +39,7 @@ public class DG1FileTest extends TestCase
 
 	public void testToString() {
 		DG1File dg1File = createTestObject();
-		String expectedResult = "DG1File P<NLDMEULENDIJK<<LOES<ALBERTINE<<<<<<<<<<<<<XX00000000NLD7110195F1108280123456782<<<<<02";
+		String expectedResult = "DG1File P<NLDMEULENDIJK<<LOES<ALBERTINE<<<<<<<<<<<<<XX00000000NLD7110195F1108280123456782<<<<<<2";
 		assertEquals(dg1File.toString(), expectedResult);
 	}
 

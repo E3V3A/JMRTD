@@ -22,11 +22,10 @@
 
 package org.jmrtd.lds;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -34,8 +33,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -97,7 +94,7 @@ public class DG11File extends DataGroup
 	private String profession;
 	private String title;
 	private String personalSummary;
-	private BufferedImage proofOfCitizenship;
+	private byte[] proofOfCitizenship;
 	private List<String> otherValidTDNumbers;
 	private String custodyInformation;
 
@@ -125,7 +122,7 @@ public class DG11File extends DataGroup
 			List<String> fullNamesecondaryIdentifiers, String personalNumber,
 			Date fullDateOfBirth, List<String> placeOfBirth, List<String> permanentAddress,
 			String telephone, String profession, String title,
-			String personalSummary, BufferedImage proofOfCitizenship,
+			String personalSummary, byte[] proofOfCitizenship,
 			List<String> otherValidTDNumbers, String custodyInformation) {
 		super(EF_DG11_TAG);
 		this.fullNamePrimaryIdentifier = fullNamePrimaryIdentifier;
@@ -147,7 +144,8 @@ public class DG11File extends DataGroup
 		super(EF_DG11_TAG, in);
 	}
 
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
+	protected void readContent(InputStream in) throws IOException {
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
 		int length = tlvIn.readLength();
@@ -211,12 +209,7 @@ public class DG11File extends DataGroup
 	}
 
 	private void parseProofOfCitizenShip(byte[] value) {
-		try {
-			ByteArrayInputStream in = new ByteArrayInputStream(value);
-			proofOfCitizenship =  ImageIO.read(in);
-		} catch (IOException ioe) {
-			throw new IllegalArgumentException(ioe.getMessage());
-		}
+		proofOfCitizenship = value;
 	}
 
 	private void parsePersonalSummary(String in) {
@@ -415,7 +408,7 @@ public class DG11File extends DataGroup
 	/**
 	 * @return the proofOfCitizenship
 	 */
-	public BufferedImage getProofOfCitizenship() {
+	public byte[] getProofOfCitizenship() {
 		return proofOfCitizenship;
 	}
 
@@ -451,7 +444,7 @@ public class DG11File extends DataGroup
 		result.append(profession); result.append(", ");
 		result.append(title); result.append(", ");
 		result.append(personalSummary); result.append(", ");
-		result.append(proofOfCitizenship == null ? "" : proofOfCitizenship.getWidth() + "x" + proofOfCitizenship.getHeight()); result.append(", ");
+		result.append(proofOfCitizenship == null ? "" : "image (" + proofOfCitizenship.length + ")"); result.append(", ");
 		result.append(otherValidTDNumbers == null || otherValidTDNumbers.size() == 0 ? "[]" : otherValidTDNumbers.toString()); result.append(", ");
 		result.append(custodyInformation);
 		result.append("]");
@@ -470,7 +463,8 @@ public class DG11File extends DataGroup
 		return 13 * toString().hashCode() + 111;
 	}
 
-	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
 		tlvOut.writeTag(TAG_LIST_TAG);
 		DataOutputStream dataOut = new DataOutputStream(tlvOut);
 		List<Integer> tags = getTagPresenceList();
@@ -544,8 +538,7 @@ public class DG11File extends DataGroup
 				tlvOut.writeValue(personalSummary.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			case PROOF_OF_CITIZENSHIP_TAG:
-				ImageIO.write(proofOfCitizenship, "image/jpeg", tlvOut);
-				tlvOut.writeValueEnd(); /* PROOF_OF_CITIZENSHIP_TAG */
+				tlvOut.writeValue(proofOfCitizenship);
 				break;
 			case OTHER_VALID_TD_NUMBERS_TAG:
 				isFirstOne = true;

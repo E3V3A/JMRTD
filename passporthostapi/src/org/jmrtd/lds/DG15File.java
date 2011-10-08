@@ -24,6 +24,7 @@ package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
@@ -59,7 +60,8 @@ public class DG15File extends DataGroup
 		super(EF_DG15_TAG, in);
 	}
 	
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
+	protected void readContent(InputStream in) throws IOException {
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		try {
 			byte[] value = tlvIn.readValue();			
 			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
@@ -69,8 +71,9 @@ public class DG15File extends DataGroup
 			throw new IllegalArgumentException(e.toString());
 		}
 	}
-	
-	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
+
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
 		byte[] publicKeyBytes = publicKey.getEncoded();
 		tlvOut.writeValue(publicKeyBytes);
 	}

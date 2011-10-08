@@ -23,14 +23,11 @@ package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.List;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.LDSFile;
 
 public class COMFileTest extends TestCase
 {
@@ -51,13 +48,14 @@ public class COMFileTest extends TestCase
 	private void testReflexive(COMFile comFile) {
 		try {
 			byte[] encoded = comFile.getEncoded();
-			
-			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encoded));
-			
+			assertNotNull(encoded);			
 			ByteArrayInputStream in = new ByteArrayInputStream(encoded);
 			COMFile copy = new COMFile(in);
 			assertEquals(comFile, copy);
-			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
+			byte[] encodedCopy = copy.getEncoded();
+			assertNotNull(encodedCopy);
+			assertEquals(encoded.length, encodedCopy.length);
+			assertTrue(java.util.Arrays.equals(encoded, encodedCopy));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());
@@ -75,24 +73,45 @@ public class COMFileTest extends TestCase
 		
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		try {
-			COMFile file = new COMFile(in);
-			assertEquals(file.getLDSVersion(), "01.07");
-			assertEquals(file.getUnicodeVersion(), "04.00.00");
-			assertEquals(file.getTagList().size(), 4);
-			assertEquals((int)file.getTagList().get(0), COMFile.EF_DG1_TAG);
-			assertEquals((int)file.getTagList().get(1), COMFile.EF_DG2_TAG);
-			assertEquals((int)file.getTagList().get(2), COMFile.EF_DG4_TAG);
-			assertEquals((int)file.getTagList().get(3), COMFile.EF_DG12_TAG);
+			COMFile comFile = new COMFile(in);
+			assertEquals(comFile.getLDSVersion(), "01.07");
+			assertEquals(comFile.getUnicodeVersion(), "04.00.00");
+
+			int[] tagList = comFile.getTagList();
+			assertNotNull(tagList);
+			assertEquals(tagList.length, 4);
+			assertEquals(tagList[0], COMFile.EF_DG1_TAG);
+			assertEquals(tagList[1], COMFile.EF_DG2_TAG);
+			assertEquals(tagList[2], COMFile.EF_DG4_TAG);
+			assertEquals(tagList[3], COMFile.EF_DG12_TAG);
 		} catch (Exception e) {
 			fail(e.toString());
 		}
 	}
 	
+	public void testAlternativeConstructor() {
+		int[] tagList1 = new int[2];
+		tagList1[0] = LDSFile.EF_DG1_TAG;
+		tagList1[1] = LDSFile.EF_DG2_TAG;
+		int[] tagList2 = new int[tagList1.length];
+		System.arraycopy(tagList1, 0, tagList2, 0, tagList1.length);
+		assertNotNull(tagList1);
+		assertNotNull(tagList2);
+		assertTrue(java.util.Arrays.equals(tagList1, tagList2));
+		COMFile comFile1 = new COMFile("01", "07", "04", "00", "00", tagList1);
+		COMFile comFile2 = new COMFile("1.7", "4.0.0", tagList2);
+		assertEquals(comFile1, comFile2);
+		assertEquals(comFile2.getLDSVersion(), "01.07");
+		assertEquals(comFile2.getUnicodeVersion(), "04.00.00");
+		
+		assertEquals(new COMFile("01.7", "4.00.0", tagList1), new COMFile("1.07", "04.0.00", tagList2));
+	}
+	
 	public static COMFile createTestObject() {
-		List<Integer> tagList = new ArrayList<Integer>();
-		tagList.add(PassportFile.EF_DG1_TAG);
-		tagList.add(PassportFile.EF_DG2_TAG);
-		tagList.add(PassportFile.EF_DG15_TAG);
+		int[] tagList = new int[3];
+		tagList[0] = LDSFile.EF_DG1_TAG;
+		tagList[1] = LDSFile.EF_DG2_TAG;
+		tagList[2] = LDSFile.EF_DG15_TAG;
 		return new COMFile("01", "07", "04", "00", "00", tagList);
 	}
 

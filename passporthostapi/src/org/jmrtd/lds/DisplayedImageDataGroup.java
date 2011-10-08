@@ -22,13 +22,11 @@
 
 package org.jmrtd.lds;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.imageio.ImageIO;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -43,27 +41,27 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 abstract class DisplayedImageDataGroup extends DataGroup
 {
-	protected static final int
-	DISPLAYED_PORTRAIT_TAG = 0x5F40,
-	DISPLAYED_SIGNATURE_OR_MARK_TAG = 0x5F43;
-
 	private static final int DISPLAYED_IMAGE_COUNT_TAG = 0x02;
 
-	protected int displayedImageTagToUseForEncoding;
+	private int displayedImageTagToUse;
+	private List<DisplayedImageInfo> imageInfos;
 
-	protected List<DisplayedImageInfo> images;
-
-	public DisplayedImageDataGroup(int dataGroupTag, List<DisplayedImageInfo> images, int displayedImageTagToUseForEncoding) {
+	public DisplayedImageDataGroup(int dataGroupTag, List<DisplayedImageInfo> imageInfos, int displayedImageTagToUse) {
 		super(dataGroupTag);
-		this.images = new ArrayList<DisplayedImageInfo>(images);
-		this.displayedImageTagToUseForEncoding = displayedImageTagToUseForEncoding;
+		if (imageInfos == null) { throw new IllegalArgumentException("imageInfos cannot be null"); }
+		this.displayedImageTagToUse = displayedImageTagToUse;
+		this.imageInfos = new ArrayList<DisplayedImageInfo>(imageInfos);
+		checkTypesConsistentWithTag();
 	}
 
-	public DisplayedImageDataGroup(int tagToExpect, InputStream in) {
-		super(tagToExpect, in);
+	public DisplayedImageDataGroup(int dataGroupTag, InputStream in) {
+		super(dataGroupTag, in);
+		if (this.imageInfos == null) { this.imageInfos = new ArrayList<DisplayedImageInfo>(); }
+		checkTypesConsistentWithTag();
 	}
 
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
+	protected void readContent(InputStream in) throws IOException {
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int countTag = tlvIn.readTag();
 		if (countTag != DISPLAYED_IMAGE_COUNT_TAG) { /* 02 */
 			throw new IllegalArgumentException("Expected tag 0x02 in displayed image structure, found " + Integer.toHexString(countTag));
@@ -74,63 +72,23 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		}
 		int count = (tlvIn.readValue()[0] & 0xFF);
 		for (int i = 0; i < count; i++) {
-			readDisplayedImage(tlvIn);
-		}
-	}
-
-	protected void writeContent(TLVOutputStream out) throws IOException {
-		out.writeTag(DISPLAYED_IMAGE_COUNT_TAG);
-		out.writeValue(new byte[] { (byte)images.size() });
-		for (DisplayedImageInfo imageInfo: images) {
-			writeDisplayedImage(imageInfo, out);
-		}
-	}
-
-	/**
-	 * Reads the displayed image. This method should be implemented by concrete
-	 * subclasses. The 5F2E or 7F2E tag and the length are already read.
-	 * 
-	 * @param tlvIn the input stream positioned so that biometric data block tag and length are already read
-	 * @param length the length
-	 * @throws IOException if reading fails
-	 */
-	protected void readDisplayedImage(TLVInputStream tlvIn) throws IOException {
-		int displayedImageTag = tlvIn.readTag();
-		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */
-				&& displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
-			throw new IllegalArgumentException("Expected tag 0x5F40 or 0x5F43, found " + Integer.toHexString(displayedImageTag));
-		}
-
-		/* FIXME: check whether displayedImageTag == displayedImageTagToUseForEncoding. */
-
-		int type = -1;
-		switch (displayedImageTag) {
-		case DISPLAYED_PORTRAIT_TAG: type = DisplayedImageInfo.TYPE_PORTRAIT; break;
-		case DISPLAYED_SIGNATURE_OR_MARK_TAG: type = DisplayedImageInfo.TYPE_SIGNATURE_OR_MARK; break;
-		default: throw new IllegalArgumentException("Cannot determine type in displayed image group (tag " + Integer.toHexString(displayedImageTag));
-		}
-
-		displayedImageTagToUseForEncoding = displayedImageTag;
-		/* int displayedImageLength = */ tlvIn.readLength();
-		/* Displayed Facial Image: ISO 10918, JFIF option
-		 * Displayed Finger: ANSI/NIST-ITL 1-2000
-		 * Displayed Signature/ usual mark: ISO 10918, JFIF option
-		 */
-		try {
-			BufferedImage image = ImageIO.read(tlvIn);
-			if (image != null) {
-				add(new DisplayedImageInfo(type, image));
+			DisplayedImageInfo imageInfo = new DisplayedImageInfo(tlvIn);
+			if (i == 0) { 
+				displayedImageTagToUse = imageInfo.getDisplayedImageTag();
+			} else if (imageInfo.getDisplayedImageTag() != displayedImageTagToUse){
+				throw new IOException("Found images with different displayed image tags inside displayed image datagroup");
 			}
-		} catch (IOException ioe) {
-			// DEBUG
-			ioe.printStackTrace();
+			add(imageInfo);
 		}
 	}
 
-	protected void writeDisplayedImage(DisplayedImageInfo info, TLVOutputStream out) throws IOException {
-		out.writeTag(displayedImageTagToUseForEncoding);
-		ImageIO.write(info.getImage(), "jpg", out);
-		out.writeValueEnd();		
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+		tlvOut.writeTag(DISPLAYED_IMAGE_COUNT_TAG);
+		tlvOut.writeValue(new byte[] { (byte)imageInfos.size() });
+		for (DisplayedImageInfo imageInfo: imageInfos) {
+			imageInfo.writeObject(tlvOut);
+		}
 	}
 
 	public String toString() {
@@ -138,7 +96,11 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		result.append(getClass().getSimpleName());
 		result.append(" [");
 		boolean isFirst = true;
-		for (DisplayedImageInfo info: images) {
+		if (imageInfos == null) {
+			throw new IllegalStateException("imageInfos cannot be null");	
+		}
+		// result.append("size: " + imageInfos.size());
+		for (DisplayedImageInfo info: imageInfos) {
 			if (isFirst) { isFirst = false; } else { result.append(", "); }
 			result.append(info.toString());
 		}
@@ -146,19 +108,47 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		return result.toString();
 	}
 
+	public int hashCode() {
+		return 1337 + (imageInfos == null ? 1 : imageInfos.hashCode()) + 31337;
+	}
+
+	public boolean equals(Object other) {
+		if (other == null) { return false; }
+		if (other == this) { return true; }
+		if (!getClass().equals(other.getClass())) { return false; }
+		DisplayedImageDataGroup otherDG = (DisplayedImageDataGroup)other;
+		return this.imageInfos == otherDG.imageInfos || this.imageInfos != null && this.imageInfos.equals(otherDG.imageInfos);
+	}
+
 	/**
-	 * Gets the images.
+	 * Gets the image infos.
 	 *
 	 * @return images
 	 */
 	public List<DisplayedImageInfo> getImages() {
-		return images;
+		return new ArrayList<DisplayedImageInfo>(imageInfos);
 	}
-	
+
 	private void add(DisplayedImageInfo image) {
-		if (images == null) {
-			images = new ArrayList<DisplayedImageInfo>();
+		if (imageInfos == null) {
+			imageInfos = new ArrayList<DisplayedImageInfo>();
 		}
-		images.add(image);
+		imageInfos.add(image);
+	}
+
+	private void checkTypesConsistentWithTag() {
+		for (DisplayedImageInfo imageInfo: imageInfos) {
+			switch (imageInfo.getType()) {
+			case ImageInfo.TYPE_SIGNATURE_OR_MARK:
+				if (displayedImageTagToUse != DisplayedImageInfo.DISPLAYED_SIGNATURE_OR_MARK_TAG) {
+					throw new IllegalArgumentException("\'Portrait\' image cannot be part of a \'Signature or usual mark\' displayed image datagroup");
+				}
+				break;
+			case ImageInfo.TYPE_PORTRAIT:
+				if (displayedImageTagToUse == DisplayedImageInfo.DISPLAYED_PORTRAIT_TAG) {
+					throw new IllegalArgumentException("\'Signature or usual mark\' image cannot be part of a \'Portrait\' displayed image datagroup");
+				}
+			}
+		}
 	}
 }

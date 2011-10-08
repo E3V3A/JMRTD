@@ -31,7 +31,7 @@ import org.jmrtd.cert.CVCPrincipal;
 
 /* TODO: Use CVCPrincipal instead of String for references? */
 
-public class CVCAFile extends PassportFile
+public class CVCAFile extends LDSFile
 {
 	public static final byte CAR_TAG = 0x42;
 	public static final int LENGTH = 36;

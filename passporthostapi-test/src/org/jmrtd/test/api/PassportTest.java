@@ -26,24 +26,23 @@ import java.security.Security;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.jmrtd.MRTDTrustStore;
-import org.jmrtd.Passport;
-import org.jmrtd.lds.MRZInfo;
-
 public class PassportTest extends TestCase
 {
-	Provider BC_PROV = new BouncyCastleProvider();
-
+	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	
+	static {
+		Security.addProvider(BC_PROVIDER);
+	}
+	
 	public PassportTest(String name) {
 		super(name);
-		Security.addProvider(BC_PROV);
 	}
 
 	public void testInitNoException() {
 		try {
-			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, new MRTDTrustStore());
-			assertNotNull(passport);
+//			Passport passport = new Passport("I<", new MRTDTrustStore());
+//			assertNotNull(passport);\
+			fail("FIXME");
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
@@ -51,8 +50,9 @@ public class PassportTest extends TestCase
 	
 	public void testNewMRTDVerify() {
 		try {
-			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, new MRTDTrustStore());
-			passport.verifySecurity();
+//			Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, new MRTDTrustStore());
+//			passport.verifySecurity();
+			fail("FIXME");
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

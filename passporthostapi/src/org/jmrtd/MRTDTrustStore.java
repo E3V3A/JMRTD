@@ -32,7 +32,6 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -67,10 +66,6 @@ import org.jmrtd.cert.PKDMasterListCertStoreParameters;
  * @version $Revision: $
  */
 public class MRTDTrustStore {
-
-	private static final Provider
-	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider(),
-	JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -192,11 +187,11 @@ public class MRTDTrustStore {
 	}
 
 	private void addAsSingletonCSCACertStore(URI uri) throws MalformedURLException, IOException, CertificateException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {
-		URLConnection uc = uri.toURL().openConnection();
-		InputStream in = uc.getInputStream();
-		CertificateFactory cf = CertificateFactory.getInstance("X.509");
-		X509Certificate certificate = (X509Certificate)cf.generateCertificate(in);
-		in.close();
+		URLConnection urlConnection = uri.toURL().openConnection();
+		InputStream inputStream = urlConnection.getInputStream();
+		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+		X509Certificate certificate = (X509Certificate)certFactory.generateCertificate(inputStream);
+		inputStream.close();
 		CertStoreParameters params = new CollectionCertStoreParameters(Collections.singleton(certificate));
 		CertStore cscaStore = CertStore.getInstance("Collection", params);
 		cscaStores.add(cscaStore);
@@ -260,11 +255,11 @@ public class MRTDTrustStore {
 		for(String storeType : storeTypes) {
 			try {
 				KeyStore cvcaStore = KeyStore.getInstance(storeType);
-				URLConnection uc = uri.toURL().openConnection();
-				InputStream in = uc.getInputStream();
-				cvcaStore.load(in, "".toCharArray());
+				URLConnection urlConnection = uri.toURL().openConnection();
+				InputStream inputStream = urlConnection.getInputStream();
+				cvcaStore.load(inputStream, "".toCharArray());
 				addCVCAStore(cvcaStore);
-				in.close();
+				inputStream.close();
 				return;
 			} catch (Exception e) {
 				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());

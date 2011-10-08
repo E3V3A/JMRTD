@@ -87,7 +87,7 @@ public class PassportBACTester extends PassportTesterBase {
 
 	public void setUp() throws CardServiceException, ParseException {
 		resetCard();
-//		service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
+		//		service.setMRZ("XX1234587", "760803", "140507"); /* Passport MRZ*/
 		service.setMRZ("IZP3R8132", "391109", "140406"); /* ID card MRZ*/
 		// System.out.println("Setup EAC: " + service.setupEAC());
 	}
@@ -111,7 +111,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * @throws CardServiceException
 	 */
 	public void testAccessControlOnFingerprintAfterBAC()
-			throws CardServiceException {
+	throws CardServiceException {
 		service.doBAC();
 		traceApdu = true;
 		// We should now be able to read MRZ, photo and public key for AA
@@ -129,7 +129,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * @throws CardServiceException
 	 */
 	public void testAccessControlOnAllFilesAfterBAC()
-			throws CardServiceException {
+	throws CardServiceException {
 		service.doBAC();
 		traceApdu = true;
 		// Datagroups that are RFU should not be selectable, probably?
@@ -157,7 +157,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * After BAC, we should refuse all non-SM communication
 	 */
 	public void testSMAbortedCorrectlyOnNonSMSelectFile()
-			throws CardServiceException {
+	throws CardServiceException {
 		service.doBAC();
 		traceApdu = true;
 		assertFalse(service.canSelectFileWithoutSM(PassportService.EF_DG1));
@@ -223,8 +223,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * 
 	 * Any CardServiceException is simply passed on.
 	 */
-	private void printSupportedInstructionsPostBAC()
-			throws CardServiceException {
+	private void printSupportedInstructionsPostBAC() throws CardServiceException {
 		System.out.println("Supported instruction: ");
 		for (int ins = 0; ins < 256; ins++) {
 			if (!service.canSelectFileWithoutSM(PassportService.EF_DG1)) {
@@ -447,7 +446,7 @@ public class PassportBACTester extends PassportTesterBase {
 	}
 
 	public void testAverageDelayedSuccessfulBAC() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		service.failBAC();
@@ -476,7 +475,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check duration of undelayed failed BACs (ie after successful BAC)
 	 */
 	public void testAverageUndelayedFailedBAC() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		for (int i = 0; i < TRIES; i++) {
@@ -504,7 +503,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check duration of undelayed successful BACs (ie after successful BAC)
 	 */
 	public void testAverageUndelayedSuccessfulBAC()
-			throws CardServiceException, InterruptedException {
+	throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		for (int i = 0; i < TRIES; i++) {
@@ -531,7 +530,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check delay on failed BACs after failed BAC
 	 */
 	public void testAverageDelayedFailedBAC() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		service.failBAC();
@@ -560,7 +559,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check delay on failed BACs after failed BAC, after soft reset
 	 */
 	public void testAverageDelayedBACAfterSoftReset()
-			throws CardServiceException, InterruptedException {
+	throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		service.failBAC();
@@ -592,7 +591,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check delay of successful BAC after failed BAC, after soft reset
 	 */
 	public void testAverageDelayedSuccessfulBACAfterSoftReset()
-			throws CardServiceException, InterruptedException {
+	throws CardServiceException, InterruptedException {
 		long start, stop, min = 100000000, max = 0, total = 0;
 		final int TRIES = 30;
 		service.failBAC();
@@ -622,7 +621,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * Check timing of multiple failed BACs.
 	 */
 	public void testDelayedBACAfterSoftReset() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 
 		long start, stop;
 
@@ -650,22 +649,22 @@ public class PassportBACTester extends PassportTesterBase {
 		service.failBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A second unsuccessful BAC, immediately afterwards, takes "
-						+ (stop - start) + " millisecs");
+		.println("A second unsuccessful BAC, immediately afterwards, takes "
+				+ (stop - start) + " millisecs");
 
 		start = System.currentTimeMillis();
 		service.failBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A third unsuccessful BAC, immediately afterwards, takes "
-						+ (stop - start) + " millisecs");
+		.println("A third unsuccessful BAC, immediately afterwards, takes "
+				+ (stop - start) + " millisecs");
 
 		start = System.currentTimeMillis();
 		service.doBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A subsequent successful BAC, immediately afterwards, takes "
-						+ (stop - start) + " millisecs");
+		.println("A subsequent successful BAC, immediately afterwards, takes "
+				+ (stop - start) + " millisecs");
 
 		/* Now a few in a row, with resetting in between */
 		System.out.println();
@@ -686,8 +685,8 @@ public class PassportBACTester extends PassportTesterBase {
 		service.failBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A subsequent unsuccessful BAC, after restarting card, takes "
-						+ (stop - start) + " millisecs");
+		.println("A subsequent unsuccessful BAC, after restarting card, takes "
+				+ (stop - start) + " millisecs");
 		System.out.println("which is  " + (stop - timeBeforeReset)
 				+ " millisecs incl. the reset");
 		System.out.println("The restart took " + (start - timeBeforeReset)
@@ -699,8 +698,8 @@ public class PassportBACTester extends PassportTesterBase {
 		service.failBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A subsequent unsuccessful BAC, after restarting card, takes "
-						+ (stop - start) + " millisecs");
+		.println("A subsequent unsuccessful BAC, after restarting card, takes "
+				+ (stop - start) + " millisecs");
 		System.out.println("which is  " + (stop - timeBeforeReset)
 				+ " millisecs incl. the reset");
 		System.out.println("The restart took " + (start - timeBeforeReset)
@@ -712,7 +711,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * card tear. Beware user interaction required!
 	 */
 	public void testDelayedBACAfterCardTear() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 
 		long start, stop;
 
@@ -726,8 +725,8 @@ public class PassportBACTester extends PassportTesterBase {
 		service.failBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A failed BAC after a card tear after a failed BAC takes "
-						+ (stop - start) + " millisecs");
+		.println("A failed BAC after a card tear after a failed BAC takes "
+				+ (stop - start) + " millisecs");
 
 		service.failBAC();
 		System.out.println("Failed a BAC - remove card now");
@@ -739,8 +738,8 @@ public class PassportBACTester extends PassportTesterBase {
 		service.doBAC();
 		stop = System.currentTimeMillis();
 		System.out
-				.println("A succesful BAC after card tear a after a failed BAC takes "
-						+ (stop - start) + " millisecs");
+		.println("A succesful BAC after card tear a after a failed BAC takes "
+				+ (stop - start) + " millisecs");
 	}
 
 	/**
@@ -748,7 +747,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * a card tear. Beware user interaction required!
 	 */
 	public void testDelayedBACAfterCardTear2() throws CardServiceException,
-			InterruptedException {
+	InterruptedException {
 
 		long start, stop;
 		byte b[] = { (byte) 0, (byte) 0, (byte) 0, (byte) 0, (byte) 0,
@@ -793,7 +792,7 @@ public class PassportBACTester extends PassportTesterBase {
 	 * FIXME: Erik, I moved the toByteArray here from CardFileInputStream, a generic
 	 * inputstream-to-byte-array reader doesn't belong there IMO. -- MO
 	 */
-	
+
 	/**
 	 * 
 	 * @return the contents of the file

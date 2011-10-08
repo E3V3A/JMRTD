@@ -24,6 +24,7 @@ package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
@@ -68,10 +69,10 @@ public class DG1File extends DataGroup implements Serializable
 		super(EF_DG1_TAG, in);
 	}
 	
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
+	protected void readContent(InputStream in) throws IOException {
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		tlvIn.skipToTag(MRZ_INFO_TAG);
 		tlvIn.readLength();
-		isSourceConsistent = false;
 		this.mrzInfo = new MRZInfo(tlvIn);
 	}
 
@@ -104,35 +105,9 @@ public class DG1File extends DataGroup implements Serializable
 		return 3 * mrzInfo.hashCode() + 57;
 	}
 
-	protected void writeContent(TLVOutputStream out) throws IOException {
-		out.writeTag(MRZ_INFO_TAG);
-		out.writeValue(mrzInfo.getEncoded());
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+		tlvOut.writeTag(MRZ_INFO_TAG);
+		tlvOut.writeValue(mrzInfo.getEncoded());
 	}
-
-	/**
-	 * Gets the contents of this file as byte array,
-	 * includes the ICAO tag and length.
-	 * 
-	 * @return a byte array containing the file
-	 */
-	//	public byte[] getEncoded() {
-	//		if (isSourceConsistent) {
-	//			return sourceObject;
-	//		}
-	//
-	//		try {
-	//			BERTLVObject ef0101 =
-	//				new BERTLVObject(EF_DG1_TAG,
-	//						new BERTLVObject(0x5F1F, mrzInfo.getEncoded()));
-	//
-	//			ef0101.reconstructLength();
-	//			byte[] ef0101bytes = ef0101.getEncoded();
-	//			sourceObject = ef0101bytes;
-	//			isSourceConsistent = true;
-	//			return ef0101bytes;
-	//		} catch (Exception e) {
-	//			e.printStackTrace();
-	//			return null;
-	//		}
-	//	}
 }

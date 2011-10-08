@@ -22,7 +22,7 @@
 
 package org.jmrtd;
 
-import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -33,23 +33,23 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECFieldF2m;
 import java.security.spec.RSAKeyGenParameterSpec;
-import java.text.SimpleDateFormat;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
-
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.tlv.BERTLVObject;
+import net.sourceforge.scuba.smartcards.ScubaSmartcards;
+import net.sourceforge.scuba.tlv.ASN1Constants;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -61,10 +61,12 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  */
-public class PassportPersoService extends CardService {
-	
+public class PassportPersoService<C,R> extends CardService<C,R> {
+
 	private static final long serialVersionUID = 4975606132249105202L;
-	
+
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+
 	private static final byte INS_SET_DOCNR_DOB_DOE = (byte) 0x10;
 	private static final short AAPRIVKEY_FID = 0x0001;
 	private static final byte INS_PUT_DATA = (byte) 0xda;;
@@ -72,22 +74,20 @@ public class PassportPersoService extends CardService {
 	private static final byte PRIVMODULUS_TAG = 0x60;
 	private static final byte PRIVEXPONENT_TAG = 0x61;
 	private static final byte MRZ_TAG = 0x62;
-    private static final byte ECPRIVATE_TAG = 0x63;
-    private static final byte CVCERTIFICATE_TAG = 0x64;
+	private static final byte ECPRIVATE_TAG = 0x63;
+	private static final byte CVCERTIFICATE_TAG = 0x64;
 
-    /**
-     * The name of the EC curve for DH key pair generation (this is the only one
-     * that our passport applet supports. 
-     */
-    public static final String EC_CURVE_NAME = "c2pnb163v1";
+	/**
+	 * The name of the EC curve for DH key pair generation (this is the only one
+	 * that our passport applet supports. 
+	 */
+	public static final String EC_CURVE_NAME = "c2pnb163v1";
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
+	private PassportService<C,R> service;
 
-	private PassportService service;
-
-	public PassportPersoService(CardService service)
+	public PassportPersoService(CardService<C,R> service)
 	throws CardServiceException {
-		this.service = (service instanceof PassportService) ? (PassportService)service : new PassportService(service);
+		this.service = (service instanceof PassportService) ? (PassportService<C, R>)service : new PassportService<C, R>(service);
 	}
 
 	/**
@@ -95,66 +95,88 @@ public class PassportPersoService extends CardService {
 	 * 
 	 * @return a KeyPair
 	 * @throws GeneralSecurityException
-	 * @throws NoSuchAlgorithmException
-	 *             when BouncyCastle provider cannot be found.
+	 * @throws NoSuchAlgorithmException if crypto algorithm could not be provided by JCE providers
 	 * @deprecated Leave this responsibility to the client
 	 */
-	public static KeyPair generateAAKeyPair() throws GeneralSecurityException,
-	NoSuchAlgorithmException {
-		String preferredProvider = "BC";
-		Provider provider = Security.getProvider(preferredProvider);
-		if (provider == null) {
-			return null;
+	public static KeyPair generateAAKeyPair() throws GeneralSecurityException, NoSuchAlgorithmException {
+		KeyPairGenerator generator = null;
+		try {
+			generator = KeyPairGenerator.getInstance("RSA", BC_PROVIDER);
+		} catch (NoSuchAlgorithmException nsae) {
+			generator = KeyPairGenerator.getInstance("RSA");
 		}
-		KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA",
-				provider);
-		generator.initialize(new RSAKeyGenParameterSpec(1024,
-				RSAKeyGenParameterSpec.F4));
+		generator.initialize(new RSAKeyGenParameterSpec(1024, RSAKeyGenParameterSpec.F4));
 		KeyPair keyPair = generator.generateKeyPair();
 		return keyPair;
 	}
 
-	private CommandAPDU createPutDataApdu(byte p1, byte p2, byte[] data) {
+	private C createPutDataApdu(byte p1, byte p2, byte[] data) {
 		byte cla = 0;
 		byte ins = INS_PUT_DATA;
 
-		return new CommandAPDU(cla, ins, p1, p2, data);
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+
+		return sc.createCommandAPDU(cla, ins, p1, p2, data);
 	}
 
 	private byte[] putData(byte p1, byte p2,
 			byte[] data) throws CardServiceException {
-		CommandAPDU capdu = createPutDataApdu(p1, p2, data);
-		SecureMessagingWrapper wrapper = service.getWrapper();
+		C capdu = createPutDataApdu(p1, p2, data);
+		SecureMessagingWrapper<C,R> wrapper = service.getWrapper();
+
+
 
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		ResponseAPDU rapdu = service.transmit(capdu);
+
+		R rapdu = service.transmit(capdu);
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		IResponseAPDU rAcc = sc.accesR(rapdu);
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
 		}
-		return rapdu.getData();
+		return rAcc.getData();
 	}
 
-	/***************************************************************************
+	/**
 	 * Sends a PUT_DATA command to the card to set the private keys used for
 	 * Active Authentication.
 	 * 
-	 * @param key
-	 *            holding the private key data.
-	 * @throws IOException
-	 *             on error.
+	 * @param privateKey holding the private key data.
+	 * @throws IOException on error.
 	 */
-	public void putPrivateKey(PrivateKey key)
-	throws CardServiceException {
+	public void putPrivateKey(PrivateKey privateKey) throws CardServiceException {
+		if (!"RSA".equals(privateKey.getAlgorithm())) {
+			throw new CardServiceException("Was expecting RSA private key");
+		}
 		try {
-			byte[] encodedPriv = key.getEncoded();
-			BERTLVObject encodedPrivObject = BERTLVObject.getInstance(new ByteArrayInputStream(encodedPriv));
-			byte[] privKeyData = (byte[]) encodedPrivObject.getChildByIndex(2).getValue();
-			BERTLVObject privKeyDataObject = BERTLVObject.getInstance(new ByteArrayInputStream(privKeyData));
-			byte[] privModulus = (byte[]) privKeyDataObject.getChildByIndex(1).getValue();
-			byte[] privExponent = (byte[]) privKeyDataObject.getChildByIndex(3).getValue();
-			putPrivateKey(privModulus, privExponent);
+			byte[] privModulus = ((RSAPrivateKey)privateKey).getModulus().toByteArray();
+			byte[] privExponent = ((RSAPrivateKey)privateKey).getPrivateExponent().toByteArray();
+			
+			/* Construct objects for modulus and exponent and send them to applet. */
+			
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			TLVOutputStream tlvOut = new TLVOutputStream(out);
+			tlvOut.writeTag(PRIVMODULUS_TAG);
+			tlvOut.writeTag(ASN1Constants.OCTET_STRING_TYPE_TAG);
+			tlvOut.writeValue(privModulus);
+			tlvOut.writeValueEnd(); /* PRIVMODULUS_TAG */
+			out.flush();
+			out.close();
+			putData((byte)0, PRIVMODULUS_TAG, out.toByteArray());
+
+			out.reset();
+			
+			tlvOut = new TLVOutputStream(out);
+			tlvOut.writeTag(PRIVEXPONENT_TAG);
+			tlvOut.writeTag(ASN1Constants.OCTET_STRING_TYPE_TAG);
+			tlvOut.writeValue(privExponent);
+			tlvOut.writeValueEnd(); /* PRIVEXPONENT_TAG */
+			out.flush();
+			out.close();
+			putData((byte)0, PRIVEXPONENT_TAG, out.toByteArray());
+			
 		} catch (IOException ioe) {
 			throw new CardServiceException(ioe.toString());
 		} catch (Exception pe) {
@@ -162,129 +184,108 @@ public class PassportPersoService extends CardService {
 		}
 	}
 
-	private void putPrivateKey(byte[] privModulus, byte[] privExponent)
+	/**
+	 * Sends a PUT_DATA command to the card to set the private key used for
+	 * Extended Access Control.
+	 * 
+	 * @param privKey
+	 *            holding the private key data.
+	 * @throws CardServiceException
+	 *             on error.
+	 */
+	public void putPrivateEACKey(PrivateKey privKey)
 	throws CardServiceException {
-		try {
-			BERTLVObject privModulusObject = new BERTLVObject(PRIVMODULUS_TAG,
-					new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG,
-							privModulus));
 
-			putData((byte) 0, PRIVMODULUS_TAG, privModulusObject
-					.getEncoded());
+		ECPrivateKey privateKey = (ECPrivateKey)privKey;
+		byte[] aArray = privateKey.getParams().getCurve().getA().toByteArray();
+		byte[] bArray = privateKey.getParams().getCurve().getB().toByteArray();
 
-			BERTLVObject privExponentObject = new BERTLVObject(
-					PRIVEXPONENT_TAG, new BERTLVObject(
-							BERTLVObject.OCTET_STRING_TYPE_TAG, privExponent));
+		byte[] rArray = privateKey.getParams().getOrder().toByteArray();
+		short k = (short) privateKey.getParams().getCofactor();
 
-			putData((byte) 0, PRIVEXPONENT_TAG, privExponentObject
-					.getEncoded());
-		} catch (Exception ioe) {
-			throw new CardServiceException(ioe.toString());
+		byte[] kArray = new byte[2];
+		kArray[0] = (byte) ((k & 0xFF00) >> 8);
+		kArray[1] = (byte) (k & 0xFF);
+
+		ECFieldF2m fm = (ECFieldF2m) privateKey.getParams().getCurve()
+		.getField();
+		byte[] pArray = null;
+		if (fm.getMidTermsOfReductionPolynomial() == null) {
+			int m = fm.getM();
+			pArray = new byte[2];
+			pArray[0] = (byte) ((m & 0xFF00) >> 8);
+			pArray[1] = (byte) (m & 0xFF);
+		} else {
+			int[] ms = fm.getMidTermsOfReductionPolynomial();
+			int off = 0;
+			pArray = new byte[ms.length * 2];
+			for (int i = 0; i < ms.length; i++) {
+				int m = ms[i];
+				pArray[off + 0] = (byte) ((m & 0xFF00) >> 8);
+				pArray[off + 1] = (byte) (m & 0xFF);
+				off += 2;
+			}
 		}
+
+		org.spongycastle.jce.interfaces.ECPrivateKey ktmp = (org.spongycastle.jce.interfaces.ECPrivateKey) privateKey;
+		org.spongycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
+		byte[] gArray = point.getEncoded();
+		byte[] sArray = privateKey.getS().toByteArray();
+		pArray = tagData((byte) 0x81, pArray);
+		aArray = tagData((byte) 0x82, aArray);
+		bArray = tagData((byte) 0x83, bArray);
+		gArray = tagData((byte) 0x84, gArray);
+		rArray = tagData((byte) 0x85, rArray);
+		sArray = tagData((byte) 0x86, sArray);
+		kArray = tagData((byte) 0x87, kArray);
+
+		int offset = 0;
+		byte[] all = new byte[pArray.length + aArray.length + bArray.length
+		                      + gArray.length + rArray.length + sArray.length + kArray.length];
+		System.arraycopy(pArray, 0, all, offset, pArray.length);
+		offset += pArray.length;
+		System.arraycopy(aArray, 0, all, offset, aArray.length);
+		offset += aArray.length;
+		System.arraycopy(bArray, 0, all, offset, bArray.length);
+		offset += bArray.length;
+		System.arraycopy(gArray, 0, all, offset, gArray.length);
+		offset += gArray.length;
+		System.arraycopy(rArray, 0, all, offset, rArray.length);
+		offset += rArray.length;
+		System.arraycopy(sArray, 0, all, offset, sArray.length);
+		offset += sArray.length;
+		System.arraycopy(kArray, 0, all, offset, kArray.length);
+		offset += kArray.length;
+
+		putData((byte) 0, ECPRIVATE_TAG, all);
 	}
 
-       /**
-     * Sends a PUT_DATA command to the card to set the private key used for
-     * Extended Access Control.
-     * 
-     * @param privKey
-     *            holding the private key data.
-     * @throws CardServiceException
-     *             on error.
-     */
-    public void putPrivateEACKey(PrivateKey privKey)
-            throws CardServiceException {
+	// For quick and dirty tagging of data
+	private static byte[] tagData(byte tag, byte[] data) {
+		byte[] result = new byte[data.length + 2];
+		System.arraycopy(data, 0, result, 2, data.length);
+		result[0] = tag;
+		result[1] = (byte) data.length;
+		return result;
+	}
 
-        ECPrivateKey privateKey = (ECPrivateKey)privKey;
-        byte[] aArray = privateKey.getParams().getCurve().getA().toByteArray();
-        byte[] bArray = privateKey.getParams().getCurve().getB().toByteArray();
-
-        byte[] rArray = privateKey.getParams().getOrder().toByteArray();
-        short k = (short) privateKey.getParams().getCofactor();
-
-        byte[] kArray = new byte[2];
-        kArray[0] = (byte) ((k & 0xFF00) >> 8);
-        kArray[1] = (byte) (k & 0xFF);
-
-        ECFieldF2m fm = (ECFieldF2m) privateKey.getParams().getCurve()
-                .getField();
-        byte[] pArray = null;
-        if (fm.getMidTermsOfReductionPolynomial() == null) {
-            int m = fm.getM();
-            pArray = new byte[2];
-            pArray[0] = (byte) ((m & 0xFF00) >> 8);
-            pArray[1] = (byte) (m & 0xFF);
-        } else {
-            int[] ms = fm.getMidTermsOfReductionPolynomial();
-            int off = 0;
-            pArray = new byte[ms.length * 2];
-            for (int i = 0; i < ms.length; i++) {
-                int m = ms[i];
-                pArray[off + 0] = (byte) ((m & 0xFF00) >> 8);
-                pArray[off + 1] = (byte) (m & 0xFF);
-                off += 2;
-            }
-        }
-
-        org.bouncycastle.jce.interfaces.ECPrivateKey ktmp = (org.bouncycastle.jce.interfaces.ECPrivateKey) privateKey;
-        org.bouncycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
-        byte[] gArray = point.getEncoded();
-        byte[] sArray = privateKey.getS().toByteArray();
-        pArray = tagData((byte) 0x81, pArray);
-        aArray = tagData((byte) 0x82, aArray);
-        bArray = tagData((byte) 0x83, bArray);
-        gArray = tagData((byte) 0x84, gArray);
-        rArray = tagData((byte) 0x85, rArray);
-        sArray = tagData((byte) 0x86, sArray);
-        kArray = tagData((byte) 0x87, kArray);
-
-        int offset = 0;
-        byte[] all = new byte[pArray.length + aArray.length + bArray.length
-                + gArray.length + rArray.length + sArray.length + kArray.length];
-        System.arraycopy(pArray, 0, all, offset, pArray.length);
-        offset += pArray.length;
-        System.arraycopy(aArray, 0, all, offset, aArray.length);
-        offset += aArray.length;
-        System.arraycopy(bArray, 0, all, offset, bArray.length);
-        offset += bArray.length;
-        System.arraycopy(gArray, 0, all, offset, gArray.length);
-        offset += gArray.length;
-        System.arraycopy(rArray, 0, all, offset, rArray.length);
-        offset += rArray.length;
-        System.arraycopy(sArray, 0, all, offset, sArray.length);
-        offset += sArray.length;
-        System.arraycopy(kArray, 0, all, offset, kArray.length);
-        offset += kArray.length;
-
-        putData((byte) 0, ECPRIVATE_TAG, all);
-    }
-
-    // For quick and dirty tagging of data
-    private static byte[] tagData(byte tag, byte[] data) {
-        byte[] result = new byte[data.length + 2];
-        System.arraycopy(data, 0, result, 2, data.length);
-        result[0] = tag;
-        result[1] = (byte) data.length;
-        return result;
-    }
-
-    /**
-     * Sends a PUT_DATA command to the card to set the root cv certificate for
-     * Extended Access Control.
-     * 
-     * @param certificate
-     *            card verifiable certificate
-     * @throws CardServiceException
-     *             on error.
-     */
-    public void putCVCertificate(CardVerifiableCertificate certificate)
-            throws CardServiceException {
-        try {
-            putData((byte) 1, CVCERTIFICATE_TAG, certificate.getCertBodyData());
-        } catch (Exception e) {
-            throw new CardServiceException(e.toString());
-        }
-    }
+	/**
+	 * Sends a PUT_DATA command to the card to set the root cv certificate for
+	 * Extended Access Control.
+	 * 
+	 * @param certificate
+	 *            card verifiable certificate
+	 * @throws CardServiceException
+	 *             on error.
+	 */
+	public void putCVCertificate(CardVerifiableCertificate certificate)
+	throws CardServiceException {
+		try {
+			putData((byte) 1, CVCERTIFICATE_TAG, certificate.getCertBodyData());
+		} catch (Exception e) {
+			throw new CardServiceException(e.toString());
+		}
+	}
 
 	/***************************************************************************
 	 * Sends a CREATE_FILE APDU to the card.
@@ -298,64 +299,77 @@ public class PassportPersoService extends CardService {
 		sendCreateFile(service.getWrapper(), fid, length);
 	}
 
-	private CommandAPDU createCreateFileAPDU(short fid, short length) {
+	private C createCreateFileAPDU(short fid, short length) {
 		byte p1 = (byte) 0x00;
 		byte p2 = (byte) 0x00;
 		int le = 0;
 		byte[] data = { 0x63, 4, (byte) ((length >>> 8) & 0xff),
 				(byte) (length & 0xff), (byte) ((fid >>> 8) & 0xff),
 				(byte) (fid & 0xff) };
-		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_CREATE_FILE, p1, p2, data, le);
+
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+
+		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_CREATE_FILE, p1, p2, data, le);
 		return apdu;
 	}
 
-	private byte[] sendCreateFile(SecureMessagingWrapper wrapper, short fid,
+	private byte[] sendCreateFile(SecureMessagingWrapper<C,R> wrapper, short fid,
 			short length) throws CardServiceException {
-		CommandAPDU capdu = createCreateFileAPDU(fid, length);
+		C capdu = createCreateFileAPDU(fid, length);
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		ResponseAPDU rapdu = service.transmit(capdu);
+		R rapdu = service.transmit(capdu);
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		IResponseAPDU rAcc = sc.accesR(rapdu);
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
 		}
-		return rapdu.getData();
+		return rAcc.getData();
 	}
 
-	private CommandAPDU createUpdateBinaryAPDU(short offset, int data_len,
+	private C createUpdateBinaryAPDU(short offset, int data_len,
 			byte[] data) {
 		byte p1 = (byte) ((offset >>> 8) & 0xff);
 		byte p2 = (byte) (offset & 0xff);
 		byte[] chunk = new byte[data_len];
 		System.arraycopy(data, 0, chunk, 0, data_len);
-		CommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,
-				ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
+
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+
+		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
 		return apdu;
 	}
 
-	private byte[] sendUpdateBinary(SecureMessagingWrapper wrapper,
+	private byte[] sendUpdateBinary(SecureMessagingWrapper<C,R> wrapper,
 			short offset, int data_len, byte[] data)
 	throws CardServiceException {
-		CommandAPDU capdu = createUpdateBinaryAPDU(offset, data_len, data);
+		C capdu = createUpdateBinaryAPDU(offset, data_len, data);
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		ResponseAPDU rapdu = service.transmit(capdu);
+		R rapdu = service.transmit(capdu);
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		IResponseAPDU rAcc = sc.accesR(rapdu);
+
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
 		}
-		return rapdu.getData();
+		return rAcc.getData();
 
 	}
 
-	private int getPlainDataMaxLength(SecureMessagingWrapper wrapper) {
+	private int getPlainDataMaxLength(SecureMessagingWrapper<C,R> wrapper) {
 		int maxWithoutSM = 0xff;
 		byte[] dummyData = new byte[maxWithoutSM];
-		CommandAPDU dummy = new CommandAPDU((byte) 0, (byte) 0, (byte) 0,
-				(byte) 0, dummyData);
-		byte[] wrappedApdu = wrapper.wrap(dummy).getBytes();
-		int x = wrappedApdu.length - dummy.getBytes().length;
+
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		C dummy = sc.createCommandAPDU((byte) 0, (byte) 0, (byte) 0, (byte) 0, dummyData);
+		ICommandAPDU dummyAcc = sc.accesC(dummy);
+		ICommandAPDU cWrappedAcc = sc.accesC(wrapper.wrap(dummy));
+
+		byte[] wrappedApdu = cWrappedAcc.getBytes();
+		int x = wrappedApdu.length - dummyAcc.getBytes().length;
 		int lowestMod8 = ((maxWithoutSM - x) / 8) * 8;
 		return lowestMod8;
 	}
@@ -370,7 +384,7 @@ public class PassportPersoService extends CardService {
 	 * @throws CardServiceException
 	 */
 	public void writeFile(short fid, InputStream i) throws CardServiceException {
-		SecureMessagingWrapper wrapper = service.getWrapper();
+		SecureMessagingWrapper<C,R> wrapper = service.getWrapper();
 		try {
 			int length = 0xff;
 			if (wrapper != null) {
@@ -409,13 +423,20 @@ public class PassportPersoService extends CardService {
 			byte[] docNr = documentNumber.trim().toUpperCase().getBytes("UTF-8");
 			byte[] dob = dateOfBirth.getBytes("UTF-8");
 			byte[] doe = dateOfExpiry.getBytes("UTF-8");
-			BERTLVObject mrzObject = new BERTLVObject(MRZ_TAG,
-					new BERTLVObject(BERTLVObject.OCTET_STRING_TYPE_TAG, docNr));
-			mrzObject.addSubObject(new BERTLVObject(
-					BERTLVObject.OCTET_STRING_TYPE_TAG, dob));
-			mrzObject.addSubObject(new BERTLVObject(
-					BERTLVObject.OCTET_STRING_TYPE_TAG, doe));
-			putData((byte) 0, MRZ_TAG, mrzObject.getEncoded());
+			
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			TLVOutputStream tlvOut = new TLVOutputStream(out);
+			tlvOut.writeTag(MRZ_TAG);
+			tlvOut.writeTag(ASN1Constants.OCTET_STRING_TYPE_TAG);
+			tlvOut.writeValue(docNr);
+			tlvOut.writeTag(ASN1Constants.OCTET_STRING_TYPE_TAG);
+			tlvOut.writeValue(dob);
+			tlvOut.writeTag(ASN1Constants.OCTET_STRING_TYPE_TAG);
+			tlvOut.writeValue(doe);
+			tlvOut.writeValueEnd(); /* MRZ_TAG */
+			tlvOut.flush();
+			tlvOut.close();
+			putData((byte) 0, MRZ_TAG, out.toByteArray());
 		} catch (Exception ioe) {
 			throw new CardServiceException(ioe.toString());
 		}
@@ -521,7 +542,7 @@ public class PassportPersoService extends CardService {
 		service.open();
 	}
 
-	public ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException {
+	public R transmit(C apdu) throws CardServiceException {
 		return service.transmit(apdu);
 	}
 }

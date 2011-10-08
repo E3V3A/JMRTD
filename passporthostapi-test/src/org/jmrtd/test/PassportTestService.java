@@ -87,7 +87,9 @@ import org.jmrtd.lds.DG15File;
  * 
  * @author erikpoll
  */
-public class PassportTestService extends PassportService {
+public class PassportTestService extends PassportService<CommandAPDU, ResponseAPDU> {
+
+	private static final long serialVersionUID = -8688610916582311419L;
 
 	/** Data needed for BAC **/
 
@@ -147,7 +149,7 @@ public class PassportTestService extends PassportService {
 		return service;
 	}
 
-	protected PassportTestService(CardService service)
+	protected PassportTestService(CardService<CommandAPDU, ResponseAPDU> service)
 	throws CardServiceException {
 		super(service);
 	}
@@ -341,7 +343,7 @@ public class PassportTestService extends PassportService {
 			sendSelectFile(getWrapper(), fid);
 			CardFileInputStream in = readFile(fid);
 			DG14File dg14 = new DG14File(in);
-			cardKey = dg14.getPublicKeys().get(-1);
+			cardKey = dg14.getChipAuthenticationPublicKeyInfos().get(-1);
 			resetCard();
 		} catch (CardServiceException e) {
 			return false;

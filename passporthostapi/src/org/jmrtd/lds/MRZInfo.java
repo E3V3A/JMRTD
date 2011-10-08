@@ -22,19 +22,15 @@
 
 package org.jmrtd.lds;
 
-import java.io.ByteArrayOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.StringTokenizer;
+import java.io.UnsupportedEncodingException;
 
-import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
 
 /**
@@ -45,223 +41,341 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @version $Revision$
  */
-public class MRZInfo implements Serializable
+public class MRZInfo extends AbstractInfo implements Serializable
 {
 	private static final long serialVersionUID = 7054965914471297804L;
 
 	/** Unspecified document type (do not use, choose ID1 or ID3). */
 	public static final int DOC_TYPE_UNSPECIFIED = 0;
-	/** ID1 document type for credit card sized national identity cards. */
+
+	/** ID1 document type for credit card sized identity cards. Assume 3-line MRZ. */
 	public static final int DOC_TYPE_ID1 = 1;
+
 	/** ID2 document type. */
 	public static final int DOC_TYPE_ID2 = 2;
-	/** ID3 document type for passport booklets. */
+
+	/** ID3 document type for passport booklets. Assume 2-line MRZ. */
 	public static final int DOC_TYPE_ID3 = 3;
 
+	/** All valid characters in MRZ. */
 	private static final String MRZ_CHARS = "<0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-	private static final Calendar CALENDAR = Calendar.getInstance();
-
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	/** @deprecated to be replaced with documentCode */
 	private int documentType;
 
 	private String documentCode;
-	private Country issuingState;
+	private String issuingState;
 	private String primaryIdentifier;
-	private String[] secondaryIdentifiers;
-	private Country nationality;
+	private String secondaryIdentifier;
+	private String nationality;
 	private String documentNumber;
-	private String personalNumber;
 	private String dateOfBirth;
 	private Gender gender;
 	private String dateOfExpiry;
 	private char documentNumberCheckDigit;
 	private char dateOfBirthCheckDigit;
 	private char dateOfExpiryCheckDigit;
-	private char personalNumberCheckDigit;
 	private char compositeCheckDigit;
-	private String optionalData2; // FIXME: Last field on line 2 of ID3 MRZ.
-
-	public MRZInfo(int documentType, Country issuingState,
-			String primaryIdentifier, String[] secondaryIdentifiers,
-			String documentNumber, Country nationality, String dateOfBirth,
-			Gender gender, String dateOfExpiry, String personalNumber) {
-		this(getDocumentCodeFromDocumentType(documentType), issuingState,
-				primaryIdentifier, secondaryIdentifiers,
-				documentNumber, nationality, dateOfBirth,
-				gender, dateOfExpiry, personalNumber);
-	}
+	private String optionalData1; /* NOTE: holds personal number for some issuing states (e.g. NL), but is used to hold (part of) document number for others. */
+	private String optionalData2;
 
 	/**
-	 * Creates a new MRZ.
+	 * Creates a new 2-line MRZ compliant with ICAO Doc 9303 part 1 vol 1.
 	 *
-	 * @param documentCode document type
-	 * @param issuingState issuing state
+	 * @param documentCode document code (1 or 2 digit, has to start with "P" or "V")
+	 * @param issuingState issuing state as 3 digit string
 	 * @param primaryIdentifier card holder name
 	 * @param secondaryIdentifiers card holder name
 	 * @param documentNumber document number
-	 * @param nationality nationality
+	 * @param nationality nationality as 3 digit string
 	 * @param dateOfBirth date of birth
 	 * @param gender gender
 	 * @param dateOfExpiry date of expiry
-	 * @param personalNumber personal number
+	 * @param personalNumber either empty, or a personal number of maximum length 14, or other optional data of exact length 15
 	 */
-	public MRZInfo(String documentCode, Country issuingState,
-			String primaryIdentifier, String[] secondaryIdentifiers,
-			String documentNumber, Country nationality, String dateOfBirth,
+	public MRZInfo(String documentCode, String issuingState,
+			String primaryIdentifier, String secondaryIdentifier,
+			String documentNumber, String nationality, String dateOfBirth,
 			Gender gender, String dateOfExpiry, String personalNumber) {
+		if (documentCode == null || documentCode.length() < 1 || documentCode.length() > 2
+				|| !(documentCode.startsWith("P") || documentCode.startsWith("V"))) {
+			throw new IllegalArgumentException("Wrong document code: " + documentCode);
+		}
 		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
-		this.documentCode = documentCode;
+		this.documentCode = trimFillerChars(documentCode);
 		this.issuingState = issuingState;
 		this.primaryIdentifier = primaryIdentifier;
-		this.secondaryIdentifiers = secondaryIdentifiers;
-		this.documentNumber = documentNumber;
+		this.secondaryIdentifier = secondaryIdentifier;
+		this.documentNumber = trimFillerChars(documentNumber);
 		this.nationality = nationality;
 		this.dateOfBirth = dateOfBirth;
 		this.gender = gender;
 		this.dateOfExpiry = dateOfExpiry;
-		this.personalNumber = personalNumber;
-		if (documentType == DOC_TYPE_ID1) {
-			this.optionalData2 = "<<<<<<<<<<<";
+		if (personalNumber == null || equalsModuloFillerChars(personalNumber, "")) {
+			/* optional data field is not used */
+			this.optionalData1 = "";
+		} else if (personalNumber.length() == 15) {
+			/* it's either a personalNumber with check digit included, or some other optional data */
+			this.optionalData1 = personalNumber;
+		} else if (personalNumber.length() <= 14) {
+			/* we'll assume it's a personalNumber without check digit, and we add the check digit ourselves */
+			this.optionalData1 = mrzFormat(personalNumber, 14) + checkDigit(personalNumber, true);
+		} else {
+			throw new IllegalArgumentException("Wrong personal number: " + personalNumber);
 		}
+		checkDigit();
+	}
+
+	/**
+	 * Creates a new 3-line MRZ compliant with ICAO Doc 9303 part 3 vol 1.
+	 *
+	 * @param documentCode document code (1 or 2 digit, has to start with "I", "C", or "A")
+	 * @param issuingState issuing state as 3 digit string
+	 * @param primaryIdentifier card holder name
+	 * @param secondaryIdentifiers card holder name
+	 * @param documentNumber document number
+	 * @param nationality nationality as 3 digit string
+	 * @param dateOfBirth date of birth in YYMMDD format
+	 * @param gender gender
+	 * @param dateOfExpiry date of expiry in YYMMDD format
+	 * @param optionalData1 optional data in line 1 of maximum length 15
+	 * @param optionalData2 optional data in line 2 of maximum length 11
+	 */
+	public MRZInfo(String documentCode,
+			String issuingState,
+			String documentNumber,
+			String optionalData1,
+			String dateOfBirth,
+			Gender gender,
+			String dateOfExpiry,
+			String nationality,
+			String optionalData2,
+			String primaryIdentifier,
+			String secondaryIdentifier
+			) {
+		if (documentCode == null || documentCode.length() < 1 || documentCode.length() > 2
+				|| !(documentCode.startsWith("C") || documentCode.startsWith("I") || documentCode.startsWith("A"))) {
+			throw new IllegalArgumentException("Wrong document code: " + documentCode);
+		}
+
+		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
+		this.documentCode = trimFillerChars(documentCode);
+		this.issuingState = issuingState;
+		this.primaryIdentifier = primaryIdentifier;
+		this.secondaryIdentifier = secondaryIdentifier;
+		this.documentNumber = trimFillerChars(documentNumber);
+		this.nationality = nationality;
+		this.dateOfBirth = dateOfBirth;
+		this.gender = gender;
+		this.dateOfExpiry = dateOfExpiry;
+		if (optionalData1 == null || optionalData1.length() > 15) { throw new IllegalArgumentException("Wrong optional data 1: " + (optionalData1 == null ? "null" : "\"" + optionalData1 + "\"")); }
+		this.optionalData1 = optionalData1;
+		this.optionalData2 = optionalData2;
 		checkDigit();
 	}
 
 	/**
 	 * Creates a new MRZ based on an input stream.
 	 *
-	 * @param in contains the contents of DG1 (without the tag and length)
+	 * @param inputStream contains the contents of DG1 (without the tag and length)
 	 */
-	public MRZInfo(InputStream in) {
+	public MRZInfo(InputStream inputStream) {
 		try {
-			DataInputStream dataIn = new DataInputStream(in);
-			this.documentCode = readDocumentCode(dataIn);
-			this.documentType = getDocumentTypeFromDocumentCode(this.documentCode);
-			if (documentType == DOC_TYPE_ID1) {
-				this.issuingState = readCountry(dataIn);
-				this.documentNumber = readString(dataIn, 9);
-				this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-				this.personalNumber = readStringWithFillers(dataIn, 14); // (FIXED by hakan@elgin.nl) not 15 but 14 let control digit out of this read
-				dataIn.readByte(); // MO: always '<'?
-				this.personalNumberCheckDigit = checkDigit(personalNumber); // (Also: hakan@elgin.nl sugests to: read control digite of sofinumber instead.)
-				this.dateOfBirth = readDateOfBirth(dataIn);
-				this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
-				this.gender = readGender(dataIn);
-				this.dateOfExpiry = readDateOfExpiry(dataIn);
-				this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
-				this.nationality = readCountry(dataIn);
-				this.optionalData2 = readStringWithFillers(dataIn, 11);
-				this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
-				processNameIdentifiers(readString(dataIn, 30));
-			} else {
-				/* Assume it's a ID3 document */
-				this.issuingState = readCountry(dataIn);
-				processNameIdentifiers(readString(dataIn, 39));
-				this.documentNumber = readString(dataIn, 9);
-				this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
-				this.nationality = readCountry(dataIn);
-				this.dateOfBirth = readDateOfBirth(dataIn);
-				this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
-				this.gender = readGender(dataIn);
-				this.dateOfExpiry = readDateOfExpiry(dataIn);
-				this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
-				this.personalNumber = readStringWithFillers(dataIn, 14);
-				this.personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
-				this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
-			}
+			readObject(inputStream);
 		} catch (IOException ioe) {
-			throw new IllegalArgumentException("Invalid MRZ input source");
+			ioe.printStackTrace();
+			throw new IllegalArgumentException(ioe.getMessage());
 		}
 	}
 
-	private void processNameIdentifiers(String mrzNameString) {
+	/**
+	 * Creates a new MRZ based on the text input.
+	 * The text input may contain newlines, which will be ignored.
+	 * 
+	 * @param str input text
+	 */
+	public MRZInfo(String str) {
+		if (str == null) { throw new IllegalArgumentException("Null string"); }
+		str = str.trim().replace("\n", "");
+		try {
+			readObject(new ByteArrayInputStream(str.getBytes("UTF-8")));
+		} catch (UnsupportedEncodingException uee) {
+			/* NOTE: never happens, UTF-8 is supported. */
+			uee.printStackTrace();
+			throw new IllegalStateException(uee.getMessage());
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
+	}
+
+	private void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = new DataInputStream(inputStream);
+
+		/* line 1, pos 1 to 2, Document code */
+		this.documentCode = readStringWithFillers(dataIn, 2);
+		this.documentType = getDocumentTypeFromDocumentCode(this.documentCode);
+		if (documentType == DOC_TYPE_ID1) {
+			/* line 1, pos 3 to 5 Issuing State or organization */
+			this.issuingState = readCountry(dataIn);
+
+			/* line 1, pos 6 to 14 Document number */
+			this.documentNumber = readString(dataIn, 9);
+
+			/* line 1, pos 15 Check digit */
+			this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
+
+			/* line 1, pos 16 to 30, Optional data elements */
+			this.optionalData1 = readStringWithFillers(dataIn, 15);
+
+			if (documentNumberCheckDigit == '<') {
+				/* Interpret personal number as part of document number, see note j. */
+				this.documentNumber += optionalData1.substring(0, optionalData1.length() - 1);
+				this.documentNumberCheckDigit = optionalData1.charAt(optionalData1.length() - 1);
+				this.optionalData1 = null;
+			}
+			this.documentNumber = trimFillerChars(this.documentNumber);
+
+			/* line 2, pos 1 to 6, Date of birth */
+			this.dateOfBirth = readDateOfBirth(dataIn);
+
+			/* line 2, pos 7, Check digit */
+			this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
+
+			/* line 2, pos 8, Sex */
+			this.gender = readGender(dataIn);
+
+			/* line 2, Pos 9 to 14, Date of expiry */
+			this.dateOfExpiry = readDateOfExpiry(dataIn);
+
+			/* line 2, pos 15, Check digit */
+			this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
+
+			/* line 2, pos 16 to 18, Nationality */
+			this.nationality = readCountry(dataIn);
+
+			/* line 2, pos 19 to 29, Optional data elements */
+			this.optionalData2 = readString(dataIn, 11);
+
+			/* line 2, pos 30, Overall check digit */
+			this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
+
+			/* line 3 */
+			readNameIdentifiers(readString(dataIn, 30));
+		} else {
+			/* Assume it's a ID3 document, i.e. 2-line MRZ. */
+
+			/* line 1, pos 3 to 5 */
+			this.issuingState = readCountry(dataIn);
+
+			/* line 1, pos 6 to 44 */
+			readNameIdentifiers(readString(dataIn, 39));
+
+			/* line 2 */
+			this.documentNumber = trimFillerChars(readString(dataIn, 9));
+			this.documentNumberCheckDigit = (char)dataIn.readUnsignedByte();
+			this.nationality = readCountry(dataIn);
+			this.dateOfBirth = readDateOfBirth(dataIn);
+			this.dateOfBirthCheckDigit = (char)dataIn.readUnsignedByte();
+			this.gender = readGender(dataIn);
+			this.dateOfExpiry = readDateOfExpiry(dataIn);
+			this.dateOfExpiryCheckDigit = (char)dataIn.readUnsignedByte();
+			String personalNumber = readStringWithFillers(dataIn, 14);
+			char personalNumberCheckDigit = (char)dataIn.readUnsignedByte();
+			this.optionalData1 = mrzFormat(personalNumber, 14) + personalNumberCheckDigit;
+			this.compositeCheckDigit = (char)dataIn.readUnsignedByte();
+		}
+	}
+
+	/**
+	 * Writes the MRZ to an output stream.
+	 * Note: this just outputs the MRZ characters, and does not add newlines.
+	 *
+	 * @return an encoded version of this MRZ info
+	 */
+	public void writeObject(OutputStream outputStream) throws IOException {
+		DataOutputStream dataOut = new DataOutputStream(outputStream);
+		writeDocumentType(dataOut);
+		if (documentType == DOC_TYPE_ID1) {
+			/* Assume it's an ID1 document */
+
+			/* line 1 */
+			writeIssuingState(dataOut);
+			if (documentNumber.length() > 9 && (optionalData1 == null || equalsModuloFillerChars(optionalData1, ""))) {
+				/*
+				 * If document number has more than 9 character, the 9 principal
+				 * character shall be shown in the MRZ in character positions 1 to 9.
+				 * They shall be followed by a filler character instead of a check
+				 * digit to indicate a truncated number. The remaining character of
+				 * the document number shall be shown at the beginning of the field
+				 * reserved of optional data element (character position 29 to 35 of
+				 * the lower machine readable line) followed by a check digit and a
+				 * filler character.
+				 * 
+				 * Corresponds to Doc 9303 pt 3 vol 1 page V-10 (note j) (FIXED by Paulo Assumcao)
+				 */
+				writeString(documentNumber.substring(0, 9), dataOut, 9);
+				dataOut.write('<');
+				writeString(documentNumber.substring(9, documentNumber.length()) + documentNumberCheckDigit, dataOut, 15);
+			} else {
+				writeString(documentNumber, dataOut, 9); /* FIXME: max size of field */
+				dataOut.write(documentNumberCheckDigit);
+				writeString(optionalData1, dataOut, 15); /* FIXME: max size of field */
+			}
+
+			/* line 2 */
+			writeDateOfBirth(dataOut);
+			dataOut.write(dateOfBirthCheckDigit);
+			writeGender(dataOut);
+			writeDateOfExpiry(dataOut);
+			dataOut.write(dateOfExpiryCheckDigit);
+			writeNationality(dataOut);
+			writeString(optionalData2, dataOut, 11);
+			dataOut.write(compositeCheckDigit);
+
+			/* third line */
+			writeName(dataOut, 30);
+		} else {
+			/* Assume it's a ID3 document */
+
+			/* first line */
+			writeIssuingState(dataOut);
+			writeName(dataOut, 39);
+
+			/* second line */
+			writeString(documentNumber, dataOut, 9);
+			dataOut.write(documentNumberCheckDigit);
+			writeNationality(dataOut);
+			writeDateOfBirth(dataOut);
+			dataOut.write(dateOfBirthCheckDigit);
+			writeGender(dataOut);
+			writeDateOfExpiry(dataOut);
+			dataOut.write(dateOfExpiryCheckDigit);
+			writeString(optionalData1, dataOut, 15); /* NOTE: already includes check digit */
+			dataOut.write(compositeCheckDigit);
+		}
+	}
+
+	private void readNameIdentifiers(String mrzNameString) {
 		int delimIndex = mrzNameString.indexOf("<<");
 		if (delimIndex < 0) {
 			throw new IllegalArgumentException("Input does not contain primary identifier!");
 		}
 		primaryIdentifier = trimFillerChars(mrzNameString.substring(0, delimIndex));
 		String rest = mrzNameString.substring(mrzNameString.indexOf("<<") + 2);
-		processSecondaryIdentifiers(rest);
+		readSecondaryIdentifiers(rest);
 	}
 
-	private void processSecondaryIdentifiers(String secondaryIdentifiersString) {
-		StringTokenizer st = new StringTokenizer(secondaryIdentifiersString, "<");
-		Collection<String> result = new ArrayList<String>();
-		while (st.hasMoreTokens()) {
-			String identifier = st.nextToken();
-			if (identifier != null && identifier.length() > 0) {
-				result.add(identifier);
-			}
-		}
-		secondaryIdentifiers = (String[])result.toArray(new String[result.size()]);
-	}
-
-	private static String trimFillerChars(String str) {
-		byte[] chars = str.trim().getBytes();
-		for (int i = 0; i < chars.length; i++) {
-			if (chars[i] == '<') { chars[i] = ' '; }
-		}
-		return (new String(chars)).trim();
-	}
-
-	/**
-	 * Gets this MRZ info as byte array (without the 5F1F tag).
-	 *
-	 * @return an encoded version of this MRZ info
-	 */
-	public byte[] getEncoded() {
-		try {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			DataOutputStream dataOut = new DataOutputStream(out);
-			writeDocumentType(dataOut);
-			if (documentType == DOC_TYPE_ID1) {
-				/* Assume it's an ID1 document */
-				writeIssuingState(dataOut);
-				writeString(documentNumber, dataOut, 9); /* FIXME: max size of field */
-				dataOut.write(documentNumberCheckDigit);
-				writeString(personalNumber, dataOut, 14); /* FIXME: max size of field */
-				dataOut.write('<'); // FIXME: correct? Some people suggested checkDigit(personalNumber)...
-				writeDateOfBirth(dataOut);
-				dataOut.write(dateOfBirthCheckDigit);
-				writeGender(dataOut);
-				writeDateOfExpiry(dataOut);
-				dataOut.write(dateOfExpiryCheckDigit);
-				writeNationality(dataOut);
-				writeString(optionalData2, dataOut, 11);
-				dataOut.write(compositeCheckDigit);
-				writeName(dataOut, 30);
-			} else {
-				/* Assume it's a ID3 document */
-				writeIssuingState(dataOut);
-				writeName(dataOut, 39);
-				writeString(documentNumber, dataOut, 9);
-				dataOut.write(documentNumberCheckDigit);
-				writeNationality(dataOut);
-				writeDateOfBirth(dataOut);
-				dataOut.write(dateOfBirthCheckDigit);
-				writeGender(dataOut);
-				writeDateOfExpiry(dataOut);
-				dataOut.write(dateOfExpiryCheckDigit);
-				writeString(personalNumber, dataOut, 14); /* FIXME: max size of field */
-				dataOut.write(personalNumberCheckDigit);
-				dataOut.write(compositeCheckDigit);
-			}
-			byte[] result = out.toByteArray();
-			dataOut.close();
-			return result;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			return null;
-		}
+	private void readSecondaryIdentifiers(String secondaryIdentifier) {
+		this.secondaryIdentifier = secondaryIdentifier;
 	}
 
 	private void writeString(String string, DataOutputStream dataOut, int width) throws IOException {
 		dataOut.write(mrzFormat(string, width).getBytes("UTF-8"));
 	}
+
 	private void writeIssuingState(DataOutputStream dataOut) throws IOException {
-		dataOut.write(issuingState.toAlpha3Code().getBytes("UTF-8"));
+		dataOut.write(issuingState.getBytes("UTF-8"));
 	}
 
 	private void writeDateOfExpiry(DataOutputStream dataOut) throws IOException {
@@ -277,7 +391,7 @@ public class MRZInfo implements Serializable
 	}
 
 	private void writeNationality(DataOutputStream dataOut) throws IOException {
-		dataOut.write(nationality.toAlpha3Code().getBytes("UTF-8"));
+		dataOut.write(nationality.getBytes("UTF-8"));
 	}
 
 	private void writeName(DataOutputStream dataOut, int width) throws IOException {
@@ -297,12 +411,18 @@ public class MRZInfo implements Serializable
 	}
 
 	private String nameToString(int width) {
+		String[] primaryComponents = primaryIdentifier.split(" |<");
+		String[] secondaryComponents = secondaryIdentifier.split(" |<");
+
 		StringBuffer name = new StringBuffer();
-		name.append(primaryIdentifier);
-		name.append("<");
-		for (int i = 0; i < secondaryIdentifiers.length; i++) {
-			name.append("<");
-			name.append(secondaryIdentifiers[i]);
+		for (int i = 0; i < primaryComponents.length; i++) {
+			String component = primaryComponents[i];
+			name.append(component);
+			name.append('<');
+		}
+		for (int i = 0; i < secondaryComponents.length; i++) {
+			name.append('<');
+			name.append(secondaryComponents[i]);
 		}
 		return mrzFormat(name.toString(), width);
 	}
@@ -318,17 +438,6 @@ public class MRZInfo implements Serializable
 	}
 
 	/**
-	 * Reads the type of document.
-	 * ICAO Doc 9303 part 1 gives "P<" as an example.
-	 *
-	 * @return a string of length 2 containing the document type
-	 * @throws IOException if something goes wrong
-	 */
-	private String readDocumentCode(DataInputStream in) throws IOException {
-		return readStringWithFillers(in, 2);
-	}
-
-	/**
 	 * Reads the issuing state as a three letter string.
 	 *
 	 * @return a string of length 3 containing an abbreviation
@@ -336,13 +445,9 @@ public class MRZInfo implements Serializable
 	 *
 	 * @throws IOException if something goes wrong
 	 */
-	private Country readCountry(DataInputStream in) throws IOException {
+	private String readCountry(DataInputStream in) throws IOException {
 		String dataString = readString(in, 3);
-		try {
-			return Country.getInstance(dataString);
-		} catch (IllegalArgumentException e) {
-			return ICAOCountry.getInstance(dataString);
-		}
+		return dataString;
 	}
 
 	/**
@@ -395,53 +500,10 @@ public class MRZInfo implements Serializable
 		return readString(in, 6);
 	}
 
-	//	private static Date parseDateInRecentPast(String dateString) throws NumberFormatException {
-	//		Date today = CALENDAR.getTime();
-	//		int thisYear = CALENDAR.get(Calendar.YEAR);
-	//		int currentBaseYear = (thisYear / 100) * 100;
-	//		int pastBaseYear = currentBaseYear - 100;
-	//		int futureBaseYear = currentBaseYear + 100;
-	//		
-	//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-	//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-	//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-	//		
-	//		if (parsedDate3.before(today)) { return parsedDate3; }
-	//		else if (parsedDate2.before(today)) { return parsedDate2; }
-	//		else { return parsedDate1; }
-	//	}
-	//	
-	//	private static Date parseDateInNearFuture(String dateString) throws NumberFormatException {
-	//		Date today = CALENDAR.getTime();
-	//		int thisYear = CALENDAR.get(Calendar.YEAR);
-	//		int currentBaseYear = (thisYear / 100) * 100;
-	//		int pastBaseYear = currentBaseYear - 100;
-	//		int futureBaseYear = currentBaseYear + 100;
-	//		
-	//		Date parsedDate1 = parseDate(pastBaseYear, dateString);
-	//		Date parsedDate2 = parseDate(currentBaseYear, dateString);
-	//		Date parsedDate3 = parseDate(futureBaseYear, dateString);
-	//		
-	//		if (parsedDate1.after(today)) { return parsedDate1; }
-	//		else if (parsedDate2.after(today)) { return parsedDate2; }
-	//		else { return parsedDate3; }
-	//	}
-
-	//	private static Date parseDate(int baseYear, String dateString) throws NumberFormatException {
-	//		if (dateString.length() != 6) {
-	//			throw new NumberFormatException("Wrong date format!");
-	//		}
-	//		int year = baseYear + Integer.parseInt(dateString.substring(0, 2));
-	//		int month = Integer.parseInt(dateString.substring(2, 4));
-	//		int day = Integer.parseInt(dateString.substring(4, 6));
-	//		GregorianCalendar cal = new GregorianCalendar(year, month - 1, day);
-	//		return cal.getTime();
-	//	}
-
 	/**
 	 * Gets the date of birth of the passport holder.
 	 *
-	 * @return date of birth (with 1900 as base year)
+	 * @return date of birth
 	 */
 	public String getDateOfBirth() {
 		return dateOfBirth;
@@ -460,7 +522,7 @@ public class MRZInfo implements Serializable
 	/**
 	 * Gets the date of expiry
 	 *
-	 * @return date of expiry (with 2000 as base year)
+	 * @return date of expiry
 	 */
 	public String getDateOfExpiry() {
 		return dateOfExpiry;
@@ -514,11 +576,11 @@ public class MRZInfo implements Serializable
 	}
 
 	/**
-	 * Gets the issuing state
+	 * Gets the issuing state as a 3 letter code
 	 *
 	 * @return issuing state
 	 */
-	public Country getIssuingState() {
+	public String getIssuingState() {
 		return issuingState;
 	}
 
@@ -527,7 +589,7 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param issuingState new issuing state
 	 */
-	public void setIssuingState(Country issuingState) {
+	public void setIssuingState(String issuingState) {
 		this.issuingState = issuingState;
 		checkDigit();
 	}
@@ -551,13 +613,17 @@ public class MRZInfo implements Serializable
 		checkDigit();
 	}
 
+	public String getSecondaryIdentifier() {
+		return secondaryIdentifier;
+	}
+
 	/**
 	 * Gets the passport holder's first names.
 	 *
 	 * @return first names
 	 */
-	public String[] getSecondaryIdentifiers() {
-		return secondaryIdentifiers;
+	public String[] getSecondaryIdentifierComponents() {
+		return secondaryIdentifier.split(" |<");
 	}
 
 	/**
@@ -565,12 +631,17 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param secondaryIdentifiers new secondary identifiers
 	 */
-	public void setSecondaryIdentifiers(String[] secondaryIdentifiers) {
+	public void setSecondaryIdentifierComponents(String[] secondaryIdentifiers) {
 		if (secondaryIdentifiers == null) {
-			this.secondaryIdentifiers = null;
+			this.secondaryIdentifier = null;
 		} else {
-			this.secondaryIdentifiers = new String[secondaryIdentifiers.length];
-			System.arraycopy(secondaryIdentifiers, 0, this.secondaryIdentifiers, 0, secondaryIdentifiers.length);
+			StringBuffer stringBuffer = new StringBuffer();
+			for (int i = 0; i < secondaryIdentifiers.length; i++) {
+				stringBuffer.append(secondaryIdentifiers[i]);
+				if (i < secondaryIdentifiers.length - 1) {
+					stringBuffer.append('<');
+				}
+			}
 		}
 		checkDigit();
 	}
@@ -581,16 +652,16 @@ public class MRZInfo implements Serializable
 	 * @param secondaryIdentifiers new secondary identifiers
 	 */
 	public void setSecondaryIdentifiers(String secondaryIdentifiers) {
-		processSecondaryIdentifiers(secondaryIdentifiers.trim());
+		readSecondaryIdentifiers(secondaryIdentifiers.trim());
 		checkDigit();
 	}
 
 	/**
-	 * Gets the passport holder's nationality.
+	 * Gets the passport holder's nationality as a 3 digit code.
 	 *
 	 * @return a country
 	 */
-	public Country getNationality() {
+	public String getNationality() {
 		return nationality;
 	}
 
@@ -599,19 +670,24 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param nationality new nationality
 	 */
-	public void setNationality(Country nationality) {
+	public void setNationality(String nationality) {
 		this.nationality = nationality;
 		checkDigit();
 	}
 
 	/**
-	 * Gets the personal number.
+	 * Gets the personal number (if a personal number is encoded in optional data 1).
 	 *
 	 * @return personal number
 	 */
 	public String getPersonalNumber() {
-		return personalNumber;
+		if (optionalData1.length() > 14) {
+			return trimFillerChars(optionalData1.substring(0, 14));
+		} else {
+			return trimFillerChars(optionalData1);
+		}
 	}
+
 
 	/**
 	 * Sets the personal number.
@@ -619,8 +695,12 @@ public class MRZInfo implements Serializable
 	 * @param personalNumber new personal number
 	 */
 	public void setPersonalNumber(String personalNumber) {
-		this.personalNumber = trimFillerChars(personalNumber);
-		checkDigit();
+		if (personalNumber == null || personalNumber.length() > 14) { throw new IllegalArgumentException("Wrong personal number"); }
+		this.optionalData1 = mrzFormat(personalNumber, 14) + checkDigit(personalNumber, true);
+	}
+
+	public String getOptionalData1() {
+		return optionalData1;
 	}
 
 	public String getOptionalData2() {
@@ -628,7 +708,8 @@ public class MRZInfo implements Serializable
 	}
 
 	public void setOptionalData2(String optionalData2) {
-		this.optionalData2 = optionalData2;
+		this.optionalData2 = trimFillerChars(optionalData2);
+		checkDigit();
 	}
 
 	/**
@@ -662,50 +743,24 @@ public class MRZInfo implements Serializable
 	 * @see java.lang.Object#toString()
 	 */
 	public String toString() {
-		StringBuffer out = new StringBuffer();
-		if (documentType == DOC_TYPE_ID1) {
-			/*
-			 * FIXME: some composite check digit
-			 *        should go into this one as well...
-			 */
-			out.append(mrzFormat(documentCode, 2));
-			out.append(issuingState.toAlpha3Code());
-			out.append(documentNumber);
-			out.append(documentNumberCheckDigit);
-			out.append(mrzFormat(personalNumber, 14));
-			out.append("<"); // FIXME: not sure... maybe check digit?
-			// out.append(checkDigit(personalNumber));
-			out.append("\n");
-			out.append(dateOfBirth);
-			out.append(dateOfBirthCheckDigit);
-			out.append(genderToString());
-			out.append(dateOfExpiry);
-			out.append(dateOfExpiryCheckDigit);
-			out.append(nationality.toAlpha3Code());
-			out.append(mrzFormat(optionalData2, 11));
-			out.append(compositeCheckDigit); // should be: upper + middle line?
-			out.append("\n");
-			out.append(nameToString(30));
-			out.append("\n");
-		} else {
-			out.append(mrzFormat(documentCode, 2));
-			out.append(issuingState.toAlpha3Code());
-			out.append(nameToString(39));
-			out.append("\n");
-			out.append(documentNumber);
-			out.append(documentNumberCheckDigit);
-			out.append(nationality.toAlpha3Code());
-			out.append(dateOfBirth);
-			out.append(dateOfBirthCheckDigit);
-			out.append(genderToString());
-			out.append(dateOfExpiry);
-			out.append(dateOfExpiryCheckDigit);
-			out.append(mrzFormat(personalNumber, 14));
-			out.append(personalNumberCheckDigit);
-			out.append(compositeCheckDigit);
-			out.append("\n");
+		try {
+			String str = new String(getEncoded(), "UTF-8");
+			switch(str.length()) {
+			case 90: /* ID1 */
+				return str.substring(0, 30) + "\n"
+				+ str.substring(30, 60) + "\n"
+				+ str.substring(60, 90) + "\n";
+			case 88: /* ID3 */
+				return str.substring(0, 44) + "\n"
+				+ str.substring(44, 88) + "\n";
+			default:
+				/* TODO: consider throwing an exception in this case. */
+				return str;
+			}
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+			throw new IllegalStateException(uee.getMessage());
 		}
-		return out.toString();
 	}
 
 	/**
@@ -714,7 +769,7 @@ public class MRZInfo implements Serializable
 	 * @return a hash code
 	 */
 	public int hashCode() {
-		return toString().hashCode() + 53;
+		return 2 * toString().hashCode() + 53;
 	}
 
 	/**
@@ -726,43 +781,29 @@ public class MRZInfo implements Serializable
 		if (obj == null) { return false; }
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		MRZInfo other = (MRZInfo)obj;
-		return toString().equals(other.toString());
+
+		return
+		((documentCode == null && other.documentCode == null) || documentCode !=  null && documentCode.equals(other.documentCode))
+		&& ((issuingState == null && other.issuingState == null) || issuingState != null && issuingState.equals(other.issuingState))
+		&& ((primaryIdentifier == null && other.primaryIdentifier == null) || primaryIdentifier != null && primaryIdentifier.equals(other.primaryIdentifier))
+		&& ((secondaryIdentifier == null && other.secondaryIdentifier == null) || equalsModuloFillerChars(secondaryIdentifier, other.secondaryIdentifier))
+		&& ((nationality == null && other.nationality == null) || nationality != null && nationality.equals(other.nationality))
+		&& ((documentNumber == null && other.documentNumber == null) || documentNumber != null && documentNumber.equals(other.documentNumber))
+		&& ((optionalData1 == null && other.optionalData1 == null) || optionalData1 != null && optionalData1.equals(other.optionalData1) || getPersonalNumber().equals(other.getPersonalNumber()))
+		&& ((dateOfBirth == null && other.dateOfBirth == null) || dateOfBirth != null && dateOfBirth.equals(other.dateOfBirth))
+		&& ((gender == null && other.gender == null) || gender != null && gender.equals(other.gender))
+		&& ((dateOfExpiry == null && other.dateOfExpiry == null) || dateOfExpiry.equals(other.dateOfExpiry))
+		&& ((optionalData2 == null && other.optionalData2 == null) || optionalData2 != null && equalsModuloFillerChars(optionalData2, other.optionalData2))
+		;
 	}
 
-	private void checkDigit() {
-		this.documentNumberCheckDigit = checkDigit(documentNumber);
-		this.dateOfBirthCheckDigit = checkDigit(dateOfBirth);
-		this.dateOfExpiryCheckDigit = checkDigit(dateOfExpiry);
-		this.personalNumberCheckDigit = checkDigit(mrzFormat(personalNumber, 14));
-		StringBuffer composite = new StringBuffer();
-		if (documentType == DOC_TYPE_ID1) {
-			// TODO: Include: 6-30 (upper line), 1-7,9-15,19-29 (middle line)
-			// composite.append(documentTypeToString());
-			// composite.append(issuingState);
-			composite.append(documentNumber);
-			composite.append(documentNumberCheckDigit);
-			composite.append(mrzFormat(personalNumber, 15));
-			composite.append(dateOfBirth);
-			composite.append(dateOfBirthCheckDigit);
-			composite.append(dateOfExpiry);
-			composite.append(dateOfExpiryCheckDigit);
-			composite.append(mrzFormat(optionalData2, 11));
-		} else {
-			composite.append(documentNumber);
-			composite.append(documentNumberCheckDigit);
-			composite.append(dateOfBirth);
-			composite.append(dateOfBirthCheckDigit);
-			composite.append(dateOfExpiry);
-			composite.append(dateOfExpiryCheckDigit);
-			composite.append(mrzFormat(personalNumber, 14));
-			composite.append(personalNumberCheckDigit);
-		}
-		this.compositeCheckDigit = checkDigit(composite.toString());
-	}
+	/* ONLY PRIVATE METHODS BELOW */
 
 	/**
 	 * Reformats the input string such that it
-	 * only contains 'A'-'Z' and '<' characters.
+	 * only contains ['A'-'Z'], ['0'-'9'], '<' characters
+	 * by replacing other characters with '<'.
+	 * Also extends to the given length by adding '<' to the right.
 	 *
 	 * @param str the input string
 	 * @param width the (minimal) width of the result
@@ -770,6 +811,8 @@ public class MRZInfo implements Serializable
 	 * @return the reformatted string
 	 */
 	private static String mrzFormat(String str, int width) {
+		if (str == null) { throw new IllegalArgumentException("Attempting to MRZ format null"); }
+		if (str.length() > width) { throw new IllegalArgumentException("Argument too wide (" + str.length() + " > " + width + ")"); }
 		str = str.toUpperCase().trim();
 		StringBuffer result = new StringBuffer();
 		for (int i = 0; i < str.length(); i++) {
@@ -786,19 +829,110 @@ public class MRZInfo implements Serializable
 		return result.toString();
 	}
 
+	private static boolean equalsModuloFillerChars(String str1, String str2) {
+		if (str1 == str2) { return true; }
+		if ((str1 == null && str2 != null) || (str1 != null && str2 == null)) { return false; }
+		int length = Math.max(str1.length(), str2.length());
+		return mrzFormat(str1, length).equals(mrzFormat(str2, length));
+	}
+
+	/**
+	 * Determines the document type based on the document code (the first two characters of the MRZ).
+	 * 
+	 * ICAO Doc 9303 part 3 vol 1 defines MRTDs with 3-line MRZs,
+	 * in this case the document code starts with "A", "C", or "I"
+	 * according to note j to Section 6.6 (page V-9).
+	 * 
+	 * ICAO Doc 9303 part 2 defines MRVs with 2-line MRZs,
+	 * in this case the document code starts with "V". 
+	 * 
+	 * ICAO Doc 9303 part 1 vol 1 defines MRPs with 2-line MRZs,
+	 * in this case the document code starts with "P"
+	 * according to Section 9.6 (page IV-15).
+	 * 
+	 * @param documentCode a two letter code
+	 *
+	 * @return a document type, one of {@link #DOC_TYPE_ID1}, {@link #DOC_TYPE_ID2},
+	 * 			{@link #DOC_TYPE_ID3}, or {@link #DOC_TYPE_UNSPECIFIED}
+	 */
 	private static int getDocumentTypeFromDocumentCode(String documentCode) {
+		if (documentCode == null || documentCode.length() < 1 || documentCode.length() > 2) {
+			throw new IllegalArgumentException("Was expecting 1 or 2 digit document code, got " + documentCode);
+		}
 		if (documentCode.startsWith("A")
 				|| documentCode.startsWith("C")
 				|| documentCode.startsWith("I")) {
+			/* MRTD according to ICAO Doc 9303 part 3 vol 1 */
+			return DOC_TYPE_ID1;
+		} else if (documentCode.startsWith("V")) {
+			/* MRV according to ICAO Doc 9303 part 2 */
 			return DOC_TYPE_ID1;
 		} else if (documentCode.startsWith("P")) {
+			/* MRP according to ICAO Doc 9303 part 1 vol 1 */
 			return DOC_TYPE_ID3;
 		}
 		return DOC_TYPE_UNSPECIFIED;
 	}
-	
-	private static String getDocumentCodeFromDocumentType(int documentType) {
-		return (documentType == DOC_TYPE_ID3) ? "P<" : "I<";
+
+	/**
+	 * Replaces '<' with ' ' and trims leading and trailing whitespace.
+	 *
+	 * @param str
+	 * @return trimmed string
+	 */
+	private static String trimFillerChars(String str) {
+		byte[] chars = str.trim().getBytes();
+		for (int i = 0; i < chars.length; i++) {
+			if (chars[i] == '<') { chars[i] = ' '; }
+		}
+		return (new String(chars)).trim();
+	}
+
+	/**
+	 * Updates the check digit fields for document number,
+	 * date of birth, date of expiry, and personal number.
+	 */
+	private void checkDigit() {
+		this.documentNumberCheckDigit = checkDigit(documentNumber);
+		this.dateOfBirthCheckDigit = checkDigit(dateOfBirth);
+		this.dateOfExpiryCheckDigit = checkDigit(dateOfExpiry);
+		if (optionalData1.length() < 15) {
+			String personalNumber = mrzFormat(optionalData1, 14);
+			char personalNumberCheckDigit = checkDigit(mrzFormat(optionalData1, 14), true); /* FIXME: Uses '<' over '0'. Where specified? */
+			optionalData1 = personalNumber + personalNumberCheckDigit;
+		}
+		StringBuffer composite = new StringBuffer();
+		if (documentType == DOC_TYPE_ID1) {
+			/*
+			 * Based on 6.6 in Part V of Doc 9303 Part 3 Vol 1.
+			 * Composite check digit in position 30 is computed over:
+			 * 
+			 * Upper line:
+			 * 6-30, i.e., documentNumber, documentNumberCheckDigit, personalNumber(15)
+			 * 
+			 * Middle line:
+			 * 1-7, i.e., dateOfBirth, dateOfBirthCheckDigit
+			 * 9-15, i.e., dateOfExpiry, dateOfExpiryCheckDigit
+			 * 19-29, i.e., optionalData2(11)
+			 */
+			composite.append(documentNumber);
+			composite.append(documentNumberCheckDigit);
+			composite.append(mrzFormat(optionalData1, 15));
+			composite.append(dateOfBirth);
+			composite.append(dateOfBirthCheckDigit);
+			composite.append(dateOfExpiry);
+			composite.append(dateOfExpiryCheckDigit);
+			composite.append(mrzFormat(optionalData2, 11));
+		} else {
+			composite.append(documentNumber);
+			composite.append(documentNumberCheckDigit);
+			composite.append(dateOfBirth);
+			composite.append(dateOfBirthCheckDigit);
+			composite.append(dateOfExpiry);
+			composite.append(dateOfExpiryCheckDigit);
+			composite.append(mrzFormat(optionalData1, 15));
+		}
+		this.compositeCheckDigit = checkDigit(composite.toString(), true); /* FIXME: Uses '<' over '0'. Where specified? */
 	}
 
 	/**
@@ -806,18 +940,42 @@ public class MRZInfo implements Serializable
 	 *
 	 * @param str a part of the MRZ.
 	 *
-	 * @return the resulting check digit.
+	 * @return the resulting check digit (in '0' - '9')
 	 */
 	public static char checkDigit(String str) {
+		return checkDigit(str, false);
+	}
+
+	/**
+	 * Computes the 7-3-1 check digit for part of the MRZ.
+	 * If <code>preferFillerOverZero</code> is <code>true</code> then '<' will be
+	 * returned on check digit 0.
+	 *
+	 * @param str a part of the MRZ.
+	 *
+	 * @return the resulting check digit (in '0' - '9', '<')
+	 */
+	private static char checkDigit(String str, boolean preferFillerOverZero) {
 		try {
-			byte[] chars = str.getBytes("UTF-8");
+			byte[] chars = str == null ? new byte[]{ } : str.getBytes("UTF-8");
 			int[] weights = { 7, 3, 1 };
 			int result = 0;
 			for (int i = 0; i < chars.length; i++) {
 				result = (result + weights[i % 3] * decodeMRZDigit(chars[i])) % 10;
 			}
-			chars = Integer.toString(result).getBytes("UTF-8");
-			return (char)chars[0];
+			String checkDigitString = Integer.toString(result);
+			if (checkDigitString.length() != 1) { throw new IllegalStateException("Error in computing check digit."); /* NOTE: Never happens. */ }
+			char checkDigit = (char)checkDigitString.getBytes("UTF-8")[0];
+			if (preferFillerOverZero && checkDigit == '0') { checkDigit = '<'; }
+			return checkDigit;
+		} catch (NumberFormatException nfe) {
+			/* NOTE: never happens. */
+			nfe.printStackTrace();
+			throw new IllegalStateException("Error in computing check digit.");
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: never happens. */
+			usee.printStackTrace();
+			throw new IllegalStateException("Error in computing check digit.");
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException(e.toString());

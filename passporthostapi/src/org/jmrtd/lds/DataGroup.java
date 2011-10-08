@@ -36,9 +36,10 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-public abstract class DataGroup extends PassportFile
+public abstract class DataGroup extends LDSFile
 {
 	private int dataGroupTag;
+	private int dataGroupLength;
 
 	/**
 	 * Constructs a datagroup. This constructor
@@ -65,14 +66,13 @@ public abstract class DataGroup extends PassportFile
 	}
 
 	protected void readObject(InputStream in) throws IOException {
-		TLVInputStream tlvIn = new TLVInputStream(in);	
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);	
 		int tag = tlvIn.readTag();
 		if (tag != dataGroupTag) {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
 		}
-		tlvIn.readLength();
+		dataGroupLength = tlvIn.readLength();
 		readContent(tlvIn);
-		/* isSourceConsistent = true; */
 	}
 
 	protected void writeObject(OutputStream out) throws IOException {
@@ -82,15 +82,19 @@ public abstract class DataGroup extends PassportFile
 		tlvOut.writeValueEnd(); /* dataGroupTag */
 	}
 
-	/*
-	 * Naive implementation would be to read dataGroupLength bytes from in into a byte[].
+	/**
+	 * Reas the contents of the datagroup from an inputstream.
+	 * Client code implementing this method should only read the contents
+	 * from the inputstream, not the tag or length of the datagroup.
 	 */
-	protected abstract void readContent(TLVInputStream in) throws IOException;
+	protected abstract void readContent(InputStream in) throws IOException;
 
-	/*
-	 * Naive implementation would be that byte[] to out.
+	/**
+	 * Writes the contents of the datagroup to an outputstream.
+	 * Client code implementing this method should only write the contents
+	 * to the outputstream, not the tag or length of the datagroup.
 	 */
-	protected abstract void writeContent(TLVOutputStream out) throws IOException;
+	protected abstract void writeContent(OutputStream out) throws IOException;
 
 	/**
 	 * Gets a textual representation of this file.
@@ -116,10 +120,6 @@ public abstract class DataGroup extends PassportFile
 	 * @return the length of the value of the data group
 	 */
 	public int getLength() {
-		if (isSourceConsistent) {
-			return sourceObject.length;
-		} else {
-			throw new IllegalStateException("Length not yet known");
-		}
+		return dataGroupLength;
 	}
 }

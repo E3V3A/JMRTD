@@ -33,13 +33,13 @@ import java.io.PipedInputStream;
 import java.io.PipedOutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
+import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertStore;
@@ -51,15 +51,13 @@ import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -69,15 +67,10 @@ import java.util.zip.ZipFile;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.exception.ExtCertPathValidatorException;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.VerificationStatus.Verdict;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -87,9 +80,8 @@ import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
-import org.jmrtd.lds.DG2File;
-import org.jmrtd.lds.MRZInfo;
-import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.DataGroup;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
@@ -105,23 +97,36 @@ import org.jmrtd.lds.SecurityInfo;
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class Passport
+public class Passport<C, R>
 {
 	private static final int BUFFER_SIZE = 243;
 
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
 
-	private static final Calendar CALENDAR = Calendar.getInstance(); 
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
-
+	/** Maps FID to stream. */
 	private Map<Short, InputStream> rawStreams;
+
+	/** Maps FID to stream. */
 	private Map<Short, InputStream> bufferedStreams;
+
+	/** Maps FID to bytes. */
 	private Map<Short, byte[]> filesBytes;
+
+	/** Maps FID to file length. */
 	private Map<Short, Integer> fileLengths;
+
+	/** FIDs that could not be read (because of EAC, e.g.). */
 	private Collection<Short> couldNotRead;
+
+	/** Bytes read so far. */
 	private int bytesRead;
+
+	/** Total bytes to read */
 	private int totalLength;
+
+	private Collection<ProgressListener> progressListeners;
 
 	private VerificationStatus verificationStatus;
 
@@ -130,13 +135,14 @@ public class Passport
 	/* Our local copies of the COM and SOD files: */
 	private COMFile comFile;
 	private SODFile sodFile;
-	private DG1File dg1File;
 
 	private boolean isPKIXRevocationCheckingEnabled = false;
 	private boolean hasEACSupport = false;
 
 	private PrivateKey docSigningPrivateKey;
+
 	private CardVerifiableCertificate cvcaCertificate;
+
 	private PrivateKey eacPrivateKey;
 
 	private PrivateKey aaPrivateKey;
@@ -146,103 +152,58 @@ public class Passport
 	private BACKeySpec bacKeySpec;
 	private MRTDTrustStore trustManager;
 
-	private PassportService service;
+	private PassportService<C, R> service;
 
 	private Passport() {
+		this.progressListeners = new HashSet<ProgressListener>();
 	}
 
-	/**
-	 * Creates passport from scratch.
-	 * 
-	 * @param docType either <code>MRZInfo.DOC_TYPE_ID1</code> or <code>MRZInfo.DOC_TYPE_ID3</code>
-	 * @throws GeneralSecurityException if something wrong
-	 */
-	public Passport(int docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
+	public Passport(COMFile comFile, Collection<DataGroup> dataGroups, SODFile sodFile,
+			PrivateKey docSigningPrivateKey, MRTDTrustStore trustManager) throws GeneralSecurityException {
 		this();
 		this.trustManager = trustManager;
-		switch (docType) { // FIXME: use docCode of type String here?
-		case MRZInfo.DOC_TYPE_ID1: break;
-		case MRZInfo.DOC_TYPE_ID2: break;
-		case MRZInfo.DOC_TYPE_ID3: break;
-		default: throw new IllegalArgumentException("Unknown document type specified");
-		}
+		this.verificationStatus = new VerificationStatus();
+		this.docSigningPrivateKey = docSigningPrivateKey;
+
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new ArrayList<Short>();
 
-		/* EF.COM */
-		List<Integer> tagList = new ArrayList<Integer>();
-		tagList.add(PassportFile.EF_DG1_TAG);
-		tagList.add(PassportFile.EF_DG2_TAG);
-		comFile = new COMFile("01", "07", "04", "00", "00", tagList);
+		this.comFile = comFile;
 		byte[] comBytes = comFile.getEncoded();
 		int fileLength = comBytes.length;
-		totalLength += fileLength;
+		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(PassportService.EF_COM, fileLength);
 		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
 
-		/* EF.DG1 */
-		Date today = CALENDAR.getTime();
-		String todayString = SDF.format(today);
-		String primaryIdentifier = "";
-		String[] secondaryIdentifiers = { "" };
-		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL, primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL, todayString, Gender.MALE, todayString, "");
-		DG1File dg1 = new DG1File(mrzInfo);
-		byte[] dg1Bytes = dg1.getEncoded();
-		fileLength = dg1Bytes.length;
-		totalLength += fileLength;
-		fileLengths.put(PassportService.EF_DG1, fileLength);
-		rawStreams.put(PassportService.EF_DG1, new ByteArrayInputStream(dg1Bytes));
+		for (DataGroup dg: dataGroups) {
+			byte[] dgBytes = dg.getEncoded();
+			fileLength = dgBytes.length;
+			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+			short fid = LDSFile.lookupFIDByTag(dg.getTag());
+			fileLengths.put(fid, fileLength);
+			rawStreams.put(fid, new ByteArrayInputStream(dgBytes));
+		}
 
-		/* EF.DG2 */
-		DG2File dg2 = new DG2File(); 
-		byte[] dg2Bytes = dg2.getEncoded();
-		fileLength = dg2Bytes.length;
-		totalLength += fileLength;
-		fileLengths.put(PassportService.EF_DG2, fileLength);
-		rawStreams.put(PassportService.EF_DG2, new ByteArrayInputStream(dg2Bytes));
-
-		/* EF.SOD */
-		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-		keyPairGenerator.initialize(1024);
-		KeyPair keyPair = keyPairGenerator.generateKeyPair();
-		PublicKey publicKey = keyPair.getPublic();
-		PrivateKey privateKey = keyPair.getPrivate();
-		Date dateOfIssuing = today;
-		Date dateOfExpiry = today;
-		String digestAlgorithm = "SHA256";
-		String signatureAlgorithm = "SHA256withRSA";
-		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
-		certGenerator.setSerialNumber(new BigInteger("1"));
-		certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-		certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-		certGenerator.setNotBefore(dateOfIssuing);
-		certGenerator.setNotAfter(dateOfExpiry);
-		certGenerator.setPublicKey(publicKey);
-		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
-		X509Certificate docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
-		docSigningPrivateKey = privateKey;
-		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
-		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
-		hashes.put(1, digest.digest(dg1Bytes));
-		hashes.put(2, digest.digest(dg2Bytes));
-		sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
+		this.sodFile = sodFile;
 		byte[] sodBytes = sodFile.getEncoded();
 		fileLength = sodBytes.length;
-		totalLength += fileLength;
+		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(PassportService.EF_SOD, fileLength);
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
-	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
 		this.trustManager = trustManager;
+		this.verificationStatus = new VerificationStatus();
 		try {
 			service.open();
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new CardServiceException("Cannot open passport. " + e.getMessage());
 		}
 		this.bacKeySpec = null;
@@ -303,7 +264,7 @@ public class Passport
 		}
 	}
 
-	public Passport(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {
+	public Passport(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {
 		this();
 		this.trustManager = trustManager;
 		readFromService(service, bacKeySpec, trustManager);
@@ -312,6 +273,7 @@ public class Passport
 	public Passport(File file, MRTDTrustStore trustManager) throws IOException {
 		this();
 		this.trustManager = trustManager;
+		this.verificationStatus = new VerificationStatus();
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();
@@ -358,7 +320,7 @@ public class Passport
 				DataInputStream dataIn = new DataInputStream(zipEntryIn);
 				dataIn.readFully(bytes);
 				dataIn.close();
-				int tagBasedFID = PassportFile.lookupFIDByTag(bytes[0] & 0xFF);
+				int tagBasedFID = LDSFile.lookupFIDByTag(bytes[0] & 0xFF);
 				if (fid < 0) {
 					/* FIXME: untested! */
 					fid = tagBasedFID;
@@ -366,7 +328,7 @@ public class Passport
 				if (fid != tagBasedFID) {
 					LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
 				}
-				totalLength += fileLength;
+				totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 				fileLengths.put((short)fid, fileLength);
 				rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
 				if(fid == PassportService.EF_COM) {
@@ -391,7 +353,7 @@ public class Passport
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	private void readFromService(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
+	private void readFromService(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
 		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
@@ -400,18 +362,18 @@ public class Passport
 		couldNotRead = new ArrayList<Short>();
 		InputStream comIn = preReadFile(service, PassportService.EF_COM);
 		comFile = new COMFile(comIn);
-		List<Integer> comTagList = comFile.getTagList();
+		int[] comTagList = comFile.getTagList();
 		InputStream sodIn = preReadFile(service, PassportService.EF_SOD);
 		sodFile = new SODFile(sodIn);
 		InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
-		dg1File = new DG1File(dg1In);
+		DG1File dg1File = new DG1File(dg1In);
 		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
 		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;
 
 		/* Find out if we need to do EAC. */
-		if (comTagList.contains(PassportFile.EF_DG14_TAG)) {
+		if (Arrays.asList(comTagList).contains(LDSFile.EF_DG14_TAG)) {
 			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
 			dg14File = new DG14File(dg14In);
 
@@ -433,7 +395,7 @@ public class Passport
 
 		/* Start reading each of the files. */
 		for (int tag: comTagList) {
-			short fid = PassportFile.lookupFIDByTag(tag);
+			short fid = LDSFile.lookupFIDByTag(tag);
 			try {
 				setupFile(service, fid);
 			} catch(CardServiceException ex) {
@@ -446,9 +408,7 @@ public class Passport
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
-		if(verificationStatus == null)
-			verificationStatus = new VerificationStatus();
-		Map<Integer, PublicKey> cardKeys = dg14File.getPublicKeys();
+		Map<Integer, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
 		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 			if (caRef != null) {
 				try {
@@ -500,25 +460,25 @@ public class Passport
 			throw new CardServiceException("Could not read " + Integer.toHexString(fid));
 		}
 		try {
-			InputStream in = null;
+			InputStream inputStream = null;
 			byte[] file = filesBytes.get(fid);
 			if (file != null) {
 				/* Already completely read this file. */
-				in = new ByteArrayInputStream(file);
-				in.mark(file.length + 1);
+				inputStream = new ByteArrayInputStream(file);
+				inputStream.mark(file.length + 1);
 			} else {
 				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
 
 				/* Maybe partially read? Use the buffered stream. */
-				in = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
-				if (in != null && in.markSupported()) { in.reset(); }
+				inputStream = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
+				if (inputStream != null && inputStream.markSupported()) { inputStream.reset(); }
 			}
-			if (in == null) {
+			if (inputStream == null) {
 				/* Not read yet. Start reading it. */
 				startCopyingRawInputStream(fid);
-				in = bufferedStreams.get(fid);              
+				inputStream = bufferedStreams.get(fid);              
 			}
-			return in;
+			return inputStream;
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			throw new IllegalStateException("ERROR: " + ioe.toString());
@@ -528,13 +488,13 @@ public class Passport
 	public void putFile(short fid, byte[] bytes) {
 		if (bytes == null) { return; }
 		filesBytes.put(fid, bytes);
-		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
 		int fileLength = bytes.length;
-		in.mark(fileLength + 1);
-		bufferedStreams.put(fid, in);
+		inputStream.mark(fileLength + 1);
+		bufferedStreams.put(fid, inputStream);
 		fileLengths.put(fid, fileLength);
 		// FIXME: is this necessary?
-		totalLength += fileLength;
+		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 			updateCOMSODFile(null);
 		}
@@ -551,12 +511,13 @@ public class Passport
 			List<Short> dgFids = new ArrayList<Short>();
 			dgFids.addAll(fileLengths.keySet());
 			Collections.sort(dgFids);
-			MessageDigest digest = MessageDigest.getInstance(digestAlg);
+			MessageDigest digest = null;
+			digest = MessageDigest.getInstance(digestAlg);
 			for (Short fid : dgFids) {
 				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 					byte[] data = getFileBytes(fid);
 					byte tag = data[0];
-					dgHashes.put(PassportFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
+					dgHashes.put(LDSFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
 					comFile.insertTag(Integer.valueOf(tag));
 				}
 			}
@@ -576,14 +537,14 @@ public class Passport
 		byte[] result = filesBytes.get(fid);
 		if (result != null) { return result; }
 		try {
-			InputStream in = getInputStream(fid);
-			if (in == null) { return null; }
+			InputStream inputStream = getInputStream(fid);
+			if (inputStream == null) { return null; }
 
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			byte[] buf = new byte[256];
 			while (true) {
 				try {
-					int bytesRead = in.read(buf);
+					int bytesRead = inputStream.read(buf);
 					if (bytesRead < 0) { break; }
 					out.write(buf, 0, bytesRead);
 				} catch (IOException ioe) {
@@ -636,9 +597,8 @@ public class Passport
 	}
 
 	public void setEACPublicKey(PublicKey publicKey) {
-		List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
-		securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
-		DG14File dg14File = new DG14File(securityInfos);		
+		ChipAuthenticationPublicKeyInfo chipAuthenticationPublicKeyInfo = new ChipAuthenticationPublicKeyInfo(publicKey);
+		DG14File dg14File = new DG14File(Arrays.asList(new SecurityInfo[] { chipAuthenticationPublicKeyInfo }));		
 		putFile(PassportService.EF_DG14, dg14File.getEncoded());
 	}
 
@@ -670,6 +630,7 @@ public class Passport
 	public List<Short> getFileList() {
 		List<Short> result = new ArrayList<Short>();
 		result.addAll(fileLengths.keySet());
+		Collections.sort(result);
 		return result;
 	}
 
@@ -680,7 +641,6 @@ public class Passport
 	 * Assumes passport object is non-null and read from the service.
 	 */
 	public void verifySecurity() {
-		if (verificationStatus == null) { verificationStatus = new VerificationStatus(); }
 		verifyBAC();
 		verifyEAC();
 		verifyDS();
@@ -701,9 +661,9 @@ public class Passport
 	 * 
 	 * @return a list of certificates
 	 * 
-	 * @throws ExtCertPathValidatorException if  could not be checked
+	 * @throws GeneralSecurityException if could not be checked
 	 */
-	public List<Certificate> getCertificateChain() throws ExtCertPathValidatorException {
+	public List<Certificate> getCertificateChain() throws GeneralSecurityException {
 		List<CertStore> cscaStores = trustManager.getCSCAStores();
 		if (cscaStores == null) {
 			LOGGER.warning("No certificate stores found.");
@@ -761,18 +721,18 @@ public class Passport
 				selector.setIssuer(sodIssuer);
 				selector.setSerialNumber(sodSerialNumber);
 			}
-			
-			CertStoreParameters docStoreParams =
-				new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
+
+			CertStoreParameters docStoreParams = new CollectionCertStoreParameters(Collections.singleton((Certificate)docSigningCertificate));
 			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
 
-			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BC_PROVIDER);
 			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(trustManager.getCSCAAnchors(), selector);
 			buildParams.addCertStore(docStore);
 			for (CertStore trustStore: trustManager.getCSCAStores()) {
 				buildParams.addCertStore(trustStore);
 			}
 			buildParams.setRevocationEnabled(isPKIXRevocationCheckingEnabled); /* NOTE: set to false for checking disabled. */
+			Security.addProvider(BC_PROVIDER); /* DEBUG: needed, or builder will throw a runtime exception. FIXME! */
 			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
 			if (result == null) { return null; }
 			CertPath chain = result.getCertPath();
@@ -816,7 +776,7 @@ public class Passport
 
 	/* Only private methods below. */
 
-	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
+	private BufferedInputStream preReadFile(PassportService<C, R> service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {
 			int length = fileLengths.get(fid); 
 			BufferedInputStream bufferedIn = new BufferedInputStream(rawStreams.get(fid), length + 1);
@@ -827,7 +787,7 @@ public class Passport
 			CardFileInputStream cardIn = service.readFile(fid);
 			int length = cardIn.getFileLength();
 			BufferedInputStream bufferedIn = new BufferedInputStream(cardIn, length + 1);
-			totalLength += length;
+			totalLength += length; notifyProgressListeners(bytesRead, totalLength);
 			fileLengths.put(fid, length);
 			bufferedIn.mark(length + 1);
 			rawStreams.put(fid, bufferedIn);
@@ -835,7 +795,7 @@ public class Passport
 		}
 	}
 
-	private void setupFile(PassportService service, short fid) throws CardServiceException {
+	private void setupFile(PassportService<C, R> service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {
 			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
 			return;
@@ -844,7 +804,7 @@ public class Passport
 		int fileLength = cardIn.getFileLength();
 		cardIn.mark(fileLength + 1);
 		rawStreams.put(fid, cardIn);
-		totalLength += fileLength;
+		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(fid, fileLength);        
 	}
 
@@ -856,11 +816,11 @@ public class Passport
 	 * @throws IOException
 	 */
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
-		final Passport passport = this;
+		final Passport<C, R> passport = this;
 		if (couldNotRead.contains(fid)) { return; }
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
-			String message = "Cannot read " + PassportFile.toString(PassportFile.lookupTagByFID(fid));
+			String message = "Cannot read " + LDSFile.toString(LDSFile.lookupTagByFID(fid));
 			LOGGER.warning(message + " (not starting thread)");
 			couldNotRead.add(fid);
 			return;
@@ -870,9 +830,9 @@ public class Passport
 		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
 		final PipedOutputStream out = new PipedOutputStream(pipedIn);
 		final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
-		InputStream in = new BufferedInputStream(pipedIn, fileLength + 1);
-		in.mark(fileLength + 1);
-		bufferedStreams.put(fid, in);
+		InputStream inputStream = new BufferedInputStream(pipedIn, fileLength + 1);
+		inputStream.mark(fileLength + 1);
+		bufferedStreams.put(fid, inputStream);
 		(new Thread(new Runnable() {
 			public void run() {
 				byte[] buf = new byte[BUFFER_SIZE];
@@ -882,7 +842,7 @@ public class Passport
 						if (bytesRead < 0) { break; }
 						out.write(buf, 0, bytesRead);
 						copyOut.write(buf, 0, bytesRead);
-						passport.bytesRead += bytesRead;
+						passport.bytesRead += bytesRead; notifyProgressListeners(passport.bytesRead, totalLength);
 					}
 					out.flush(); out.close();
 					copyOut.flush();
@@ -917,7 +877,7 @@ public class Passport
 	}
 
 	/** Check active authentication. */
-	private void verifyAA(PassportService service) {
+	private void verifyAA(PassportService<C, R> service) {
 		try {
 			InputStream sodIn = getInputStream(PassportService.EF_SOD);
 			SODFile	sod = new SODFile(sodIn);
@@ -957,7 +917,7 @@ public class Passport
 			COMFile com = new COMFile(comIn);
 			List<Integer> comDGList = new ArrayList<Integer>();
 			for(Integer tag : com.getTagList()) {
-				comDGList.add(PassportFile.lookupDataGroupNumberByTag(tag));
+				comDGList.add(LDSFile.lookupDataGroupNumberByTag(tag));
 			}
 			Collections.sort(comDGList);
 
@@ -979,10 +939,14 @@ public class Passport
 			}
 
 			String digestAlgorithm = sod.getDigestAlgorithm();
-			MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
-
+			MessageDigest digest = null;
+			if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
+				digest = MessageDigest.getInstance(digestAlgorithm);
+			} else {
+				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
+			}
 			for (int dgNumber: hashes.keySet()) {
-				short fid = PassportFile.lookupFIDByTag(PassportFile.lookupTagByDataGroupNumber(dgNumber));
+				short fid = LDSFile.lookupFIDByTag(LDSFile.lookupTagByDataGroupNumber(dgNumber));
 				byte[] storedHash = hashes.get(dgNumber);
 
 				digest.reset();
@@ -1080,5 +1044,24 @@ public class Passport
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
 		}
+	}
+
+	public void addProgressListener(ProgressListener l) {
+		progressListeners.add(l);
+	}
+
+	public void removeProgressListener(ProgressListener l) {
+		progressListeners.remove(l);
+	}
+
+	private void notifyProgressListeners(int progress, int max) {
+		if (progressListeners == null) { return; }
+		for (ProgressListener l: progressListeners) {
+			l.changed(progress, max);
+		}
+	}
+
+	public interface ProgressListener {
+		void changed(int progress, int max);
 	}
 }

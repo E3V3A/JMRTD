@@ -28,12 +28,11 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.prefs.Preferences;
 
-import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.Action;
@@ -53,10 +52,9 @@ import javax.swing.JToolBar;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
-import net.sourceforge.scuba.util.Images;
+import net.sourceforge.scuba.util.ImageUtil;
 
-import org.jmrtd.ImageReadUpdateListener;
-import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.FaceImageInfo;
 
 /**
  * Frame for displaying and manipulating one portrait image.
@@ -81,26 +79,27 @@ public class PortraitFrame extends JMRTDFrame
 
 	private ActionMap actionMap;
 	
-	private FaceInfo info;
+	private FaceImageInfo info;
 	private ImagePanel imagePanel;
 	private JCheckBoxMenuItem viewFeaturePointsItem;
 
-	public PortraitFrame(FaceInfo info) {
-		this("Portrait", info);
+	public PortraitFrame(FaceImageInfo faceImageInfo) {
+		this("Portrait", faceImageInfo);
 	}
 
-	public PortraitFrame(String title, FaceInfo info) {
+	public PortraitFrame(String title, FaceImageInfo info) {
 		super(title);
+		if (info == null) { throw new IllegalArgumentException("Face image cannot be null"); }
 		this.info = info;
 	
 		actionMap = new ActionMap();
 		
-		info.addImageReadUpdateListener(new ImageReadUpdateListener() {
-			public void passComplete(BufferedImage image, double percentage) {
-				imagePanel.setImage(image);
-				imagePanel.revalidate(); repaint();
-			}
-		});
+//		info.addImageReadUpdateListener(new ImageReadUpdateListener() {
+//			public void passComplete(BufferedImage image, double percentage) {
+//				imagePanel.setImage(image);
+//				imagePanel.revalidate(); repaint();
+//			}
+//		});
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
@@ -117,7 +116,7 @@ public class PortraitFrame extends JMRTDFrame
 		
 		/* Frame content */
 		try {
-			Image image = info.getImage();
+			Image image = ImageUtil.read(info.getImageInputStream(), info.getImageLength(), info.getMimeType());
 			imagePanel = new ImagePanel();
 			imagePanel.addMouseListener(new MouseAdapter() {
 				public void mouseClicked(MouseEvent e) {
@@ -190,15 +189,19 @@ public class PortraitFrame extends JMRTDFrame
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.IMAGE_FILES_DIR_KEY, file.getParent());
 						String fileName = file.getName().toLowerCase();
+						Image image = imagePanel.getImage();
+						FileOutputStream fileOut = new FileOutputStream(file);
 						if (fileName.endsWith(".png")) {
-							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "png", file);
+							ImageUtil.write(image, "image/png", fileOut);
 						} else if (fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") ) {
-							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "jpg", file);
+							ImageUtil.write(image, "image/jpeg", fileOut);
 						} else if (fileName.endsWith(".bmp")) {
-							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "bmp", file);
+							ImageUtil.write(image, "image/bmp", fileOut);
 						} else if (fileName.endsWith(".gif")) {
-							ImageIO.write(Images.toBufferedImage(imagePanel.getImage()), "gif", file);
+							ImageUtil.write(image, "image/gif", fileOut);
 						}
+						fileOut.flush();
+						fileOut.close();
 					} catch (IOException fnfe) {
 						fnfe.printStackTrace();
 					}
@@ -257,15 +260,15 @@ public class PortraitFrame extends JMRTDFrame
 	}
 	
 	private void toggleViewFeaturePoints(boolean showPoints) {
-		FaceInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
+		FaceImageInfo.FeaturePoint[] featurePoints = info.getFeaturePoints();
 		viewFeaturePointsItem.setSelected(showPoints);
 		if (showPoints) {
-			for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+			for (FaceImageInfo.FeaturePoint featurePoint: featurePoints) {
 				String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
 				imagePanel.highlightPoint(key, featurePoint.getX(), featurePoint.getY());
 			}
 		} else {
-			for (FaceInfo.FeaturePoint featurePoint: featurePoints) {
+			for (FaceImageInfo.FeaturePoint featurePoint: featurePoints) {
 				String key = featurePoint.getMajorCode() + "." + featurePoint.getMinorCode();
 				imagePanel.deHighlightPoint(key);
 			}

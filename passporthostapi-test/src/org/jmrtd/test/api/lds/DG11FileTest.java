@@ -21,7 +21,6 @@
 
 package org.jmrtd.test.api.lds;
 
-import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -179,7 +178,7 @@ public class DG11FileTest extends TestCase
 		String profession = "";
 		String title = "";
 		String personalSummary = "";
-		BufferedImage proofOfCitizenship = null;
+		byte[] proofOfCitizenship = null;
 		List<String> otherValidTDNumbers = new ArrayList<String>();
 		String custodyInformation = "";
 		return new DG11File(fullNamePrimaryIdentifier,

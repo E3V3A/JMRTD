@@ -9,6 +9,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.security.Provider;
 import java.security.Security;
 
 import javax.smartcardio.CardTerminal;
@@ -29,6 +30,8 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 public class MBTadapter
 
 {
+	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	
 	/** service to talk to the passport */
 	private static PassportTestService service;
 
@@ -82,8 +85,7 @@ public class MBTadapter
 	public static void main(String[] args) throws Exception
 
 	{
-		Security
-				.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		Security.addProvider(BC_PROVIDER);
 
 		if (args.length != 1) {
 			System.out.println("own port number required");

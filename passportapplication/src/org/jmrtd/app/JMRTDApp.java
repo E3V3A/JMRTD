@@ -32,10 +32,22 @@ import java.awt.event.KeyListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.MessageDigest;
+import java.security.PrivateKey;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +56,8 @@ import java.util.prefs.Preferences;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -63,24 +77,36 @@ import javax.swing.KeyStroke;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.data.ISOCountry;
 import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CardTerminalListener;
+import net.sourceforge.scuba.smartcards.SCFactory;
+import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.BACStore;
 import org.jmrtd.FileBACStore;
+import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
-import org.jmrtd.PassportEvent;
-import org.jmrtd.PassportListener;
-import org.jmrtd.PassportManager;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.DG1File;
+import org.jmrtd.lds.DG2File;
+import org.jmrtd.lds.DataGroup;
+import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
+import org.jmrtd.lds.SODFile;
 
 /**
  * Simple graphical application to demonstrate the
@@ -91,7 +117,7 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @version $Revision: 894 $
  */
-public class JMRTDApp implements PassportListener
+public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 {
 	private static final String MAIN_FRAME_TITLE = "Main";
 
@@ -102,9 +128,13 @@ public class JMRTDApp implements PassportListener
 	private static final Icon RELOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
 	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-	
+
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
+
+	private static final Calendar CALENDAR = Calendar.getInstance(); 
+
+	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 	
 	public static final String
 	READING_MODE_KEY = "mode.reading",
@@ -119,9 +149,16 @@ public class JMRTDApp implements PassportListener
 	CERT_AND_KEY_FILES_DIR_KEY = "location.certfiles";
 
 	private static final Provider
-	JMRTD_PROVIDER = new org.jmrtd.JMRTDSecurityProvider(),
-	BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance(),
+	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
+	static {
+		/* So that BC stuff knows about CVC certificates. */
+		BC_PROVIDER.put("CertificateFactory.CVC", JMRTD_PROVIDER.get("CertificateFactory.CVC"));
+		Security.insertProviderAt(BC_PROVIDER, 1);
+		Security.addProvider(JMRTD_PROVIDER);
+	}
+	
 	private ActionMap actionMap;
 
 	private Container contentPane;
@@ -140,16 +177,15 @@ public class JMRTDApp implements PassportListener
 	 * @param arg command line arguments, are ignored for now.
 	 */
 	public JMRTDApp() {
-		try {
-			/* So that BC stuff knows about CVC certificates */
-			BC_PROVIDER.put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
-			Security.insertProviderAt(BC_PROVIDER, 1);
-			Security.addProvider(JMRTD_PROVIDER);
+		try {			
+			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
+			SCFactory apduFactory = new SCFactory();
+			sc.init(apduFactory);
 			
 			actionMap = new ActionMap();
-			
+
 			cardManager = CardManager.getInstance();
-			PassportManager passportManager = PassportManager.getInstance();
+			//			PassportManager passportManager = PassportManager.getInstance();
 			this.bacStore = new FileBACStore();
 			trustManager = new MRTDTrustStore();
 
@@ -194,8 +230,7 @@ public class JMRTDApp implements PassportListener
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
-
-			passportManager.addPassportListener(this);
+			cardManager.addCardTerminalListener(this);
 			updateFromPreferences();
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */
@@ -262,25 +297,18 @@ public class JMRTDApp implements PassportListener
 		}
 	}
 
-	public void passportInserted(PassportEvent ce) {
+	public void cardInserted(CardEvent<CommandAPDU, ResponseAPDU> ce) {
 		try {
-			PassportService service = ce.getService();
+			PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
+			service.open();
 			readPassport(service);
-		} catch (Exception ex) {
-			ex.printStackTrace();
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
-	public void passportRemoved(PassportEvent ce) {
-		/* Do nothing. */
-	}
-
-	public void cardInserted(CardEvent ce) {
-		/* Ignore non-passport card. */
-	}
-
-	public void cardRemoved(CardEvent ce) {
-		CardService service = ce.getService();
+	public void cardRemoved(CardEvent<CommandAPDU, ResponseAPDU> ce) {
+		CardService<CommandAPDU, ResponseAPDU> service = ce.getService();
 		if (service != null) {
 			service.close();
 		}
@@ -295,8 +323,8 @@ public class JMRTDApp implements PassportListener
 	 * @param service
 	 * @throws CardServiceException
 	 */
-	private void readPassport(PassportService service) throws CardServiceException {
-		Passport passport = new Passport(service, trustManager, bacStore);
+	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
+		Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
 		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
 		passportFrame.pack();
 		passportFrame.setVisible(true);
@@ -331,7 +359,7 @@ public class JMRTDApp implements PassportListener
 		JMenuItem cscaCertsItem = new JMenuItem();
 		cscaCertsItem.setAction(getCSCACertsAction());
 		menu.add(cscaCertsItem);
-		
+
 		JMenuItem reloadItem = new JMenuItem();
 		reloadItem.setAction(getReloadAction());
 		menu.add(reloadItem);
@@ -360,8 +388,8 @@ public class JMRTDApp implements PassportListener
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport passport = new Passport(MRZInfo.DOC_TYPE_ID3, trustManager);
-					PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
+					Passport<CommandAPDU, ResponseAPDU> passport = createEmptyPassport("P<", trustManager);
+					PassportEditFrame passportFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);
 				} catch (Exception ex) {
@@ -397,7 +425,7 @@ public class JMRTDApp implements PassportListener
 					try {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport passport = new Passport(file, trustManager);
+						Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(file, trustManager);
 
 						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
@@ -458,7 +486,7 @@ public class JMRTDApp implements PassportListener
 		actionMap.put("CSCAAnchorss", action);
 		return action;
 	}
-	
+
 	private Action getReloadAction() {
 		Action action = actionMap.get("Reload");
 		if (action != null) { return action; }
@@ -475,9 +503,9 @@ public class JMRTDApp implements PassportListener
 								if (/* cardManager.isPolling(terminal) && */ terminal.isCardPresent()) {
 									boolean isPolling = cardManager.isPolling(terminal);
 									if (isPolling) { cardManager.stopPolling(terminal); }
-									CardService service = cardManager.getService(terminal);
+									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
-									PassportService passportService = new PassportService(new TerminalCardService(terminal));
+									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(new TerminalCardService(terminal));
 									readPassport(passportService);
 
 									if (isPolling) { cardManager.startPolling(terminal); }
@@ -574,7 +602,59 @@ public class JMRTDApp implements PassportListener
 		actionMap.put("About", action);
 		return action;
 	}
+	
+	/**
+	 * Creates passport from scratch.
+	 * 
+	 * @param docType either <code>MRZInfo.DOC_TYPE_ID1</code> or <code>MRZInfo.DOC_TYPE_ID3</code>
+	 * @throws GeneralSecurityException if something wrong
+	 */
+	private static Passport<CommandAPDU,ResponseAPDU> createEmptyPassport(String docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
 
+		/* EF.COM */
+		int[] tagList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
+		COMFile comFile = new COMFile("1.7", "4.0.0", tagList);
+
+		/* EF.DG1 */
+		Date today = CALENDAR.getTime();
+		String todayString = SDF.format(today);
+		String primaryIdentifier = "";
+		String secondaryIdentifiers = "";
+		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL.toAlpha3Code(), primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL.toAlpha3Code(), todayString, Gender.MALE, todayString, "");
+		DG1File dg1 = new DG1File(mrzInfo);
+
+		/* EF.DG2 */
+		DG2File dg2 = new DG2File(Arrays.asList(new FaceInfo[] { }));
+
+		/* EF.SOD */
+		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
+		keyPairGenerator.initialize(1024);
+		KeyPair keyPair = keyPairGenerator.generateKeyPair();
+		PublicKey publicKey = keyPair.getPublic();
+		PrivateKey privateKey = keyPair.getPrivate();
+		Date dateOfIssuing = today;
+		Date dateOfExpiry = today;
+		String digestAlgorithm = "SHA256";
+		String signatureAlgorithm = "SHA256withRSA";
+
+		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
+		certGenerator.setSerialNumber(new BigInteger("1"));
+		certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+		certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
+		certGenerator.setNotBefore(dateOfIssuing);
+		certGenerator.setNotAfter(dateOfExpiry);
+		certGenerator.setPublicKey(publicKey);
+		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
+		X509Certificate docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
+		PrivateKey docSigningPrivateKey = privateKey;
+		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
+		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
+		hashes.put(1, digest.digest(dg1.getEncoded()));
+		hashes.put(2, digest.digest(dg2.getEncoded()));
+		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
+		return new Passport(comFile, Arrays.asList(new DataGroup[] { }), sodFile, docSigningPrivateKey, trustManager);
+	}
+	
 	/**
 	 * Main method creates an instance.
 	 *

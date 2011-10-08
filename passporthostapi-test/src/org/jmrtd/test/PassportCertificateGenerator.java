@@ -9,13 +9,13 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.AuthorizationRoleEnum;
@@ -30,6 +30,8 @@ import org.ejbca.cvc.HolderReferenceField;
 
 public class PassportCertificateGenerator {
 
+	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	
     public static final String rootCertFile = "/home/sos/woj/passportcert/rootcert.cvcert";
     public static final String newRootCertFile = "/home/sos/woj/passportcert/rootcert.cvcert";
     public static final String rootKeyFile = "/home/sos/woj/passportcert/rootkey.der";
@@ -90,7 +92,7 @@ public class PassportCertificateGenerator {
     
     public static void main(String[] args) {
         try {
-            Security.addProvider(new BouncyCastleProvider());
+            Security.addProvider(BC_PROVIDER);
 
             CVCertificate rootCert = readCVCertificateFromFile(new File(rootCertFile));
             String keyAlg = "ECDSA";

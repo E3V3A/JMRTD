@@ -21,12 +21,16 @@
 
 package org.jmrtd.test.api.lds;
 
+import java.io.ByteArrayInputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -35,23 +39,26 @@ import javax.crypto.spec.DHParameterSpec;
 
 import junit.framework.TestCase;
 
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.jmrtd.JMRTDSecurityProvider;
+import org.jmrtd.lds.ChipAuthenticationInfo;
+import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
 import org.jmrtd.lds.DG14File;
+import org.jmrtd.lds.SecurityInfo;
+import org.jmrtd.lds.TerminalAuthenticationInfo;
 
 public class DG14FileTest extends TestCase {
 
-	Provider BC_PROV = new BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	static {
+		Security.addProvider(BC_PROVIDER);
+	}
 
-	public void testReflexive1() throws NoSuchAlgorithmException {
+	public void testReflexive() {
 		try {
 			Map<Integer, PublicKey> keys = new TreeMap<Integer, PublicKey>();
 
-			Security.addProvider(BC_PROV);
-
 			/* Using BC here, since SunJCE doesn't support EC. */
-			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", BC_PROV);
+			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", BC_PROVIDER);
 			keyGen1.initialize(192);
 			KeyPair keyPair1 = keyGen1.generateKeyPair();
 
@@ -63,41 +70,29 @@ public class DG14FileTest extends TestCase {
 			 */
 			KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("DH", "SunJCE");
 
-			
 			System.out.println("DEBUG: DG14FileTest: Generating key pair 2");
 			KeyPair keyPair2 = keyGen2.generateKeyPair();
-			
+
 			PublicKey publicKey1 = keyPair1.getPublic();
 			PublicKey publicKey2 = keyPair2.getPublic();
 
 			keys.put(1, publicKey1);
 			keys.put(2, publicKey2);
-			
+
 			System.out.println("DEBUG: publicKey1.getAlgorithm() = " + publicKey1.getAlgorithm());
 			System.out.println("DEBUG: publicKey2.getAlgorithm() = " + publicKey2.getAlgorithm());
 
-			Map<Integer, DERObjectIdentifier> algs = new TreeMap<Integer, DERObjectIdentifier>();
-			algs.put(1, EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC);
-			algs.put(2, EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
+			Map<Integer, String> algs = new TreeMap<Integer, String>();
+			algs.put(1, SecurityInfo.ID_CA_DH_3DES_CBC_CBC_OID);
+			algs.put(2, SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID);
 
 			DG14File dg14File = new DG14File(keys, algs, null, null);
 
 			System.out.println("DEBUG: DG14FileTest: End");
 
-			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getPublicKeys();
-			
+			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getChipAuthenticationPublicKeyInfos();
 
-			/* Oops, assertEquals fails... sometimes (depending on order of
-			 * inserted providers) because neither SunJCE nor BC implement equals
-			 * methods in their DHPublicKey.
-			 * 
-			 * 		assertEquals(keys, dg14PublicKeys);
-			 * 
-			 * Below we compare the parameters ourselves using equalsDHPublicKey(..)
-			 * method... not pretty.
-			 * 
-			 * FIXME: Other solutions?
-			 */
+
 			assertEquals(keys.keySet(), dg14PublicKeys.keySet());
 			for (int i: keys.keySet()) {
 				PublicKey publicKey = (PublicKey)keys.get(i);
@@ -109,8 +104,86 @@ public class DG14FileTest extends TestCase {
 				}
 			}
 			assertEquals(algs, dg14File.getChipAuthenticationInfos());
+
+			List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, 1));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, 2));	
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 1));
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 2));
+			securityInfos.add(new TerminalAuthenticationInfo());
+			DG14File dg14File2 = new DG14File(securityInfos);
+
+			assertEquals(dg14File, dg14File2);
 		} catch (Exception e) {
 			fail(e.getMessage());
+		}
+	}
+
+	public void testEncodeDecode() {
+		DG14File dg14 = getSampleObject();
+		byte[] encoded = dg14.getEncoded();
+		assertNotNull(encoded);
+		
+		DG14File copy = new DG14File(new ByteArrayInputStream(encoded));
+		assertEquals(dg14, copy);
+		
+		byte[] copyEncoded = dg14.getEncoded();
+		assertNotNull(copyEncoded);
+		
+		DG14File copyOfCopy = new DG14File(new ByteArrayInputStream(copyEncoded));
+		assertEquals(dg14, copyOfCopy);
+		assertEquals(copyOfCopy, copy);
+	}
+	
+	public void testDecodeEncode() {
+		DG14File dg14 = getSampleObject();
+		Collection<SecurityInfo> securityInfos = dg14.getSecurityInfos();
+		assertNotNull(securityInfos);
+		DG14File copy = new DG14File(securityInfos);
+		assertEquals(dg14, copy);
+
+		byte[] encoded = dg14.getEncoded();
+		assertNotNull(encoded);
+		byte[] copyEncoded = copy.getEncoded();
+		assertNotNull(copyEncoded);
+		assertTrue(Arrays.equals(encoded, copyEncoded));
+	}
+	
+	public void testDecodeEncode1() {
+		DG14File dg14 = getSampleObject();
+	}
+	
+	public DG14File getSampleObject() {
+		try {
+			/* Using BC here, since SunJCE doesn't support EC. */
+			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", BC_PROVIDER);
+			keyGen1.initialize(192);
+			KeyPair keyPair1 = keyGen1.generateKeyPair();
+
+			/* Using SunJCE here, since BC sometimes hangs?!?! Bug in BC?
+			 *
+			 * FIXME: This happened to MO on WinXP, Eclipse 3.4, Sun JDK1.6.0_15,
+			 * not tested on other platforms... replace "SunJCE" with "BC" and see
+			 * if this test halts forever.
+			 */
+			KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("DH", "SunJCE");
+
+			KeyPair keyPair2 = keyGen2.generateKeyPair();
+
+			PublicKey publicKey1 = keyPair1.getPublic();
+			PublicKey publicKey2 = keyPair2.getPublic();
+
+			List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, 1));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, 2));	
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 1));
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 2));
+			securityInfos.add(new TerminalAuthenticationInfo());
+			DG14File dg14 = new DG14File(securityInfos);
+			return dg14;
+		} catch(Exception e) {
+			fail(e.getMessage());
+			return null;
 		}
 	}
 

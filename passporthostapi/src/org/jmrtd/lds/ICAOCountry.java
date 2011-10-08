@@ -28,8 +28,9 @@ import net.sourceforge.scuba.data.Country;
  * Contributed by Aleksandar Kamburov (wise_guybg).
  */
 public class ICAOCountry extends Country {
-
-	private static final ICAOCountry
+	
+	public static final ICAOCountry
+	DE = new ICAOCountry("DE", "D<<", "Germany"),
 	GBD = new ICAOCountry("GB","GBD","British Dependent territories citizen"),
 	GBN = new ICAOCountry("GB","GBN","British National (Overseas)"),
 	GBO = new ICAOCountry("GB","GBO","British Overseas citizen"),
@@ -46,6 +47,7 @@ public class ICAOCountry extends Country {
 	XXX = new ICAOCountry("XX","XXX","Unspecified");
 
 	private static ICAOCountry[] VALUES = {
+		DE,
 		GBD, GBN, GBO, GBP, GBS,
 		UNO, UNA, UNK,
 		XOM, XCC, XXA, XXB, XXC, XXX
@@ -55,9 +57,14 @@ public class ICAOCountry extends Country {
 	private String alpha2Code;
 	private String alpha3Code;
 	
-	public static ICAOCountry getInstance(String alpha3Code) {
+	public static Country getInstance(String alpha3Code) {
 		for (ICAOCountry country: VALUES) {
 			if (country.alpha3Code.equals(alpha3Code)) { return country; }
+		}
+		try {
+			return Country.getInstance(alpha3Code);
+		} catch (Exception e) {
+			/* NOTE: ignore this exception if it's not a legal 3 digit code. */
 		}
 		throw new IllegalArgumentException("Illegal ICAO country alpha 3 code " + alpha3Code);
 	}

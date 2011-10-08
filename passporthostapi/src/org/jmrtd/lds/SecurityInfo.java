@@ -22,14 +22,17 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.spongycastle.asn1.DERInteger;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DERObjectIdentifier;
+import org.spongycastle.asn1.DERSequence;
+import org.spongycastle.asn1.eac.EACObjectIdentifiers;
+import org.spongycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.spongycastle.asn1.x9.X9ObjectIdentifiers;
 
 /**
  * The abstract SecurityInfo structure.
@@ -39,15 +42,34 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
  * 
  * FIXME: dependency on BC in interface?
  */
-public abstract class SecurityInfo
-{
+public abstract class SecurityInfo extends AbstractInfo {
+
+	public static final String
+	ID_PK_DH_OID = EACObjectIdentifiers.id_PK_DH.getId(),
+	ID_PK_ECDH_OID = EACObjectIdentifiers.id_PK_ECDH.getId(),
+	ID_TA_OID = EACObjectIdentifiers.id_TA.getId(),
+	ID_CA_DH_3DES_CBC_CBC_OID = EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC.getId(),
+	ID_CA_ECDH_3DES_CBC_CBC_OID = EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC.getId();
+	
+	public static final String
+	ID_EC_PUBLIC_KEY_TYPE = X9ObjectIdentifiers.id_publicKeyType.getId(),
+	ID_EC_PUBLIC_KEY = X9ObjectIdentifiers.id_ecPublicKey.getId();
+	
 	/**
 	 * Returns a DER object with this SecurityInfo data (DER sequence)
 	 * 
 	 * @return a DER object with this SecurityInfo data
 	 */
 	abstract DERObject getDERObject();
-
+	
+	public void writeObject(OutputStream outputStream) throws IOException {
+		DERObject derEncoded = getDERObject();
+		if (derEncoded == null) { throw new IOException("Could not decode from DER."); }
+		byte[] derEncodedBytes = derEncoded.getDEREncoded();
+		if (derEncodedBytes == null) { throw new IOException("Could not decode from DER."); }
+		outputStream.write(derEncodedBytes);
+	}
+	
 	/**
 	 * Returns the object identifier of this SecurityInfo
 	 * 
@@ -62,9 +84,8 @@ public abstract class SecurityInfo
 	 * 
 	 * @return a concrete security info object
 	 */
-	static SecurityInfo createSecurityInfo(DERObject obj) {
+	static SecurityInfo getInstance(DERObject obj) {
 		try {
-//			DERObject obj = new ASN1InputStream(in).readObject();
 			DERSequence sequence = (DERSequence)obj;
 			String oid = ((DERObjectIdentifier)sequence.getObjectAt(0)).getId();
 			DERObject requiredData = sequence.getObjectAt(1).getDERObject();
@@ -104,11 +125,11 @@ public abstract class SecurityInfo
 			throw new IllegalArgumentException("Malformed input stream.");
 		}
 	}
-
-	protected static String lookupMnemonicByOID(DERObjectIdentifier oid) throws NoSuchAlgorithmException {
-		if (oid.equals(EACObjectIdentifiers.id_PK_DH)) { return "id_PK_DH"; }
-		if (oid.equals(EACObjectIdentifiers.id_PK_ECDH)) { return "id_PK_ECDH"; }
-		if (oid.equals(EACObjectIdentifiers.id_TA)) { return "id_TA"; }
-		throw new NoSuchAlgorithmException("Unknown OID " + oid.getId() + "(is not " + EACObjectIdentifiers.id_PK_DH.getId() + ", and not " + EACObjectIdentifiers.id_PK_ECDH.getId());
+	
+	protected static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {
+		if (ID_PK_DH_OID.equals(oid)) { return "id_PK_DH"; }
+		if (ID_PK_ECDH_OID.equals(oid)) { return "id_PK_ECDH"; }
+		if (ID_TA_OID.equals(oid)) { return "id_TA"; }
+		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
 }

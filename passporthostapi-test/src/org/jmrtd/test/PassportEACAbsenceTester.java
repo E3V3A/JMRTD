@@ -2,7 +2,6 @@ package org.jmrtd.test;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.List;
 import java.util.Set;
 
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
@@ -12,7 +11,7 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.PassportFile;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.SODFile;
 
 /**
@@ -65,9 +64,9 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         } catch (IOException ioe) {
             fail();
         }
-        List<Integer> tags = com.getTagList();
-        for (Integer tag : tags) {
-            assertTrue(tag.intValue() != PassportFile.EF_DG14_TAG);
+        int[] tags = com.getTagList();
+        for (int tag : tags) {
+            assertTrue(tag != LDSFile.EF_DG14_TAG);
         }
     }
 
@@ -92,8 +91,8 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
             fail();
         }
         Set<Integer> dgs = sod.getDataGroupHashes().keySet();
-        for (Integer dg : dgs) {
-            assertTrue(dg.intValue() != 14);
+        for (int dg : dgs) {
+            assertTrue(dg != 14);
         }
     }
 

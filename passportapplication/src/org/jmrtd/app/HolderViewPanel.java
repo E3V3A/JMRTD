@@ -37,6 +37,7 @@ import net.sourceforge.scuba.swing.CountryLabel;
 import net.sourceforge.scuba.swing.DateLabel;
 import net.sourceforge.scuba.swing.GenderLabel;
 
+import org.jmrtd.lds.ICAOCountry;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -128,7 +129,7 @@ public class HolderViewPanel extends JPanel
 		}
 		case GIVEN_NAMES: {
 			StringBuffer nameStr = new StringBuffer();
-			String[] firstNames = nfo.getSecondaryIdentifiers();
+			String[] firstNames = nfo.getSecondaryIdentifierComponents();
 			for (int i = 0; i < firstNames.length; i++) {
 				nameStr.append(firstNames[i]);
 				if (i < (firstNames.length - 1)) { nameStr.append(" "); }
@@ -145,11 +146,13 @@ public class HolderViewPanel extends JPanel
 			return tf;
 		}
 		case NATIONALITY: {
-			final CountryLabel tf = makeCountryField(nfo.getNationality());
+			/* FIXME: germany uses "D<<" instead of "DEU". */
+			final CountryLabel tf = makeCountryField(ICAOCountry.getInstance(nfo.getNationality()));
 			return tf;
 		}
 		case ISSUING_STATE: {
-			final CountryLabel tf = makeCountryField(nfo.getIssuingState());
+			/* FIXME: germany uses "D<<" instead of "DEU". */
+			final CountryLabel tf = makeCountryField(ICAOCountry.getInstance(nfo.getIssuingState()));
 			return tf;
 		}
 		case DATE_OF_BIRTH: {

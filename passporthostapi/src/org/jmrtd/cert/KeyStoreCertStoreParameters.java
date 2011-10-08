@@ -30,9 +30,11 @@ import java.security.KeyStoreException;
 import java.security.Provider;
 import java.security.cert.CertStoreParameters;
 
+import org.jmrtd.JMRTDSecurityProvider;
+
 public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParameters
 {
-	private static final Provider BC_PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
 	private static final String DEFAULT_ALGORITHM = "JKS";
 	private static final char[] DEFAULT_PASSWORD = "".toCharArray();
@@ -76,10 +78,10 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 	private static KeyStore readKeyStore(URI location, String keyStoreType, char[] password) throws KeyStoreException {
 		try {
 			URLConnection uc = location.toURL().openConnection();
-			InputStream in = uc.getInputStream();
+			InputStream inputStream = uc.getInputStream();
 			KeyStore ks = null;
 			try {
-				ks = KeyStore.getInstance(keyStoreType, BC_PROVIDER);
+				ks = KeyStore.getInstance(keyStoreType, JMRTD_PROVIDER);
 			} catch (Exception e1) {
 				try {
 					ks = KeyStore.getInstance(keyStoreType);
@@ -87,11 +89,11 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 					throw e1;
 				}
 			}
-			ks.load(in, password);
-			in.close();
+			ks.load(inputStream, password);
+			inputStream.close();
 			return ks;
 		} catch (Exception e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 			throw new KeyStoreException("Error getting keystore: " + e.getMessage());
 		}
 	}

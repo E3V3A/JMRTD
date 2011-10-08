@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -30,10 +31,13 @@ import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 public abstract class PassportTesterBase extends TestCase implements
-		APDUListener {
+		APDUListener<CommandAPDU, ResponseAPDU> {
 
+
+	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	
 	static {
-		Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+		Security.addProvider(BC_PROVIDER);
 	}
 
 	protected PassportTestService service = null;
@@ -97,7 +101,7 @@ public abstract class PassportTesterBase extends TestCase implements
 
 	protected boolean traceApdu = false;
 
-	public void exchangedAPDU(APDUEvent e) {
+	public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
 		CommandAPDU capdu = e.getCommandAPDU();
 		ResponseAPDU rapdu = e.getResponseAPDU();
 		last_rapdu = rapdu;
@@ -117,7 +121,7 @@ public abstract class PassportTesterBase extends TestCase implements
     /** Reads in a CVCertficate object from a file */
 	protected static CardVerifiableCertificate readCVCertificateFromFile(File f) {
 		try {
-			CertificateFactory cf = CertificateFactory.getInstance("CVC", new JMRTDSecurityProvider());
+			CertificateFactory cf = CertificateFactory.getInstance("CVC", JMRTDSecurityProvider.getInstance());
 			return (CardVerifiableCertificate)cf.generateCertificate(new FileInputStream(f));
 		} catch (Exception e) {
 			return null;

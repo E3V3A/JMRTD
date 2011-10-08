@@ -24,21 +24,20 @@ package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
-
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.spongycastle.asn1.ASN1EncodableVector;
+import org.spongycastle.asn1.ASN1InputStream;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DERSet;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see
@@ -50,17 +49,18 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
  */
 public class DG14File extends DataGroup
 {
-	/** The different security infos that make up this file */
-	private List<SecurityInfo> securityInfos;
+	/** The security infos that make up this file */
+	private Set<SecurityInfo> securityInfos;
 
 	/**
 	 * Constructs a new DG14 file from the provided data.
 	 *  
 	 * @param securityInfos a list of security infos
 	 */
-	public DG14File(List<SecurityInfo> securityInfos) {
+	public DG14File(Collection<SecurityInfo> securityInfos) {
 		super(EF_DG14_TAG);
-		this.securityInfos = new ArrayList<SecurityInfo>(securityInfos);
+		if (securityInfos == null) { throw new IllegalArgumentException("Null securityInfos"); }
+		this.securityInfos = new HashSet<SecurityInfo>(securityInfos);
 	}
 
 	/**
@@ -73,27 +73,13 @@ public class DG14File extends DataGroup
 		super(EF_DG14_TAG, in);
 	}
 
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
-		securityInfos = new ArrayList<SecurityInfo>();
-		byte[] value = tlvIn.readValue();
-		ASN1InputStream asn1In = new ASN1InputStream(value);
-		DERSet set = (DERSet)asn1In.readObject();
-		/* TODO: check if it contains additional objects? */
-		asn1In.close();
-		for (int i = 0; i < set.size(); i++) {
-			DERObject o = set.getObjectAt(i).getDERObject();
-			SecurityInfo si = SecurityInfo.createSecurityInfo(o);
-			securityInfos.add(si);
-		}
-	}
-
 	/**
 	 * Constructs a new DG14 file from the provided data.
 	 * 
-	 * @param publicKeys
+	 * @param chipAuthenticationPublicKeyInfos
 	 *            the map of (EC or DH) public keys indexed by key identifiers.
 	 *            If only one key, the index can be -1.
-	 * @param chipInfoMap
+	 * @param chipAuthenticationInfos
 	 *            the map of protocol identifiers for EAC indexed by key
 	 *            identifiers. If only one protocol identifier, the index can be
 	 *            -1.
@@ -104,20 +90,21 @@ public class DG14File extends DataGroup
 	 *            identifiers (can be empty)
 	 */
 	// FIXME: why not simply use the List<SecurityInfo>() constructor?
-	public DG14File(Map<Integer, PublicKey> publicKeys,
-			Map<Integer, DERObjectIdentifier> chipInfoMap,
+	public DG14File(
+			Map<Integer, PublicKey> chipAuthenticationPublicKeyInfos,
+			Map<Integer, String> chipAuthenticationInfos,
 			List<Integer> cvcaFileIdList,
 			Map<Integer, Integer> cvcaShortFileIdMap) {
 		super(EF_DG14_TAG);
-		if (publicKeys.size() == 0) {
+		if (chipAuthenticationPublicKeyInfos.size() == 0) {
 			throw new IllegalArgumentException("Need at least one key.");
 		}
-		securityInfos = new ArrayList<SecurityInfo>();
-		if (publicKeys.size() == 1 && publicKeys.containsKey(-1)) {
-			PublicKey publicKey = publicKeys.get(-1);
+		securityInfos = new HashSet<SecurityInfo>();
+		if (chipAuthenticationPublicKeyInfos.size() == 1 && chipAuthenticationPublicKeyInfos.containsKey(-1)) {
+			PublicKey publicKey = chipAuthenticationPublicKeyInfos.get(-1);
 			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
 		} else {
-			for (Map.Entry<Integer, PublicKey> entry: publicKeys.entrySet()) {
+			for (Map.Entry<Integer, PublicKey> entry: chipAuthenticationPublicKeyInfos.entrySet()) {
 				int i = entry.getKey();
 				PublicKey publicKey = entry.getValue();
 				if (i < 0) {
@@ -126,36 +113,44 @@ public class DG14File extends DataGroup
 				securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey, i));
 			}
 		}
-		if (chipInfoMap != null && chipInfoMap.size() > 0) {
-			if (chipInfoMap.size() == 1 && chipInfoMap.containsKey(-1)) {
-				securityInfos.add(new ChipAuthenticationInfo(chipInfoMap.get(-1).getId(),
+		if (chipAuthenticationInfos != null && chipAuthenticationInfos.size() > 0) {
+			if (chipAuthenticationInfos.size() == 1 && chipAuthenticationInfos.containsKey(-1)) {
+				securityInfos.add(new ChipAuthenticationInfo(chipAuthenticationInfos.get(-1),
 						ChipAuthenticationInfo.VERSION_NUM));
 			} else {
-				for (int i : chipInfoMap.keySet()) {
-					securityInfos.add(new ChipAuthenticationInfo(chipInfoMap.get(i).getId(),
+				for (int i : chipAuthenticationInfos.keySet()) {
+					securityInfos.add(new ChipAuthenticationInfo(chipAuthenticationInfos.get(i),
 							ChipAuthenticationInfo.VERSION_NUM, i));
 				}
 			}
 		}
 		if (cvcaFileIdList == null || cvcaFileIdList.size() == 0) {
-			securityInfos.add(new TerminalAuthenticationInfo(
-					EACObjectIdentifiers.id_TA.getId(),
-					TerminalAuthenticationInfo.VERSION_NUM));
+			securityInfos.add(new TerminalAuthenticationInfo(SecurityInfo.ID_TA_OID, TerminalAuthenticationInfo.VERSION_NUM));
 		} else {
 			for (Integer i : cvcaFileIdList) {
-				securityInfos.add(new TerminalAuthenticationInfo(i,
-						cvcaShortFileIdMap.containsKey(i) ? cvcaShortFileIdMap.get(i) : -1));
+				securityInfos.add(new TerminalAuthenticationInfo(i, cvcaShortFileIdMap.containsKey(i) ? cvcaShortFileIdMap.get(i) : -1));
 			}
 		}
 	}
-	
-	protected void writeContent(TLVOutputStream out) throws IOException {
+
+	protected void readContent(InputStream in) throws IOException {
+		securityInfos = new HashSet<SecurityInfo>();
+		ASN1InputStream asn1In = new ASN1InputStream(in);
+		DERSet set = (DERSet)asn1In.readObject();
+		for (int i = 0; i < set.size(); i++) {
+			DERObject object = set.getObjectAt(i).getDERObject();
+			SecurityInfo securityInfo = SecurityInfo.getInstance(object);
+			securityInfos.add(securityInfo);
+		}
+	}
+
+	protected void writeContent(OutputStream out) throws IOException {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
 		for (SecurityInfo si : securityInfos) {
 			vector.add(si.getDERObject());
 		}
 		DERSet derSet = new DERSet(vector);
-		out.writeValue(derSet.getDEREncoded());
+		out.write(derSet.getDEREncoded());
 	}
 
 	/**
@@ -202,12 +197,12 @@ public class DG14File extends DataGroup
 	 * 
 	 * @return the mapping of key identifiers to EAC protocol identifiers
 	 */
-	public Map<Integer, DERObjectIdentifier> getChipAuthenticationInfos() {
-		Map<Integer, DERObjectIdentifier> map = new TreeMap<Integer, DERObjectIdentifier>();
+	public Map<Integer, String> getChipAuthenticationInfos() {
+		Map<Integer, String> map = new TreeMap<Integer, String>();
 		for (SecurityInfo securityInfo : securityInfos) {
 			if (securityInfo instanceof ChipAuthenticationInfo) {
 				ChipAuthenticationInfo chipAuthNInfo = (ChipAuthenticationInfo)securityInfo;
-				map.put(chipAuthNInfo.getKeyId(), new DERObjectIdentifier(chipAuthNInfo.getObjectIdentifier()));
+				map.put(chipAuthNInfo.getKeyId(), chipAuthNInfo.getObjectIdentifier());
 				if (chipAuthNInfo.getKeyId() == -1) {
 					return map;
 				}
@@ -217,12 +212,12 @@ public class DG14File extends DataGroup
 	}
 
 	/**
-	 * Returns the mapping of key identifiers to public keys. The key identifier
+	 * Gets the mapping of key identifiers to public keys. The key identifier
 	 * may be -1 if there is only one key.
 	 * 
 	 * @return the mapping of key identifiers to public keys
 	 */
-	public Map<Integer, PublicKey> getPublicKeys() {
+	public Map<Integer, PublicKey> getChipAuthenticationPublicKeyInfos() {
 		Map<Integer, PublicKey> publicKeys = new TreeMap<Integer, PublicKey>();
 		boolean foundOne = false;
 		for (SecurityInfo securityInfo: securityInfos) {
@@ -236,7 +231,12 @@ public class DG14File extends DataGroup
 		return publicKeys;
 	}
 
-	public List<SecurityInfo> getSecurityInfos() {
+	/**
+	 * Gets the security infos as an unordered collection.
+	 * 
+	 * @return security infos
+	 */
+	public Collection<SecurityInfo> getSecurityInfos() {
 		return securityInfos;
 	}
 
@@ -248,8 +248,9 @@ public class DG14File extends DataGroup
 		if (obj == null) { return false; }
 		if (!(obj.getClass().equals(this.getClass()))) { return false; }
 		DG14File other = (DG14File)obj;
-		return (securityInfos == null && other.securityInfos == null)
-		|| (securityInfos != null && securityInfos.equals(other.securityInfos));
+		if (securityInfos == null) { return  other.securityInfos == null; }
+		if (other.securityInfos == null) { return securityInfos == null; }
+		return securityInfos.equals(other.securityInfos);
 	}
 
 	public int hashCode() {

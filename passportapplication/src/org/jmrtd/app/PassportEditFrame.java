@@ -25,12 +25,14 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,6 +53,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -63,6 +66,8 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.Icon;
@@ -86,6 +91,7 @@ import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
@@ -110,10 +116,14 @@ import org.jmrtd.lds.DG5File;
 import org.jmrtd.lds.DG6File;
 import org.jmrtd.lds.DG7File;
 import org.jmrtd.lds.DisplayedImageInfo;
+import org.jmrtd.lds.FaceImageInfo;
+import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
+import org.jmrtd.lds.ImageInfo;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
-import org.jmrtd.lds.PassportFile;
 import org.jmrtd.lds.SODFile;
 
 /**
@@ -147,13 +157,13 @@ public class PassportEditFrame extends JMRTDFrame
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
-	private DisplayPreviewPanel displayPreviewPanel;
+	private ImagePreviewPanel displayPreviewPanel;
 
 	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
-	private Passport passport;
+	private Passport<CommandAPDU, ResponseAPDU> passport;
 
 	private EACEvent eacEvent;
 
@@ -172,7 +182,7 @@ public class PassportEditFrame extends JMRTDFrame
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
 		panel.add(southPanel, BorderLayout.SOUTH);
-		displayPreviewPanel = new DisplayPreviewPanel(160, 200);
+		displayPreviewPanel = new ImagePreviewPanel(160, 200);
 		displayPreviewPanel.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				super.mouseClicked(e);
@@ -206,17 +216,18 @@ public class PassportEditFrame extends JMRTDFrame
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 
 			displayProgressBar();
-			switch (readingMode) {
-			case SAFE_MODE:
-				passport.verifySecurity(); // blocks
-				verificationIndicator.setStatus(passport.getVerificationStatus());
-				displayInputStreams(false);
-				break;
-			case PROGRESSIVE_MODE:
-				displayInputStreams(true);
-				break;
-			}
-			passport.verifySecurity();
+			//			switch (readingMode) {
+			//			case SAFE_MODE:
+			//				passport.verifySecurity(); // blocks
+			//				verificationIndicator.setStatus(passport.getVerificationStatus());
+			//				displayInputStreams();
+			//				break;
+			//			case PROGRESSIVE_MODE:
+			//				displayInputStreams();
+			//				break;
+			//			}
+			//			passport.verifySecurity();
+			displayInputStreams();
 			verificationIndicator.setStatus(passport.getVerificationStatus());
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
@@ -238,7 +249,7 @@ public class PassportEditFrame extends JMRTDFrame
 	 * Reads the datagroups and adds them to the GUI.
 	 * Assumes inputstreams in <code>passportFiles</code> are reset to beginning.
 	 */
-	private void displayInputStreams(boolean isProgressiveMode) {
+	private void displayInputStreams() {
 		try {
 			displayHolderInfo();
 		} catch (Exception e) {
@@ -259,13 +270,26 @@ public class PassportEditFrame extends JMRTDFrame
 					break;
 				case PassportService.EF_DG2:
 					DG2File dg2 = new DG2File(in);
-					List<FaceInfo> faces = dg2.getBiometricTemplates();
-					for (FaceInfo face: faces) { displayPreviewPanel.addDisplayedImage(face, isProgressiveMode); }
+					List<FaceInfo> faceInfos = dg2.getFaceInfos();
+					for (FaceInfo faceInfo: faceInfos) {
+						List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
+						for (FaceImageInfo faceImageInfo: faceImageInfos) {
+							displayPreviewPanel.addDisplayedImage(faceImageInfo);
+						}
+					}
 					break;
 				case PassportService.EF_DG3:
 					DG3File dg3 = new DG3File(in);
-					List<FingerInfo> fingers = dg3.getBiometricTemplates();
-					for (FingerInfo finger: fingers) { displayPreviewPanel.addDisplayedImage(finger, isProgressiveMode); }
+					if (eacEvent == null || !eacEvent.isSuccess()) {
+						LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
+					}
+					List<FingerInfo> fingerInfos = dg3.getFingerInfos();
+					for (FingerInfo fingerInfo: fingerInfos) {
+						List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
+						for (FingerImageInfo fingerImageInfo: fingerImageInfos) {
+							displayPreviewPanel.addDisplayedImage(fingerImageInfo);
+						}
+					}
 					break;
 				case PassportService.EF_DG4:
 					DG4File dg4 = new DG4File(in);
@@ -279,7 +303,7 @@ public class PassportEditFrame extends JMRTDFrame
 				case PassportService.EF_DG7:
 					DG7File dg7 = new DG7File(in);
 					List<DisplayedImageInfo> infos = dg7.getImages();
-					for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info, isProgressiveMode); }
+					for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info); }
 					break;
 				case PassportService.EF_DG11:
 					DG11File dg11 = new DG11File(in);
@@ -303,8 +327,8 @@ public class PassportEditFrame extends JMRTDFrame
 				default:
 					String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
 					if ((fid & 0x010F) == fid) {
-						int tag = PassportFile.lookupTagByFID(fid);
-						int dgNumber = PassportFile.lookupDataGroupNumberByTag(tag);
+						int tag = LDSFile.lookupTagByFID(fid);
+						int dgNumber = LDSFile.lookupDataGroupNumberByTag(tag);
 						message = "Displaying of DG" + dgNumber + " not supported!";
 					}
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
@@ -331,7 +355,7 @@ public class PassportEditFrame extends JMRTDFrame
 			if (eacEvent != null) {
 				terminalKey = eacEvent.getTerminalKey();
 				cvCertificates = eacEvent.getCVCertificates();
-				publicKeyMap = dg14.getPublicKeys();
+				publicKeyMap = dg14.getChipAuthenticationPublicKeyInfos();
 				cardPublicKeyId = eacEvent.getCardPublicKeyId();
 			} // TODO: else { default values }
 			createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
@@ -688,14 +712,14 @@ public class PassportEditFrame extends JMRTDFrame
 	}
 
 	private void viewPreviewImageAtOriginalSize() {
-		DisplayedImageInfo info = displayPreviewPanel.getSelectedDisplayedImage();
+		ImageInfo info = displayPreviewPanel.getSelectedDisplayedImage();
 		switch (info.getType()) {
 		case DisplayedImageInfo.TYPE_PORTRAIT:
 			try {
 				InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
 				DG2File dg2 = new DG2File(dg2In);
 
-				FaceInfo faceInfo = (FaceInfo)info;
+				FaceImageInfo faceInfo = (FaceImageInfo)info;
 				PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
 				portraitFrame.pack();
 				portraitFrame.setVisible(true);
@@ -704,12 +728,17 @@ public class PassportEditFrame extends JMRTDFrame
 			}
 			break;
 		default:
-			JFrame frame = new JFrame("Image");
-			ImagePanel imagePanel = new ImagePanel();
-			imagePanel.setImage(info.getImage());
-			frame.getContentPane().add(imagePanel);
-			frame.pack();
-			frame.setVisible(true);
+			try {
+				JFrame frame = new JFrame("Image");
+				Image image = ImageUtil.read(info.getImageInputStream(), info.getImageLength(), info.getMimeType());
+				ImagePanel imagePanel = new ImagePanel();
+				imagePanel.setImage(image);
+				frame.getContentPane().add(imagePanel);
+				frame.pack();
+				frame.setVisible(true);
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 			break;
 		}
 	}
@@ -723,7 +752,7 @@ public class PassportEditFrame extends JMRTDFrame
 				try {
 					InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
 					DG3File dg3 = new DG3File(dg3In);
-					List<FingerInfo> fingerPrints = dg3.getBiometricTemplates();
+					List<FingerInfo> fingerPrints = dg3.getFingerInfos();
 					FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerPrints);
 					fingerPrintFrame.setVisible(true);
 					fingerPrintFrame.pack();
@@ -760,19 +789,33 @@ public class PassportEditFrame extends JMRTDFrame
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.IMAGE_FILES_DIR_KEY, file.getParent());
 						BufferedImage image = ImageIO.read(file);
-
-						FaceInfo faceInfo = new FaceInfo(
+						ByteArrayOutputStream encodedImageOut = new ByteArrayOutputStream();
+						ImageUtil.write(image, "image/jpeg", encodedImageOut);
+						encodedImageOut.flush();
+						byte[] imageBytes = encodedImageOut.toByteArray();
+						int width = image.getWidth(), height = image.getHeight();
+						FaceImageInfo faceImageInfo = new FaceImageInfo(
 								Gender.UNSPECIFIED,
-								FaceInfo.EyeColor.UNSPECIFIED,
-								FaceInfo.HAIR_COLOR_UNSPECIFIED,
-								FaceInfo.EXPRESSION_UNSPECIFIED,
-								FaceInfo.SOURCE_TYPE_UNSPECIFIED,
-								image, "images/jpeg");
+								FaceImageInfo.EyeColor.UNSPECIFIED,
+								FaceImageInfo.HAIR_COLOR_UNSPECIFIED,
+								0x0000,
+								FaceImageInfo.EXPRESSION_UNSPECIFIED,
+								new int[3],
+								new int[3],
+								0x00, // color space
+								FaceImageInfo.FACE_IMAGE_TYPE_BASIC,
+								FaceImageInfo.SOURCE_TYPE_UNSPECIFIED,
+								0x0000,
+								0x0000, // quality
+								new FeaturePoint[0],
+								width, height,
+								imageBytes, FaceImageInfo.IMAGE_DATA_TYPE_JPEG);
+						FaceInfo faceInfo = new FaceInfo(Arrays.asList(new FaceImageInfo[] { faceImageInfo }));
 						InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
 						DG2File dg2 = new DG2File(dg2In);
 						dg2.addFaceInfo(faceInfo);
 						passport.putFile(PassportService.EF_DG2, dg2.getEncoded());
-						displayPreviewPanel.addDisplayedImage(faceInfo, false);
+						displayPreviewPanel.addDisplayedImage(faceImageInfo);
 					} catch (IOException ioe) {
 						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
@@ -1176,9 +1219,9 @@ public class PassportEditFrame extends JMRTDFrame
 							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
 						}
 						if (aaPublicKey != null) {
-							PrivateKey k = passport.getAAPrivateKey();
-							if(k != null) {
-								persoService.putPrivateKey(k);
+							PrivateKey aaPrivateKey = passport.getAAPrivateKey();
+							if(aaPrivateKey != null) {
+								persoService.putPrivateKey(aaPrivateKey);
 							}
 						}
 						if(passport.getCVCertificate() != null) {

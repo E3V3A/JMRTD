@@ -22,19 +22,16 @@
 
 package org.jmrtd.lds;
 
-import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
-
-import javax.imageio.ImageIO;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -72,8 +69,8 @@ public class DG12File extends DataGroup
 	private String nameOfOtherPerson;
 	private String endorseMentsAndObservations;
 	private String taxOrExitRequirements;
-	private BufferedImage imageOfFront;
-	private BufferedImage imageOfRear;
+	private byte[] imageOfFront;
+	private byte[] imageOfRear;
 	private Date dateAndTimeOfPersonalization;
 	private String personalizationSystemSerialNumber;
 
@@ -96,8 +93,8 @@ public class DG12File extends DataGroup
 	 */
 	public DG12File(String issuingAuthority, Date dateOfIssue,
 			String nameOfOtherPerson, String endorseMentsAndObservations,
-			String taxOrExitRequirements, BufferedImage imageOfFront,
-			BufferedImage imageOfRear, Date dateAndTimeOfPersonalization,
+			String taxOrExitRequirements, byte[] imageOfFront,
+			byte[] imageOfRear, Date dateAndTimeOfPersonalization,
 			String personalizationSystemSerialNumber) {
 		super(EF_DG12_TAG);
 		this.issuingAuthority = issuingAuthority;
@@ -121,7 +118,8 @@ public class DG12File extends DataGroup
 		super(EF_DG12_TAG, in);
 	}
 
-	protected void readContent(TLVInputStream tlvIn) throws IOException {	
+	protected void readContent(InputStream in) throws IOException {	
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
 		int length = tlvIn.readLength();
@@ -190,21 +188,11 @@ public class DG12File extends DataGroup
 	}
 
 	private void parseImageOfFront(byte[] value) {
-		try {
-			ByteArrayInputStream in = new ByteArrayInputStream(value);
-			imageOfFront =  ImageIO.read(in);
-		} catch (IOException ioe) {
-			throw new IllegalArgumentException(ioe.getMessage());
-		}
+		imageOfFront =  value;
 	}
 
 	private void parseImageOfRear(byte[] value) {
-		try {
-			ByteArrayInputStream in = new ByteArrayInputStream(value);
-			imageOfRear =  ImageIO.read(in);
-		} catch (IOException ioe) {
-			throw new IllegalArgumentException(ioe.getMessage());
-		}
+		imageOfRear =  value;
 	}
 
 	private void parseTaxOrExitRequirements(String in) {
@@ -273,14 +261,14 @@ public class DG12File extends DataGroup
 	/**
 	 * @return the imageOfFront
 	 */
-	public BufferedImage getImageOfFront() {
+	public byte[] getImageOfFront() {
 		return imageOfFront;
 	}
 
 	/**
 	 * @return the imageOfRear
 	 */
-	public BufferedImage getImageOfRear() {
+	public byte[] getImageOfRear() {
 		return imageOfRear;
 	}
 
@@ -306,7 +294,8 @@ public class DG12File extends DataGroup
 		return "DG12File";
 	}
 
-	protected void writeContent(TLVOutputStream tlvOut) throws IOException {
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
 		tlvOut.writeTag(TAG_LIST_TAG);
 		List<Integer> tags = getTagPresenceList();
 		DataOutputStream dataOut = new DataOutputStream(tlvOut);
@@ -331,12 +320,10 @@ public class DG12File extends DataGroup
 				tlvOut.writeValue(taxOrExitRequirements.trim().replace(' ', '<').getBytes());
 				break;
 			case IMAGE_OF_FRONT_TAG:
-				ImageIO.write(imageOfFront, "image/jpeg", tlvOut);
-				tlvOut.writeValueEnd(); /* IMAGE_OF_FRONT_TAG */
+				tlvOut.writeValue(imageOfFront);
 				break;
 			case IMAGE_OF_REAR_TAG:
-				ImageIO.write(imageOfRear, "image/jpeg", tlvOut);
-				tlvOut.writeValueEnd(); /* IMAGE_OF_REAR_TAG */
+				tlvOut.writeValue(imageOfRear);
 				break;
 			case DATE_AND_TIME_OF_PERSONALIZATION:
 				tlvOut.writeValue(Hex.hexStringToBytes(SDTF.format(dateAndTimeOfPersonalization)));

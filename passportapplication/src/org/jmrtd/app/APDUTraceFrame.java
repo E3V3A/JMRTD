@@ -51,7 +51,7 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-public class APDUTraceFrame extends JMRTDFrame implements APDUListener
+public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAPDU, ResponseAPDU>
 {
 	protected static final Icon CLEAR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("paintbrush"));
 	
@@ -85,7 +85,7 @@ public class APDUTraceFrame extends JMRTDFrame implements APDUListener
 		cp.add(toolBar, BorderLayout.NORTH);
 	}
 
-	public void exchangedAPDU(APDUEvent e) {
+	public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
 		CommandAPDU capdu = e.getCommandAPDU();
 		ResponseAPDU rapdu = e.getResponseAPDU();
 		area.append("C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");

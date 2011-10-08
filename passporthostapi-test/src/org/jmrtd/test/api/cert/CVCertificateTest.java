@@ -26,7 +26,7 @@ public class CVCertificateTest extends TestCase
 	public static final String filenameKey = "/d:/ca/cvcert/terminalkey.der";
 
 	public CVCertificateTest() {
-		Security.insertProviderAt(new JMRTDSecurityProvider(), 3);
+		Security.insertProviderAt(JMRTDSecurityProvider.getInstance(), 3);
 	}
 
 	private InputStream readTestFile() throws FileNotFoundException  {

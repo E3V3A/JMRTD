@@ -35,13 +35,17 @@ import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 
 import net.sourceforge.scuba.smartcards.APDUWrapper;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
+
+/*
+ * TODO: Can we use TLVInputStream instead of those readDOXX methods? -- MO
+ */
 
 /**
  * Secure messaging wrapper for apdus. Based on Section E.3 of ICAO-TR-PKI.
@@ -51,7 +55,7 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class SecureMessagingWrapper implements APDUWrapper, Serializable
+public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializable
 {
 	private static final long serialVersionUID = -2859033943345961793L;
 
@@ -126,7 +130,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 	 *
 	 * @return length of the command apdu after wrapping.
 	 */
-	public CommandAPDU wrap(CommandAPDU commandAPDU) {
+	public C wrap(C commandAPDU) {
 		try {
 			return wrapCommandAPDU(commandAPDU);
 		} catch (GeneralSecurityException gse) {
@@ -148,15 +152,16 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 	 * 
 	 * @return a new byte array containing the unwrapped buffer.
 	 */
-	public ResponseAPDU unwrap(ResponseAPDU responseAPDU, int len) {
+	public R unwrap(R responseAPDU, int len) {
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
 		try {
-			byte[] rapdu = responseAPDU.getBytes();
+			byte[] rapdu =  sc.accesR(responseAPDU).getBytes();
 			if (rapdu.length == 2) {
 				// no sense in unwrapping - card indicates SM error
 				throw new IllegalStateException("Card indicates SM error, SW = " + Hex.bytesToHexString(rapdu));
 				/* FIXME: wouldn't it be cleaner to throw a CardServiceException? */
 			}
-			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
+			return sc.createResponseAPDU(unwrapResponseAPDU(rapdu, len));
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
 			throw new IllegalStateException(gse.toString());
@@ -178,77 +183,79 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 	 */
 	/*@ requires apdu != null && 4 <= len && len <= apdu.length;
 	 */
-	private CommandAPDU wrapCommandAPDU(CommandAPDU c)
+	private C wrapCommandAPDU(C c)
 	throws GeneralSecurityException, IOException {
+		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		ICommandAPDU cAcc = sc.accesC(c);
 
-		int lc = c.getNc();
-		int le = c.getNe();
+		int lc = cAcc.getNc();
+		int le = cAcc.getNe();
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-		byte[] maskedHeader = new byte[] {(byte)(c.getCLA() | (byte)0x0C), (byte)c.getINS(), (byte)c.getP1(), (byte)c.getP2()};
+		byte[] maskedHeader = new byte[] {(byte)(cAcc.getCLA() | (byte)0x0C), (byte)cAcc.getINS(), (byte)cAcc.getP1(), (byte)cAcc.getP2()};
 
 		byte[] paddedHeader = Util.pad(maskedHeader);
 
-		boolean hasDO85 = ((byte)c.getINS() == ISO7816.INS_READ_BINARY2);
+		boolean hasDO85 = ((byte)cAcc.getINS() == ISO7816.INS_READ_BINARY2);
 
 		byte[] do8587 = new byte[0];
 		/* byte[] do8E = new byte[0]; */ /* FIXME: FindBugs told me this is a dead store -- MO */
 		byte[] do97 = new byte[0];
 
 		if (le > 0) {
-			out.reset();
-			out.write((byte) 0x97);
-			out.write((byte) 0x01);
-			out.write((byte) le);
-			do97 = out.toByteArray();
+			bOut.reset();
+			bOut.write((byte) 0x97);
+			bOut.write((byte) 0x01);
+			bOut.write((byte) le);
+			do97 = bOut.toByteArray();
 		}
 
 		if (lc > 0) {
-			byte[] data = Util.pad(c.getData());
+			byte[] data = Util.pad(cAcc.getData());
 			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
 			byte[] ciphertext = cipher.doFinal(data);
 
-			out.reset();
-			out.write(hasDO85 ? (byte) 0x85 : (byte) 0x87);
-			out.write(TLVUtil.getLengthAsBytes(ciphertext.length + (hasDO85 ? 0 : 1)));
-			if(!hasDO85) { out.write(0x01); };
-			out.write(ciphertext, 0, ciphertext.length);
-			do8587 = out.toByteArray();
+			bOut.reset();
+			bOut.write(hasDO85 ? (byte) 0x85 : (byte) 0x87);
+			bOut.write(TLVUtil.getLengthAsBytes(ciphertext.length + (hasDO85 ? 0 : 1)));
+			if(!hasDO85) { bOut.write(0x01); };
+			bOut.write(ciphertext, 0, ciphertext.length);
+			do8587 = bOut.toByteArray();
 		}
 
-		out.reset();
-		out.write(paddedHeader, 0, paddedHeader.length);
-		out.write(do8587, 0, do8587.length);
-		out.write(do97, 0, do97.length);
-		byte[] m = out.toByteArray();
+		bOut.reset();
+		bOut.write(paddedHeader, 0, paddedHeader.length);
+		bOut.write(do8587, 0, do8587.length);
+		bOut.write(do97, 0, do97.length);
+		byte[] m = bOut.toByteArray();
 
-		out.reset();
-		DataOutputStream dataOut = new DataOutputStream(out);
+		bOut.reset();
+		DataOutputStream dataOut = new DataOutputStream(bOut);
 		ssc++;
 		dataOut.writeLong(ssc);
 		dataOut.write(m, 0, m.length);
 		dataOut.flush();
-		byte[] n = Util.pad(out.toByteArray());
+		byte[] n = Util.pad(bOut.toByteArray());
 
 		/* Compute cryptographic checksum... */
 		mac.init(ksMac);
 		byte[] cc = mac.doFinal(n);
 
-		out.reset();
-		out.write((byte) 0x8E);
-		out.write(cc.length);
-		out.write(cc, 0, cc.length);
-		byte[] do8E = out.toByteArray();
+		bOut.reset();
+		bOut.write((byte) 0x8E);
+		bOut.write(cc.length);
+		bOut.write(cc, 0, cc.length);
+		byte[] do8E = bOut.toByteArray();
 
 		/* Construct protected apdu... */
-		out.reset();
-		out.write(do8587, 0, do8587.length);
-		out.write(do97, 0, do97.length);
-		out.write(do8E, 0, do8E.length);
-		byte[] data = out.toByteArray();
+		bOut.reset();
+		bOut.write(do8587);
+		bOut.write(do97);
+		bOut.write(do8E);
+		byte[] data = bOut.toByteArray();
 
-		CommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3], data, 256);
+		C wc = sc.createCommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3], data, 256);
 		return wc;
 	}
 
@@ -271,25 +278,25 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 				throw new IllegalArgumentException("Invalid response APDU");
 			}
 			cipher.init(Cipher.DECRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
-			DataInputStream in = new DataInputStream(new ByteArrayInputStream(rapdu));
+			DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(rapdu));
 			byte[] data = new byte[0];
 			short sw = 0;
 			boolean finished = false;
 			byte[] cc = null;
 			while (!finished) {
-				int tag = in.readByte();
+				int tag = inputStream.readByte();
 				switch (tag) {
 				case (byte) 0x87:
-					data = readDO87(in, false);
+					data = readDO87(inputStream, false);
 				break;
 				case (byte) 0x85:
-					data = readDO87(in, true);
+					data = readDO87(inputStream, true);
 				break;
 				case (byte) 0x99:
-					sw = readDO99(in);
+					sw = readDO99(inputStream);
 				break;
 				case (byte) 0x8E:
-					cc = readDO8E(in);
+					cc = readDO8E(inputStream);
 				finished = true;
 				break;
 				}
@@ -297,11 +304,11 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 			if (!checkMac(rapdu, cc)) {
 				throw new IllegalStateException("Invalid MAC");
 			}
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			out.write(data, 0, data.length);
-			out.write((sw & 0xFF00) >> 8);
-			out.write(sw & 0x00FF);
-			return out.toByteArray();
+			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+			bOut.write(data, 0, data.length);
+			bOut.write((sw & 0xFF00) >> 8);
+			bOut.write(sw & 0x00FF);
+			return bOut.toByteArray();
 		} finally {
 			/*
 			 * If we fail to unwrap, at least make sure we have the same counter
@@ -317,19 +324,19 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 	/**
 	 * The <code>0x87</code> tag has already been read.
 	 * 
-	 * @param in
+	 * @param inputStream
 	 *            inputstream to read from.
 	 */
-	private byte[] readDO87(DataInputStream in, boolean do85) throws IOException,
+	private byte[] readDO87(DataInputStream inputStream, boolean do85) throws IOException,
 	GeneralSecurityException {
 		/* Read length... */
 		int length = 0;
-		int buf = in.readUnsignedByte();
+		int buf = inputStream.readUnsignedByte();
 		if ((buf & 0x00000080) != 0x00000080) {
 			/* Short form */
 			length = buf;
 			if(!do85) {
-				buf = in.readUnsignedByte(); /* should be 0x01... */
+				buf = inputStream.readUnsignedByte(); /* should be 0x01... */
 				if (buf != 0x01) {
 					throw new IllegalStateException(
 							"DO'87 expected 0x01 marker, found "
@@ -340,10 +347,10 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 			/* Long form */
 			int lengthBytesCount = buf & 0x0000007F;
 			for (int i = 0; i < lengthBytesCount; i++) {
-				length = (length << 8) | in.readUnsignedByte();
+				length = (length << 8) | inputStream.readUnsignedByte();
 			}
 			if(!do85) {
-				buf = in.readUnsignedByte(); /* should be 0x01... */
+				buf = inputStream.readUnsignedByte(); /* should be 0x01... */
 				if (buf != 0x01) {
 					throw new IllegalStateException("DO'87 expected 0x01 marker");
 				}
@@ -354,7 +361,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 		}
 		/* Read, decrypt, unpad the data... */
 		byte[] ciphertext = new byte[length];
-		in.readFully(ciphertext);
+		inputStream.readFully(ciphertext);
 		byte[] paddedData = cipher.doFinal(ciphertext);
 		byte[] data = Util.unpad(paddedData);
 		return data;
@@ -396,15 +403,15 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable
 	private boolean checkMac(byte[] rapdu, byte[] cc1)
 	throws GeneralSecurityException {
 		try {
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			DataOutputStream dataOut = new DataOutputStream(out);
+			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+			DataOutputStream dataOut = new DataOutputStream(bOut);
 			ssc++;
 			dataOut.writeLong(ssc);
 			byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
 			dataOut.write(paddedData, 0, paddedData.length);
 			dataOut.flush();
 			mac.init(ksMac);
-			byte[] cc2 = mac.doFinal(out.toByteArray());
+			byte[] cc2 = mac.doFinal(bOut.toByteArray());
 			dataOut.close();
 			return Arrays.equals(cc1, cc2);
 		} catch (IOException ioe) {

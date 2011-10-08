@@ -22,6 +22,7 @@
 
 package org.jmrtd.cert;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CRL;
@@ -31,8 +32,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactorySpi;
 import java.util.Collection;
 
-import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 import org.ejbca.cvc.CVCObject;
 import org.ejbca.cvc.CertificateParser;
@@ -52,9 +53,13 @@ public class CVCertificateFactorySpi extends CertificateFactorySpi
 			if (tag != CV_CERTIFICATE_TAG) { throw new CertificateException("Expected CV_CERTIFICATE_TAG, found " + Integer.toHexString(tag)); }
 			/* int length = */ tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
-			byte[] data = (new BERTLVObject(tag, value)).getEncoded();
-
-			CVCObject parsedObject = CertificateParser.parseCertificate(data);
+			
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			TLVOutputStream tlvOut = new TLVOutputStream(out);
+			tlvOut.writeTag(CV_CERTIFICATE_TAG);
+			tlvOut.writeValue(value);
+			tlvOut.close();
+			CVCObject parsedObject = CertificateParser.parseCertificate(out.toByteArray());
 			return new CardVerifiableCertificate((org.ejbca.cvc.CVCertificate)parsedObject);
 		} catch (IOException ioe) {
 			throw new CertificateException(ioe.getMessage());

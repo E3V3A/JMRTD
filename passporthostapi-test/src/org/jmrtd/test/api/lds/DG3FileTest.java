@@ -21,15 +21,23 @@
 
 package org.jmrtd.test.api.lds;
 
-import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.security.AccessControlException;
+import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
+import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DG3File;
+import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 
 public class DG3FileTest extends TestCase
@@ -41,46 +49,196 @@ public class DG3FileTest extends TestCase
 		super(name);
 	}
 
+	public void testConstruct() {
+		try {
+			DG3File dg3 = new DG3File(Arrays.asList(new FingerInfo[] { }));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+	
 	public void testFile() {
 		try {
-			FileInputStream in = new FileInputStream(TEST_FILE);
-			DG3File dg3 = new DG3File(in);
-			for (FingerInfo fingerPrint: dg3.getBiometricTemplates()) {
-				BufferedImage image = fingerPrint.getImage();
-				System.out.println("DEBUG: fingerprint " + image.getWidth() + " x " + image.getHeight());
+			DG3File dg3 = getTestObject();
+			List<FingerInfo> recordInfos = dg3.getFingerInfos();
+			int recordCount = recordInfos.size();
+			int recordNumber = 1;
+			System.out.println("DEBUG: Number of finger records = " + recordCount);
+			for (FingerInfo record: recordInfos) {
+				List<FingerImageInfo> imageInfos = record.getFingerImageInfos();
+				int imageInfoCount = imageInfos.size();
+				System.out.println("DEBUG: Number of images in record " + recordNumber + " is " + imageInfoCount);
+				int imageInfoNumber = 1;
+				for (FingerImageInfo imageInfo: imageInfos) {
+					RenderedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
+					System.out.println("DEBUG: fingerprint " + imageInfoNumber + "/" + imageInfoCount + " in record " + recordNumber + "/" + recordCount + " has " + image.getWidth() + " x " + image.getHeight());
+				}
+				recordNumber ++;
 			}
-		} catch (FileNotFoundException fnfe) {
-			fnfe.printStackTrace();
-			fail(fnfe.getMessage());
+		} catch (AccessControlException ace) {
+			System.out.println("DEBUG: *************** could not get access to DG3 *********");
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
 	public void testDecodeEncode() {
 		try {
 			FileInputStream in = new FileInputStream(TEST_FILE);
+			testDecodeEncode(in);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			fail(e.toString());
+		}
+	}
+
+	public void testDecodeEncode(InputStream in) {
+		try {
 			DG3File dg3 = new DG3File(in);
-			
+
 			byte[] encoded = dg3.getEncoded();
+
+			FileOutputStream origOut = new FileOutputStream("t:/dg3orig.bin");			
+			origOut.write(encoded);
+			origOut.flush();
+			origOut.close();
+
 			assertNotNull(encoded);
-						
+
 			DG3File copy = new DG3File(new ByteArrayInputStream(encoded));
+
 			byte[] encodedCopy = copy.getEncoded();
-			
+
+			FileOutputStream copyOut = new FileOutputStream("t:/dg3copy.bin");			
+			copyOut.write(encodedCopy);
+			copyOut.flush();
+			copyOut.close();
+
+
 			assertNotNull(encodedCopy);
-			List<FingerInfo> dg3Infos = dg3.getBiometricTemplates();
-			List<FingerInfo> copyInfos = copy.getBiometricTemplates();
-			assertEquals(dg3Infos.size(), copyInfos.size());
-			for (int i = 0; i < dg3Infos.size(); i++) {
-				FingerInfo dg3Info = dg3Infos.get(i);
-				FingerInfo copyInfo = copyInfos.get(i);
-				BufferedImage dg3Image = dg3Info.getImage();
-				BufferedImage copyImage = copyInfo.getImage();
-				assertEquals(dg3Image.getHeight(), copyImage.getHeight());
-				assertEquals(dg3Image.getWidth(), copyImage.getWidth());
+			List<FingerInfo> fingerInfos = dg3.getFingerInfos();
+			int fingerInfoCount = fingerInfos.size();
+
+			List<FingerInfo> fingerInfos1 = copy.getFingerInfos();
+			int fingerInfoCount1 = fingerInfos1.size();
+
+			assertEquals(fingerInfoCount, fingerInfoCount1);
+
+			int fingerInfoIndex = 0;
+			for (FingerInfo fingerInfo: fingerInfos) {
+				List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
+				int fingerImageInfoCount = fingerImageInfos.size();
+				FingerInfo fingerInfo1 = fingerInfos1.get(fingerInfoIndex);
+				List<FingerImageInfo> fingerImageInfos1 = fingerInfo1.getFingerImageInfos();
+				int fingerImageInfoCount1 = fingerImageInfos1.size();
+				assertEquals(fingerImageInfoCount, fingerImageInfoCount1);
+				int fingerImageInfoIndex = 0;
+				for (FingerImageInfo fingerImageInfo: fingerImageInfos) {
+					FingerImageInfo fingerImageInfo1 = fingerImageInfos1.get(fingerImageInfoIndex);
+					RenderedImage image = ImageUtil.read(fingerImageInfo.getImageInputStream(), fingerImageInfo.getImageLength(), fingerImageInfo.getMimeType());
+					RenderedImage image1 = ImageUtil.read(fingerImageInfo1.getImageInputStream(), fingerImageInfo1.getImageLength(), fingerImageInfo1.getMimeType());
+					assertEquals(image.getHeight(), image1.getHeight());
+					assertEquals(image.getWidth(), image1.getWidth());
+					fingerImageInfoIndex ++;
+				}
+				fingerInfoIndex ++;
 			}
+		} catch (AccessControlException ace) {
+			System.out.println("DEBUG: could not access DG3, ignoring this DG3 file");
 		} catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
+		}
+	}
+
+	public void testElements() {
+		testElements(getTestObject());
+	}
+	
+	public void testElements(DG3File dg3File) {
+		FingerInfoTest fingerInfoTest = new FingerInfoTest("DG3FileTest#testElements");
+		List<FingerInfo> records = dg3File.getFingerInfos();
+		for (FingerInfo fingerInfo: records) {
+			fingerInfoTest.testEncodeDecode(fingerInfo);
+			fingerInfoTest.testFieldsReasonable(fingerInfo);
+			fingerInfoTest.testFieldsSameAfterReconstruct(fingerInfo);
+			fingerInfoTest.testReflexiveReconstruct(fingerInfo);
+			fingerInfoTest.testMandatorySBHFields(fingerInfo);
+			fingerInfoTest.testOptionalSBHFields(fingerInfo);
+			fingerInfoTest.testBiometricSubType(fingerInfo);
+			fingerInfoTest.testElements(fingerInfo);
+		}
+	}
+	
+	public void testFile(InputStream in) {
+		try {
+			testDecodeEncode(in);
+		} catch (Exception e) {
+			fail(e.toString());
+		}
+	}
+
+	public void testEncodeDecode() {
+		DG3File dg3 = getTestObject();
+		byte[] dg3Bytes = dg3.getEncoded();
+		assertNotNull(dg3Bytes);
+		
+		DG3File copy = new DG3File(new ByteArrayInputStream(dg3Bytes));
+		byte[] copyBytes = copy.getEncoded();
+		assertNotNull(copyBytes);
+		
+		assertTrue(Arrays.equals(dg3Bytes, copyBytes));
+	}
+	
+	public void testZeroInstanceTestObjectNotEquals() {
+		DG3File dg3 = new DG3File(new LinkedList<FingerInfo>());
+		byte[] dg3Bytes = dg3.getEncoded();
+		assertNotNull(dg3Bytes);
+		
+		DG3File anotherDG3 = new DG3File(new LinkedList<FingerInfo>());
+		byte[] anotherDG3Bytes = anotherDG3.getEncoded();
+		assertNotNull(anotherDG3Bytes);
+		
+		assertFalse(Arrays.equals(dg3Bytes, anotherDG3Bytes));
+		
+		DG3File copy = new DG3File(new ByteArrayInputStream(dg3Bytes));
+		byte[] copyBytes = copy.getEncoded();
+		assertNotNull(copyBytes);
+		
+		assertFalse(Arrays.equals(dg3Bytes, copyBytes));
+	}
+	
+	public void testCreate() {
+		DG3File dg3 = createTestObject();
+		byte[] header = new byte[256];
+		System.arraycopy(dg3.getEncoded(), 0, header, 0, header.length);
+		System.out.println(Hex.bytesToPrettyString(header));
+	}
+	
+	private DG3File createTestObject() {
+		try {
+			FingerInfo fingerInfo1 = FingerInfoTest.createSingleRightIndexFingerTestObject();
+//			FingerInfo fingerInfo2 = FingerInfoTest.createTestObject();
+			List<FingerInfo> fingerInfos = Arrays.asList(new FingerInfo[] { fingerInfo1, /* fingerInfo2 */ });
+			DG3File dg3 = new DG3File(fingerInfos);
+			return dg3;
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+			return null;
+		}
+	}
+	
+	private DG3File getTestObject() {
+		try {
+			FileInputStream in = new FileInputStream(TEST_FILE);
+			DG3File dg3 = new DG3File(in);
+			return dg3;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
 		}
 	}
 }

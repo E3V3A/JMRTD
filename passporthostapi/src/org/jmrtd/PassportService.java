@@ -32,8 +32,10 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -54,19 +56,19 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.FileInfo;
 import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.BERTLVObject;
 import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
+import org.spongycastle.asn1.ASN1InputStream;
+import org.spongycastle.asn1.DERInteger;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DERSequence;
+import org.spongycastle.jce.interfaces.ECPrivateKey;
 
 /**
  * Card service for reading files (such as data groups) and using the BAC and AA
@@ -85,14 +87,18 @@ import org.jmrtd.lds.MRZInfo;
  *        close()
  * </pre>
  * 
+ * @author Cees-Bart Breunesse (ceesb@riscure.com)
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision:352 $
  */
-public class PassportService extends PassportApduService implements Serializable
+public class PassportService<C, R> extends PassportApduService<C, R> implements Serializable
 {
 	private static final long serialVersionUID = 1751933705552226972L;
 
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
 
@@ -214,7 +220,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * @deprecated visibility will be set to private
 	 */
-	protected SecureMessagingWrapper wrapper;
+	protected SecureMessagingWrapper<C, R> wrapper;
 
 	private transient Signature aaSignature;
 	private transient MessageDigest aaDigest;
@@ -233,15 +239,11 @@ public class PassportService extends PassportApduService implements Serializable
 	 *             when the available JCE providers cannot provide the necessary
 	 *             cryptographic primitives.
 	 */
-	public PassportService(CardService service) throws CardServiceException {
+	public PassportService(CardService<C,R> service) throws CardServiceException {
 		super(service);
 		try {
-			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2"); /*
-			 * FIXME:
-			 * SHA1WithRSA
-			 * also
-			 * works ?
-			 */
+			Security.insertProviderAt(BC_PROVIDER, 1); /* FIXME: not needed here? */
+			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
@@ -366,12 +368,12 @@ public class PassportService extends PassportApduService implements Serializable
 			if ("DH".equals(algName)) {
 				DHPublicKey k = (DHPublicKey) keyPair.getPublic();
 				keyData = k.getY().toByteArray();
-				// TODO: this is proabably wrong, what should be hased?
+				// TODO: this is probably wrong, what should be hashed?
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.bouncycastle.jce.interfaces.ECPublicKey k =
-					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+				org.spongycastle.jce.interfaces.ECPublicKey k =
+					(org.spongycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = k.getQ().getEncoded();
 				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, k.getParameters().getCurve().getFieldSize() / 8);
@@ -423,11 +425,18 @@ public class PassportService extends PassportApduService implements Serializable
 					}
 					sendMSEDST(wrapper, certRef);
 					byte[] body = cert.getCertBodyData();
-					byte[] sig = (new BERTLVObject(TAG_CVCERTIFICATE_SIGNATURE, cert.getSignature())).getEncoded();
+					ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
+					TLVOutputStream tlvSigOut = new TLVOutputStream(sigOut);
+					tlvSigOut.writeTag(TAG_CVCERTIFICATE_SIGNATURE);
+					tlvSigOut.writeValue(cert.getSignature());
+					tlvSigOut.close();
+					byte[] sig = sigOut.toByteArray();
+					
+					
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
 					// certificate
-					// is too big to fit into one APDU).
+					// is too big to fit into one APDU). FIXME: What boolean are we referring to here? -- MO
 					sendPSOExtendedLengthMode(wrapper, body, sig);
 					sigAlg = cert.getPublicKey().getAlgorithm();
 					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes());
@@ -457,7 +466,8 @@ public class PassportService extends PassportApduService implements Serializable
 			sig.update(dtbs.toByteArray());
 			byte[] signature = sig.sign();
 			if (sigAlg.endsWith("ECDSA")) {
-				signature = getRawECDSASignature(signature, ((ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8);
+				int keySize = ((ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8;
+				signature = getRawECDSASignature(signature, keySize);
 			}
 
 			sendMSEAT(wrapper, certRef); // shouldn't this be before the
@@ -695,7 +705,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @return the wrapper
 	 */
-	public SecureMessagingWrapper getWrapper() {
+	public SecureMessagingWrapper<C, R> getWrapper() {
 		return wrapper;
 	}
 
@@ -704,7 +714,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @param wrapper
 	 *            wrapper
 	 */
-	public void setWrapper(SecureMessagingWrapper wrapper) {
+	public void setWrapper(SecureMessagingWrapper<C, R> wrapper) {
 		this.wrapper = wrapper;
 		BACEvent event = new BACEvent(this, null, null, null, null, true);
 		notifyBACPerformed(event);
@@ -721,7 +731,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @throws IOException
 	 *             if the file cannot be read
 	 */
-	public CardFileInputStream readFile(short fid) throws CardServiceException{
+	public CardFileInputStream readFile(short fid) throws CardServiceException {
 		fs.selectFile(fid);
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
@@ -729,7 +739,7 @@ public class PassportService extends PassportApduService implements Serializable
 	private class PassportFileSystem implements FileSystemStructured, Serializable
 	{
 		private static final long serialVersionUID = -4357282016708205020L;
-		
+
 		private PassportFileInfo selectedFile;
 
 		public synchronized byte[] readBinary(int offset, int length)

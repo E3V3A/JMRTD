@@ -22,54 +22,50 @@
 
 package org.jmrtd.lds;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.List;
+
+import org.jmrtd.cbeff.BiometricDataBlock;
+import org.jmrtd.cbeff.BiometricDataBlockDecoder;
+import org.jmrtd.cbeff.BiometricDataBlockEncoder;
+import org.jmrtd.cbeff.CBEFFInfo;
+import org.jmrtd.cbeff.ComplexCBEFFInfo;
+import org.jmrtd.cbeff.ISO781611Decoder;
+import org.jmrtd.cbeff.ISO781611Encoder;
+import org.jmrtd.cbeff.SimpleCBEFFInfo;
+import org.jmrtd.cbeff.StandardBiometricHeader;
 
 /**
  * File structure for the EF_DG4 file.
- * Based on ISO/IEC FCD 19794-6 (Biometric Data Interchange Formats.
- * Part 6: Iris Image Data) aka Annex E.
+ * Based on ISO/IEC 19794-6.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
-public class DG4File extends CBEFFDataGroup
-{	
-	private static final byte[] FORMAT_IDENTIFIER = { 'I', 'I', 'R', 0x00 };
-	private static final byte[] VERSION_NUMBER = { '0', '1', '0', 0x00 };
-	
-	private static int
-	IMAGE_QUAL_UNDEF = 0xFE, /* (decimal 254) */
-	IMAGE_QUAL_LOW_LO = 0x1A,
-	IMAGE_QUAL_LOW_HI = 0x32, /* (decimal 26-50) */
-	IMAGE_QUAL_MED_LO = 0x33,
-	IMAGE_QUAL_MED_HI = 0x4B, /* (decimal 51-75) */
-	IMAGE_QUAL_HIGH_LO = 0x4C,
-	IMAGE_QUAL_HIGH_HI = 0x64; /* (decimal 76-100) */
-	
-	/** Feature identifiers */
-	private static int
-	EYE_UNDEF = 0,
-	EYE_RIGHT = 1,
-	EYE_LEFT = 2;
+public class DG4File extends CBEFFDataGroup<IrisInfo> {
 
-	private List<IrisInfo> irisInfos;
+	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<IrisInfo>() {
+		public IrisInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
+			return new IrisInfo(sbh, in);
+		}
+	});
 	
-	/* TODO: many more constants here, amongst others bitfields... */
+	private static final ISO781611Encoder<IrisInfo> ENCODER = new ISO781611Encoder<IrisInfo>(new BiometricDataBlockEncoder<IrisInfo>() {
+		public void encode(IrisInfo info, OutputStream out) throws IOException {
+			info.writeObject(out);
+		}
+	});
 	
 	/**
-	 * Creates a new file with zero images.
+	 * Creates a new file with the specified records.
+	 * 
+	 * @param irisInfos records
 	 */
-	public DG4File() {
-		super(EF_DG4_TAG, BIOMETRIC_DATA_BLOCK_TAG);
-		if (irisInfos == null) { irisInfos = new ArrayList<IrisInfo>(); }
-		isSourceConsistent = false;
+	public DG4File(List<IrisInfo> irisInfos) {
+		super(EF_DG4_TAG, irisInfos);
 	}
 	
 	/**
@@ -81,128 +77,51 @@ public class DG4File extends CBEFFDataGroup
 		super(EF_DG4_TAG, in);
 	}
 	
-	public List<IrisInfo> getBiometricTemplates() {
-		return irisInfos;
+	protected void readContent(InputStream in) throws IOException {
+		ComplexCBEFFInfo cbeffInfo = DECODER.decode(in);
+		List<CBEFFInfo> records = cbeffInfo.getSubRecords();
+		for (CBEFFInfo record: records) {
+			if (!(record instanceof SimpleCBEFFInfo<?>)) {
+				throw new IOException("Was expecting a SimpleCBEFFInfo, found " + record.getClass().getSimpleName());
+			}
+			BiometricDataBlock bdb = ((SimpleCBEFFInfo<?>)record).getBiometricDataBlock();
+			if (!(bdb instanceof IrisInfo)) {
+				throw new IOException("Was expecting an IrisInfo, found " + bdb.getClass().getSimpleName());
+			}
+			IrisInfo irisInfo = (IrisInfo)bdb;
+			add(irisInfo);
+		}
+		
+		/* FIXME: by symmetry, shouldn't there be a readOptionalRandomData here? */
 	}
 
-	public int getBiometricTemplateCount() {
-		return irisInfos == null ? 0 : irisInfos.size();
+	protected void writeContent(OutputStream out) throws IOException {
+		ComplexCBEFFInfo cbeffInfo = new ComplexCBEFFInfo();
+		List<IrisInfo> irisInfos = getSubRecords();
+		for (IrisInfo irisInfo: irisInfos) {
+			SimpleCBEFFInfo<IrisInfo> simpleCBEFFInfo = new SimpleCBEFFInfo<IrisInfo>(irisInfo);
+			cbeffInfo.add(simpleCBEFFInfo);
+		}
+		ENCODER.encode(cbeffInfo, out);
+		
+		/* NOTE: Supplement to ICAO Doc 9303 R7-p1_v2_sIII_0057. */
+		writeOptionalRandomData(out);
 	}
 	
-	public BiometricTemplate getBiometricTemplate(int index) {
-		return irisInfos.get(index);
-	}
-
 	/**
 	 * Gets a textual representation of this file.
 	 * 
 	 * @return a textual representation of this file
 	 */
 	public String toString() {
-		return "DG4File";
-	}
-
-	/**
-	 * Reads biometric data block.
-	 * Based on ISO/IEC FCD 19794-4 aka Annex F.
-	 * 
-	 * TODO: work in progress... -- MO
-	 */
-	protected void readBiometricData(InputStream in, int valueLength) throws IOException {
-		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
-
-		/* Iris Record Header (61) */
-		int iir0 = dataIn.readInt(); /* header (e.g. "IIR", 0x00) (4) */
-		if (iir0 != 0x49495200) { throw new IllegalArgumentException("'IIR0' marker expected! Found " + Integer.toHexString(iir0)); }
-		/* int version = */ dataIn.readInt(); /* version in ASCII (e.g. "010" 0x00) (4) */
-		/* long length = */ dataIn.readInt(); /* & 0x00000000FFFFFFFFL (4) */;
-		/* int captureDeviceID = */ dataIn.readUnsignedShort(); /* (2) */
-		int irisFeatureCount = dataIn.readUnsignedByte(); /* (1) */
-		/* int recordHeaderLength = */ dataIn.readUnsignedShort(); /* Should be 61? (2) */
-		/* int imagePropertiesBits = */ dataIn.readUnsignedShort(); /* (2) */
-		/* int irisDiameter = */ dataIn.readUnsignedShort(); /* (2) */
-		int imageFormat = dataIn.readUnsignedShort(); /* (2) */
-		/* int rawImageWidth = */ dataIn.readUnsignedShort(); /* (2) */
-		/* int rawImageHeight = */ dataIn.readUnsignedShort(); /* (2) */
-		/* int intensityDepth = */ dataIn.readUnsignedByte(); /* (1) */
-		/* int imageTransform = */ dataIn.readUnsignedByte(); /* (1) */
-
-		/*
-		 * A 16 character string uniquely identifying the
-		 * device or source of the data. This data can be
-		 * one of:
-		 * Device Serial number, identified by the first character "D"
-		 * Host PC Mac address, identified by the first character "M"
-		 * Host PC processor ID, identified by the first character "P"
-		 * No serial number, identified by all zeros
-		 */
-		byte[] deviceUniqueID = new byte[16]; /* (16) */
-		dataIn.readFully(deviceUniqueID);
-
-		byte[] globallyUniqueID = new byte[16]; /* (16) */
-		dataIn.readFully(globallyUniqueID);
-		
-		/* Features */
-		for (int featureIndex = 0; featureIndex < irisFeatureCount; featureIndex++) {
-			readIrisFeature(dataIn, featureIndex, imageFormat);
-		}
+		return "DG4File [" + super.toString() + "]";
 	}
 	
-	private void readIrisFeature(DataInputStream dataIn, int featureIndex, int imageFormat) throws IOException {
-		/* Iris feature header */
-		/* int featureID = */ dataIn.readUnsignedByte();
-		int imageCount = dataIn.readUnsignedShort();
-		
-		/* Images */
-		for (int imageIndex = 0; imageIndex < imageCount; imageIndex++) {
-			addIrisInfo(new IrisInfo(dataIn, imageFormat));
-		}
+	public boolean isSubTypeMandatory() {
+		return true;
 	}
 	
-	private void addIrisInfo(IrisInfo irisInfo) {
-		if (irisInfos == null) { irisInfos = new ArrayList<IrisInfo>(); }
-		irisInfos.add(irisInfo);
-	}
-
-	protected void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException { // FIXME
-		DataOutputStream dataOut = (out instanceof DataOutputStream) ? (DataOutputStream)out : new DataOutputStream(out);
-
-		/* Iris Record Header (61) */
-		dataOut.write(FORMAT_IDENTIFIER); /* header (e.g. "IIR", 0x00) (4) */
-		dataOut.write(VERSION_NUMBER); /* version in ASCII (e.g. "010" 0x00) (4) */
-		
-		long length = 0L; // FIXME
-		dataOut.write((int)length);
-		
-		int captureDeviceId = 0; // FIXME
-		int irisFeatureCount = 0; // FIXME
-		int recordHeaderLength = 0; // FIXME
-		int imagePropertiesBits = 0; // FIXME
-		int irisDiameter = 0; // FIXME
-		int imageFormat = 0; // FIXME
-		int rawImageWidth = 0; // FIXME
-		int rawImageHeight = 0; // FIXME
-		int intensityDepth = 0; // FIXME
-		int imageTransform = 0; // FIXME
-		byte[] deviceUniqueId = new byte[16];
-		byte[] globallyUniqueId = new byte[16];
-		
-		dataOut.writeShort(captureDeviceId);
-		dataOut.writeByte(irisFeatureCount);
-		dataOut.writeShort(recordHeaderLength);
-		dataOut.writeShort(imagePropertiesBits);
-		dataOut.writeShort(irisDiameter);
-		dataOut.writeShort(imageFormat);
-		dataOut.writeShort(rawImageWidth);
-		dataOut.writeShort(rawImageHeight);
-		dataOut.writeByte(intensityDepth);
-		dataOut.writeByte(imageTransform);
-		dataOut.write(deviceUniqueId); /* byte[] of length 16 */
-		dataOut.write(globallyUniqueId);  /* byte[] of length 16 */
-				
-		/* Features */
-		for (int featureIndex = 0; featureIndex < irisFeatureCount; featureIndex++) {
-//			writeIrisFeature(dataOut, featureIndex, imageFormat);
-		}
-	}
+	public List<IrisInfo> getIrisInfos() { return getSubRecords(); }
+	public void addIrisInfo(IrisInfo irisInfo) { add(irisInfo); }
+	public void removeIrisInfo(int index) { remove(index); }
 }

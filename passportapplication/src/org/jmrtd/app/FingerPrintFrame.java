@@ -42,7 +42,9 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.ImageUtil;
 
+import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 
 /**
@@ -71,9 +73,9 @@ public class FingerPrintFrame extends JMRTDFrame
 		this("FingerPrints", fingerPrints);
 	}
 
-	public FingerPrintFrame(String title, List<FingerInfo> fingerPrints) {
+	public FingerPrintFrame(String title, List<FingerInfo> fingerInfos) {
 		super(title);
-		this.fingerPrints = new ArrayList<FingerInfo>(fingerPrints);
+		this.fingerPrints = new ArrayList<FingerInfo>(fingerInfos);
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
@@ -84,11 +86,14 @@ public class FingerPrintFrame extends JMRTDFrame
 		/* Frame content */
 		try {
 			JTabbedPane tabbedPane = new JTabbedPane();
-			for (FingerInfo fingerPrint: fingerPrints) {
-				Image image = fingerPrint.getImage();
-				ImagePanel imagePanel = new ImagePanel();
-				imagePanel.setImage(image);
-				tabbedPane.addTab("f", imagePanel);				
+			for (FingerInfo fingerInfo: fingerInfos) {
+				List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
+				for (FingerImageInfo fingerImageInfo: fingerImageInfos) {
+					Image image = ImageUtil.read(fingerImageInfo.getImageInputStream(), fingerImageInfo.getImageLength(), fingerImageInfo.getMimeType());
+					ImagePanel imagePanel = new ImagePanel();
+					imagePanel.setImage(image);
+					tabbedPane.addTab("f", imagePanel);
+				}
 			}
 			Container cp = getContentPane();
 			cp.add(tabbedPane);

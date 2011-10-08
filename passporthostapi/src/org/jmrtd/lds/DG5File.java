@@ -35,7 +35,7 @@ import java.util.List;
 public class DG5File extends DisplayedImageDataGroup
 {
 	public DG5File(List<DisplayedImageInfo> images) {
-		super(EF_DG5_TAG, images, DISPLAYED_PORTRAIT_TAG);
+		super(EF_DG5_TAG, images, DisplayedImageInfo.DISPLAYED_PORTRAIT_TAG);
 	}
 	
 	public DG5File(InputStream in) {

@@ -22,63 +22,48 @@
 
 package org.jmrtd.lds;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 
+import org.jmrtd.cbeff.BiometricDataBlock;
+import org.jmrtd.cbeff.ISO781611;
+
 /**
- * File structure for Common Biometric Exchange File Format (CBEFF) formated files.
- * Abstract super class for DG2 - DG4.
- * 
- * Some information based on ISO/IEC 7816-11:2004(E) and/or
- * NISTIR 6529-A.
+ * Datagroup containing list of biometric information templates (BITs).
+ * The {@link DG2File}, {@link DG3File}, and {@link DG4File} datagroups
+ * are based on this type.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
+ * @param <R> the type of the elements
+ * 
  * @version $Revision$
  */
-abstract class CBEFFDataGroup extends DataGroup
+abstract class CBEFFDataGroup<R extends BiometricDataBlock> extends DataGroup
 {
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	protected static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
-	static final int BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG = 0x7F61;
-	static final int BIOMETRIC_INFORMATION_TEMPLATE_TAG = 0x7F60;
-
-	static final int BIOMETRIC_INFO_COUNT_TAG = 0x02;
-	static final int BIOMETRIC_HEADER_TEMPLATE_BASE_TAG = (byte) 0xA1;
-	static final int BIOMETRIC_DATA_BLOCK_TAG = 0x5F2E;
-	static final int BIOMETRIC_DATA_BLOCK_TAG_ALT = 0x7F2E;
-
-	private static final int FORMAT_OWNER_TAG = 0x87, FORMAT_TYPE_TAG = 0x88;
-	private static final byte[] FORMAT_OWNER_VALUE = { 0x01, 0x01 }, FORMAT_TYPE_VALUE = { 0x00, 0x08 };
+	private Random random;
 	
-	/** From ISO7816-11: Secure Messaging Template tags. */
-	static final int
-	SMT_TAG = 0x7D,
-	SMT_DO_PV = 0x81,
-	SMT_DO_CG = 0x85,
-	SMT_DO_CC = 0x8E,
-	SMT_DO_DS = 0x9E;
+	/** Records in the BIT group. Each record represents a single BIT. */
+	private List<R> subRecords;
 
-	private int biometricDataBlockTag;
-
-	protected CBEFFDataGroup(int dataGroupTag, int biometricDataBlockTag) {
+	CBEFFDataGroup(int dataGroupTag, List<R> subRecords) {
 		super(dataGroupTag);
-		if (biometricDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG && biometricDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT) {
-			throw new IllegalArgumentException("Biometric data group tag should be either " + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG) + " or " + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG_ALT) + ".");
-		}
-		this.biometricDataBlockTag = biometricDataBlockTag;
+		addAll(subRecords);
+		this.random = new Random();
 	}
 	
 	/**
-	 * Constructs a CBEFFDataGroup instance.
+	 * Constructs an instance.
 	 * 
 	 * @param in an input stream
 	 * @param dataGroupTag the datagroup tag to use
@@ -86,175 +71,87 @@ abstract class CBEFFDataGroup extends DataGroup
 	 */
 	CBEFFDataGroup(int dataGroupTag, InputStream in) {
 		super(dataGroupTag, in);
-		
+		this.random = new Random();
 	}
-	
-	public abstract List<? extends BiometricTemplate> getBiometricTemplates();
-	
-	public abstract BiometricTemplate getBiometricTemplate(int index);
-	
-	public abstract int getBiometricTemplateCount();
-	
-	protected void readContent(TLVInputStream tlvIn) throws IOException {	
-		int bioInfoGroupTemplateTag = tlvIn.readTag();
-		if (bioInfoGroupTemplateTag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoGroupTemplateTag));
-		}
-		tlvIn.readLength();
-		int bioInfoCountTag = tlvIn.readTag();
-		if (bioInfoCountTag != BIOMETRIC_INFO_COUNT_TAG) { /* 02 */
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFO_COUNT_TAG (" + Integer.toHexString(BIOMETRIC_INFO_COUNT_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bioInfoCountTag));
-		}
-		int tlvBioInfoCountLength = tlvIn.readLength();
-		if (tlvBioInfoCountLength != 1) {
-			throw new IllegalArgumentException("BIOMETRIC_INFO_COUNT should have length 1, found length " + tlvBioInfoCountLength);
-		}
-		int bioInfoCount = (tlvIn.readValue()[0] & 0xFF);
-		LOGGER.info("bioInfoCount = " + bioInfoCount);
-		for (int i = 0; i < bioInfoCount; i++) {
-			readBIT(tlvIn, i);
+
+	void add(R record) {
+		if (subRecords == null) { subRecords = new ArrayList<R>(); }
+		subRecords.add(record);
+	}
+
+	void addAll(List<R> records) {
+		if (subRecords == null) { subRecords = new ArrayList<R>(); }
+		subRecords.addAll(records);
+	}
+
+	void remove(int index) {
+		if (subRecords == null) { subRecords = new ArrayList<R>(); }
+		subRecords.remove(index);		
+	}
+
+	List<R> getSubRecords() {
+		if (subRecords == null) { subRecords = new ArrayList<R>(); }
+		return new ArrayList<R>(subRecords);
+	}
+
+	public boolean equals(Object other) {
+		if (other == null) { return false; }
+		if (other == this) { return true; }
+		if (!(other instanceof CBEFFDataGroup<?>)) { return false; }
+		try {
+			@SuppressWarnings("unchecked")
+			CBEFFDataGroup<R> otherDG = (CBEFFDataGroup<R>)other;
+			List<R> subRecords = getSubRecords();
+			List<R> otherSubRecords = otherDG.getSubRecords();
+			int subRecordCount = subRecords.size();
+			if (subRecordCount != otherSubRecords.size()) { return false; }
+			for (int i = 0; i < subRecordCount; i++) {
+				R subRecord = subRecords.get(i);
+				R otherSubRecord = otherSubRecords.get(i);
+				if (subRecord == null) {
+					if (otherSubRecord != null) {
+						return false;
+					}
+				} else if (!subRecord.equals(otherSubRecord)) {
+					return false;
+				}
+			}
+			return true;
+		} catch (ClassCastException cce) {
+			return false;
 		}
 	}
 
-	private void readBIT(TLVInputStream tlvIn, int templateIndex) throws IOException {
-		int bioInfoTemplateTag = tlvIn.readTag();
-		if (bioInfoTemplateTag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(bioInfoTemplateTag));
+	public int hashCode() {
+		int result = 1234567891;
+		List<R> subRecords = getSubRecords();
+		for (R record: subRecords) {
+			if (record == null) {
+				result = 3 * result + 5;
+			} else {
+			result = 5 * (result + record.hashCode()) + 7;
+			}
 		}
-		tlvIn.readLength();
-
-		int headerTemplateTag = tlvIn.readTag();
-		int headerTemplateLength = tlvIn.readLength();
-		
-		if ((headerTemplateTag == SMT_TAG)) {
-			/* The BIT is protected... */
-			readStaticallyProtectedBIT(headerTemplateTag, headerTemplateLength, templateIndex, tlvIn);
-		} else if ((headerTemplateTag & 0xA0) == 0xA0) {
-			readBHT(headerTemplateTag, headerTemplateLength, templateIndex, tlvIn);
-			readBiometricDataBlock(tlvIn);
-		} else {
-			throw new IllegalArgumentException("Unsupported template tag: " + Integer.toHexString(headerTemplateTag));
-		}
-	}
-	
-	/**
-	 *  A1, A2, ...
-	 *  Will contain DOs as described in ISO 7816-11 Annex C.
-	 */
-	private void readBHT(int headerTemplateTag, int headerTemplateLength, int templateIndex, TLVInputStream tlvIn) throws IOException {
-		int expectedBioHeaderTemplateTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + templateIndex) & 0xFF;
-		if (headerTemplateTag != expectedBioHeaderTemplateTag) {
-			String warning = "Expected tag BIOMETRIC_HEADER_TEMPLATE_TAG (" + Integer.toHexString(expectedBioHeaderTemplateTag) + "), found " + Integer.toHexString(headerTemplateTag);
-			if (LOGGER != null) { LOGGER.warning(warning); }
-			// throw new IllegalArgumentException(warning);
-		}
-		/* We'll just skip this header for now. */
-		long skippedBytes = 0;
-		while (skippedBytes < headerTemplateLength) { skippedBytes += tlvIn.skip(headerTemplateLength - skippedBytes); }
+		return 7 * result + 11;
 	}
 
 	/**
-	 * Reads a biometric information template protected with secure messaging.
-	 * Described in ISO7816-11 Annex D.
-	 *
-	 * @param tag should be <code>0x7D</code>
-	 * @param length the length of the BIT
-	 * @param templateIndex index of the template
-	 * @param tlvIn source to read from
-	 *
-	 * @throws IOException on failure
-	 */
-	private void readStaticallyProtectedBIT(int tag, int length, int templateIndex, TLVInputStream tlvIn) throws IOException {
-		TLVInputStream tlvBHTIn = new TLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
-		int headerTemplateTag = tlvBHTIn.readTag();
-		int headerTemplateLength = tlvBHTIn.readLength();
-		readBHT(headerTemplateTag, headerTemplateLength, templateIndex, tlvBHTIn);
-		TLVInputStream tlvBiometricDataBlockIn = new TLVInputStream(new ByteArrayInputStream(decodeSMTValue(tlvIn)));
-		readBiometricDataBlock(tlvBiometricDataBlockIn);
-	}
-
-	private byte[] decodeSMTValue(TLVInputStream tlvIn) throws IOException {
-		int doTag = tlvIn.readTag();
-		int doLength = tlvIn.readLength();
-		switch (doTag) {
-		case SMT_DO_PV /* 0x81 */:
-			/* NOTE: Plain value, just return whatever is in the payload */
-			return tlvIn.readValue();
-		case SMT_DO_CG /* 0x85 */:
-			/* NOTE: content of payload is encrypted */
-			return tlvIn.readValue();
-		case SMT_DO_CC /* 0x8E */:
-			/* NOTE: payload contains a MAC */
-			long skippedBytes = 0;
-			while (skippedBytes < doLength) { skippedBytes += tlvIn.skip(doLength); }
-			break;
-		case SMT_DO_DS /* 0x9E */:
-			/* NOTE: payload contains a signature */
-			skippedBytes = 0;
-			while (skippedBytes < doLength) { skippedBytes += tlvIn.skip(doLength); }
-			break;
-		}
-		return null;
-	}
-
-	private void readBiometricDataBlock(TLVInputStream tlvIn) throws IOException {
-		int bioDataBlockTag = tlvIn.readTag();
-		if (bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */ &&
-				bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG_ALT /* 7F2E */) {
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_DATA_BLOCK_TAG (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG) + ") or BIOMETRIC_DATA_BLOCK_TAG_ALT (" + Integer.toHexString(BIOMETRIC_DATA_BLOCK_TAG_ALT) + "), found " + Integer.toHexString(bioDataBlockTag));
-		}
-		this.biometricDataBlockTag = bioDataBlockTag;
-		int length = tlvIn.readLength();
-		readBiometricData(tlvIn, length);
-	}
-
-	/**
-	 * Reads the contents of the biometric data block. This method should be implemented by concrete
-	 * subclasses (DG2 - DG4 structures). It is assumed that the caller has already read
-	 * the biometric data block tag (5F2E or 7F2E) and the length.
+	 * Concrete implementations of EAC protected CBEFF DataGroups should call this
+	 * method at the end of their {@link #writeContent(OutputStream)} method to add
+	 * some random data if the record contains zero biometric templates.
+	 * See supplement to ICAO Doc 9303 R7-p1_v2_sIII_0057.
 	 * 
-	 * @param in the input stream positioned so that biometric data block tag and length are already read
-	 * @param length the length
-	 * @throws IOException if reading fails
+	 * @param outputStream the outputstream
+	 * 
+	 * @throws IOException on I/O errors
 	 */
-	protected abstract void readBiometricData(InputStream in, int length) throws IOException;
-
-	public void writeContent(TLVOutputStream tlvOut) throws IOException {
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
-		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
-		int bioInfoCount = getBiometricTemplateCount();
-		tlvOut.writeValue(new byte[] { (byte)bioInfoCount });
-
-		for (int index = 0; index < bioInfoCount; index++) {
-			writeBIT(tlvOut, index);
+	protected void writeOptionalRandomData(OutputStream outputStream) throws IOException {
+		if (subRecords.size() == 0) {
+			TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
+			tlvOut.writeTag(ISO781611.DISCRETIONARY_DATA_FOR_PAYLOAD_TAG);
+			byte[] value = new byte[8];
+			random.nextBytes(value);
+			tlvOut.writeValue(value);
 		}
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
-
 	}
-
-	private void writeBIT(TLVOutputStream tlvOut, int index) throws IOException {
-		BiometricTemplate info = getBiometricTemplate(index);
-
-		tlvOut.writeTag(BIOMETRIC_INFORMATION_TEMPLATE_TAG); /* 7F60 */
-				
-		tlvOut.writeTag((BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index) & 0xFF); /* A1 + index */
-		tlvOut.writeTag(FORMAT_OWNER_TAG);
-		tlvOut.writeValue(FORMAT_OWNER_VALUE);
-		tlvOut.writeTag(FORMAT_TYPE_TAG);
-		tlvOut.writeValue(FORMAT_TYPE_VALUE);
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_HEADER_TEMPLATE_BASE_TAG + index, i.e. A1 + index */
-
-		writeBiometricDataBlock(tlvOut, info);
-
-		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_TEMPLATE_TAG, i.e. 7F60 */
-	}
-	
-	private void writeBiometricDataBlock(TLVOutputStream tlvOut, BiometricTemplate info) throws IOException {
-		tlvOut.writeTag(biometricDataBlockTag); /* 5F2E or 7F2E */
-		writeBiometricData(tlvOut, info);
-		tlvOut.writeValueEnd(); /* BIOMETRIC_DATA_BLOCK_TAG, i.e. 5F2E or 7F2E */
-	}
-	
-	protected abstract void writeBiometricData(OutputStream out, BiometricTemplate info) throws IOException;
 }

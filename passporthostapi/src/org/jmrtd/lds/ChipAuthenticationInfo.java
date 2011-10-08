@@ -22,12 +22,11 @@
 
 package org.jmrtd.lds;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.spongycastle.asn1.ASN1EncodableVector;
+import org.spongycastle.asn1.DERInteger;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DERObjectIdentifier;
+import org.spongycastle.asn1.DERSequence;
 
 /**
  * A concrete SecurityInfo structure that stores chip authentication info,
@@ -86,7 +85,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 		this(oid, version, -1);
 	}
 
-	public DERObject getDERObject() {
+	DERObject getDERObject() {
 		ASN1EncodableVector v = new ASN1EncodableVector();
 		v.add(new DERObjectIdentifier(oid));
 		v.add(new DERInteger(version));
@@ -106,7 +105,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	 * 
 	 * @return key identifier stored in this ChipAuthenticationInfo structure
 	 */
-	public Integer getKeyId() {
+	public int getKeyId() {
 		return keyId;
 	}
 
@@ -136,12 +135,24 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	 * @return true if the match is positive
 	 */
 	static boolean checkRequiredIdentifier(String oid) {
-		DERObjectIdentifier derOID = new DERObjectIdentifier(oid);
-		return derOID.equals(EACObjectIdentifiers.id_CA_DH_3DES_CBC_CBC)
-		|| derOID.equals(EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC);
+		return ID_CA_DH_3DES_CBC_CBC_OID.equals(oid) || ID_CA_ECDH_3DES_CBC_CBC_OID.equals(oid);
 	}
 	
 	public String toString() {
 		return  "ChipAuthenticationInfo [oid = " + oid + ", version = " + version + ", keyId = " + keyId + "]";
+	}
+	
+	public int hashCode() {
+		return 3 + 11 * (oid == null ? 0 : oid.hashCode()) + 61 * version + 1991 * keyId;
+	}
+	
+	public boolean equals(Object other) {
+		if (other == null) { return false; }
+		if (other == this) { return true; }
+		if (!ChipAuthenticationInfo.class.equals(other.getClass())) { return false; }
+		ChipAuthenticationInfo otherChipAuthenticationInfo = (ChipAuthenticationInfo)other;
+		return oid.equals(otherChipAuthenticationInfo.oid)
+			&& version == otherChipAuthenticationInfo.version
+			&& keyId == otherChipAuthenticationInfo.keyId;
 	}
 }

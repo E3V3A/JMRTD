@@ -28,14 +28,12 @@ import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
 import java.security.cert.CRL;
-import java.security.cert.CRLException;
 import java.security.cert.CRLSelector;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStoreException;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.CertStoreSpi;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
@@ -60,24 +58,25 @@ import javax.naming.directory.SearchResult;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.pkcs.ContentInfo;
-import org.bouncycastle.asn1.pkcs.SignedData;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.jce.provider.X509CertificateObject;
+import org.jmrtd.JMRTDSecurityProvider;
+import org.spongycastle.asn1.ASN1InputStream;
+import org.spongycastle.asn1.DERObject;
+import org.spongycastle.asn1.DEROctetString;
+import org.spongycastle.asn1.DERSequence;
+import org.spongycastle.asn1.DERSet;
+import org.spongycastle.asn1.DERTaggedObject;
+import org.spongycastle.asn1.pkcs.ContentInfo;
+import org.spongycastle.asn1.pkcs.SignedData;
+import org.spongycastle.asn1.x509.X509CertificateStructure;
+import org.spongycastle.jce.provider.X509CertificateObject;
 
 public class PKDCertStoreSpi extends CertStoreSpi
 {
 	/** We may need this provider... */
-	private static final Provider PROVIDER = new org.bouncycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
 	private static final long SERVER_TIMEOUT = 5000;
-	
+
 	private static final String CERTIFICATE_ATTRIBUTE_NAME = "userCertificate";
 	private static final String CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME = "CscaMasterListData";
 	private static final String CRL_ATTRIBUTE_NAME = "certificateRevocationList";
@@ -88,12 +87,12 @@ public class PKDCertStoreSpi extends CertStoreSpi
 	private int port;
 	private String baseDN;
 	private boolean isMasterListStore;
-	
+
 	private long heartBeat;
 	private Collection<CRL> crls;
 	private Collection<Certificate> certificates;
 
-	private CertificateFactory factory, alternativeFactory;
+	private List<CertificateFactory> factories;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -107,16 +106,18 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		this.server = ((PKDCertStoreParameters)params).getServerName();
 		this.port = ((PKDCertStoreParameters)params).getPort();
 		this.baseDN = ((PKDCertStoreParameters)params).getBaseDN();
+		factories = new ArrayList<CertificateFactory>();
 		try {
-			factory = CertificateFactory.getInstance("X509");
-			alternativeFactory = CertificateFactory.getInstance("X509", PROVIDER);
-		} catch (CertificateException ce) {
-			if (factory == null && alternativeFactory == null) {
-				throw new IllegalStateException("Could not create an X.509 certificate factory\n" + ce.toString());
+			factories.add(CertificateFactory.getInstance("X.509"));
+		} catch (Exception e) {
+			/* NOTE: failed to add that factory */
+		}
+		try {
+			if (JMRTD_PROVIDER != null) {
+				factories.add(CertificateFactory.getInstance("X.509", JMRTD_PROVIDER.getName()));
 			}
-			if (factory == null && alternativeFactory != null) {
-				factory = alternativeFactory;
-			}
+		} catch (Exception e) {
+			/* NOTE: failed to add that factory */
 		}
 	}
 
@@ -187,16 +188,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		Collection<Certificate> result = new HashSet<Certificate>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			Certificate certificate = null;
-			try {
-				certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
-			} catch (Exception e) {
+			for (CertificateFactory factory: factories) {
 				try {
-					if (alternativeFactory != null) {
-						certificate = alternativeFactory.generateCertificate(new ByteArrayInputStream(valueBytes));
-					}
-				}  catch (CertificateException ce) {
-					ce.printStackTrace();
-					certificate = null;
+					certificate = factory.generateCertificate(new ByteArrayInputStream(valueBytes));
+				} catch (Exception e) {
+					continue; /* NOTE: try next factory. */
 				}
 			}
 
@@ -261,16 +257,11 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		Collection<CRL> result = new HashSet<CRL>(binaries.size());
 		for (byte[] valueBytes: binaries) {
 			CRL crl = null;
-			try {
-				crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
-			} catch (Exception e) {
+			for (CertificateFactory factory: factories) {
 				try {
-					if (alternativeFactory != null) {
-						crl = alternativeFactory.generateCRL(new ByteArrayInputStream(valueBytes));
-					}
-				}  catch (CRLException crle) {
-					crle.printStackTrace();
-					crl = null;
+					crl = factory.generateCRL(new ByteArrayInputStream(valueBytes));
+				} catch (Exception e) {
+					continue; /* NOTE: try next factory... */
 				}
 			}
 			if (crl != null && selector.match(crl)) {
@@ -407,33 +398,33 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		return result;
 	}
 
-//	private Collection<byte[]> searchAttributes(String specificDN, String attributeName) {
-//		Collection<byte[]> result = new HashSet<byte[]>();
-//		try {
-//			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
-//			String[] attrIDs = { attributeName };
-//
-//			matchAttrs.put(new BasicAttribute(attributeName));
-//			if (!attributeName.endsWith(";binary")) {
-//				String attributeNameBinary = attributeName + ";binary";
-//				matchAttrs.put(new BasicAttribute(attributeNameBinary));
-//				attrIDs = new String[]{ attributeName, attributeNameBinary };
-//			}
-//
-//			/* Search for objects that have those matching attributes. */
-//			NamingEnumeration<?> answer = null;
-//			try {
-//				answer = context.search(specificDN, matchAttrs, attrIDs);
-//			} catch (NameNotFoundException nnfe) {
-//				/* NOTE: No results found. Fine. */
-//			}
-//
-//			addToList(answer, attributeName, result);
-//		} catch (NamingException e) {
-//			e.printStackTrace();
-//		}
-//		return result;
-//	}
+	//	private Collection<byte[]> searchAttributes(String specificDN, String attributeName) {
+	//		Collection<byte[]> result = new HashSet<byte[]>();
+	//		try {
+	//			Attributes matchAttrs = new BasicAttributes(true); /* Ignore attribute name case. */
+	//			String[] attrIDs = { attributeName };
+	//
+	//			matchAttrs.put(new BasicAttribute(attributeName));
+	//			if (!attributeName.endsWith(";binary")) {
+	//				String attributeNameBinary = attributeName + ";binary";
+	//				matchAttrs.put(new BasicAttribute(attributeNameBinary));
+	//				attrIDs = new String[]{ attributeName, attributeNameBinary };
+	//			}
+	//
+	//			/* Search for objects that have those matching attributes. */
+	//			NamingEnumeration<?> answer = null;
+	//			try {
+	//				answer = context.search(specificDN, matchAttrs, attrIDs);
+	//			} catch (NameNotFoundException nnfe) {
+	//				/* NOTE: No results found. Fine. */
+	//			}
+	//
+	//			addToList(answer, attributeName, result);
+	//		} catch (NamingException e) {
+	//			e.printStackTrace();
+	//		}
+	//		return result;
+	//	}
 
 	private void addToList(NamingEnumeration<?> answer, String attributeName, Collection<byte[]> result) throws NamingException {
 		int resultCount = 0;

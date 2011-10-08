@@ -24,9 +24,12 @@ package org.jmrtd.lds;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.IllegalFormatConversionException;
 import java.util.List;
+import java.util.StringTokenizer;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -35,8 +38,6 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * File structure for the EF_COM file.
  * This file contains the common data (version and
  * data group presence table) information.
- * 
- * FIXME: get rid of all those BERTLVObjects in favor of BERTLVInputStreams. -- MO
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -57,7 +58,7 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 	private List<Integer> tagList;
 
 	/**
-	 * Constructs a new file.
+	 * Constructs a new COM file.
 	 * 
 	 * @param versionLDS a numerical string of length 2
 	 * @param updateLevelLDS a numerical string of length 2
@@ -70,8 +71,50 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 */
 	public COMFile(String versionLDS, String updateLevelLDS,
 			String majorVersionUnicode, String minorVersionUnicode,
-			String releaseLevelUnicode, List<Integer> tagList) {
+			String releaseLevelUnicode, int[] tagList) {
 		super(EF_COM_TAG);
+		initialize(versionLDS, updateLevelLDS, majorVersionUnicode, minorVersionUnicode, releaseLevelUnicode, tagList);
+	}
+
+	/**
+	 * Constructs a new COM file.
+	 * 
+	 * @param ldsVer a "x.y" version number
+	 * @param unicodeVer a "x.y.z" version number
+	 * @param tagList list of tags
+	 */
+	public COMFile(String ldsVer, String unicodeVer, int [] tagList) {
+		super(EF_COM_TAG);
+		try {
+			if (ldsVer == null) { throw new IllegalArgumentException("Null versionLDS"); }
+			if (unicodeVer == null) { throw new IllegalArgumentException("Null versionUnicode"); }
+			StringTokenizer st = new StringTokenizer(ldsVer, ".");
+			if (st.countTokens() != 2) { throw new IllegalArgumentException("Could not parse LDS version. Expecting 2 level version number x.y."); }
+			Integer versionLDS = Integer.parseInt(st.nextToken().trim());
+			Integer updateLevelLDS = Integer.parseInt(st.nextToken().trim());
+			st = new StringTokenizer(unicodeVer, ".");
+			if (st.countTokens() != 3) { throw new IllegalArgumentException("Could not parse unicode version. Expecting 3 level version number x.y.z."); }
+			Integer majorVersionUnicode = Integer.parseInt(st.nextToken().trim());
+			Integer minorVersionUnicode = Integer.parseInt(st.nextToken().trim());
+			Integer releaseLevelUnicode = Integer.parseInt(st.nextToken().trim());
+			initialize(
+				String.format("%02d", versionLDS),
+				String.format("%02d", updateLevelLDS),
+				String.format("%02d", majorVersionUnicode),
+				String.format("%02d", minorVersionUnicode),
+				String.format("%02d", releaseLevelUnicode),
+				tagList);
+		} catch (NumberFormatException nfe) {
+			throw new IllegalArgumentException("Could not parse version number. " + nfe.getMessage());
+		} catch (IllegalFormatConversionException ifce) {
+			throw new IllegalArgumentException("Could not parse version number. " + ifce.getMessage());
+		}
+	}
+
+	private void initialize(String versionLDS, String updateLevelLDS,
+			String majorVersionUnicode, String minorVersionUnicode,
+			String releaseLevelUnicode, int[] tagList) {
+		if (tagList == null) { throw new IllegalArgumentException("Null tag list"); }
 		if (versionLDS == null || versionLDS.length() != 2
 				|| updateLevelLDS == null || updateLevelLDS.length() != 2
 				|| majorVersionUnicode == null || majorVersionUnicode.length() != 2
@@ -85,9 +128,8 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		this.majorVersionUnicode = majorVersionUnicode;
 		this.minorVersionUnicode = minorVersionUnicode;
 		this.releaseLevelUnicode = releaseLevelUnicode;
-		this.tagList = new ArrayList<Integer>();
-		this.tagList.addAll(tagList);
-		// System.arraycopy(tagList, 0, this.tagList, 0, tagList.length);
+		this.tagList = new ArrayList<Integer>(tagList.length);
+		for (int tag: tagList) { this.tagList.add(tag); }
 	}
 
 	/**
@@ -103,7 +145,8 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		super(EF_COM_TAG, in);
 	}
 
-	protected void readContent(TLVInputStream tlvIn) throws IOException {
+	protected void readContent(InputStream in) throws IOException {
+		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int versionLDSTag = tlvIn.readTag();
 		if (versionLDSTag != VERSION_LDS_TAG) {
 			throw new IllegalArgumentException("Excepected VERSION_LDS_TAG (" + Integer.toHexString(VERSION_LDS_TAG) + "), found " + Integer.toHexString(versionLDSTag));
@@ -167,31 +210,37 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 	 * 
 	 * @return a list of bytes
 	 */
-	public List<Integer> getTagList() {
-		return tagList;
+	public int[] getTagList() {
+		int[] result = new int[tagList.size()];
+		int i = 0;
+		for (Integer tag: tagList) {
+			result[i++] = tag;
+		}
+		return result;
 	}
 
-    /**
-     * Inserts a tag in a proper place if not already present
-     * @param tag
-     */
-    public void insertTag(Integer tag) {
-        if(tagList.contains(tag)) { return; }
-        tagList.add(tag);
-        Collections.sort(tagList);
+	/**
+	 * Inserts a tag in a proper place if not already present
+	 * @param tag
+	 */
+	public void insertTag(Integer tag) {
+		if(tagList.contains(tag)) { return; }
+		tagList.add(tag);
+		Collections.sort(tagList);
 
-    }
-	
-	protected void writeContent(TLVOutputStream out) throws IOException {
-		out.writeTag(VERSION_LDS_TAG);
-		out.writeValue((versionLDS + updateLevelLDS).getBytes());
-		out.writeTag(VERSION_UNICODE_TAG);
-		out.writeValue((majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes());
-		out.writeTag(TAG_LIST_TAG);
-		
-		out.writeLength(tagList.size());
+	}
+
+	protected void writeContent(OutputStream out) throws IOException {
+		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+		tlvOut.writeTag(VERSION_LDS_TAG);
+		tlvOut.writeValue((versionLDS + updateLevelLDS).getBytes());
+		tlvOut.writeTag(VERSION_UNICODE_TAG);
+		tlvOut.writeValue((majorVersionUnicode + minorVersionUnicode + releaseLevelUnicode).getBytes());
+		tlvOut.writeTag(TAG_LIST_TAG);
+
+		tlvOut.writeLength(tagList.size());
 		for (int tag: tagList) {
-			out.write((byte)tag);
+			tlvOut.write((byte)tag);
 		}
 	}
 
@@ -211,14 +260,14 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		result.append("[");
 		int dgCount = tagList.size();
 		for (int tag: tagList) {
-			result.append("DG" + PassportFile.lookupDataGroupNumberByTag(tag));
+			result.append("DG" + LDSFile.lookupDataGroupNumberByTag(tag));
 			if (i < dgCount - 1) { result.append(", "); }
 			i++;
 		}
 		result.append("]");
 		return result.toString();
 	}
-	
+
 	/**
 	 * Whether other is equal to this file.
 	 * 
@@ -230,19 +279,19 @@ public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a
 		if (!other.getClass().equals(getClass())) { return false; }
 		COMFile otherCOMFile = (COMFile)other;
 		return versionLDS.equals(otherCOMFile.versionLDS) &&
-			updateLevelLDS.equals(otherCOMFile.updateLevelLDS) &&
-			majorVersionUnicode.equals(otherCOMFile.majorVersionUnicode) &&
-			minorVersionUnicode.equals(otherCOMFile.minorVersionUnicode) &&
-			releaseLevelUnicode.equals(otherCOMFile.releaseLevelUnicode) &&
-			tagList.equals(otherCOMFile.tagList);
+		updateLevelLDS.equals(otherCOMFile.updateLevelLDS) &&
+		majorVersionUnicode.equals(otherCOMFile.majorVersionUnicode) &&
+		minorVersionUnicode.equals(otherCOMFile.minorVersionUnicode) &&
+		releaseLevelUnicode.equals(otherCOMFile.releaseLevelUnicode) &&
+		tagList.equals(otherCOMFile.tagList);
 	}
-	
+
 	public int hashCode() {
 		return 3 * versionLDS.hashCode() +
-			5 * updateLevelLDS.hashCode() +
-			7 * majorVersionUnicode.hashCode() +
-			11 * minorVersionUnicode.hashCode() +
-			13 * releaseLevelUnicode.hashCode() +
-			17 * tagList.hashCode();
+		5 * updateLevelLDS.hashCode() +
+		7 * majorVersionUnicode.hashCode() +
+		11 * minorVersionUnicode.hashCode() +
+		13 * releaseLevelUnicode.hashCode() +
+		17 * tagList.hashCode();
 	}
 }
