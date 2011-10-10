@@ -9,7 +9,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_gui_j2se"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_storage_j2se"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards_j2se"/>
 	<classpathentry kind="lib" path="/wsq_imageio/wsq_imageio.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/acrprovider"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards"/>
