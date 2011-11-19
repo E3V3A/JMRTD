@@ -24,6 +24,7 @@ package org.jmrtd.app;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
@@ -81,6 +82,7 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.data.Gender;
@@ -140,7 +142,7 @@ public class PassportEditFrame extends JMRTDFrame
 	private static final long serialVersionUID = -4624658204371014128L;
 
 	private static final String PASSPORT_FRAME_TITLE = "Edit MRTD";
-	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
+	private static final Dimension PREFERRED_SIZE = new Dimension(800, 420);
 
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
@@ -159,7 +161,7 @@ public class PassportEditFrame extends JMRTDFrame
 
 	private ImagePreviewPanel displayPreviewPanel;
 
-	private JPanel panel, centerPanel, southPanel;
+	private JPanel panel, westPanel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
@@ -173,11 +175,15 @@ public class PassportEditFrame extends JMRTDFrame
 		super(PASSPORT_FRAME_TITLE);
 		LOGGER.setLevel(Level.ALL);
 		this.passport = passport;
+		Container contentPane = getContentPane();
+		contentPane.setLayout(new BorderLayout());
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
+		westPanel = new JPanel();
 		centerPanel = new JPanel(new BorderLayout());
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
+		panel.add(westPanel, BorderLayout.WEST);
 		panel.add(centerPanel, BorderLayout.CENTER);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
@@ -191,8 +197,16 @@ public class PassportEditFrame extends JMRTDFrame
 				}
 			}
 		});
-		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
-		getContentPane().add(panel);
+//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
+		westPanel.add(displayPreviewPanel);
+		
+		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+		splitPane.add(new LDSTreePanel(passport));
+		splitPane.add(panel);
+
+		contentPane.add(splitPane, BorderLayout.CENTER);
+
+		
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());

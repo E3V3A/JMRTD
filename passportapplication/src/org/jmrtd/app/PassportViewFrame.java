@@ -122,7 +122,7 @@ public class PassportViewFrame extends JMRTDFrame
 	private static final long serialVersionUID = -4624658204381014128L;
 
 	private static final String PASSPORT_FRAME_TITLE = "MRTD";
-	private static final Dimension PREFERRED_SIZE = new Dimension(800, 420);
+	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -139,7 +139,7 @@ public class PassportViewFrame extends JMRTDFrame
 
 	private ImagePreviewPanel displayPreviewPanel;
 
-	private JPanel panel, westPanel, centerPanel, southPanel;
+	private JPanel panel, centerPanel, southPanel;
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
@@ -158,11 +158,9 @@ public class PassportViewFrame extends JMRTDFrame
 		contentPane.setLayout(new BorderLayout());
 		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
-		westPanel = new JPanel();
 		centerPanel = new JPanel(new BorderLayout());
 		southPanel = new JPanel();
 		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
-		panel.add(westPanel, BorderLayout.WEST);
 		panel.add(centerPanel, BorderLayout.CENTER);
 		southPanel.add(verificationIndicator);
 		southPanel.add(progressBar);
@@ -176,15 +174,9 @@ public class PassportViewFrame extends JMRTDFrame
 				}
 			}
 		});
-		//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
-		westPanel.add(displayPreviewPanel);
+		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
 		
-		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		splitPane.add(new LDSTreePanel(passport));
-		splitPane.add(panel);
-
-		contentPane.add(splitPane, BorderLayout.CENTER);
-		
+		contentPane.add(panel, BorderLayout.CENTER);
 		
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
