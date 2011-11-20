@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: CBEFFDataGroup.java 1319 2011-04-20 21:08:32Z martijno $
+ * $Id: $
  */
 
 package org.jmrtd.lds;

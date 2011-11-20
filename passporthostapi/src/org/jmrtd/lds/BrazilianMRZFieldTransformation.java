@@ -3,18 +3,19 @@ package org.jmrtd.lds;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class BrazilianMRZFieldTransformation {
-	/*
-	 * Contributed by Paulo. FIXME: check this out. 
-	 */
+/**
+ * Contributed by Paulo. FIXME: check this out. 
+ */
+public class BrazilianMRZFieldTransformation implements MRZFieldTransformer {
 
+	private static final String NAME_SEPARATOR = "<<";
+	
 	/**
 	 * Truncates the primary and secundary identifiers.
 	 * 
 	 * NOTE: Brazilian case.
 	 */
-	private String[] truncateNames(String primaryIdentifier, String secondaryIdentifier, int length) {
-		final String NAME_SEPARATOR = "<<";
+	public String[] truncateNames(String primaryIdentifier, String secondaryIdentifier, int length) {
 
 		// Removing Latin characters
 		primaryIdentifier = transliterate(primaryIdentifier.trim());
@@ -79,7 +80,7 @@ public class BrazilianMRZFieldTransformation {
 	 * 
 	 * @param text input text
 	 */
-	private String transliterate(String text) {
+	public String transliterate(String text) {
 
 		text = text.toUpperCase();
 		final String[] REPLACES = { "A", "E", "I", "O", "U", "C", "", " " };

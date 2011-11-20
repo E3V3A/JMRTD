@@ -45,8 +45,6 @@ import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.util.Hex;
-
 import org.jmrtd.JMRTDSecurityProvider;
 import org.spongycastle.asn1.ASN1Encodable;
 import org.spongycastle.asn1.ASN1InputStream;
@@ -359,11 +357,10 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 	}
 
 	/**
-	 * Gets the document signing certificate.
-	 * Use this certificate to verify that
-	 * <i>eSignature</i> is a valid signature for
-	 * <i>eContent</i>. This certificate itself is
-	 * signed using the country signing certificate.
+	 * Gets the embedded document signing certificate (if present).
+	 * Use this certificate to verify that <i>eSignature</i> is a valid
+	 * signature for <i>eContent</i>. This certificate itself is signed
+	 * using the country signing certificate.
 	 *
 	 * @return the document signing certificate
 	 */

@@ -257,6 +257,7 @@
 			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_data_src};${scuba_storage_src};${scuba_smartcards_src};${scuba_gui_src}" />
 			<package name="org.jmrtd" />
 			<package name="org.jmrtd.lds" />
+			<package name="org.jmrtd.cbeff" />
 			<package name="org.jmrtd.cert" />
 			<package name="net.sourceforge.scuba.data" />
 			<package name="net.sourceforge.scuba.smartcards" />

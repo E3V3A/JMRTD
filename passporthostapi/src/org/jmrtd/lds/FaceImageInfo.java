@@ -253,7 +253,7 @@ public class FaceImageInfo extends AbstractImageInfo
 			int featureMask,
 			int hairColor,
 			int expression,
-			int[] poseAngle, int[] poaseAngleUncertainty,
+			int[] poseAngle, int[] poseAngleUncertainty,
 			int faceImageType,
 			int colorSpace,
 			int sourceType,

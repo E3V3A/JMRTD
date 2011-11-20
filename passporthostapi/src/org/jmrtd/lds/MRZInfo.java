@@ -84,8 +84,8 @@ public class MRZInfo extends AbstractInfo implements Serializable
 	 *
 	 * @param documentCode document code (1 or 2 digit, has to start with "P" or "V")
 	 * @param issuingState issuing state as 3 digit string
-	 * @param primaryIdentifier card holder name
-	 * @param secondaryIdentifiers card holder name
+	 * @param primaryIdentifier card holder last name
+	 * @param secondaryIdentifier card holder first name(s)
 	 * @param documentNumber document number
 	 * @param nationality nationality as 3 digit string
 	 * @param dateOfBirth date of birth
@@ -131,8 +131,8 @@ public class MRZInfo extends AbstractInfo implements Serializable
 	 *
 	 * @param documentCode document code (1 or 2 digit, has to start with "I", "C", or "A")
 	 * @param issuingState issuing state as 3 digit string
-	 * @param primaryIdentifier card holder name
-	 * @param secondaryIdentifiers card holder name
+	 * @param primaryIdentifier card holder last name
+	 * @param secondaryIdentifier card holder first name(s)
 	 * @param documentNumber document number
 	 * @param nationality nationality as 3 digit string
 	 * @param dateOfBirth date of birth in YYMMDD format
@@ -289,9 +289,9 @@ public class MRZInfo extends AbstractInfo implements Serializable
 
 	/**
 	 * Writes the MRZ to an output stream.
-	 * Note: this just outputs the MRZ characters, and does not add newlines.
-	 *
-	 * @return an encoded version of this MRZ info
+	 * This just outputs the MRZ characters, and does not add newlines.
+	 * 
+	 * @param outputStream the output stream to write to
 	 */
 	public void writeObject(OutputStream outputStream) throws IOException {
 		DataOutputStream dataOut = new DataOutputStream(outputStream);

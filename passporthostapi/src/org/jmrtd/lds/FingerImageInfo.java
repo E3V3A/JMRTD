@@ -129,7 +129,7 @@ public class FingerImageInfo extends AbstractImageInfo
 	 * Constructs a new finger information record.
 	 * 
 	 * @param in input stream
-	 * @param mimeType image format type (which is given in the general record header, not for each individual image) 
+	 * @param compressionAlgorithm image format type (which is given in the general record header, not for each individual image)
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
