@@ -28,6 +28,7 @@ import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
+import java.security.Security;
 import java.security.cert.CertStoreParameters;
 
 import org.jmrtd.JMRTDSecurityProvider;
@@ -84,6 +85,13 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 				ks = KeyStore.getInstance(keyStoreType, JMRTD_PROVIDER);
 			} catch (Exception e1) {
 				try {
+					/* DEBUG */
+					Provider[] providers = Security.getProviders();
+					for (Provider provider: providers) {
+						System.out.println("DEBUG: provider " + provider.getName());
+					}
+					/* DEBUG */
+
 					ks = KeyStore.getInstance(keyStoreType);
 				} catch (Exception e2) {
 					throw e1;

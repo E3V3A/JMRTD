@@ -227,8 +227,8 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 			}
 		}
 
-		org.spongycastle.jce.interfaces.ECPrivateKey ktmp = (org.spongycastle.jce.interfaces.ECPrivateKey) privateKey;
-		org.spongycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
+		org.bouncycastle.jce.interfaces.ECPrivateKey ktmp = (org.bouncycastle.jce.interfaces.ECPrivateKey) privateKey;
+		org.bouncycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
 		byte[] gArray = point.getEncoded();
 		byte[] sArray = privateKey.getS().toByteArray();
 		pArray = tagData((byte) 0x81, pArray);

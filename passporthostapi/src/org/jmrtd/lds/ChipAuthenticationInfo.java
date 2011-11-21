@@ -22,11 +22,11 @@
 
 package org.jmrtd.lds;
 
-import org.spongycastle.asn1.ASN1EncodableVector;
-import org.spongycastle.asn1.DERInteger;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DERObjectIdentifier;
-import org.spongycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
 
 /**
  * A concrete SecurityInfo structure that stores chip authentication info,

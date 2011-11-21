@@ -59,16 +59,16 @@ import javax.naming.directory.SearchResult;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.JMRTDSecurityProvider;
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DEROctetString;
-import org.spongycastle.asn1.DERSequence;
-import org.spongycastle.asn1.DERSet;
-import org.spongycastle.asn1.DERTaggedObject;
-import org.spongycastle.asn1.pkcs.ContentInfo;
-import org.spongycastle.asn1.pkcs.SignedData;
-import org.spongycastle.asn1.x509.X509CertificateStructure;
-import org.spongycastle.jce.provider.X509CertificateObject;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.x509.X509CertificateStructure;
+import org.bouncycastle.jce.provider.X509CertificateObject;
 
 public class PKDCertStoreSpi extends CertStoreSpi
 {

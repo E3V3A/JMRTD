@@ -26,13 +26,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
-import org.spongycastle.asn1.DERInteger;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DERObjectIdentifier;
-import org.spongycastle.asn1.DERSequence;
-import org.spongycastle.asn1.eac.EACObjectIdentifiers;
-import org.spongycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.spongycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 /**
  * The abstract SecurityInfo structure.

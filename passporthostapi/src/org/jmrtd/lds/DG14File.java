@@ -34,10 +34,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.spongycastle.asn1.ASN1EncodableVector;
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DERSet;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERSet;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see

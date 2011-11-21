@@ -24,13 +24,13 @@ package org.jmrtd.lds;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.spongycastle.asn1.ASN1Encodable;
-import org.spongycastle.asn1.ASN1EncodableVector;
-import org.spongycastle.asn1.DERInteger;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DERObjectIdentifier;
-import org.spongycastle.asn1.DEROctetString;
-import org.spongycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 
 /**
  * A concrete SecurityInfo structure that stores terminal authentication

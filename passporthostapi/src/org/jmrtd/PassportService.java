@@ -64,11 +64,11 @@ import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.DERInteger;
-import org.spongycastle.asn1.DERObject;
-import org.spongycastle.asn1.DERSequence;
-import org.spongycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.DERInteger;
+import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
 
 /**
  * Card service for reading files (such as data groups) and using the BAC and AA
@@ -372,8 +372,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.spongycastle.jce.interfaces.ECPublicKey k =
-					(org.spongycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+				org.bouncycastle.jce.interfaces.ECPublicKey k =
+					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = k.getQ().getEncoded();
 				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, k.getParameters().getCurve().getFieldSize() / 8);
