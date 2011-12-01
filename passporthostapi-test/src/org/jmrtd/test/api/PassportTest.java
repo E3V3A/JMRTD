@@ -26,9 +26,11 @@ import java.security.Security;
 
 import junit.framework.TestCase;
 
+import org.jmrtd.JMRTDSecurityProvider;
+
 public class PassportTest extends TestCase
 {
-	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
 	static {
 		Security.addProvider(BC_PROVIDER);

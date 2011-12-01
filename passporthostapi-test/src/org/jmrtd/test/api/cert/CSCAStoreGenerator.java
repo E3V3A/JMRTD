@@ -25,7 +25,7 @@ import org.jmrtd.cert.KeyStoreCertStoreParameters;
 public class CSCAStoreGenerator extends TestCase
 {
 	private static final Provider
-	BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider(),
+	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider(),
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
 	//	private static final String TEST_KEY_STORE = "file:/d:/csca.ks";

@@ -27,10 +27,11 @@ import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
+import org.jmrtd.JMRTDSecurityProvider;
 
 public class PassportCertificateGenerator {
 
-	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
     public static final String rootCertFile = "/home/sos/woj/passportcert/rootcert.cvcert";
     public static final String newRootCertFile = "/home/sos/woj/passportcert/rootcert.cvcert";

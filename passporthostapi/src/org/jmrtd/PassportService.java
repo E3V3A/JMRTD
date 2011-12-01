@@ -60,15 +60,15 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.cert.CVCPrincipal;
-import org.jmrtd.cert.CardVerifiableCertificate;
-import org.jmrtd.lds.CVCAFile;
-import org.jmrtd.lds.MRZInfo;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERInteger;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.jmrtd.cert.CVCPrincipal;
+import org.jmrtd.cert.CardVerifiableCertificate;
+import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.MRZInfo;
 
 /**
  * Card service for reading files (such as data groups) and using the BAC and AA

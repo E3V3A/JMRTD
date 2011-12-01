@@ -19,6 +19,8 @@ import javax.smartcardio.TerminalFactory;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
+import org.jmrtd.JMRTDSecurityProvider;
+
 /** ****************************************************************** */
 
 /*******************************************************************************
@@ -30,7 +32,7 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 public class MBTadapter
 
 {
-	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
 	/** service to talk to the passport */
 	private static PassportTestService service;

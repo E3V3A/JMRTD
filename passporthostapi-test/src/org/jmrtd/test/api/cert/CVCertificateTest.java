@@ -19,11 +19,11 @@ public class CVCertificateTest extends TestCase
 {
 //	private static final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
-	public static final String filenameCA = "/d:/ca/cvcert/cacert.cvcert";
+	public static final String filenameCA = "/t:/ca/cvcert/cacert.cvcert";
 
-	public static final String filenameTerminal = "/d:/ca/cvcert/terminalcert.cvcert";
+	public static final String filenameTerminal = "/t:/ca/cvcert/terminalcert.cvcert";
 
-	public static final String filenameKey = "/d:/ca/cvcert/terminalkey.der";
+	public static final String filenameKey = "/t:/ca/cvcert/terminalkey.der";
 
 	public CVCertificateTest() {
 		Security.insertProviderAt(JMRTDSecurityProvider.getInstance(), 3);

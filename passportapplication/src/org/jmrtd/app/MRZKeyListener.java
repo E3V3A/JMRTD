@@ -93,13 +93,30 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 		tryAndAddBACStoreEntry(buffer, 0, indexInBuffer);
 	}
 
+	/**
+	 * Attempts to see if the pattern in the buffer ending at index
+	 * <code>length + offset - 1</code> is consistent with the portion
+	 * of the MRZ containing document number, date of birth, date of
+	 * expiry. Consistency is checked using the check digits, the contents
+	 * of the gender field ('M', 'F', or '<'), and the well-formedness of
+	 * the dates.
+	 * 
+	 * If successful a new <code>BACEntry</code> candidate will be added to
+	 * <code>store</code>.
+	 * 
+	 * @param buffer the buffer
+	 * @param offset an offset in the buffer where the string to be considered starts
+	 * @param length the length of the string to be considered
+	 */
 	private void tryAndAddBACStoreEntry(char[] buffer, int offset, int length) {
 		if (length < 28) { return; }
 
 		/* ID 1
 		 * I<NNNPPPPPPPPPC<<<<<<<<<<<<<<<
 		 * BBBBBBCGEEEEEECNNN<<<<<<<<<<<C
-		 * NAME<<NAME<NAME<NAME<<<<<<<<<<
+		 * LAST<NAME<<FIRST<NAME<NAME<<<<<
+		 * 
+		 * Relevant fields: PPPPPPPPP, BBBBBB, and EEEEEE
 		 */
 		if (length >= 40) {
 			char doeCheckDigit = buffer[offset + length - 1];
@@ -132,8 +149,10 @@ public class MRZKeyListener implements KeyListener, BACEntrySource
 		}
 
 		/* ID 3
-		 * P<NNNNAME<<NAME<NAME<<<<<<<<<<<<<<<<<<<<<<<<
+		 * P<NNNLAST<NAME<<NAME<NAME<<<<<<<<<<<<<<<<<<<
 		 * PPPPPPPPPCNNNBBBBBBCGEEEEEEC<<<<<<<<<<<<<<CC
+		 * 
+		 * Relevant fields: PPPPPPPPP, BBBBBB, and EEEEEE
 		 */
 		if (length >= 28) {
 			char doeCheckDigit = buffer[offset + length - 1];

@@ -34,7 +34,7 @@ public abstract class PassportTesterBase extends TestCase implements
 		APDUListener<CommandAPDU, ResponseAPDU> {
 
 
-	private static final Provider BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider();
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
 	static {
 		Security.addProvider(BC_PROVIDER);

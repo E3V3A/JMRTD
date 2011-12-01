@@ -58,7 +58,6 @@ import javax.naming.directory.SearchResult;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.JMRTDSecurityProvider;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.DERObject;
 import org.bouncycastle.asn1.DEROctetString;
@@ -69,6 +68,7 @@ import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
+import org.jmrtd.JMRTDSecurityProvider;
 
 public class PKDCertStoreSpi extends CertStoreSpi
 {

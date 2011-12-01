@@ -47,14 +47,14 @@ import javax.security.auth.x500.X500Principal;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.SODFile;
-import org.spongycastle.asn1.x509.X509Name;
-import org.spongycastle.x509.X509V3CertificateGenerator;
 
 public class SODFileTest extends TestCase {
 

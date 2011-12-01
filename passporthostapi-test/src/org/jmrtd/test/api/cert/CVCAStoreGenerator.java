@@ -43,7 +43,7 @@ import org.jmrtd.cert.CardVerifiableCertificate;
 public class CVCAStoreGenerator extends TestCase
 {
 	private static final Provider
-	BC_PROVIDER = new org.spongycastle.jce.provider.BouncyCastleProvider(),
+	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider(),
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
 	//	private static final String TEST_KEY_STORE = "file:/c:/csca.ks";
@@ -54,7 +54,7 @@ public class CVCAStoreGenerator extends TestCase
 
 	private static final String
 //	WOJ_ROOT = "file:/home/sos/woj",
-	 WOJ_ROOT = "file:/c:/cygwin/tmp/woj",
+	 WOJ_ROOT = "file:/t:/ca/cvca/woj",
 	WOJ_DIR = WOJ_ROOT + "/terminals/nltest",
 	WOJ_KS = WOJ_ROOT + "/terminals/nltest.ks";
 

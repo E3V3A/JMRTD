@@ -60,7 +60,7 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${scuba_util_src}:${scuba_data_src}:${scuba_gui_src}:${scuba_smartcards_src}:${scuba_sc_indep_src}:${scuba_sc_j2se_src}:${scuba_storage_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" />
+		<javac srcdir="${src}:${scuba_util_src}:${scuba_data_src}:${scuba_gui_src}:${scuba_smartcards_src}:${scuba_sc_indep_src}:${scuba_sc_j2se_src}:${scuba_storage_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
 	</target>
 
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		

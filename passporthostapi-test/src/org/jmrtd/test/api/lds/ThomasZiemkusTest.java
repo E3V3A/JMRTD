@@ -3,11 +3,10 @@ package org.jmrtd.test.api.lds;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.SODFile;
-
-import junit.framework.TestCase;
 
 public class ThomasZiemkusTest extends TestCase {
 
