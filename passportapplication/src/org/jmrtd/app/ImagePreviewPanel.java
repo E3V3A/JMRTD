@@ -133,7 +133,11 @@ public class ImagePreviewPanel extends JPanel
 		infos.remove(index);
 		revalidate(); repaint();
 	}
-
+	
+	public void addMouseListener(MouseListener l) {
+		super.addMouseListener(l);
+		tabbedPane.addMouseListener(l);
+	}
 
 	/**
 	 * A scaling factor resulting in at most desiredWidth and desiredHeight yet
@@ -156,13 +160,8 @@ public class ImagePreviewPanel extends JPanel
 	private BufferedImage scaleImage(BufferedImage image, double scale) {
 		BufferedImage scaledImage = new BufferedImage((int)((double)image.getWidth() * scale), (int)((double)image.getHeight() * scale), BufferedImage.TYPE_INT_RGB);
 		Graphics2D g2 = scaledImage.createGraphics();
-		AffineTransform at = AffineTransform.getScaleInstance(scale, scale);
-		g2.drawImage(image, at, null); 
+		AffineTransform affineTransform = AffineTransform.getScaleInstance(scale, scale);
+		g2.drawImage(image, affineTransform, null); 
 		return scaledImage;
-	}
-
-	public void addMouseListener(MouseListener l) {
-		super.addMouseListener(l);
-		tabbedPane.addMouseListener(l);
 	}
 }

@@ -74,6 +74,9 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -135,7 +138,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	private static final Calendar CALENDAR = Calendar.getInstance(); 
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
-	
+
 	public static final String
 	READING_MODE_KEY = "mode.reading",
 	TERMINAL_KEY_PREFIX = "terminal.",
@@ -158,7 +161,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		Security.insertProviderAt(BC_PROVIDER, 1);
 		Security.addProvider(JMRTD_PROVIDER);
 	}
-	
+
 	private ActionMap actionMap;
 
 	private Container contentPane;
@@ -181,7 +184,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
 			SCFactory apduFactory = new SCFactory();
 			sc.init(apduFactory);
-			
+
 			actionMap = new ActionMap();
 
 			cardManager = CardManager.getInstance();
@@ -602,7 +605,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		actionMap.put("About", action);
 		return action;
 	}
-	
+
 	/**
 	 * Creates passport from scratch.
 	 * 
@@ -654,13 +657,32 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 		return new Passport(comFile, Arrays.asList(new DataGroup[] { }), sodFile, docSigningPrivateKey, trustManager);
 	}
-	
+
 	/**
 	 * Main method creates an instance.
 	 *
 	 * @param arg command line arguments.
 	 */
 	public static void main(String[] arg) {
-		new JMRTDApp();
+		SwingUtilities.invokeLater(new Runnable() {
+
+			@Override
+			public void run() {
+				try {
+					System.setProperty("apple.laf.useScreenMenuBar", "true");
+					System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
+					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					new JMRTDApp();
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				} catch (UnsupportedLookAndFeelException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 }
