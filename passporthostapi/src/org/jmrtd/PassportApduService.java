@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@
 package org.jmrtd;
 
 import java.security.GeneralSecurityException;
-import java.security.Provider;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -65,9 +64,6 @@ import net.sourceforge.scuba.util.Hex;
 public class PassportApduService<C,R> extends CardService<C,R>
 {
 	private static final long serialVersionUID = 2451509825132976178L;
-
-	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
-	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	/** The applet we select when we start a session. */
 	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
@@ -579,6 +575,14 @@ public class PassportApduService<C,R> extends CardService<C,R>
 		}
 	}
 
+	public void addPlainTextAPDUListener(APDUListener<C, R> l) {
+		if (plainTextAPDUListeners != null) { plainTextAPDUListeners.add(l); }
+	}
+
+	public void removePlainTextAPDUListener(APDUListener<C, R> l) {
+		if (plainTextAPDUListeners != null) { plainTextAPDUListeners.add(l); }
+	}
+	
 	/**
 	 * The MSE KAT APDU, see EAC 1.11 spec, Section B.1
 	 * 
@@ -729,10 +733,6 @@ public class PassportApduService<C,R> extends CardService<C,R>
 
 		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816 | (last ? 0x00 : 0x10), ISO7816.INS_PSO, p1, p2, data);
 		return apdu;
-	}
-	
-	public void addPlainTextAPDUListener(APDUListener<C, R> l) {
-		plainTextAPDUListeners.add(l);
 	}
 	
 	/**
