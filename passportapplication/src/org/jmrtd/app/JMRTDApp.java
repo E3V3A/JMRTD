@@ -303,6 +303,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	public void cardInserted(CardEvent<CommandAPDU, ResponseAPDU> ce) {
 		try {
 			PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
+			if (apduTraceFrame != null) {
+				service.addPlainTextAPDUListener(apduTraceFrame);
+			}
 			service.open();
 			readPassport(service);
 		} catch (Exception e) {
@@ -320,8 +323,6 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	/**
 	 * Reads the passport from a service by attempting to
 	 * perform BAC and firing up a PassportFrame.
-	 * 
-	 * FIXME: this logic could be moved into the passporthostapi's Passport class.
 	 * 
 	 * @param service
 	 * @throws CardServiceException
@@ -509,6 +510,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
 									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(new TerminalCardService(terminal));
+									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame); }
 									readPassport(passportService);
 
 									if (isPolling) { cardManager.startPolling(terminal); }

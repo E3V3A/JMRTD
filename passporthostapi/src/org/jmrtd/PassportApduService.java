@@ -24,12 +24,15 @@ package org.jmrtd;
 
 import java.security.GeneralSecurityException;
 import java.security.Provider;
+import java.util.Collection;
+import java.util.HashSet;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
+import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -84,6 +87,10 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	/** Usage of the ScubaSmartcard Abstractions  */
 	private ScubaSmartcards<C, R> sc;
 
+	private Collection<APDUListener<C,R>> plainTextAPDUListeners;
+	
+	private int plainAPDUCount;
+	
 	/**
 	 * Creates a new passport APDU sending service.
 	 * 
@@ -102,6 +109,8 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	public PassportApduService(CardService<C,R> service) throws CardServiceException {
 		sc = ScubaSmartcards.getInstance();
 		this.service = service;
+		plainTextAPDUListeners = new HashSet<APDUListener<C,R>>();
+		plainAPDUCount = 0;
 		try {
 			mac = Mac.getInstance("ISO9797Alg3Mac");
 			cipher = Cipher.getInstance("DESede/CBC/NoPadding");
@@ -152,13 +161,11 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	}
 
 	private R transmit(SecureMessagingWrapper<C,R> wrapper, C capdu) throws CardServiceException {
-		if (wrapper != null) {
-			capdu = wrapper.wrap(capdu);
-		}
-		R rapdu = transmit(capdu);
-		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, sc.accesR(rapdu).getBytes().length);
-		}
+		if (wrapper == null) { return transmit(capdu); }
+		C wrappedCapdu = wrapper.wrap(capdu);
+		R wrappedRapdu = transmit(wrappedCapdu);
+		R rapdu = wrapper.unwrap(wrappedRapdu, sc.accesR(wrappedRapdu).getBytes().length);
+		notifyExchangedPlainTextAPDU(++plainAPDUCount, capdu, rapdu);
 		return rapdu;
 	}
 
@@ -722,5 +729,20 @@ public class PassportApduService<C,R> extends CardService<C,R>
 
 		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816 | (last ? 0x00 : 0x10), ISO7816.INS_PSO, p1, p2, data);
 		return apdu;
+	}
+	
+	public void addPlainTextAPDUListener(APDUListener<C, R> l) {
+		plainTextAPDUListeners.add(l);
+	}
+	
+	/**
+	 * Notifies listeners about APDU event.
+	 * 
+	 * @param capdu APDU event
+	 */
+	protected void notifyExchangedPlainTextAPDU(int count, C capdu, R rapdu) {
+		for (APDUListener<C,R> listener: plainTextAPDUListeners) {
+			listener.exchangedAPDU(new APDUEvent<C,R>(this, "PLAINTEXT", count, capdu, rapdu));
+		}
 	}
 }

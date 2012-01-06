@@ -719,7 +719,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		BACEvent event = new BACEvent(this, null, null, null, null, true);
 		notifyBACPerformed(event);
 	}
-
+	
 	/**
 	 * Gets the file indicated by a file identifier.
 	 * 

@@ -85,11 +85,11 @@ public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAP
 		cp.add(toolBar, BorderLayout.NORTH);
 	}
 
-	public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
+	public synchronized void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
 		CommandAPDU capdu = e.getCommandAPDU();
 		ResponseAPDU rapdu = e.getResponseAPDU();
-		area.append("C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
-		area.append("R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
+		area.append(e.getType() + ". C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
+		area.append(e.getType() + ". R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
 		area.setCaretPosition(area.getDocument().getLength() - 1);
 	}
 
