@@ -509,7 +509,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 									if (isPolling) { cardManager.stopPolling(terminal); }
 									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
-									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(new TerminalCardService(terminal));
+									service = new TerminalCardService(terminal);
+									service.addAPDUListener(apduTraceFrame);
+									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(service);
 									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame); }
 									readPassport(passportService);
 
