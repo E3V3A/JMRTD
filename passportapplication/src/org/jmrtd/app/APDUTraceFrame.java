@@ -51,7 +51,7 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.Icons;
 
-public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAPDU, ResponseAPDU>
+public class APDUTraceFrame extends JMRTDFrame
 {
 	protected static final Icon CLEAR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("paintbrush"));
 	
@@ -60,6 +60,8 @@ public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAP
 	private ActionMap actionMap;
 	
 	private JTextArea area;
+	
+	private APDUListener<CommandAPDU,ResponseAPDU> apduListener;
 
 	public APDUTraceFrame() {
 		this("APDU trace");
@@ -67,6 +69,15 @@ public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAP
 	
 	public APDUTraceFrame(String title) {
 		super(title);
+		final APDUTraceFrame frame = this;
+		this.apduListener = new APDUListener<CommandAPDU,ResponseAPDU>() {
+
+			@Override
+			public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
+				frame.exchangedAPDU(e);
+			}
+			
+		};
 		actionMap = new ActionMap();
 		area = new JTextArea(40, 80);
 		area.setFont(new Font("Monospaced", Font.PLAIN, 9));
@@ -91,6 +102,14 @@ public class APDUTraceFrame extends JMRTDFrame implements APDUListener<CommandAP
 		area.append(e.getType() + ". C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
 		area.append(e.getType() + ". R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
 		area.setCaretPosition(area.getDocument().getLength() - 1);
+	}
+	
+	public APDUListener<CommandAPDU, ResponseAPDU> getRawAPDUListener() {
+		return apduListener;
+	}
+	
+	public APDUListener<CommandAPDU, ResponseAPDU> getPlainTextAPDUListener() {
+		return apduListener;
 	}
 
 	private JMenu createFileMenu() {

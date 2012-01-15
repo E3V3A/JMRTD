@@ -34,6 +34,7 @@ import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.DG4File;
 import org.jmrtd.lds.DataGroup;
 import org.jmrtd.lds.FaceImageInfo;
+import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
@@ -250,7 +251,22 @@ public class LDSTreePanel extends JPanel {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("FaceInfo");
 		node.add(buildTreeFromSBH(faceInfo));
 		for (FaceImageInfo faceImageInfo: faceInfo.getFaceImageInfos()) {
-			node.add(buildTreeFromImageInfo(faceImageInfo));
+			DefaultMutableTreeNode headerNode = new DefaultMutableTreeNode("Image header");
+			headerNode.add(new DefaultMutableTreeNode("Quality: " + faceImageInfo.getQuality()));
+			headerNode.add(new DefaultMutableTreeNode("Color space: " + faceImageInfo.getColorSpace()));
+			headerNode.add(new DefaultMutableTreeNode("Device type: " + faceImageInfo.getDeviceType()));
+			headerNode.add(new DefaultMutableTreeNode("Expression: " + faceImageInfo.getExpression()));
+			headerNode.add(new DefaultMutableTreeNode("Eye color: " + faceImageInfo.getEyeColor()));
+			headerNode.add(new DefaultMutableTreeNode("Feature mask: " + faceImageInfo.getFeatureMask()));
+			FeaturePoint[] featurePoints = faceImageInfo.getFeaturePoints();
+			DefaultMutableTreeNode fpNode = new DefaultMutableTreeNode("Feature points (" + featurePoints.length + ")");
+			for (FeaturePoint featurePoint: featurePoints) {
+				fpNode.add(new DefaultMutableTreeNode(featurePoint.toString()));
+			}
+			headerNode.add(fpNode);
+			node.add(headerNode);
+			MutableTreeNode imageNode = buildTreeFromImageInfo(faceImageInfo);
+			node.add(imageNode);
 		}
 		return node;
 	}

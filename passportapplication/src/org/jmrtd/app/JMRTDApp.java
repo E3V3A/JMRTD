@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,13 +36,18 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.SignatureException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -94,7 +99,7 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
 import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.x509.X509V3CertificateGenerator; /* NOTE: It's deprecated, but X509v3CertificateBuilder is part of bcmail, not bcprov. */
 import org.jmrtd.BACStore;
 import org.jmrtd.FileBACStore;
 import org.jmrtd.JMRTDSecurityProvider;
@@ -265,11 +270,11 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			}
 			apduTraceFrame.pack();
 			apduTraceFrame.setVisible(true);
-			cardManager.addAPDUListener(apduTraceFrame);
+			cardManager.addAPDUListener(apduTraceFrame.getRawAPDUListener());
 		} else {
 			if (apduTraceFrame != null) {
 				apduTraceFrame.setVisible(false);
-				cardManager.removeAPDUListener(apduTraceFrame);
+				cardManager.removeAPDUListener(apduTraceFrame.getRawAPDUListener());
 				apduTraceFrame = null;
 			}
 		}
@@ -304,7 +309,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		try {
 			PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
 			if (apduTraceFrame != null) {
-				service.addPlainTextAPDUListener(apduTraceFrame);
+				service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
 			}
 			service.open();
 			readPassport(service);
@@ -510,9 +515,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
 									service = new TerminalCardService(terminal);
-									service.addAPDUListener(apduTraceFrame);
+									service.addAPDUListener(apduTraceFrame.getRawAPDUListener());
 									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(service);
-									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame); }
+									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener()); }
 									readPassport(passportService);
 
 									if (isPolling) { cardManager.startPolling(terminal); }
@@ -643,16 +648,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		Date dateOfExpiry = today;
 		String digestAlgorithm = "SHA256";
 		String signatureAlgorithm = "SHA256withRSA";
-
-		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
-		certGenerator.setSerialNumber(new BigInteger("1"));
-		certGenerator.setIssuerDN(new X509Name("C=NL, O=JMRTD, OU=CSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-		certGenerator.setSubjectDN(new X509Name("C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org"));
-		certGenerator.setNotBefore(dateOfIssuing);
-		certGenerator.setNotAfter(dateOfExpiry);
-		certGenerator.setPublicKey(publicKey);
-		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
-		X509Certificate docSigningCert = (X509Certificate)certGenerator.generate(privateKey, "BC");
+		String issuer = "C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org";
+		String subject = "C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org";
+		X509Certificate docSigningCert = generateSelfSignedCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, privateKey, signatureAlgorithm);
 		PrivateKey docSigningPrivateKey = privateKey;
 		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
@@ -660,6 +658,20 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		hashes.put(2, digest.digest(dg2.getEncoded()));
 		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 		return new Passport(comFile, Arrays.asList(new DataGroup[] { }), sodFile, docSigningPrivateKey, trustManager);
+	}
+
+	private static X509Certificate generateSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
+			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
+		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
+		certGenerator.setSerialNumber(new BigInteger("1"));
+		certGenerator.setIssuerDN(new X509Name(issuer));
+		certGenerator.setSubjectDN(new X509Name(subject));
+		certGenerator.setNotBefore(dateOfIssuing);
+		certGenerator.setNotAfter(dateOfExpiry);
+		certGenerator.setPublicKey(publicKey);
+		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
+		X509Certificate certificate = (X509Certificate)certGenerator.generate(privateKey, "BC");
+		return certificate;
 	}
 
 	/**
