@@ -140,7 +140,7 @@ Code quality
 + Findbugs
 
 
-VERSION 0.4.7 (Q4 2011)
+VERSION 0.4.7 (Q1 2012)
 ----------------------
 
 General
@@ -173,7 +173,7 @@ Code quality
 --------------
 
 General
-- Support  SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test)
+- Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
@@ -199,8 +199,8 @@ GUI
 
 Android
 - Full GUI, all DGs
-- Cam based OCR
-- App in Market
+- Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
+  distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 
 Bugs/temporary fixes
 - Fix padding error during AA on Omnikey 5121 on newer versions of NL NIK. Restore gracefully from session?
@@ -234,9 +234,7 @@ VERSION 0.9.x (FUTURE)
 ----------------------
 
 Features
-- Webcam/phone cam OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
-  distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
-- WSQ image support in pure Java.
+- JPEG2000 and WSQ image support in pure Java.
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 - Android NFC support.
 
