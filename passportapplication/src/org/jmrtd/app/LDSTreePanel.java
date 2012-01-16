@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
@@ -25,6 +26,7 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.Passport;
 import org.jmrtd.cbeff.BiometricDataBlock;
+import org.jmrtd.cbeff.ISO781611;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
@@ -47,6 +49,8 @@ import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
 public class LDSTreePanel extends JPanel {
+
+	private static final long serialVersionUID = 8507600800214680846L;
 
 	private static final Dimension PREFERRED_SIZE = new Dimension(160, 420);
 
@@ -98,28 +102,37 @@ public class LDSTreePanel extends JPanel {
 	}
 
 	private MutableTreeNode buildTreeFromCOMFile(COMFile com) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(com);
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("COM");
+		node.add(new DefaultMutableTreeNode("LDS Version: " + com.getLDSVersion()));
+		node.add(new DefaultMutableTreeNode("Unicode version: " + com.getUnicodeVersion()));
+		DefaultMutableTreeNode tagsNode = new DefaultMutableTreeNode("Datagroups");
+		node.add(tagsNode);
 		int[] tagList = com.getTagList();
 		for (int tag: tagList) {
-			node.add(new DefaultMutableTreeNode(Integer.toHexString(tag)));
+			int dgNumber = DataGroup.lookupDataGroupNumberByTag(tag);
+			tagsNode.add(new DefaultMutableTreeNode("DG" + dgNumber + " (" + Integer.toHexString(tag) + ")"));
 		}
 		return node;
 	}
 
 	private MutableTreeNode buildTreeFromSODFile(SODFile sod) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(sod);
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("SOd");
+		node.add(new DefaultMutableTreeNode("LDS version: " + sod.getLDSVersion()));
+		node.add(new DefaultMutableTreeNode("Unicode version: " + sod.getUnicodeVersion()));
 		DefaultMutableTreeNode hashesNode = new DefaultMutableTreeNode("Hashes");
 		node.add(hashesNode);
 		Map<Integer, byte[]> dataGroupHashes = sod.getDataGroupHashes();
 		for (Map.Entry<Integer, byte[]> entry: dataGroupHashes.entrySet()) {
-			hashesNode.add(new DefaultMutableTreeNode(Integer.toHexString(entry.getKey()) + ": " + Hex.bytesToHexString(entry.getValue())));
+			int dgNumber = entry.getKey();
+			hashesNode.add(new DefaultMutableTreeNode("DG" + dgNumber + ": " + Hex.bytesToHexString(entry.getValue())));
 		}
-		node.add(new DefaultMutableTreeNode("LDS version: " + sod.getLDSVersion()));
 		node.add(new DefaultMutableTreeNode("Issuer: " + sod.getIssuerX500Principal()));
 		node.add(new DefaultMutableTreeNode("Serial number: " + sod.getSerialNumber()));
+		node.add(new DefaultMutableTreeNode("Digest algorithm: " + sod.getDigestAlgorithm()));
+		node.add(new DefaultMutableTreeNode("Digest encryption algorithm: " + sod.getDigestEncryptionAlgorithm()));
 		try {
 			Certificate dsCert = sod.getDocSigningCertificate();
-			node.add(new DefaultMutableTreeNode(dsCert));
+			node.add(buildTreeFromCertificate(dsCert, "Document signing certificate"));
 		} catch (Exception ce) {
 			ce.printStackTrace();
 		}
@@ -161,7 +174,6 @@ public class LDSTreePanel extends JPanel {
 		node.add(new DefaultMutableTreeNode("Date of expiry: " + mrzInfo.getDateOfExpiry()));
 		node.add(new DefaultMutableTreeNode("Gender: " + mrzInfo.getGender()));
 		node.add(new DefaultMutableTreeNode("Optional data / personal number: \"" + mrzInfo.getPersonalNumber() + "\""));
-
 		return node;
 	}
 
@@ -191,7 +203,7 @@ public class LDSTreePanel extends JPanel {
 		}
 		return node;
 	}
-	
+
 	private MutableTreeNode buildTreeFromDG14(DG14File dg14) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG14");
 
@@ -201,14 +213,14 @@ public class LDSTreePanel extends JPanel {
 		for (int fileId: cvcaFileIds) {
 			cvcaFileIdsNode.add(new DefaultMutableTreeNode("CVCA File Id: " + fileId + ", as short file Id: " + dg14.getCVCAShortFileId(fileId)));
 		}
-		
+
 		DefaultMutableTreeNode caNode = new DefaultMutableTreeNode("CA");
 		node.add(caNode);
 		Map<Integer, String> caInfos = dg14.getChipAuthenticationInfos();
 		for (Map.Entry<Integer, String> entry: caInfos.entrySet()) {
 			caNode.add(new DefaultMutableTreeNode(entry.getKey() + " -> " + entry.getValue()));
 		}
-		
+
 		DefaultMutableTreeNode caPubKeyNode = new DefaultMutableTreeNode("CA Public Keys");
 		node.add(caPubKeyNode);
 		Map<Integer, PublicKey> caPubKeyInfos = dg14.getChipAuthenticationPublicKeyInfos();
@@ -225,6 +237,21 @@ public class LDSTreePanel extends JPanel {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG15");
 		PublicKey publicKey = dg15.getPublicKey();
 		node.add(buildTreeFromPublicKey(publicKey));
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromCertificate(Certificate certificate, String nodeName) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode(nodeName);
+		if (certificate instanceof X509Certificate) {
+			node.add(new DefaultMutableTreeNode("Issuer: " + ((X509Certificate) certificate).getIssuerX500Principal()));
+			node.add(new DefaultMutableTreeNode("Subject: " + ((X509Certificate) certificate).getIssuerX500Principal()));
+			node.add(new DefaultMutableTreeNode("Serial number: " + ((X509Certificate) certificate).getSerialNumber()));
+			node.add(new DefaultMutableTreeNode("Not before: " + ((X509Certificate) certificate).getNotBefore()));
+			node.add(new DefaultMutableTreeNode("Not after: " + ((X509Certificate) certificate).getNotAfter()));
+		} else {
+			node.add(new DefaultMutableTreeNode(certificate));
+		}
+		node.add(buildTreeFromPublicKey(certificate.getPublicKey()));
 		return node;
 	}
 	
@@ -246,7 +273,7 @@ public class LDSTreePanel extends JPanel {
 		}
 		return node;
 	}
-	
+
 	private MutableTreeNode buildTreeFromFaceInfo(FaceInfo faceInfo) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("FaceInfo");
 		node.add(buildTreeFromSBH(faceInfo));
@@ -279,7 +306,7 @@ public class LDSTreePanel extends JPanel {
 		}
 		return node;
 	}
-	
+
 	private MutableTreeNode buildTreeFromIrisInfo(IrisInfo irisInfo) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("IrisInfo");
 		node.add(buildTreeFromSBH(irisInfo));
@@ -288,7 +315,7 @@ public class LDSTreePanel extends JPanel {
 		}
 		return node;
 	}
-	
+
 	private MutableTreeNode buildTreeFromIrisBiometricSubtypeInfo(IrisBiometricSubtypeInfo irisBiometricSubtypeInfo) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("IrisBiometricSubtypeInfo");
 		for (IrisImageInfo irisImageInfo: irisBiometricSubtypeInfo.getIrisImageInfos()) {
@@ -296,16 +323,31 @@ public class LDSTreePanel extends JPanel {
 		}
 		return node;
 	}	
-	
+
 	private MutableTreeNode buildTreeFromSBH(BiometricDataBlock bdb) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("SBH");
 		Map<Integer, byte[]> sbh = bdb.getStandardBiometricHeader().getElements();
 		for (Map.Entry<Integer, byte[]> entry: sbh.entrySet()) {
-			node.add(new DefaultMutableTreeNode(Integer.toHexString(entry.getKey()) + ": " + Hex.bytesToHexString(entry.getValue())));
+			int key = entry.getKey();
+			byte[] value = entry.getValue();
+			node.add(new DefaultMutableTreeNode(getSBHKey(key) + " (" + Integer.toHexString(key) + "): " + Hex.bytesToHexString(value)));
 		}
 		return node;
 	}
-	
+
+	private String getSBHKey(int key) {
+		switch(key) {
+		case ISO781611.BIOMETRIC_TYPE_TAG: return "Biometric type";
+		case ISO781611.BIOMETRIC_SUBTYPE_TAG: return "Biometric sub-type";
+		case ISO781611.CREATION_DATE_AND_TIME_TAG: return "Creation date and time";
+		case ISO781611.VALIDITY_PERIOD_TAG: return "Validity period";
+		case ISO781611.CREATOR_OF_BIOMETRIC_REFERENCE_DATA: return "Creator of biometric reference data";
+		case ISO781611.FORMAT_OWNER_TAG: return "Format owner";
+		case ISO781611.FORMAT_TYPE_TAG: return "Format type";
+		default: return "Unknown";
+		}
+	}
+
 	private MutableTreeNode buildTreeFromImageInfo(ImageInfo imageInfo) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("Image");
 		node.add(new DefaultMutableTreeNode("Dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));

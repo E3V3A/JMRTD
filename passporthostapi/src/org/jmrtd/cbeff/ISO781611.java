@@ -67,7 +67,7 @@ public interface ISO781611 {
 	 */
 	static final int BIOMETRIC_SUBTYPE_TAG = 0x82;
 	
-	static final int CREATION_DATA_AND_TIME_TAG = 0x83;
+	static final int CREATION_DATE_AND_TIME_TAG = 0x83;
 	
 	static final int VALIDITY_PERIOD_TAG = 0x85;
 	
