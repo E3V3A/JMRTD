@@ -205,7 +205,6 @@ public class PassportEditFrame extends JMRTDFrame
 		splitPane.add(panel);
 
 		contentPane.add(splitPane, BorderLayout.CENTER);
-
 		
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);

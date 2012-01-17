@@ -2,6 +2,7 @@ package org.jmrtd.app;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
@@ -23,6 +24,7 @@ import javax.swing.tree.TreeNode;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
+import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.Passport;
 import org.jmrtd.cbeff.BiometricDataBlock;
@@ -80,7 +82,7 @@ public class LDSTreePanel extends JPanel {
 				InputStream inputStream = passport.getInputStream(fid);
 				LDSFile file = LDSFile.getInstance(inputStream);
 				rootNode.add(buildTree(file));
-			} catch (CardServiceException cse) {
+			} catch (Exception cse) {
 				cse.printStackTrace();
 			}
 		}
@@ -350,13 +352,41 @@ public class LDSTreePanel extends JPanel {
 
 	private MutableTreeNode buildTreeFromImageInfo(ImageInfo imageInfo) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("Image");
-		node.add(new DefaultMutableTreeNode("Dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));
 		node.add(new DefaultMutableTreeNode("Mime-type: \"" + imageInfo.getMimeType() + "\""));
 		node.add(new DefaultMutableTreeNode("Encoded record length: " + imageInfo.getRecordLength()));
 		node.add(new DefaultMutableTreeNode("Encoded image length: " + imageInfo.getImageLength()));
+		node.add(new DefaultMutableTreeNode("Reported dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));
+		try{
+			BufferedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
+			node.add(new DefaultMutableTreeNode("Actual dimensions: " + image.getWidth() + " x " + image.getHeight()));
+			node.add(new DefaultMutableTreeNode("Image type: " + imageTypeToString(image.getType())));
+		} catch(IOException e){
+			node.add(new DefaultMutableTreeNode("Actual dimensions: unable to decode image"));
+		}
+
 		return node;
 	}
 
+	private String imageTypeToString(int type) {
+		switch (type) {
+		case BufferedImage.TYPE_3BYTE_BGR: return "3 byte bgr";
+		case BufferedImage.TYPE_4BYTE_ABGR: return "4 byte abgr";
+		case BufferedImage.TYPE_4BYTE_ABGR_PRE: return "4 byte abgr pre";
+		case BufferedImage.TYPE_BYTE_BINARY: return "byte binary";
+		case BufferedImage.TYPE_BYTE_GRAY: return "byte gray";
+		case BufferedImage.TYPE_BYTE_INDEXED: return "byte indexed";
+		case BufferedImage.TYPE_CUSTOM: return "custom";
+		case BufferedImage.TYPE_INT_ARGB: return "int argb";
+		case BufferedImage.TYPE_INT_ARGB_PRE: return "int arbg pre";
+		case BufferedImage.TYPE_INT_BGR: return "int bgr";
+		case BufferedImage.TYPE_INT_RGB: return "int rgb";
+		case BufferedImage.TYPE_USHORT_555_RGB: return "ushort 555 rgb";
+		case BufferedImage.TYPE_USHORT_565_RGB: return "ushort 565 rgb";
+		case BufferedImage.TYPE_USHORT_GRAY: return "ushort gray";
+		default: return "Unknown";
+		}
+	}
+	
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
