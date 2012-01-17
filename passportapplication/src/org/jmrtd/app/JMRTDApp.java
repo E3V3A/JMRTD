@@ -99,7 +99,7 @@ import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Icons;
 
 import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.x509.X509V3CertificateGenerator; /* NOTE: It's deprecated, but X509v3CertificateBuilder is part of bcmail, not bcprov. */
+import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.BACStore;
 import org.jmrtd.FileBACStore;
 import org.jmrtd.JMRTDSecurityProvider;

@@ -49,17 +49,17 @@ public class DG12File extends DataGroup
 {
 	private static final int TAG_LIST_TAG = 0x5C;
 
-	private static final int ISSUING_AUTHORITY_TAG = 0x5F19;
-	private static final int DATE_OF_ISSUE_TAG = 0x5F26;  // yyyymmdd
-	private static final int NAME_OF_OTHER_PERSON_TAG = 0x5F1A; // formatted per ICAO 9303 rules 
-	private static final int ENDORSEMENTS_AND_OBSERVATIONS_TAG = 0x5F1B;
-	private static final int TAX_OR_EXIT_REQUIREMENTS_TAG = 0x5F1C;
-	private static final int IMAGE_OF_FRONT_TAG = 0x5F1D; // Image per ISO/IEC 10918
-	private static final int IMAGE_OF_REAR_TAG = 0x5F1E; // Image per ISO/IEC 10918
-	private static final int DATE_AND_TIME_OF_PERSONALIZATION = 0x5F55; // yyyymmddhhmmss
-	private static final int PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG = 0x5F56;
-	private static final int OTHER_PEOPLE_OBJECT_TAG = 0xA0; // FIXME: alternative to 5F1A?
-	private static final int OTHER_PEOPLE_COUNT_TAG = 0x02;
+	public static final int ISSUING_AUTHORITY_TAG = 0x5F19,
+	DATE_OF_ISSUE_TAG = 0x5F26,  // yyyymmdd
+	NAME_OF_OTHER_PERSON_TAG = 0x5F1A, // formatted per ICAO 9303 rules 
+	ENDORSEMENTS_AND_OBSERVATIONS_TAG = 0x5F1B,
+	TAX_OR_EXIT_REQUIREMENTS_TAG = 0x5F1C,
+	IMAGE_OF_FRONT_TAG = 0x5F1D, // Image per ISO/IEC 10918
+	IMAGE_OF_REAR_TAG = 0x5F1E, // Image per ISO/IEC 10918
+	DATE_AND_TIME_OF_PERSONALIZATION = 0x5F55, // yyyymmddhhmmss
+	PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG = 0x5F56,
+	OTHER_PEOPLE_OBJECT_TAG = 0xA0, // FIXME: alternative to 5F1A?
+	OTHER_PEOPLE_COUNT_TAG = 0x02;
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 	private static final SimpleDateFormat SDTF = new SimpleDateFormat("yyyyMMddhhmmss");

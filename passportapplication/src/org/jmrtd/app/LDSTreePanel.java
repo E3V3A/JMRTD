@@ -22,7 +22,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.ImageUtil;
 
@@ -30,13 +29,19 @@ import org.jmrtd.Passport;
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.ISO781611;
 import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.DG11File;
+import org.jmrtd.lds.DG12File;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.DG4File;
+import org.jmrtd.lds.DG5File;
+import org.jmrtd.lds.DG6File;
+import org.jmrtd.lds.DG7File;
 import org.jmrtd.lds.DataGroup;
+import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
@@ -78,12 +83,23 @@ public class LDSTreePanel extends JPanel {
 		List<Short> fileList = passport.getFileList();
 
 		for (short fid: fileList) {
+			MutableTreeNode fileNode = null;
 			try {
 				InputStream inputStream = passport.getInputStream(fid);
 				LDSFile file = LDSFile.getInstance(inputStream);
-				rootNode.add(buildTree(file));
+				fileNode = buildTree(file);
 			} catch (Exception cse) {
 				cse.printStackTrace();
+			}
+			if (fileNode != null) {
+				rootNode.add(fileNode);
+			} else {
+				try {
+					int dgNumber = LDSFile.lookupDataGroupNumberByFID(fid);
+					rootNode.add(new DefaultMutableTreeNode("DG" + dgNumber));
+				} catch (NumberFormatException nfe) {
+					rootNode.add(new DefaultMutableTreeNode("File " + Integer.toHexString(fid)));	
+				}
 			}
 		}
 		return rootNode;
@@ -151,6 +167,16 @@ public class LDSTreePanel extends JPanel {
 			return buildTreeFromDG3((DG3File)dataGroup);
 		case LDSFile.EF_DG4_TAG:
 			return buildTreeFromDG4((DG4File)dataGroup);
+		case LDSFile.EF_DG5_TAG:
+			return buildTreeFromDG5((DG5File)dataGroup);
+		case LDSFile.EF_DG6_TAG:
+			return buildTreeFromDG6((DG6File)dataGroup);
+		case LDSFile.EF_DG7_TAG:
+			return buildTreeFromDG7((DG7File)dataGroup);
+		case LDSFile.EF_DG11_TAG:
+			return buildTreeFromDG11((DG11File)dataGroup);
+		case LDSFile.EF_DG12_TAG:
+			return buildTreeFromDG12((DG12File)dataGroup);
 		case LDSFile.EF_DG14_TAG:
 			return buildTreeFromDG14((DG14File)dataGroup);
 		case LDSFile.EF_DG15_TAG:
@@ -206,23 +232,98 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
+
+	private MutableTreeNode buildTreeFromDG5(DG5File dg5) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG5");
+		List<DisplayedImageInfo> imageInfos = dg5.getImages();
+		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
+		node.add(imagesNode);
+		for (DisplayedImageInfo imageInfo: imageInfos) {
+			MutableTreeNode imageInfoNode =	buildTreeFromImageInfo(imageInfo);
+			imagesNode.add(imageInfoNode);
+		}
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromDG6(DG6File dg6) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG6");
+		List<DisplayedImageInfo> imageInfos = dg6.getImages();
+		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
+		node.add(imagesNode);
+		for (DisplayedImageInfo imageInfo: imageInfos) {
+			MutableTreeNode imageInfoNode =	buildTreeFromImageInfo(imageInfo);
+			imagesNode.add(imageInfoNode);
+		}
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromDG7(DG7File dg7) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG7");
+		List<DisplayedImageInfo> imageInfos = dg7.getImages();
+		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
+		node.add(imagesNode);
+		for (DisplayedImageInfo imageInfo: imageInfos) {
+			MutableTreeNode imageInfoNode =	buildTreeFromImageInfo(imageInfo);
+			imagesNode.add(imageInfoNode);
+		}
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromDG11(DG11File dataGroup) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG11");
+		List<Integer> tagsPresent = dataGroup.getTagPresenceList();
+		if (tagsPresent.contains(DG11File.FULL_NAME_TAG)) {
+			node.add(new DefaultMutableTreeNode("Full name primary identifier: " + dataGroup.getFullNamePrimaryIdentifier()));
+			List<String> fullNameSecondaryIdentifiers = dataGroup.getFullNameSecondaryIdentifiers();
+			DefaultMutableTreeNode fullNameSecondaryIdentifiersNode = new DefaultMutableTreeNode("Full name secondary identifiers");
+			node.add(fullNameSecondaryIdentifiersNode);
+			for (String fullNameSecondaryIdentifier: fullNameSecondaryIdentifiers) {
+				fullNameSecondaryIdentifiersNode.add(new DefaultMutableTreeNode(fullNameSecondaryIdentifier));
+			}
+		}
+		if (tagsPresent.contains(DG11File.FULL_DATE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Full date of birth: " + dataGroup.getFullDateOfBirth())); }
+		if (tagsPresent.contains(DG11File.PLACE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Place of birth: " + dataGroup.getPlaceOfBirth())); }
+		if (tagsPresent.contains(DG11File.TITLE_TAG)) { node.add(new DefaultMutableTreeNode("Title: " + dataGroup.getTitle())); }
+		if (tagsPresent.contains(DG11File.PROFESSION_TAG)) { node.add(new DefaultMutableTreeNode("Profession: " + dataGroup.getProfession())); }
+		if (tagsPresent.contains(DG11File.TELEPHONE_TAG)) { node.add(new DefaultMutableTreeNode("Telephone: " + dataGroup.getTelephone())); }
+		if (tagsPresent.contains(DG11File.PERSONAL_SUMMARY_TAG)) { node.add(new DefaultMutableTreeNode("Personal summary: " + dataGroup.getPersonalSummary())); }
+		if (tagsPresent.contains(DG11File.CUSTODY_INFORMATION_TAG)) { node.add(new DefaultMutableTreeNode("Custody information: " + dataGroup.getCustodyInformation())); }
+		if (tagsPresent.contains(DG11File.PERMANENT_ADDRESS_TAG)) { node.add(new DefaultMutableTreeNode("Permanent address:" + dataGroup.getPermanentAddress())); }
+		if (tagsPresent.contains(DG11File.PROOF_OF_CITIZENSHIP_TAG)) { node.add(new DefaultMutableTreeNode("Proof of citizenship: " + dataGroup.getProofOfCitizenship())); }
+		if (tagsPresent.contains(DG11File.PERSONAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personal number: " + dataGroup.getPersonalNumber())); }
+		if (tagsPresent.contains(DG11File.OTHER_VALID_TD_NUMBERS_TAG)) { node.add(new DefaultMutableTreeNode("Other valid TD numbers: " + dataGroup.getOtherValidTDNumbers())); }
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromDG12(DG12File dataGroup) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG12");
+		List<Integer> tagsPresent = dataGroup.getTagPresenceList();
+		if (tagsPresent.contains(DG12File.DATE_AND_TIME_OF_PERSONALIZATION)) { node.add(new DefaultMutableTreeNode("Date and time of personalization: " + dataGroup.getDateAndTimeOfPersonalization())); }
+		if (tagsPresent.contains(DG12File.DATE_OF_ISSUE_TAG)) { node.add(new DefaultMutableTreeNode("Date of issue: " + dataGroup.getDateOfIssue())); }
+		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dataGroup.getEndorseMentsAndObservations())); }
+		if (tagsPresent.contains(DG12File.IMAGE_OF_FRONT_TAG)) { node.add(new DefaultMutableTreeNode("Image of front: " + dataGroup.getImageOfFront())); }
+		if (tagsPresent.contains(DG12File.IMAGE_OF_REAR_TAG)) { node.add(new DefaultMutableTreeNode("Image of rear: " + dataGroup.getImageOfRear())); }
+		if (tagsPresent.contains(DG12File.ISSUING_AUTHORITY_TAG)) { node.add(new DefaultMutableTreeNode("Issuing authority: " + dataGroup.getIssuingAuthority())); }
+		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Name of other person: " + dataGroup.getNameOfOtherPerson())); }
+		if (tagsPresent.contains(DG12File.PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personalization sytem serial number: " + dataGroup.getPersonalizationSystemSerialNumber())); }
+		if (tagsPresent.contains(DG12File.TAX_OR_EXIT_REQUIREMENTS_TAG)) { node.add(new DefaultMutableTreeNode("a: " + dataGroup.getTaxOrExitRequirements())); }
+		return node;
+	}
+
 	private MutableTreeNode buildTreeFromDG14(DG14File dg14) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG14");
-
 		DefaultMutableTreeNode cvcaFileIdsNode = new DefaultMutableTreeNode("TA");
 		node.add(cvcaFileIdsNode);
 		List<Integer> cvcaFileIds = dg14.getCVCAFileIds();
 		for (int fileId: cvcaFileIds) {
 			cvcaFileIdsNode.add(new DefaultMutableTreeNode("CVCA File Id: " + fileId + ", as short file Id: " + dg14.getCVCAShortFileId(fileId)));
 		}
-
 		DefaultMutableTreeNode caNode = new DefaultMutableTreeNode("CA");
 		node.add(caNode);
 		Map<Integer, String> caInfos = dg14.getChipAuthenticationInfos();
 		for (Map.Entry<Integer, String> entry: caInfos.entrySet()) {
-			caNode.add(new DefaultMutableTreeNode(entry.getKey() + " -> " + entry.getValue()));
+			caNode.add(new DefaultMutableTreeNode(entry.getKey() + ": " + entry.getValue()));
 		}
-
 		DefaultMutableTreeNode caPubKeyNode = new DefaultMutableTreeNode("CA Public Keys");
 		node.add(caPubKeyNode);
 		Map<Integer, PublicKey> caPubKeyInfos = dg14.getChipAuthenticationPublicKeyInfos();
@@ -231,7 +332,6 @@ public class LDSTreePanel extends JPanel {
 			entryNode.add(buildTreeFromPublicKey(entry.getValue()));
 			caPubKeyNode.add(entryNode);
 		}
-
 		return node;
 	}
 
@@ -256,7 +356,7 @@ public class LDSTreePanel extends JPanel {
 		node.add(buildTreeFromPublicKey(certificate.getPublicKey()));
 		return node;
 	}
-	
+
 	private MutableTreeNode buildTreeFromPublicKey(PublicKey publicKey) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode("Public key");
 		node.add(new DefaultMutableTreeNode("Public Key Algorithm: \"" + publicKey.getAlgorithm() + "\""));
@@ -372,21 +472,21 @@ public class LDSTreePanel extends JPanel {
 		case BufferedImage.TYPE_3BYTE_BGR: return "3 byte bgr";
 		case BufferedImage.TYPE_4BYTE_ABGR: return "4 byte abgr";
 		case BufferedImage.TYPE_4BYTE_ABGR_PRE: return "4 byte abgr pre";
-		case BufferedImage.TYPE_BYTE_BINARY: return "byte binary";
-		case BufferedImage.TYPE_BYTE_GRAY: return "byte gray";
-		case BufferedImage.TYPE_BYTE_INDEXED: return "byte indexed";
-		case BufferedImage.TYPE_CUSTOM: return "custom";
-		case BufferedImage.TYPE_INT_ARGB: return "int argb";
-		case BufferedImage.TYPE_INT_ARGB_PRE: return "int arbg pre";
-		case BufferedImage.TYPE_INT_BGR: return "int bgr";
-		case BufferedImage.TYPE_INT_RGB: return "int rgb";
-		case BufferedImage.TYPE_USHORT_555_RGB: return "ushort 555 rgb";
-		case BufferedImage.TYPE_USHORT_565_RGB: return "ushort 565 rgb";
-		case BufferedImage.TYPE_USHORT_GRAY: return "ushort gray";
+		case BufferedImage.TYPE_BYTE_BINARY: return "Byte binary";
+		case BufferedImage.TYPE_BYTE_GRAY: return "Byte gray";
+		case BufferedImage.TYPE_BYTE_INDEXED: return "Byte indexed";
+		case BufferedImage.TYPE_CUSTOM: return "Custom";
+		case BufferedImage.TYPE_INT_ARGB: return "Int argb";
+		case BufferedImage.TYPE_INT_ARGB_PRE: return "Int arbg pre";
+		case BufferedImage.TYPE_INT_BGR: return "Int bgr";
+		case BufferedImage.TYPE_INT_RGB: return "Int rgb";
+		case BufferedImage.TYPE_USHORT_555_RGB: return "Ushort 555 rgb";
+		case BufferedImage.TYPE_USHORT_565_RGB: return "Ushort 565 rgb";
+		case BufferedImage.TYPE_USHORT_GRAY: return "Ushort gray";
 		default: return "Unknown";
 		}
 	}
-	
+
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}

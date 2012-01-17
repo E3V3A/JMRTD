@@ -291,6 +291,29 @@ public abstract class LDSFile implements LDSInfo
 		}
 	}
 
+	public static short lookupDataGroupNumberByFID(short fid) {
+		switch(fid) {
+		case PassportService.EF_DG1: return 1;
+		case PassportService.EF_DG2: return 2;
+		case PassportService.EF_DG3: return 3;
+		case PassportService.EF_DG4: return 4;
+		case PassportService.EF_DG5: return 5;
+		case PassportService.EF_DG6: return 6;
+		case PassportService.EF_DG7: return 7;
+		case PassportService.EF_DG8: return 8;
+		case PassportService.EF_DG9: return 9;
+		case PassportService.EF_DG10: return 10;
+		case PassportService.EF_DG11: return 11;
+		case PassportService.EF_DG12: return 12;
+		case PassportService.EF_DG13: return 13;
+		case PassportService.EF_DG14: return 14;
+		case PassportService.EF_DG15: return 15;
+		case PassportService.EF_DG16: return 16;
+		default:
+			throw new NumberFormatException("Unknown fid " + Integer.toHexString(fid));
+		}
+	}
+	
 	/**
 	 * Returns a mnemonic name corresponding to the file represented by the
 	 * given ICAO tag, such as "EF_COM", "EF_SOD", or "EF_DG1".
