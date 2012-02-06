@@ -173,7 +173,7 @@ Code quality
 --------------
 
 General
-- Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test)
+- Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
@@ -230,7 +230,7 @@ Website and documentation
 - Compile-it-yourself instructions
 
 
-VERSION 0.9.x (FUTURE)
+VERSION 0.9.x (DISTANT FUTURE)
 ----------------------
 
 Features

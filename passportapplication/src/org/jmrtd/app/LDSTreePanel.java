@@ -3,6 +3,7 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.PublicKey;
@@ -75,6 +76,10 @@ public class LDSTreePanel extends JPanel {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public Dimension getPreferredSize() {
+		return PREFERRED_SIZE;
 	}
 
 	private MutableTreeNode buildTree(Passport passport) throws IOException {
@@ -301,8 +306,28 @@ public class LDSTreePanel extends JPanel {
 		if (tagsPresent.contains(DG12File.DATE_AND_TIME_OF_PERSONALIZATION)) { node.add(new DefaultMutableTreeNode("Date and time of personalization: " + dataGroup.getDateAndTimeOfPersonalization())); }
 		if (tagsPresent.contains(DG12File.DATE_OF_ISSUE_TAG)) { node.add(new DefaultMutableTreeNode("Date of issue: " + dataGroup.getDateOfIssue())); }
 		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dataGroup.getEndorseMentsAndObservations())); }
-		if (tagsPresent.contains(DG12File.IMAGE_OF_FRONT_TAG)) { node.add(new DefaultMutableTreeNode("Image of front: " + dataGroup.getImageOfFront())); }
-		if (tagsPresent.contains(DG12File.IMAGE_OF_REAR_TAG)) { node.add(new DefaultMutableTreeNode("Image of rear: " + dataGroup.getImageOfRear())); }
+		if (tagsPresent.contains(DG12File.IMAGE_OF_FRONT_TAG)) {
+			DefaultMutableTreeNode imageNode = new DefaultMutableTreeNode("Image of front");
+			byte[] imageBytes = dataGroup.getImageOfFront();
+			imageNode.add(new DefaultMutableTreeNode("Encoded length: " + imageBytes.length));
+			try {
+				BufferedImage image = ImageUtil.read(new ByteArrayInputStream(imageBytes), imageBytes.length, "image/jpeg");
+				addNodes(image, imageNode);
+			} catch (IOException ioe) {
+				imageNode.add(new DefaultMutableTreeNode("Error decoding image"));
+			}
+		}
+		if (tagsPresent.contains(DG12File.IMAGE_OF_REAR_TAG)) {
+			DefaultMutableTreeNode imageNode = new DefaultMutableTreeNode("Image of rear");
+			byte[] imageBytes = dataGroup.getImageOfRear();
+			imageNode.add(new DefaultMutableTreeNode("Encoded length: " + imageBytes.length));
+			try {
+				BufferedImage image = ImageUtil.read(new ByteArrayInputStream(imageBytes), imageBytes.length, "image/jpeg");
+				addNodes(image, imageNode);
+			} catch (IOException ioe) {
+				imageNode.add(new DefaultMutableTreeNode("Error decoding image"));
+			}
+		}
 		if (tagsPresent.contains(DG12File.ISSUING_AUTHORITY_TAG)) { node.add(new DefaultMutableTreeNode("Issuing authority: " + dataGroup.getIssuingAuthority())); }
 		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Name of other person: " + dataGroup.getNameOfOtherPerson())); }
 		if (tagsPresent.contains(DG12File.PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personalization sytem serial number: " + dataGroup.getPersonalizationSystemSerialNumber())); }
@@ -458,8 +483,7 @@ public class LDSTreePanel extends JPanel {
 		node.add(new DefaultMutableTreeNode("Reported dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));
 		try{
 			BufferedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
-			node.add(new DefaultMutableTreeNode("Actual dimensions: " + image.getWidth() + " x " + image.getHeight()));
-			node.add(new DefaultMutableTreeNode("Image type: " + imageTypeToString(image.getType())));
+			addNodes(image, node);
 		} catch(IOException e){
 			node.add(new DefaultMutableTreeNode("Actual dimensions: unable to decode image"));
 		}
@@ -475,7 +499,6 @@ public class LDSTreePanel extends JPanel {
 		case BufferedImage.TYPE_BYTE_BINARY: return "Byte binary";
 		case BufferedImage.TYPE_BYTE_GRAY: return "Byte gray";
 		case BufferedImage.TYPE_BYTE_INDEXED: return "Byte indexed";
-		case BufferedImage.TYPE_CUSTOM: return "Custom";
 		case BufferedImage.TYPE_INT_ARGB: return "Int argb";
 		case BufferedImage.TYPE_INT_ARGB_PRE: return "Int arbg pre";
 		case BufferedImage.TYPE_INT_BGR: return "Int bgr";
@@ -483,11 +506,13 @@ public class LDSTreePanel extends JPanel {
 		case BufferedImage.TYPE_USHORT_555_RGB: return "Ushort 555 rgb";
 		case BufferedImage.TYPE_USHORT_565_RGB: return "Ushort 565 rgb";
 		case BufferedImage.TYPE_USHORT_GRAY: return "Ushort gray";
+		case BufferedImage.TYPE_CUSTOM: return "Custom";
 		default: return "Unknown";
 		}
 	}
 
-	public Dimension getPreferredSize() {
-		return PREFERRED_SIZE;
+	private void addNodes(BufferedImage image, DefaultMutableTreeNode node) {
+		node.add(new DefaultMutableTreeNode("Actual dimensions: " + image.getWidth() + " x " + image.getHeight()));
+		node.add(new DefaultMutableTreeNode("Actual image type: " + imageTypeToString(image.getType())));
 	}
 }
