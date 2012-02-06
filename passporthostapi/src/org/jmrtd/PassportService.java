@@ -35,7 +35,6 @@ import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
-import java.security.Security;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -242,7 +241,6 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	public PassportService(CardService<C,R> service) throws CardServiceException {
 		super(service);
 		try {
-			Security.insertProviderAt(BC_PROVIDER, 1); /* FIXME: not needed here? */
 			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
