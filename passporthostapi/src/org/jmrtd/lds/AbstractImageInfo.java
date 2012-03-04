@@ -40,8 +40,6 @@ abstract class AbstractImageInfo implements ImageInfo {
 
 	private int type;
 	private String mimeType;
-	private InputStream carrier;
-	private int pos;
 	private byte[] imageBytes; /* FIXME: replace imageBytes with an InputStream (or ByteBuffer, ByteArrayOutputStream, Piped*Stream, TeeInputStream)? */
 	private int width, height;
 
@@ -68,7 +66,6 @@ abstract class AbstractImageInfo implements ImageInfo {
 		if (imageBytes != null) {
 			this.imageBytes = new byte[imageBytes.length];
 			System.arraycopy(imageBytes, 0, this.imageBytes, 0, imageBytes.length);
-			pos = imageBytes.length;
 		}
 	}
 
@@ -145,32 +142,17 @@ abstract class AbstractImageInfo implements ImageInfo {
 	}
 
 	public InputStream getImageInputStream() {
-		/* DEBUG: new version comment below */
 		return new ByteArrayInputStream(imageBytes);
-		/* GUBED */
-		
-		/* DEBUG: new version uncomment below */
-		//		BlaReader bla = new BlaReader();
-		//		return bla.getInputStream();
-		/* GUBED */
 	}
 
 	protected void readImage(InputStream in, long imageLength) throws IOException {
-		/* DEBUG: new version uncomment below */
-		//		this.carrier = in;
-		//		pos = 0;
-		/* GUBED */
-		
 		imageBytes = new byte[(int)(imageLength & 0x00000000FFFFFFFFL)];
-
-		/* DEBUG: new version comment out below */
 		int bytesRead = 0;
 		while (bytesRead < imageLength) {
 			int bytesJustNowRead = in.read(imageBytes, bytesRead, (int)(imageLength - bytesRead));
 			if (bytesJustNowRead < 0) { throw new IOException("EOF detected after " + bytesRead + " bytes. Was expecting image length " + imageLength + " bytes (i.e., " + (imageLength - bytesRead) + " more bytes)."); }
 			bytesRead += bytesJustNowRead;
 		}
-		/* GUBED */
 	}
 
 	protected void writeImage(OutputStream out) throws IOException {
@@ -218,39 +200,5 @@ abstract class AbstractImageInfo implements ImageInfo {
 		case TYPE_IRIS: return "Iris";
 		default: throw new NumberFormatException("Unknown type: " + Integer.toHexString(type));
 		}
-	}
-
-	private class BlaReader {
-
-		private int bytesRead;
-
-		public BlaReader() {
-			this.bytesRead = 0;
-		}
-
-		public InputStream getInputStream() {
-			return new InputStream() {
-
-				@Override
-				public int read() throws IOException {
-					if (bytesRead < pos) {
-						return imageBytes[bytesRead++];
-					} else {
-						synchronized(carrier) {
-							if (bytesRead < pos) {
-								return imageBytes[bytesRead++];
-							} else {
-								int b = carrier.read();
-								if (b >= 0) {
-									imageBytes[pos++] = (byte)b;
-								}
-								return b;
-							}
-						}
-					}
-				}	
-			};
-		}
-
 	}
 }

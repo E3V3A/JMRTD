@@ -29,7 +29,9 @@ import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
@@ -59,6 +61,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
+import javax.imageio.ImageIO;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
@@ -85,8 +88,9 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.data.ISOCountry;
+import net.sourceforge.scuba.data.TestCountry;
 import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
@@ -111,6 +115,9 @@ import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.DataGroup;
+import org.jmrtd.lds.FaceImageInfo;
+import org.jmrtd.lds.FaceImageInfo.EyeColor;
+import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
@@ -334,7 +341,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	 */
 	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
 		Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
-		PassportViewFrame passportFrame = new PassportViewFrame(passport, preferencesPanel.getReadingMode());
+		DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesPanel.getReadingMode());
 		passportFrame.pack();
 		passportFrame.setVisible(true);
 	}
@@ -398,7 +405,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			public void actionPerformed(ActionEvent e) {
 				try {
 					Passport<CommandAPDU, ResponseAPDU> passport = createEmptyPassport("P<", trustManager);
-					PassportEditFrame passportFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
+					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);
 				} catch (Exception ex) {
@@ -436,7 +443,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(file, trustManager);
 
-						PassportViewFrame passportFrame = new PassportViewFrame(passport, ReadingMode.SAFE_MODE);
+						DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE);
 						passportFrame.pack();
 						passportFrame.setVisible(true);
 					} catch (/* IO */ Exception ioe) {
@@ -630,13 +637,19 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		/* EF.DG1 */
 		Date today = CALENDAR.getTime();
 		String todayString = SDF.format(today);
-		String primaryIdentifier = "";
-		String secondaryIdentifiers = "";
-		MRZInfo mrzInfo = new MRZInfo(docType, ISOCountry.NL.toAlpha3Code(), primaryIdentifier, secondaryIdentifiers, "", ISOCountry.NL.toAlpha3Code(), todayString, Gender.MALE, todayString, "");
+		String primaryIdentifier = "TRAVELER";
+		String secondaryIdentifiers = "HAPPY";
+		String documentNumber = "123456789";
+		Country country = TestCountry.UT;
+		Gender gender = Gender.FEMALE;
+		String optionalData = "";
+		MRZInfo mrzInfo = new MRZInfo(docType, country.toAlpha3Code(), primaryIdentifier, secondaryIdentifiers, documentNumber, country.toAlpha3Code(), todayString, gender, todayString, optionalData);
 		DG1File dg1 = new DG1File(mrzInfo);
 
 		/* EF.DG2 */
-		DG2File dg2 = new DG2File(Arrays.asList(new FaceInfo[] { }));
+		FaceImageInfo faceImageInfo = createFaceImageInfo();
+		FaceInfo faceInfo = new FaceInfo(Arrays.asList(new FaceImageInfo[] { faceImageInfo }));
+		DG2File dg2 = new DG2File(Arrays.asList(new FaceInfo[] { faceInfo }));
 
 		/* EF.SOD */
 		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
@@ -648,8 +661,8 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		Date dateOfExpiry = today;
 		String digestAlgorithm = "SHA256";
 		String signatureAlgorithm = "SHA256withRSA";
-		String issuer = "C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org";
-		String subject = "C=NL, O=JMRTD, OU=DSCA, CN=jmrtd.org/emailAddress=info@jmrtd.org";
+		String issuer = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
+		String subject = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
 		X509Certificate docSigningCert = generateSelfSignedCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, privateKey, signatureAlgorithm);
 		PrivateKey docSigningPrivateKey = privateKey;
 		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
@@ -657,9 +670,56 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		hashes.put(1, digest.digest(dg1.getEncoded()));
 		hashes.put(2, digest.digest(dg2.getEncoded()));
 		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
-		return new Passport(comFile, Arrays.asList(new DataGroup[] { }), sodFile, docSigningPrivateKey, trustManager);
+		return new Passport(comFile, Arrays.asList(new DataGroup[] { dg1, dg2 }), sodFile, docSigningPrivateKey, trustManager);
 	}
 
+	private static FaceImageInfo createFaceImageInfo() {
+		int width = 449, height = 599;
+		byte[] jpegImageBytes = createTrivialJPEGBytes(width, height);
+		Gender gender = Gender.UNSPECIFIED;
+		EyeColor eyeColor = EyeColor.UNSPECIFIED;
+		int hairColor = FaceImageInfo.HAIR_COLOR_UNSPECIFIED;
+		int featureMask = 0;
+		short expression = FaceImageInfo.EXPRESSION_UNSPECIFIED;
+		int[] poseAngle = { 0, 0, 0 };
+		int[] poseAngleUncertainty = { 0, 0, 0 };
+		int faceImageType = FaceImageInfo.FACE_IMAGE_TYPE_FULL_FRONTAL;
+		int colorSpace = 0x00;
+		int sourceType = FaceImageInfo.SOURCE_TYPE_UNSPECIFIED;
+		int deviceType = 0x0000;
+		int quality = 0x0000;
+		int imageDataType = FaceImageInfo.IMAGE_DATA_TYPE_JPEG;	
+		FeaturePoint[] featurePoints = { };
+		FaceImageInfo imageInfo = new FaceImageInfo(
+				 gender,  eyeColor, hairColor,
+				 featureMask,
+				 expression,
+				 poseAngle, poseAngleUncertainty,
+				 faceImageType,
+				 colorSpace,
+				 sourceType,
+				 deviceType,
+				 quality,
+				 featurePoints,
+				 width, height,
+				 jpegImageBytes, imageDataType);
+		return imageInfo;
+	}
+	
+	private static byte[] createTrivialJPEGBytes(int width, int height) {
+		try {
+			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ImageIO.write(image, "jpg", out);
+			out.flush();
+			byte[] bytes = out.toByteArray();
+			return bytes;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+	}
+	
 	private static X509Certificate generateSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
 			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
 		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();

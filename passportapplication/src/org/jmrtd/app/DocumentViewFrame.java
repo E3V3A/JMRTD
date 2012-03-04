@@ -116,11 +116,11 @@ import org.jmrtd.lds.SecurityInfo;
  *
  * @version $Revision: 894 $
  */
-public class PassportViewFrame extends JMRTDFrame
+public class DocumentViewFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -4624658204381014128L;
 
-	private static final String PASSPORT_FRAME_TITLE = "MRTD";
+	private static final String PASSPORT_FRAME_TITLE = "View document";
 	private static final Dimension PREFERRED_SIZE = new Dimension(540, 420);
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
@@ -148,7 +148,7 @@ public class PassportViewFrame extends JMRTDFrame
 
 	private VerificationIndicator verificationIndicator;
 
-	public PassportViewFrame(Passport passport, ReadingMode readingMode) {
+	public DocumentViewFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
 		LOGGER.setLevel(Level.ALL); // DEBUG
 		actionMap = new ActionMap();
@@ -463,7 +463,7 @@ public class PassportViewFrame extends JMRTDFrame
 		action = new AbstractAction() {
 
 			public void actionPerformed(ActionEvent e) {
-				JFrame editorFrame = new PassportEditFrame(passport, ReadingMode.SAFE_MODE);
+				JFrame editorFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
 				// dispose();
 			}
 

@@ -464,6 +464,7 @@ public class LDSTreePanel extends JPanel {
 
 	private String getSBHKey(int key) {
 		switch(key) {
+		case ISO781611.PATRON_HEADER_VERSION_TAG: return "Patron header version";
 		case ISO781611.BIOMETRIC_TYPE_TAG: return "Biometric type";
 		case ISO781611.BIOMETRIC_SUBTYPE_TAG: return "Biometric sub-type";
 		case ISO781611.CREATION_DATE_AND_TIME_TAG: return "Creation date and time";

@@ -153,12 +153,15 @@ LDS
 + Clean up CBEFF groups data groups and related types. Create seperate package org.jmrtd.cbeff.
 + Map terminology from ISO-19794 to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo.
 + Get finger and iris bio template I/O to the same level as face.
-+ Restructure LDS base classes. Introduce *ImageInfo and LDSInfo. Rename some classes.
++ Restructure LDS base classes. Introduce *ImageInfo and LDSInfo.
++ Rename some classes, prefer "Document" or "MRTD" over "Passport".
 + getEncoded() implementations for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo. Uniformly use readObject() and writeObject().
 + In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; don't try to convert to degrees (for now), just use coded values.
 
 GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
+- User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
+- Show DG3 and DG4 in tree if present, even if not readable.
 
 Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max)
@@ -189,8 +192,6 @@ MRZ
 
 GUI
 - APDU tracing showing plain text APDUs when BAC based SM is used
-- When creating a new document from scratch the user should be able to select either ID-1 or ID-3 (3 or 2 line MRZ).
-  Currently it's hardcoded to ID-1.
 - Bug in loading document from file without SOd (is silently accepted, perhaps we should generate SOd?).
 - Improve certificate / trust store viewing and editing (both CSCA, CVCA)
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).

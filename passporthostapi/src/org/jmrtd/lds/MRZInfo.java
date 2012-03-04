@@ -575,6 +575,15 @@ public class MRZInfo extends AbstractInfo implements Serializable
 		return documentCode;
 	}
 
+	public void setDocumentCode(String documentCode) {
+		this.documentCode = documentCode;
+		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
+		if (documentType == DOC_TYPE_ID1 && optionalData2 == null) {
+			optionalData2 = "";
+		}
+		/* FIXME: need to adjust some other lengths if we go from ID1 to ID3 or back... */
+	}
+
 	/**
 	 * Gets the issuing state as a 3 letter code
 	 *

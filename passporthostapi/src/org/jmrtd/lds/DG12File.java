@@ -290,8 +290,25 @@ public class DG12File extends DataGroup
 		return EF_DG12_TAG;
 	}
 
+	/**
+	 * Gets a textual representation of this file.
+	 * 
+	 * @return a textual representation of this file
+	 */
 	public String toString() {
-		return "DG12File";
+		StringBuffer result = new StringBuffer();
+		result.append("DG12File [");
+		result.append(issuingAuthority == null ? "" : issuingAuthority); result.append(", ");
+		result.append(dateOfIssue == null ? "" : SDF.format(dateOfIssue)); result.append(", ");
+		result.append(nameOfOtherPerson == null ? "" : nameOfOtherPerson); result.append(", ");
+		result.append(endorseMentsAndObservations == null ? "" : endorseMentsAndObservations); result.append(", ");
+		result.append(taxOrExitRequirements == null ? "" : taxOrExitRequirements); result.append(", ");
+		result.append(imageOfFront == null ? "" : "image (" + imageOfFront.length + ")"); result.append(", ");
+		result.append(imageOfRear == null ? "" : "image (" + imageOfRear.length + ")"); result.append(", ");
+		result.append(dateAndTimeOfPersonalization == null ? "" : SDF.format(dateAndTimeOfPersonalization)); result.append(", ");
+		result.append(personalizationSystemSerialNumber== null ? "" : personalizationSystemSerialNumber);
+		result.append("]");
+		return result.toString();
 	}
 
 	protected void writeContent(OutputStream out) throws IOException {

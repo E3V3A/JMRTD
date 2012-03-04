@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 
 /**
- * Frame for displaying and manipulating one portrait image.
+ * Frame for displaying and manipulating one fingerprint image.
  * Portrait is displayed at actual size.
  * 
  * Menu bar includes menu for saving image in alternative format,
@@ -64,7 +64,6 @@ public class FingerPrintFrame extends JMRTDFrame
 	private static final long serialVersionUID = -3718372037784454010L;
 
 	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
-	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
 
 	private List<FingerInfo> fingerPrints;
 	// private ImagePanel imagePanel;

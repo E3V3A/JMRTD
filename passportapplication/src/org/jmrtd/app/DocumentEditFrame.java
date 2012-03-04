@@ -71,6 +71,8 @@ import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.ButtonGroup;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -80,7 +82,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
@@ -137,13 +139,15 @@ import org.jmrtd.lds.SODFile;
  *
  * @version $Revision: 894 $
  */
-public class PassportEditFrame extends JMRTDFrame
+public class DocumentEditFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -4624658204371014128L;
 
-	private static final String PASSPORT_FRAME_TITLE = "Edit MRTD";
-	private static final Dimension PREFERRED_SIZE = new Dimension(800, 420);
+	private static final String PASSPORT_FRAME_TITLE = "Edit document";
+	private static final Dimension PREFERRED_SIZE = new Dimension(800, 500);
 
+	private static final Icon CHANGE_DOCUMENT_TYPE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("page_go"));
+	private static final Icon CHANGE_DOCUMENT_TYPE_TO_ID_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bullet_go"));
 	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
 	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
 	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
@@ -162,32 +166,26 @@ public class PassportEditFrame extends JMRTDFrame
 	private ImagePreviewPanel displayPreviewPanel;
 
 	private JPanel panel, westPanel, centerPanel, southPanel;
-	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
 	private Passport<CommandAPDU, ResponseAPDU> passport;
 
 	private EACEvent eacEvent;
 
-	private VerificationIndicator verificationIndicator;
+	private ActionMap actionMap;
 
-	public PassportEditFrame(Passport passport, ReadingMode readingMode) {
+	public DocumentEditFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
 		LOGGER.setLevel(Level.ALL);
 		this.passport = passport;
+		actionMap = new ActionMap();
 		Container contentPane = getContentPane();
 		contentPane.setLayout(new BorderLayout());
-		verificationIndicator = new VerificationIndicator();
 		panel = new JPanel(new BorderLayout());
 		westPanel = new JPanel();
 		centerPanel = new JPanel(new BorderLayout());
-		southPanel = new JPanel();
-		progressBar = new JProgressBar(JProgressBar.HORIZONTAL);
 		panel.add(westPanel, BorderLayout.WEST);
 		panel.add(centerPanel, BorderLayout.CENTER);
-		southPanel.add(verificationIndicator);
-		southPanel.add(progressBar);
-		panel.add(southPanel, BorderLayout.SOUTH);
 		displayPreviewPanel = new ImagePreviewPanel(160, 200);
 		displayPreviewPanel.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
@@ -197,15 +195,15 @@ public class PassportEditFrame extends JMRTDFrame
 				}
 			}
 		});
-//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
+		//		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
 		westPanel.add(displayPreviewPanel);
-		
+
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 		splitPane.add(new LDSTreePanel(passport));
 		splitPane.add(panel);
 
 		contentPane.add(splitPane, BorderLayout.CENTER);
-		
+
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
@@ -222,26 +220,13 @@ public class PassportEditFrame extends JMRTDFrame
 
 				public void performedEAC(EACEvent ee) {
 					eacEvent = ee;
-					updateViewMenu();
+					updateViewMenu(); // FIXME: make switch to allow creation/editing of EAC document. This is legacy from view mode.
 				}
 			});
 			long t = System.currentTimeMillis();
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 
-			displayProgressBar();
-			//			switch (readingMode) {
-			//			case SAFE_MODE:
-			//				passport.verifySecurity(); // blocks
-			//				verificationIndicator.setStatus(passport.getVerificationStatus());
-			//				displayInputStreams();
-			//				break;
-			//			case PROGRESSIVE_MODE:
-			//				displayInputStreams();
-			//				break;
-			//			}
-			//			passport.verifySecurity();
 			displayInputStreams();
-			verificationIndicator.setStatus(passport.getVerificationStatus());
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -389,7 +374,7 @@ public class PassportEditFrame extends JMRTDFrame
 							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
 				JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "MRZ used in BAC differs from MRZ in DG1!", JOptionPane.WARNING_MESSAGE);
 			}
-			final HolderEditPanel holderInfoPanel = new HolderEditPanel(mrzInfo);
+			final DG1EditPanel holderInfoPanel = new DG1EditPanel(mrzInfo);
 			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
@@ -402,34 +387,11 @@ public class PassportEditFrame extends JMRTDFrame
 					mrzPanel.setMRZ(updatedMRZInfo);
 					DG1File dg1 = new DG1File(updatedMRZInfo);
 					passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
-					verificationIndicator.setStatus(passport.getVerificationStatus());
 				}
 			});
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 		}
-	}
-
-	/**
-	 * Sets up the progress bar, starts up the thread, returns immediately.
-	 */
-	private void displayProgressBar() {
-		(new Thread(new Runnable() {
-			public void run() {
-				try {
-					int totalLength = passport.getTotalLength();
-					progressBar.setMaximum(totalLength);
-					while (passport.getBytesRead() <= totalLength) {
-						Thread.sleep(200);
-						progressBar.setValue(passport.getBytesRead());
-					}
-				} catch (InterruptedException ie) {
-					/* NOTE: interrupted, end thread. */
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		})).start();
 	}
 
 	/* Menu stuff below... */
@@ -518,6 +480,19 @@ public class PassportEditFrame extends JMRTDFrame
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
+		/* Change document type (ID1, ID2, ID3) */
+		JMenu changeDocTypeMenuItem = new JMenu("Change doc type");
+		menu.add(changeDocTypeMenuItem);
+		changeDocTypeMenuItem.setAction(getChangeDocTypeAction());
+		ButtonGroup buttonGroup = new ButtonGroup();
+		JRadioButtonMenuItem id1MenuItem = new JRadioButtonMenuItem();
+		buttonGroup.add(id1MenuItem); changeDocTypeMenuItem.add(id1MenuItem); id1MenuItem.setAction(getChangeDocTypeToAction(1));
+		id1MenuItem.setSelected(true);
+		JRadioButtonMenuItem id2MenuItem = new JRadioButtonMenuItem();
+		buttonGroup.add(id2MenuItem); changeDocTypeMenuItem.add(id2MenuItem); id2MenuItem.setAction(getChangeDocTypeToAction(2));
+		JRadioButtonMenuItem id3MenuItem = new JRadioButtonMenuItem();
+		buttonGroup.add(id3MenuItem); changeDocTypeMenuItem.add(id3MenuItem); id3MenuItem.setAction(getChangeDocTypeToAction(3));
+		
 		/* Load additional portrait from file... */
 		JMenuItem loadPortraitFromFile = new JMenuItem();
 		menu.add(loadPortraitFromFile);
@@ -654,7 +629,9 @@ public class PassportEditFrame extends JMRTDFrame
 
 	private Action getSaveAsAction() {
 		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("SaveAs");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 9113082315691234764L;
 
@@ -705,11 +682,14 @@ public class PassportEditFrame extends JMRTDFrame
 		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save passport to file");
 		action.putValue(Action.NAME, "Save As...");
+		actionMap.put("SaveAs", action);
 		return action;
 	}
 
 	private Action getViewPortraitAtOriginalSizeAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewPortraitAtOrginalSize");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7141975907898754026L;
 
@@ -721,6 +701,7 @@ public class PassportEditFrame extends JMRTDFrame
 		action.putValue(Action.LARGE_ICON_KEY, MAGNIFIER_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View portrait image at original size");
 		action.putValue(Action.NAME, "Portrait at 100%...");
+		actionMap.put("ViewPortraitAtOrginalSize", action);
 		return action;
 	}
 
@@ -757,7 +738,9 @@ public class PassportEditFrame extends JMRTDFrame
 	}
 
 	private Action getViewFingerPrintsAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("ViewFingerPrints");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7141975907858754026L;
 
@@ -778,6 +761,7 @@ public class PassportEditFrame extends JMRTDFrame
 		action.putValue(Action.LARGE_ICON_KEY, FINGERPRINT_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "View fingerprint images at original size");
 		action.putValue(Action.NAME, "Fingerprints...");
+		actionMap.put("ViewFingerPrints", action);
 		return action;
 	}
 
@@ -1276,6 +1260,47 @@ public class PassportEditFrame extends JMRTDFrame
 		action.putValue(Action.NAME, "Upload passport...");
 		return action;
 	}
+
+	private Action getChangeDocTypeToAction(int type) {
+		Action action = actionMap.get("ChangeDocTypeToID" + type);
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					DG1File dg1 = new DG1File(passport.getInputStream(PassportService.EF_DG1));
+					MRZInfo mrzInfo = dg1.getMRZInfo();
+					int originalDocumentType = mrzInfo.getDocumentType();
+					MRZInfo newMRZInfo = new MRZInfo(mrzInfo.getDocumentCode(), mrzInfo.getIssuingState(), mrzInfo.getPrimaryIdentifier(), mrzInfo.getSecondaryIdentifier(), mrzInfo.getDocumentNumber(), mrzInfo.getNationality(), mrzInfo.getDateOfBirth(), mrzInfo.getGender(), mrzInfo.getDateOfExpiry(), mrzInfo.getPersonalNumber());
+				} catch (CardServiceException cse) {
+					cse.printStackTrace();
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, CHANGE_DOCUMENT_TYPE_TO_ID_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, CHANGE_DOCUMENT_TYPE_TO_ID_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Change type to ID" + type);
+		action.putValue(Action.NAME, "ID" + type);
+		actionMap.put("ChangeDocTypeToID" + type, action);
+		return action;
+	}
+
+	private Action getChangeDocTypeAction() {
+		Action action = actionMap.get("ChangeDocType");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+			}			
+		};
+		action.putValue(Action.SMALL_ICON, CHANGE_DOCUMENT_TYPE_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, UPLOAD_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Change document type");
+		action.putValue(Action.NAME, "Change doc.type");
+		actionMap.put("ChangeDocType", action);
+		return action;
+	}
+
 
 	private static PrivateKey readPrivateRSAKeyFromFile(File file) {
 		try {

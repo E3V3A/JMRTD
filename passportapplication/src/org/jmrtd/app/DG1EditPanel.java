@@ -27,7 +27,6 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -46,19 +45,17 @@ import org.jmrtd.lds.MRZInfo;
 
 /**
  * Panel for displaying and editing DG1.
- * TODO: maybe also involve DG11.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
  * @version $Revision: 894 $
  */
-public class HolderEditPanel extends JPanel
+public class DG1EditPanel extends JPanel
 {
 	private static final long serialVersionUID = -6169486570387029561L;
 
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");	
-	
 	private enum Field {
+		DOCUMENT_CODE,
 		SURNAME,
 		GIVEN_NAMES,
 		DOCUMENT_NUMBER,
@@ -84,7 +81,7 @@ public class HolderEditPanel extends JPanel
 
 	private Collection<ActionListener> listeners;
 
-	public HolderEditPanel(MRZInfo nfo) {
+	public DG1EditPanel(MRZInfo nfo) {
 		this.info = nfo;
 		listeners = new ArrayList<ActionListener>();
 		SpringLayout layout = new SpringLayout();
@@ -125,6 +122,16 @@ public class HolderEditPanel extends JPanel
 
 	private Component makeValueComp(Field field, MRZInfo nfo) {
 		switch(field) {
+		case DOCUMENT_CODE: {
+			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentCode(), 2);
+			tf.addActionListener(new ActionListener() {
+				public void actionPerformed(ActionEvent e) {
+					info.setDocumentCode(tf.getText());
+					notifyActionPerformed(new ActionEvent(this, 0, "Document code changed"));
+				}
+			});
+			return tf;			
+		}
 		case SURNAME: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPrimaryIdentifier());
 			tf.addActionListener(new ActionListener() {

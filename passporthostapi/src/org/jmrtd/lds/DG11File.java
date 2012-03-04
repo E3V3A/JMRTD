@@ -434,19 +434,19 @@ public class DG11File extends DataGroup
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("DG11File [");
-		result.append(fullNamePrimaryIdentifier); result.append(", ");
+		result.append(fullNamePrimaryIdentifier == null ? "" : fullNamePrimaryIdentifier); result.append(", ");
 		result.append(fullNameSecondaryIdentifiers == null || fullNameSecondaryIdentifiers.size() == 0 ? "[]" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
-		result.append(personalNumber); result.append(", ");
-		result.append(SDF.format(fullDateOfBirth)); result.append(", ");
+		result.append(personalNumber == null ? "" : personalNumber); result.append(", ");
+		result.append(fullDateOfBirth == null ? "" : SDF.format(fullDateOfBirth)); result.append(", ");
 		result.append(placeOfBirth == null || placeOfBirth.size() == 0 ? "[]" : placeOfBirth.toString()); result.append(", ");
 		result.append(permanentAddress == null || permanentAddress.size() == 0 ? "[]" : permanentAddress.toString()); result.append(", ");
-		result.append(telephone); result.append(", ");
-		result.append(profession); result.append(", ");
-		result.append(title); result.append(", ");
-		result.append(personalSummary); result.append(", ");
+		result.append(telephone == null ? "" : telephone); result.append(", ");
+		result.append(profession == null ? "" : profession); result.append(", ");
+		result.append(title == null ? "" : title); result.append(", ");
+		result.append(personalSummary == null ? "" : personalSummary); result.append(", ");
 		result.append(proofOfCitizenship == null ? "" : "image (" + proofOfCitizenship.length + ")"); result.append(", ");
 		result.append(otherValidTDNumbers == null || otherValidTDNumbers.size() == 0 ? "[]" : otherValidTDNumbers.toString()); result.append(", ");
-		result.append(custodyInformation);
+		result.append(custodyInformation == null ? "" : custodyInformation);
 		result.append("]");
 		return result.toString();
 	}

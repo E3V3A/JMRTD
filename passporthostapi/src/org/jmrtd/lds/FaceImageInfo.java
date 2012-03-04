@@ -737,7 +737,7 @@ public class FaceImageInfo extends AbstractImageInfo
 	private static String toMimeType(int compressionAlg) {
 		switch (compressionAlg) {
 		case IMAGE_DATA_TYPE_JPEG: return "image/jpeg";
-		case IMAGE_DATA_TYPE_JPEG2000: return "image/jpeg2000";
+		case IMAGE_DATA_TYPE_JPEG2000: return "image/jpeg2000"; /* FIXME; Check ietf rfc3745, shouldn't this be "image/jp2"? */
 		}
 		return null;
 	}
