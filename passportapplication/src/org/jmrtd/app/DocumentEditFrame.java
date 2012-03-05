@@ -168,6 +168,10 @@ public class DocumentEditFrame extends JMRTDFrame
 	private JPanel panel, westPanel, centerPanel, southPanel;
 	private JMenu viewMenu;
 
+	private DG1EditPanel dg1EditPanel;
+	private LDSTreePanel treePanel;
+	private MRZPanel mrzPanel;
+
 	private Passport<CommandAPDU, ResponseAPDU> passport;
 
 	private EACEvent eacEvent;
@@ -199,7 +203,8 @@ public class DocumentEditFrame extends JMRTDFrame
 		westPanel.add(displayPreviewPanel);
 
 		JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
-		splitPane.add(new LDSTreePanel(passport));
+		treePanel = new LDSTreePanel(passport);
+		splitPane.add(treePanel);
 		splitPane.add(panel);
 
 		contentPane.add(splitPane, BorderLayout.CENTER);
@@ -249,7 +254,7 @@ public class DocumentEditFrame extends JMRTDFrame
 	 */
 	private void displayInputStreams() {
 		try {
-			displayHolderInfo();
+			displayDG1();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
@@ -362,7 +367,7 @@ public class DocumentEditFrame extends JMRTDFrame
 		}
 	}
 
-	private void displayHolderInfo() throws IOException {
+	private void displayDG1() throws IOException {
 		try {
 			InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
 			DG1File dg1 = new DG1File(dg1In);
@@ -374,24 +379,46 @@ public class DocumentEditFrame extends JMRTDFrame
 							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
 				JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "MRZ used in BAC differs from MRZ in DG1!", JOptionPane.WARNING_MESSAGE);
 			}
-			final DG1EditPanel holderInfoPanel = new DG1EditPanel(mrzInfo);
-			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
-			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);
-			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
-			centerPanel.revalidate();
-			centerPanel.repaint();
-			holderInfoPanel.addActionListener(new ActionListener() {
+			dg1EditPanel = new DG1EditPanel(mrzInfo);
+			mrzPanel = new MRZPanel(mrzInfo);
+			setMRZ(mrzInfo);
+			dg1EditPanel.addActionListener(new ActionListener() {
 				/* User changes DG1 info in GUI. */
 				public void actionPerformed(ActionEvent e) {
-					MRZInfo updatedMRZInfo = holderInfoPanel.getMRZ();
-					mrzPanel.setMRZ(updatedMRZInfo);
-					DG1File dg1 = new DG1File(updatedMRZInfo);
-					passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
+					MRZInfo mrzInfo = dg1EditPanel.getMRZ();
+					setMRZ(mrzInfo);
 				}
 			});
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 		}
+	}
+
+	private void setMRZ(MRZInfo mrzInfo) {
+		
+//		DG1File dg1 = new DG1File(mrzInfo);
+//		passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
+//		treePanel.setDocument(passport);
+//		treePanel.revalidate();
+//		treePanel.repaint();
+		
+		if (!mrzInfo.equals(mrzPanel.getMRZ())) {
+			mrzPanel.setMRZ(mrzInfo);
+		}
+
+		if (!mrzInfo.equals(dg1EditPanel.getMRZ())) {
+			dg1EditPanel.setMRZ(mrzInfo);
+		}
+
+		if (centerPanel.getComponentCount() > 0) {
+			centerPanel.removeAll();
+		}
+		centerPanel.add(dg1EditPanel, BorderLayout.CENTER);
+		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
+		centerPanel.revalidate();
+		centerPanel.repaint();
+
+
 	}
 
 	/* Menu stuff below... */
@@ -480,6 +507,17 @@ public class DocumentEditFrame extends JMRTDFrame
 	private JMenu createToolsMenu() {
 		JMenu menu = new JMenu("Tools");
 
+		int documentType = MRZInfo.DOC_TYPE_UNSPECIFIED;
+		try {
+			MRZInfo mrzInfo = null;
+			DG1File dg1 = new DG1File(passport.getInputStream(PassportService.EF_DG1));
+			mrzInfo = dg1.getMRZInfo();
+			documentType = mrzInfo.getDocumentType();
+		} catch (Exception e) {
+			e.printStackTrace();
+			LOGGER.severe("Could not determine current document type");
+		}
+
 		/* Change document type (ID1, ID2, ID3) */
 		JMenu changeDocTypeMenuItem = new JMenu("Change doc type");
 		menu.add(changeDocTypeMenuItem);
@@ -487,12 +525,14 @@ public class DocumentEditFrame extends JMRTDFrame
 		ButtonGroup buttonGroup = new ButtonGroup();
 		JRadioButtonMenuItem id1MenuItem = new JRadioButtonMenuItem();
 		buttonGroup.add(id1MenuItem); changeDocTypeMenuItem.add(id1MenuItem); id1MenuItem.setAction(getChangeDocTypeToAction(1));
-		id1MenuItem.setSelected(true);
+		id1MenuItem.setSelected(documentType == MRZInfo.DOC_TYPE_ID1);
 		JRadioButtonMenuItem id2MenuItem = new JRadioButtonMenuItem();
+		id2MenuItem.setSelected(documentType == MRZInfo.DOC_TYPE_ID2);
 		buttonGroup.add(id2MenuItem); changeDocTypeMenuItem.add(id2MenuItem); id2MenuItem.setAction(getChangeDocTypeToAction(2));
 		JRadioButtonMenuItem id3MenuItem = new JRadioButtonMenuItem();
 		buttonGroup.add(id3MenuItem); changeDocTypeMenuItem.add(id3MenuItem); id3MenuItem.setAction(getChangeDocTypeToAction(3));
-		
+		id3MenuItem.setSelected(documentType == MRZInfo.DOC_TYPE_ID3);
+
 		/* Load additional portrait from file... */
 		JMenuItem loadPortraitFromFile = new JMenuItem();
 		menu.add(loadPortraitFromFile);
@@ -1261,8 +1301,8 @@ public class DocumentEditFrame extends JMRTDFrame
 		return action;
 	}
 
-	private Action getChangeDocTypeToAction(int type) {
-		Action action = actionMap.get("ChangeDocTypeToID" + type);
+	private Action getChangeDocTypeToAction(final int requestedDocumentType) {
+		Action action = actionMap.get("ChangeDocTypeToID" + requestedDocumentType);
 		if (action != null) { return action; }
 		action = new AbstractAction() {
 			@Override
@@ -1270,8 +1310,18 @@ public class DocumentEditFrame extends JMRTDFrame
 				try {
 					DG1File dg1 = new DG1File(passport.getInputStream(PassportService.EF_DG1));
 					MRZInfo mrzInfo = dg1.getMRZInfo();
+					String documentCode = mrzInfo.getDocumentCode();
 					int originalDocumentType = mrzInfo.getDocumentType();
-					MRZInfo newMRZInfo = new MRZInfo(mrzInfo.getDocumentCode(), mrzInfo.getIssuingState(), mrzInfo.getPrimaryIdentifier(), mrzInfo.getSecondaryIdentifier(), mrzInfo.getDocumentNumber(), mrzInfo.getNationality(), mrzInfo.getDateOfBirth(), mrzInfo.getGender(), mrzInfo.getDateOfExpiry(), mrzInfo.getPersonalNumber());
+					if (requestedDocumentType != originalDocumentType) {
+						switch(requestedDocumentType) {
+						case MRZInfo.DOC_TYPE_ID1: documentCode = "I"; break;
+						case MRZInfo.DOC_TYPE_ID2: documentCode = "V"; break;
+						case MRZInfo.DOC_TYPE_ID3: documentCode = "P"; break;
+						}
+					}
+					// FIXME: if we go from 3 -> 1, spread personal number over opt.data 1 and opt.data 2?
+					mrzInfo.setDocumentCode(documentCode);
+					setMRZ(mrzInfo);
 				} catch (CardServiceException cse) {
 					cse.printStackTrace();
 				}
@@ -1279,9 +1329,9 @@ public class DocumentEditFrame extends JMRTDFrame
 		};
 		action.putValue(Action.SMALL_ICON, CHANGE_DOCUMENT_TYPE_TO_ID_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, CHANGE_DOCUMENT_TYPE_TO_ID_ICON);
-		action.putValue(Action.SHORT_DESCRIPTION, "Change type to ID" + type);
-		action.putValue(Action.NAME, "ID" + type);
-		actionMap.put("ChangeDocTypeToID" + type, action);
+		action.putValue(Action.SHORT_DESCRIPTION, "Change type to ID" + requestedDocumentType);
+		action.putValue(Action.NAME, "ID" + requestedDocumentType);
+		actionMap.put("ChangeDocTypeToID" + requestedDocumentType, action);
 		return action;
 	}
 
@@ -1300,7 +1350,6 @@ public class DocumentEditFrame extends JMRTDFrame
 		actionMap.put("ChangeDocType", action);
 		return action;
 	}
-
 
 	private static PrivateKey readPrivateRSAKeyFromFile(File file) {
 		try {

@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.crypto.interfaces.DHPublicKey;
-import javax.swing.ActionMap;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
@@ -63,21 +62,26 @@ public class LDSTreePanel extends JPanel {
 	private static final Dimension PREFERRED_SIZE = new Dimension(160, 420);
 
 	private Passport passport;
-	private ActionMap actionMap;
 
 	public LDSTreePanel(Passport passport) {
+		setLayout(new BorderLayout());
+		setDocument(passport);
+	}
+
+	public void setDocument(Passport passport) {
 		try {
-			setLayout(new BorderLayout());
 			this.passport = passport;
+			if (getComponentCount() > 0) { removeAll(); }
 			TreeNode root = buildTree(passport);
 			add(new JScrollPane(new JTree(root)));
 			revalidate();
+			repaint();
 			setVisible(true);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
@@ -147,6 +151,7 @@ public class LDSTreePanel extends JPanel {
 		Map<Integer, byte[]> dataGroupHashes = sod.getDataGroupHashes();
 		for (Map.Entry<Integer, byte[]> entry: dataGroupHashes.entrySet()) {
 			int dgNumber = entry.getKey();
+			System.out.println("DEBUG: *** DG" + dgNumber);
 			hashesNode.add(new DefaultMutableTreeNode("DG" + dgNumber + ": " + Hex.bytesToHexString(entry.getValue())));
 		}
 		node.add(new DefaultMutableTreeNode("Issuer: " + sod.getIssuerX500Principal()));

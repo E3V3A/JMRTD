@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,19 +77,30 @@ public class DG1EditPanel extends JPanel
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 10);
 	private static final Font VALUE_FONT = new Font("Monospaced", Font.PLAIN, 12);
 
-	private MRZInfo info;
+	private MRZInfo mrzInfo;
 
 	private Collection<ActionListener> listeners;
 
-	public DG1EditPanel(MRZInfo nfo) {
-		this.info = nfo;
+	public DG1EditPanel(MRZInfo mrzInfo) {
 		listeners = new ArrayList<ActionListener>();
+		setMRZ(mrzInfo);
+	}
+
+	public MRZInfo getMRZ() {
+		return mrzInfo;
+	}
+
+	public void setMRZ(MRZInfo mrzInfo) {
+		this.mrzInfo = mrzInfo;
+		if (getComponentCount() > 0) {
+			removeAll();
+		}
 		SpringLayout layout = new SpringLayout();
 		setLayout(layout);
 		Component prevComp = null;
 		for (Field field: Field.values()) {
 			Component keyComp = makeKeyComp(field.toString());
-			Component valueComp = makeValueComp(field, nfo);
+			Component valueComp = makeValueComp(field, mrzInfo);
 			if (prevComp == null) {
 				layout.putConstraint(SpringLayout.NORTH, keyComp, 5, SpringLayout.NORTH, this);
 				layout.putConstraint(SpringLayout.NORTH, valueComp, 5, SpringLayout.NORTH, this);
@@ -108,11 +119,7 @@ public class DG1EditPanel extends JPanel
 			}
 		}
 	}
-
-	public MRZInfo getMRZ() {
-		return info;
-	}
-
+	
 	private Component makeKeyComp(String key) {
 		key = key.trim();
 		JLabel c = new JLabel(key + ": ");
@@ -126,7 +133,7 @@ public class DG1EditPanel extends JPanel
 			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentCode(), 2);
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDocumentCode(tf.getText());
+					mrzInfo.setDocumentCode(tf.getText());
 					notifyActionPerformed(new ActionEvent(this, 0, "Document code changed"));
 				}
 			});
@@ -136,7 +143,7 @@ public class DG1EditPanel extends JPanel
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPrimaryIdentifier());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setPrimaryIdentifier(tf.getText());
+					mrzInfo.setPrimaryIdentifier(tf.getText());
 					notifyActionPerformed(new ActionEvent(this, 0, "Primary identifier changed"));
 				}
 			});
@@ -152,7 +159,7 @@ public class DG1EditPanel extends JPanel
 			final MRZEntryField tf = makeMRZEntryField(nameStr.toString());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setSecondaryIdentifiers(tf.getText());
+					mrzInfo.setSecondaryIdentifiers(tf.getText());
 					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
 				}
 			});
@@ -162,7 +169,7 @@ public class DG1EditPanel extends JPanel
 			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentNumber(), 9);
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDocumentNumber(tf.getText());
+					mrzInfo.setDocumentNumber(tf.getText());
 					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
 				}
 			});
@@ -172,7 +179,7 @@ public class DG1EditPanel extends JPanel
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPersonalNumber(), 14);
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setPersonalNumber(tf.getText());
+					mrzInfo.setPersonalNumber(tf.getText());
 					notifyActionPerformed(new ActionEvent(this, 0, "Personal number changed"));
 				}
 			});
@@ -182,7 +189,7 @@ public class DG1EditPanel extends JPanel
 			final CountryEntryField tf = makeCountryField(nfo.getNationality());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setNationality(tf.getCountry().toAlpha3Code());
+					mrzInfo.setNationality(tf.getCountry().toAlpha3Code());
 					notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
 				}
 			});
@@ -192,7 +199,7 @@ public class DG1EditPanel extends JPanel
 			final CountryEntryField tf = makeCountryField(nfo.getIssuingState());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setIssuingState(tf.getCountry().toAlpha3Code());
+					mrzInfo.setIssuingState(tf.getCountry().toAlpha3Code());
 					notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
 				}
 			});
@@ -202,7 +209,7 @@ public class DG1EditPanel extends JPanel
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfBirth());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDateOfBirth(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
+					mrzInfo.setDateOfBirth(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
 					notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
 				}
 			});
@@ -212,7 +219,7 @@ public class DG1EditPanel extends JPanel
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfExpiry());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setDateOfExpiry(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
+					mrzInfo.setDateOfExpiry(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
 					notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
 				}
 			});
@@ -222,7 +229,7 @@ public class DG1EditPanel extends JPanel
 			final GenderEntryField tf = makeGenderEntryField(nfo.getGender());
 			tf.addActionListener(new ActionListener() {
 				public void actionPerformed(ActionEvent e) {
-					info.setGender(tf.getGender());
+					mrzInfo.setGender(tf.getGender());
 					notifyActionPerformed(new ActionEvent(this, 0, "Gender changed"));
 				}
 			});

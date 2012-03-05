@@ -154,20 +154,20 @@ LDS
 + Map terminology from ISO-19794 to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo.
 + Get finger and iris bio template I/O to the same level as face.
 + Restructure LDS base classes. Introduce *ImageInfo and LDSInfo.
-+ Rename some classes, prefer "Document" or "MRTD" over "Passport".
++ Start renaming some classes, prefer "Document" or "MRTD" over "Passport".
 + getEncoded() implementations for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo. Uniformly use readObject() and writeObject().
 + In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; don't try to convert to degrees (for now), just use coded values.
 
 GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
-- User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
-- Show DG3 and DG4 in tree if present, even if not readable.
++ User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
++ Show DG3 and DG4 in tree if present, even if not readable.
 
 Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max)
 
 Code quality
-- Check unit tests
++ Check unit tests
 - Check JavaDoc
 - Check Findbugs
 
@@ -184,6 +184,9 @@ General
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Implement BAC as KeyStore?
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
+- Check image/jpeg2000 mime-type. Should this be image/jp2 according to RFC3745?
+- Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
+- Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.

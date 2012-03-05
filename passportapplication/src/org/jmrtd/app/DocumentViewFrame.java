@@ -174,9 +174,9 @@ public class DocumentViewFrame extends JMRTDFrame
 			}
 		});
 		centerPanel.add(displayPreviewPanel, BorderLayout.WEST);
-		
+
 		contentPane.add(panel, BorderLayout.CENTER);
-		
+
 		JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		menuBar.add(createFileMenu());
@@ -464,7 +464,7 @@ public class DocumentViewFrame extends JMRTDFrame
 
 			public void actionPerformed(ActionEvent e) {
 				JFrame editorFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
-				// dispose();
+				dispose();
 			}
 
 		};

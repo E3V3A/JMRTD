@@ -630,6 +630,7 @@ public class Passport<C, R>
 	public List<Short> getFileList() {
 		List<Short> result = new ArrayList<Short>();
 		result.addAll(fileLengths.keySet());
+		result.addAll(couldNotRead);
 		Collections.sort(result);
 		return result;
 	}
