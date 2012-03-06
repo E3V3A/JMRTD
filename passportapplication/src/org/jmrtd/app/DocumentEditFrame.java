@@ -396,19 +396,13 @@ public class DocumentEditFrame extends JMRTDFrame
 
 	private void setMRZ(MRZInfo mrzInfo) {
 		
-//		DG1File dg1 = new DG1File(mrzInfo);
-//		passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
-//		treePanel.setDocument(passport);
-//		treePanel.revalidate();
-//		treePanel.repaint();
+		DG1File dg1 = new DG1File(mrzInfo);
+		passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
+		treePanel.reload();
 		
-		if (!mrzInfo.equals(mrzPanel.getMRZ())) {
-			mrzPanel.setMRZ(mrzInfo);
-		}
+		mrzPanel.setMRZ(mrzInfo);
 
-		if (!mrzInfo.equals(dg1EditPanel.getMRZ())) {
-			dg1EditPanel.setMRZ(mrzInfo);
-		}
+		dg1EditPanel.setMRZ(mrzInfo);
 
 		if (centerPanel.getComponentCount() > 0) {
 			centerPanel.removeAll();
@@ -417,8 +411,6 @@ public class DocumentEditFrame extends JMRTDFrame
 		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 		centerPanel.revalidate();
 		centerPanel.repaint();
-
-
 	}
 
 	/* Menu stuff below... */

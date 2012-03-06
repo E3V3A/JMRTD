@@ -26,7 +26,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
-import java.security.Provider;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -50,8 +49,6 @@ import org.jmrtd.lds.MRZInfo;
  */
 public class Util
 {
-	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-
 	public static final int ENC_MODE = 1;
 	public static final int MAC_MODE = 2;
 

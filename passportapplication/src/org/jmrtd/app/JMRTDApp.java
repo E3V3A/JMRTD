@@ -167,11 +167,18 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance(),
 	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	static {
 		/* So that BC stuff knows about CVC certificates. */
 		BC_PROVIDER.put("CertificateFactory.CVC", JMRTD_PROVIDER.get("CertificateFactory.CVC"));
 		Security.insertProviderAt(BC_PROVIDER, 1);
 		Security.addProvider(JMRTD_PROVIDER);
+		
+		Provider[] providers = Security.getProviders();
+		for (Provider provider: providers) {
+			LOGGER.info("Provider " + provider.getName() + ": " + provider.getClass().getCanonicalName());
+		}
 	}
 
 	private ActionMap actionMap;
@@ -183,8 +190,6 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	private MRTDTrustStore trustManager;
 
 	private APDUTraceFrame apduTraceFrame;
-
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/**
 	 * Constructs the GUI.

@@ -27,9 +27,11 @@ import java.security.Security;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Security provider for JMRTD specific implementations.
+ * Main motivation is to make JMRTD less dependent on the BouncyCastle provider.
  * Provides:
  * <ul>
  *    <li>{@link java.security.cert.CertificateFactory} &quot;CVC&quot;
@@ -57,16 +59,24 @@ public class JMRTDSecurityProvider extends Provider
 {
 	private static final long serialVersionUID = -2881416441551680704L;
 
-	private static final Provider BC_PROVIDER = createBouncyCastleProviderOrNull();
-	private static final Provider SC_PROVIDER = createSpongyCastleProviderOrNull();
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+
+	private static final String
+	SUN_PROVIDER_CLASS_NAME = "sun.security.provider.Sun",
+	BC_PROVIDER_CLASS_NAME = "org.bouncycastle.jce.provider.BouncyCastleProvider",
+	SC_PROVIDER_CLASS_NAME = "org.spongycastle.jce.provider.BouncyCastleProvider";
+
+	private static final Provider SUN_PROVIDER = getProviderOrNull(SUN_PROVIDER_CLASS_NAME);
+	private static final Provider BC_PROVIDER = getProviderOrNull(BC_PROVIDER_CLASS_NAME);
+	private static final Provider SC_PROVIDER = getProviderOrNull(SC_PROVIDER_CLASS_NAME);
 	private static final Provider JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	static {
-		if (BC_PROVIDER != null) { Security.insertProviderAt(BC_PROVIDER, 1); }
-		if (SC_PROVIDER != null) { Security.insertProviderAt(SC_PROVIDER, 2); }
-		if (JMRTD_PROVIDER != null) { Security.insertProviderAt(JMRTD_PROVIDER, 3); }
+		//		if (BC_PROVIDER != null) { Security.insertProviderAt(BC_PROVIDER, 1); }
+		//		if (SC_PROVIDER != null) { Security.insertProviderAt(SC_PROVIDER, 2); }
+		//		if (JMRTD_PROVIDER != null) { Security.insertProviderAt(JMRTD_PROVIDER, 3); }
 	}
-	
+
 	private JMRTDSecurityProvider() {
 		super("JMRTD", 0.1, "JMRTD Security Provider");
 		put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
@@ -78,19 +88,19 @@ public class JMRTDSecurityProvider extends Provider
 			/* Replicate BC algorithms... */
 
 			/* FIXME: this won't work, our provider is not signed! */
-//			replicateFromProvider("Cipher", "DESede/CBC/NoPadding", getBouncyCastleProvider());
-//			replicateFromProvider("Cipher", "RSA/ECB/PKCS1Padding", getBouncyCastleProvider());
-//			replicateFromProvider("Cipher", "RSA/NONE/NoPadding", getBouncyCastleProvider());
-//			replicateFromProvider("KeyFactory", "RSA", getBouncyCastleProvider());
-//			replicateFromProvider("KeyFactory", "DH", getBouncyCastleProvider());
-//			replicateFromProvider("Mac", "ISO9797ALG3MAC", getBouncyCastleProvider());
-//			replicateFromProvider("Mac", "ISO9797ALG3WITHISO7816-4PADDING", getBouncyCastleProvider());
-//			replicateFromProvider("SecretKeyFactory", "DESede", getBouncyCastleProvider());
+			//			replicateFromProvider("Cipher", "DESede/CBC/NoPadding", getBouncyCastleProvider());
+			//			replicateFromProvider("Cipher", "RSA/ECB/PKCS1Padding", getBouncyCastleProvider());
+			//			replicateFromProvider("Cipher", "RSA/NONE/NoPadding", getBouncyCastleProvider());
+			//			replicateFromProvider("KeyFactory", "RSA", getBouncyCastleProvider());
+			//			replicateFromProvider("KeyFactory", "DH", getBouncyCastleProvider());
+			//			replicateFromProvider("Mac", "ISO9797ALG3MAC", getBouncyCastleProvider());
+			//			replicateFromProvider("Mac", "ISO9797ALG3WITHISO7816-4PADDING", getBouncyCastleProvider());
+			//			replicateFromProvider("SecretKeyFactory", "DESede", getBouncyCastleProvider());
 
 			/* But these work fine. */
 			replicateFromProvider("CertificateFactory", "X.509", getBouncyCastleProvider());
 			replicateFromProvider("CertStore", "Collection", getBouncyCastleProvider());
-			replicateFromProvider("Keystore", "JKS", getBouncyCastleProvider());
+			replicateFromProvider("KeyStore", "JKS", SUN_PROVIDER);
 			replicateFromProvider("MessageDigest", "SHA1", getBouncyCastleProvider());
 			replicateFromProvider("Signature", "SHA1withRSA/ISO9796-2", getBouncyCastleProvider());
 			replicateFromProvider("Signature", "MD2withRSA", getBouncyCastleProvider());
@@ -107,6 +117,12 @@ public class JMRTDSecurityProvider extends Provider
 			replicateFromProvider("Signature", "SHA224withRSA", getBouncyCastleProvider());
 			replicateFromProvider("Signature", "SHA224withRSA/ISO9796-2", getBouncyCastleProvider());
 
+			/* Testing 0.4.7 -- MO */			
+			//			replicateFromProvider("KeyStore", "UBER", getBouncyCastleProvider());
+			//			replicateFromProvider("KeyPairGenerator", "ECDHC", getBouncyCastleProvider());
+			//			replicateFromProvider("KeyPairGenerator", "ECDSA", getBouncyCastleProvider());
+			//			replicateFromProvider("X509StreamParser", "CERTIFICATE", getBouncyCastleProvider());
+
 			put("Alg.Alias.Mac.ISO9797Alg3Mac", "ISO9797ALG3MAC");
 			put("Alg.Alias.CertificateFactory.X509", "X.509");
 		}
@@ -114,9 +130,9 @@ public class JMRTDSecurityProvider extends Provider
 
 	private void replicateFromProvider(String serviceName, String algorithmName, Provider provider) {
 		String name = serviceName + "." + algorithmName;
-		Object bouncyService = provider.get(name);
-		if (bouncyService != null) {
-			put(name, bouncyService);
+		Object service = provider.get(name);
+		if (service != null) {
+			put(name, service);
 		}
 	}
 
@@ -124,34 +140,53 @@ public class JMRTDSecurityProvider extends Provider
 		return JMRTD_PROVIDER;
 	}
 
+	public static int beginPreferBouncyCastleProvider() {
+		Provider bcProvider = getBouncyCastleProvider();
+		if (bcProvider == null) { return -1; }
+		Provider[] providers = Security.getProviders();
+		for (int i = 0; i < providers.length; i++) {
+			Provider provider = providers[i];
+			if (bcProvider.getClass().getCanonicalName().equals(provider.getClass().getCanonicalName())) {
+				Security.removeProvider(provider.getName());
+				Security.insertProviderAt(bcProvider, 1);
+				return i;
+			}
+		}
+		return -1;
+	}
+	
+	public static void endPreferBouncyCastleProvider(int i) {
+		Provider bcProvider = getBouncyCastleProvider();
+		Security.removeProvider(bcProvider.getName());
+		if (i > 0) {
+			Security.insertProviderAt(bcProvider, i);
+		}
+	}
+
 	public static Provider getBouncyCastleProvider() {
 		if (BC_PROVIDER != null) { return BC_PROVIDER; }
 		if (SC_PROVIDER != null) { return SC_PROVIDER; }
+		LOGGER.severe("No Bouncy or Spongy provider");
 		return null;
 	}
 
 	public static Provider getSpongyCastleProvider() {
 		if (SC_PROVIDER != null) { return SC_PROVIDER; }
 		if (BC_PROVIDER != null) { return BC_PROVIDER; }
+		LOGGER.severe("No Bouncy or Spongy provider");
 		return null;
 	}
 
-	private static Provider createSpongyCastleProviderOrNull() {
+	private static Provider getProviderOrNull(String className) {
 		try {
-			return (Provider)(Class.forName("org.spongycastle.jce.provider.BouncyCastleProvider")).newInstance();
-		} catch (IllegalAccessException iae) {
-			// iae.printStackTrace();
-		} catch (InstantiationException ie) {
-			// ie.printStackTrace();
-		} catch (ClassNotFoundException cnfe) {
-			// cnfe.printStackTrace();
-		}
-		return null;
-	}
-
-	private static Provider createBouncyCastleProviderOrNull() {
-		try {
-			return (Provider)(Class.forName("org.bouncycastle.jce.provider.BouncyCastleProvider")).newInstance();
+			Class<?> providerClass = Class.forName(className);
+			Provider[] providers = Security.getProviders();
+			for (Provider provider: providers) {
+				if (provider.getClass().equals(providerClass)) {
+					return provider;
+				}
+			}
+			return (Provider)providerClass.newInstance();
 		} catch (IllegalAccessException iae) {
 			// iae.printStackTrace();
 		} catch (InstantiationException ie) {
@@ -169,7 +204,7 @@ public class JMRTDSecurityProvider extends Provider
 		}
 		return null;
 	}
-	
+
 	public static List<Provider> getProviders(String serviceName, String algorithmName) {
 		if (Security.getAlgorithms(serviceName).contains(algorithmName)) {
 			Provider[] providers = Security.getProviders(serviceName + "." + algorithmName);

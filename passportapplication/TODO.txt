@@ -146,6 +146,7 @@ VERSION 0.4.7 (Q1 2012)
 General
 + Abstraction of SCUBA smartcard layer.
 + Implementation of SCUBA smartcard layer for j2se and Android.
++ Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
 
 LDS
 + Move progressive mode stuff out of FaceInfo
@@ -161,6 +162,7 @@ LDS
 GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
 + User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
+- Check "V<", ID-2 MRZInfo.
 + Show DG3 and DG4 in tree if present, even if not readable.
 
 Android
@@ -182,11 +184,11 @@ General
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
+- No longer rely on jai_imageio. Use jj2000 as alternative.
 - Implement BAC as KeyStore?
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Check image/jpeg2000 mime-type. Should this be image/jp2 according to RFC3745?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
-- Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.

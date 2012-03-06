@@ -32,6 +32,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.cert.CertSelector;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreException;
@@ -67,6 +68,8 @@ import org.jmrtd.cert.PKDMasterListCertStoreParameters;
  */
 public class MRTDTrustStore {
 
+	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
+	
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private static final CertSelector SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
@@ -189,7 +192,8 @@ public class MRTDTrustStore {
 	private void addAsSingletonCSCACertStore(URI uri) throws MalformedURLException, IOException, CertificateException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {
 		URLConnection urlConnection = uri.toURL().openConnection();
 		InputStream inputStream = urlConnection.getInputStream();
-		CertificateFactory certFactory = CertificateFactory.getInstance("X.509");
+		CertificateFactory certFactory = CertificateFactory.getInstance("X.509", JMRTD_PROVIDER);
+		LOGGER.info("DEBUG: certFactory provided by: " + certFactory.getProvider().getClass().getCanonicalName());
 		X509Certificate certificate = (X509Certificate)certFactory.generateCertificate(inputStream);
 		inputStream.close();
 		CertStoreParameters params = new CollectionCertStoreParameters(Collections.singleton(certificate));

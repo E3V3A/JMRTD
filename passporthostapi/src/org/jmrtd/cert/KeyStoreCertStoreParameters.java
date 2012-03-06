@@ -22,26 +22,29 @@
 
 package org.jmrtd.cert;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertStoreParameters;
+import java.util.logging.Logger;
 
 import org.jmrtd.JMRTDSecurityProvider;
 
 public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParameters
 {
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+
 	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
 	private static final String DEFAULT_ALGORITHM = "JKS";
 	private static final char[] DEFAULT_PASSWORD = "".toCharArray();
 
 	private KeyStore keyStore;
-	
+
 	public KeyStoreCertStoreParameters(URI uri) throws KeyStoreException {
 		this(uri, DEFAULT_ALGORITHM, DEFAULT_PASSWORD);
 	}
@@ -78,27 +81,19 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 
 	private static KeyStore readKeyStore(URI location, String keyStoreType, char[] password) throws KeyStoreException {
 		try {
+			int n = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
 			URLConnection uc = location.toURL().openConnection();
 			InputStream inputStream = uc.getInputStream();
 			KeyStore ks = null;
+			ks = KeyStore.getInstance(keyStoreType);
 			try {
-				ks = KeyStore.getInstance(keyStoreType, JMRTD_PROVIDER);
-			} catch (Exception e1) {
-				try {
-					/* DEBUG */
-					Provider[] providers = Security.getProviders();
-					for (Provider provider: providers) {
-						System.out.println("DEBUG: provider " + provider.getName());
-					}
-					/* DEBUG */
-
-					ks = KeyStore.getInstance(keyStoreType);
-				} catch (Exception e2) {
-					throw e1;
-				}
+				LOGGER.info("KeystoreCertStore will use provider for KeyStore: " + ks.getProvider().getClass().getCanonicalName());
+				ks.load(inputStream, password);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
 			}
-			ks.load(inputStream, password);
 			inputStream.close();
+			JMRTDSecurityProvider.endPreferBouncyCastleProvider(n);
 			return ks;
 		} catch (Exception e) {
 			// e.printStackTrace();

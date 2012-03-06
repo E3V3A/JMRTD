@@ -13,14 +13,15 @@ import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import javax.crypto.interfaces.DHPublicKey;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
-import javax.swing.tree.TreeNode;
 
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.ImageUtil;
@@ -61,19 +62,24 @@ public class LDSTreePanel extends JPanel {
 
 	private static final Dimension PREFERRED_SIZE = new Dimension(160, 420);
 
-	private Passport passport;
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
+	private MRTDTreeModel treeModel;
+	
 	public LDSTreePanel(Passport passport) {
 		setLayout(new BorderLayout());
 		setDocument(passport);
 	}
 
-	public void setDocument(Passport passport) {
+	public void reload() {
+		treeModel.reload();
+	}
+	
+	private void setDocument(Passport passport) {
 		try {
-			this.passport = passport;
 			if (getComponentCount() > 0) { removeAll(); }
-			TreeNode root = buildTree(passport);
-			add(new JScrollPane(new JTree(root)));
+			treeModel = new MRTDTreeModel(passport);
+			add(new JScrollPane(new JTree(treeModel)));
 			revalidate();
 			repaint();
 			setVisible(true);
@@ -84,34 +90,6 @@ public class LDSTreePanel extends JPanel {
 
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
-	}
-
-	private MutableTreeNode buildTree(Passport passport) throws IOException {
-		DefaultMutableTreeNode rootNode = new DefaultMutableTreeNode("MRTD");
-
-		List<Short> fileList = passport.getFileList();
-
-		for (short fid: fileList) {
-			MutableTreeNode fileNode = null;
-			try {
-				InputStream inputStream = passport.getInputStream(fid);
-				LDSFile file = LDSFile.getInstance(inputStream);
-				fileNode = buildTree(file);
-			} catch (Exception cse) {
-				cse.printStackTrace();
-			}
-			if (fileNode != null) {
-				rootNode.add(fileNode);
-			} else {
-				try {
-					int dgNumber = LDSFile.lookupDataGroupNumberByFID(fid);
-					rootNode.add(new DefaultMutableTreeNode("DG" + dgNumber));
-				} catch (NumberFormatException nfe) {
-					rootNode.add(new DefaultMutableTreeNode("File " + Integer.toHexString(fid)));	
-				}
-			}
-		}
-		return rootNode;
 	}
 
 	private MutableTreeNode buildTree(LDSFile passportFile) {
@@ -520,5 +498,58 @@ public class LDSTreePanel extends JPanel {
 	private void addNodes(BufferedImage image, DefaultMutableTreeNode node) {
 		node.add(new DefaultMutableTreeNode("Actual dimensions: " + image.getWidth() + " x " + image.getHeight()));
 		node.add(new DefaultMutableTreeNode("Actual image type: " + imageTypeToString(image.getType())));
+	}
+
+	private class MRTDTreeModel extends DefaultTreeModel {
+
+		private Passport passport;
+
+		public MRTDTreeModel(Passport passport) {
+			super(new DefaultMutableTreeNode("MRTD"));
+			this.passport = passport;
+		}
+
+		@Override
+		public Object getChild(Object parent, int index) {
+			if (getRoot().equals(parent)) {
+				List<Short> files = passport.getFileList();
+				Short fid = files.get(index);
+				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); }
+				try {
+					InputStream inputStream = passport.getInputStream(fid);
+					return buildTree(LDSFile.getInstance(inputStream));
+				} catch (Exception cse) {
+					try {
+						int dgNumber = LDSFile.lookupDataGroupNumberByFID(fid);
+						return new DefaultMutableTreeNode("DG" + dgNumber);
+					} catch (NumberFormatException nfe) {
+						return new DefaultMutableTreeNode("File " + Integer.toHexString(fid));	
+					}					
+				}
+			} else {
+				return super.getChild(parent, index);
+			}
+		}
+
+		@Override
+		public int getChildCount(Object parent) {
+			if (getRoot().equals(parent)) {
+				List<Short> files = passport.getFileList();
+				return files.size();
+			} else {
+				return super.getChildCount(parent);
+			}
+		}
+
+		@Override
+		public boolean isLeaf(Object node) {
+			if (getRoot().equals(node)) {
+				return false;
+			} else if (node instanceof DefaultMutableTreeNode && getRoot().equals(((DefaultMutableTreeNode)node).getParent())) {
+				return false;
+			} else {
+				return super.isLeaf(node);
+			}
+		}
 	}
 }
