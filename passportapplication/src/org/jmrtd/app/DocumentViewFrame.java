@@ -66,6 +66,7 @@ import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.swing.ImagePanel;
@@ -463,7 +464,12 @@ public class DocumentViewFrame extends JMRTDFrame
 			private static final long serialVersionUID = 6290353637971392593L;
 
 			public void actionPerformed(ActionEvent e) {
-				/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
+				SwingUtilities.invokeLater(new Runnable() {
+					@Override
+					public void run() {
+						/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
+					}
+				});
 				dispose();
 			}
 

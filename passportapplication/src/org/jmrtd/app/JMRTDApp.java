@@ -66,6 +66,7 @@ import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
+import javax.smartcardio.TerminalFactory;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -205,7 +206,8 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			actionMap = new ActionMap();
 
 			cardManager = CardManager.getInstance();
-			//			PassportManager passportManager = PassportManager.getInstance();
+			addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
+
 			this.bacStore = new FileBACStore();
 			trustManager = new MRTDTrustStore();
 
@@ -264,6 +266,13 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		List<CardTerminal> terminals = cardManager.getTerminals();
 		for (CardTerminal terminal: terminals) { terminalPollingMap.put(terminal, cardManager.isPolling(terminal)); }
 		return terminalPollingMap;
+	}
+
+	private static void addTerminalProvider(CardManager cardManager, String providerName, String providerClassName) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchAlgorithmException {
+		Class<?> acrProviderClass = Class.forName(providerClassName);
+		Provider acrProvider = (Provider)acrProviderClass.newInstance();
+		TerminalFactory acrFactory = TerminalFactory.getInstance(providerName, null, acrProvider);
+		cardManager.addTerminals(acrFactory, true);
 	}
 
 	private void updateFromPreferences() {
@@ -535,7 +544,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
 									service = new TerminalCardService(terminal);
-									service.addAPDUListener(apduTraceFrame.getRawAPDUListener());
+									if (apduTraceFrame != null) { service.addAPDUListener(apduTraceFrame.getRawAPDUListener()); }
 									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(service);
 									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener()); }
 									readPassport(passportService);
