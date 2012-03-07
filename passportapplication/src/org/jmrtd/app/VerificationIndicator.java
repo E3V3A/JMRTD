@@ -31,7 +31,7 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 import org.jmrtd.VerificationStatus;
 import org.jmrtd.VerificationStatus.Verdict;
@@ -53,10 +53,10 @@ public class VerificationIndicator extends Box
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	private static final Image
-	SUCCEEDED_ICON = Icons.getFamFamFamSilkIcon("tick"),
-	FAILED_ICON = Icons.getFamFamFamSilkIcon("cross"),
-	UNKNOWN_ICON = Icons.getFamFamFamSilkIcon("error"),
-	NOT_PRESENT_ICON = Icons.getFamFamFamSilkIcon("error_add");
+	SUCCEEDED_ICON = IconUtil.getFamFamFamSilkIcon("tick"),
+	FAILED_ICON = IconUtil.getFamFamFamSilkIcon("cross"),
+	UNKNOWN_ICON = IconUtil.getFamFamFamSilkIcon("error"),
+	NOT_PRESENT_ICON = IconUtil.getFamFamFamSilkIcon("error_add");
 	private static final int SPACING = 25;
 
 	private JLabel bacLabel, dsLabel, csLabel, aaLabel, eacLabel;

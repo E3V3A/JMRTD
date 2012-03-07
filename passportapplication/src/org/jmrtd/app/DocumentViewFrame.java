@@ -72,7 +72,7 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.AuthAdapter;
@@ -125,14 +125,14 @@ public class DocumentViewFrame extends JMRTDFrame
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
-	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
-	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
-	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
-	private static final Icon KEY_GO = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
-	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
-	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("application_edit"));
+	private static final Icon CERTIFICATE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("script_key"));
+	private static final Icon FINGERPRINT_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("shading"));
+	private static final Icon KEY_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("key"));
+	private static final Icon KEY_GO = new ImageIcon(IconUtil.getFamFamFamSilkIcon("key_go"));
+	private static final Icon MAGNIFIER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("magnifier"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
+	private static final Icon OPEN_EDITOR_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("application_edit"));
 
 	private ActionMap actionMap;
 

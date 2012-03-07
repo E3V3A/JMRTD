@@ -94,7 +94,7 @@ import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.AAEvent;
@@ -146,20 +146,20 @@ public class DocumentEditFrame extends JMRTDFrame
 	private static final String PASSPORT_FRAME_TITLE = "Edit document";
 	private static final Dimension PREFERRED_SIZE = new Dimension(800, 500);
 
-	private static final Icon CHANGE_DOCUMENT_TYPE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("page_go"));
-	private static final Icon CHANGE_DOCUMENT_TYPE_TO_ID_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bullet_go"));
-	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
-	private static final Icon FINGERPRINT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("shading"));
-	private static final Icon KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("key"));
-	private static final Icon KEY_GO = new ImageIcon(Icons.getFamFamFamSilkIcon("key_go"));
-	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
-	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon LOAD_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_image"));
-	private static final Icon DELETE_IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("image_delete"));
-	private static final Icon LOAD_CERT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_page_white"));
-	private static final Icon LOAD_KEY_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder_key"));
-	private static final Icon UPLOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("drive_burn"));
+	private static final Icon CHANGE_DOCUMENT_TYPE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("page_go"));
+	private static final Icon CHANGE_DOCUMENT_TYPE_TO_ID_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bullet_go"));
+	private static final Icon CERTIFICATE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("script_key"));
+	private static final Icon FINGERPRINT_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("shading"));
+	private static final Icon KEY_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("key"));
+	private static final Icon KEY_GO = new ImageIcon(IconUtil.getFamFamFamSilkIcon("key_go"));
+	private static final Icon MAGNIFIER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("magnifier"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
+	private static final Icon LOAD_IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder_image"));
+	private static final Icon DELETE_IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("image_delete"));
+	private static final Icon LOAD_CERT_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder_page_white"));
+	private static final Icon LOAD_KEY_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder_key"));
+	private static final Icon UPLOAD_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("drive_burn"));
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 

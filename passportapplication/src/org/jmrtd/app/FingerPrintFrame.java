@@ -41,7 +41,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.FingerImageInfo;
@@ -63,7 +63,7 @@ public class FingerPrintFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -3718372037784454010L;
 
-	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
+	private static final Icon IMAGE_INFO_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("information"));
 
 	private List<FingerInfo> fingerPrints;
 	// private ImagePanel imagePanel;

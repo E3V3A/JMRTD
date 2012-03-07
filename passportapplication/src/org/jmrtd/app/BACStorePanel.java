@@ -45,7 +45,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
@@ -65,14 +65,14 @@ public class BACStorePanel extends JPanel
 	private static final int DATE_OF_BIRTH_COLUMN = 1;
 	private static final int DATE_OF_EXPIRY_COLUMN = 2;
 
-	private static final Icon DOWN_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
-	private static final Icon DOWN_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_down"));
-	private static final Icon UP_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_up"));
-	private static final Icon UP_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_up"));
-	private static final Icon TABLE_ROW_DELETE_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_delete"));
-	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_delete"));
-	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
-	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("table_row_insert"));
+	private static final Icon DOWN_SMALL_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_down"));
+	private static final Icon DOWN_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_down"));
+	private static final Icon UP_SMALL_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_up"));
+	private static final Icon UP_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_up"));
+	private static final Icon TABLE_ROW_DELETE_SMALL_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_delete"));
+	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_delete"));
+	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_insert"));
+	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_insert"));
 	
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 

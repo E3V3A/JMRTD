@@ -51,7 +51,7 @@ import javax.swing.JToolBar;
 
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.Files;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.FaceImageInfo;
@@ -72,10 +72,10 @@ public class PortraitFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -3718372037784854010L;
 
-	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
-	private static final Icon IMAGE_INFO_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("page_white_text"));
-	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("chart_line"));
+	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
+	private static final Icon IMAGE_INFO_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("page_white_text"));
+	private static final Icon FEATURE_POINTS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("chart_line"));
 
 	private ActionMap actionMap;
 	

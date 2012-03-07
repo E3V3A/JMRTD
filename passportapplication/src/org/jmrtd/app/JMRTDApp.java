@@ -100,7 +100,7 @@ import net.sourceforge.scuba.smartcards.SCFactory;
 import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Files;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.x509.X509V3CertificateGenerator;
@@ -136,13 +136,13 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 {
 	private static final String MAIN_FRAME_TITLE = "Main";
 
-	private static final Icon CSCA_ANCHORS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("anchor"));
-	private static final Icon NEW_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("lightning"));
-	private static final Icon OPEN_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("folder"));
-	private static final Icon EXIT_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("door_out"));
-	private static final Icon RELOAD_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
-	private static final Icon PREFERENCES_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("wrench"));
-	private static final Icon INFORMATION_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("information"));
+	private static final Icon CSCA_ANCHORS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("anchor"));
+	private static final Icon NEW_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("lightning"));
+	private static final Icon OPEN_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder"));
+	private static final Icon EXIT_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("door_out"));
+	private static final Icon RELOAD_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
+	private static final Icon PREFERENCES_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("wrench"));
+	private static final Icon INFORMATION_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("information"));
 
 	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
 	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
@@ -596,7 +596,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					ex.printStackTrace();
 				}
 				ImageIcon aboutJMRTDImageIcon = null;
-				Image aboutJMRTDImage = Icons.getImage(ABOUT_JMRTD_LOGO, getClass());
+				Image aboutJMRTDImage = IconUtil.getImage(ABOUT_JMRTD_LOGO, getClass());
 				if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
 
 				try {

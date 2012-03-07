@@ -43,7 +43,7 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.swing.KeyPanel;
 import net.sourceforge.scuba.util.Files;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 import org.jmrtd.cert.CardVerifiableCertificate;
 
@@ -58,8 +58,8 @@ public class CVCertificateFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = 2118341538613049952L;
 
-	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
 
 	private CVCertificatePanel certificatePanel;
 

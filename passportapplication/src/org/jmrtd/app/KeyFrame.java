@@ -41,7 +41,7 @@ import javax.swing.JMenuItem;
 
 import net.sourceforge.scuba.swing.KeyPanel;
 import net.sourceforge.scuba.util.Files;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 /**
  * Frame for displaying (and saving to file) keys.
@@ -54,8 +54,8 @@ public class KeyFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -514612440541711549L;
 
-	private static final Icon SAVE_AS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("disk"));
-	private static final Icon CLOSE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("bin"));
+	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
+	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
 
 	private KeyPanel keyPanel;
 

@@ -37,7 +37,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DisplayedImageInfo;
@@ -54,12 +54,12 @@ public class ImagePreviewPanel extends JPanel
 {	
 	private static final long serialVersionUID = 9113961215076977525L;
 
-	private static final Icon IMAGE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("picture"));
-	private static final Icon FACE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("user"));
-	private static final Icon FINGER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("thumb_up"));
-	private static final Icon IRIS_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("eye"));
-	private static final Icon MAGNIFIER_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("magnifier"));
-	private static final Icon WRITTEN_SIGNATURE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("text_signature"));
+	private static final Icon IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("picture"));
+	private static final Icon FACE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("user"));
+	private static final Icon FINGER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("thumb_up"));
+	private static final Icon IRIS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("eye"));
+	private static final Icon MAGNIFIER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("magnifier"));
+	private static final Icon WRITTEN_SIGNATURE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("text_signature"));
 	
 	private int width, height;
 	private JTabbedPane tabbedPane;

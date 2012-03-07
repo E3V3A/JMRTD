@@ -63,7 +63,7 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.util.Icons;
+import net.sourceforge.scuba.util.IconUtil;
 
 /**
  * GUI to show the CSCA trust anchors, sorted by country.
@@ -74,8 +74,8 @@ public class CertificateMasterListFrame extends JMRTDFrame
 {
 	private static final long serialVersionUID = -1239469067988004321L;
 
-	private static final Icon CSCA_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("world"));
-	private static final Icon CERTIFICATE_ICON = new ImageIcon(Icons.getFamFamFamSilkIcon("script_key"));
+	private static final Icon CSCA_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("world"));
+	private static final Icon CERTIFICATE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("script_key"));
 
 	private static final Dimension PREFERRED_SIZE = new Dimension(480, 280);
 
@@ -237,7 +237,7 @@ public class CertificateMasterListFrame extends JMRTDFrame
 				Object userObject = ((DefaultMutableTreeNode)value).getUserObject();
 				if (userObject instanceof Country) {
 					Country country = (Country)userObject;
-					ImageIcon icon = new ImageIcon(Icons.getFlagImage(country));
+					ImageIcon icon = new ImageIcon(IconUtil.getFlagImage(country));
 					label.setText(country.toAlpha2Code() + " " + country.getName());
 					label.setIcon(icon);
 					setLabelSelected(selected);
