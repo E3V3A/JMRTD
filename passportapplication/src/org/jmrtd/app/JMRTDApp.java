@@ -99,7 +99,7 @@ import net.sourceforge.scuba.smartcards.CardTerminalListener;
 import net.sourceforge.scuba.smartcards.SCFactory;
 import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 
 import org.bouncycastle.asn1.x509.X509Name;
@@ -226,7 +226,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 				if (defaultCSCAFile.exists()) {
 					defaultCSCAURI = defaultCSCAFile.toURI();
 				} else {
-					URI baseDir = Files.getBaseDirAsURI(this.getClass());
+					URI baseDir = FileUtil.getBaseDirAsURI(this.getClass());
 					defaultCSCAURI = baseDir.resolve("csca.ks");
 				}
 				LOGGER.info("Adding " + defaultCSCAURI.toString() + " as CSCA store.");
@@ -439,7 +439,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(contentPane);
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -591,7 +591,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			public void actionPerformed(ActionEvent e) {
 				URL readMeFile = null;
 				try {
-					readMeFile = new URL(Files.getBaseDir(getClass()) + "/README");
+					readMeFile = new URL(FileUtil.getBaseDir(getClass()) + "/README");
 				} catch (Exception ex) {
 					ex.printStackTrace();
 				}

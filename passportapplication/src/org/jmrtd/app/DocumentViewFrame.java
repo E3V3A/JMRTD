@@ -70,7 +70,7 @@ import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
@@ -564,7 +564,7 @@ public class DocumentViewFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:

@@ -50,7 +50,7 @@ import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 
 import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
 
@@ -181,7 +181,7 @@ public class PortraitFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.IMAGE_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:

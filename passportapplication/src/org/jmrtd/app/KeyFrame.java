@@ -40,7 +40,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
 import net.sourceforge.scuba.swing.KeyPanel;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 
 /**
@@ -111,7 +111,7 @@ public class KeyFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.KEY_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:

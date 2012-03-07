@@ -42,7 +42,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 
 import org.jmrtd.cert.CardVerifiableCertificate;
 
@@ -166,7 +166,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		CardVerifiableCertificate cert = null;
 		String name = null;
 		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+		fileChooser.setFileFilter(FileUtil.CV_CERTIFICATE_FILE_FILTER);
 		int choice = fileChooser.showOpenDialog(getContentPane());
 		switch (choice) {
 		case JFileChooser.APPROVE_OPTION:

@@ -92,7 +92,7 @@ import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.ImageUtil;
@@ -673,7 +673,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.ZIP_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -809,7 +809,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.IMAGE_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.IMAGE_FILE_FILTER);
 
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
@@ -900,7 +900,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.CERTIFICATE_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.CERTIFICATE_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -936,7 +936,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.CV_CERTIFICATE_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.CV_CERTIFICATE_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -1000,7 +1000,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.KEY_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -1033,7 +1033,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.KEY_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
@@ -1092,7 +1092,7 @@ public class DocumentEditFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.KEY_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.KEY_FILE_FILTER);
 				int choice = fileChooser.showOpenDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:

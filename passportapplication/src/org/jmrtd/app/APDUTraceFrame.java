@@ -47,7 +47,7 @@ import javax.swing.JToolBar;
 
 import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.IconUtil;
 
@@ -158,7 +158,7 @@ public class APDUTraceFrame extends JMRTDFrame
 				if (directory != null) {
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
-				fileChooser.setFileFilter(Files.TXT_FILE_FILTER);
+				fileChooser.setFileFilter(FileUtil.TXT_FILE_FILTER);
 				int choice = fileChooser.showSaveDialog(getContentPane());
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
