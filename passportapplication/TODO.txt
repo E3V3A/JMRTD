@@ -189,6 +189,7 @@ General
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Check image/jpeg2000 mime-type. Should this be image/jp2 according to RFC3745?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
+- Latest C sources from NIST for WSQ?
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.

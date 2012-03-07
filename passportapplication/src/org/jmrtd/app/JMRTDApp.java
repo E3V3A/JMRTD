@@ -775,6 +775,15 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					if (osName.contains("Windows")) {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 					} else if (osName.contains("Mac")) {
+						/* Better to set these on command line (in jmrtd.sh for MacOS X):
+						 * 
+						 * java -Dcom.apple.macos.useScreenMenuBar=true \
+						 * 		-Dcom.apple.mrj.application.apple.menu.about.name=JMRTD \
+						 * 		-Xdock:name="JMRTD" \
+						 * 		-jar jmrtd.jar
+						 * 
+						 * FIXME: the about dialog, see the 2003 Sun developer article on java.sun.com.
+						 */
 						System.setProperty("apple.laf.useScreenMenuBar", "true");
 						System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
