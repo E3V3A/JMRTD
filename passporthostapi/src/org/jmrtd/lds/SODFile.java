@@ -621,7 +621,7 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 				while (attributes.hasMoreElements()) {
 					Attribute attribute = new Attribute((DERSequence)attributes.nextElement());
 					DERObjectIdentifier attrType = attribute.getAttrType();
-					if (attrType.equals(RFC_3369_MESSAGE_DIGEST_OID)) {
+					if (RFC_3369_MESSAGE_DIGEST_OID.equals(attrType.getId())) {
 						ASN1Set attrValuesSet = attribute.getAttrValues();
 						if (attrValuesSet.size() != 1) {
 							LOGGER.warning("Expected only one attribute value in signedAttribute message digest in eContent!");

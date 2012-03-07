@@ -676,7 +676,7 @@ public class MRZInfo extends AbstractInfo implements Serializable
 		&& ((optionalData1 == null && other.optionalData1 == null) || optionalData1 != null && optionalData1.equals(other.optionalData1) || getPersonalNumber().equals(other.getPersonalNumber()))
 		&& ((dateOfBirth == null && other.dateOfBirth == null) || dateOfBirth != null && dateOfBirth.equals(other.dateOfBirth))
 		&& ((gender == null && other.gender == null) || gender != null && gender.equals(other.gender))
-		&& ((dateOfExpiry == null && other.dateOfExpiry == null) || dateOfExpiry.equals(other.dateOfExpiry))
+		&& ((dateOfExpiry == null && other.dateOfExpiry == null) || dateOfExpiry != null && dateOfExpiry.equals(other.dateOfExpiry))
 		&& ((optionalData2 == null && other.optionalData2 == null) || optionalData2 != null && equalsModuloFillerChars(optionalData2, other.optionalData2))
 		;
 	}

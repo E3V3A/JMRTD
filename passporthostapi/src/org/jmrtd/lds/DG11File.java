@@ -66,6 +66,8 @@ import net.sourceforge.scuba.util.Hex;
  */
 public class DG11File extends DataGroup
 {
+	private static final long serialVersionUID = 8566312538928662937L;
+
 	public static final int TAG_LIST_TAG = 0x5C,
 	FULL_NAME_TAG = 0x5F0E,
 	PERSONAL_NUMBER_TAG = 0x5F10,

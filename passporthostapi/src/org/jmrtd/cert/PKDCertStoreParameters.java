@@ -78,10 +78,9 @@ public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
 	}
 
 	/**
-	 * Makes a shallow copy of this object as this
-	 * class is immutable.
+	 * Makes a copy of this object.
 	 * 
-	 * @return a shallow copy of this object
+	 * @return a copy of this object
 	 */
 	public Object clone() {
 		return new PKDCertStoreParameters(serverName, port, baseDN);

@@ -462,8 +462,10 @@ public class DocumentViewFrame extends JMRTDFrame
 		if (action != null) { return action; }
 		action = new AbstractAction() {
 
+			private static final long serialVersionUID = 6290353637971392593L;
+
 			public void actionPerformed(ActionEvent e) {
-				JFrame editorFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
+				/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
 				dispose();
 			}
 

@@ -173,7 +173,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		if (!other.getClass().equals(this.getClass())) { return false; }
 		AbstractImageInfo otherImageInfo = (AbstractImageInfo)other;
 		return (imageBytes == otherImageInfo.imageBytes || imageBytes != null && Arrays.equals(imageBytes, otherImageInfo.imageBytes))
-		&& (mimeType == otherImageInfo.mimeType || mimeType != null && mimeType.equals(otherImageInfo.mimeType))
+		&& (mimeType == null && otherImageInfo.mimeType == null || mimeType != null && mimeType.equals(otherImageInfo.mimeType))
 		&& type == otherImageInfo.type;
 	}
 

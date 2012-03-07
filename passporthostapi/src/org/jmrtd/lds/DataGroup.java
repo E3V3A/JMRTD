@@ -38,6 +38,8 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  */
 public abstract class DataGroup extends LDSFile
 {
+	private static final long serialVersionUID = -4761360877353069639L;
+	
 	private int dataGroupTag;
 	private int dataGroupLength;
 

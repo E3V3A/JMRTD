@@ -163,7 +163,6 @@ LDS
 GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
 + User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
-- Check "V<", ID-2 MRZInfo.
 + Show DG3 and DG4 in tree if present, even if not readable.
 
 Android
@@ -171,8 +170,8 @@ Android
 
 Code quality
 + Check unit tests
-- Check JavaDoc
-- Check Findbugs
++ Check JavaDoc
++ Check Findbugs
 
 
 0.5.x (FUTURE)
@@ -195,6 +194,7 @@ MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
 - MRZ character transliteration. Provide interface for custom rules. Implement reasonable default rules.
 - MRZ optional field rules (e.g., personal  number for Dutch case). Provide interface for custom rules. Implement reasonable default rules.
+- Check "V<", ID-2 MRZInfo.
 
 GUI
 - APDU tracing showing plain text APDUs when BAC based SM is used

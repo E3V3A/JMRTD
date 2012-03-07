@@ -742,14 +742,11 @@ public class DocumentEditFrame extends JMRTDFrame
 		switch (info.getType()) {
 		case DisplayedImageInfo.TYPE_PORTRAIT:
 			try {
-				InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
-				DG2File dg2 = new DG2File(dg2In);
-
 				FaceImageInfo faceInfo = (FaceImageInfo)info;
 				PortraitFrame portraitFrame = new PortraitFrame(faceInfo);
 				portraitFrame.pack();
 				portraitFrame.setVisible(true);
-			} catch (CardServiceException cse) {
+			} catch (Exception cse) {
 				cse.printStackTrace();
 			}
 			break;

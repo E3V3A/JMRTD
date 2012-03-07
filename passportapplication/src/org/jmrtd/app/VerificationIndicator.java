@@ -131,6 +131,10 @@ public class VerificationIndicator extends Box
 		if (SUCCEEDED_ICON.equals(FAILED_ICON)) {
 			LOGGER.warning("Icons not loaded correctly...");
 		}
+		if (label == null || icon == null) {
+			LOGGER.severe("Unclear which indicator component was selected");
+			return;
+		}
 		switch (result) {
 		case SUCCEEDED:
 			icon.setImage(SUCCEEDED_ICON);

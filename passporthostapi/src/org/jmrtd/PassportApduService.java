@@ -81,7 +81,7 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	private transient Mac mac;
 
 	/** Usage of the ScubaSmartcard Abstractions  */
-	private ScubaSmartcards<C, R> sc;
+	private transient ScubaSmartcards<C, R> sc;
 
 	private Collection<APDUListener<C,R>> plainTextAPDUListeners;
 	

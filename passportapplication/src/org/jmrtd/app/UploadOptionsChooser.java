@@ -138,7 +138,7 @@ public class UploadOptionsChooser // extends JComponent
 	private class UploadOptionsPanel extends JPanel
 	{
 		private static final long serialVersionUID = 961491777511960967L;
-		private JComboBox terminalsComboBox;
+		private JComboBox<CardTerminal> terminalsComboBox;
 		private JCheckBox bacCheckBox, aaCheckBox;
 		private BACEntryField bacEntryField;
 		private JTextField fileTF;
@@ -147,7 +147,7 @@ public class UploadOptionsChooser // extends JComponent
 		public UploadOptionsPanel(BACKeySpec bacEntry, PublicKey aaPublicKey) {
 			super(new BorderLayout());
 			JPanel northPanel = new JPanel();
-			terminalsComboBox = new JComboBox();
+			terminalsComboBox = new JComboBox<CardTerminal>();
 			northPanel.add(new JLabel("Terminal: "));
 			northPanel.add(terminalsComboBox);
 
@@ -155,8 +155,9 @@ public class UploadOptionsChooser // extends JComponent
 
 			JPanel bacPanel = new JPanel();
 			bacCheckBox = new JCheckBox(getBACSelectedAction());
+			bacCheckBox.setSelected(bacEntry != null);
 			bacPanel.add(bacCheckBox);
-			bacEntryField = new BACEntryField(bacEntry);
+			bacEntryField = bacEntry != null ? new BACEntryField(bacEntry) : new BACEntryField();
 			bacEntryField.setEnabled(bacCheckBox.isSelected());
 			bacPanel.add(bacEntryField);
 
@@ -203,6 +204,8 @@ public class UploadOptionsChooser // extends JComponent
 
 		private Action getBACSelectedAction() {
 			Action action = new AbstractAction() {
+				private static final long serialVersionUID = 5530203750051299471L;
+
 				public void actionPerformed(ActionEvent e) {
 					JToggleButton src = (JToggleButton)e.getSource();
 					bacEntryField.setEnabled(src.isSelected());			

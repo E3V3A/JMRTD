@@ -277,7 +277,7 @@ public class LDSTreePanel extends JPanel {
 		if (tagsPresent.contains(DG11File.PERSONAL_SUMMARY_TAG)) { node.add(new DefaultMutableTreeNode("Personal summary: " + dataGroup.getPersonalSummary())); }
 		if (tagsPresent.contains(DG11File.CUSTODY_INFORMATION_TAG)) { node.add(new DefaultMutableTreeNode("Custody information: " + dataGroup.getCustodyInformation())); }
 		if (tagsPresent.contains(DG11File.PERMANENT_ADDRESS_TAG)) { node.add(new DefaultMutableTreeNode("Permanent address:" + dataGroup.getPermanentAddress())); }
-		if (tagsPresent.contains(DG11File.PROOF_OF_CITIZENSHIP_TAG)) { node.add(new DefaultMutableTreeNode("Proof of citizenship: " + dataGroup.getProofOfCitizenship())); }
+		if (tagsPresent.contains(DG11File.PROOF_OF_CITIZENSHIP_TAG)) { node.add(new DefaultMutableTreeNode("Proof of citizenship: byte[" + dataGroup.getProofOfCitizenship().length + "]")); }
 		if (tagsPresent.contains(DG11File.PERSONAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personal number: " + dataGroup.getPersonalNumber())); }
 		if (tagsPresent.contains(DG11File.OTHER_VALID_TD_NUMBERS_TAG)) { node.add(new DefaultMutableTreeNode("Other valid TD numbers: " + dataGroup.getOtherValidTDNumbers())); }
 		return node;
@@ -514,7 +514,7 @@ public class LDSTreePanel extends JPanel {
 			if (getRoot().equals(parent)) {
 				List<Short> files = passport.getFileList();
 				Short fid = files.get(index);
-				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); }
+				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); return null; }
 				try {
 					InputStream inputStream = passport.getInputStream(fid);
 					return buildTree(LDSFile.getInstance(inputStream));

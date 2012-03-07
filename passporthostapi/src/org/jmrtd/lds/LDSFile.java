@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 
@@ -40,7 +41,7 @@ import org.jmrtd.PassportService;
  * 
  * @version $Revision: 1320 $
  */
-public abstract class LDSFile implements LDSInfo
+public abstract class LDSFile implements LDSInfo, Serializable
 {
 	/** ICAO specific datagroup tag. There is also the CVCA file that has no tag! */
 	public static final int
