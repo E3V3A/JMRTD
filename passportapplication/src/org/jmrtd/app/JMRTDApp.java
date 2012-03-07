@@ -168,13 +168,13 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
-	
+
 	static {
 		/* So that BC stuff knows about CVC certificates. */
 		BC_PROVIDER.put("CertificateFactory.CVC", JMRTD_PROVIDER.get("CertificateFactory.CVC"));
 		Security.insertProviderAt(BC_PROVIDER, 1);
 		Security.addProvider(JMRTD_PROVIDER);
-		
+
 		Provider[] providers = Security.getProviders();
 		for (Provider provider: providers) {
 			LOGGER.info("Provider " + provider.getName() + ": " + provider.getClass().getCanonicalName());
@@ -601,6 +601,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 
 				try {
 					JTextArea area = new JTextArea(20, 35);
+					// HIER
 					if (readMeFile == null) { throw new Exception("Could not open README file"); }
 					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
 					while (true) {
@@ -696,21 +697,21 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		int imageDataType = FaceImageInfo.IMAGE_DATA_TYPE_JPEG;	
 		FeaturePoint[] featurePoints = { };
 		FaceImageInfo imageInfo = new FaceImageInfo(
-				 gender,  eyeColor, hairColor,
-				 featureMask,
-				 expression,
-				 poseAngle, poseAngleUncertainty,
-				 faceImageType,
-				 colorSpace,
-				 sourceType,
-				 deviceType,
-				 quality,
-				 featurePoints,
-				 width, height,
-				 jpegImageBytes, imageDataType);
+				gender,  eyeColor, hairColor,
+				featureMask,
+				expression,
+				poseAngle, poseAngleUncertainty,
+				faceImageType,
+				colorSpace,
+				sourceType,
+				deviceType,
+				quality,
+				featurePoints,
+				width, height,
+				jpegImageBytes, imageDataType);
 		return imageInfo;
 	}
-	
+
 	private static byte[] createTrivialJPEGBytes(int width, int height) {
 		try {
 			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -724,7 +725,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			return null;
 		}
 	}
-	
+
 	private static X509Certificate generateSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
 			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
 		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
@@ -750,9 +751,17 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			@Override
 			public void run() {
 				try {
-					System.setProperty("apple.laf.useScreenMenuBar", "true");
-					System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
-					UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					String osName = System.getProperty("os.name");
+					String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+					LOGGER.info("OS name = " + osName);
+					LOGGER.info("System look and feel class name = " + systemLookAndFeelClassName);
+					if (osName.contains("Windows")) {
+						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					} else if (osName.contains("Mac")) {
+						System.setProperty("apple.laf.useScreenMenuBar", "true");
+						System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
+						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+					}
 					new JMRTDApp();
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();

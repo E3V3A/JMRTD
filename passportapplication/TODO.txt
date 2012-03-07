@@ -129,6 +129,7 @@ General
 + Patches and feedback by various people (thanks!)
 
 Dependencies
+- Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
 + Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken)
 + Latest Bouncy Castle 1.46
 + Latest cert-cvc 1.2.12 (with patch to OIDField)
