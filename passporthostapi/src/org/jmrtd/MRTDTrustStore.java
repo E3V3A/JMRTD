@@ -193,7 +193,6 @@ public class MRTDTrustStore {
 		URLConnection urlConnection = uri.toURL().openConnection();
 		InputStream inputStream = urlConnection.getInputStream();
 		CertificateFactory certFactory = CertificateFactory.getInstance("X.509", JMRTD_PROVIDER);
-		LOGGER.info("DEBUG: certFactory provided by: " + certFactory.getProvider().getClass().getCanonicalName());
 		X509Certificate certificate = (X509Certificate)certFactory.generateCertificate(inputStream);
 		inputStream.close();
 		CertStoreParameters params = new CollectionCertStoreParameters(Collections.singleton(certificate));
@@ -246,7 +245,7 @@ public class MRTDTrustStore {
 		try {
 			addAsCVCAKeyStore(uri);
 		} catch (Exception e) {
-			e.printStackTrace(); /* DEBUG */
+			LOGGER.warning("Exception in addCVCAStore: " + e.getMessage());
 		}
 	}	
 
@@ -267,7 +266,7 @@ public class MRTDTrustStore {
 				return;
 			} catch (Exception e) {
 				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
-				e.printStackTrace();
+				// e.printStackTrace();
 			}
 		}
 		throw new IllegalArgumentException("Not a supported keystore");

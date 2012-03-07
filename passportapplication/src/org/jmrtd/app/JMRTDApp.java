@@ -345,10 +345,18 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	 * @throws CardServiceException
 	 */
 	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
-		Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
-		DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesPanel.getReadingMode());
-		passportFrame.pack();
-		passportFrame.setVisible(true);
+		try {
+			Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
+			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesPanel.getReadingMode());
+			passportFrame.pack();
+			passportFrame.setVisible(true);
+		} catch (CardServiceException cse) {
+			String errMessage = cse.getMessage();
+			if (errMessage.contains("BAC") && errMessage.contains("denied")) {
+				System.out.println("This would be a good place to tell the GUI user that BAC failed");
+				JOptionPane.showMessageDialog(contentPane, "BAC failed", "Oops...", JOptionPane.ERROR_MESSAGE);
+			}
+		}
 	}
 
 	private JMenu createFileMenu() {
@@ -600,7 +608,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 				if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
 
 				try {
-					JTextArea area = new JTextArea(20, 35);
+					JTextArea area = new JTextArea(25, 40);
 					// HIER
 					if (readMeFile == null) { throw new Exception("Could not open README file"); }
 					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));

@@ -1,3 +1,25 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006 - 2012  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id: KeyFrame.java 893 2009-03-23 15:43:42Z martijno $
+ */
+
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
@@ -56,6 +78,15 @@ import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
+/**
+ * Panel for navigating the LDS (in edit mode).
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
+ * 
+ * @since 0.4.7
+ */
 public class LDSTreePanel extends JPanel {
 
 	private static final long serialVersionUID = 8507600800214680846L;
@@ -129,7 +160,6 @@ public class LDSTreePanel extends JPanel {
 		Map<Integer, byte[]> dataGroupHashes = sod.getDataGroupHashes();
 		for (Map.Entry<Integer, byte[]> entry: dataGroupHashes.entrySet()) {
 			int dgNumber = entry.getKey();
-			System.out.println("DEBUG: *** DG" + dgNumber);
 			hashesNode.add(new DefaultMutableTreeNode("DG" + dgNumber + ": " + Hex.bytesToHexString(entry.getValue())));
 		}
 		node.add(new DefaultMutableTreeNode("Issuer: " + sod.getIssuerX500Principal()));

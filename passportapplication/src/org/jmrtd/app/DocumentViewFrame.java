@@ -44,7 +44,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
@@ -150,7 +149,6 @@ public class DocumentViewFrame extends JMRTDFrame
 
 	public DocumentViewFrame(Passport passport, ReadingMode readingMode) {
 		super(PASSPORT_FRAME_TITLE);
-		LOGGER.setLevel(Level.ALL); // DEBUG
 		actionMap = new ActionMap();
 		this.passport = passport;
 		Container contentPane = getContentPane();

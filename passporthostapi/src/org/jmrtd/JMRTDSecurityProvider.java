@@ -149,7 +149,7 @@ public class JMRTDSecurityProvider extends Provider
 			if (bcProvider.getClass().getCanonicalName().equals(provider.getClass().getCanonicalName())) {
 				Security.removeProvider(provider.getName());
 				Security.insertProviderAt(bcProvider, 1);
-				return i;
+				return i + 1;
 			}
 		}
 		return -1;
