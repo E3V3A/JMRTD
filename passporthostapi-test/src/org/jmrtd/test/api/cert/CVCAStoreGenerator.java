@@ -9,7 +9,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.net.URLConnection;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -41,11 +40,15 @@ import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 public class CVCAStoreGenerator extends TestCase
-{
+{	
 	private static final Provider
 	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider(),
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
+	static {
+		Security.addProvider(BC_PROVIDER);
+	}
+	
 	//	private static final String TEST_KEY_STORE = "file:/c:/csca.ks";
 
 	private static final String
@@ -64,20 +67,17 @@ public class CVCAStoreGenerator extends TestCase
 	//
 	//	public static final String filenameKey = "/c:/terminalkey.der";
 
-	public static final String filenameCA = "/t:/ca/cvcert/cacert.cvcert";
 
-	public static final String filenameTerminal = "/t:/ca/cvcert/terminalcert.cvcert";
-
-	public static final String filenameKey = "/t:/ca/cvcert/terminalkey.der";
-
-	private static final String TEST_CV_CERT_DIR = "file:/t:/ca/cvcert";
-
-	private static final String TEST_CV_KEY_STORE = "file:/t:/ca/cvcert/cvca.ks";
+	private static final String TEST_CV_CERT_DIR = "/t:/ca/cvcert";
+	
+	public static final String filenameCA = "cacert.cvcert";
+	public static final String filenameTerminal = "terminalcert.cvcert";
+	public static final String filenameKey = "terminalkey.der";
+	private static final String TEST_CV_KEY_STORE = "cvca.ks";
 
 	public void testGenerateDERFiles() {
 		try {
-			// Install BC as security provider
-			Security.addProvider(BC_PROVIDER);
+			int jmrtdProviderIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
 
 			// Get the current time, and +3 months
 			Calendar cal1 = Calendar.getInstance();
@@ -123,14 +123,16 @@ public class CVCAStoreGenerator extends TestCase
 			byte[] terminalCertData = terminalCvc.getDEREncoded();
 			byte[] terminalPrivateKey = terminalKeyPair.getPrivate().getEncoded();
 
-			writeFile(new File(filenameCA), caCertData);
-			writeFile(new File(filenameTerminal), terminalCertData);
-			writeFile(new File(filenameKey), terminalPrivateKey);
+			File certsDir = new File(TEST_CV_CERT_DIR);
+			if (!certsDir.exists()) { certsDir.mkdirs(); }
+			writeFile(new File(certsDir, filenameCA), caCertData);
+			writeFile(new File(certsDir, filenameTerminal), terminalCertData);
+			writeFile(new File(certsDir, filenameKey), terminalPrivateKey);
 
 			// Test - read the files again and parse its contents,
 			// spit out the certificates
 
-			CVCertificate c = readCVCertificateFromFile(new File(filenameCA));
+			CVCertificate c = readCVCertificateFromFile(new File(certsDir, filenameCA));
 			if (c == null) {
 				fail("could not read filenameCA as CVCertificate");
 			}
@@ -145,8 +147,11 @@ public class CVCAStoreGenerator extends TestCase
 
 			System.out.println("DEBUG: " + bodyText);
 
-			c = readCVCertificateFromFile(new File(filenameTerminal));
+			c = readCVCertificateFromFile(new File(certsDir, filenameTerminal));
+			assertNotNull(c);
 			System.out.println(c.getCertificateBody().getAsText());
+			
+			JMRTDSecurityProvider.endPreferBouncyCastleProvider(jmrtdProviderIndex);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -154,8 +159,8 @@ public class CVCAStoreGenerator extends TestCase
 
 	public void testCreateKeyStore() {
 		try {
-			URI certsDirURI = new URI(TEST_CV_CERT_DIR);
-			File certsDir = new File(certsDirURI.getPath());
+			File certsDir = new File(TEST_CV_CERT_DIR);
+			if (!certsDir.exists()) { certsDir.mkdirs(); }
 			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
 			String[] files = certsDir.list();
 			KeyStore outStore = KeyStore.getInstance("JKS");
@@ -184,23 +189,27 @@ public class CVCAStoreGenerator extends TestCase
 				}
 			}
 			System.out.println("DEBUG: entries in outStore: " + outStore.size());
-			File outFile = new File(new URI(TEST_CV_KEY_STORE).getPath());
+			File outFile = new File(certsDir, TEST_CV_KEY_STORE);
 			FileOutputStream out = new FileOutputStream(outFile);
 			outStore.store(out, STORE_PASSWORD.toCharArray());
 			out.flush();
 			out.close();
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
 	public void testCreateKeyStore2() {
 		try {
-			Security.removeProvider(BC_PROVIDER.getName());
-			Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
+			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
+
 			URI certsDirURI = new URI(WOJ_DIR);
 			File certsDir = new File(certsDirURI.getPath());
-			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
+			if (!certsDir.exists()) {
+				certsDir.mkdirs();
+			}
+			if (!certsDir.isDirectory()) { fail("Certificate directory \"" + certsDir + "\" needs to be a directory!"); }
 			String[] certFiles = certsDir.list(new FilenameFilter(){
 				public boolean accept(File dir, String name) {
 					return name.endsWith(".cvcert") || name.endsWith(".CVCERT"); 
@@ -213,7 +222,7 @@ public class CVCAStoreGenerator extends TestCase
 				}
 
 			});
-			KeyStore outStore = KeyStore.getInstance("BKS");
+			KeyStore outStore = KeyStore.getInstance("JKS");
 			outStore.load(null);
 			String keyAlgName = "RSA";
 			for (String fileName: certFiles) {
@@ -240,31 +249,38 @@ public class CVCAStoreGenerator extends TestCase
 				outStore.setKeyEntry(keyEntryAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), new Certificate[] { dvCertificate, terminalCertificate });
 			}
 
-
 			System.out.println("DEBUG: entries in outStore: " + outStore.size());
 			File outFile = new File(new URI(WOJ_KS).getPath());
 			FileOutputStream out = new FileOutputStream(outFile);
 			outStore.store(out, STORE_PASSWORD.toCharArray());
 			out.flush();
 			out.close();
+
+			JMRTDSecurityProvider.endPreferBouncyCastleProvider(jmrtdProvIndex);
 		} catch (Exception e) {
 			e.printStackTrace();
+			fail(e.getMessage());
 		}
 	}
 
-
 	public void testReadFromKeyStore() {
 		try {
-			Security.removeProvider(BC_PROVIDER.getName());
-			Security.insertProviderAt(BC_PROVIDER, 1); // So that KeyStore accepts non-named EC keys
+			testCreateKeyStore();
+			
+			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
 			Security.addProvider(JMRTD_PROVIDER); // So that KeyStore knows about CVC certs
-			URI storeURI = new URI(TEST_CV_KEY_STORE);
+
+			File certsDir = new File(TEST_CV_CERT_DIR);
+			if (!certsDir.exists()) {
+				certsDir.mkdirs();
+			}
+			File keyStoreFile = new File(certsDir, TEST_CV_KEY_STORE);			
 			KeyStore keyStore = KeyStore.getInstance("JKS");
-			URLConnection uc = storeURI.toURL().openConnection();
-			InputStream in = uc.getInputStream();
+			InputStream in = new FileInputStream(keyStoreFile);
 			keyStore.load(in, STORE_PASSWORD.toCharArray());	
 			keyStore.getKey("terminalkey.der", KEY_ENTRY_PASSWORD.toCharArray());
 
+			JMRTDSecurityProvider.endPreferBouncyCastleProvider(jmrtdProvIndex);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

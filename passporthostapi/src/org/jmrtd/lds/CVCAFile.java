@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -106,21 +106,6 @@ public class CVCAFile extends LDSFile
 	public CVCAFile(String caReference) {
 		this(caReference, null);
 	}
-
-	//	public byte[] getEncoded() {
-	//		byte[] result = new byte[LENGTH];
-	//		result[0] = CAR_TAG;
-	//		result[1] = (byte)caReference.length();
-	//		System.arraycopy(caReference.getBytes(), 0, result, 2, result[1]);
-	//		if (altCaReference != null) {
-	//			int index = result[1] + 2;
-	//			result[index] = CAR_TAG;
-	//			result[index + 1] = (byte) altCaReference.length();
-	//			System.arraycopy(altCaReference.getBytes(), 0, result, index + 2,
-	//					result[index + 1]);
-	//		}
-	//		return result;
-	//	}
 
 	protected void writeObject(OutputStream out) throws IOException {
 		byte[] result = new byte[LENGTH];

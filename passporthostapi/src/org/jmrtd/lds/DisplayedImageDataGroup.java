@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,6 +46,13 @@ abstract class DisplayedImageDataGroup extends DataGroup
 	private int displayedImageTagToUse;
 	private List<DisplayedImageInfo> imageInfos;
 
+	/**
+	 * Constructs a displayed image data group from a list of displayed images.
+	 *
+	 * @param dataGroupTag a tag indicating DG5, DG6, or DG7
+	 * @param imageInfos a list of displayed images
+	 * @param displayedImageTagToUse a tag indicating <i>Portrait</i> or <i>Signature or mark</i>
+	 */
 	public DisplayedImageDataGroup(int dataGroupTag, List<DisplayedImageInfo> imageInfos, int displayedImageTagToUse) {
 		super(dataGroupTag);
 		if (imageInfos == null) { throw new IllegalArgumentException("imageInfos cannot be null"); }
@@ -54,6 +61,12 @@ abstract class DisplayedImageDataGroup extends DataGroup
 		checkTypesConsistentWithTag();
 	}
 
+	/**
+	 * Constructs a displayed image data group from binary representation.
+	 * 
+	 * @param dataGroupTag a tag indicating DG5, DG6, or DG7
+	 * @param in an input stream
+	 */
 	public DisplayedImageDataGroup(int dataGroupTag, InputStream in) {
 		super(dataGroupTag, in);
 		if (this.imageInfos == null) { this.imageInfos = new ArrayList<DisplayedImageInfo>(); }

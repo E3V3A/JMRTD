@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -88,6 +88,10 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 		this(identifier, version, null);
 	}
 
+	/**
+	 * Constructs a terminal authentication info using id_TA identifier {@link #ID_TA_OID}
+	 * and version {@value #VERSION_NUM}.
+	 */
 	public TerminalAuthenticationInfo() {
 		this(ID_TA_OID, VERSION_NUM);
 	}
@@ -123,6 +127,11 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 		return new DERSequence(v);
 	}
 
+	/**
+	 * Gets the object identifier of this TA security info.
+	 * 
+	 * @return an object identifier
+	 */
 	public String getObjectIdentifier() {
 		return oid;
 	}
@@ -138,42 +147,6 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 		DEROctetString fid = (DEROctetString) s.getObjectAt(0);
 		byte[] fidBytes = fid.getOctets();
 		return Hex.hexStringToInt(Hex.bytesToHexString(fidBytes));
-	}
-
-	/**
-	 * Checks the correctness of the data for this instance of SecurityInfo
-	 */
-	private void checkFields() {
-		try {
-			if (!checkRequiredIdentifier(oid)) { throw new IllegalArgumentException("Wrong identifier: " + oid); }
-			if (version != VERSION_NUM) { throw new IllegalArgumentException("Wrong version"); }
-			if (efCVCA != null) {
-				DERSequence sequence = (DERSequence) efCVCA;
-				DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
-				if (fid.getOctets().length != 2) { throw new IllegalArgumentException("Malformed FID."); }
-				if (sequence.size() == 2) {
-					DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);
-					if (sfi.getOctets().length != 1) {
-						throw new IllegalArgumentException("Malformed SFI.");
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("Malformed TerminalAuthenticationInfo.");
-		}
-	}
-
-	/**
-	 * Checks whether the given object identifier identifies a
-	 * TerminalAuthenticationInfo structure.
-	 * 
-	 * @param id
-	 *            object identifier
-	 * @return true if the match is positive
-	 */
-	static boolean checkRequiredIdentifier(String id) {
-		return ID_TA_OID.equals(id);
 	}
 
 	/**
@@ -213,5 +186,43 @@ public class TerminalAuthenticationInfo extends SecurityInfo
 		if (efCVCA == null && otherTerminalAuthenticationInfo.efCVCA != null) { return false; }
 		if (efCVCA != null && otherTerminalAuthenticationInfo.efCVCA == null) { return false; }
 		return getDERObject().equals(otherTerminalAuthenticationInfo.getDERObject());
+	}
+	
+	/* ONLY NON-PUBLIC METHODS BELOW */
+
+	/**
+	 * Checks whether the given object identifier identifies a
+	 * TerminalAuthenticationInfo structure.
+	 * 
+	 * @param id
+	 *            object identifier
+	 * @return true if the match is positive
+	 */
+	static boolean checkRequiredIdentifier(String id) {
+		return ID_TA_OID.equals(id);
+	}
+	
+	/**
+	 * Checks the correctness of the data for this instance of SecurityInfo
+	 */
+	private void checkFields() {
+		try {
+			if (!checkRequiredIdentifier(oid)) { throw new IllegalArgumentException("Wrong identifier: " + oid); }
+			if (version != VERSION_NUM) { throw new IllegalArgumentException("Wrong version"); }
+			if (efCVCA != null) {
+				DERSequence sequence = (DERSequence) efCVCA;
+				DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
+				if (fid.getOctets().length != 2) { throw new IllegalArgumentException("Malformed FID."); }
+				if (sequence.size() == 2) {
+					DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);
+					if (sfi.getOctets().length != 1) {
+						throw new IllegalArgumentException("Malformed SFI.");
+					}
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw new IllegalArgumentException("Malformed TerminalAuthenticationInfo.");
+		}
 	}
 }

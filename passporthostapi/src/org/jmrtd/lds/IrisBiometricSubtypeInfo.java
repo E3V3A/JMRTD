@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,7 +50,7 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 	private int biometricSubtype;
 
 	/**
-	 * Constructs a biometric subtype info object.
+	 * Constructs a biometric subtype info.
 	 * 
 	 * @param biometricSubtype one of {@link #EYE_UNDEF}, {@link #EYE_RIGHT}, {@link #EYE_LEFT}
 	 * @param imageFormat the image format as specified in the {@link IrisInfo} of which this is a part
@@ -62,13 +62,28 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 		addAll(irisImageInfos);
 	}
 
+	/**
+	 * Constructs an iris biometric subtype from binary encoding.
+	 * 
+	 * @param in an input stream
+	 * @param imageFormat the image format used
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public IrisBiometricSubtypeInfo(InputStream in, int imageFormat) throws IOException {
 		this.imageFormat = imageFormat;
 		readObject(in);
 	}
 
-	public void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = in instanceof DataInputStream ? (DataInputStream)in : new DataInputStream(in);
+	/**
+	 * Reads an iris biometric subtype from input stream.
+	 * 
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
+	public void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		/* Iris biometric subtype header */
 		this.biometricSubtype = dataIn.readUnsignedByte();			/* 1 */
@@ -81,8 +96,15 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 		}
 	}
 
-	public void writeObject(OutputStream out) throws IOException {
-		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
+	/**
+	 * Writes an iris biometric subtype to output stream.
+	 * 
+	 * @param outputStream an output stream
+	 * 
+	 * @throws IOException if writing fails
+	 */
+	public void writeObject(OutputStream outputStream) throws IOException {
+		DataOutputStream dataOut = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
 		
 		dataOut.writeByte(biometricSubtype & 0xFF);					/* 1 */
 		
@@ -93,6 +115,11 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 		}
 	}
 
+	/**
+	 * Gets the record length.
+	 * 
+	 * @return the record length
+	 */
 	public long getRecordLength() {
 		long result = 3;
 		List<IrisImageInfo> irisImageInfos = getSubRecords();
@@ -128,7 +155,30 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 	public int getImageFormat() {
 		return imageFormat;
 	}
+	
+	/**
+	 * Gets the iris image infos embedded in this iris biometric subtype info.
+	 * 
+	 * @return the embedded iris image infos
+	 */
+	public List<IrisImageInfo> getIrisImageInfos() { return getSubRecords(); }
+	
+	/**
+	 * Adds an iris image info to this iris biometric subtype info.
+	 * 
+	 * @param irisImageInfo the iris image info to add
+	 */
+	public void addIrisImageInfo(IrisImageInfo irisImageInfo) { add(irisImageInfo); }
+	
+	/**
+	 * Removes an iris image info from this iris biometric subtype info.
+	 * 
+	 * @param index the index of the iris image info to remove
+	 */
+	public void removeIrisImageInfo(int index) { remove(index); }
 
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private static String biometricSubtypeToString(int biometricSubtype) {
 		switch (biometricSubtype) {
 		case EYE_LEFT: return "Left eye";
@@ -136,9 +186,5 @@ public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 		case EYE_UNDEF: return "Undefined";
 		default: throw new NumberFormatException("Unknown biometric subtype: " + Integer.toHexString(biometricSubtype));
 		}
-	}
-	
-	public List<IrisImageInfo> getIrisImageInfos() { return getSubRecords(); }
-	public void addIrisImageInfo(IrisImageInfo irisImageInfo) { add(irisImageInfo); }
-	public void removeIrisImageInfo(int index) { remove(index); }
+	}	
 }

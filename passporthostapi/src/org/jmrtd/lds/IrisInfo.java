@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -64,6 +64,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	 */	
 	private static final int FORMAT_TYPE_VALUE = 0x0009;
 
+	/** Image format */
+	/* TODO: reference to specification. */
 	public static final int
 	IMAGEFORMAT_MONO_RAW = 2, /* (0x0002) */
 	IMAGEFORMAT_RGB_RAW = 4, /* (0x0004) */
@@ -102,12 +104,15 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	IROCC_ZEROFILL = 0,
 	IROC_UNITFILL = 1;
 
+	/* TODO: reference to specification. */
 	public static final int
 	INTENSITY_DEPTH_UNDEF = 0;
 
+	/* TODO: reference to specification. */
 	public static final int
 	TRANS_UNDEF = 0, TRANS_STD = 1;
 
+	/* TODO: reference to specification. */
 	public static final int
 	IRBNDY_UNDEF = 0,
 	IRBNDY_PROCESSED = 1;
@@ -222,15 +227,37 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 		this.recordLength = headerLength + dataLength;
 	}
 
+	/**
+	 * Constructs an iris info from binary encoding.
+	 * 
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public IrisInfo(InputStream inputStream) throws IOException {
 		this(null, inputStream);
 	}
-	
+
+	/**
+	 * Constructs an iris info from binary encoding.
+	 * 
+	 * @param sbh standard biometric header to use
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public IrisInfo(StandardBiometricHeader sbh, InputStream inputStream) throws IOException {
 		this.sbh = sbh;
 		readObject(inputStream);
 	}
 
+	/**
+	 * Reads this iris info from input stream.
+	 * 
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public void readObject(InputStream inputStream) throws IOException {
 
 		/* Iris Record Header (45) */
@@ -303,6 +330,13 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 		}
 	}
 
+	/**
+	 * Writes this iris info to an output stream.
+	 * 
+	 * @param outputStream an output stream
+	 * 
+	 * @throws IOException if writing fails
+	 */
 	public void writeObject(OutputStream outputStream) throws IOException {
 
 		int headerLength = 45;
@@ -352,6 +386,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the capture device id.
+	 * 
 	 * @return the captureDeviceId
 	 */
 	public int getCaptureDeviceId() {
@@ -359,27 +395,35 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
-	 * @return the horizontalOrientation
+	 * Gets the horizontal orientation
+	 * 
+	 * @return the horizontalOrientation, one of {@link #ORIENTATION_UNDEF}, {@link #ORIENTATION_BASE}, or {@link #ORIENTATION_FLIPPED}
 	 */
 	public int getHorizontalOrientation() {
 		return horizontalOrientation;
 	}
 
 	/**
-	 * @return the verticalOrientation
+	 * Gets the vertical orientation
+	 * 
+	 * @return the verticalOrientation, one of {@link #ORIENTATION_UNDEF}, {@link #ORIENTATION_BASE}, or {@link #ORIENTATION_FLIPPED}
 	 */
 	public int getVerticalOrientation() {
 		return verticalOrientation;
 	}
 
 	/**
-	 * @return the scanType
+	 * Gets the scan type.
+	 * 
+	 * @return the scanType, one of {@link #SCAN_TYPE_UNDEF}, {@link #SCAN_TYPE_PROGRESSIVE}, {@link #SCAN_TYPE_INTERLACE_FRAME}, {@link #SCAN_TYPE_INTERLACE_FIELD}, or {@link #SCAN_TYPE_CORRECTED}
 	 */
 	public int getScanType() {
 		return scanType;
 	}
 
 	/**
+	 * Gets the iris occlusion.
+	 * 
 	 * @return the irisOcclusion
 	 */
 	public int getIrisOcclusion() {
@@ -387,6 +431,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the iris occlusing filling.
+	 * 
 	 * @return the occlusionFilling
 	 */
 	public int getOcclusionFilling() {
@@ -394,6 +440,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the boundary extraction.
+	 * 
 	 * @return the boundaryExtraction
 	 */
 	public int getBoundaryExtraction() {
@@ -401,6 +449,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the iris diameter.
+	 * 
 	 * @return the irisDiameter
 	 */
 	public int getIrisDiameter() {
@@ -408,6 +458,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the image format.
+	 * 
 	 * @return the imageFormat
 	 */
 	public int getImageFormat() {
@@ -415,6 +467,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the raw image width.
+	 * 
 	 * @return the rawImageWidth
 	 */
 	public int getRawImageWidth() {
@@ -422,6 +476,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the raw image height.
+	 * 
 	 * @return the rawImageHeight
 	 */
 	public int getRawImageHeight() {
@@ -429,6 +485,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the intensity depth.
+	 * 
 	 * @return the intensityDepth
 	 */
 	public int getIntensityDepth() {
@@ -436,6 +494,8 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the image transformation.
+	 * 
 	 * @return the imageTransformation
 	 */
 	public int getImageTransformation() {
@@ -443,12 +503,19 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 	}
 
 	/**
+	 * Gets the device unique id.
+	 * 
 	 * @return the deviceUniqueId
 	 */
 	public byte[] getDeviceUniqueId() {
 		return deviceUniqueId;
 	}
 
+	/**
+	 * Gets the standard biometric header of this iris info.
+	 * 
+	 * @return the standard biometric header
+	 */
 	public StandardBiometricHeader getStandardBiometricHeader() {
 		if (sbh == null) {
 			byte[] biometricType = { (byte)CBEFFInfo.BIOMETRIC_TYPE_FINGERPRINT };
@@ -467,6 +534,44 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 		return sbh;
 	}
 
+	/**
+	 * Generates a textual representation of this object.
+	 * 
+	 * @return a textual representation of this object
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		result.append("IrisInfo [");
+		/* TODO: contents */
+		result.append("]");
+		return result.toString();
+	}
+
+	/**
+	 * Gets the iris biometric subtype infos embedded in this iris info.
+	 * 
+	 * @return iris biometric subtype infos
+	 */
+	public List<IrisBiometricSubtypeInfo> getIrisBiometricSubtypeInfos() { return getSubRecords(); }
+	
+	/**
+	 * Adds an iris biometric subtype info to this iris info.
+	 * 
+	 * @param irisBiometricSubtypeInfo
+	 */
+	public void addIrisBiometricSubtypeInfo(IrisBiometricSubtypeInfo irisBiometricSubtypeInfo) { add(irisBiometricSubtypeInfo); }
+
+	/**
+	 * Removes an iris biometric subtype info from this iris info.
+	 * 
+	 * @param index the index of the biometric subtype info to remove
+	 */
+	public void removeIrisBiometricSubtypeInfo(int index) { remove(index); }
+
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private int getBiometricSubtype() {
 		int result = CBEFFInfo.BIOMETRIC_SUBTYPE_NONE;
 		List<IrisBiometricSubtypeInfo> irisBiometricSubtypeInfos = getSubRecords();
@@ -475,12 +580,4 @@ public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements Biom
 		}
 		return result;
 	}
-
-	public String toString() {
-		return "IrisInfo [ ]";
-	}
-
-	public List<IrisBiometricSubtypeInfo> getIrisBiometricSubtypeInfos() { return getSubRecords(); }
-	public void addIrisBiometricSubtypeInfo(IrisBiometricSubtypeInfo irisFeatureInfo) { add(irisFeatureInfo); }
-	public void removeIrisBiometricSubtypeInfo(int index) { remove(index); }
 }

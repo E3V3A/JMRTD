@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -110,6 +110,19 @@ public class FingerImageInfo extends AbstractImageInfo
 		this.compressionAlgorithm = compressionAlgorithm;
 	}
 
+	/**
+	 * Constructs a finger image info.
+	 * 
+	 * @param position finger position according to ISO 19794-4
+	 * @param viewCount number of views
+	 * @param viewNumber the view number
+	 * @param quality quality
+	 * @param impressionType impression type accordign to ISO 19794-4
+	 * @param width width
+	 * @param height height
+	 * @param imageBytes encoded image
+	 * @param compressionAlgorithm image encoding type according to ISO 19794-4
+	 */
 	public FingerImageInfo(int position,
 			int viewCount, int viewNumber, int quality, int impressionType,
 			int width, int height, byte[] imageBytes, int compressionAlgorithm) {
@@ -257,9 +270,33 @@ public class FingerImageInfo extends AbstractImageInfo
 		dataOut.flush();
 	}
 
+	/**
+	 * Gets the record length.
+	 * 
+	 * @return the record length
+	 */
 	public long getRecordLength() {
 		/* Should be equal to (getImageLength() + 14) */
 		return recordLength;
+	}
+	
+
+	/**
+	 * Gets the format type.
+	 * 
+	 * @return a byte array of length 2
+	 */
+	public byte[] getFormatType() {
+		return FORMAT_TYPE_VALUE;
+	}
+	
+	/**
+	 * Gets the biometric sub-type.
+	 * 
+	 * @return the ICAO/CBEFF (BHT) biometric sub-type
+	 */
+	public int getBiometricSubtype() {
+		return toBiometricSubtype(position);
 	}
 
 	/**
@@ -333,14 +370,6 @@ public class FingerImageInfo extends AbstractImageInfo
 		default: return null;
 		}
 	}
-
-	public byte[] getFormatType() {
-		return FORMAT_TYPE_VALUE;
-	}
-	
-	public int getBiometricSubtype() {
-		return toBiometricSubtype(position);
-	}
 	
 	/**
 	 * Converts from ISO (FRH) coding to ICAO/CBEFF (BHT) coding.
@@ -360,6 +389,7 @@ public class FingerImageInfo extends AbstractImageInfo
 	 * </table>
 	 * 
 	 * @param an ISO finger position
+	 * 
 	 * @return an ICAO biometric subtype
 	 */
 	private static int toBiometricSubtype(int position) {

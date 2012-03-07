@@ -31,5 +31,10 @@ package org.jmrtd.cbeff;
  */
 public interface BiometricDataBlock {
 
+	/**
+	 * Gets the standard biometric header of this biometric data block
+	 * 
+	 * @return the standard biometric header
+	 */
 	public StandardBiometricHeader getStandardBiometricHeader();	
 }

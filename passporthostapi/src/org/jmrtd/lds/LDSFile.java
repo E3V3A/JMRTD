@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,7 +33,7 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import org.jmrtd.PassportService;
 
 /**
- * Super class for passport files (EF_COM, EF_SOD, and data groups).
+ * Base class for all files (EF_COM, EF_SOD, and data groups) in the LDS.
  * 
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -291,6 +291,13 @@ public abstract class LDSFile implements LDSInfo
 		}
 	}
 
+	/**
+	 * Finds a data group number by file identifier.
+	 * 
+	 * @param fid a file id
+	 * 
+	 * @return a data group number
+	 */
 	public static short lookupDataGroupNumberByFID(short fid) {
 		switch(fid) {
 		case PassportService.EF_DG1: return 1;

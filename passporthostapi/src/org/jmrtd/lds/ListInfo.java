@@ -1,3 +1,25 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006 - 2012  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id: $
+ */
+
 package org.jmrtd.lds;
 
 import java.io.IOException;
@@ -7,9 +29,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * List info containing list of elements.
+ * Abstract base class for several data structures used in the LDS
+ * containing a list of elements.
  * 
- * @author martijn.oostdijk
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
  *
  * @param <R> the type of the elements
  */
@@ -78,7 +103,7 @@ abstract class ListInfo<R> extends AbstractInfo {
 		return 7 * result + 11;
 	}
 	
-	public abstract void writeObject(OutputStream out) throws IOException;
+	public abstract void writeObject(OutputStream outputStream) throws IOException;
 
-	public abstract void readObject(InputStream in) throws IOException;
+	public abstract void readObject(InputStream inputStream) throws IOException;
 }

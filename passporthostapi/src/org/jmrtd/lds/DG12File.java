@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -139,6 +139,11 @@ public class DG12File extends DataGroup
 		}
 	}
 
+	/**
+	 * Gets the tags of fields actually present in this file.
+	 * 
+	 * @return a list of tags
+	 */
 	public List<Integer> getTagPresenceList() {
 		if (tagPresenceList != null) { return tagPresenceList; }
 		tagPresenceList = new ArrayList<Integer>(10);
@@ -224,6 +229,8 @@ public class DG12File extends DataGroup
 	/* Accessors below. */
 
 	/**
+	 * Gets the issuing authority.
+	 * 
 	 * @return the issuingAuthority
 	 */
 	public String getIssuingAuthority() {
@@ -231,6 +238,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets the date of issuance.
+	 * 
 	 * @return the dateOfIssue
 	 */
 	public Date getDateOfIssue() {
@@ -238,6 +247,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets name of other person.
+	 * 
 	 * @return the nameOfOtherPerson
 	 */
 	public String getNameOfOtherPerson() {
@@ -245,13 +256,17 @@ public class DG12File extends DataGroup
 	}
 
 	/**
-	 * @return the endorseMentsAndObservations
+	 * Gets endorsements and observations.
+	 * 
+	 * @return the endorsementsAndObservations
 	 */
-	public String getEndorseMentsAndObservations() {
+	public String getEndorsementsAndObservations() {
 		return endorseMentsAndObservations;
 	}
 
 	/**
+	 * Gets tax or exit requirements.
+	 * 
 	 * @return the taxOrExitRequirements
 	 */
 	public String getTaxOrExitRequirements() {
@@ -259,6 +274,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets image of front.
+	 * 
 	 * @return the imageOfFront
 	 */
 	public byte[] getImageOfFront() {
@@ -266,6 +283,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets image of rear.
+	 * 
 	 * @return the imageOfRear
 	 */
 	public byte[] getImageOfRear() {
@@ -273,6 +292,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets date and time of personalization.
+	 * 
 	 * @return the dateAndTimeOfPersonalization
 	 */
 	public Date getDateAndTimeOfPersonalization() {
@@ -280,6 +301,8 @@ public class DG12File extends DataGroup
 	}
 
 	/**
+	 * Gets the personalization system serial number.
+	 * 
 	 * @return the personalizationSystemSerialNumber
 	 */
 	public String getPersonalizationSystemSerialNumber() {

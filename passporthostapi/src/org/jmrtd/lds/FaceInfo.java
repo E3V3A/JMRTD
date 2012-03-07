@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -62,19 +62,45 @@ public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBl
 
 	private StandardBiometricHeader sbh;
 
+	/**
+	 * Constructs a face info from a list of face image infos.
+	 * 
+	 * @param faceImageInfos face image infos
+	 */
 	public FaceInfo(List<FaceImageInfo> faceImageInfos) {
 		this(null, faceImageInfos);
 	}
 
+	/**
+	 * Constructs a face info from a list of face image infos.
+	 * 
+	 * @param sbh the standard biometric header to use
+	 * @param faceImageInfos face image infos
+	 */	
 	public FaceInfo(StandardBiometricHeader sbh, List<FaceImageInfo> faceImageInfos) {
 		this.sbh = sbh;
 		addAll(faceImageInfos);
 	}
 
+	/**
+	 * Constructs a face info from binary encoding.
+	 * 
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException when decoding fails
+	 */
 	public FaceInfo(InputStream inputStream) throws IOException {
 		this(null, inputStream);
 	}
 	
+	/**
+	 * Constructs a face info from binary encoding.
+	 *  
+	 * @param sbh the standard biometric header to use
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException when decoding fails
+	 */
 	public FaceInfo(StandardBiometricHeader sbh, InputStream inputStream) throws IOException {
 		this.sbh = sbh;
 		readObject(inputStream);
@@ -118,6 +144,8 @@ public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBl
 	/**
 	 * Writes the facial record to an output stream. Note that the standard biometric header
 	 * (part of CBEFF structure) is not written here.
+	 * 
+	 * @param outputStream an output stream
 	 */
 	public void writeObject(OutputStream outputStream) throws IOException {		
 
@@ -151,6 +179,11 @@ public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBl
 		}
 	}
 
+	/**
+	 * Gets the standard biometric header of this biometric data block
+	 * 
+	 * @return the standard biometric header
+	 */
 	public StandardBiometricHeader getStandardBiometricHeader() {
 		if (sbh == null) {
 			byte[] biometricType = { (byte)CBEFFInfo.BIOMETRIC_TYPE_FACIAL_FEATURES };
@@ -168,7 +201,24 @@ public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBl
 		return sbh;
 	}
 
+	/**
+	 * Gets the face image infos embedded in this face info.
+	 * 
+	 * @return the embedded face image infos
+	 */
 	public List<FaceImageInfo> getFaceImageInfos() { return getSubRecords(); }
+	
+	/**
+	 * Adds a face image info to this face info.
+	 * 
+	 * @param faceImageInfo the face image info to add
+	 */
 	public void addFaceImageInfo(FaceImageInfo faceImageInfo) { add(faceImageInfo); }
+	
+	/**
+	 * Removes a face image info from this face info.
+	 * 
+	 * @param index the index of the face image info to remove
+	 */
 	public void removeFaceImageInfo(int index) { remove(index); }
 }

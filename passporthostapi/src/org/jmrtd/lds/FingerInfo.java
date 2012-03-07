@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -271,6 +271,13 @@ public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDa
 		return compressionAlgorithm;
 	}
 
+	/**
+	 * Reads a finger info from an input stream.
+	 * 
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public void readObject(InputStream inputStream) throws IOException {
 		/* General record header (32) according to Table 2 in Section 7.1 of ISO/IEC 19794-4. */
 
@@ -315,6 +322,13 @@ public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDa
 		}
 	}
 
+	/**
+	 * Writes this finger info to an output stream.
+	 * 
+	 * @param outputStream an output stream
+	 * 
+	 * @throws IOException if writing fails
+	 */
 	public void writeObject(OutputStream outputStream) throws IOException {
 
 		long headerLength = 32; /* 4 + 4 + 6 + 2 + 2 + 1 + 1 + 2 + 2 + 2 + 2 + 1 + 1 + 2 */
@@ -365,6 +379,50 @@ public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDa
 		return result.toString();
 	}
 
+	/**
+	 * Gets the standard biometric header of this biometric data block
+	 * 
+	 * @return the standard biometric header
+	 */
+	public StandardBiometricHeader getStandardBiometricHeader() {
+		if (sbh == null) {
+			byte[] biometricType = { (byte)CBEFFInfo.BIOMETRIC_TYPE_FINGERPRINT };
+			byte[] biometricSubtype = { (byte)getBiometricSubtype() };
+			byte[] formatOwner = { (byte)((FORMAT_OWNER_VALUE & 0xFF00) >> 8), (byte)(FORMAT_OWNER_VALUE & 0xFF) };
+			byte[] formatType = { (byte)((FORMAT_TYPE_VALUE & 0xFF00) >> 8), (byte)(FORMAT_TYPE_VALUE & 0xFF) };
+
+			SortedMap<Integer, byte[]> elements = new TreeMap<Integer, byte[]>();
+			elements.put(ISO781611.BIOMETRIC_TYPE_TAG, biometricType);
+			elements.put(ISO781611.BIOMETRIC_SUBTYPE_TAG, biometricSubtype);
+			elements.put(ISO781611.FORMAT_OWNER_TAG, formatOwner);
+			elements.put(ISO781611.FORMAT_TYPE_TAG, formatType);
+
+			sbh = new StandardBiometricHeader(elements);
+		}
+		return sbh;
+	}
+	
+	/**
+	 * Gets the finger image infos embedded in this finger info.
+	 * 
+	 * @return the embedded finger image infos
+	 */
+	public List<FingerImageInfo> getFingerImageInfos() { return getSubRecords(); }
+
+	/**
+	 * Adds a finger image info to this finger info.
+	 * 
+	 * @param fingerImageInfo the finger image info to add
+	 */
+	public void addFingerImageInfo(FingerImageInfo fingerImageInfo) { add(fingerImageInfo); }
+
+	/**
+	 * Removes a finger image info from this finger info.
+	 * 
+	 * @param index the index of the finger image info to remove
+	 */
+	public void removeFingerImageInfo(int index) { remove(index); }	
+	
 	/* ONLY PRIVATE BELOW */
 
 	private static long readUnsignedLong(InputStream in, int byteCount) throws IOException {
@@ -426,24 +484,6 @@ public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDa
 		throw new IllegalArgumentException("Did not recognize mimeType");
 	}
 
-	public StandardBiometricHeader getStandardBiometricHeader() {
-		if (sbh == null) {
-			byte[] biometricType = { (byte)CBEFFInfo.BIOMETRIC_TYPE_FINGERPRINT };
-			byte[] biometricSubtype = { (byte)getBiometricSubtype() };
-			byte[] formatOwner = { (byte)((FORMAT_OWNER_VALUE & 0xFF00) >> 8), (byte)(FORMAT_OWNER_VALUE & 0xFF) };
-			byte[] formatType = { (byte)((FORMAT_TYPE_VALUE & 0xFF00) >> 8), (byte)(FORMAT_TYPE_VALUE & 0xFF) };
-
-			SortedMap<Integer, byte[]> elements = new TreeMap<Integer, byte[]>();
-			elements.put(ISO781611.BIOMETRIC_TYPE_TAG, biometricType);
-			elements.put(ISO781611.BIOMETRIC_SUBTYPE_TAG, biometricSubtype);
-			elements.put(ISO781611.FORMAT_OWNER_TAG, formatOwner);
-			elements.put(ISO781611.FORMAT_TYPE_TAG, formatType);
-
-			sbh = new StandardBiometricHeader(elements);
-		}
-		return sbh;
-	}
-
 	private int getBiometricSubtype() {
 		int result = CBEFFInfo.BIOMETRIC_SUBTYPE_NONE;
 		boolean isFirst = true;
@@ -459,8 +499,4 @@ public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDa
 		}
 		return result;
 	}
-
-	public List<FingerImageInfo> getFingerImageInfos() { return getSubRecords(); }
-	public void addFingerImageInfo(FingerImageInfo fingerImageInfo) { add(fingerImageInfo); }
-	public void removeFingerImageInfo(int index) { remove(index); }	
 }

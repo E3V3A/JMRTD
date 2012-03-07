@@ -30,13 +30,17 @@ public class CSCAStoreGenerator extends TestCase
 
 	//	private static final String TEST_KEY_STORE = "file:/d:/csca.ks";
 
+	static {
+		Security.addProvider(BC_PROVIDER);
+	}
+	
 	private static final String
 	STORE_PASSWORD = "",
 	KEY_ENTRY_PASSWORD = "";
 
-	private static final String TEST_CERT_DIR = "file:/d:/ca/icao/csca";
+	private static final String TEST_CERT_DIR = "file:/t:/ca/icao/csca";
 
-	private static final String TEST_DEST_KEY_STORE = "file:/d:/ca/icao/csca/csca.ks";
+	private static final String TEST_DEST_KEY_STORE = "file:/t:/ca/icao/csca/csca.ks";
 
 	private static final String TEST_SRC_KEY_STORE = TEST_DEST_KEY_STORE;
 
@@ -47,10 +51,11 @@ public class CSCAStoreGenerator extends TestCase
 
 	public void testImportX509Certificates() {
 		try {
-			Security.removeProvider(BC_PROVIDER.getName());
-			Security.insertProviderAt(BC_PROVIDER, 1);
+			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
+			
 			URI certsDirURI = new URI(TEST_CERT_DIR);
 			File certsDir = new File(certsDirURI.getPath());
+			if (!certsDir.exists()) { certsDir.mkdirs(); }
 			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
 			String[] files = certsDir.list();
 			KeyStore outStore = KeyStore.getInstance("JKS");
@@ -74,6 +79,8 @@ public class CSCAStoreGenerator extends TestCase
 			outStore.store(out, STORE_PASSWORD.toCharArray());
 			out.flush();
 			out.close();
+			
+			JMRTDSecurityProvider.endPreferBouncyCastleProvider(jmrtdProvIndex);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

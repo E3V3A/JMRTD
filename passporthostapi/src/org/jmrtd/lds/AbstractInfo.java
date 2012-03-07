@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/**
+ * Base class for data structures that are contained in files in the LDS. 
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
 abstract class AbstractInfo implements LDSInfo {
 
 	public byte[] getEncoded() {

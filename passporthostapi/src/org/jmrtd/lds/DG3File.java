@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,7 +58,6 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 			info.writeObject(out);
 		}
 	});
-
 
 	/**
 	 * Creates a new file with the specified records.
@@ -119,7 +118,24 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 		return "DG3File [" + super.toString() + "]";
 	}
 
+	/**
+	 * Gets the finger infos embedded in this file.
+	 * 
+	 * @return finger infos
+	 */
 	public List<FingerInfo> getFingerInfos() { return getSubRecords(); }
+
+	/**
+	 * Adds a finger info to this file.
+	 * 
+	 * @param fingerInfo the finger info to add
+	 */
 	public void addFingerInfo(FingerInfo fingerInfo) { add(fingerInfo); }
+
+	/**
+	 * Removes a finger info from this file.
+	 * 
+	 * @param index the index of the finger info to remove
+	 */
 	public void removeFingerInfo(int index) { remove(index); }
 }

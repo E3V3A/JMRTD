@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,9 +30,9 @@ import java.io.OutputStream;
 import java.util.Arrays;
 
 /**
- * Base class for ImageInfos.
+ * Base class for image infos.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */
@@ -61,6 +61,15 @@ abstract class AbstractImageInfo implements ImageInfo {
 		this.height = height;
 	}
 
+	/**
+	 * Constructs an abstract image info.
+	 * 
+	 * @param type type image info
+	 * @param width width of image
+	 * @param height height of image
+	 * @param imageBytes encoded image
+	 * @param mimeType mime-type of image
+	 */
 	public AbstractImageInfo(int type, int width, int height, byte[] imageBytes, String mimeType) {
 		this(type, width, height, mimeType);
 		if (imageBytes != null) {
@@ -69,6 +78,18 @@ abstract class AbstractImageInfo implements ImageInfo {
 		}
 	}
 
+	/**
+	 * Constructs an abstract image info.
+	 * 
+	 * @param type type of image info
+	 * @param width width of image
+	 * @param height height of image
+	 * @param in encoded image
+	 * @param imageLength length of encoded image
+	 * @param mimeType mime-type of encoded image
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public AbstractImageInfo(int type, int width, int height, InputStream in, long imageLength, String mimeType) throws IOException {
 		this(type, width, height, mimeType);
 		readImage(in, imageLength);
@@ -87,22 +108,47 @@ abstract class AbstractImageInfo implements ImageInfo {
 		return type;
 	}
 
+	/**
+	 * Gets the mime-type of the encoded image.
+	 * 
+	 * @return the mime-type of the encoded image
+	 */
 	public String getMimeType() {
 		return mimeType;
 	}
 
+	/**
+	 * Gets the width of the image.
+	 * 
+	 * @return the width of the image
+	 */
 	public int getWidth() {
 		return width;
 	}
 
+	/**
+	 * Gets the height of the image.
+	 * 
+	 * @return the height of the image
+	 */
 	public int getHeight() {
 		return height;
 	}
 
+	/**
+	 * Gets the length of the encoded image.
+	 * 
+	 * @return the length of the encoded image
+	 */
 	public int getImageLength() {
 		return imageBytes.length;
 	}
 
+	/**
+	 * Gets a textual representation of this image info.
+	 * 
+	 * @return a textual representation of this image info
+	 */
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append(this.getClass().getSimpleName());
@@ -131,6 +177,11 @@ abstract class AbstractImageInfo implements ImageInfo {
 		&& type == otherImageInfo.type;
 	}
 
+	/**
+	 * Encodes this image info.
+	 * 
+	 * @return a byte array containing the encoded image info
+	 */
 	public byte[] getEncoded() {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
@@ -141,6 +192,18 @@ abstract class AbstractImageInfo implements ImageInfo {
 		return out.toByteArray();
 	}
 
+	/**
+	 * Gets the record length.
+	 * 
+	 * @return the record length
+	 */
+	public abstract long getRecordLength();
+	
+	/**
+	 * Gets the encoded image as an input stream.
+	 * 
+	 * @return an input stream containing the encoded image
+	 */
 	public InputStream getImageInputStream() {
 		return new ByteArrayInputStream(imageBytes);
 	}
@@ -187,8 +250,6 @@ abstract class AbstractImageInfo implements ImageInfo {
 	protected abstract void readObject(InputStream in) throws IOException;
 
 	protected abstract void writeObject(OutputStream out) throws IOException;
-
-	public abstract long getRecordLength();
 
 	/* ONLY PRIVATE METHODS BELOW */
 

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,10 @@ import net.sourceforge.scuba.data.Country;
 
 /**
  * Contributed by Aleksandar Kamburov (wise_guybg).
+ * 
+ * @author Aleksandar Kamburov (wise_guybg)
+ * 
+ * @version $Revision: $
  */
 public class ICAOCountry extends Country {
 	
@@ -57,6 +61,13 @@ public class ICAOCountry extends Country {
 	private String alpha2Code;
 	private String alpha3Code;
 	
+	/**
+	 * Gets an ICAO country instance.
+	 * 
+	 * @param alpha3Code a three-digit ICAO country code
+	 * 
+	 * @return an ICAO country
+	 */
 	public static Country getInstance(String alpha3Code) {
 		for (ICAOCountry country: VALUES) {
 			if (country.alpha3Code.equals(alpha3Code)) { return country; }
@@ -85,14 +96,29 @@ public class ICAOCountry extends Country {
 		return -1;
 	}
 
+	/**
+	 * Gets the full name of the country.
+	 * 
+	 * @return a country name
+	 */
 	public String getName() {
 		return name;
 	}
 
+	/**
+	 * Gets the two-digit country code.
+	 * 
+	 * @return a two-digit country code
+	 */
 	public String toAlpha2Code() {
 		return alpha2Code;
 	}
 
+	/**
+	 * Gets the three-digit country code.
+	 * 
+	 * @return a three-digit country code
+	 */
 	public String toAlpha3Code() {
 		return alpha3Code;
 	}

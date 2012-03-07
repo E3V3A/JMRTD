@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -355,6 +355,344 @@ public class MRZInfo extends AbstractInfo implements Serializable
 			dataOut.write(compositeCheckDigit);
 		}
 	}
+	
+	/**
+	 * Gets the date of birth of the passport holder.
+	 *
+	 * @return date of birth
+	 */
+	public String getDateOfBirth() {
+		return dateOfBirth;
+	}
+
+	/**
+	 * Sets the date of birth.
+	 *
+	 * @param dateOfBirth new date of birth
+	 */
+	public void setDateOfBirth(String dateOfBirth) {
+		this.dateOfBirth = dateOfBirth;
+		checkDigit();
+	}
+
+	/**
+	 * Gets the date of expiry
+	 *
+	 * @return date of expiry
+	 */
+	public String getDateOfExpiry() {
+		return dateOfExpiry;
+	}
+
+	/**
+	 * Sets the date of expiry.
+	 *
+	 * @param dateOfExpiry new date of expiry
+	 */
+	public void setDateOfExpiry(String dateOfExpiry) {
+		this.dateOfExpiry = dateOfExpiry;
+		checkDigit();
+	}
+
+	/**
+	 * Gets the document number.
+	 *
+	 * @return document number
+	 */
+	public String getDocumentNumber() {
+		return documentNumber;
+	}
+
+	/**
+	 * Sets the document number.
+	 *
+	 * @param documentNumber new document number
+	 */
+	public void setDocumentNumber(String documentNumber) {
+		this.documentNumber = documentNumber.trim();
+		checkDigit();
+	}
+
+	/**
+	 * Gets the document type.
+	 *
+	 * @return document type
+	 */
+	public int getDocumentType() {
+		return documentType;
+	}
+
+	/**
+	 * Gets the document type.
+	 *
+	 * @return document type
+	 */
+	public String getDocumentCode() {
+		return documentCode;
+	}
+
+	public void setDocumentCode(String documentCode) {
+		this.documentCode = documentCode;
+		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
+		if (documentType == DOC_TYPE_ID1 && optionalData2 == null) {
+			optionalData2 = "";
+		}
+		/* FIXME: need to adjust some other lengths if we go from ID1 to ID3 or back... */
+	}
+
+	/**
+	 * Gets the issuing state as a 3 letter code
+	 *
+	 * @return issuing state
+	 */
+	public String getIssuingState() {
+		return issuingState;
+	}
+
+	/**
+	 * Sets the issuing state.
+	 *
+	 * @param issuingState new issuing state
+	 */
+	public void setIssuingState(String issuingState) {
+		this.issuingState = issuingState;
+		checkDigit();
+	}
+
+	/**
+	 * Gets the passport holder's last name.
+	 *
+	 * @return name
+	 */
+	public String getPrimaryIdentifier() {
+		return primaryIdentifier;
+	}
+
+	/**
+	 * Sets the passport holder's last name.
+	 *
+	 * @param primaryIdentifier new primary identifier
+	 */
+	public void setPrimaryIdentifier(String primaryIdentifier) {
+		this.primaryIdentifier = primaryIdentifier.trim();
+		checkDigit();
+	}
+
+	/**
+	 * Gets the document holder's first names.
+	 * 
+	 * @return the secondary identifier
+	 */
+	public String getSecondaryIdentifier() {
+		return secondaryIdentifier;
+	}
+
+	/**
+	 * Gets the document holder's first names.
+	 *
+	 * @return first names
+	 */
+	public String[] getSecondaryIdentifierComponents() {
+		return secondaryIdentifier.split(" |<");
+	}
+
+	/**
+	 * Sets the passport holder's first names.
+	 *
+	 * @param secondaryIdentifiers new secondary identifiers
+	 */
+	public void setSecondaryIdentifierComponents(String[] secondaryIdentifiers) {
+		if (secondaryIdentifiers == null) {
+			this.secondaryIdentifier = null;
+		} else {
+			StringBuffer stringBuffer = new StringBuffer();
+			for (int i = 0; i < secondaryIdentifiers.length; i++) {
+				stringBuffer.append(secondaryIdentifiers[i]);
+				if (i < secondaryIdentifiers.length - 1) {
+					stringBuffer.append('<');
+				}
+			}
+		}
+		checkDigit();
+	}
+
+	/**
+	 * Sets the passport holder's first names.
+	 *
+	 * @param secondaryIdentifiers new secondary identifiers
+	 */
+	public void setSecondaryIdentifiers(String secondaryIdentifiers) {
+		readSecondaryIdentifiers(secondaryIdentifiers.trim());
+		checkDigit();
+	}
+
+	/**
+	 * Gets the passport holder's nationality as a 3 digit code.
+	 *
+	 * @return a country
+	 */
+	public String getNationality() {
+		return nationality;
+	}
+
+	/**
+	 * Sets the passport holder's nationality.
+	 *
+	 * @param nationality new nationality
+	 */
+	public void setNationality(String nationality) {
+		this.nationality = nationality;
+		checkDigit();
+	}
+
+	/**
+	 * Gets the personal number (if a personal number is encoded in optional data 1).
+	 *
+	 * @return personal number
+	 */
+	public String getPersonalNumber() {
+		if (optionalData1.length() > 14) {
+			return trimFillerChars(optionalData1.substring(0, 14));
+		} else {
+			return trimFillerChars(optionalData1);
+		}
+	}
+
+	/**
+	 * Sets the personal number.
+	 *
+	 * @param personalNumber new personal number
+	 */
+	public void setPersonalNumber(String personalNumber) {
+		if (personalNumber == null || personalNumber.length() > 14) { throw new IllegalArgumentException("Wrong personal number"); }
+		this.optionalData1 = mrzFormat(personalNumber, 14) + checkDigit(personalNumber, true);
+	}
+
+	/**
+	 * Gets the contents of the first optional data field for ID-1 and ID-3 style MRZs.
+	 * 
+	 * @return optional data 1
+	 */
+	public String getOptionalData1() {
+		return optionalData1;
+	}
+
+	/**
+	 * Gets the contents of the second optional data field for ID-1 style MRZs.
+	 * 
+	 * @return optional data 2
+	 */
+	public String getOptionalData2() {
+		return optionalData2;
+	}
+
+	/**
+	 * Sets the contents for the second optional data field for ID-1 style MRZs.
+	 * 
+	 * @param optionalData2 optional data 2
+	 */
+	public void setOptionalData2(String optionalData2) {
+		this.optionalData2 = trimFillerChars(optionalData2);
+		checkDigit();
+	}
+
+	/**
+	 * Gets the passport holder's gender.
+	 *
+	 * @return gender
+	 */
+	public Gender getGender() {
+		return gender;
+	}
+
+	/**
+	 * Sets the gender.
+	 *
+	 * @param gender new gender
+	 */
+	public void setGender(Gender gender) {
+		this.gender = gender;
+		checkDigit();
+	}
+
+	/**
+	 * Creates a textual representation of this MRZ.
+	 * This is the 2 or 3 line representation
+	 * (depending on the document type) as it
+	 * appears in the document. All lines end in
+	 * a newline char.
+	 *
+	 * @return the MRZ as text
+	 *
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		try {
+			String str = new String(getEncoded(), "UTF-8");
+			switch(str.length()) {
+			case 90: /* ID1 */
+				return str.substring(0, 30) + "\n"
+				+ str.substring(30, 60) + "\n"
+				+ str.substring(60, 90) + "\n";
+			case 88: /* ID3 */
+				return str.substring(0, 44) + "\n"
+				+ str.substring(44, 88) + "\n";
+			default:
+				/* TODO: consider throwing an exception in this case. */
+				return str;
+			}
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+			throw new IllegalStateException(uee.getMessage());
+		}
+	}
+
+	/**
+	 * Gets a hash code for this MRZ info.
+	 *
+	 * @return a hash code
+	 */
+	public int hashCode() {
+		return 2 * toString().hashCode() + 53;
+	}
+
+	/**
+	 * Whether this MRZ info is identical to the other one.
+	 *
+	 * @return a boolean
+	 */
+	public boolean equals(Object obj) {
+		if (obj == null) { return false; }
+		if (!(obj.getClass().equals(this.getClass()))) { return false; }
+		MRZInfo other = (MRZInfo)obj;
+
+		return
+		((documentCode == null && other.documentCode == null) || documentCode !=  null && documentCode.equals(other.documentCode))
+		&& ((issuingState == null && other.issuingState == null) || issuingState != null && issuingState.equals(other.issuingState))
+		&& ((primaryIdentifier == null && other.primaryIdentifier == null) || primaryIdentifier != null && primaryIdentifier.equals(other.primaryIdentifier))
+		&& ((secondaryIdentifier == null && other.secondaryIdentifier == null) || equalsModuloFillerChars(secondaryIdentifier, other.secondaryIdentifier))
+		&& ((nationality == null && other.nationality == null) || nationality != null && nationality.equals(other.nationality))
+		&& ((documentNumber == null && other.documentNumber == null) || documentNumber != null && documentNumber.equals(other.documentNumber))
+		&& ((optionalData1 == null && other.optionalData1 == null) || optionalData1 != null && optionalData1.equals(other.optionalData1) || getPersonalNumber().equals(other.getPersonalNumber()))
+		&& ((dateOfBirth == null && other.dateOfBirth == null) || dateOfBirth != null && dateOfBirth.equals(other.dateOfBirth))
+		&& ((gender == null && other.gender == null) || gender != null && gender.equals(other.gender))
+		&& ((dateOfExpiry == null && other.dateOfExpiry == null) || dateOfExpiry.equals(other.dateOfExpiry))
+		&& ((optionalData2 == null && other.optionalData2 == null) || optionalData2 != null && equalsModuloFillerChars(optionalData2, other.optionalData2))
+		;
+	}
+
+	/**
+	 * Computes the 7-3-1 check digit for part of the MRZ.
+	 *
+	 * @param str a part of the MRZ.
+	 *
+	 * @return the resulting check digit (in '0' - '9')
+	 */
+	public static char checkDigit(String str) {
+		return checkDigit(str, false);
+	}
+	
+	/* ONLY PRIVATE METHODS BELOW */
 
 	private void readNameIdentifiers(String mrzNameString) {
 		int delimIndex = mrzNameString.indexOf("<<");
@@ -501,314 +839,6 @@ public class MRZInfo extends AbstractInfo implements Serializable
 	}
 
 	/**
-	 * Gets the date of birth of the passport holder.
-	 *
-	 * @return date of birth
-	 */
-	public String getDateOfBirth() {
-		return dateOfBirth;
-	}
-
-	/**
-	 * Sets the date of birth.
-	 *
-	 * @param dateOfBirth new date of birth
-	 */
-	public void setDateOfBirth(String dateOfBirth) {
-		this.dateOfBirth = dateOfBirth;
-		checkDigit();
-	}
-
-	/**
-	 * Gets the date of expiry
-	 *
-	 * @return date of expiry
-	 */
-	public String getDateOfExpiry() {
-		return dateOfExpiry;
-	}
-
-	/**
-	 * Sets the date of expiry.
-	 *
-	 * @param dateOfExpiry new date of expiry
-	 */
-	public void setDateOfExpiry(String dateOfExpiry) {
-		this.dateOfExpiry = dateOfExpiry;
-		checkDigit();
-	}
-
-	/**
-	 * Gets the document number.
-	 *
-	 * @return document number
-	 */
-	public String getDocumentNumber() {
-		return documentNumber;
-	}
-
-	/**
-	 * Sets the document number.
-	 *
-	 * @param documentNumber new document number
-	 */
-	public void setDocumentNumber(String documentNumber) {
-		this.documentNumber = documentNumber.trim();
-		checkDigit();
-	}
-
-	/**
-	 * Gets the document type.
-	 *
-	 * @return document type
-	 */
-	public int getDocumentType() {
-		return documentType;
-	}
-
-	/**
-	 * Gets the document type.
-	 *
-	 * @return document type
-	 */
-	public String getDocumentCode() {
-		return documentCode;
-	}
-
-	public void setDocumentCode(String documentCode) {
-		this.documentCode = documentCode;
-		this.documentType = getDocumentTypeFromDocumentCode(documentCode);
-		if (documentType == DOC_TYPE_ID1 && optionalData2 == null) {
-			optionalData2 = "";
-		}
-		/* FIXME: need to adjust some other lengths if we go from ID1 to ID3 or back... */
-	}
-
-	/**
-	 * Gets the issuing state as a 3 letter code
-	 *
-	 * @return issuing state
-	 */
-	public String getIssuingState() {
-		return issuingState;
-	}
-
-	/**
-	 * Sets the issuing state.
-	 *
-	 * @param issuingState new issuing state
-	 */
-	public void setIssuingState(String issuingState) {
-		this.issuingState = issuingState;
-		checkDigit();
-	}
-
-	/**
-	 * Gets the passport holder's last name.
-	 *
-	 * @return name
-	 */
-	public String getPrimaryIdentifier() {
-		return primaryIdentifier;
-	}
-
-	/**
-	 * Sets the passport holder's last name.
-	 *
-	 * @param primaryIdentifier new primary identifier
-	 */
-	public void setPrimaryIdentifier(String primaryIdentifier) {
-		this.primaryIdentifier = primaryIdentifier.trim();
-		checkDigit();
-	}
-
-	public String getSecondaryIdentifier() {
-		return secondaryIdentifier;
-	}
-
-	/**
-	 * Gets the passport holder's first names.
-	 *
-	 * @return first names
-	 */
-	public String[] getSecondaryIdentifierComponents() {
-		return secondaryIdentifier.split(" |<");
-	}
-
-	/**
-	 * Sets the passport holder's first names.
-	 *
-	 * @param secondaryIdentifiers new secondary identifiers
-	 */
-	public void setSecondaryIdentifierComponents(String[] secondaryIdentifiers) {
-		if (secondaryIdentifiers == null) {
-			this.secondaryIdentifier = null;
-		} else {
-			StringBuffer stringBuffer = new StringBuffer();
-			for (int i = 0; i < secondaryIdentifiers.length; i++) {
-				stringBuffer.append(secondaryIdentifiers[i]);
-				if (i < secondaryIdentifiers.length - 1) {
-					stringBuffer.append('<');
-				}
-			}
-		}
-		checkDigit();
-	}
-
-	/**
-	 * Sets the passport holder's first names.
-	 *
-	 * @param secondaryIdentifiers new secondary identifiers
-	 */
-	public void setSecondaryIdentifiers(String secondaryIdentifiers) {
-		readSecondaryIdentifiers(secondaryIdentifiers.trim());
-		checkDigit();
-	}
-
-	/**
-	 * Gets the passport holder's nationality as a 3 digit code.
-	 *
-	 * @return a country
-	 */
-	public String getNationality() {
-		return nationality;
-	}
-
-	/**
-	 * Sets the passport holder's nationality.
-	 *
-	 * @param nationality new nationality
-	 */
-	public void setNationality(String nationality) {
-		this.nationality = nationality;
-		checkDigit();
-	}
-
-	/**
-	 * Gets the personal number (if a personal number is encoded in optional data 1).
-	 *
-	 * @return personal number
-	 */
-	public String getPersonalNumber() {
-		if (optionalData1.length() > 14) {
-			return trimFillerChars(optionalData1.substring(0, 14));
-		} else {
-			return trimFillerChars(optionalData1);
-		}
-	}
-
-
-	/**
-	 * Sets the personal number.
-	 *
-	 * @param personalNumber new personal number
-	 */
-	public void setPersonalNumber(String personalNumber) {
-		if (personalNumber == null || personalNumber.length() > 14) { throw new IllegalArgumentException("Wrong personal number"); }
-		this.optionalData1 = mrzFormat(personalNumber, 14) + checkDigit(personalNumber, true);
-	}
-
-	public String getOptionalData1() {
-		return optionalData1;
-	}
-
-	public String getOptionalData2() {
-		return optionalData2;
-	}
-
-	public void setOptionalData2(String optionalData2) {
-		this.optionalData2 = trimFillerChars(optionalData2);
-		checkDigit();
-	}
-
-	/**
-	 * Gets the passport holder's gender.
-	 *
-	 * @return gender
-	 */
-	public Gender getGender() {
-		return gender;
-	}
-
-	/**
-	 * Sets the gender.
-	 *
-	 * @param gender new gender
-	 */
-	public void setGender(Gender gender) {
-		this.gender = gender;
-		checkDigit();
-	}
-
-	/**
-	 * Creates a textual representation of this MRZ.
-	 * This is the 2 or 3 line representation
-	 * (depending on the document type) as it
-	 * appears in the document. All lines end in
-	 * a newline char.
-	 *
-	 * @return the MRZ as text
-	 *
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		try {
-			String str = new String(getEncoded(), "UTF-8");
-			switch(str.length()) {
-			case 90: /* ID1 */
-				return str.substring(0, 30) + "\n"
-				+ str.substring(30, 60) + "\n"
-				+ str.substring(60, 90) + "\n";
-			case 88: /* ID3 */
-				return str.substring(0, 44) + "\n"
-				+ str.substring(44, 88) + "\n";
-			default:
-				/* TODO: consider throwing an exception in this case. */
-				return str;
-			}
-		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
-			throw new IllegalStateException(uee.getMessage());
-		}
-	}
-
-	/**
-	 * Gets a hash code for this MRZ info.
-	 *
-	 * @return a hash code
-	 */
-	public int hashCode() {
-		return 2 * toString().hashCode() + 53;
-	}
-
-	/**
-	 * Whether this MRZ info is identical to the other one.
-	 *
-	 * @return a boolean
-	 */
-	public boolean equals(Object obj) {
-		if (obj == null) { return false; }
-		if (!(obj.getClass().equals(this.getClass()))) { return false; }
-		MRZInfo other = (MRZInfo)obj;
-
-		return
-		((documentCode == null && other.documentCode == null) || documentCode !=  null && documentCode.equals(other.documentCode))
-		&& ((issuingState == null && other.issuingState == null) || issuingState != null && issuingState.equals(other.issuingState))
-		&& ((primaryIdentifier == null && other.primaryIdentifier == null) || primaryIdentifier != null && primaryIdentifier.equals(other.primaryIdentifier))
-		&& ((secondaryIdentifier == null && other.secondaryIdentifier == null) || equalsModuloFillerChars(secondaryIdentifier, other.secondaryIdentifier))
-		&& ((nationality == null && other.nationality == null) || nationality != null && nationality.equals(other.nationality))
-		&& ((documentNumber == null && other.documentNumber == null) || documentNumber != null && documentNumber.equals(other.documentNumber))
-		&& ((optionalData1 == null && other.optionalData1 == null) || optionalData1 != null && optionalData1.equals(other.optionalData1) || getPersonalNumber().equals(other.getPersonalNumber()))
-		&& ((dateOfBirth == null && other.dateOfBirth == null) || dateOfBirth != null && dateOfBirth.equals(other.dateOfBirth))
-		&& ((gender == null && other.gender == null) || gender != null && gender.equals(other.gender))
-		&& ((dateOfExpiry == null && other.dateOfExpiry == null) || dateOfExpiry.equals(other.dateOfExpiry))
-		&& ((optionalData2 == null && other.optionalData2 == null) || optionalData2 != null && equalsModuloFillerChars(optionalData2, other.optionalData2))
-		;
-	}
-
-	/* ONLY PRIVATE METHODS BELOW */
-
-	/**
 	 * Reformats the input string such that it
 	 * only contains ['A'-'Z'], ['0'-'9'], '<' characters
 	 * by replacing other characters with '<'.
@@ -942,17 +972,6 @@ public class MRZInfo extends AbstractInfo implements Serializable
 			composite.append(mrzFormat(optionalData1, 15));
 		}
 		this.compositeCheckDigit = checkDigit(composite.toString(), true); /* FIXME: Uses '<' over '0'. Where specified? */
-	}
-
-	/**
-	 * Computes the 7-3-1 check digit for part of the MRZ.
-	 *
-	 * @param str a part of the MRZ.
-	 *
-	 * @return the resulting check digit (in '0' - '9')
-	 */
-	public static char checkDigit(String str) {
-		return checkDigit(str, false);
 	}
 
 	/**

@@ -288,7 +288,7 @@ public class LDSTreePanel extends JPanel {
 		List<Integer> tagsPresent = dataGroup.getTagPresenceList();
 		if (tagsPresent.contains(DG12File.DATE_AND_TIME_OF_PERSONALIZATION)) { node.add(new DefaultMutableTreeNode("Date and time of personalization: " + dataGroup.getDateAndTimeOfPersonalization())); }
 		if (tagsPresent.contains(DG12File.DATE_OF_ISSUE_TAG)) { node.add(new DefaultMutableTreeNode("Date of issue: " + dataGroup.getDateOfIssue())); }
-		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dataGroup.getEndorseMentsAndObservations())); }
+		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dataGroup.getEndorsementsAndObservations())); }
 		if (tagsPresent.contains(DG12File.IMAGE_OF_FRONT_TAG)) {
 			DefaultMutableTreeNode imageNode = new DefaultMutableTreeNode("Image of front");
 			byte[] imageBytes = dataGroup.getImageOfFront();

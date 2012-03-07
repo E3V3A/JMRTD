@@ -1,9 +1,11 @@
 package org.jmrtd.test.api.cert;
 
+import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.security.PublicKey;
 import java.security.Security;
@@ -12,6 +14,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.FileUtil;
 
 import org.jmrtd.JMRTDSecurityProvider;
 
@@ -19,19 +22,16 @@ public class CVCertificateTest extends TestCase
 {
 //	private static final int TAG_CVCERTIFICATE_SIGNATURE = 0x5F37;
 
-	public static final String filenameCA = "/t:/ca/cvcert/cacert.cvcert";
+	private static final String TEST_CERT_DIR = "file:/t:/ca/cvcert";
+	
+	public static final String filenameCA = "cacert.cvcert";
 
-	public static final String filenameTerminal = "/t:/ca/cvcert/terminalcert.cvcert";
+	public static final String filenameTerminal = "terminalcert.cvcert";
 
-	public static final String filenameKey = "/t:/ca/cvcert/terminalkey.der";
+	public static final String filenameKey = "terminalkey.der";
 
 	public CVCertificateTest() {
 		Security.insertProviderAt(JMRTDSecurityProvider.getInstance(), 3);
-	}
-
-	private InputStream readTestFile() throws FileNotFoundException  {
-		FileInputStream fileIn = new FileInputStream(filenameTerminal);
-		return fileIn;
 	}
 
 	/**
@@ -40,7 +40,9 @@ public class CVCertificateTest extends TestCase
 	public void testCertificateFactory() {
 		try {
 			CertificateFactory factory = CertificateFactory.getInstance("CVC");
-			Certificate certificate = factory.generateCertificate(readTestFile());
+			assertNotNull(factory);
+			Certificate certificate = factory.generateCertificate(readCertFile());
+			assertNotNull(certificate);
 		} catch(Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -53,7 +55,7 @@ public class CVCertificateTest extends TestCase
 	public void testKeyStore() {
 		try {
 			CertificateFactory factory = CertificateFactory.getInstance("CVC");
-			Certificate c1 = factory.generateCertificate(readTestFile());
+			Certificate c1 = factory.generateCertificate(readCertFile());
 			KeyStore ks = KeyStore.getInstance("JKS");
 			ks.load(null);
 			ks.setCertificateEntry("bla", c1);
@@ -72,7 +74,7 @@ public class CVCertificateTest extends TestCase
 	public void testTest() {
 		try {
 			CertificateFactory factory = CertificateFactory.getInstance("CVC");
-			Certificate certificate = factory.generateCertificate(readTestFile());
+			Certificate certificate = factory.generateCertificate(readCertFile());
 			System.out.println("DEBUG: " + certificate);
 
 
@@ -124,5 +126,29 @@ public class CVCertificateTest extends TestCase
 		} catch (NoSuchFieldException nsfe) {
 			throw new CertificateException(nsfe.getMessage());
 		}
+	}
+	
+	private InputStream readCertFile() throws IOException, URISyntaxException  {
+		File certFile = getCertFile();
+		FileInputStream fileIn = new FileInputStream(certFile);
+		return fileIn;
+	}
+	
+	private File getCertFile() throws URISyntaxException {
+//		File certsDir = getCertsDir();
+//		File certFile = new File(certsDir, filenameTerminal);
+		File certsDir = new File(FileUtil.getBaseDirAsFile(), "certs");
+		File certFile = new File(certsDir, "certIS_orig.cvcert");
+		if (!certFile.exists()) {
+			fail("Cert file doesn't exist: \"" + certFile.getAbsolutePath() + "\"");
+		}
+		return certFile;
+	}
+	
+	private File getCertsDir() throws URISyntaxException {
+		URI certsDirURI = new URI(TEST_CERT_DIR);
+		File certsDir = new File(certsDirURI.getPath());
+		if (!certsDir.exists()) { certsDir.mkdir(); }
+		return certsDir;
 	}
 }

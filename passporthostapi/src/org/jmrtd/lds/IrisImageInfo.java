@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -71,6 +71,18 @@ public class IrisImageInfo extends AbstractImageInfo
 		setMimeType(getMimeTypeFromImageFormat(imageFormat));
 	}
 
+	/**
+	 * Constructs an iris image info.
+	 * 
+	 * @param imageNumber the image number
+	 * @param quality quality
+	 * @param rotationAngle rotation angle
+	 * @param rotationAngleUncertainty rotation angle uncertainty
+	 * @param width with
+	 * @param height height
+	 * @param imageBytes the encoded image
+	 * @param imageFormat the image format used for encoding
+	 */
 	public IrisImageInfo(int imageNumber, int quality, int rotationAngle, int rotationAngleUncertainty,
 			int width, int height, byte[] imageBytes, int imageFormat) {
 		super(TYPE_IRIS, width, height, imageBytes, getMimeTypeFromImageFormat(imageFormat));
@@ -80,7 +92,16 @@ public class IrisImageInfo extends AbstractImageInfo
 		this.rotationAngle = rotationAngle;
 		this.rotationAngleUncertainty = rotationAngleUncertainty;
 	}
-	
+
+	/**
+	 * Constructs an iris image info.
+	 * 
+	 * @param imageNumber the image number
+	 * @param width width
+	 * @param height height
+	 * @param imageBytes the encoded image
+	 * @param imageFormat the image format used for encoding
+	 */
 	public IrisImageInfo(int imageNumber, int width, int height, byte[] imageBytes, int imageFormat) {
 		this(imageNumber, IMAGE_QUAL_UNDEF, ROT_ANGLE_UNDEF, ROT_UNCERTAIN_UNDEF,
 				width, height, imageBytes, imageFormat);
@@ -98,19 +119,36 @@ public class IrisImageInfo extends AbstractImageInfo
 		readObject(in);
 	}
 
+	/**
+	 * Gets the image format.
+	 * 
+	 * @return the image format
+	 */
 	public int getImageFormat() {
 		return imageFormat;
 	}
 	
+	/**
+	 * Gets the image number.
+	 * 
+	 * @return the image number
+	 */
 	public int getImageNumber() {
 		return imageNumber;
 	}
-	
+
+	/**
+	 * Gets the quality.
+	 * 
+	 * @return the image quality
+	 */
 	public int getQuality() {
 		return quality;
 	}
 	
 	/**
+	 * Gets the rotation angle.
+	 * 
 	 * @return the rotationAngle
 	 */
 	public int getRotationAngle() {
@@ -118,10 +156,40 @@ public class IrisImageInfo extends AbstractImageInfo
 	}
 
 	/**
+	 * Gets the rotation angle uncertainty.
+	 * 
 	 * @return the rotationAngleUncertainty
 	 */
 	public int getRotationAngleUncertainty() {
 		return rotationAngleUncertainty;
+	}
+	
+	/**
+	 * Gets the record length.
+	 * 
+	 * @return the record length
+	 */
+	public long getRecordLength() {
+		return 11 + getImageLength();
+	}
+
+	/**
+	 * Generates a textual representation of this object.
+	 * 
+	 * @return a textual representation of this object
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		result.append("IrisImageInfo [");
+		result.append("image number: " + imageNumber + ", ");
+		result.append("quality: " + quality + ", ");
+		result.append("image: ");
+		result.append(getWidth() + " x " + getHeight());
+		result.append("mime-type: " + getMimeTypeFromImageFormat(imageFormat));
+		result.append("]");
+		return result.toString();
 	}
 
 	protected void readObject(InputStream in) throws IOException {
@@ -157,10 +225,6 @@ public class IrisImageInfo extends AbstractImageInfo
 		
 		readImage(dataIn, imageLength);
 	}
-	
-	public long getRecordLength() {
-		return 11 + getImageLength();
-	}
 
 	protected void writeObject(OutputStream out) throws IOException {
 
@@ -191,17 +255,6 @@ public class IrisImageInfo extends AbstractImageInfo
 
 		dataOut.writeInt(getImageLength());						/* + 4 = 11 */
 		writeImage(dataOut);
-	}
-
-	/**
-	 * Generates a textual representation of this object.
-	 * 
-	 * @return a textual representation of this object
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		return "IrisImageInfo [ ]";
 	}
 
 	private static String getMimeTypeFromImageFormat(int imageFormat) {

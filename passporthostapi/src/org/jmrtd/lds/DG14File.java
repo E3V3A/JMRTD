@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -154,7 +154,7 @@ public class DG14File extends DataGroup
 	}
 
 	/**
-	 * Returns the list of file identifier references to efCVCA files, possibly
+	 * Gets the list of file identifier references to efCVCA files, possibly
 	 * empty.
 	 * 
 	 * @return the list of file identifier
@@ -173,7 +173,7 @@ public class DG14File extends DataGroup
 	}
 
 	/**
-	 * Returns a corresponding short file ID.
+	 * Gets a corresponding short file ID.
 	 * 
 	 * @param fileId
 	 *            the file ID
@@ -191,7 +191,7 @@ public class DG14File extends DataGroup
 	}
 
 	/**
-	 * Returns the mapping of key identifiers to EAC protocol identifiers
+	 * Gets the mapping of key identifiers to EAC protocol identifiers
 	 * contained in this file. The key identifier may be -1 if there is only one
 	 * protocol identifier.
 	 * 

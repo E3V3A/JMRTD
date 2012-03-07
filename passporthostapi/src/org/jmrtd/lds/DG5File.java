@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,10 +34,20 @@ import java.util.List;
  */
 public class DG5File extends DisplayedImageDataGroup
 {
+	/**
+	 * Constructs a new file from a list of displayed images.
+	 * 
+	 * @param images the displayed images, all of which should be of type <i>Portrait</i>
+	 */
 	public DG5File(List<DisplayedImageInfo> images) {
 		super(EF_DG5_TAG, images, DisplayedImageInfo.DISPLAYED_PORTRAIT_TAG);
 	}
 	
+	/**
+	 * Constructs a new file from binary representation.
+	 * 
+	 * @param in an input stream
+	 */
 	public DG5File(InputStream in) {
 		super(EF_DG5_TAG, in);
 	}

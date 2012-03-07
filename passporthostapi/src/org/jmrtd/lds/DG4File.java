@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -117,11 +117,24 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 		return "DG4File [" + super.toString() + "]";
 	}
 	
-	public boolean isSubTypeMandatory() {
-		return true;
-	}
-	
+	/**
+	 * Gets the embedded iris infos in this file.
+	 * 
+	 * @return iris infos
+	 */
 	public List<IrisInfo> getIrisInfos() { return getSubRecords(); }
+	
+	/**
+	 * Adds an iris info to this file.
+	 * 
+	 * @param irisInfo an iris info
+	 */
 	public void addIrisInfo(IrisInfo irisInfo) { add(irisInfo); }
+	
+	/**
+	 * Removes an iris info from this file.
+	 * 
+	 * @param index the index of the iris info to remove
+	 */
 	public void removeIrisInfo(int index) { remove(index); }
 }

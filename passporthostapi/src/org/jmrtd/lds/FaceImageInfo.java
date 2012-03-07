@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -287,9 +287,9 @@ public class FaceImageInfo extends AbstractImageInfo
 	}
 
 	/**
-	 * Constructs a new face information structure.
+	 * Constructs a new face information structure from binary encoding.
 	 * 
-	 * @param in input stream
+	 * @param in an input stream
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
@@ -361,24 +361,197 @@ public class FaceImageInfo extends AbstractImageInfo
 		readImage(in, imageLength);
 	}
 
-	public void writeObject(OutputStream out) throws IOException {
+	/**
+	 * Writes this face image info to output stream.
+	 * 
+	 * @param outputStream an output stream
+	 * 
+	 * @throws IOException if writing fails
+	 */
+	public void writeObject(OutputStream outputStream) throws IOException {
 		ByteArrayOutputStream recordOut = new ByteArrayOutputStream();
 		writeFacialRecordData(recordOut);
 		byte[] facialRecordData = recordOut.toByteArray();
 		long faceImageBlockLength = facialRecordData.length + 4;		
-		DataOutputStream dataOut = new DataOutputStream(out);
+		DataOutputStream dataOut = new DataOutputStream(outputStream);
 		dataOut.writeInt((int)faceImageBlockLength);
 		dataOut.write(facialRecordData);
 		dataOut.flush();
 	}
 
+	/**
+	 * Gets the record length.
+	 * 
+	 * @return the record length
+	 */
 	public long getRecordLength() {
 		/* Should be equal to (20 + 8 * featurePoints.length + 12 + getImageLength()). */
 		return recordLength;
 	}
 
-	private void writeFacialRecordData(OutputStream out) throws IOException {
-		DataOutputStream dataOut = new DataOutputStream(out);
+	/**
+	 * Gets the available feature points of this face.
+	 * 
+	 * @return feature points
+	 */
+	public FeaturePoint[] getFeaturePoints() {
+		return featurePoints;
+	}
+
+	/**
+	 * Gets the expression
+	 * (neutral, smiling, eyebrow raised, etc).
+	 * 
+	 * @return expression
+	 */
+	public int getExpression() {
+		return expression;
+	}
+
+	/**
+	 * Gets the eye color
+	 * (black, blue, brown, etc).
+	 * 
+	 * @return eye color
+	 */
+	public EyeColor getEyeColor() {
+		return eyeColor;
+	}
+
+	/**
+	 * Gets the gender
+	 * (male, female, etc).
+	 * 
+	 * @return gender
+	 */
+	public Gender getGender() {
+		return gender;
+	}
+
+	/**
+	 * Gets the hair color
+	 * (bald, black, blonde, etc).
+	 * 
+	 * @return hair color
+	 */
+	public int getHairColor() {
+		return hairColor;
+	}
+
+	/**
+	 * Gets the face image type
+	 * (full frontal, token frontal, etc).
+	 * 
+	 * @return face image type
+	 */
+	public int getFaceImageType() {
+		return faceImageType;
+	}
+	
+	public int getFeatureMask() {
+		return featureMask;
+	}
+
+	/**
+	 * Gets the quality as unsigned integer.
+	 * 
+	 * @return quality
+	 */
+	public int getQuality() {
+		return quality;
+	}
+
+	/**
+	 * Gets the source type
+	 * (camera, scanner, etc).
+	 * 
+	 * @return source type
+	 */
+	public int getSourceType() {
+		return sourceType;
+	}
+
+	public int getImageDataType() {
+		return imageDataType;
+	}
+	
+	/**
+	 * Gets the image color space
+	 * (rgb, grayscale, etc).
+	 * 
+	 * @return image color space
+	 */
+	public int getColorSpace() {
+		return colorSpace;
+	}
+
+	/**
+	 * Gets the device type.
+	 * 
+	 * @return device type
+	 */
+	public int getDeviceType() {
+		return deviceType;
+	}
+
+	/**
+	 * Gets the pose angle as an integer array of length 3,
+	 * containing yaw, pitch, and roll angle in encoded form.
+	 * 
+	 * @return an integer array of length 3
+	 */
+	public int[] getPoseAngle() {
+		int[] result = new int[3];
+		System.arraycopy(poseAngle, 0, result, 0, result.length);
+		return result;
+	}
+
+	/**
+	 * Gets the pose angle uncertainty as an integer array of length 3,
+	 * containing yaw, pitch, and roll angle uncertainty.
+	 * 
+	 * @return an integer array of length 3
+	 */
+	public int[] getPoseAngleUncertainty() {
+		int[] result = new int[3];
+		System.arraycopy(poseAngleUncertainty, 0, result, 0, result.length);
+		return result;
+	}
+	
+	/**
+	 * Generates a textual representation of this object.
+	 * 
+	 * @return a textual representation of this object
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	/* TODO: rename this method, distinguish between a pretty print version to be used in JMRTD GUI and a proper toString() */
+	public String toString() {
+		StringBuffer out = new StringBuffer();
+		out.append("Image size: "); out.append(getWidth() + " x " + getHeight()); out.append("\n");
+		out.append("Gender: "); out.append(gender); out.append("\n");
+		out.append("Eye color: "); out.append(eyeColor); out.append("\n");
+		out.append("Hair color: "); out.append(hairColorToString()); out.append("\n");
+		out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
+		out.append("Expression: "); out.append(expressionToString()); out.append("\n");
+		out.append("Pose angle: "); out.append(poseAngleToString()); out.append("\n");
+		out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
+		out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
+		out.append("Feature points: "); out.append("\n");
+		if (featurePoints == null || featurePoints.length == 0) {
+			out.append("   (none)\n");
+		} else {
+			for (int i = 0; i < featurePoints.length; i++) {
+				out.append("   ");
+				out.append(featurePoints[i].toString());
+				out.append("\n");
+			}
+		}
+		return out.toString();
+	}
+
+	private void writeFacialRecordData(OutputStream outputStream) throws IOException {
+		DataOutputStream dataOut = new DataOutputStream(outputStream);
 
 		/* Facial Information (16) */
 		dataOut.writeShort(featurePoints.length);						/* 2 */
@@ -426,47 +599,7 @@ public class FaceImageInfo extends AbstractImageInfo
 		dataOut.flush();
 		dataOut.close();
 	}
-
-	/**
-	 * Gets the available feature points of this face.
-	 * 
-	 * @return feature points
-	 */
-	public FeaturePoint[] getFeaturePoints() {
-		return featurePoints;
-	}
-
-	/**
-	 * Generates a textual representation of this object.
-	 * 
-	 * @return a textual representation of this object
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	public String toString() {
-		StringBuffer out = new StringBuffer();
-		out.append("Image size: "); out.append(getWidth() + " x " + getHeight()); out.append("\n");
-		out.append("Gender: "); out.append(gender); out.append("\n");
-		out.append("Eye color: "); out.append(eyeColor); out.append("\n");
-		out.append("Hair color: "); out.append(hairColorToString()); out.append("\n");
-		out.append("Feature mask: "); out.append(featureMaskToString()); out.append("\n");
-		out.append("Expression: "); out.append(expressionToString()); out.append("\n");
-		out.append("Pose angle: "); out.append(poseAngleToString()); out.append("\n");
-		out.append("Face image type: "); out.append(faceImageTypeToString()); out.append("\n");
-		out.append("Source type: "); out.append(sourceTypeToString()); out.append("\n");
-		out.append("Feature points: "); out.append("\n");
-		if (featurePoints == null || featurePoints.length == 0) {
-			out.append("   (none)\n");
-		} else {
-			for (int i = 0; i < featurePoints.length; i++) {
-				out.append("   ");
-				out.append(featurePoints[i].toString());
-				out.append("\n");
-			}
-		}
-		return out.toString();
-	}
-
+	
 	private String hairColorToString() {
 		switch(hairColor) {
 		case HAIR_COLOR_UNSPECIFIED: return "unspecified";
@@ -613,126 +746,6 @@ public class FaceImageInfo extends AbstractImageInfo
       return "unknown";
    }
 	 */
-
-	/**
-	 * Gets the expression
-	 * (neutral, smiling, eyebrow raised, etc).
-	 * 
-	 * @return expression
-	 */
-	public int getExpression() {
-		return expression;
-	}
-
-	/**
-	 * Gets the eye color
-	 * (black, blue, brown, etc).
-	 * 
-	 * @return eye color
-	 */
-	public EyeColor getEyeColor() {
-		return eyeColor;
-	}
-
-	/**
-	 * Gets the gender
-	 * (male, female, etc).
-	 * 
-	 * @return gender
-	 */
-	public Gender getGender() {
-		return gender;
-	}
-
-	/**
-	 * Gets the hair color
-	 * (bald, black, blonde, etc).
-	 * 
-	 * @return hair color
-	 */
-	public int getHairColor() {
-		return hairColor;
-	}
-
-	/**
-	 * Gets the face image type
-	 * (full frontal, token frontal, etc).
-	 * 
-	 * @return face image type
-	 */
-	public int getFaceImageType() {
-		return faceImageType;
-	}
-	
-	public int getFeatureMask() {
-		return featureMask;
-	}
-
-	/**
-	 * Gets the quality as unsigned integer.
-	 * 
-	 * @return quality
-	 */
-	public int getQuality() {
-		return quality;
-	}
-
-	/**
-	 * Gets the source type
-	 * (camera, scanner, etc).
-	 * 
-	 * @return source type
-	 */
-	public int getSourceType() {
-		return sourceType;
-	}
-
-	public int getImageDataType() {
-		return imageDataType;
-	}
-	
-	/**
-	 * Gets the image color space
-	 * (rgb, grayscale, etc).
-	 * 
-	 * @return image color space
-	 */
-	public int getColorSpace() {
-		return colorSpace;
-	}
-
-	/**
-	 * Gets the device type.
-	 * 
-	 * @return device type
-	 */
-	public int getDeviceType() {
-		return deviceType;
-	}
-
-	/**
-	 * Gets the pose angle as an integer array of length 3,
-	 * containing yaw, pitch, and roll angle in encoded form.
-	 * 
-	 * @return an integer array of length 3
-	 */
-	public int[] getPoseAngle() {
-		int[] result = new int[3];
-		System.arraycopy(poseAngle, 0, result, 0, result.length);
-		return result;
-	}
-
-	/**
-	 * Gets the pose angle uncertainty as an integer array of length 3,
-	 * containing yaw, pitch, and roll angle uncertainty.
-	 * 
-	 * @return an integer array of length 3
-	 */
-	public int[] getPoseAngleUncertainty() {
-		int[] result = new int[3];
-		System.arraycopy(poseAngleUncertainty, 0, result, 0, result.length);
-		return result;
-	}
 
 	private static String toMimeType(int compressionAlg) {
 		switch (compressionAlg) {

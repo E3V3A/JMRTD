@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
 /**
- * The abstract SecurityInfo structure.
+ * Abstract base class for security info structure.
  * See the EAC 1.11 specification.
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
@@ -62,6 +62,13 @@ public abstract class SecurityInfo extends AbstractInfo {
 	 */
 	abstract DERObject getDERObject();
 	
+	/**
+	 * Writes this SecurityInfo to output stream.
+	 * 
+	 * @param outputStream an ouput stream
+	 * 
+	 * @throws IOException if writing fails
+	 */
 	public void writeObject(OutputStream outputStream) throws IOException {
 		DERObject derEncoded = getDERObject();
 		if (derEncoded == null) { throw new IOException("Could not decode from DER."); }
@@ -71,7 +78,7 @@ public abstract class SecurityInfo extends AbstractInfo {
 	}
 	
 	/**
-	 * Returns the object identifier of this SecurityInfo
+	 * Returns the object identifier of this SecurityInfo.
 	 * 
 	 * @return this SecurityInfo object identifier
 	 */

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -292,6 +292,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		return getEncryptedDigest(signedData);
 	}
 	
+	/**
+	 * Gets the e-content inside the signed data strucure.
+	 * 
+	 * @return the e-content
+	 */
 	public byte[] getEContent() {
 		return getEContent(signedData);
 	}
@@ -479,6 +484,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		 */
 	}
 
+	/**
+	 * Gets the issuer of the document signing certificate.
+	 * 
+	 * @return a certificate issuer
+	 */
 	public X500Principal getIssuerX500Principal() {
 		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
 		X500Name name = issuerAndSerialNumber.getName();
@@ -486,6 +496,11 @@ public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a
 		return x500Principal;
 	}
 
+	/**
+	 * Gets the serial number of the document signing certificate.
+	 * 
+	 * @return a certificate serial number
+	 */
 	public BigInteger getSerialNumber() {
 		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
 		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();

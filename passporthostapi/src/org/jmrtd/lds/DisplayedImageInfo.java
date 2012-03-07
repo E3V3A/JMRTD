@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,6 +30,14 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.tlv.TLVUtil;
 
+/**
+ * Data structure for storing either a <i>Portrait</i> (as used in DG5) or
+ * a <i>Signature or mark</i> (as used in DG7).
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Id: $
+ */
 public class DisplayedImageInfo extends AbstractImageInfo
 {
 	protected static final int
@@ -38,13 +46,26 @@ public class DisplayedImageInfo extends AbstractImageInfo
 	
 	private int displayedImageTag;
 	
+	/**
+	 * Constructs a displayed image info from the image bytes.
+	 * 
+	 * @param type one of {@link ImageInfo#TYPE_PORTRAIT} or {@link ImageInfo#TYPE_SIGNATURE_OR_MARK}
+	 * @param imageBytes encoded image, for <i>Portrait</i> and <i>Signature or mark</i> use JPEG encoding
+	 */
 	public DisplayedImageInfo(int type, byte[] imageBytes) {
 		super(type);
 		displayedImageTag = getDisplayedImageTagFromType(type);
 		setMimeType(getMimeTypeFromType(type));
 		setImageBytes(imageBytes);
 	}
-	
+
+	/**
+	 * Constructs a displayed image info from binary encoding.
+	 * 
+	 * @param in an input stream
+	 * 
+	 * @throws IOException if decoding fails
+	 */
 	public DisplayedImageInfo(InputStream in) throws IOException {
 		readObject(in);
 	}

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,11 @@ public class DG15File extends DataGroup
 		this.publicKey = publicKey;
 	}
 
+	/**
+	 * Constructs a new file from binary representation.
+	 * 
+	 * @param in an input stream
+	 */
 	public DG15File(InputStream in) {
 		super(EF_DG15_TAG, in);
 	}

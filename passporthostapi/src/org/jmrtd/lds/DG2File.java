@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,7 +60,6 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 			info.writeObject(out);
 		}
 	});
-
 	
 	/**
 	 * Creates a new file with the specified records.
@@ -119,7 +118,24 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 		return "DG2File [" + super.toString() + "]";
 	}
 
+	/**
+	 * Gets the face infos embedded in this file.
+	 * 
+	 * @return face infos
+	 */
 	public List<FaceInfo> getFaceInfos() { return getSubRecords(); }
+
+	/**
+	 * Adds a face info to this file.
+	 * 
+	 * @param faceInfo the face info to add
+	 */
 	public void addFaceInfo(FaceInfo faceInfo) { add(faceInfo); }
+	
+	/**
+	 * Removes a face info from this file.
+	 * 
+	 * @param index the index of the face info to remove
+	 */
 	public void removeFaceInfo(int index) { remove(index); }
 }

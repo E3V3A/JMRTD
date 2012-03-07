@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,6 +140,13 @@ public class DG11File extends DataGroup
 		this.custodyInformation = custodyInformation;
 	}
 
+	/**
+	 * Constructs a file from binary representation.
+	 * 
+	 * @param in an input stream
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public DG11File(InputStream in) throws IOException {
 		super(EF_DG11_TAG, in);
 	}
@@ -288,7 +295,7 @@ public class DG11File extends DataGroup
 	}
 
 	/**
-	 * Gets list of tags present.
+	 * Gets list of tags of fields actually present.
 	 * 
 	 * @return list of tags
 	 */
@@ -336,6 +343,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the full name primary identifier.
+	 * 
 	 * @return the fullNamePrimaryIdentifier
 	 */
 	public String getFullNamePrimaryIdentifier() {
@@ -343,6 +352,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the full name secondary identifiers.
+	 * 
 	 * @return the fullNamesecondaryIdentifiers
 	 */
 	public List<String> getFullNameSecondaryIdentifiers() {
@@ -350,6 +361,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the personal number.
+	 * 
 	 * @return the personalNumber
 	 */
 	public String getPersonalNumber() {
@@ -357,6 +370,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the full date of birth.
+	 * 
 	 * @return the fullDateOfBirth
 	 */
 	public Date getFullDateOfBirth() {
@@ -364,6 +379,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the place of birth.
+	 * 
 	 * @return the placeOfBirth
 	 */
 	public List<String> getPlaceOfBirth() {
@@ -371,6 +388,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the permanent address.
+	 * 
 	 * @return the permanentAddress
 	 */
 	public List<String> getPermanentAddress() {
@@ -378,6 +397,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the telephone number.
+	 * 
 	 * @return the telephone
 	 */
 	public String getTelephone() {
@@ -385,6 +406,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the profession.
+	 * 
 	 * @return the profession
 	 */
 	public String getProfession() {
@@ -392,6 +415,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the title.
+	 * 
 	 * @return the title
 	 */
 	public String getTitle() {
@@ -399,6 +424,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the personal summary.
+	 * 
 	 * @return the personalSummary
 	 */
 	public String getPersonalSummary() {
@@ -406,6 +433,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the proof of citizenship.
+	 * 
 	 * @return the proofOfCitizenship
 	 */
 	public byte[] getProofOfCitizenship() {
@@ -413,6 +442,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets the other valid TD numbers.
+	 * 
 	 * @return the otherValidTDNumbers
 	 */
 	public List<String> getOtherValidTDNumbers() {
@@ -420,6 +451,8 @@ public class DG11File extends DataGroup
 	}
 
 	/**
+	 * Gets custody information.
+	 * 
 	 * @return the custodyInformation
 	 */
 	public String getCustodyInformation() {

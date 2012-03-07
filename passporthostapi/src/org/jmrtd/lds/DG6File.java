@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,6 +33,11 @@ import java.io.InputStream;
  */
 public class DG6File extends DisplayedImageDataGroup
 {	
+	/**
+	 * Constructs a new file from binary representation.
+	 * 
+	 * @param in an input stream
+	 */
 	public DG6File(InputStream in) {
 		super(EF_DG6_TAG, in);
 	}

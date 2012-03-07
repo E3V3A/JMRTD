@@ -87,11 +87,11 @@ public class DG14FileTest extends TestCase {
 			algs.put(2, SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID);
 
 			DG14File dg14File = new DG14File(keys, algs, null, null);
+			assertNotNull(dg14File);
 
 			System.out.println("DEBUG: DG14FileTest: End");
 
 			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getChipAuthenticationPublicKeyInfos();
-
 
 			assertEquals(keys.keySet(), dg14PublicKeys.keySet());
 			for (int i: keys.keySet()) {
@@ -100,6 +100,8 @@ public class DG14FileTest extends TestCase {
 				if (publicKey instanceof DHPublicKey) {
 					assertTrue(equalsDHPublicKey((DHPublicKey)publicKey, dg14PublicKey));
 				} else {
+					assertNotNull(publicKey);
+					assertNotNull(dg14PublicKey);
 					assertEquals(publicKey, dg14PublicKey);
 				}
 			}
