@@ -36,7 +36,7 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.util.Files;
+import net.sourceforge.scuba.util.FileUtil;
 
 /**
  * Flat file based database for BAC entries.
@@ -48,7 +48,7 @@ import net.sourceforge.scuba.util.Files;
 public class FileBACStore implements BACStore
 {
 	private static final File
-		JMRTD_USER_DIR = Files.getApplicationDataDir("jmrtd"),
+		JMRTD_USER_DIR = FileUtil.getApplicationDataDir("jmrtd"),
 		DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
@@ -70,7 +70,7 @@ public class FileBACStore implements BACStore
 	}
 
 	public FileBACStore(URL location) {
-		this(Files.toFile(location));
+		this(FileUtil.toFile(location));
 	}
 
 	public synchronized File getLocation() {
