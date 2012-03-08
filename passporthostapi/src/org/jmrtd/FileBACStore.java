@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,24 +59,47 @@ public class FileBACStore implements BACStore
 
 	private List<BACKeySpec> entries;
 
+	/**
+	 * Constructs a BAC store using a default file location.
+	 */
 	public FileBACStore() {
 		this(DEFAULT_BACDB_FILE);
 	}
 
+	/**
+	 * Constructs a BAC store using the given file location.
+	 * 
+	 * @param location a file
+	 */
 	public FileBACStore(File location) {
 		setLocation(location);
 		entries = new ArrayList<BACKeySpec>();
 		read(location, entries);
 	}
 
+	/**
+	 * Constructs a BAC store using the given file location.
+	 * 
+	 * @param location a URL for a file
+	 */
 	public FileBACStore(URL location) {
 		this(FileUtil.toFile(location));
 	}
 
+	/**
+	 * Gets the file that stores the BAC store.
+	 * 
+	 * @return a file
+	 */
 	public synchronized File getLocation() {
 		return location;
 	}
 
+	/**
+	 * Sets the file location for the BAC store.
+	 * 
+	 * @param location a file
+	 */
 	public synchronized void setLocation(File location) {
 		this.location = location;
 		try {
@@ -96,10 +119,20 @@ public class FileBACStore implements BACStore
 		}
 	}
 
+	/**
+	 * Gets the BAC key entries.
+	 * 
+	 * @return a list of BAC key entries
+	 */
 	public List<BACKeySpec> getEntries() {
 		return entries;
 	}
 
+	/**
+	 * Adds an entry to this BAC store.
+	 * 
+	 * @param entry the BAC key entry to add
+	 */
 	public synchronized void addEntry(BACKeySpec entry) {
 		if (!entries.contains(entry)) {
 			entries.add(entry);
@@ -111,11 +144,54 @@ public class FileBACStore implements BACStore
 		}
 	}
 
-	public synchronized  void addEntry(int i, BACKeySpec entry) {
-		entries.add(i, entry);
+	/**
+	 * Adds an entry to this BAC store at a specific index.
+	 * 
+	 * @param index the index
+	 * @param entry the BAC key entry to add
+	 */
+	public synchronized  void addEntry(int index, BACKeySpec entry) {
+		entries.add(index, entry);
 		write(entries, location);
 	}
 
+	/**
+	 * Removes an entry from the BAC store.
+	 * 
+	 * @param index the index of the BAC key entry to remove
+	 */
+	public synchronized void removeEntry(int index) {
+		entries.remove(index);
+		write(entries, location);
+	}
+
+	/**
+	 * Gets an entry from this BAC store.
+	 * 
+	 * @param index the index of the entry to get
+	 * 
+	 * @return a BAC key entry
+	 */
+	public BACKeySpec getEntry(int index) {
+		return entries.get(index);
+	}
+	
+	/**
+	 * Gets a textual representation of this BAC store.
+	 * 
+	 * @return a textual representation of this BAC store
+	 */
+	public String toString() {
+		StringBuffer result = new StringBuffer();
+		for (BACKeySpec entry: entries) {
+			result.append(entry.toString());
+			result.append('\n');
+		}
+		return result.toString();
+	}
+	
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private static String[] getFields(String entry) {
 		StringTokenizer st = new StringTokenizer(entry.trim(), ",");
 		int tokenCount = st.countTokens();
@@ -126,24 +202,6 @@ public class FileBACStore implements BACStore
 		return result;
 	}
 
-	public String toString() {
-		StringBuffer result = new StringBuffer();
-		for (BACKeySpec entry: entries) {
-			result.append(entry.toString());
-			result.append('\n');
-		}
-		return result.toString();
-	}
-
-	public synchronized void removeEntry(int index) {
-		entries.remove(index);
-		write(entries, location);
-	}
-
-	public BACKeySpec getEntry(int entryRowIndex) {
-		return entries.get(entryRowIndex);
-	}
-	
 	private static void read(File location, List<BACKeySpec> entries) {
 		try {
 			BufferedReader d = new BufferedReader(new FileReader(location));

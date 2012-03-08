@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,6 +31,7 @@ import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -48,11 +49,12 @@ import net.sourceforge.scuba.util.IconUtil;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
- * Frame for displaying (and saving to file) a public card verifiable certificate.
+ * Frame for displaying (and saving to file) a card verifiable public key certificate.
  *
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
+ * @version $Revision: $
  */
 public class CVCertificateFrame extends JMRTDFrame
 {
@@ -61,14 +63,30 @@ public class CVCertificateFrame extends JMRTDFrame
 	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
 
+
+	private ActionMap actionMap;
+	
 	private CVCertificatePanel certificatePanel;
 
+	/**
+	 * Constructs a CV certificate frame from a certificate.
+	 * 
+	 * @param certificate the certificate
+	 */
 	public CVCertificateFrame(CardVerifiableCertificate certificate) {
 		this("CV Certificate", certificate);
 	}
 
+	/**
+	 * Constructs a CV certificate frame from a certificate.
+	 * 
+	 * @param title the title to use
+	 * @param certificate the certificate
+	 */
 	public CVCertificateFrame(String title, CardVerifiableCertificate certificate) {
 		super(title);
+
+		actionMap = new ActionMap();
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
@@ -100,10 +118,13 @@ public class CVCertificateFrame extends JMRTDFrame
 	/**
 	 * Saves the certificate to file.
 	 * 
+	 * @return an action for <i>SaveAs</i>
 	 */
 	private Action getSaveAsAction() {
 		final Preferences preferences = Preferences.userNodeForPackage(getClass());
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("SaveAs");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = -7143003045680922518L;
 
@@ -132,17 +153,18 @@ public class CVCertificateFrame extends JMRTDFrame
 				}
 			}
 		};
-
 		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, SAVE_AS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Save certificate to file");
 		action.putValue(Action.NAME, "Save As...");
-
+		actionMap.put("SaveAs", action);
 		return action;
 	}
 
 	private Action getCloseAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Close");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 			private static final long serialVersionUID = 2579413086163111656L;
 
 			public void actionPerformed(ActionEvent e) {
@@ -153,6 +175,7 @@ public class CVCertificateFrame extends JMRTDFrame
 		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
+		actionMap.put("Close", action);
 		return action;
 	}
 
@@ -170,19 +193,24 @@ public class CVCertificateFrame extends JMRTDFrame
 			result.append("Not before: " + cert.getNotBefore() + "\n");
 			result.append("Not after: " +  cert.getNotAfter()+ "\n");
 			return result.toString();
-		}catch (Exception ex) {
+		} catch (Exception ex) {
 			ex.printStackTrace();
 			return "null";
 		}
 	}
 
-	public static class CVCertificatePanel extends JPanel
+	private static class CVCertificatePanel extends JPanel
 	{
 		private static final long serialVersionUID = 2109469067988004311L;
 
 		private CardVerifiableCertificate certificate;
 		private JTextArea area;
 
+		/**
+		 * Constructs a certificate panel from a certificate.
+		 * 
+		 * @param certificate the certificate
+		 */
 		public CVCertificatePanel(CardVerifiableCertificate certificate) {
 			super(new BorderLayout());
 			try{
@@ -197,10 +225,20 @@ public class CVCertificateFrame extends JMRTDFrame
 			}
 		}
 
+		/**
+		 * Gets the certificate.
+		 * 
+		 * @return a certificate
+		 */
 		public CardVerifiableCertificate getCertificate() {
 			return certificate;
 		}
 
+		/**
+		 * Sets the font.
+		 * 
+		 * @param font a font
+		 */
 		public void setFont(Font font) {
 			super.setFont(font);
 			if (area != null) { area.setFont(font); }

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -27,6 +27,14 @@ import java.security.Principal;
 
 import net.sourceforge.scuba.data.Country;
 
+/**
+ * Card verifiable certificate principal.
+ * This just wraps the EJBCA implementation.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
 public class CVCPrincipal implements Principal, Serializable
 {
 	private static final long serialVersionUID = -4905647207367309688L;

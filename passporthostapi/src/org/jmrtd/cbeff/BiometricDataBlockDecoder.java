@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,8 +33,21 @@ import java.io.InputStream;
  * @version $Revision: $
  * 
  * @param <B> the type of BDB implementation that is decoded by this decoder
+ * 
+ * @since 0.4.7
  */
 public interface BiometricDataBlockDecoder<B extends BiometricDataBlock> {
 
+	/**
+	 * Reads a biometric data block from an input stream.
+	 * 
+	 * @param in the input stream to read from
+	 * @param sbh the standard biometric header that preceded this BDB
+	 * @param index the index of this BDB
+	 * @param length the length of this BDB
+	 * @return a biometric data block
+	 * 
+	 * @throws IOException if reading failed
+	 */
 	B decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException;
 }

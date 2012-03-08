@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,10 +40,12 @@ import java.util.List;
 /**
  * Certificate store backed by key store.
  * 
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
  * @version $Revision: $
  */
-public class KeyStoreCertStoreSpi extends CertStoreSpi
-{
+public class KeyStoreCertStoreSpi extends CertStoreSpi {
+
 	private KeyStore keyStore;
 
 	public KeyStoreCertStoreSpi(CertStoreParameters params) throws InvalidAlgorithmParameterException {

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,17 +28,21 @@ import java.net.URI;
 import java.net.URLConnection;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.Provider;
 import java.security.cert.CertStoreParameters;
 import java.util.logging.Logger;
 
 import org.jmrtd.JMRTDSecurityProvider;
 
-public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParameters
-{
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+/**
+ * Parameters for key store backed certificate store.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
+public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParameters {
 
-	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private static final String DEFAULT_ALGORITHM = "JKS";
 	private static final char[] DEFAULT_PASSWORD = "".toCharArray();

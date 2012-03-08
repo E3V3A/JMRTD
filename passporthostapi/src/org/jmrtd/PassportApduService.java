@@ -119,6 +119,8 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	/**
 	 * Opens a session by connecting to the card and selecting the passport
 	 * applet.
+	 * 
+	 * @throws CardServiceException on failure to open the service
 	 */
 	public void open() throws CardServiceException {
 		if (!service.isOpen()) {
@@ -136,13 +138,6 @@ public class PassportApduService<C,R> extends CardService<C,R>
 		return service.isOpen();
 	}
 
-	private void sendSelectApplet() throws CardServiceException {
-		int sw = sendSelectApplet(APPLET_AID);
-		if (sw != 0x00009000) {
-			throw new CardServiceException("Could not select passport");
-		}
-	}
-
 	/**
 	 * TO CLARIFY: If the card responds with a status word other than 0x9000,
 	 * ie. an staus word indicating an error, this method does NOT throw a
@@ -154,16 +149,7 @@ public class PassportApduService<C,R> extends CardService<C,R>
 	throws CardServiceException {
 		return service.transmit(capdu);
 	}
-
-	private R transmit(SecureMessagingWrapper<C,R> wrapper, C capdu) throws CardServiceException {
-		if (wrapper == null) { return transmit(capdu); }
-		C wrappedCapdu = wrapper.wrap(capdu);
-		R wrappedRapdu = transmit(wrappedCapdu);
-		R rapdu = wrapper.unwrap(wrappedRapdu, sc.accesR(wrappedRapdu).getBytes().length);
-		notifyExchangedPlainTextAPDU(++plainAPDUCount, capdu, rapdu);
-		return rapdu;
-	}
-
+	
 	public void close() {
 		if (service != null) {
 			service.close();
@@ -180,6 +166,22 @@ public class PassportApduService<C,R> extends CardService<C,R>
 
 	public void removeAPDUListener(APDUListener<C,R> l) {
 		service.removeAPDUListener(l);
+	}
+
+	private void sendSelectApplet() throws CardServiceException {
+		int sw = sendSelectApplet(APPLET_AID);
+		if (sw != 0x00009000) {
+			throw new CardServiceException("Could not select passport");
+		}
+	}
+	
+	private R transmit(SecureMessagingWrapper<C,R> wrapper, C capdu) throws CardServiceException {
+		if (wrapper == null) { return transmit(capdu); }
+		C wrappedCapdu = wrapper.wrap(capdu);
+		R wrappedRapdu = transmit(wrappedCapdu);
+		R rapdu = wrapper.unwrap(wrappedRapdu, sc.accesR(wrappedRapdu).getBytes().length);
+		notifyExchangedPlainTextAPDU(++plainAPDUCount, capdu, rapdu);
+		return rapdu;
 	}
 
 	C createSelectAppletAPDU(byte[] aid) {

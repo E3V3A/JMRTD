@@ -44,13 +44,17 @@ public class BACKeySpec implements KeySpec
 	private String dateOfExpiry;
 
 	public BACKeySpec(String documentNumber, String dateOfBirth, String dateOfExpiry) {
+		if (documentNumber == null || documentNumber.length() > 9) {
+			throw new IllegalArgumentException("Document number should have length 9");
+		}
+		while (documentNumber.length() < 9) { documentNumber += "<"; }
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth;
 		this.dateOfExpiry = dateOfExpiry;
 	}
 	
 	public BACKeySpec(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
-		this(documentNumber, SDF.format(dateOfBirth), SDF.format(dateOfExpiry));
+		this(documentNumber, toString(dateOfBirth), toString(dateOfExpiry));
 	}
 
 	public String getDocumentNumber() {
@@ -87,15 +91,26 @@ public class BACKeySpec implements KeySpec
 		dateOfExpiry.equals(previous.dateOfExpiry);
 	}
 
+	/**
+	 * The algorithm of this key specification.
+	 * 
+	 * @return constant &quot;BAC&quot;
+	 */
 	public String getAlgorithm() {
 		return "BAC";
 	}
 
+	/* FIXME: not implemented? -- MO */
 	public byte[] getEncoded() {
 		return null;
 	}
 
+	/* FIXME: not implemented? -- MO */
 	public String getFormat() {
 		return null;
+	}
+
+	private static synchronized String toString(Date date) {
+		return SDF.format(date);
 	}
 }

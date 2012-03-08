@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -24,8 +24,15 @@ package org.jmrtd.cert;
 
 import java.security.cert.CertStoreParameters;
 
-public class PKDCertStoreParameters implements Cloneable, CertStoreParameters
-{	
+/**
+ * Parameters for PKD backed certificate store.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
+public class PKDCertStoreParameters implements Cloneable, CertStoreParameters {
+	
 	private static final String DEFAULT_SERVER_NAME = "localhost";
 	private static final int DEFAULT_PORT = 389;
 	private static final String DEFAULT_BASE_DN = "dc=data,dc=pkdDownload";

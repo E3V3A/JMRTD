@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,8 +55,8 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializable
-{
+public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializable {
+
 	private static final long serialVersionUID = -2859033943345961793L;
 
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,15 +32,27 @@ import java.util.TreeMap;
  * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
+ * 
+ * @since 0.4.7
  */
 public class StandardBiometricHeader {
 
 	private SortedMap<Integer, byte[]> elements;
 	
+	/**
+	 * Constructs a standard biometric header.
+	 * 
+	 * @param elements the elements, consisting of a tag and value
+	 */
 	public StandardBiometricHeader(Map<Integer, byte[]> elements) {
 		this.elements = new TreeMap<Integer, byte[]>(elements);
 	}
 
+	/**
+	 * Gets the elements of this standard biometric header.
+	 * 
+	 * @return the elements, each consisting of a tag and value
+	 */
 	public SortedMap<Integer, byte[]> getElements() {
 		return new TreeMap<Integer, byte[]>(elements);
 	}

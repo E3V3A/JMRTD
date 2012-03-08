@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,15 +26,48 @@ import java.util.List;
 
 /**
  * Interface for persistent storage of BAC keys.
+ * 
+ * @author The JRMTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
  */
 public interface BACStore {
+	
+	/**
+	 * Gets the entries in this BAC store.
+	 * 
+	 * @return a list of BAC key entries
+	 */
     List<BACKeySpec> getEntries();
 
+    /**
+     * Adds an entry to this BAC store.
+     * 
+     * @param entry the BAC key entry to add
+     */
     void addEntry(BACKeySpec entry);
 
-    void addEntry(int i, BACKeySpec entry);
+    /**
+     * Inserts an entry to this BAC store at a specific index.
+     * 
+     * @param index the index
+     * @param entry the BAC key entry to add
+     */
+    void addEntry(int index, BACKeySpec entry);
 
+    /**
+     * Removes an entry from this BAC store.
+     * 
+     * @param index the index of the BAC key entry to remove
+     */
     void removeEntry(int index);
 
-    BACKeySpec getEntry(int entryRowIndex);
+    /**
+     * Gets a BAC key entry from this BAC store.
+     * 
+     * @param index the index of the BAC key entry to get
+     * 
+     * @return a BAC key entry
+     */
+    BACKeySpec getEntry(int index);
 }

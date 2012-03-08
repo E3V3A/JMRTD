@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -66,7 +66,7 @@ import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.util.IconUtil;
 
 /**
- * GUI to show the CSCA trust anchors, sorted by country.
+ * Frame to show the CSCA trust anchors, sorted by country.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
@@ -86,10 +86,22 @@ public class CertificateMasterListFrame extends JMRTDFrame
 	private DefaultMutableTreeNode rootNode;
 	private ActionMap actionMap;
 
+	/**
+	 * Creates a certificate master list frame.
+	 * 
+	 * @param title the title to use
+	 * @param anchors the certificates to show
+	 */
 	public CertificateMasterListFrame(String title, Set<TrustAnchor> anchors) {
 		this(title, getAsCertificates(anchors));
 	}
 
+	/**
+	 * Creates a certificate master list frame.
+	 * 
+	 * @param title the title to use
+	 * @param certs the certificates to show
+	 */
 	public CertificateMasterListFrame(String title, Collection<Certificate> certs) {
 		super(title);
 		Container cp = getContentPane();
@@ -155,10 +167,17 @@ public class CertificateMasterListFrame extends JMRTDFrame
 		cp.add(new JScrollPane(tree), BorderLayout.CENTER);
 	}
 
+	/**
+	 * Gets the preferred size of this frame.
+	 * 
+	 * @return a size
+	 */
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
 
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private JMenu createFileMenu() {
 		JMenu fileMenu = new JMenu("File");
 

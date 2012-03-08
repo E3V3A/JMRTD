@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,11 +92,9 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision:352 $
  */
-public class PassportService<C, R> extends PassportApduService<C, R> implements Serializable
-{
+public class PassportService<C, R> extends PassportApduService<C, R> implements Serializable {
+	
 	private static final long serialVersionUID = 1751933705552226972L;
-
-	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
@@ -256,6 +254,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	/**
 	 * Opens a session. This is done by connecting to the card, selecting the
 	 * passport application.
+	 * 
+	 * @throws CardServiceException on error
 	 */
 	public void open() throws CardServiceException {
 		if (isOpen()) {

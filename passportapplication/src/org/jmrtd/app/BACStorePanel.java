@@ -29,6 +29,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -60,6 +61,8 @@ import org.jmrtd.BACStore;
 public class BACStorePanel extends JPanel
 {
 	private static final long serialVersionUID = 8209327475448864084L;
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	private static final int DOCUMENT_NUMBER_COLUMN = 0;
 	private static final int DATE_OF_BIRTH_COLUMN = 1;
@@ -73,11 +76,11 @@ public class BACStorePanel extends JPanel
 	private static final Icon TABLE_ROW_DELETE_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_delete"));
 	private static final Icon TABLE_ROW_INSERT_SMALL_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_insert"));
 	private static final Icon TABLE_ROW_INSERT_LARGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("table_row_insert"));
-	
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private ActionMap actionMap;
-	
+
 	private final BACStore store;
 	private BACStoreTable table;
 	private BACEntryField entryField;
@@ -102,7 +105,7 @@ public class BACStorePanel extends JPanel
 		moveDownAction = getMoveDownAction(),
 		deleteAction = getDeleteAction(),
 		addAction = getAddAction();
-		
+
 		JToolBar toolBar = new JToolBar();
 		toolBar.add(moveUpAction);
 		toolBar.add(moveDownAction);
@@ -112,13 +115,23 @@ public class BACStorePanel extends JPanel
 		add(toolBar, BorderLayout.NORTH);
 	}
 
+	/**
+	 * Adds a key listener (typed MRZ fragments lead to entering BAC entry)
+	 * 
+	 * @param l a key listener
+	 */
 	public void addKeyListener(KeyListener l) {
 		super.addKeyListener(l);
 		table.addKeyListener(l);
 	}
 
-	public void addEntry(BACKeySpec entry) {
-		store.addEntry(entry);
+	/**
+	 * Adds a BAC entry.
+	 * 
+	 * @param bacKeySpec a BAC key spec
+	 */
+	public void addEntry(BACKeySpec bacKeySpec) {
+		store.addEntry(bacKeySpec);
 		table.revalidate();
 	}
 
@@ -213,15 +226,23 @@ public class BACStorePanel extends JPanel
 
 			private static final long serialVersionUID = -7053795260898666446L;
 
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed(ActionEvent ae) {
 				int choice = JOptionPane.showOptionDialog(table, entryField, "Enter BAC",
 						JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
 						null, null, null);
 				if (choice == JOptionPane.OK_OPTION) {
-					String documentNumber = entryField.getDocumentNumber();
-					Date dateOfBirth = entryField.getDateOfBirth();
-					Date dateOfExpiry = entryField.getDateOfExpiry();
-					addEntry(new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry));
+					BACKeySpec bacKeySpec = null;
+					try {
+						String documentNumber = entryField.getDocumentNumber();
+						Date dateOfBirth = entryField.getDateOfBirth();
+						Date dateOfExpiry = entryField.getDateOfExpiry();
+						bacKeySpec = new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry);
+					} catch (Exception e) {
+						/* FIXME: something is wrong with the entered BAC key, tell user in popup dialog. */
+						LOGGER.warning("Failed to add BAC entry");
+						e.printStackTrace();
+					}
+					if (bacKeySpec != null) { addEntry(bacKeySpec); }
 				}
 			}
 		};

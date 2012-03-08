@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,7 @@ import org.jmrtd.cert.CardVerifiableCertificate;
 /**
  * Event to indicate EAC protocol was executed.
  * 
- * @author Wojciech Mostowski <woj@cs.ru.nl>
+ * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
  * @version $Revision: $
  */
@@ -103,7 +103,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Returns the host key pair used for EAC chip authentication.
+	 * Gets the host key pair used for EAC chip authentication.
 	 * 
 	 * @return the host key pair used for EAC chip authentication
 	 */
@@ -112,7 +112,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Returns CA certificate's reference used during EAC.
+	 * Gets CA certificate's reference used during EAC.
 	 * 
 	 * @return CA certificate's reference
 	 */
@@ -121,7 +121,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Returns the chain of CVCertificates used to authenticate the terminal to
+	 * Gets the chain of CVCertificates used to authenticate the terminal to
 	 * the card.
 	 * 
 	 * @return the chain of CVCertificates used to authenticate the terminal to
@@ -132,7 +132,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Returns the terminal private key used during EAC.
+	 * Gets the terminal private key used during EAC.
 	 * 
 	 * @return the terminal private key
 	 */
@@ -141,7 +141,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Returns the id of the card used during EAC.
+	 * Gets the id of the card used during EAC.
 	 * 
 	 * @return the id of the card
 	 */
@@ -150,7 +150,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Return the card's challenge generated during EAC.
+	 * Gets the card's challenge generated during EAC.
 	 * 
 	 * @return the card's challenge
 	 */
@@ -159,7 +159,7 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Return the card's public key used during EAC.
+	 * Gets the card's public key used during EAC.
 	 * 
 	 * @return the card's public key
 	 */
@@ -168,15 +168,19 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Return the card's public key ID used during EAC.
+	 * Gets the card's public key ID used during EAC.
 	 * 
 	 * @return the card's public key ID
 	 */
-
 	public int getCardPublicKeyId() {
 		return keyId;
 	}
 
+	/**
+	 * Gets the service.
+	 * 
+	 * @return a service
+	 */
 	public PassportService getService() {
 		return service;
 	}

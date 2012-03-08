@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,6 +28,8 @@ package org.jmrtd.cbeff;
  * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: $
+ * 
+ * @since 0.4.7
  */
 public interface BiometricDataBlock {
 

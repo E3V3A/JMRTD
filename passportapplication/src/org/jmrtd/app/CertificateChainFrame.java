@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: CertificateFrame.java 893 2009-03-23 15:43:42Z martijno $
+ * $Id: $
  */
 
 package org.jmrtd.app;
@@ -60,26 +60,65 @@ public class CertificateChainFrame extends JMRTDFrame
 
 	private CertificateChainPanel certificatePanel;
 
+	/**
+	 * Constructs a certificate chain frame from a certificate.
+	 * 
+	 * @param certificate the certificate
+	 */
 	public CertificateChainFrame(Certificate certificate) {
 		this("Certificate", Collections.singletonList(certificate), false, false);
 	}
 	
+	/**
+	 * Constructs a certificate chain frame from a certificate.
+	 * 
+	 * @param certificate the certificate
+	 * @param isValid whether the chain should be displayed as valid
+	 */
 	public CertificateChainFrame(Certificate certificate, boolean isValid) {
 		this("Certificate", Collections.singletonList(certificate), true, isValid);
 	}
 
+	/**
+	 * Constructs a certificate chain frame from a certificate.
+	 * 
+	 * @param title the title to use for the frame
+	 * @param certificate the certificate
+	 * @param isValid whether the chain should be displayed as valid
+	 */
 	public CertificateChainFrame(String title, Certificate certificate, boolean isValid) {
 		this(title, Collections.singletonList(certificate), true, isValid);		
 	}
 
+	/**
+	 * Constructs a certificate chain frame from a list of certificates.
+	 * 
+	 * @param certificates the certificates
+	 * @param isValid whether the chain should be displayed as valid
+	 */
 	public CertificateChainFrame(List<Certificate> certificates, boolean isValid) {
 		this("Certificates", certificates, true, isValid);
 	}
 
+	/**
+	 * Constructs a certificate chain frame from a list of certificates.
+	 * 
+	 * @param title the title to use for the frame
+	 * @param certificates the certificates
+	 * @param isValid whether the chain should be displayed as valid
+	 */
 	public CertificateChainFrame(String title, List<Certificate> certificates, boolean isValid) {
 		this("Certificates", certificates, true, isValid);
 	}
-	
+
+	/**
+	 * Private constructor used by the other constructors.
+	 * 
+	 * @param title the title to use
+	 * @param certificates the certificates
+	 * @param showValidity whether to show validity
+	 * @param isValid whether to chain is valid
+	 */
 	private CertificateChainFrame(String title, List<Certificate> certificates, boolean showValidity, boolean isValid) {
 		super(title);
 
@@ -106,6 +145,8 @@ public class CertificateChainFrame extends JMRTDFrame
 		cp.add(certificatePanel, BorderLayout.CENTER);
 	}
 
+	/* ONLY PRIVATE METHODS BELOW */
+	
 	private JMenu createFileMenu() {
 		JMenu fileMenu = new JMenu("File");
 

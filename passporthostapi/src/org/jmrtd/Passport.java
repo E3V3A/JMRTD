@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -96,6 +96,8 @@ import org.jmrtd.lds.SecurityInfo;
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * 
+ * @version $Revision: $
  */
 public class Passport<C, R>
 {
@@ -158,6 +160,17 @@ public class Passport<C, R>
 		this.progressListeners = new HashSet<ProgressListener>();
 	}
 
+	/**
+	 * Creates a document from LDS data structures.
+	 * 
+	 * @param comFile the EF_COM
+	 * @param dataGroups the data groups
+	 * @param sodFile the EF_SOd
+	 * @param docSigningPrivateKey the document signing private key
+	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * 
+	 * @throws GeneralSecurityException if error
+	 */
 	public Passport(COMFile comFile, Collection<DataGroup> dataGroups, SODFile sodFile,
 			PrivateKey docSigningPrivateKey, MRTDTrustStore trustManager) throws GeneralSecurityException {
 		this();
@@ -195,6 +208,15 @@ public class Passport<C, R>
 		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
 	}
 
+	/**
+	 * Creates a document by reading it from a service.
+	 * 
+	 * @param service the service to read from
+	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * @param bacStore the BAC entries
+	 * 
+	 * @throws CardServiceException on error
+	 */
 	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this();
 		this.service = service;
@@ -208,7 +230,7 @@ public class Passport<C, R>
 		}
 		this.bacKeySpec = null;
 
-		/* Find out whether this passport supports BAC. */
+		/* Find out whether this MRTD supports BAC. */
 		boolean isBACPassport = false;
 		try {
 			/* Attempt to read EF.COM before BAC. */
@@ -259,17 +281,39 @@ public class Passport<C, R>
 		try {
 			readFromService(service, bacKeySpec, trustManager);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			//			ioe.printStackTrace();
 			throw new CardServiceException(ioe.getMessage());
 		}
 	}
 
-	public Passport(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {
+	/**
+	 * Creates document by reading from service.
+	 * 
+	 * @param service the service to read from
+	 * @param bacKeySpec BAC entry
+	 * @param trustManager the trust manager
+	 * 
+	 * @throws CardServiceException on error
+	 */
+	public Passport(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws CardServiceException {
 		this();
 		this.trustManager = trustManager;
-		readFromService(service, bacKeySpec, trustManager);
+		try {
+			readFromService(service, bacKeySpec, trustManager);
+		} catch (IOException ioe) {
+			//			ioe.printStackTrace();
+			throw new CardServiceException(ioe.getMessage());
+		}
 	}
 
+	/**
+	 * Creates a document by reading it from a ZIP file.
+	 * 
+	 * @param file the ZIP file to read from
+	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * 
+	 * @throws IOException on error
+	 */
 	public Passport(File file, MRTDTrustStore trustManager) throws IOException {
 		this();
 		this.trustManager = trustManager;
@@ -295,14 +339,13 @@ public class Passport<C, R>
 				int fid = -1;
 				int delimIndex = fileName.lastIndexOf('.');
 				String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
-				if (delimIndex >= 0) {
-					if (!fileName.endsWith(".bin")
-							&& !fileName.endsWith(".BIN")
-							&& !fileName.endsWith(".dat")
-							&& !fileName.endsWith(".DAT")) {
-						LOGGER.warning("Skipping file " + fileName + "(delimIndex == " + delimIndex + ")");
-						continue;					
-					}
+				if (delimIndex >= 0
+						&& !fileName.endsWith(".bin")
+						&& !fileName.endsWith(".BIN")
+						&& !fileName.endsWith(".dat")
+						&& !fileName.endsWith(".DAT")) {
+					LOGGER.warning("Skipping file \"" + fileName + "\" in \"" + file.getName() + "\"");
+					continue;					
 				}
 
 				if (baseName.length() == 4) {
@@ -338,13 +381,392 @@ public class Passport<C, R>
 				}
 			} catch (NumberFormatException nfe) {
 				/* NOTE: ignore this file */
+				LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
 			}
 		}
 	}
 
 	/**
-	 * Constructs a passport object by reading from an actual MRTD chip
-	 * through a PassportService.
+	 * Gets an inputstream that is ready for reading.
+	 * 
+	 * @param fid
+	 * @return an inputstream for <code>fid</code>
+	 */
+	public synchronized InputStream getInputStream(final short fid) throws CardServiceException {
+		if (couldNotRead.contains(fid)) {
+			LOGGER.warning("Could not read from file with FID " + Integer.toHexString(fid));
+			throw new CardServiceException("Could not read " + Integer.toHexString(fid));
+		}
+		try {
+			InputStream inputStream = null;
+			byte[] file = filesBytes.get(fid);
+			if (file != null) {
+				/* Already completely read this file. */
+				inputStream = new ByteArrayInputStream(file);
+				inputStream.mark(file.length + 1);
+			} else {
+				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
+
+				/* Maybe partially read? Use the buffered stream. */
+				inputStream = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
+				if (inputStream != null && inputStream.markSupported()) { inputStream.reset(); }
+			}
+			if (inputStream == null) {
+				/* Not read yet. Start reading it. */
+				startCopyingRawInputStream(fid);
+				inputStream = bufferedStreams.get(fid);              
+			}
+			return inputStream;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			throw new IllegalStateException("ERROR: " + ioe.toString());
+		}
+	}
+
+	/**
+	 * Inserts a file into this document, and updates EF_COM and EF_SOd accordingly.
+	 * 
+	 * @param fid the FID of the new file
+	 * @param bytes the contents of the new file
+	 */
+	public void putFile(short fid, byte[] bytes) {
+		if (bytes == null) { return; }
+		filesBytes.put(fid, bytes);
+		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
+		int fileLength = bytes.length;
+		inputStream.mark(fileLength + 1);
+		bufferedStreams.put(fid, inputStream);
+		fileLengths.put(fid, fileLength);
+		// FIXME: is this necessary?
+		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
+			updateCOMSODFile(null);
+		}
+		verificationStatus.setAll(Verdict.UNKNOWN);
+	}
+
+	/**
+	 * Updates EF_COM and EF_SOd using a new document signing certificate.
+	 * 
+	 * @param newCertificate a certificate
+	 */
+	public void updateCOMSODFile(X509Certificate newCertificate) {
+		try {
+			String digestAlg = sodFile.getDigestAlgorithm();
+			String signatureAlg = sodFile.getDigestEncryptionAlgorithm();
+			X509Certificate cert = newCertificate != null ? newCertificate : sodFile.getDocSigningCertificate();
+			byte[] signature = sodFile.getEncryptedDigest();
+			Map<Integer, byte[]> dgHashes = new TreeMap<Integer, byte[]>();
+			List<Short> dgFids = new ArrayList<Short>();
+			dgFids.addAll(fileLengths.keySet());
+			Collections.sort(dgFids);
+			MessageDigest digest = null;
+			digest = MessageDigest.getInstance(digestAlg);
+			for (Short fid : dgFids) {
+				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
+					byte[] data = getFileBytes(fid);
+					byte tag = data[0];
+					dgHashes.put(LDSFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
+					comFile.insertTag(Integer.valueOf(tag));
+				}
+			}
+			if(docSigningPrivateKey != null) {
+				sodFile = new SODFile(digestAlg, signatureAlg, dgHashes, docSigningPrivateKey, cert);
+			} else {
+				sodFile = new SODFile(digestAlg, signatureAlg, dgHashes, signature, cert);            
+			}
+			putFile(PassportService.EF_SOD, sodFile.getEncoded());
+			putFile(PassportService.EF_COM, comFile.getEncoded());
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Gets the contents of a file.
+	 * 
+	 * @param fid the FID of the file
+	 * 
+	 * @return a byte array
+	 * 
+	 * @deprecated use {@link #getInputStream(short)} instead
+	 */
+	public byte[] getFileBytes(short fid) {
+		byte[] result = filesBytes.get(fid);
+		if (result != null) { return result; }
+		try {
+			InputStream inputStream = getInputStream(fid);
+			if (inputStream == null) { return null; }
+
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			byte[] buf = new byte[256];
+			while (true) {
+				try {
+					int bytesRead = inputStream.read(buf);
+					if (bytesRead < 0) { break; }
+					out.write(buf, 0, bytesRead);
+				} catch (IOException ioe) {
+					ioe.printStackTrace();
+				}
+			}
+			return out.toByteArray();
+		} catch (CardServiceException cse) {
+			return null;
+		}
+	}
+
+	/**
+	 * Gets the BAC entry that was used (only relevant when reading from service).
+	 * 
+	 * @return a BAC entry
+	 */
+	public BACKeySpec getBACKeySpec() {
+		return bacKeySpec;
+	}
+
+	/**
+	 * Sets the document signing private key.
+	 * 
+	 * @param docSigningPrivateKey a private key
+	 */
+	public void setDocSigningPrivateKey(PrivateKey docSigningPrivateKey) {
+		this.docSigningPrivateKey = docSigningPrivateKey;
+		updateCOMSODFile(null);
+	}
+
+	/**
+	 * Gets the CVCA certificate.
+	 * 
+	 * @return a CV certificate or <code>null</code>
+	 */
+	public CardVerifiableCertificate getCVCertificate() {
+		return cvcaCertificate;
+	}
+
+	/**
+	 * Sets the CVCA certificate.
+	 * 
+	 * @param cert the CV certificate
+	 */
+	public void setCVCertificate(CardVerifiableCertificate cert) {
+		this.cvcaCertificate = cert;
+		try {
+			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getHolderReference().getName());
+			putFile(cvcaFID, cvcaFile.getEncoded());
+		} catch (CertificateException ce) {
+			ce.printStackTrace();
+		}
+	}
+
+	/**
+	 * Gets the document signing private key, or <code>null</code> if not present.
+	 * 
+	 * @return a private key or <code>null</code>
+	 */
+	public PrivateKey getDocSigningPrivateKey() {
+		return docSigningPrivateKey;
+	}
+
+	/**
+	 * Sets the document signing certificate.
+	 * 
+	 * @param docSigningCertificate a certificate
+	 */
+	public void setDocSigningCertificate(X509Certificate docSigningCertificate) {
+		updateCOMSODFile(docSigningCertificate);
+	}
+
+	/**
+	 * Gets the CSCA, CVCA trust store.
+	 * 
+	 * @return the trust store in use
+	 */
+	public MRTDTrustStore getTrustManager() {
+		return trustManager;
+	}
+
+	/**
+	 * Gets the private key for EAC, or <code>null</code> if not present.
+	 * 
+	 * @return a private key or <code>null</code>
+	 */
+	public PrivateKey getEACPrivateKey() {
+		return eacPrivateKey;
+	}
+
+	/**
+	 * Sets the private key for EAC.
+	 * 
+	 * @param eacPrivateKey a private key
+	 */
+	public void setEACPrivateKey(PrivateKey eacPrivateKey) {
+		this.eacPrivateKey = eacPrivateKey;
+	}
+
+	/**
+	 * Sets the public key for EAC.
+	 * 
+	 * @param eacPublicKey a public key
+	 */
+	public void setEACPublicKey(PublicKey eacPublicKey) {
+		ChipAuthenticationPublicKeyInfo chipAuthenticationPublicKeyInfo = new ChipAuthenticationPublicKeyInfo(eacPublicKey);
+		DG14File dg14File = new DG14File(Arrays.asList(new SecurityInfo[] { chipAuthenticationPublicKeyInfo }));		
+		putFile(PassportService.EF_DG14, dg14File.getEncoded());
+	}
+
+	/**
+	 * Gets the private key for AA, or <code>null</code> if not present.
+	 * 
+	 * @return a private key or <code>null</code>
+	 */
+	public PrivateKey getAAPrivateKey() {
+		return aaPrivateKey;
+	}
+
+	/**
+	 * Sets the private key for AA.
+	 * 
+	 * @param aaPrivateKey a private key
+	 */
+	public void setAAPrivateKey(PrivateKey aaPrivateKey) {
+		this.aaPrivateKey = aaPrivateKey;
+	}
+
+	/**
+	 * Sets the public key for AA.
+	 * 
+	 * @param aaPublicKey a public key
+	 */
+	public void setAAPublicKey(PublicKey aaPublicKey) {
+		DG15File dg15file = new DG15File(aaPublicKey);
+		putFile(PassportService.EF_DG15, dg15file.getEncoded());
+	}
+
+	/**
+	 * Gets the total number of  bytes to read (only relevant when reading from service).
+	 * 
+	 * @return the total number of bytes in the document
+	 */
+	public int getTotalLength() {
+		return totalLength;
+	}
+
+	/**
+	 * Gets the number of bytes read (only relevant when reading from service).
+	 * 
+	 * @return the number of bytes read
+	 */
+	public int getBytesRead() {
+		return bytesRead;
+	}
+
+	/**
+	 * Gets a list of FIDs.
+	 * 
+	 * @return a list of FIDs
+	 */
+	public List<Short> getFileList() {
+		List<Short> result = new ArrayList<Short>();
+		result.addAll(fileLengths.keySet());
+		result.addAll(couldNotRead);
+		Collections.sort(result);
+		return result;
+	}
+
+	/**
+	 * Verifies the passport using the security related mechanisms.
+	 * Adjusts the verificationIndicator to show the user the verification status.
+	 * 
+	 * Assumes passport object is non-null and read from the service.
+	 */
+	public void verifySecurity() {
+		verifyBAC();
+		verifyEAC();
+		verifyDS();
+		verifyCS();
+		verifyAA(service);
+		/*
+		 * FIXME: The verifyAA call used to be right after verifyEAC
+		 * but that seems to generate a security status not satisfied
+		 * if in SAFE_MODE on my EAC NIK. It seems to work fine in
+		 * PROGRESSIVE_MODE though. Some kind of synchronization error?
+		 * -- MO
+		 */
+	}
+
+	/**
+	 * Gets the verification status of this document (and/or the service it was read from).
+	 * 
+	 * @return a {@link VerificationStatus}
+	 */
+	public VerificationStatus getVerificationStatus() {
+		return verificationStatus;
+	}
+
+	/**
+	 * Builds certificate chain from SOd to CSCA anchor.
+	 * Uses PKIX algorithm.
+	 * 
+	 * @return a list of certificates
+	 * 
+	 * @throws GeneralSecurityException if could not be checked
+	 */
+	public List<Certificate> getCertificateChain() throws GeneralSecurityException {
+		List<CertStore> cscaStores = trustManager.getCSCAStores();
+		if (cscaStores == null) {
+			LOGGER.warning("No certificate stores found.");
+			return null;
+		}
+		SODFile sod = null;
+		try {
+			InputStream sodIn = getInputStream(PassportService.EF_SOD);
+			sod = new SODFile(sodIn);
+		} catch (IOException ioe) {
+			LOGGER.warning("Error opening SOD file");
+			return null;
+		} catch (CardServiceException cse) {
+			LOGGER.warning("Error opening SOD file");
+			return null;
+		}
+		X500Principal sodIssuer = sod.getIssuerX500Principal();
+		BigInteger sodSerialNumber = sod.getSerialNumber();
+		X509Certificate docSigningCertificate = null;
+		try {
+			docSigningCertificate = sod.getDocSigningCertificate();
+		} catch (Exception e) {
+			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
+			// FIXME: search for it in cert stores?
+		}
+		if (docSigningCertificate != null) {
+			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
+			if (!sodIssuer.equals(docIssuer)) {
+				LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
+				return null;
+			}
+			BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
+			if (!sodSerialNumber.equals(docSerialNumber)) {
+				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
+			}
+		}
+		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
+	}
+
+	/**
+	 * Adds an authentication listener to this document.
+	 * 
+	 * @param l an authentication listener
+	 */
+	public void addAuthenticationListener(AuthListener l) {
+		if (service != null) {
+			service.addAuthenticationListener(l);
+		}
+	}
+
+	/* ONLY PRIVATE METHODS BELOW. */
+
+	/**
+	 * Constructs a document by reading from an actual MRTD chip
+	 * through a service.
 	 * 
 	 * @param service the service to read from
 	 * @param cvcaStore contains EAC relevant credentials
@@ -410,298 +832,38 @@ public class Passport<C, R>
 		hasEACSupport = true;
 		Map<Integer, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
 		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
-			if (caRef != null) {
-				try {
-					List<String> aliases = Collections.list(cvcaStore.aliases());
-					for (String alias: aliases) {
-						if (cvcaStore.isCertificateEntry(alias)) {
-							CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
-							CVCPrincipal authRef = certificate.getAuthorityReference();
-							CVCPrincipal holderRef = certificate.getHolderReference();
-							if (caRef.equals(authRef)) {
-								/* See if we have a private key for that certificate. */
-								PrivateKey privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
-								Certificate[] certPath = cvcaStore.getCertificateChain(holderRef.getName());
-								if (privateKey != null) {
-									List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(certPath.length);
-									for (Certificate c: certPath) { terminalCerts.add((CardVerifiableCertificate)c); }
-
-									for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
-										int i = entry.getKey();
-										PublicKey publicKey = entry.getValue();
-										try {
-											service.doEAC(i, publicKey, caRef, terminalCerts, privateKey, documentNumber);
-											verificationStatus.setEAC(Verdict.SUCCEEDED);
-											break;
-										} catch(CardServiceException cse) {
-											cse.printStackTrace();
-											/* NOTE: Failed, too bad, try next public key. */
-										}
-									}
-								}
-							}				
+			if (caRef == null) { continue; }
+			try {
+				List<String> aliases = Collections.list(cvcaStore.aliases());
+				for (String alias: aliases) {
+					if (!cvcaStore.isCertificateEntry(alias)) { continue; }
+					CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
+					CVCPrincipal authRef = certificate.getAuthorityReference();
+					CVCPrincipal holderRef = certificate.getHolderReference();
+					if (!caRef.equals(authRef)) { continue; }
+					/* See if we have a private key for that certificate. */
+					PrivateKey privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
+					Certificate[] certPath = cvcaStore.getCertificateChain(holderRef.getName());
+					if (privateKey == null) { continue; }
+					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(certPath.length);
+					for (Certificate c: certPath) { terminalCerts.add((CardVerifiableCertificate)c); }
+					for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
+						int i = entry.getKey();
+						PublicKey publicKey = entry.getValue();
+						try {
+							service.doEAC(i, publicKey, caRef, terminalCerts, privateKey, documentNumber);
+							verificationStatus.setEAC(Verdict.SUCCEEDED);
+							break;
+						} catch(CardServiceException cse) {
+							cse.printStackTrace();
+							/* NOTE: Failed, too bad, try next public key. */
 						}
 					}
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
-	}
-
-	/**
-	 * Gets an inputstream that is ready for reading.
-	 * 
-	 * @param fid
-	 * @return an inputstream for <code>fid</code>
-	 */
-	public synchronized InputStream getInputStream(final short fid) throws CardServiceException {
-		if (couldNotRead.contains(fid)) {
-			throw new CardServiceException("Could not read " + Integer.toHexString(fid));
-		}
-		try {
-			InputStream inputStream = null;
-			byte[] file = filesBytes.get(fid);
-			if (file != null) {
-				/* Already completely read this file. */
-				inputStream = new ByteArrayInputStream(file);
-				inputStream.mark(file.length + 1);
-			} else {
-				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
-
-				/* Maybe partially read? Use the buffered stream. */
-				inputStream = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
-				if (inputStream != null && inputStream.markSupported()) { inputStream.reset(); }
-			}
-			if (inputStream == null) {
-				/* Not read yet. Start reading it. */
-				startCopyingRawInputStream(fid);
-				inputStream = bufferedStreams.get(fid);              
-			}
-			return inputStream;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IllegalStateException("ERROR: " + ioe.toString());
-		}
-	}
-
-	public void putFile(short fid, byte[] bytes) {
-		if (bytes == null) { return; }
-		filesBytes.put(fid, bytes);
-		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-		int fileLength = bytes.length;
-		inputStream.mark(fileLength + 1);
-		bufferedStreams.put(fid, inputStream);
-		fileLengths.put(fid, fileLength);
-		// FIXME: is this necessary?
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
-			updateCOMSODFile(null);
-		}
-		verificationStatus.setAll(Verdict.UNKNOWN);
-	}
-
-	public void updateCOMSODFile(X509Certificate newCertificate) {
-		try {
-			String digestAlg = sodFile.getDigestAlgorithm();
-			String signatureAlg = sodFile.getDigestEncryptionAlgorithm();
-			X509Certificate cert = newCertificate != null ? newCertificate : sodFile.getDocSigningCertificate();
-			byte[] signature = sodFile.getEncryptedDigest();
-			Map<Integer, byte[]> dgHashes = new TreeMap<Integer, byte[]>();
-			List<Short> dgFids = new ArrayList<Short>();
-			dgFids.addAll(fileLengths.keySet());
-			Collections.sort(dgFids);
-			MessageDigest digest = null;
-			digest = MessageDigest.getInstance(digestAlg);
-			for (Short fid : dgFids) {
-				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
-					byte[] data = getFileBytes(fid);
-					byte tag = data[0];
-					dgHashes.put(LDSFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
-					comFile.insertTag(Integer.valueOf(tag));
-				}
-			}
-			if(docSigningPrivateKey != null) {
-				sodFile = new SODFile(digestAlg, signatureAlg, dgHashes, docSigningPrivateKey, cert);
-			} else {
-				sodFile = new SODFile(digestAlg, signatureAlg, dgHashes, signature, cert);            
-			}
-			putFile(PassportService.EF_SOD, sodFile.getEncoded());
-			putFile(PassportService.EF_COM, comFile.getEncoded());
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public byte[] getFileBytes(short fid) {
-		byte[] result = filesBytes.get(fid);
-		if (result != null) { return result; }
-		try {
-			InputStream inputStream = getInputStream(fid);
-			if (inputStream == null) { return null; }
-
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			byte[] buf = new byte[256];
-			while (true) {
-				try {
-					int bytesRead = inputStream.read(buf);
-					if (bytesRead < 0) { break; }
-					out.write(buf, 0, bytesRead);
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
-			}
-			return out.toByteArray();
-		} catch (CardServiceException cse) {
-			return null;
-		}
-	}
-
-	public BACKeySpec getBACKeySpec() {
-		return bacKeySpec;
-	}
-
-	public void setDocSigningPrivateKey(PrivateKey key) {
-		docSigningPrivateKey = key;
-		updateCOMSODFile(null);
-	}
-
-	public void setDocSigningCertificate(X509Certificate newCertificate) {
-		updateCOMSODFile(newCertificate);
-	}
-
-	public void setCVCertificate(CardVerifiableCertificate cert) {
-		this.cvcaCertificate = cert;
-		try {
-			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getHolderReference().getName());
-			putFile(cvcaFID, cvcaFile.getEncoded());
-		} catch (CertificateException ce) {
-			ce.printStackTrace();
-		}
-	}
-
-	public CardVerifiableCertificate getCVCertificate() {
-		return cvcaCertificate;
-	}
-
-	public PrivateKey getDocSigningPrivateKey() {
-		return docSigningPrivateKey;
-	}
-
-	public MRTDTrustStore getTrustManager() {
-		return trustManager;
-	}
-
-	public void setEACPrivateKey(PrivateKey privateKey) {
-		this.eacPrivateKey = privateKey;
-	}
-
-	public void setEACPublicKey(PublicKey publicKey) {
-		ChipAuthenticationPublicKeyInfo chipAuthenticationPublicKeyInfo = new ChipAuthenticationPublicKeyInfo(publicKey);
-		DG14File dg14File = new DG14File(Arrays.asList(new SecurityInfo[] { chipAuthenticationPublicKeyInfo }));		
-		putFile(PassportService.EF_DG14, dg14File.getEncoded());
-	}
-
-	public PrivateKey getAAPrivateKey() {
-		return aaPrivateKey;
-	}
-
-	public void setAAPrivateKey(PrivateKey key) {
-		aaPrivateKey = key;
-	}
-
-	public void setAAPublicKey(PublicKey key) {
-		DG15File dg15file = new DG15File(key);
-		putFile(PassportService.EF_DG15, dg15file.getEncoded());
-	}
-
-	public PrivateKey getEACPrivateKey() {
-		return eacPrivateKey;
-	}
-
-	public int getTotalLength() {
-		return totalLength;
-	}
-
-	public int getBytesRead() {
-		return bytesRead;
-	}
-
-	public List<Short> getFileList() {
-		List<Short> result = new ArrayList<Short>();
-		result.addAll(fileLengths.keySet());
-		result.addAll(couldNotRead);
-		Collections.sort(result);
-		return result;
-	}
-
-	/**
-	 * Verifies the passport using the security related mechanisms.
-	 * Adjusts the verificationIndicator to show the user the verification status.
-	 * 
-	 * Assumes passport object is non-null and read from the service.
-	 */
-	public void verifySecurity() {
-		verifyBAC();
-		verifyEAC();
-		verifyDS();
-		verifyCS();
-		verifyAA(service);
-		/*
-		 * FIXME: The verifyAA call used to be right after verifyEAC
-		 * but that seems to generate a security status not satisfied
-		 * if in SAFE_MODE on my EAC NIK. It seems to work fine in
-		 * PROGRESSIVE_MODE though. Some kind of synchronization error?
-		 * -- MO
-		 */
-	}
-
-	/**
-	 * Builds certificate chain from SOd to CSCA anchor.
-	 * Uses PKIX algorithm.
-	 * 
-	 * @return a list of certificates
-	 * 
-	 * @throws GeneralSecurityException if could not be checked
-	 */
-	public List<Certificate> getCertificateChain() throws GeneralSecurityException {
-		List<CertStore> cscaStores = trustManager.getCSCAStores();
-		if (cscaStores == null) {
-			LOGGER.warning("No certificate stores found.");
-			return null;
-		}
-		SODFile sod = null;
-		try {
-			InputStream sodIn = getInputStream(PassportService.EF_SOD);
-			sod = new SODFile(sodIn);
-		} catch (IOException ioe) {
-			LOGGER.warning("Error opening SOD file");
-			return null;
-		} catch (CardServiceException cse) {
-			LOGGER.warning("Error opening SOD file");
-			return null;
-		}
-		X500Principal sodIssuer = sod.getIssuerX500Principal();
-		BigInteger sodSerialNumber = sod.getSerialNumber();
-		X509Certificate docSigningCertificate = null;
-		try {
-			docSigningCertificate = sod.getDocSigningCertificate();
-		} catch (Exception e) {
-			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
-			// FIXME: search for it in cert stores?
-		}
-		if (docSigningCertificate != null) {
-			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			if (!sodIssuer.equals(docIssuer)) {
-				LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
-				return null;
-			}
-			BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
-			if (!sodSerialNumber.equals(docSerialNumber)) {
-				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
-			}
-		}
-		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
 	}
 
 	/**
@@ -754,28 +916,6 @@ public class Passport<C, R>
 		}
 		return null;
 	}
-
-	/**
-	 * Adds an authentication listener to this MRTD.
-	 * 
-	 * @param l an authentication listener
-	 */
-	public void addAuthenticationListener(AuthListener l) {
-		if (service != null) {
-			service.addAuthenticationListener(l);
-		}
-	}
-
-	/**
-	 * Gets the verification status of this MRTD.
-	 * 
-	 * @return a {@link VerificationStatus}
-	 */
-	public VerificationStatus getVerificationStatus() {
-		return verificationStatus;
-	}
-
-	/* Only private methods below. */
 
 	private BufferedInputStream preReadFile(PassportService<C, R> service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {

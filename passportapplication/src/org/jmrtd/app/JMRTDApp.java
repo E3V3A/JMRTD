@@ -220,7 +220,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			if (preferencesPanel.isBackingStoreNew()) {
 				/*
 				 * If there are no previously saved preferences, we have some
-				 * suggestions, e.g. certificates for document verification that
+				 * suggestions, e.g. the CSCA trust store that
 				 * came with the installation of JMRTD.
 				 */
 				URI defaultCSCAURI = null;
@@ -686,7 +686,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		String signatureAlgorithm = "SHA256withRSA";
 		String issuer = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
 		String subject = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
-		X509Certificate docSigningCert = generateSelfSignedCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, privateKey, signatureAlgorithm);
+		X509Certificate docSigningCert = createSelfSignedCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, privateKey, signatureAlgorithm);
 		PrivateKey docSigningPrivateKey = privateKey;
 		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
 		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
@@ -743,7 +743,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		}
 	}
 
-	private static X509Certificate generateSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
+	private static X509Certificate createSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
 			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
 		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
 		certGenerator.setSerialNumber(new BigInteger("1"));

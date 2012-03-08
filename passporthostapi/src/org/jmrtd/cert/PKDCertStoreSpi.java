@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,6 +70,13 @@ import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.jmrtd.JMRTDSecurityProvider;
 
+/**
+ * SPI for PKD backed certificate store.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
 public class PKDCertStoreSpi extends CertStoreSpi
 {
 	/** We may need this provider... */

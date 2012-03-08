@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -53,6 +53,8 @@ public class VerificationStatus
 	}
 	
 	/**
+	 * Gets the AA verdict.
+	 * 
 	 * @return the AA status
 	 */
 	public Verdict getAA() {
@@ -60,6 +62,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Sets the AA verdict.
+	 * 
 	 * @param v the status to set
 	 */
 	public void setAA(Verdict v) {
@@ -67,6 +71,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Gets the BAC verdict.
+	 * 
 	 * @return the BAC status
 	 */
 	public Verdict getBAC() {
@@ -74,6 +80,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Sets the BAC verdict.
+	 * 
 	 * @param v the status to set
 	 */
 	public void setBAC(Verdict v) {
@@ -81,6 +89,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Gets the CS verdict.
+	 * 
 	 * @return the CS status
 	 */
 	public Verdict getCS() {
@@ -88,6 +98,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Gets the CS verdict.
+	 * 
 	 * @param v the status to set
 	 */
 	public void setCS(Verdict v) {
@@ -95,6 +107,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Gets the DS verdict.
+	 * 
 	 * @return the DS status
 	 */
 	public Verdict getDS() {
@@ -102,6 +116,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Sets the DS verdict.
+	 * 
 	 * @param v the status to set
 	 */
 	public void setDS(Verdict v) {
@@ -109,6 +125,8 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Gets the EAC verdict.
+	 * 
 	 * @return the EAC status
 	 */
 	public Verdict getEAC() {
@@ -116,12 +134,19 @@ public class VerificationStatus
 	}
 
 	/**
+	 * Sets the EAC verdict.
+	 * 
 	 * @param v the status to set
 	 */
 	public void setEAC(Verdict v) {
 		this.eac = v;
 	}
 	
+	/**
+	 * Sets all vedicts to <code>v</code>.
+	 * 
+	 * @param v the status to set
+	 */
 	public void setAll(Verdict v) {
 		setAA(v);
 		setBAC(v);

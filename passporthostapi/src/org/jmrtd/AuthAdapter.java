@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -31,10 +31,25 @@ package org.jmrtd;
  */
 public class AuthAdapter implements AuthListener {
 
+	/**
+	 * Called when an attempt was made to perform the BAC protocol.
+	 *
+	 * @param be contains the resulting wrapper
+	 */
 	public void performedBAC(BACEvent be) { }
 
+	/**
+	 * Called when an attempt was made to perform the EAC protocol.
+	 *
+	 * @param ee contains the resulting wrapper and other EAC data
+	 */
 	public void performedEAC(EACEvent ee) { }
 
+	/**
+	 * Called when an attempt was made to perform the AA protocol.
+	 *
+	 * @param ae contains the used public key and resulting status of the protocol 
+	 */
 	public void performedAA(AAEvent ae) { }
 }
 

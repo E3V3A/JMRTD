@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -33,8 +33,18 @@ import java.io.OutputStream;
  * @version $Revision: $
  * 
  * @param <B> the type of BDB implementation that is encoded by this encoder
+ * 
+ * @since 0.4.7
  */
 public interface BiometricDataBlockEncoder<B extends BiometricDataBlock> {
 
+	/**
+	 * Writes the biometric data block in <code>bdb</code> to the output stream.
+	 * 
+	 * @param bdb the biometric data block to write
+	 * @param out the output stream to write to
+	 * 
+	 * @throws IOException if writing fails
+	 */
 	void encode(B bdb, OutputStream out) throws IOException;
 }

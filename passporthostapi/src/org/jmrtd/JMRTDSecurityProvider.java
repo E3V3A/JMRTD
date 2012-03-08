@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -140,6 +140,14 @@ public class JMRTDSecurityProvider extends Provider
 		return JMRTD_PROVIDER;
 	}
 
+	/**
+	 * Temporarily puts the BC provider on number one in the list of
+	 * providers, until caller calls {@link #endPreferBouncyCastleProvider(int)}.
+	 * 
+	 * @return the index of BC, if it was present, in the list of providers
+	 * 
+	 * @see #endPreferBouncyCastleProvider(int)
+	 */
 	public static int beginPreferBouncyCastleProvider() {
 		Provider bcProvider = getBouncyCastleProvider();
 		if (bcProvider == null) { return -1; }
@@ -155,6 +163,14 @@ public class JMRTDSecurityProvider extends Provider
 		return -1;
 	}
 	
+	/**
+	 * Removes the BC provider from the number one position and puts it back
+	 * at its original position, after a call to {@link #beginPreferBouncyCastleProvider()}.
+	 * 
+	 * @param i the original index of the BC provider
+	 * 
+	 * @see #beginPreferBouncyCastleProvider()
+	 */
 	public static void endPreferBouncyCastleProvider(int i) {
 		Provider bcProvider = getBouncyCastleProvider();
 		Security.removeProvider(bcProvider.getName());
@@ -163,6 +179,11 @@ public class JMRTDSecurityProvider extends Provider
 		}
 	}
 
+	/**
+	 * Gets the BC provider, if present.
+	 * 
+	 * @return the BC provider, the SC provider, or <code>null</code>
+	 */
 	public static Provider getBouncyCastleProvider() {
 		if (BC_PROVIDER != null) { return BC_PROVIDER; }
 		if (SC_PROVIDER != null) { return SC_PROVIDER; }
@@ -170,6 +191,11 @@ public class JMRTDSecurityProvider extends Provider
 		return null;
 	}
 
+	/**
+	 * Gets the SC provider, if present.
+	 * 
+	 * @return the SC provider, the BC provider, or <code>null</code>
+	 */
 	public static Provider getSpongyCastleProvider() {
 		if (SC_PROVIDER != null) { return SC_PROVIDER; }
 		if (BC_PROVIDER != null) { return BC_PROVIDER; }
@@ -177,6 +203,31 @@ public class JMRTDSecurityProvider extends Provider
 		return null;
 	}
 
+	private static Provider getProvider(String serviceName, String algorithmName) {
+		List<Provider> providers = getProviders(serviceName, algorithmName);
+		if (providers != null && providers.size() > 0) {
+			return providers.get(0);
+		}
+		return null;
+	}
+
+	private static List<Provider> getProviders(String serviceName, String algorithmName) {
+		if (Security.getAlgorithms(serviceName).contains(algorithmName)) {
+			Provider[] providers = Security.getProviders(serviceName + "." + algorithmName);
+			return Arrays.asList(providers);
+		}
+		if (BC_PROVIDER != null && BC_PROVIDER.getService(serviceName, algorithmName) != null) {
+			return Collections.singletonList(BC_PROVIDER);
+		}
+		if (SC_PROVIDER != null && SC_PROVIDER.getService(serviceName, algorithmName) != null) {
+			return Collections.singletonList(SC_PROVIDER);
+		}
+		if (JMRTD_PROVIDER != null && JMRTD_PROVIDER.getService(serviceName, algorithmName) != null) {
+			return Collections.singletonList(JMRTD_PROVIDER);
+		}
+		return null;
+	}
+	
 	private static Provider getProviderOrNull(String className) {
 		try {
 			Class<?> providerClass = Class.forName(className);
@@ -193,31 +244,6 @@ public class JMRTDSecurityProvider extends Provider
 			// ie.printStackTrace();
 		} catch (ClassNotFoundException cnfe) {
 			// cnfe.printStackTrace();
-		}
-		return null;
-	}
-
-	public static Provider getProvider(String serviceName, String algorithmName) {
-		List<Provider> providers = getProviders(serviceName, algorithmName);
-		if (providers != null && providers.size() > 0) {
-			return providers.get(0);
-		}
-		return null;
-	}
-
-	public static List<Provider> getProviders(String serviceName, String algorithmName) {
-		if (Security.getAlgorithms(serviceName).contains(algorithmName)) {
-			Provider[] providers = Security.getProviders(serviceName + "." + algorithmName);
-			return Arrays.asList(providers);
-		}
-		if (BC_PROVIDER != null && BC_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(BC_PROVIDER);
-		}
-		if (SC_PROVIDER != null && SC_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(SC_PROVIDER);
-		}
-		if (JMRTD_PROVIDER != null && JMRTD_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(JMRTD_PROVIDER);
 		}
 		return null;
 	}

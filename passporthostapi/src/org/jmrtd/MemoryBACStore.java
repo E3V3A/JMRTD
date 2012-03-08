@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,12 +35,21 @@ import java.util.List;
  * @version $Revision: $
  */
 public class MemoryBACStore implements BACStore {
+
     private List<BACKeySpec> entries;
 
+    /**
+     * Constructs a BAC store.
+     */
     public MemoryBACStore() {
         this(null);
     }
 
+    /**
+     * Constructs a BAC store given another BAC store.
+     * 
+     * @param store the other BAC store
+     */
     public MemoryBACStore(BACStore store) {
         entries = new ArrayList<BACKeySpec>();
         if (store != null) {
@@ -48,10 +57,20 @@ public class MemoryBACStore implements BACStore {
         }
     }
 
+    /**
+     * Gets the entries in this BAC store.
+     * 
+     * @return the list of BAC key entries
+     */
     public List<BACKeySpec> getEntries() {
         return entries;
     }
 
+    /**
+     * Adds a BAC key entry to this BAC store.
+     * 
+     * @param entry the BAC key entry to add
+     */
     public synchronized void addEntry(BACKeySpec entry) {
         if (!entries.contains(entry)) {
             entries.add(entry);
@@ -61,15 +80,33 @@ public class MemoryBACStore implements BACStore {
         }
     }
 
-    public synchronized void addEntry(int i, BACKeySpec entry) {
-        entries.add(i, entry);
+    /**
+     * Adds a BAC key entry to this BAC store at a specific index.
+     * 
+     * @param index the index
+     * @param entry the BAC key entry to add
+     */
+    public synchronized void addEntry(int index, BACKeySpec entry) {
+        entries.add(index, entry);
     }
 
+    /**
+     * Removes a BAC key entry from this BAC store.
+     * 
+     * @param index the index of the BAC key entry to remove
+     */
     public synchronized void removeEntry(int index) {
         entries.remove(index);
     }
 
-    public BACKeySpec getEntry(int entryRowIndex) {
-        return entries.get(entryRowIndex);
+    /**
+     * Gets a BAC key entry from this BAC store.
+     * 
+     * @param index the index of the BAC key entry to get
+     * 
+     * @return a BAC key entry
+     */
+    public BACKeySpec getEntry(int index) {
+        return entries.get(index);
     }
 }

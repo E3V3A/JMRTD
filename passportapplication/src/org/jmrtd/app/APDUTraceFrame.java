@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -51,6 +51,13 @@ import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.IconUtil;
 
+/**
+ * Frame for tracing APDUs.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
+ */
 public class APDUTraceFrame extends JMRTDFrame
 {
 	protected static final Icon CLEAR_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("paintbrush"));
@@ -63,10 +70,18 @@ public class APDUTraceFrame extends JMRTDFrame
 	
 	private APDUListener<CommandAPDU,ResponseAPDU> apduListener;
 
+	/**
+	 * Constructs an APDU trace frame.
+	 */
 	public APDUTraceFrame() {
 		this("APDU trace");
 	}
 	
+	/**
+	 * Constructs an APDU trace frame with a specific title.
+	 * 
+	 * @param title the title to use
+	 */
 	public APDUTraceFrame(String title) {
 		super(title);
 		final APDUTraceFrame frame = this;
@@ -96,7 +111,32 @@ public class APDUTraceFrame extends JMRTDFrame
 		cp.add(toolBar, BorderLayout.NORTH);
 	}
 
-	public synchronized void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
+	/**
+	 * Gets the APDU listener for raw (possibly encrypted APDUs).
+	 * 
+	 * @return an APDU listener
+	 */
+	public APDUListener<CommandAPDU, ResponseAPDU> getRawAPDUListener() {
+		return apduListener;
+	}
+
+	/**
+	 * Gets the APDU listener for plain text (decrypted APDUs)
+	 * 
+	 * @return an APDU listener
+	 */
+	public APDUListener<CommandAPDU, ResponseAPDU> getPlainTextAPDUListener() {
+		return apduListener;
+	}
+
+	/* ONLY PRIVATE METHODS BELOW */
+	
+	/**
+	 * Tell this APDU listener that an APDU was exchanged.
+	 * 
+	 * @param e the event indicating an APDU was exchanged
+	 */
+	private synchronized void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
 		CommandAPDU capdu = e.getCommandAPDU();
 		ResponseAPDU rapdu = e.getResponseAPDU();
 		area.append(e.getType() + ". C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
@@ -104,14 +144,6 @@ public class APDUTraceFrame extends JMRTDFrame
 		area.setCaretPosition(area.getDocument().getLength() - 1);
 	}
 	
-	public APDUListener<CommandAPDU, ResponseAPDU> getRawAPDUListener() {
-		return apduListener;
-	}
-	
-	public APDUListener<CommandAPDU, ResponseAPDU> getPlainTextAPDUListener() {
-		return apduListener;
-	}
-
 	private JMenu createFileMenu() {
 		JMenu menu = new JMenu("File");
 		menu.add(getSaveAsAction());

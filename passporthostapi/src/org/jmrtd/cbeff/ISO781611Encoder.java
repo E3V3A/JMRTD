@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,10 +41,23 @@ public class ISO781611Encoder<B extends BiometricDataBlock> implements ISO781611
 
 	private BiometricDataBlockEncoder<B> bdbEncoder;
 	
+	/**
+	 * Constructs an ISO7816-11 encoder that uses the given BDB encoder.
+	 * 
+	 * @param bdbEncoder the BDB encoder to use
+	 */
 	public ISO781611Encoder(BiometricDataBlockEncoder<B> bdbEncoder) {
 		this.bdbEncoder = bdbEncoder;
 	}
 	
+	/**
+	 * Writes a BIT group to an output stream.
+	 * 
+	 * @param cbeffInfo a CBEFF info containing the BIT group
+	 * @param out the output stream to write to
+	 * 
+	 * @throws IOException if something goes wrong
+	 */
 	public void encode(CBEFFInfo cbeffInfo, OutputStream out) throws IOException {
 		if (cbeffInfo instanceof SimpleCBEFFInfo) {
 			writeBITGroup(Arrays.asList(new CBEFFInfo[] { cbeffInfo }), out);

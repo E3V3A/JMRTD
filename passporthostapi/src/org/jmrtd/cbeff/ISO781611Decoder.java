@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,6 +39,8 @@ import net.sourceforge.scuba.tlv.TLVUtil;
  * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: $
+ * 
+ * @since 0.4.7
  */
 public class ISO781611Decoder implements ISO781611 {
 
@@ -46,14 +48,37 @@ public class ISO781611Decoder implements ISO781611 {
 	
 	private BiometricDataBlockDecoder<?> bdbDecoder;
 	
+	/**
+	 * Constructs an ISO7816-11 decoder that uses the given BDB decoder.
+	 * 
+	 * @param bdbDecoder the BDB decoder to use
+	 */
 	public ISO781611Decoder(BiometricDataBlockDecoder<?> bdbDecoder) {
 		this.bdbDecoder = bdbDecoder;
 	}
-	
+
+	/**
+	 * Reads a BIT group from an input stream.
+	 * 
+	 * @param in the input stream to read from
+	 * 
+	 * @return a complex CBEFF info representing the BIT group
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	public ComplexCBEFFInfo decode(InputStream in) throws IOException {
 		return readBITGroup(in);
 	}
-	
+
+	/**
+	 * Reads a BIT group from an input stream.
+	 * 
+	 * @param in the input stream to read from
+	 * 
+	 * @return a complex CBEFF info representing the BIT group
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	private ComplexCBEFFInfo readBITGroup(InputStream in) throws IOException {
 		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int tag = tlvIn.readTag();
@@ -71,7 +96,7 @@ public class ISO781611Decoder implements ISO781611 {
 		if (tag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
 			throw new IllegalArgumentException("Expected tag " + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ", found " + Integer.toHexString(tag));
 		}
-		int bitGroupLength = tlvIn.readLength();
+		/* int bitGroupLength = */ tlvIn.readLength();
 		int bitCountTag = tlvIn.readTag();
 		if (bitCountTag != BIOMETRIC_INFO_COUNT_TAG) { /* 02 */
 			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFO_COUNT_TAG (" + Integer.toHexString(BIOMETRIC_INFO_COUNT_TAG) + ") in CBEFF structure, found " + Integer.toHexString(bitCountTag));
@@ -89,7 +114,17 @@ public class ISO781611Decoder implements ISO781611 {
 		
 		return result;
 	}
-	
+
+	/**
+	 * Reads a BIT from the input stream.
+	 * 
+	 * @param in the input stream to read from
+	 * @param index index of this BIT within the BIT group
+	 * 
+	 * @return a CBEFF info representing the BIT
+	 * 
+	 * @throws IOException if reading fails
+	 */
 	private CBEFFInfo readBIT(InputStream in, int index) throws IOException {
 		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		int tag = tlvIn.readTag();

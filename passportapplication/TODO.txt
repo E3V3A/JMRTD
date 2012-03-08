@@ -129,7 +129,6 @@ General
 + Patches and feedback by various people (thanks!)
 
 Dependencies
-- Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
 + Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken)
 + Latest Bouncy Castle 1.46
 + Latest cert-cvc 1.2.12 (with patch to OIDField)
@@ -148,6 +147,10 @@ General
 + Abstraction of SCUBA smartcard layer.
 + Implementation of SCUBA smartcard layer for j2se and Android.
 + Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
+- Document number > 9 digits. MRZ document number field "spill over" to optional information field). Check docs.
+- Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
+- Pim Vullers has CardManager patches?
+- JPEG2000 on MacOS X
 
 LDS
 + Move progressive mode stuff out of FaceInfo
@@ -164,6 +167,7 @@ GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
 + User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
 + Show DG3 and DG4 in tree if present, even if not readable.
+- MacOS X: Top menu, About dialog, AppData dir (in FileUtil)
 
 Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max)

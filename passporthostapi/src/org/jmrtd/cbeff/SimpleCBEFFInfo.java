@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2011  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,15 +32,27 @@ package org.jmrtd.cbeff;
  * @version $Revision: $
  * 
  * @param <B> the embedded BDB
+ * 
+ * @since 0.4.7
  */
 public class SimpleCBEFFInfo<B extends BiometricDataBlock> implements CBEFFInfo {
 
 	private B bdb;
 	
+	/**
+	 * Constructs a simple CBEFF info from the given BDB.
+	 * 
+	 * @param bdb a biometric data block
+	 */
 	public SimpleCBEFFInfo(B bdb) {
 		this.bdb = bdb;
 	}
 	
+	/**
+	 * Gets the biometric data block from this simple CBEFF info.
+	 * 
+	 * @return a biometric data block
+	 */
 	public B getBiometricDataBlock() {
 		return bdb;
 	}
