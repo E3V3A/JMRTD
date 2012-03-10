@@ -138,7 +138,7 @@ public class UploadOptionsChooser // extends JComponent
 	private class UploadOptionsPanel extends JPanel
 	{
 		private static final long serialVersionUID = 961491777511960967L;
-		private JComboBox<CardTerminal> terminalsComboBox;
+		private JComboBox terminalsComboBox;
 		private JCheckBox bacCheckBox, aaCheckBox;
 		private BACEntryField bacEntryField;
 		private JTextField fileTF;
@@ -147,7 +147,7 @@ public class UploadOptionsChooser // extends JComponent
 		public UploadOptionsPanel(BACKeySpec bacEntry, PublicKey aaPublicKey) {
 			super(new BorderLayout());
 			JPanel northPanel = new JPanel();
-			terminalsComboBox = new JComboBox<CardTerminal>();
+			terminalsComboBox = new JComboBox();
 			northPanel.add(new JLabel("Terminal: "));
 			northPanel.add(terminalsComboBox);
 
