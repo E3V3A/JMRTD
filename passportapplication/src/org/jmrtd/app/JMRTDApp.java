@@ -126,6 +126,10 @@ import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
+import com.apple.eawt.Application;
+import com.apple.eawt.ApplicationAdapter;
+import com.apple.eawt.ApplicationEvent;
+
 /**
  * Simple graphical application to demonstrate the
  * JMRTD passport host API.
@@ -184,6 +188,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		}
 	}
 
+	/* FIXME: I know, it's ugly. */
+	private boolean isMacOSX;
+
 	private ActionMap actionMap;
 
 	private Container contentPane;
@@ -199,13 +206,15 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	 *
 	 * @param arg command line arguments, are ignored for now.
 	 */
-	public JMRTDApp() {
-		try {			
+	public JMRTDApp(boolean isMacOSX) {
+		try {	
 			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
 			SCFactory apduFactory = new SCFactory();
 			sc.init(apduFactory);
 			actionMap = new ActionMap();
 			cardManager = CardManager.getInstance();
+
+			this.isMacOSX = isMacOSX;
 
 			this.bacStore = new FileBACStore();
 			trustManager = new MRTDTrustStore();
@@ -248,6 +257,8 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			menuBar.add(createToolsMenu());
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
+
+			
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
@@ -273,7 +284,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			throw new IllegalStateException(e);
 		}
 	}
-
+	
 	private Map<CardTerminal, Boolean> getTerminalPollingMap() {
 		Map<CardTerminal, Boolean> terminalPollingMap = new HashMap<CardTerminal, Boolean>();
 		List<CardTerminal> terminals = cardManager.getTerminals();
@@ -424,9 +435,14 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 
 	private JMenu createHelpMenu() {
 		JMenu menu = new JMenu("Help");
-		JMenuItem aboutItem = new JMenuItem();
-		aboutItem.setAction(getAboutAction());
-		menu.add(aboutItem);
+		if (isMacOSX) {
+			/* Mac OS X "About" goes in the JMRTD menu */
+			new MacOSAboutHandler();
+		} else {
+			JMenuItem aboutItem = new JMenuItem();
+			aboutItem.setAction(getAboutAction());
+			menu.add(aboutItem);
+		}
 		return menu;
 	}
 
@@ -619,35 +635,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			private static final long serialVersionUID = 1528395261878587434L;
 
 			public void actionPerformed(ActionEvent e) {
-				URL readMeFile = null;
-				try {
-					readMeFile = new URL(FileUtil.getBaseDir(getClass()) + "/README");
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
-				ImageIcon aboutJMRTDImageIcon = null;
-				Image aboutJMRTDImage = IconUtil.getImage(ABOUT_JMRTD_LOGO, getClass());
-				if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
-
-				try {
-					JTextArea area = new JTextArea(25, 40);
-					// HIER
-					if (readMeFile == null) { throw new Exception("Could not open README file"); }
-					BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
-					while (true) {
-						String line = in.readLine();
-						if (line == null) { break; }
-						area.append("  " + line.trim());
-						area.append("\n");
-					}
-					in.close();
-					area.setCaretPosition(0);
-					area.setEditable(false);
-					JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-					JOptionPane.showMessageDialog(contentPane, ABOUT_JMRTD_DEFAULT_TEXT, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
-				}
+				showAboutDialog();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, INFORMATION_ICON);
@@ -658,6 +646,38 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		return action;
 	}
 
+	private void showAboutDialog() {
+		URL readMeFile = null;
+		try {
+			readMeFile = new URL(FileUtil.getBaseDir(getClass()) + "/README");
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
+		ImageIcon aboutJMRTDImageIcon = null;
+		Image aboutJMRTDImage = IconUtil.getImage(ABOUT_JMRTD_LOGO, getClass());
+		if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
+
+		try {
+			JTextArea area = new JTextArea(25, 40);
+			// HIER
+			if (readMeFile == null) { throw new Exception("Could not open README file"); }
+			BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
+			while (true) {
+				String line = in.readLine();
+				if (line == null) { break; }
+				area.append("  " + line.trim());
+				area.append("\n");
+			}
+			in.close();
+			area.setCaretPosition(0);
+			area.setEditable(false);
+			JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			JOptionPane.showMessageDialog(contentPane, ABOUT_JMRTD_DEFAULT_TEXT, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
+		}
+	}
+	
 	/**
 	 * Creates passport from scratch.
 	 * 
@@ -769,6 +789,20 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		X509Certificate certificate = (X509Certificate)certGenerator.generate(privateKey, "BC");
 		return certificate;
 	}
+	
+	private class MacOSAboutHandler extends Application {
+
+	    public MacOSAboutHandler() {
+	        addApplicationListener(new AboutBoxHandler());
+	    }
+
+	    class AboutBoxHandler extends ApplicationAdapter {
+	        public void handleAbout(ApplicationEvent event) {
+	            showAboutDialog();
+	            event.setHandled(true);
+	        }
+	    }
+	}
 
 	/**
 	 * Main method creates an instance.
@@ -785,9 +819,10 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
 					LOGGER.info("OS name = " + osName);
 					LOGGER.info("System look and feel class name = " + systemLookAndFeelClassName);
+					boolean isMacOSX = false;
 					if (osName.contains("Windows")) {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					} else if (osName.contains("Mac")) {
+					} else if (osName.contains("Mac") || System.getProperty("mrj.version") != null) {
 						/* Better to set these on command line (in jmrtd.sh for MacOS X):
 						 * 
 						 * java -Dcom.apple.macos.useScreenMenuBar=true \
@@ -800,8 +835,9 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 						System.setProperty("apple.laf.useScreenMenuBar", "true");
 						System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+						isMacOSX = true;
 					}
-					new JMRTDApp();
+					new JMRTDApp(isMacOSX);
 				} catch (ClassNotFoundException e) {
 					e.printStackTrace();
 				} catch (InstantiationException e) {
