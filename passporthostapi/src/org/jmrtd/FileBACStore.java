@@ -41,7 +41,7 @@ import net.sourceforge.scuba.util.FileUtil;
 /**
  * Flat file based database for BAC entries.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: $
  */

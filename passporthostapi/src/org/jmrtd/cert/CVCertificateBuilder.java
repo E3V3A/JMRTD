@@ -37,8 +37,37 @@ import org.ejbca.cvc.exception.ConstructionException;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 
-public class CVCertificateBuilder
-{
+/**
+ * Card verifiable certificate builder.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
+public class CVCertificateBuilder {
+
+	/**
+	 * Card verifiable certificate factory method.
+	 * 
+	 * @param publicKey the public key
+	 * @param signerKey private key
+	 * @param algorithmName algorithm name
+	 * @param caRef CA principal
+	 * @param holderRef holder principal
+	 * @param authZTemplate authorization template
+	 * @param validFrom valid from date
+	 * @param validTo valid to date
+	 * @param provider provider name
+	 * 
+	 * @return a card verifiable certificate
+	 *
+	 * @throws IOException on error
+	 * @throws NoSuchAlgorithmException on unknown algorithm
+	 * @throws NoSuchProviderException  on unknown provider
+	 * @throws InvalidKeyException on invalid key
+	 * @throws SignatureException on error creating signature
+	 * @throws ConstructionException on error constructing the certificate
+	 */
 	public static CardVerifiableCertificate createCertificate(PublicKey publicKey,
 			PrivateKey signerKey, String algorithmName, CVCPrincipal caRef,
 			CVCPrincipal holderRef, CVCAuthorizationTemplate authZTemplate, Date validFrom, Date validTo,

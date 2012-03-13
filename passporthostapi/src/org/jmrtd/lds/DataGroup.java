@@ -30,7 +30,7 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
- * Super class for data group files.
+ * Abstract base class for data group files.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 

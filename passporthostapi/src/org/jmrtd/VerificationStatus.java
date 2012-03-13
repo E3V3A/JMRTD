@@ -29,8 +29,15 @@ package org.jmrtd;
  * 
  * @version $Revision$
  */
-public class VerificationStatus
-{
+public class VerificationStatus {
+
+	/**
+	 * Outcome of a verification process.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 *
+	 * @version $Revision$
+	 */
 	public enum Verdict {
 		UNKNOWN,	/* Not present or not checked */
 		SUCCEEDED,	/* Present, checked, and ok */

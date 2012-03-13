@@ -40,7 +40,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  * A facial record consists of a facial record header and one or more facial record datas.
  * See 5.1 of ISO 19794-5.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.nl)
+ * @author The JMRTD team (info@jmrtd.org)
  */
 public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBlock {
 

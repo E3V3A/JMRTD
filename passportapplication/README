@@ -10,9 +10,9 @@ Contributors
 
    Cees-Bart Breunesse
    Dirk-Jan van Dijk
-   Tomas Gustavsson (http://ejbca.org)
+   Tomas Gustavsson
    Engelbert Hubbers
-   Adam Laurie (http://rfidiot.org)
+   Adam Laurie
    Wojciech Mostowski
    Martijn Oostdijk
    Erik Poll
@@ -20,7 +20,10 @@ Contributors
    Julien Schmaltz
    Jan Tretmans
    Ronny Wichers Schreur
-   
+   Max Guenther
+   Pim Vullers
+   (and whoever I forget to mention here, ... sorry)
+
    Contact us via info@jmrtd.org.
 
 License
@@ -37,15 +40,17 @@ Files
 Dependencies (might be included in distribution)
 
    * Requires jdk1.6.
+   
+   * Project SCUBA:
+        This is the low level smart card reader stuff.
+        See http://scuba.sourceforge.net/.
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath.
-        Tested with bcprov-jdk16-144.jar.
         URL: http://www.bouncycastle.org/
 
    * EJBCA Cert-CVC:
         The cert-cvc.jar needs to be in classpath.
-        Tested with version cert-cvc 1.2.8.
         URL: http://ejbca.org/
 
    * JAI ImageIO for interpreting JPEG 2000 data:
@@ -59,20 +64,12 @@ Dependencies (might be included in distribution)
 
 Optional stuff (may be necessary for building the project)
 
-   * Project SCUBA:
-        This is the low level smart card reader stuff.
-        See http://scuba.sourceforge.net/.
-
    * ApduIO, Java Card simulator:
-        Tested with version 2.2.2.
         When making from source, expects a copy or link to apduio.jar (or stub) in lib directory.
         The Java Card Kit is closed source software from Sun Microsystems, Inc.
         See http://java.sun.com/javacard/devkit/.
 
    * JCOP toolset:
-        Tested with version 3.1.1.
-        Tested with version 3.1.2.
-        Tested with version 3.2.7.
         When making from source, expects a copy or link to offcard.jar (or stub) in lib directory.
         The JCOP plugin for Eclipse is proprietary software from NXP Semiconductors.
 
@@ -83,4 +80,3 @@ Optional stuff (may be necessary for building the project)
    * RFIDIOt
         mrpkey.py command line tool for testing/reading/writing/cloning
         See http://rfidiot.org/.
-

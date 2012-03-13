@@ -34,8 +34,8 @@ import net.sourceforge.scuba.util.Hex;
  *
  * @version $Revision$
  */
-public class AAEvent extends EventObject
-{	
+public class AAEvent extends EventObject {
+
 	private static final long serialVersionUID = 3597146485237004531L;
 
 	private PublicKey pubkey;

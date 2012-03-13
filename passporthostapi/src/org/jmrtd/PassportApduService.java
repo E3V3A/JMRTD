@@ -55,14 +55,17 @@ import net.sourceforge.scuba.util.Hex;
  * <li><code>READ BINARY</code> (using secure messaging)</li>
  * </ul>
  * 
- * @author Cees-Bart Breunesse (ceesb@riscure.com)
+ * @param <C> the command APDU class to use
+ * @param <R> the response APDU class to use
+ * 
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
-public class PassportApduService<C,R> extends CardService<C,R>
-{
+public class PassportApduService<C,R> extends CardService<C,R> {
+
 	private static final long serialVersionUID = 2451509825132976178L;
 	
 	/** The applet we select when we start a session. */

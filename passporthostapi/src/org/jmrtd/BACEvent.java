@@ -31,8 +31,8 @@ import java.util.EventObject;
  *
  * @version $Revision$
  */
-public class BACEvent extends EventObject
-{	
+public class BACEvent extends EventObject {
+
 	private static final long serialVersionUID = 3409319064431094270L;
 
 	private PassportService service;

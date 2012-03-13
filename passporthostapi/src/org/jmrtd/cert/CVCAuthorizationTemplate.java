@@ -22,8 +22,22 @@
 
 package org.jmrtd.cert;
 
-public class CVCAuthorizationTemplate
-{
+/**
+ * Card verifiable certificate authorization template.
+ *  
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
+public class CVCAuthorizationTemplate {
+
+	/**
+	 * The issuing authority.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 *
+	 * @version $Revision: $
+	 */
 	public enum Role {
 		CVCA  (0xC0),
 		DV_D  (0x80),
@@ -46,6 +60,13 @@ public class CVCAuthorizationTemplate
 		}
 	}
 
+	/**
+	 * The authorization permission.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 *
+	 * @version $Revision: $
+	 */
 	public enum Permission
 	{
 		READ_ACCESS_NONE        (0x00),
@@ -59,6 +80,13 @@ public class CVCAuthorizationTemplate
 			this.value = (byte)value;
 		}
 
+		/**
+		 * Whether this permission implies the other permission.
+		 * 
+		 * @param other some other permission
+		 * 
+		 * @return a boolean
+		 */
 		public boolean implies(Permission other) {
 			switch (this) {
 			case READ_ACCESS_NONE: return other == READ_ACCESS_NONE;

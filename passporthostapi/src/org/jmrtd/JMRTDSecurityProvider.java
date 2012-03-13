@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  *    </li>
  * </ul>
  *
- * @author JMRTD team (info@jmrtd.org)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */

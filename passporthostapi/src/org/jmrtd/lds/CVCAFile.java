@@ -29,8 +29,14 @@ import java.io.OutputStream;
 
 import org.jmrtd.cert.CVCPrincipal;
 
+/**
+ * File structure for CVCA file (on EAC protected documents).
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
+ */
 /* TODO: Use CVCPrincipal instead of String for references? */
-
 public class CVCAFile extends LDSFile
 {
 	public static final byte CAR_TAG = 0x42;

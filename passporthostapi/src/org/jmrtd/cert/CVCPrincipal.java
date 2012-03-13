@@ -35,8 +35,8 @@ import net.sourceforge.scuba.data.Country;
  *
  * @version $Revision: $
  */
-public class CVCPrincipal implements Principal, Serializable
-{
+public class CVCPrincipal implements Principal, Serializable {
+
 	private static final long serialVersionUID = -4905647207367309688L;
 
 	private Country country;

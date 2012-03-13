@@ -246,8 +246,8 @@
 				windowtitle="${lib_title}"
 				header="${lib_title}"
 				packagenames="org.jmrtd,net.sourceforge.scuba.data,net.sourceforge.scuba.smartcards,net.sourceforge.scuba.smartcards.indep,net.sourceforge.scuba.tlv">
-			<link href="http://download.oracle.com/javase/6/docs/api/" />
-			<link href="http://download.oracle.com/javase/6/docs/jre/api/security/smartcardio/spec/" />
+			<link href="http://download.oracle.com/javase/7/docs/api/" />
+			<link href="http://download.oracle.com/javase/7/docs/jre/api/security/smartcardio/spec/" />
 			<link href="${bcprov_api_url}" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->

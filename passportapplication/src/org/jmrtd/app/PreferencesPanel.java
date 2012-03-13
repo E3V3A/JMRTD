@@ -90,7 +90,7 @@ public class PreferencesPanel extends JPanel
 	private URIListEditor cscaLocationsDisplay, cvcaLocationsDisplay;
 
 	private Collection<ChangeListener> changeListeners;
-
+	
 	/**
 	 * Creates the preferences panel.
 	 * 
@@ -156,7 +156,6 @@ public class PreferencesPanel extends JPanel
 		apduTracingCheckBox.setAction(getSetAPDUTracingAction(apduTracingCheckBox));
 		apduTracePreferencesPanel.add(apduTracingCheckBox);
 		apduTracePreferencesPanel.setBorder(BorderFactory.createTitledBorder("APDU Tracing"));
-
 
 		JPanel northPanel = new JPanel(new FlowLayout());
 		northPanel.add(readingModePreferencesPanel);

@@ -1,4 +1,4 @@
-JMRTD/SCUBA TODO (it's not a changelog, it's not a roadmap, it's a TODO file)
+JMRTD/SCUBA TODO (it's not a changelog or backlog, it's not a roadmap, it's just a TODO file)
 
 
 VERSION 0.0.1 (2006-08-17)
@@ -150,7 +150,8 @@ General
 - Document number > 9 digits. MRZ document number field "spill over" to optional information field). Check docs.
 - Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
 - Pim Vullers has CardManager patches?
-- JPEG2000 on MacOS X
+- JPEG2000 on MacOS X (jj2000 fails, why?)
+- 32 bit Mach-O dylib for WSQ on MacOS X
 
 LDS
 + Move progressive mode stuff out of FaceInfo
@@ -234,7 +235,6 @@ SCUBA support (for exotic card readers, etc.)
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (see also http://alud.sourceforge.net/, can we JNI wrap this?).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
-- Dynamically handle connect/disconnect terminals. Pim Vullers has a patch for this.
 - Check abstraction of smartcardio.
 
 Website and documentation

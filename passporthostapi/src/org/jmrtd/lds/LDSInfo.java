@@ -25,7 +25,7 @@ package org.jmrtd.lds;
 /**
  * Interface for all data structures in the LDS.
  * 
- * @author The JMRTD Team (info@jmrtd.org)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */

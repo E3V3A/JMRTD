@@ -96,10 +96,12 @@ import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CardTerminalEvent;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
 import net.sourceforge.scuba.smartcards.SCFactory;
 import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
+import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 
@@ -202,11 +204,8 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
 			SCFactory apduFactory = new SCFactory();
 			sc.init(apduFactory);
-
 			actionMap = new ActionMap();
-
 			cardManager = CardManager.getInstance();
-			addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
 
 			this.bacStore = new FileBACStore();
 			trustManager = new MRTDTrustStore();
@@ -252,7 +251,21 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
+			addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
 			cardManager.addCardTerminalListener(this);
+			cardManager.addTerminalFactoryListener(new TerminalFactoryListener() {
+				@Override
+				public void cardTerminalAdded(CardTerminalEvent cte) {
+					CardTerminal terminal = cte.getTerminal();
+					LOGGER.info("Added card terminal " + terminal.getName());
+				}
+
+				@Override
+				public void cardTerminalRemoved(CardTerminalEvent cte) {
+					CardTerminal terminal = cte.getTerminal();
+					LOGGER.info("Removed card terminal " + terminal.getName());					
+				}				
+			});
 			updateFromPreferences();
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */

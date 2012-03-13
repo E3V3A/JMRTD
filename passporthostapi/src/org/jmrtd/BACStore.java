@@ -27,12 +27,12 @@ import java.util.List;
 /**
  * Interface for persistent storage of BAC keys.
  * 
- * @author The JRMTD team (info@jmrtd.org)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */
 public interface BACStore {
-	
+
 	/**
 	 * Gets the entries in this BAC store.
 	 * 

@@ -49,7 +49,10 @@ import org.jmrtd.lds.MRZInfo;
  */
 public class Util {
 
+	/** Encrypt mode. */
 	public static final int ENC_MODE = 1;
+	
+	/** MAC mode. */
 	public static final int MAC_MODE = 2;
 
 	private Util() {

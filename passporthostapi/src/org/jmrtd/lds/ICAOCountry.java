@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import net.sourceforge.scuba.data.Country;
 
 /**
+ * Special ICAO countries not covered in {@link net.sourceforge.scuba.data.ISOCountry}.
  * Contributed by Aleksandar Kamburov (wise_guybg).
  * 
  * @author Aleksandar Kamburov (wise_guybg)

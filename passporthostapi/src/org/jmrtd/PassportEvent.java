@@ -29,7 +29,7 @@ import java.util.EventObject;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Id$
+ * @version $Revision$
  */
 public class PassportEvent extends EventObject
 {

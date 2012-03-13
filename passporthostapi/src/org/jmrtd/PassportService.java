@@ -32,7 +32,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
@@ -85,8 +84,11 @@ import org.jmrtd.lds.MRZInfo;
  *        readFile(...)&lt;sup&gt;*&lt;/sup&gt; ==&gt;&lt;br /&gt;
  *        close()
  * </pre>
- * 
- * @author Cees-Bart Breunesse (ceesb@riscure.com)
+ *
+ * @param <C> the command APDU class to use
+ * @param <R> the response APDU class to use
+ *
+ * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 

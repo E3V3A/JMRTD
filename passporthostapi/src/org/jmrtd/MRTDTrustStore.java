@@ -62,7 +62,7 @@ import org.jmrtd.cert.PKDMasterListCertStoreParameters;
  * Provides lookup for certificates, keys, CRLs used in
  * document validation and access control for data groups.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: $
  */

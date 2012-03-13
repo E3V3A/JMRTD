@@ -94,13 +94,16 @@ import org.jmrtd.lds.SecurityInfo;
  * 
  * Also contains the document verification logic.
  * 
+ * @param <C> the command APDU class to use
+ * @param <R> the response APDU class to use
+ * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision: $
  */
-public class Passport<C, R>
-{
+public class Passport<C, R> {
+
 	private static final int BUFFER_SIZE = 243;
 
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
@@ -1202,6 +1205,13 @@ public class Passport<C, R>
 		}
 	}
 
+	/**
+	 * Document processing progress listener interface.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 *
+	 * @version $Revision: $
+	 */
 	public interface ProgressListener {
 		void changed(int progress, int max);
 	}

@@ -30,7 +30,7 @@ import java.util.List;
  *
  * Contributed by Aleksandar Kamburov (wise_guybg).
  *
- * @author JMRTD team (info@jmrtd.org)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: $
  */

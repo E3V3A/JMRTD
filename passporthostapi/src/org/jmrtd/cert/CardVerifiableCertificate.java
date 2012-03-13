@@ -51,9 +51,13 @@ import org.ejbca.cvc.ReferenceField;
  * 
  * We also hide some of the internal structure (no more calls to get the "body" just to get some
  * attributes).
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ * 
+ * @version $Revision: $
  */
-public class CardVerifiableCertificate extends Certificate
-{
+public class CardVerifiableCertificate extends Certificate {
+
 	private static final long serialVersionUID = -3585440601605666288L;
 
 	/** The EJBCA CVC that we wrap. */
