@@ -42,8 +42,8 @@ import org.jmrtd.BACKeySpec;
  *
  * @version $Revision: 764 $
  */
-public class BACEntryField extends Box implements BACEntrySource
-{
+public class BACEntryField extends Box implements BACEntrySource {
+
 	private static final long serialVersionUID = 6780286228880496605L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");

@@ -25,43 +25,20 @@ package org.jmrtd.app;
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
-import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.InputStreamReader;
-import java.math.BigInteger;
 import java.net.URI;
-import java.net.URL;
-import java.security.GeneralSecurityException;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.Provider;
-import java.security.PublicKey;
 import java.security.Security;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.X509Certificate;
-import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.prefs.Preferences;
 
-import javax.imageio.ImageIO;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
@@ -80,8 +57,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -89,9 +64,6 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.data.TestCountry;
 import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
@@ -105,42 +77,24 @@ import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
 import org.jmrtd.BACStore;
 import org.jmrtd.FileBACStore;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
-import org.jmrtd.app.PreferencesPanel.ReadingMode;
-import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.DG1File;
-import org.jmrtd.lds.DG2File;
-import org.jmrtd.lds.DataGroup;
-import org.jmrtd.lds.FaceImageInfo;
-import org.jmrtd.lds.FaceImageInfo.EyeColor;
-import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
-import org.jmrtd.lds.FaceInfo;
-import org.jmrtd.lds.LDSFile;
-import org.jmrtd.lds.MRZInfo;
-import org.jmrtd.lds.SODFile;
-
-import com.apple.eawt.Application;
-import com.apple.eawt.ApplicationAdapter;
-import com.apple.eawt.ApplicationEvent;
+import org.jmrtd.app.PreferencesDialog.ReadingMode;
 
 /**
  * Simple graphical application to demonstrate the
  * JMRTD passport host API.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
- * @author Wojciech Mostowski (woj@cs.ru.nl)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: 894 $
  */
-public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
-{
+public class JMRTDApp {
+
 	private static final String MAIN_FRAME_TITLE = "Main";
 
 	private static final Icon CSCA_ANCHORS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("anchor"));
@@ -150,13 +104,6 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	private static final Icon RELOAD_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("arrow_rotate_clockwise"));
 	private static final Icon PREFERENCES_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("wrench"));
 	private static final Icon INFORMATION_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("information"));
-
-	private static final String ABOUT_JMRTD_DEFAULT_TEXT = "JMRTD is brought to you by the JMRTD team!\nVisit http://jmrtd.org/ for more information.";
-	private static final String ABOUT_JMRTD_LOGO = "jmrtd_logo-100x100";
-
-	private static final Calendar CALENDAR = Calendar.getInstance(); 
-
-	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	public static final String
 	READING_MODE_KEY = "mode.reading",
@@ -193,11 +140,13 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 
 	private ActionMap actionMap;
 
-	private Container contentPane;
+	private JFrame mainFrame;
 	private CardManager cardManager;
-	private PreferencesPanel preferencesPanel;
 	private BACStore bacStore;
 	private MRTDTrustStore trustManager;
+
+	private AboutDialog aboutDialog;
+	private PreferencesDialog preferencesDialog;
 
 	private APDUTraceFrame apduTraceFrame;
 
@@ -216,16 +165,22 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 
 			this.isMacOSX = isMacOSX;
 
+			mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
+
+			aboutDialog = new AboutDialog(mainFrame);
+			aboutDialog.pack();
+
 			this.bacStore = new FileBACStore();
 			trustManager = new MRTDTrustStore();
 
-			preferencesPanel = new PreferencesPanel(getTerminalPollingMap(), this.getClass());
-			preferencesPanel.addChangeListener(new ChangeListener() {
+			preferencesDialog = new PreferencesDialog(mainFrame, getTerminalPollingMap(), this.getClass());
+			preferencesDialog.addChangeListener(new ChangeListener() {
 				public void stateChanged(ChangeEvent e) {
 					updateFromPreferences();
 				}
 			});
-			if (preferencesPanel.isBackingStoreNew()) {
+			preferencesDialog.pack();
+			if (preferencesDialog.isBackingStoreNew()) {
 				/*
 				 * If there are no previously saved preferences, we have some
 				 * suggestions, e.g. the CSCA trust store that
@@ -240,13 +195,12 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					defaultCSCAURI = baseDir.resolve("csca.ks");
 				}
 				LOGGER.info("Adding " + defaultCSCAURI.toString() + " as CSCA store.");
-				preferencesPanel.addCSCAStoreLocation(defaultCSCAURI);
+				preferencesDialog.addCSCAStoreLocation(defaultCSCAURI);
 				/* NOTE: GUI will perhaps need updating, delay until end of constructor. */
 			}
 			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
 
-			final JFrame mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
-			contentPane = mainFrame.getContentPane();
+			Container contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
 			contentPane.add(bacStorePanel, BorderLayout.CENTER);
 
@@ -258,12 +212,37 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
 
-			
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
-			addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
-			cardManager.addCardTerminalListener(this);
+			try {
+				addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
+			} catch (Exception e) {
+				LOGGER.warning("Not adding ACR terminal provider: " + e.getMessage());
+			}
+			cardManager.addCardTerminalListener(new CardTerminalListener<CommandAPDU, ResponseAPDU>() {
+				@Override
+				public void cardInserted(CardEvent<CommandAPDU, ResponseAPDU> ce) {
+					try {
+						PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
+						if (apduTraceFrame != null) {
+							service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
+						}
+						service.open();
+						readPassport(service);
+					} catch (Exception e) {
+						e.printStackTrace();
+					}
+				}
+
+				@Override
+				public void cardRemoved(CardEvent<CommandAPDU, ResponseAPDU> ce) {
+					CardService<CommandAPDU, ResponseAPDU> service = ce.getService();
+					if (service != null) {
+						service.close();
+					}
+				}
+			});
 			cardManager.addTerminalFactoryListener(new TerminalFactoryListener() {
 				@Override
 				public void cardTerminalAdded(CardTerminalEvent cte) {
@@ -275,7 +254,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 				public void cardTerminalRemoved(CardTerminalEvent cte) {
 					CardTerminal terminal = cte.getTerminal();
 					LOGGER.info("Removed card terminal " + terminal.getName());					
-				}				
+				}
 			});
 			updateFromPreferences();
 		} catch (Exception e) {
@@ -284,7 +263,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			throw new IllegalStateException(e);
 		}
 	}
-	
+
 	private Map<CardTerminal, Boolean> getTerminalPollingMap() {
 		Map<CardTerminal, Boolean> terminalPollingMap = new HashMap<CardTerminal, Boolean>();
 		List<CardTerminal> terminals = cardManager.getTerminals();
@@ -302,14 +281,14 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	private void updateFromPreferences() {
 		List<CardTerminal> terminals = cardManager.getTerminals();
 		for (CardTerminal terminal: terminals) {
-			if (preferencesPanel.isTerminalChecked(terminal)) {
+			if (preferencesDialog.isTerminalChecked(terminal)) {
 				if (!cardManager.isPolling(terminal)) { cardManager.startPolling(terminal); }
 			} else {
 				if (cardManager.isPolling(terminal)) { cardManager.stopPolling(terminal); }
 			}
 		}
 
-		if (preferencesPanel.isAPDUTracing()) {
+		if (preferencesDialog.isAPDUTracing()) {
 			if (apduTraceFrame == null) {
 				apduTraceFrame = new APDUTraceFrame("APDU trace");
 			}
@@ -324,8 +303,8 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			}
 		}
 		trustManager.clear();
-		trustManager.addCSCAStores(preferencesPanel.getCSCAStoreLocations());
-		trustManager.addCVCAStores(preferencesPanel.getCVCAStoreLocations());
+		trustManager.addCSCAStores(preferencesDialog.getCSCAStoreLocations());
+		trustManager.addCVCAStores(preferencesDialog.getCVCAStoreLocations());
 	}
 
 	private void addMRZKeyListener(JFrame frame, KeyListener l) {
@@ -350,26 +329,6 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		}
 	}
 
-	public void cardInserted(CardEvent<CommandAPDU, ResponseAPDU> ce) {
-		try {
-			PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
-			if (apduTraceFrame != null) {
-				service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
-			}
-			service.open();
-			readPassport(service);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void cardRemoved(CardEvent<CommandAPDU, ResponseAPDU> ce) {
-		CardService<CommandAPDU, ResponseAPDU> service = ce.getService();
-		if (service != null) {
-			service.close();
-		}
-	}
-
 	/**
 	 * Reads the passport from a service by attempting to
 	 * perform BAC and firing up a PassportFrame.
@@ -380,14 +339,14 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
 		try {
 			Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
-			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesPanel.getReadingMode());
+			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
 		} catch (CardServiceException cse) {
 			String errMessage = cse.getMessage();
 			if (errMessage.contains("BAC") && errMessage.contains("denied")) {
 				System.out.println("This would be a good place to tell the GUI user that BAC failed");
-				JOptionPane.showMessageDialog(contentPane, "BAC failed", "Oops...", JOptionPane.ERROR_MESSAGE);
+				JOptionPane.showMessageDialog(mainFrame, "BAC failed", "Oops...", JOptionPane.ERROR_MESSAGE);
 			}
 		}
 	}
@@ -437,7 +396,12 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		JMenu menu = new JMenu("Help");
 		if (isMacOSX) {
 			/* Mac OS X "About" goes in the JMRTD menu */
-			new MacOSAboutHandler();
+			// new MacOSXHandler(aboutDialog);
+			try {
+				OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
+			} catch (NoSuchMethodException nsme) {
+				nsme.printStackTrace();
+			}
 		} else {
 			JMenuItem aboutItem = new JMenuItem();
 			aboutItem.setAction(getAboutAction());
@@ -455,7 +419,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport<CommandAPDU, ResponseAPDU> passport = createEmptyPassport("P<", trustManager);
+					Passport<CommandAPDU, ResponseAPDU> passport = MRTDFactory.createEmptyMRTD("P<", trustManager);
 					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
 					passportFrame.pack();
 					passportFrame.setVisible(true);
@@ -486,7 +450,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					fileChooser.setCurrentDirectory(new File(directory));
 				}
 				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(contentPane);
+				int choice = fileChooser.showOpenDialog(mainFrame);
 				switch (choice) {
 				case JFileChooser.APPROVE_OPTION:
 					try {
@@ -609,14 +573,7 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 			private static final long serialVersionUID = 11962156923823504L;
 
 			public void actionPerformed(ActionEvent e) {
-				int n = JOptionPane.showConfirmDialog(contentPane, preferencesPanel, preferencesPanel.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
-				switch (n) {
-				case JOptionPane.OK_OPTION:
-					preferencesPanel.commit();
-					break;
-				default:
-					preferencesPanel.abort();
-				}
+				showPreferencesDialog();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, PREFERENCES_ICON);
@@ -646,162 +603,20 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 		return action;
 	}
 
-	private void showAboutDialog() {
-		URL readMeFile = null;
-		try {
-			readMeFile = new URL(FileUtil.getBaseDir(getClass()) + "/README");
-		} catch (Exception ex) {
-			ex.printStackTrace();
-		}
-		ImageIcon aboutJMRTDImageIcon = null;
-		Image aboutJMRTDImage = IconUtil.getImage(ABOUT_JMRTD_LOGO, getClass());
-		if (aboutJMRTDImage != null) { aboutJMRTDImageIcon = new ImageIcon(aboutJMRTDImage); }
-
-		try {
-			JTextArea area = new JTextArea(25, 40);
-			// HIER
-			if (readMeFile == null) { throw new Exception("Could not open README file"); }
-			BufferedReader in = new BufferedReader(new InputStreamReader(readMeFile.openStream()));
-			while (true) {
-				String line = in.readLine();
-				if (line == null) { break; }
-				area.append("  " + line.trim());
-				area.append("\n");
-			}
-			in.close();
-			area.setCaretPosition(0);
-			area.setEditable(false);
-			JOptionPane.showMessageDialog(contentPane, new JScrollPane(area), "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
-		} catch (Exception ex) {
-			ex.printStackTrace();
-			JOptionPane.showMessageDialog(contentPane, ABOUT_JMRTD_DEFAULT_TEXT, "About JMRTD", JOptionPane.INFORMATION_MESSAGE, aboutJMRTDImageIcon);
-		}
-	}
-	
-	/**
-	 * Creates passport from scratch.
-	 * 
-	 * @param docType either <code>MRZInfo.DOC_TYPE_ID1</code> or <code>MRZInfo.DOC_TYPE_ID3</code>
-	 * @throws GeneralSecurityException if something wrong
-	 */
-	private static Passport<CommandAPDU,ResponseAPDU> createEmptyPassport(String docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
-
-		/* EF.COM */
-		int[] tagList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
-		COMFile comFile = new COMFile("1.7", "4.0.0", tagList);
-
-		/* EF.DG1 */
-		Date today = CALENDAR.getTime();
-		String todayString = SDF.format(today);
-		String primaryIdentifier = "TRAVELER";
-		String secondaryIdentifiers = "HAPPY";
-		String documentNumber = "123456789";
-		Country country = TestCountry.UT;
-		Gender gender = Gender.FEMALE;
-		String optionalData = "";
-		MRZInfo mrzInfo = new MRZInfo(docType, country.toAlpha3Code(), primaryIdentifier, secondaryIdentifiers, documentNumber, country.toAlpha3Code(), todayString, gender, todayString, optionalData);
-		DG1File dg1 = new DG1File(mrzInfo);
-
-		/* EF.DG2 */
-		FaceImageInfo faceImageInfo = createFaceImageInfo();
-		FaceInfo faceInfo = new FaceInfo(Arrays.asList(new FaceImageInfo[] { faceImageInfo }));
-		DG2File dg2 = new DG2File(Arrays.asList(new FaceInfo[] { faceInfo }));
-
-		/* EF.SOD */
-		KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
-		keyPairGenerator.initialize(1024);
-		KeyPair keyPair = keyPairGenerator.generateKeyPair();
-		PublicKey publicKey = keyPair.getPublic();
-		PrivateKey privateKey = keyPair.getPrivate();
-		Date dateOfIssuing = today;
-		Date dateOfExpiry = today;
-		String digestAlgorithm = "SHA256";
-		String signatureAlgorithm = "SHA256withRSA";
-		String issuer = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
-		String subject = "C=UT, O=JMRTD, OU=DSCA, CN=jmrtd.org";
-		X509Certificate docSigningCert = createSelfSignedCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, privateKey, signatureAlgorithm);
-		PrivateKey docSigningPrivateKey = privateKey;
-		Map<Integer, byte[]> hashes = new HashMap<Integer, byte[]>();
-		MessageDigest digest = MessageDigest.getInstance(digestAlgorithm);
-		hashes.put(1, digest.digest(dg1.getEncoded()));
-		hashes.put(2, digest.digest(dg2.getEncoded()));
-		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
-		return new Passport(comFile, Arrays.asList(new DataGroup[] { dg1, dg2 }), sodFile, docSigningPrivateKey, trustManager);
+	public void showAboutDialog() {
+		aboutDialog.setVisible(true);
 	}
 
-	private static FaceImageInfo createFaceImageInfo() {
-		int width = 449, height = 599;
-		byte[] jpegImageBytes = createTrivialJPEGBytes(width, height);
-		Gender gender = Gender.UNSPECIFIED;
-		EyeColor eyeColor = EyeColor.UNSPECIFIED;
-		int hairColor = FaceImageInfo.HAIR_COLOR_UNSPECIFIED;
-		int featureMask = 0;
-		short expression = FaceImageInfo.EXPRESSION_UNSPECIFIED;
-		int[] poseAngle = { 0, 0, 0 };
-		int[] poseAngleUncertainty = { 0, 0, 0 };
-		int faceImageType = FaceImageInfo.FACE_IMAGE_TYPE_FULL_FRONTAL;
-		int colorSpace = 0x00;
-		int sourceType = FaceImageInfo.SOURCE_TYPE_UNSPECIFIED;
-		int deviceType = 0x0000;
-		int quality = 0x0000;
-		int imageDataType = FaceImageInfo.IMAGE_DATA_TYPE_JPEG;	
-		FeaturePoint[] featurePoints = { };
-		FaceImageInfo imageInfo = new FaceImageInfo(
-				gender,  eyeColor, hairColor,
-				featureMask,
-				expression,
-				poseAngle, poseAngleUncertainty,
-				faceImageType,
-				colorSpace,
-				sourceType,
-				deviceType,
-				quality,
-				featurePoints,
-				width, height,
-				jpegImageBytes, imageDataType);
-		return imageInfo;
-	}
-
-	private static byte[] createTrivialJPEGBytes(int width, int height) {
-		try {
-			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			ImageIO.write(image, "jpg", out);
-			out.flush();
-			byte[] bytes = out.toByteArray();
-			return bytes;
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
-		}
-	}
-
-	private static X509Certificate createSelfSignedCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
-			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
-		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
-		certGenerator.setSerialNumber(new BigInteger("1"));
-		certGenerator.setIssuerDN(new X509Name(issuer));
-		certGenerator.setSubjectDN(new X509Name(subject));
-		certGenerator.setNotBefore(dateOfIssuing);
-		certGenerator.setNotAfter(dateOfExpiry);
-		certGenerator.setPublicKey(publicKey);
-		certGenerator.setSignatureAlgorithm(signatureAlgorithm);
-		X509Certificate certificate = (X509Certificate)certGenerator.generate(privateKey, "BC");
-		return certificate;
-	}
-	
-	private class MacOSAboutHandler extends Application {
-
-	    public MacOSAboutHandler() {
-	        addApplicationListener(new AboutBoxHandler());
-	    }
-
-	    class AboutBoxHandler extends ApplicationAdapter {
-	        public void handleAbout(ApplicationEvent event) {
-	            showAboutDialog();
-	            event.setHandled(true);
-	        }
-	    }
+	public void showPreferencesDialog() {
+//		int n = JOptionPane.showConfirmDialog(mainFrame, preferencesDialog, preferencesDialog.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
+//		switch (n) {
+//		case JOptionPane.OK_OPTION:
+//			preferencesDialog.commit();
+//			break;
+//		default:
+//			preferencesDialog.abort();
+//		}
+		preferencesDialog.setVisible(true);
 	}
 
 	/**
@@ -820,17 +635,15 @@ public class JMRTDApp implements CardTerminalListener<CommandAPDU, ResponseAPDU>
 					LOGGER.info("OS name = " + osName);
 					LOGGER.info("System look and feel class name = " + systemLookAndFeelClassName);
 					boolean isMacOSX = false;
-					if (osName.contains("Windows")) {
+					if (osName.toLowerCase().startsWith("windows")) {
 						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					} else if (osName.contains("Mac") || System.getProperty("mrj.version") != null) {
+					} else if (osName.toLowerCase().startsWith("mac os x") || System.getProperty("mrj.version") != null) {
 						/* Better to set these on command line (in jmrtd.sh for MacOS X):
 						 * 
 						 * java -Dcom.apple.macos.useScreenMenuBar=true \
 						 * 		-Dcom.apple.mrj.application.apple.menu.about.name=JMRTD \
 						 * 		-Xdock:name="JMRTD" \
 						 * 		-jar jmrtd.jar
-						 * 
-						 * FIXME: the about dialog, see the 2003 Sun developer article on java.sun.com.
 						 */
 						System.setProperty("apple.laf.useScreenMenuBar", "true");
 						System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");

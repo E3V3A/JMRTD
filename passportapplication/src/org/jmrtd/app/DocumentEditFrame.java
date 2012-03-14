@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -105,7 +105,7 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
-import org.jmrtd.app.PreferencesPanel.ReadingMode;
+import org.jmrtd.app.PreferencesDialog.ReadingMode;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
@@ -139,8 +139,8 @@ import org.jmrtd.lds.SODFile;
  *
  * @version $Revision: 894 $
  */
-public class DocumentEditFrame extends JMRTDFrame
-{
+public class DocumentEditFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = -4624658204371014128L;
 
 	private static final String PASSPORT_FRAME_TITLE = "Edit document";

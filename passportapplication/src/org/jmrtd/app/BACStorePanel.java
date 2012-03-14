@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -58,8 +58,8 @@ import org.jmrtd.BACStore;
  *
  * @version $Revision: 893 $
  */
-public class BACStorePanel extends JPanel
-{
+public class BACStorePanel extends JPanel {
+
 	private static final long serialVersionUID = 8209327475448864084L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");

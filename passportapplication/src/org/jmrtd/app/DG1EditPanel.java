@@ -50,8 +50,8 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @version $Revision: 894 $
  */
-public class DG1EditPanel extends JPanel
-{
+public class DG1EditPanel extends JPanel {
+
 	private static final long serialVersionUID = -6169486570387029561L;
 
 	private enum Field {

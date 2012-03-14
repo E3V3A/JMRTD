@@ -1,4 +1,4 @@
-About
+About JMRTD
 
    JMRTD is a free implementation in Java of the Machine
    Readable Travel Document (MRTD) standards as specified
@@ -22,7 +22,7 @@ Contributors
    Ronny Wichers Schreur
    Max Guenther
    Pim Vullers
-   (and whoever I forget to mention here, ... sorry)
+   (and others I forget to mention here, ... sorry)
 
    Contact us via info@jmrtd.org.
 
@@ -43,7 +43,7 @@ Dependencies (might be included in distribution)
    
    * Project SCUBA:
         This is the low level smart card reader stuff.
-        See http://scuba.sourceforge.net/.
+        URL: http://scuba.sourceforge.net/.
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath.
@@ -60,7 +60,7 @@ Dependencies (might be included in distribution)
 
    * famfamfam.com icons:
         GUI code may contain icons by Mark James
-        http://www.famfamfam.com/
+        URL: http://www.famfamfam.com/
 
 Optional stuff (may be necessary for building the project)
 

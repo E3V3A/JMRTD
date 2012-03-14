@@ -46,11 +46,12 @@ import net.sourceforge.scuba.util.FileUtil;
 
 import org.jmrtd.cert.CardVerifiableCertificate;
 
-public class TerminalCertificatesDialog extends JDialog implements ActionListener
-{
+public class TerminalCertificatesDialog extends JDialog implements ActionListener {
+
 	private static final long serialVersionUID = 1694098989850878787L;
 
-	private static final String C_ADD = "add",
+	private static final String
+	C_ADD = "add",
 	C_INSERT = "insert",
 	C_REMOVE = "remove",
 	C_VIEW = "view",
@@ -58,7 +59,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 
 	private List<CardVerifiableCertificate> certificates;
 
-	private JList list;
+	private JList<String> list;
 
 	public TerminalCertificatesDialog(Frame parent, List<CardVerifiableCertificate> certificates, boolean writeMode) {
 		super(parent);
@@ -109,7 +110,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		button.addActionListener(this);
 		buttonPanel.add(button, c);
 
-		DefaultListModel model = new DefaultListModel();
+		DefaultListModel<String> model = new DefaultListModel<String>();
 		try {
 			for (CardVerifiableCertificate cert : certificates) {
 				model.addElement(cert.getHolderReference().getName());
@@ -118,7 +119,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 			/* FIXME: silent?!? */
 		}
 
-		list = new JList(model);
+		list = new JList<String>(model);
 
 		JScrollPane listScroller = new JScrollPane(list);
 		listScroller.setPreferredSize(new Dimension(150, 100));
@@ -144,7 +145,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		} else if (C_REMOVE.equals(e.getActionCommand())) {
 			int index = list.getSelectedIndex();
 			if (index != -1) {
-				DefaultListModel model = ((DefaultListModel) list.getModel());
+				DefaultListModel<String> model = ((DefaultListModel<String>)list.getModel());
 				model.remove(index);
 				certificates.remove(index);
 				if (model.size() > 0) {
@@ -185,7 +186,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		}
 
 		if (cert != null) {
-			DefaultListModel model = (DefaultListModel) list.getModel();
+			DefaultListModel<String> model = (DefaultListModel<String>)list.getModel();
 			if (index == model.getSize() || index == -1) {
 				certificates.add(cert);
 				model.addElement(name);

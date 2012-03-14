@@ -52,8 +52,8 @@ import net.sourceforge.scuba.swing.CertificateChainPanel;
  *
  * @version $Revision: 893 $
  */
-public class CertificateChainFrame extends JMRTDFrame
-{
+public class CertificateChainFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = 8218341538613049952L;
 
 	private ActionMap actionMap;

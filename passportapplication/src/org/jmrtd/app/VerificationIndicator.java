@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -43,8 +43,8 @@ import org.jmrtd.VerificationStatus.Verdict;
  * 
  * @version $Revision: 893 $
  */
-public class VerificationIndicator extends Box
-{
+public class VerificationIndicator extends Box {
+
 	private static final long serialVersionUID = -1458554034529575752L;
 
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);

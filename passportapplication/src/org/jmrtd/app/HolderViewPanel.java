@@ -48,8 +48,8 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @version $Revision: 894 $
  */
-public class HolderViewPanel extends JPanel
-{
+public class HolderViewPanel extends JPanel {
+
 	private static final long serialVersionUID = -6169487570387029561L;
 
 	private static final Dimension MAX_KEY_SIZE = new Dimension(100, 15);

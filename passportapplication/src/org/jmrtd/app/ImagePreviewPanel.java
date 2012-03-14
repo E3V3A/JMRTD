@@ -50,8 +50,8 @@ import org.jmrtd.lds.ImageInfo;
  *
  * @version $Revision: 894 $
  */
-public class ImagePreviewPanel extends JPanel
-{	
+public class ImagePreviewPanel extends JPanel {
+
 	private static final long serialVersionUID = 9113961215076977525L;
 
 	private static final Icon IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("picture"));

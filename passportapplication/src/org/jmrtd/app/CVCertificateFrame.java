@@ -56,8 +56,8 @@ import org.jmrtd.cert.CardVerifiableCertificate;
  *
  * @version $Revision: $
  */
-public class CVCertificateFrame extends JMRTDFrame
-{
+public class CVCertificateFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = 2118341538613049952L;
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));

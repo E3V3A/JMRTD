@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -40,8 +40,8 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision: 894 $
  */
-public class MRZKeyListener implements KeyListener, BACEntrySource
-{
+public class MRZKeyListener implements KeyListener, BACEntrySource {
+
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyMMdd");
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");

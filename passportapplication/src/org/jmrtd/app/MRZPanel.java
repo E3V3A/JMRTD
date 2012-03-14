@@ -39,8 +39,8 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @version $Revision: 894 $
  */
-public class MRZPanel extends JPanel
-{
+public class MRZPanel extends JPanel {
+
 	private static final long serialVersionUID = -8078528859489283298L;
 
 	private static final String MRZ_FONT_NAME = "OCR-B_10_BT.ttf";

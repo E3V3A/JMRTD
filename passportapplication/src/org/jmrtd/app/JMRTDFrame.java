@@ -33,17 +33,24 @@ import net.sourceforge.scuba.util.IconUtil;
 /**
  * Base class for JMRTD windows.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */
 public class JMRTDFrame extends JFrame {
-	
+
+	private static final long serialVersionUID = 7491093832758295366L;
+
 	private static final Image JMRTD_ICON = IconUtil.getImage("jmrtd_logo-48x48", JMRTDApp.class);
-	
+
 	protected static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
 	protected static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
-	
+
+	/**
+	 * Constructs a JMRTD frame.
+	 * 
+	 * @param title the title of this frame (without the &quot;JMRTD -&quot; prefix)
+	 */
 	public JMRTDFrame(String title) {
 		super("JMRTD - " + title);
 		setIconImage(JMRTD_ICON);

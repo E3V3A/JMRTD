@@ -70,8 +70,8 @@ import net.sourceforge.scuba.util.IconUtil;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-public class CertificateMasterListFrame extends JMRTDFrame
-{
+public class CertificateMasterListFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = -1239469067988004321L;
 
 	private static final Icon CSCA_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("world"));

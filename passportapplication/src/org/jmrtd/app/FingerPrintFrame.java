@@ -59,8 +59,8 @@ import org.jmrtd.lds.FingerInfo;
  * 
  * @version $Revision: 894 $
  */
-public class FingerPrintFrame extends JMRTDFrame
-{
+public class FingerPrintFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = -3718372037784454010L;
 
 	private static final Icon IMAGE_INFO_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("information"));

@@ -32,6 +32,7 @@ import java.util.prefs.Preferences;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
@@ -46,25 +47,39 @@ import net.sourceforge.scuba.util.IconUtil;
 /**
  * Frame for displaying (and saving to file) keys.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: 893 $
  */
-public class KeyFrame extends JMRTDFrame
-{
+public class KeyFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = -514612440541711549L;
 
 	private static final Icon SAVE_AS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));
 	private static final Icon CLOSE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("bin"));
 
+	private ActionMap actionMap;
 	private KeyPanel keyPanel;
 
+	/**
+	 * Constructs a frame.
+	 * 
+	 * @param key the key
+	 */
 	public KeyFrame(Key key) {
 		this("Key", key);
 	}
 
+	/**
+	 * Constructs a frame.
+	 * 
+	 * @param title title
+	 * @param key the key
+	 */
 	public KeyFrame(String title, Key key) {
 		super(title);
+		
+		actionMap = new ActionMap();
 
 		/* Menu bar */
 		JMenuBar menuBar = new JMenuBar();
@@ -139,7 +154,9 @@ public class KeyFrame extends JMRTDFrame
 	}
 
 	private Action getCloseAction() {
-		Action action = new AbstractAction() {
+		Action action = actionMap.get("Close");
+		if (action != null) { return action; }
+		action = new AbstractAction() {
 
 			private static final long serialVersionUID = 8216910949055330269L;
 
@@ -151,6 +168,7 @@ public class KeyFrame extends JMRTDFrame
 		action.putValue(Action.LARGE_ICON_KEY, CLOSE_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Close Window");
 		action.putValue(Action.NAME, "Close");
+		actionMap.put("Close", action);
 		return action;
 	}
 }

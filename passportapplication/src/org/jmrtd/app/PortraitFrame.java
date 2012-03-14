@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,8 +68,8 @@ import org.jmrtd.lds.FaceImageInfo;
  * 
  * @version $Revision: 894 $
  */
-public class PortraitFrame extends JMRTDFrame
-{
+public class PortraitFrame extends JMRTDFrame {
+
 	private static final long serialVersionUID = -3718372037784854010L;
 
 	private static final Icon SAVE_AS_PNG_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("disk"));

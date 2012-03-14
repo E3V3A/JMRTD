@@ -116,7 +116,7 @@ Website and documentation
 
 
 VERSION 0.4.6 (2011-04-03)
--------------------------------
+--------------------------
 
 General
 + Use String instead of Data in BAC / MRZ entry
@@ -149,7 +149,7 @@ General
 + Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
 - Document number > 9 digits. MRZ document number field "spill over" to optional information field). Check docs.
 - Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
-- Pim Vullers has CardManager patches?
+- Pim Vullers contributed CardManager patches
 - JPEG2000 on MacOS X (jj2000 fails, why?)
 - 32 bit Mach-O dylib for WSQ on MacOS X
 
@@ -168,7 +168,8 @@ GUI
 + First attempt at tree view. Editor mode only. Content window not tree event driven yet.
 + User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
 + Show DG3 and DG4 in tree if present, even if not readable.
-- MacOS X: Top menu, About dialog, AppData dir (in FileUtil)
+- MacOS X: Top menu, About dialog
+- MacOS X: AppData dir (in FileUtil)
 
 Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max)

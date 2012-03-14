@@ -58,8 +58,8 @@ import net.sourceforge.scuba.util.IconUtil;
  * 
  * @version $Revision: $
  */
-public class APDUTraceFrame extends JMRTDFrame
-{
+public class APDUTraceFrame extends JMRTDFrame {
+
 	protected static final Icon CLEAR_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("paintbrush"));
 	
 	private static final long serialVersionUID = -584060710792989841L;

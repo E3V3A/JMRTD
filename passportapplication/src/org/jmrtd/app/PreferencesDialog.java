@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2010  The JMRTD team
+ * Copyright (C) 2006 - 2012  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,16 +17,23 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PreferencesPanel.java 893 2009-03-23 15:43:42Z martijno $
+ * $Id: $
  */
 
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridLayout;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -39,6 +46,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.StringTokenizer;
+import java.util.logging.Logger;
 import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 
@@ -49,24 +57,38 @@ import javax.swing.BorderFactory;
 import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.sourceforge.scuba.smartcards.CardTerminalEvent;
+import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
 import net.sourceforge.scuba.swing.URIListEditor;
 
-/**
- * Preferences panel.
- *
- * TODO: Perhaps add a blanket reading mode, where user is asked to continue at own risk...
- *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
- */
-public class PreferencesPanel extends JPanel
-{
+public class PreferencesDialog extends JDialog {
+
+	private static final long serialVersionUID = -2915531202910732443L;
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	private static final Dimension PREFERRED_SIZE = new Dimension(350, 320);
+	private static final String COMMIT_TEXT = "OK", ABORT_TEXT = "Cancel";
+	private static final Object[] OPTIONS = { COMMIT_TEXT, ABORT_TEXT };
+
+	private JOptionPane optionPane; 
+	private TerminalFactoryListener terminalFactoryListener;
+	
+	/**
+	 * Reading mode values.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 * 
+	 * @version $Revision: $
+	 */
 	public enum ReadingMode {
 		SAFE_MODE, // completely read files, check their signature, then display only if valid
 		PROGRESSIVE_MODE; // display files while still reading, then check their signature
@@ -74,8 +96,6 @@ public class PreferencesPanel extends JPanel
 
 	private static final ReadingMode DEFAULT_READING_MODE = ReadingMode.SAFE_MODE;
 	private static final boolean DEFAULT_APDU_TRACING_SETTING = false;
-
-	private static final long serialVersionUID = 5429621553165149988L;
 
 	private PreferencesState state;
 	private PreferencesState changedState;
@@ -90,15 +110,9 @@ public class PreferencesPanel extends JPanel
 	private URIListEditor cscaLocationsDisplay, cvcaLocationsDisplay;
 
 	private Collection<ChangeListener> changeListeners;
-	
-	/**
-	 * Creates the preferences panel.
-	 * 
-	 * @param cm the terminal map
-	 * @param applicationClass the class used as an identifier for the preferences
-	 */
-	public PreferencesPanel(Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
-		super(new BorderLayout());
+
+	public PreferencesDialog(Frame frame, Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
+		super(frame, true);
 		this.changeListeners = new ArrayList<ChangeListener>();
 		this.preferences = Preferences.userNodeForPackage(applicationClass);
 		try {
@@ -107,16 +121,186 @@ public class PreferencesPanel extends JPanel
 		} catch (BackingStoreException bse) {
 			/* NOTE it probably doesn't exist */
 		}
-		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();		
+		cardTerminalPollingCheckBoxMap = new HashMap<CardTerminal, JCheckBox>();
+
 		this.state = new PreferencesState();
 		update();
+	
+		this.changedState = new PreferencesState(state);
+	
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
 		jtb.addTab("Certificates", createCertificatesPanel());
-		add(jtb, BorderLayout.CENTER);
-
-		this.changedState = new PreferencesState(state);
+		buildDialog("JMRTD - Preferences", jtb);
+		
 		updateGUIFromState(state);
+		terminalFactoryListener = new TerminalFactoryListener() {
+			@Override
+			public void cardTerminalAdded(CardTerminalEvent cte) {
+			}
+
+			@Override
+			public void cardTerminalRemoved(CardTerminalEvent cte) {
+			}			
+		};
+	}
+
+	@Override
+	public void setVisible(boolean b) {
+		Window owner = getOwner();
+		if (b && owner != null) {
+			setLocationRelativeTo(owner);
+		}
+		super.setVisible(b);
+	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		return PREFERRED_SIZE;
+	}
+	
+	public TerminalFactoryListener getTerminalFactoryListener() {
+		return terminalFactoryListener;
+	}
+
+	public String getName() {
+		return "Preferences";
+	}
+
+	public ReadingMode getReadingMode() {
+		return state.getReadingMode();
+	}
+
+	public boolean isTerminalChecked(CardTerminal terminal) {
+		return state.isTerminalChecked(terminal);
+	}
+
+	public boolean isAPDUTracing() {
+		return state.isAPDUTracing();
+	}
+
+	public void setAPDUTracing(boolean b) {
+		state.setAPDUTracing(b);
+	}
+
+	public void commit() {
+		//		PreferencesState oldState = new PreferencesState(state);
+		state = new PreferencesState(changedState);
+		state.store(preferences);
+		ChangeEvent ce = new ChangeEvent(this);
+		notifyChangeListeners(ce);
+	}
+
+	public void update() {
+		state.load(preferences);
+	}
+
+	public void abort() {
+		changedState = new PreferencesState(state);
+		updateGUIFromState(state);
+	}
+	
+	/**
+	 * Returns <code>true</code> if the preferences backing store did
+	 * not exist during construction of this preferences panel.
+	 *
+	 * @return the state of existance of the preferences' backing store
+	 *         during construction of this preferences panel
+	 */
+	public boolean isBackingStoreNew() {
+		return !existsBackingStore;
+	}
+
+	public URL getBACStoreLocation() {
+		return state.getBACStoreLocation();
+	}
+
+	public List<URI> getCSCAStoreLocations() {
+		return state.getCSCAStoreLocations();
+	}
+
+	public List<URI> getCVCAStoreLocations() {
+		return state.getCVCAStoreLocations();
+	}
+
+	public void addCSCAStoreLocation(URI uri) {
+		changedState.addCSCAStoreLocation(uri);
+		updateGUIFromState(changedState);
+		commit();
+	}
+
+	public void addChangeListener(ChangeListener l) {
+		changeListeners.add(l);	
+	}
+	
+	public void removeChangeListener(ChangeListener l) {
+		changeListeners.remove(l);
+	}
+
+	/* ONLY PRIVATE METHODS BELOW */
+	
+	private void buildDialog(String title, JTabbedPane jtb) {
+		try {
+			setTitle(title);
+			JPanel preferencesPanel = new JPanel(new BorderLayout());
+			preferencesPanel.add(jtb, BorderLayout.CENTER);
+			
+			optionPane = new JOptionPane(
+					preferencesPanel,
+					JOptionPane.PLAIN_MESSAGE,
+					JOptionPane.OK_CANCEL_OPTION,
+					null,
+					OPTIONS,
+					OPTIONS[0]);
+
+			/* Handle buttons. */
+			optionPane.addPropertyChangeListener(new PropertyChangeListener() {
+				@Override
+				public void propertyChange(PropertyChangeEvent e) {
+					String prop = e.getPropertyName();
+					if (isVisible()
+							&& (e.getSource() == optionPane)
+							&& (JOptionPane.VALUE_PROPERTY.equals(prop) || JOptionPane.INPUT_VALUE_PROPERTY.equals(prop))) {
+						Object value = optionPane.getValue();
+						if (value == JOptionPane.UNINITIALIZED_VALUE) {
+							/* NOTE: ignore reset. */
+							return;
+						}
+						if (COMMIT_TEXT.equals(value)) {
+							commit();
+							setVisible(false);
+						} else if (ABORT_TEXT.equals(value)) {
+							/* NOTE: closed via abort button. */
+							abort();
+							setVisible(false);
+						} else {
+							/* NOTE: closed via close button. */
+							abort();
+							setVisible(false);
+						}
+						optionPane.setValue(JOptionPane.UNINITIALIZED_VALUE);
+					}
+				}
+			});
+
+			/* Handle window closing correctly. */
+			setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
+			addWindowListener(new WindowAdapter() {
+				public void windowClosing(WindowEvent we) {
+					/*
+					 * Instead of directly closing the window,
+					 * we're going to change the JOptionPane's
+					 * value property.
+					 */
+					optionPane.setValue(new Integer(JOptionPane.CLOSED_OPTION));
+				}
+			});
+
+			setContentPane(optionPane);
+		} catch (Exception ex) {
+			LOGGER.severe("Could not build dialog: " + ex.getMessage());
+//			ex.printStackTrace();
+		}
 	}
 
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
@@ -190,43 +374,6 @@ public class PreferencesPanel extends JPanel
 		return panel;
 	}
 
-	public String getName() {
-		return "Preferences";
-	}
-
-	public ReadingMode getReadingMode() {
-		return state.getReadingMode();
-	}
-
-	public boolean isTerminalChecked(CardTerminal terminal) {
-		return state.isTerminalChecked(terminal);
-	}
-
-	public boolean isAPDUTracing() {
-		return state.isAPDUTracing();
-	}
-
-	public void setAPDUTracing(boolean b) {
-		state.setAPDUTracing(b);
-	}
-
-	public void commit() {
-		//		PreferencesState oldState = new PreferencesState(state);
-		state = new PreferencesState(changedState);
-		state.store(preferences);
-		ChangeEvent ce = new ChangeEvent(this);
-		notifyChangeListeners(ce);
-	}
-
-	public void update() {
-		state.load(preferences);
-	}
-
-	public void abort() {
-		changedState = new PreferencesState(state);
-		updateGUIFromState(state);
-	}
-
 	private void updateGUIFromState(PreferencesState state) {
 		for (CardTerminal terminal: cardTerminalPollingCheckBoxMap.keySet()) {
 			JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal);
@@ -241,7 +388,7 @@ public class PreferencesPanel extends JPanel
 		cscaLocationsDisplay.setURIList(state.getCSCAStoreLocations());
 	}
 
-	public Action getSetTerminalAction(final CardTerminal terminal, final JCheckBox checkBox) {
+	private Action getSetTerminalAction(final CardTerminal terminal, final JCheckBox checkBox) {
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = 8704502832790166859L;
@@ -253,35 +400,6 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.SHORT_DESCRIPTION, "Change polling behavior for " + terminal.getName());
 		action.putValue(Action.NAME, terminal.getName());
 		return action;
-	}
-
-	/**
-	 * Returns <code>true</code> if the preferences backing store did
-	 * not exist during construction of this preferences panel.
-	 *
-	 * @return the state of existance of the preferences' backing store
-	 *         during construction of this preferences panel
-	 */
-	public boolean isBackingStoreNew() {
-		return !existsBackingStore;
-	}
-
-	public URL getBACStoreLocation() {
-		return state.getBACStoreLocation();
-	}
-
-	public List<URI> getCSCAStoreLocations() {
-		return state.getCSCAStoreLocations();
-	}
-
-	public List<URI> getCVCAStoreLocations() {
-		return state.getCVCAStoreLocations();
-	}
-
-	public void addCSCAStoreLocation(URI uri) {
-		changedState.addCSCAStoreLocation(uri);
-		updateGUIFromState(changedState);
-		commit();
 	}
 
 	private Action getSetModeAction(final ReadingMode mode) {
@@ -322,15 +440,7 @@ public class PreferencesPanel extends JPanel
 		action.putValue(Action.NAME, "Trace APDUs");
 		return action;
 	}
-
-	public void addChangeListener(ChangeListener l) {
-		changeListeners.add(l);	
-	}
-
-	private void notifyChangeListeners(ChangeEvent ce) {
-		for (ChangeListener l: changeListeners) { l.stateChanged(ce); }
-	}
-
+	
 	/**
 	 * The state that needs to be saved to or restored from file. The panel
 	 * collects user changes in one instance while maintaining the original
@@ -494,5 +604,9 @@ public class PreferencesPanel extends JPanel
 			}
 		}
 		return result;
+	}
+	
+	private void notifyChangeListeners(ChangeEvent ce) {
+		for (ChangeListener l: changeListeners) { l.stateChanged(ce); }
 	}
 }

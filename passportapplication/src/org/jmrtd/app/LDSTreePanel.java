@@ -97,19 +97,34 @@ public class LDSTreePanel extends JPanel {
 
 	private MRTDTreeModel treeModel;
 	
-	public LDSTreePanel(Passport passport) {
+	/**
+	 * Constructs a new tree panel.
+	 * 
+	 * @param document the document
+	 */
+	public LDSTreePanel(Passport document) {
 		setLayout(new BorderLayout());
-		setDocument(passport);
+		setDocument(document);
 	}
 
+	/**
+	 * Reloads the underlying tree model.
+	 */
 	public void reload() {
 		treeModel.reload();
 	}
+
+	@Override
+	public Dimension getPreferredSize() {
+		return PREFERRED_SIZE;
+	}
 	
-	private void setDocument(Passport passport) {
+	/* ONLY PRIVATE METHODS BELOW */
+
+	private void setDocument(Passport document) {
 		try {
 			if (getComponentCount() > 0) { removeAll(); }
-			treeModel = new MRTDTreeModel(passport);
+			treeModel = new MRTDTreeModel(document);
 			add(new JScrollPane(new JTree(treeModel)));
 			revalidate();
 			repaint();
@@ -117,10 +132,6 @@ public class LDSTreePanel extends JPanel {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	public Dimension getPreferredSize() {
-		return PREFERRED_SIZE;
 	}
 
 	private MutableTreeNode buildTree(LDSFile passportFile) {
@@ -531,6 +542,8 @@ public class LDSTreePanel extends JPanel {
 	}
 
 	private class MRTDTreeModel extends DefaultTreeModel {
+
+		private static final long serialVersionUID = 3694551659268775436L;
 
 		private Passport passport;
 
