@@ -212,6 +212,15 @@ public class JMRTDApp {
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
 
+			/* On OS X "About" and "Preferences" go in the JMRTD menu */
+			try {
+				OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
+				OSXAdapter.setPreferencesHandler(this, getClass().getDeclaredMethod("showPreferencesDialog", (Class[])null));
+				OSXAdapter.setQuitHandler(this, getClass().getDeclaredMethod("exit", (Class[])null));
+			} catch (NoSuchMethodException nsme) {
+				nsme.printStackTrace();
+			}
+
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 			mainFrame.pack();
 			mainFrame.setVisible(true);
@@ -364,12 +373,16 @@ public class JMRTDApp {
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-		menu.addSeparator();
+		if (isMacOSX) {
+			/* NOTE: We're using the Application framework for the Quit menu item on OS X. */
+		} else {
+			menu.addSeparator();
 
-		/* Exit */
-		JMenuItem closeItem = new JMenuItem();
-		menu.add(closeItem);
-		closeItem.setAction(getExitAction());
+			/* Exit */
+			JMenuItem exitItem = new JMenuItem();
+			menu.add(exitItem);
+			exitItem.setAction(getExitAction());
+		}
 
 		return menu;
 	}
@@ -385,9 +398,13 @@ public class JMRTDApp {
 		reloadItem.setAction(getReloadAction());
 		menu.add(reloadItem);
 
-		JMenuItem preferencesItem = new JMenuItem();
-		preferencesItem.setAction(getPreferencesAction());
-		menu.add(preferencesItem);
+		if (isMacOSX) {
+			/* NOTE: We're using the Application framework for the Preferences menu item on OS X. */
+		} else {
+			JMenuItem preferencesItem = new JMenuItem();
+			preferencesItem.setAction(getPreferencesAction());
+			menu.add(preferencesItem);
+		}
 
 		return menu;
 	}
@@ -395,13 +412,7 @@ public class JMRTDApp {
 	private JMenu createHelpMenu() {
 		JMenu menu = new JMenu("Help");
 		if (isMacOSX) {
-			/* Mac OS X "About" goes in the JMRTD menu */
-			// new MacOSXHandler(aboutDialog);
-			try {
-				OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
-			} catch (NoSuchMethodException nsme) {
-				nsme.printStackTrace();
-			}
+			/* NOTE: We're using the Application framework for the About menu item on OS X. */
 		} else {
 			JMenuItem aboutItem = new JMenuItem();
 			aboutItem.setAction(getAboutAction());
@@ -603,20 +614,19 @@ public class JMRTDApp {
 		return action;
 	}
 
+	/* NOTE: Public because OSXAdapter calls this on OS X via reflection. */
 	public void showAboutDialog() {
 		aboutDialog.setVisible(true);
 	}
 
+	/* NOTE: Public because OSXAdapter calls this on OS X via reflection. */
 	public void showPreferencesDialog() {
-//		int n = JOptionPane.showConfirmDialog(mainFrame, preferencesDialog, preferencesDialog.getName(), JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE, null);
-//		switch (n) {
-//		case JOptionPane.OK_OPTION:
-//			preferencesDialog.commit();
-//			break;
-//		default:
-//			preferencesDialog.abort();
-//		}
 		preferencesDialog.setVisible(true);
+	}
+
+	/* NOTE: Public because OSXAdapter calls this on OS X via reflection. */
+	public void exit() {
+		System.exit(0);
 	}
 
 	/**

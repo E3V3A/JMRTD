@@ -59,7 +59,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 
 	private List<CardVerifiableCertificate> certificates;
 
-	private JList<String> list;
+	private JList list;
 
 	public TerminalCertificatesDialog(Frame parent, List<CardVerifiableCertificate> certificates, boolean writeMode) {
 		super(parent);
@@ -110,7 +110,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		button.addActionListener(this);
 		buttonPanel.add(button, c);
 
-		DefaultListModel<String> model = new DefaultListModel<String>();
+		DefaultListModel model = new DefaultListModel();
 		try {
 			for (CardVerifiableCertificate cert : certificates) {
 				model.addElement(cert.getHolderReference().getName());
@@ -119,7 +119,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 			/* FIXME: silent?!? */
 		}
 
-		list = new JList<String>(model);
+		list = new JList(model);
 
 		JScrollPane listScroller = new JScrollPane(list);
 		listScroller.setPreferredSize(new Dimension(150, 100));
@@ -145,7 +145,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		} else if (C_REMOVE.equals(e.getActionCommand())) {
 			int index = list.getSelectedIndex();
 			if (index != -1) {
-				DefaultListModel<String> model = ((DefaultListModel<String>)list.getModel());
+				DefaultListModel model = ((DefaultListModel)list.getModel());
 				model.remove(index);
 				certificates.remove(index);
 				if (model.size() > 0) {
@@ -186,7 +186,7 @@ public class TerminalCertificatesDialog extends JDialog implements ActionListene
 		}
 
 		if (cert != null) {
-			DefaultListModel<String> model = (DefaultListModel<String>)list.getModel();
+			DefaultListModel model = (DefaultListModel)list.getModel();
 			if (index == model.getSize() || index == -1) {
 				certificates.add(cert);
 				model.addElement(name);
