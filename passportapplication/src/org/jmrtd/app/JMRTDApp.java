@@ -68,12 +68,10 @@ import net.sourceforge.scuba.smartcards.CardEvent;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.CardTerminalEvent;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
 import net.sourceforge.scuba.smartcards.SCFactory;
 import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
-import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 
@@ -136,7 +134,7 @@ public class JMRTDApp {
 	}
 
 	/* FIXME: I know, it's ugly. */
-	private boolean isMacOSX;
+	private boolean isOSX;
 
 	private ActionMap actionMap;
 
@@ -153,9 +151,9 @@ public class JMRTDApp {
 	/**
 	 * Constructs the GUI.
 	 *
-	 * @param arg command line arguments, are ignored for now.
+	 * @param isOSX whether we're on OS X
 	 */
-	public JMRTDApp(boolean isMacOSX) {
+	public JMRTDApp(boolean isOSX) {
 		try {	
 			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
 			SCFactory apduFactory = new SCFactory();
@@ -163,7 +161,7 @@ public class JMRTDApp {
 			actionMap = new ActionMap();
 			cardManager = CardManager.getInstance();
 
-			this.isMacOSX = isMacOSX;
+			this.isOSX = isOSX;
 
 			mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
 
@@ -213,12 +211,14 @@ public class JMRTDApp {
 			mainFrame.setJMenuBar(menuBar);
 
 			/* On OS X "About" and "Preferences" go in the JMRTD menu */
-			try {
-				OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
-				OSXAdapter.setPreferencesHandler(this, getClass().getDeclaredMethod("showPreferencesDialog", (Class[])null));
-				OSXAdapter.setQuitHandler(this, getClass().getDeclaredMethod("exit", (Class[])null));
-			} catch (NoSuchMethodException nsme) {
-				nsme.printStackTrace();
+			if (isOSX) {
+				try {
+					OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
+					OSXAdapter.setPreferencesHandler(this, getClass().getDeclaredMethod("showPreferencesDialog", (Class[])null));
+					OSXAdapter.setQuitHandler(this, getClass().getDeclaredMethod("exit", (Class[])null));
+				} catch (NoSuchMethodException nsme) {
+					nsme.printStackTrace();
+				}
 			}
 
 			mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -252,19 +252,7 @@ public class JMRTDApp {
 					}
 				}
 			});
-			cardManager.addTerminalFactoryListener(new TerminalFactoryListener() {
-				@Override
-				public void cardTerminalAdded(CardTerminalEvent cte) {
-					CardTerminal terminal = cte.getTerminal();
-					LOGGER.info("Added card terminal " + terminal.getName());
-				}
-
-				@Override
-				public void cardTerminalRemoved(CardTerminalEvent cte) {
-					CardTerminal terminal = cte.getTerminal();
-					LOGGER.info("Removed card terminal " + terminal.getName());					
-				}
-			});
+			cardManager.addTerminalFactoryListener(preferencesDialog.getTerminalFactoryListener());
 			updateFromPreferences();
 		} catch (Exception e) {
 			/* NOTE: if it propagated this far, something is wrong... */
@@ -373,7 +361,7 @@ public class JMRTDApp {
 		menu.add(openItem);
 		openItem.setAction(getOpenAction());
 
-		if (isMacOSX) {
+		if (isOSX) {
 			/* NOTE: We're using the Application framework for the Quit menu item on OS X. */
 		} else {
 			menu.addSeparator();
@@ -398,7 +386,7 @@ public class JMRTDApp {
 		reloadItem.setAction(getReloadAction());
 		menu.add(reloadItem);
 
-		if (isMacOSX) {
+		if (isOSX) {
 			/* NOTE: We're using the Application framework for the Preferences menu item on OS X. */
 		} else {
 			JMenuItem preferencesItem = new JMenuItem();
@@ -411,7 +399,7 @@ public class JMRTDApp {
 
 	private JMenu createHelpMenu() {
 		JMenu menu = new JMenu("Help");
-		if (isMacOSX) {
+		if (isOSX) {
 			/* NOTE: We're using the Application framework for the About menu item on OS X. */
 		} else {
 			JMenuItem aboutItem = new JMenuItem();

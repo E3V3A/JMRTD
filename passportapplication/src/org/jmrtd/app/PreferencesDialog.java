@@ -58,7 +58,6 @@ import javax.swing.ButtonGroup;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
-import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
@@ -81,6 +80,7 @@ public class PreferencesDialog extends JDialog {
 
 	private JOptionPane optionPane; 
 	private TerminalFactoryListener terminalFactoryListener;
+	private JPanel cardTerminalsPreferencesPanel;
 	
 	/**
 	 * Reading mode values.
@@ -111,7 +111,7 @@ public class PreferencesDialog extends JDialog {
 
 	private Collection<ChangeListener> changeListeners;
 
-	public PreferencesDialog(Frame frame, Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
+	public PreferencesDialog(Frame frame, final Map<CardTerminal, Boolean> cm, Class<?> applicationClass) {
 		super(frame, true);
 		this.changeListeners = new ArrayList<ChangeListener>();
 		this.preferences = Preferences.userNodeForPackage(applicationClass);
@@ -137,11 +137,18 @@ public class PreferencesDialog extends JDialog {
 		terminalFactoryListener = new TerminalFactoryListener() {
 			@Override
 			public void cardTerminalAdded(CardTerminalEvent cte) {
+				CardTerminal terminal = cte.getTerminal();
+				LOGGER.info("DEBUG: preferences: add terminal " + terminal.getName());
+				addTerminal(terminal, true);
+				updateGUIFromState(state);
 			}
 
 			@Override
 			public void cardTerminalRemoved(CardTerminalEvent cte) {
-			}			
+				CardTerminal terminal = cte.getTerminal();
+				LOGGER.info("DEBUG: preferences: remove terminal " + terminal.getName());
+				cm.remove(terminal);
+			}
 		};
 	}
 
@@ -304,20 +311,16 @@ public class PreferencesDialog extends JDialog {
 	}
 
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
-		JPanel cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
+		cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cardTerminalsPreferencesPanel.setBorder(BorderFactory.createTitledBorder("Card Terminals"));
-		if (terminalList.size() == 0) {
-			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
-		}
+//		if (terminalList.size() == 0) {
+//			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
+//		}
 		for (Entry<CardTerminal, Boolean> entry: terminalList.entrySet()) {
 			CardTerminal terminal = entry.getKey();
 			Boolean isCheckedValue = entry.getValue();
 			boolean isChecked = isCheckedValue == null ? false : isCheckedValue; 
-			JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
-			cardTerminalPollingCheckBoxMap.put(terminal, checkBox);
-			checkBox.setAction(getSetTerminalAction(terminal, checkBox));
-			cardTerminalsPreferencesPanel.add(checkBox);
-			state.setTerminalChecked(terminal, isChecked);
+			addTerminal(terminal, isChecked);
 		}
 
 		ReadingMode[] modes = ReadingMode.values();
@@ -347,6 +350,14 @@ public class PreferencesDialog extends JDialog {
 		terminalSettingsTab.add(northPanel, BorderLayout.NORTH);
 		terminalSettingsTab.add(cardTerminalsPreferencesPanel, BorderLayout.SOUTH);
 		return terminalSettingsTab;
+	}
+
+	private void addTerminal(CardTerminal terminal, boolean isChecked) {
+		JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
+		cardTerminalPollingCheckBoxMap.put(terminal, checkBox);
+		checkBox.setAction(getSetTerminalAction(terminal, checkBox));
+		cardTerminalsPreferencesPanel.add(checkBox);
+		state.setTerminalChecked(terminal, isChecked);
 	}
 
 	private JComponent createCertificatesPanel() {
