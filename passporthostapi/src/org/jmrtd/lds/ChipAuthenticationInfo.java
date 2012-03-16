@@ -50,6 +50,8 @@ import org.bouncycastle.asn1.DERSequence;
  */
 public class ChipAuthenticationInfo extends SecurityInfo {
 
+	private static final long serialVersionUID = 5591988305059068535L;
+
 	public static final int VERSION_NUM = 1;
 
 	private String oid;

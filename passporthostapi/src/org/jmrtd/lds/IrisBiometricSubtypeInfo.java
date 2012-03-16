@@ -40,6 +40,8 @@ import java.util.List;
  */
 public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
 
+	private static final long serialVersionUID = -6588640634764878039L;
+
 	/** Biometric subtype value. */
 	public static final int
 	EYE_UNDEF = 0,

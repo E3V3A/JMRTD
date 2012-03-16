@@ -32,12 +32,12 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
 /**
  * Abstract base class for data group files.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision$
  */
-public abstract class DataGroup extends LDSFile
-{
+public abstract class DataGroup extends LDSFile {
+
 	private static final long serialVersionUID = -4761360877353069639L;
 	
 	private int dataGroupTag;

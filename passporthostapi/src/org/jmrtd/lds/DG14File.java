@@ -47,8 +47,10 @@ import org.bouncycastle.asn1.DERSet;
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  */
-public class DG14File extends DataGroup
-{
+public class DG14File extends DataGroup {
+
+	private static final long serialVersionUID = -3536507558193769953L;
+
 	/** The security infos that make up this file */
 	private Set<SecurityInfo> securityInfos;
 

@@ -42,8 +42,10 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-public class DG15File extends DataGroup
-{
+public class DG15File extends DataGroup {
+
+	private static final long serialVersionUID = 3834304239673755744L;
+
 	private PublicKey publicKey;
 
 	/**

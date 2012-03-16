@@ -49,6 +49,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  */
 public class DG2File extends CBEFFDataGroup<FaceInfo> {
 
+	private static final long serialVersionUID = 414300652684010416L;
+
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FaceInfo>() {
 		public FaceInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
 			return new FaceInfo(sbh, in);

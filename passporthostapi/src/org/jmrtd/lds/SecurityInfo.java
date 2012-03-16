@@ -44,6 +44,8 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
  */
 public abstract class SecurityInfo extends AbstractInfo {
 
+	private static final long serialVersionUID = -7919854443619069808L;
+
 	public static final String
 	ID_PK_DH_OID = EACObjectIdentifiers.id_PK_DH.getId(),
 	ID_PK_ECDH_OID = EACObjectIdentifiers.id_PK_ECDH.getId(),

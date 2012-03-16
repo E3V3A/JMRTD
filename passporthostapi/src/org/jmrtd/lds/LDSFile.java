@@ -41,8 +41,10 @@ import org.jmrtd.PassportService;
  * 
  * @version $Revision: 1320 $
  */
-public abstract class LDSFile implements LDSInfo, Serializable
-{
+public abstract class LDSFile implements LDSInfo, Serializable {
+
+	private static final long serialVersionUID = -4908935713109830409L;
+
 	/** ICAO specific datagroup tag. There is also the CVCA file that has no tag! */
 	public static final int
 	EF_COM_TAG = 0x60,

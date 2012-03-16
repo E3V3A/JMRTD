@@ -39,8 +39,10 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-abstract class DisplayedImageDataGroup extends DataGroup
-{
+abstract class DisplayedImageDataGroup extends DataGroup {
+
+	private static final long serialVersionUID = 5994136177872308962L;
+
 	private static final int DISPLAYED_IMAGE_COUNT_TAG = 0x02;
 
 	private int displayedImageTagToUse;

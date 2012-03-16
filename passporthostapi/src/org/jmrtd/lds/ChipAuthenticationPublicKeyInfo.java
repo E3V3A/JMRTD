@@ -65,8 +65,10 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
  * FIXME: interface dependency on BC classes?
  * FIXME: maybe clean up some of these constructors...
  */
-public class ChipAuthenticationPublicKeyInfo extends SecurityInfo
-{
+public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
+
+	private static final long serialVersionUID = 5687291829854501771L;
+
 	private String oid;
 	private SubjectPublicKeyInfo subjectPublicKeyInfo;
 	private int keyId;

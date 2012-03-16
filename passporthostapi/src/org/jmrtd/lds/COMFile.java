@@ -44,8 +44,10 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-public class COMFile extends DataGroup /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
-{
+public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
+
+	private static final long serialVersionUID = 2002455279067170063L;
+
 	private static final int TAG_LIST_TAG = 0x5C;
 	private static final int VERSION_UNICODE_TAG = 0x5F36;
 	private static final int VERSION_LDS_TAG = 0x5F01;

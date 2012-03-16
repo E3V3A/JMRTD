@@ -32,8 +32,10 @@ import java.util.List;
  * 
  * @version $Revision$
  */
-public class DG7File extends DisplayedImageDataGroup
-{	
+public class DG7File extends DisplayedImageDataGroup {
+
+	private static final long serialVersionUID = 7189545112850471359L;
+
 	/**
 	 * Constructs a new file from a list of displayed images.
 	 * 

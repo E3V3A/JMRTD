@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.Serializable;
 
 /**
  * Base class for data structures that are contained in files in the LDS. 
@@ -33,7 +34,9 @@ import java.io.OutputStream;
  *
  * @version $Revision: $
  */
-abstract class AbstractInfo implements LDSInfo {
+abstract class AbstractInfo implements LDSInfo, Serializable {
+
+	private static final long serialVersionUID = -2340098256249194537L;
 
 	public byte[] getEncoded() {
 		try {

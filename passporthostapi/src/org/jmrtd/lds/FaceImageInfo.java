@@ -45,8 +45,10 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @version $Revision: $
  */
-public class FaceImageInfo extends AbstractImageInfo
-{
+public class FaceImageInfo extends AbstractImageInfo {
+
+	private static final long serialVersionUID = -1751069410327594067L;
+
 	/** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
 	public enum EyeColor {
 		UNSPECIFIED { public int toInt() { return EYE_COLOR_UNSPECIFIED;} }, 
@@ -758,14 +760,14 @@ public class FaceImageInfo extends AbstractImageInfo
 	private static String toMimeType(ImageDataType imageDataType) {
 		switch(imageDataType) {
 		case TYPE_JPEG: return "image/jpeg";
-		case TYPE_JPEG2000: return "image/jpeg2000";
+		case TYPE_JPEG2000: return "image/jpeg2000"; /* FIXME; Check ietf rfc3745, shouldn't this be "image/jp2"? */
 		}
 		return null;
 	}
 
 	private static int fromMimeType(String mimeType) {
 		if ("image/jpeg".equals(mimeType)) { return IMAGE_DATA_TYPE_JPEG; }
-		if ("image/jpeg2000".equals(mimeType)) { return IMAGE_DATA_TYPE_JPEG2000; }
+		if ("image/jpeg2000".equals(mimeType) || "image/jp2".equals(mimeType)) { return IMAGE_DATA_TYPE_JPEG2000; }
 		throw new IllegalArgumentException("Did not recognize mimeType");
 	}
 

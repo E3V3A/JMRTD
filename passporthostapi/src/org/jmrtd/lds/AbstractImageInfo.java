@@ -27,6 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -36,7 +37,9 @@ import java.util.Arrays;
  * 
  * @version $Revision: $
  */
-abstract class AbstractImageInfo implements ImageInfo {
+abstract class AbstractImageInfo implements ImageInfo, Serializable {
+
+	private static final long serialVersionUID = 2870092217269116309L;
 
 	private int type;
 	private String mimeType;

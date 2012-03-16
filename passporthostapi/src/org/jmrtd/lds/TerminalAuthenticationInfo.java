@@ -51,8 +51,10 @@ import org.bouncycastle.asn1.DERSequence;
  * 
  * @version $Revision: $
  */
-public class TerminalAuthenticationInfo extends SecurityInfo
-{
+public class TerminalAuthenticationInfo extends SecurityInfo {
+
+	private static final long serialVersionUID = 6220506985707094044L;
+
 	public static final int VERSION_NUM = 1;
 
 	private String oid;

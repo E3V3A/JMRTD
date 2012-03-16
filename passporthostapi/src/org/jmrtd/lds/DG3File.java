@@ -47,6 +47,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  */
 public class DG3File extends CBEFFDataGroup<FingerInfo> {
 
+	private static final long serialVersionUID = -1037522331623814528L;
+
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FingerInfo>() {
 		public FingerInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
 			return new FingerInfo(sbh, in);

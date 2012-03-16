@@ -49,6 +49,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  */
 public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements BiometricDataBlock {
 
+	private static final long serialVersionUID = -3415309711643815511L;
+
 	/** Format identifier 'I', 'I', 'R', 0x00. */
 	private static final int FORMAT_IDENTIFIER = 0x49495200;
 

@@ -46,6 +46,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  */
 public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDataBlock {
 
+	private static final long serialVersionUID = 5808625058034008176L;
+
 	/** Format identifier 'F', 'I', 'R', 0x00. Specified in ISO/IEC 19794-4 Section 7.1, Table 2.  */
 	private static final int FORMAT_IDENTIFIER = 0x46495200;
 

@@ -37,8 +37,10 @@ import org.jmrtd.cert.CVCPrincipal;
  * @version $Revision: $
  */
 /* TODO: Use CVCPrincipal instead of String for references? */
-public class CVCAFile extends LDSFile
-{
+public class CVCAFile extends LDSFile {
+
+	private static final long serialVersionUID = -1100904058684365703L;
+
 	public static final byte CAR_TAG = 0x42;
 	public static final int LENGTH = 36;
 

@@ -43,8 +43,10 @@ import org.jmrtd.cbeff.CBEFFInfo;
  *
  * @version $Revision: $
  */
-public class FingerImageInfo extends AbstractImageInfo
-{
+public class FingerImageInfo extends AbstractImageInfo {
+
+	private static final long serialVersionUID = -6625447389275461027L;
+
 	/** Finger code, according to Table 5, 7.2.2, ISO 19794-4. */
 	public static final int
 	/* NOTE: in comment: max image area in sq mm, sq in, with in mm, in, length in mm, in */

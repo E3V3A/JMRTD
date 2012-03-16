@@ -86,8 +86,10 @@ import org.jmrtd.JMRTDSecurityProvider;
  * 
  * @version $Revision$
  */
-public class SODFile extends DataGroup /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
-{
+public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
+
+	private static final long serialVersionUID = -1081347374739311111L;
+	
 	//	private static final String SHA1_HASH_ALG_OID = "1.3.14.3.2.26";
 	//	private static final String SHA1_WITH_RSA_ENC_OID = "1.2.840.113549.1.1.5";
 	//	private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";

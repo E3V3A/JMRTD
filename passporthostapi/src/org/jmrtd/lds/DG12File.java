@@ -45,8 +45,8 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class DG12File extends DataGroup
-{
+public class DG12File extends DataGroup {
+
 	private static final long serialVersionUID = -1979367459379125674L;
 
 	private static final int TAG_LIST_TAG = 0x5C;

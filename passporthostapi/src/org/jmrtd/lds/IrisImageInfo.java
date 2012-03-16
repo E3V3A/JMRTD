@@ -37,10 +37,12 @@ import java.io.OutputStream;
  *
  * @version $Revision: $
  */
-public class IrisImageInfo extends AbstractImageInfo
-{
-	// TODO: proper enums for data types
+public class IrisImageInfo extends AbstractImageInfo {
+
+	private static final long serialVersionUID = 833541246115625112L;
 	
+	/* TODO: proper enums for data types */
+
 	/** Image quality, based on Table 3 in Section 5.5 of ISO 19794-6. */
 	public static int
 	IMAGE_QUAL_UNDEF = 0xFE, /* (decimal 254) */

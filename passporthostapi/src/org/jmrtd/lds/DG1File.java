@@ -40,8 +40,8 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-public class DG1File extends DataGroup implements Serializable
-{
+public class DG1File extends DataGroup implements Serializable {
+
 	private static final long serialVersionUID = 5091606125728809058L;
 
 	private static final short MRZ_INFO_TAG = 0x5F1F;

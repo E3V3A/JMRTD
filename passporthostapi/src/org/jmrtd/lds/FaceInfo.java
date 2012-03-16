@@ -44,6 +44,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  */
 public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBlock {
 
+	private static final long serialVersionUID = -6053206262773400725L;
+
 	/** Facial Record Header 'F', 'A', 'C', 0x00. Section 5.4, Table 2 of ISO/IEC 19794-5. */
 	private static final int FORMAT_IDENTIFIER = 0x46414300;
 

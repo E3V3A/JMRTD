@@ -40,6 +40,8 @@ import java.util.List;
  */
 abstract class ListInfo<R> extends AbstractInfo {
 
+	private static final long serialVersionUID = 2970076896364365191L;
+
 	private List<R> subRecords;
 
 	List<R> getSubRecords() {
