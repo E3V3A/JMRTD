@@ -74,6 +74,7 @@ import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
+import net.sourceforge.scuba.util.OSXAdapter;
 
 import org.jmrtd.BACStore;
 import org.jmrtd.FileBACStore;

@@ -147,32 +147,33 @@ General
 + Abstraction of SCUBA smartcard layer.
 + Implementation of SCUBA smartcard layer for j2se and Android.
 + Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
++ CardManager hot pluggable card terminal events (Pim Vullers contributed patches)
++ Cleanup SCUBA so that we have a smaller number of project
 - Document number > 9 digits. MRZ document number field "spill over" to optional information field). Check docs.
-- Cleanup SCUBA so that we have a smaller number of projects, and a single jar per platform
-- Pim Vullers contributed CardManager patches
-- JPEG2000 on MacOS X (jj2000 fails, why?)
-- 32 bit Mach-O dylib for WSQ on MacOS X
+- JPEG2000 on MacOS X (jai_imageio fails, no fallback to pure java jj2000 code, why?)
+- Combination 32/64 bit Mach-O dylib for WSQ on MacOS X. Include WSQ shared objects for Windows, Linux 32 / 64 bit as well.
+- Test "creating an MRTD from scratch and uploading it to JMRTD applet" scenario
 
 LDS
-+ Move progressive mode stuff out of FaceInfo
-+ Move java.awt.* dependencies out of org.jmrtd.lds package
-+ Clean up CBEFF groups data groups and related types. Create seperate package org.jmrtd.cbeff.
-+ Map terminology from ISO-19794 to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo.
-+ Get finger and iris bio template I/O to the same level as face.
-+ Restructure LDS base classes. Introduce *ImageInfo and LDSInfo.
-+ Start renaming some classes, prefer "Document" or "MRTD" over "Passport".
-+ getEncoded() implementations for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo. Uniformly use readObject() and writeObject().
++ Moved progressive mode stuff out of FaceInfo
++ Moved java.awt.* dependencies out of org.jmrtd.lds package
++ Cleaned up CBEFF groups data groups and related types. Create seperate package org.jmrtd.cbeff.
++ Mapped terminology from ISO-19794 to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo.
++ Finger and iris bio template I/O are at the same level as face bio template.
++ Implemented getEncoded() for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo. Uniformly use readObject() and writeObject().
++ Restructured LDS base classes. Introduced *ImageInfo and LDSInfo.
++ Started renaming classes, prefer "Document" and "MRTD" over "Passport".
 + In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; don't try to convert to degrees (for now), just use coded values.
 
 GUI
-+ First attempt at tree view. Editor mode only. Content window not tree event driven yet.
++ First attempt at tree view in editor mode. (Content panel not tree event driven yet, though.)
 + User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
 + Show DG3 and DG4 in tree if present, even if not readable.
-- MacOS X: Top menu, About dialog
-- MacOS X: AppData dir (in FileUtil)
++ MacOS X: Top menu, About dialog
++ MacOS X: AppData dir (in FileUtil)
 
 Android
-+ Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max)
++ Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max Guenther)
 
 Code quality
 + Check unit tests
@@ -229,10 +230,12 @@ Code quality
 - Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
 ASN.1 parsing
+- Remove dependencies on BC for ASN.1 / TLV, at least from public interface.
 - Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
 - ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
 
-SCUBA support (for exotic card readers, etc.)
+SCUBA
+- Cleanup. Declare all non-smart card stuff out of scope. Single jar.
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (see also http://alud.sourceforge.net/, can we JNI wrap this?).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
