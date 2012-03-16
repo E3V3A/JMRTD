@@ -363,10 +363,10 @@ public class DocumentViewFrame extends JMRTDFrame {
 			MRZInfo mrzInfo = dg1.getMRZInfo();
 			BACKeySpec bacEntry = passport.getBACKeySpec();
 			if (bacEntry != null &&
-					!(mrzInfo.getDocumentNumber().equals(bacEntry.getDocumentNumber()) &&
+					!(MRZInfo.equalsModuloFillerChars(mrzInfo.getDocumentNumber(), bacEntry.getDocumentNumber()) &&
 							mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
 							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
-				JOptionPane.showMessageDialog(getContentPane(), "Problem reading file", "MRZ used in BAC differs from MRZ in DG1!", JOptionPane.WARNING_MESSAGE);
+				JOptionPane.showMessageDialog(getContentPane(), "MRZ used in BAC differs from\nMRZ in DG1!", "Warning", JOptionPane.WARNING_MESSAGE);
 			}
 			final HolderViewPanel holderInfoPanel = new HolderViewPanel(mrzInfo);
 			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);

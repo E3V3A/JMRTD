@@ -868,7 +868,15 @@ public class MRZInfo extends AbstractInfo implements Serializable {
 		return result.toString();
 	}
 
-	private static boolean equalsModuloFillerChars(String str1, String str2) {
+	/**
+	 * Tests equality of two MRZ string while ignoring extra filler characters.
+	 * 
+	 * @param str1 an MRZ string
+	 * @param str2 another MRZ string
+	 * 
+	 * @return a boolean indicating whether the strings are equal modulo filler characters
+	 */
+	public static boolean equalsModuloFillerChars(String str1, String str2) {
 		if (str1 == str2) { return true; }
 		if ((str1 == null && str2 != null) || (str1 != null && str2 == null)) { return false; }
 		int length = Math.max(str1.length(), str2.length());

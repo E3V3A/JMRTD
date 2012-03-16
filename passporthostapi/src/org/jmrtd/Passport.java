@@ -820,13 +820,17 @@ public class Passport<C, R> {
 
 		/* Start reading each of the files. */
 		for (int tag: comTagList) {
-			short fid = LDSFile.lookupFIDByTag(tag);
 			try {
-				setupFile(service, fid);
-			} catch(CardServiceException ex) {
-				/* NOTE: Most likely EAC protected file. */
-				LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
-						+ ": " + ex.getMessage());
+				short fid = LDSFile.lookupFIDByTag(tag);
+				try {
+					setupFile(service, fid);
+				} catch(CardServiceException ex) {
+					/* NOTE: Most likely EAC protected file. */
+					LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
+							+ ": " + ex.getMessage());
+				}
+			} catch (NumberFormatException nfe) {
+				LOGGER.warning("DEBUG: ----------> NFE, tag = " + Integer.toHexString(tag));
 			}
 		}
 	}
@@ -1061,7 +1065,12 @@ public class Passport<C, R> {
 			COMFile com = new COMFile(comIn);
 			List<Integer> comDGList = new ArrayList<Integer>();
 			for(Integer tag : com.getTagList()) {
-				comDGList.add(LDSFile.lookupDataGroupNumberByTag(tag));
+				try {
+					int dgNumber = LDSFile.lookupDataGroupNumberByTag(tag);
+					comDGList.add(dgNumber);
+				} catch (NumberFormatException nfe) {
+					LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
+				}
 			}
 			Collections.sort(comDGList);
 
@@ -1072,12 +1081,12 @@ public class Passport<C, R> {
 			verificationStatus.setDS(Verdict.UNKNOWN);
 
 			/* Jeroen van Beek sanity check */
-			List<Integer> tagsOfHashes = new ArrayList<Integer>(hashes.keySet());
-			Collections.sort(tagsOfHashes);
-			if (!tagsOfHashes.equals(comDGList)) {
+			List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
+			Collections.sort(sodDGList);
+			if (!sodDGList.equals(comDGList)) {
 				LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
-						+ "tagsOfHashes = " + tagsOfHashes + "\n"
-						+ "comDGList = " + comDGList);
+						+ "datagroups reported in SOd = " + sodDGList + "\n"
+						+ "datagroups reported in COM = " + comDGList);
 				verificationStatus.setDS(Verdict.FAILED);
 				return; /* NOTE: Serious enough to not perform other checks, leave method. */
 			}
