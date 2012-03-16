@@ -27,7 +27,6 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Image;
-import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.beans.PropertyChangeEvent;
@@ -77,15 +76,6 @@ public class AboutDialog extends JDialog {
 		super(frame, false); /* NOTE: not modal */
 		area = new JTextPane();
 		buildDialog("JMRTD - About");
-	}
-
-	@Override
-	public void setVisible(boolean b) {
-		Window owner = getOwner();
-		if (b && owner != null) {
-			setLocationRelativeTo(owner);
-		}
-		super.setVisible(b);
 	}
 	
 	@Override

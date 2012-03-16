@@ -27,7 +27,6 @@ import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.GridLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
@@ -72,7 +71,7 @@ import net.sourceforge.scuba.swing.URIListEditor;
 public class PreferencesDialog extends JDialog {
 
 	private static final long serialVersionUID = -2915531202910732443L;
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	private static final Dimension PREFERRED_SIZE = new Dimension(350, 320);
 	private static final String COMMIT_TEXT = "OK", ABORT_TEXT = "Cancel";
@@ -81,7 +80,7 @@ public class PreferencesDialog extends JDialog {
 	private JOptionPane optionPane; 
 	private TerminalFactoryListener terminalFactoryListener;
 	private JPanel cardTerminalsPreferencesPanel;
-	
+
 	/**
 	 * Reading mode values.
 	 * 
@@ -125,47 +124,39 @@ public class PreferencesDialog extends JDialog {
 
 		this.state = new PreferencesState();
 		update();
-	
+
 		this.changedState = new PreferencesState(state);
-	
+
 		JTabbedPane jtb = new JTabbedPane();
 		jtb.addTab("Terminals", createTerminalsPreferencesTab(cm));
 		jtb.addTab("Certificates", createCertificatesPanel());
 		buildDialog("JMRTD - Preferences", jtb);
-		
+
 		updateGUIFromState(state);
 		terminalFactoryListener = new TerminalFactoryListener() {
 			@Override
 			public void cardTerminalAdded(CardTerminalEvent cte) {
 				CardTerminal terminal = cte.getTerminal();
 				LOGGER.info("DEBUG: preferences: add terminal " + terminal.getName());
-				addTerminal(terminal, true);
-				updateGUIFromState(state);
+				boolean isChecked = !(state.isTerminalPresent(terminal) && !state.isTerminalChecked(terminal));
+				addTerminal(terminal, isChecked);
+
 			}
 
 			@Override
 			public void cardTerminalRemoved(CardTerminalEvent cte) {
 				CardTerminal terminal = cte.getTerminal();
 				LOGGER.info("DEBUG: preferences: remove terminal " + terminal.getName());
-				cm.remove(terminal);
+				removeTerminal(terminal);
 			}
 		};
-	}
-
-	@Override
-	public void setVisible(boolean b) {
-		Window owner = getOwner();
-		if (b && owner != null) {
-			setLocationRelativeTo(owner);
-		}
-		super.setVisible(b);
 	}
 
 	@Override
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
-	
+
 	public TerminalFactoryListener getTerminalFactoryListener() {
 		return terminalFactoryListener;
 	}
@@ -206,7 +197,7 @@ public class PreferencesDialog extends JDialog {
 		changedState = new PreferencesState(state);
 		updateGUIFromState(state);
 	}
-	
+
 	/**
 	 * Returns <code>true</code> if the preferences backing store did
 	 * not exist during construction of this preferences panel.
@@ -239,19 +230,19 @@ public class PreferencesDialog extends JDialog {
 	public void addChangeListener(ChangeListener l) {
 		changeListeners.add(l);	
 	}
-	
+
 	public void removeChangeListener(ChangeListener l) {
 		changeListeners.remove(l);
 	}
 
 	/* ONLY PRIVATE METHODS BELOW */
-	
+
 	private void buildDialog(String title, JTabbedPane jtb) {
 		try {
 			setTitle(title);
 			JPanel preferencesPanel = new JPanel(new BorderLayout());
 			preferencesPanel.add(jtb, BorderLayout.CENTER);
-			
+
 			optionPane = new JOptionPane(
 					preferencesPanel,
 					JOptionPane.PLAIN_MESSAGE,
@@ -306,16 +297,16 @@ public class PreferencesDialog extends JDialog {
 			setContentPane(optionPane);
 		} catch (Exception ex) {
 			LOGGER.severe("Could not build dialog: " + ex.getMessage());
-//			ex.printStackTrace();
+			//			ex.printStackTrace();
 		}
 	}
 
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
 		cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cardTerminalsPreferencesPanel.setBorder(BorderFactory.createTitledBorder("Card Terminals"));
-//		if (terminalList.size() == 0) {
-//			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
-//		}
+		//		if (terminalList.size() == 0) {
+		//			cardTerminalsPreferencesPanel.add(new JLabel("No card terminals!"));
+		//		}
 		for (Entry<CardTerminal, Boolean> entry: terminalList.entrySet()) {
 			CardTerminal terminal = entry.getKey();
 			Boolean isCheckedValue = entry.getValue();
@@ -353,11 +344,23 @@ public class PreferencesDialog extends JDialog {
 	}
 
 	private void addTerminal(CardTerminal terminal, boolean isChecked) {
+		if (terminal == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
 		JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
 		cardTerminalPollingCheckBoxMap.put(terminal, checkBox);
 		checkBox.setAction(getSetTerminalAction(terminal, checkBox));
 		cardTerminalsPreferencesPanel.add(checkBox);
 		state.setTerminalChecked(terminal, isChecked);
+		updateGUIFromState(state);
+		validate();
+	}
+	
+	private void removeTerminal(CardTerminal terminal) {
+		if (terminal == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
+		JCheckBox checkBox = cardTerminalPollingCheckBoxMap.remove(terminal);
+		if (checkBox != null) { cardTerminalsPreferencesPanel.remove(checkBox); }
+		state.setTerminalPresent(terminal, false);
+		updateGUIFromState(state);
+		validate();
 	}
 
 	private JComponent createCertificatesPanel() {
@@ -451,7 +454,7 @@ public class PreferencesDialog extends JDialog {
 		action.putValue(Action.NAME, "Trace APDUs");
 		return action;
 	}
-	
+
 	/**
 	 * The state that needs to be saved to or restored from file. The panel
 	 * collects user changes in one instance while maintaining the original
@@ -479,6 +482,14 @@ public class PreferencesDialog extends JDialog {
 			return properties.toString();
 		}
 
+		public boolean isTerminalPresent(CardTerminal terminal) {
+			Object obj = properties.get(createTerminalKey(terminal.getName()));
+			if (obj == null) { return false; }
+			String value = ((String)obj).trim();
+			if ("".equals(value)) { return false; }
+			return true;
+		}
+
 		public boolean isTerminalChecked(CardTerminal terminal) {
 			Object obj = properties.get(createTerminalKey(terminal.getName()));
 			if (obj == null) { return false; }
@@ -488,8 +499,18 @@ public class PreferencesDialog extends JDialog {
 			return result;
 		}
 
+		public void setTerminalPresent(CardTerminal terminal, boolean b) {
+			if (terminal == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
+			if (b) {
+				/* NOTE: set it unchecked. */
+				properties.put(createTerminalKey(terminal.getName()), Boolean.toString(false));
+			} else {
+				properties.remove(createTerminalKey(terminal.getName()));
+			}
+		}
+
 		public void setTerminalChecked(CardTerminal terminal, boolean b) {
-			setTerminalChecked(terminal.getName(), b);
+			properties.put(createTerminalKey(terminal.getName()), Boolean.toString(b));
 		}
 
 		public ReadingMode getReadingMode() {
@@ -525,10 +546,6 @@ public class PreferencesDialog extends JDialog {
 
 		public Object clone() {
 			return new PreferencesState(properties);
-		}
-
-		private void setTerminalChecked(String terminalName, boolean b) {
-			properties.put(createTerminalKey(terminalName), Boolean.toString(b));
 		}
 
 		private String createTerminalKey(String terminalName) {
@@ -616,7 +633,7 @@ public class PreferencesDialog extends JDialog {
 		}
 		return result;
 	}
-	
+
 	private void notifyChangeListeners(ChangeEvent ce) {
 		for (ChangeListener l: changeListeners) { l.stateChanged(ce); }
 	}

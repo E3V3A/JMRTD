@@ -604,11 +604,13 @@ public class JMRTDApp {
 
 	/* NOTE: Public because OSXAdapter calls this on OS X via reflection. */
 	public void showAboutDialog() {
+		aboutDialog.setLocationRelativeTo(mainFrame);
 		aboutDialog.setVisible(true);
 	}
 
 	/* NOTE: Public because OSXAdapter calls this on OS X via reflection. */
 	public void showPreferencesDialog() {
+		preferencesDialog.setLocationRelativeTo(mainFrame);
 		preferencesDialog.setVisible(true);
 	}
 
