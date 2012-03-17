@@ -28,7 +28,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 
 import net.sourceforge.scuba.data.Gender;
@@ -41,7 +40,7 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @version $Revision$
  */
-public class MRZInfo extends AbstractInfo {
+public class MRZInfo extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = 7054965914471297804L;
 

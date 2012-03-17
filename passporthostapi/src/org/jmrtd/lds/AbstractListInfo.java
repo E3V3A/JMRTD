@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @param <R> the type of the elements
  */
-abstract class AbstractListInfo<R> extends AbstractInfo {
+abstract class AbstractListInfo<R> extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = 2970076896364365191L;
 

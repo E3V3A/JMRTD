@@ -81,7 +81,8 @@ import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DataGroup;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
+import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
@@ -198,7 +199,7 @@ public class Passport<C, R> {
 			byte[] dgBytes = dg.getEncoded();
 			fileLength = dgBytes.length;
 			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-			short fid = AbstractLDSFile.lookupFIDByTag(dg.getTag());
+			short fid = LDSFileUtil.lookupFIDByTag(dg.getTag());
 			fileLengths.put(fid, fileLength);
 			rawStreams.put(fid, new ByteArrayInputStream(dgBytes));
 		}
@@ -366,7 +367,7 @@ public class Passport<C, R> {
 				DataInputStream dataIn = new DataInputStream(zipEntryIn);
 				dataIn.readFully(bytes);
 				dataIn.close();
-				int tagBasedFID = AbstractLDSFile.lookupFIDByTag(bytes[0] & 0xFF);
+				int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
 				if (fid < 0) {
 					/* FIXME: untested! */
 					fid = tagBasedFID;
@@ -469,7 +470,7 @@ public class Passport<C, R> {
 				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 					byte[] data = getFileBytes(fid);
 					byte tag = data[0];
-					dgHashes.put(AbstractLDSFile.lookupDataGroupNumberByTag(tag), digest.digest(data));
+					dgHashes.put(LDSFileUtil.lookupDataGroupNumberByTag(tag), digest.digest(data));
 					comFile.insertTag(Integer.valueOf(tag));
 				}
 			}
@@ -798,7 +799,7 @@ public class Passport<C, R> {
 		CVCAFile cvcaFile = null;
 
 		/* Find out if we need to do EAC. */
-		if (Arrays.asList(comTagList).contains(AbstractLDSFile.EF_DG14_TAG)) {
+		if (Arrays.asList(comTagList).contains(LDSFile.EF_DG14_TAG)) {
 			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
 			dg14File = new DG14File(dg14In);
 
@@ -821,7 +822,7 @@ public class Passport<C, R> {
 		/* Start reading each of the files. */
 		for (int tag: comTagList) {
 			try {
-				short fid = AbstractLDSFile.lookupFIDByTag(tag);
+				short fid = LDSFileUtil.lookupFIDByTag(tag);
 				try {
 					setupFile(service, fid);
 				} catch(CardServiceException ex) {
@@ -968,7 +969,7 @@ public class Passport<C, R> {
 		if (couldNotRead.contains(fid)) { return; }
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
-			String message = "Cannot read " + AbstractLDSFile.toString(AbstractLDSFile.lookupTagByFID(fid));
+			String message = "Cannot read " + LDSFileUtil.toString(LDSFileUtil.lookupTagByFID(fid));
 			LOGGER.warning(message + " (not starting thread)");
 			couldNotRead.add(fid);
 			return;
@@ -1066,7 +1067,7 @@ public class Passport<C, R> {
 			List<Integer> comDGList = new ArrayList<Integer>();
 			for(Integer tag : com.getTagList()) {
 				try {
-					int dgNumber = AbstractLDSFile.lookupDataGroupNumberByTag(tag);
+					int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
 					comDGList.add(dgNumber);
 				} catch (NumberFormatException nfe) {
 					LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
@@ -1099,7 +1100,7 @@ public class Passport<C, R> {
 				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
 			}
 			for (int dgNumber: hashes.keySet()) {
-				short fid = AbstractLDSFile.lookupFIDByTag(AbstractLDSFile.lookupTagByDataGroupNumber(dgNumber));
+				short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
 				byte[] storedHash = hashes.get(dgNumber);
 
 				digest.reset();

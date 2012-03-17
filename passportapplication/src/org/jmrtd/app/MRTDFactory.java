@@ -64,7 +64,7 @@ import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceImageInfo.EyeColor;
 import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
@@ -91,7 +91,7 @@ public class MRTDFactory {
 	public static Passport<CommandAPDU,ResponseAPDU> createEmptyMRTD(String docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
 
 		/* EF.COM */
-		int[] tagList = { AbstractLDSFile.EF_DG1_TAG, AbstractLDSFile.EF_DG2_TAG };
+		int[] tagList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
 		COMFile comFile = new COMFile("1.7", "4.0.0", tagList);
 
 		/* EF.DG1 */

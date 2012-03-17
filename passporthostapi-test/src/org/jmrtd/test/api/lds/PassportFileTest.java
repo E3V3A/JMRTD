@@ -34,7 +34,7 @@ import java.util.zip.ZipFile;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.tlv.TLVInputStream;
 
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
 
 /**
  * You can throw files containing MRTD content at this test case and
@@ -127,24 +127,24 @@ public class PassportFileTest extends TestCase {
 		int tag = tlvIn.readTag();
 		tlvIn.reset(); /* NOTE: Unread the tag... */
 		switch (tag) {
-		case AbstractLDSFile.EF_COM_TAG: log(name + " -> COM"); comFileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG1_TAG: log(name + " -> DG1"); dg1FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG2_TAG: log(name + " -> DG2"); dg2FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG3_TAG: log(name + " -> DG3"); dg3FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG4_TAG: break;
-		case AbstractLDSFile.EF_DG5_TAG: break;
-		case AbstractLDSFile.EF_DG6_TAG: break;
-		case AbstractLDSFile.EF_DG7_TAG: log(name + " -> DG7"); dg7FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG8_TAG: break;
-		case AbstractLDSFile.EF_DG9_TAG: break;
-		case AbstractLDSFile.EF_DG10_TAG: break;
-		case AbstractLDSFile.EF_DG11_TAG: log(name + " -> DG11"); dg11FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG12_TAG: break;
-		case AbstractLDSFile.EF_DG13_TAG: break;
-		case AbstractLDSFile.EF_DG14_TAG: break;
-		case AbstractLDSFile.EF_DG15_TAG: log(name + " -> DG15"); dg15FileTest.testFile(tlvIn); break;
-		case AbstractLDSFile.EF_DG16_TAG: break;
-		case AbstractLDSFile.EF_SOD_TAG: log(name + " -> SOD"); sodFileTest.testFile(tlvIn); break;
+		case LDSFile.EF_COM_TAG: log(name + " -> COM"); comFileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG1_TAG: log(name + " -> DG1"); dg1FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG2_TAG: log(name + " -> DG2"); dg2FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG3_TAG: log(name + " -> DG3"); dg3FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG4_TAG: break;
+		case LDSFile.EF_DG5_TAG: break;
+		case LDSFile.EF_DG6_TAG: break;
+		case LDSFile.EF_DG7_TAG: log(name + " -> DG7"); dg7FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG8_TAG: break;
+		case LDSFile.EF_DG9_TAG: break;
+		case LDSFile.EF_DG10_TAG: break;
+		case LDSFile.EF_DG11_TAG: log(name + " -> DG11"); dg11FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG12_TAG: break;
+		case LDSFile.EF_DG13_TAG: break;
+		case LDSFile.EF_DG14_TAG: break;
+		case LDSFile.EF_DG15_TAG: log(name + " -> DG15"); dg15FileTest.testFile(tlvIn); break;
+		case LDSFile.EF_DG16_TAG: break;
+		case LDSFile.EF_SOD_TAG: log(name + " -> SOD"); sodFileTest.testFile(tlvIn); break;
 		}
 	}
 

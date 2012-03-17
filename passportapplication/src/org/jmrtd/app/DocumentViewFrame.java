@@ -104,7 +104,7 @@ import org.jmrtd.lds.ImageInfo;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
@@ -320,8 +320,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 				default:
 					String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
 					if ((fid & 0x010F) == fid) {
-						int tag = AbstractLDSFile.lookupTagByFID(fid);
-						int dgNumber = AbstractLDSFile.lookupDataGroupNumberByTag(tag);
+						int tag = LDSFileUtil.lookupTagByFID(fid);
+						int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
 						message = "Displaying of DG" + dgNumber + " not supported!";
 					}
 					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);

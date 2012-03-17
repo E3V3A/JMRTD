@@ -262,7 +262,7 @@ public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not
 		result.append("[");
 		int dgCount = tagList.size();
 		for (int tag: tagList) {
-			result.append("DG" + AbstractLDSFile.lookupDataGroupNumberByTag(tag));
+			result.append("DG" + LDSFileUtil.lookupDataGroupNumberByTag(tag));
 			if (i < dgCount - 1) { result.append(", "); }
 			i++;
 		}

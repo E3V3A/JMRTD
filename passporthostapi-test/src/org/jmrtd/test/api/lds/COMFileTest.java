@@ -27,7 +27,7 @@ import java.io.InputStream;
 import junit.framework.TestCase;
 
 import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
 
 public class COMFileTest extends TestCase
 {
@@ -91,8 +91,8 @@ public class COMFileTest extends TestCase
 	
 	public void testAlternativeConstructor() {
 		int[] tagList1 = new int[2];
-		tagList1[0] = AbstractLDSFile.EF_DG1_TAG;
-		tagList1[1] = AbstractLDSFile.EF_DG2_TAG;
+		tagList1[0] = LDSFile.EF_DG1_TAG;
+		tagList1[1] = LDSFile.EF_DG2_TAG;
 		int[] tagList2 = new int[tagList1.length];
 		System.arraycopy(tagList1, 0, tagList2, 0, tagList1.length);
 		assertNotNull(tagList1);
@@ -109,9 +109,9 @@ public class COMFileTest extends TestCase
 	
 	public static COMFile createTestObject() {
 		int[] tagList = new int[3];
-		tagList[0] = AbstractLDSFile.EF_DG1_TAG;
-		tagList[1] = AbstractLDSFile.EF_DG2_TAG;
-		tagList[2] = AbstractLDSFile.EF_DG15_TAG;
+		tagList[0] = LDSFile.EF_DG1_TAG;
+		tagList[1] = LDSFile.EF_DG2_TAG;
+		tagList[2] = LDSFile.EF_DG15_TAG;
 		return new COMFile("01", "07", "04", "00", "00", tagList);
 	}
 

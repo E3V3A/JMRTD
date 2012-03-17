@@ -11,7 +11,7 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.SODFile;
 
 /**
@@ -66,7 +66,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         }
         int[] tags = com.getTagList();
         for (int tag : tags) {
-            assertTrue(tag != AbstractLDSFile.EF_DG14_TAG);
+            assertTrue(tag != LDSFile.EF_DG14_TAG);
         }
     }
 

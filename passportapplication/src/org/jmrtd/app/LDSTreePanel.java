@@ -74,7 +74,8 @@ import org.jmrtd.lds.ImageInfo;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
-import org.jmrtd.lds.AbstractLDSFile;
+import org.jmrtd.lds.LDSFile;
+import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
@@ -96,7 +97,7 @@ public class LDSTreePanel extends JPanel {
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private MRTDTreeModel treeModel;
-	
+
 	/**
 	 * Constructs a new tree panel.
 	 * 
@@ -118,7 +119,7 @@ public class LDSTreePanel extends JPanel {
 	public Dimension getPreferredSize() {
 		return PREFERRED_SIZE;
 	}
-	
+
 	/* ONLY PRIVATE METHODS BELOW */
 
 	private void setDocument(Passport document) {
@@ -134,7 +135,7 @@ public class LDSTreePanel extends JPanel {
 		}
 	}
 
-	private MutableTreeNode buildTree(AbstractLDSFile passportFile) {
+	private MutableTreeNode buildTree(LDSFile passportFile) {
 		if (passportFile instanceof COMFile) {
 			return buildTreeFromCOMFile((COMFile)passportFile);
 		}
@@ -156,8 +157,12 @@ public class LDSTreePanel extends JPanel {
 		node.add(tagsNode);
 		int[] tagList = com.getTagList();
 		for (int tag: tagList) {
-			int dgNumber = DataGroup.lookupDataGroupNumberByTag(tag);
-			tagsNode.add(new DefaultMutableTreeNode("DG" + dgNumber + " (" + Integer.toHexString(tag) + ")"));
+			try {
+				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+				tagsNode.add(new DefaultMutableTreeNode("DG" + dgNumber + " (" + Integer.toHexString(tag) + ")"));
+			} catch (NumberFormatException nfe) {
+				LOGGER.warning("Did not recognize tag in EF_COM tag list: 0x" + Integer.toHexString(tag));
+			}
 		}
 		return node;
 	}
@@ -188,27 +193,27 @@ public class LDSTreePanel extends JPanel {
 
 	private MutableTreeNode buildTreeFromDataGroup(DataGroup dataGroup) {
 		switch(dataGroup.getTag()) {
-		case AbstractLDSFile.EF_DG1_TAG:
+		case LDSFile.EF_DG1_TAG:
 			return buildTreeFromDG1((DG1File)dataGroup);
-		case AbstractLDSFile.EF_DG2_TAG:
+		case LDSFile.EF_DG2_TAG:
 			return buildTreeFromDG2((DG2File)dataGroup);
-		case AbstractLDSFile.EF_DG3_TAG:
+		case LDSFile.EF_DG3_TAG:
 			return buildTreeFromDG3((DG3File)dataGroup);
-		case AbstractLDSFile.EF_DG4_TAG:
+		case LDSFile.EF_DG4_TAG:
 			return buildTreeFromDG4((DG4File)dataGroup);
-		case AbstractLDSFile.EF_DG5_TAG:
+		case LDSFile.EF_DG5_TAG:
 			return buildTreeFromDG5((DG5File)dataGroup);
-		case AbstractLDSFile.EF_DG6_TAG:
+		case LDSFile.EF_DG6_TAG:
 			return buildTreeFromDG6((DG6File)dataGroup);
-		case AbstractLDSFile.EF_DG7_TAG:
+		case LDSFile.EF_DG7_TAG:
 			return buildTreeFromDG7((DG7File)dataGroup);
-		case AbstractLDSFile.EF_DG11_TAG:
+		case LDSFile.EF_DG11_TAG:
 			return buildTreeFromDG11((DG11File)dataGroup);
-		case AbstractLDSFile.EF_DG12_TAG:
+		case LDSFile.EF_DG12_TAG:
 			return buildTreeFromDG12((DG12File)dataGroup);
-		case AbstractLDSFile.EF_DG14_TAG:
+		case LDSFile.EF_DG14_TAG:
 			return buildTreeFromDG14((DG14File)dataGroup);
-		case AbstractLDSFile.EF_DG15_TAG:
+		case LDSFile.EF_DG15_TAG:
 			return buildTreeFromDG15((DG15File)dataGroup);
 		}
 		return new DefaultMutableTreeNode(dataGroup);
@@ -560,10 +565,10 @@ public class LDSTreePanel extends JPanel {
 				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); return null; }
 				try {
 					InputStream inputStream = passport.getInputStream(fid);
-					return buildTree(AbstractLDSFile.getInstance(inputStream));
+					return buildTree(LDSFileUtil.getLDSFile(inputStream));
 				} catch (Exception cse) {
 					try {
-						int dgNumber = AbstractLDSFile.lookupDataGroupNumberByFID(fid);
+						int dgNumber = LDSFileUtil.lookupDataGroupNumberByFID(fid);
 						return new DefaultMutableTreeNode("DG" + dgNumber);
 					} catch (NumberFormatException nfe) {
 						return new DefaultMutableTreeNode("File " + Integer.toHexString(fid));	

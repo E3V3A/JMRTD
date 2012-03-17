@@ -42,7 +42,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
  * 
  * FIXME: dependency on BC in interface?
  */
-public abstract class SecurityInfo extends AbstractInfo {
+public abstract class SecurityInfo extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = -7919854443619069808L;
 
