@@ -66,7 +66,7 @@ public class DG14FileTest extends TestCase {
 			 *
 			 * FIXME: This happened to MO on WinXP, Eclipse 3.4, Sun JDK1.6.0_15,
 			 * not tested on other platforms... replace "SunJCE" with "BC" and see
-			 * if this test halts forever.
+			 * if this test hangs forever.
 			 */
 			KeyPairGenerator keyGen2 = KeyPairGenerator.getInstance("DH", "SunJCE");
 
