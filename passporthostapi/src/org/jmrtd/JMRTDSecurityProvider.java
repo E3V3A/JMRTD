@@ -55,8 +55,8 @@ import java.util.logging.Logger;
  * 
  * @version $Revision: $
  */
-public class JMRTDSecurityProvider extends Provider
-{
+public class JMRTDSecurityProvider extends Provider {
+
 	private static final long serialVersionUID = -2881416441551680704L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");

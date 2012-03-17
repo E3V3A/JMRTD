@@ -30,7 +30,7 @@ import net.sourceforge.scuba.util.Hex;
 /**
  * Event to indicate AA protocol was executed.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision$
  */

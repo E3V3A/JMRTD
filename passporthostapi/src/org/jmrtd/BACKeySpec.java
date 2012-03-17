@@ -29,7 +29,7 @@ import java.util.Date;
 /**
  * A BAC key entry.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision: 764 $
  */

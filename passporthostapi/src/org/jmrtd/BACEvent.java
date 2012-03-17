@@ -27,7 +27,7 @@ import java.util.EventObject;
 /**
  * Event to indicate BAC protocol was executed.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision$
  */

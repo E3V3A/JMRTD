@@ -27,12 +27,12 @@ import java.util.EventObject;
 /**
  * Event for passport insertion and removal.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision$
  */
-public class PassportEvent extends EventObject
-{
+public class PassportEvent extends EventObject {
+
 	private static final long serialVersionUID = 3400137567708197350L;
 
 	/** Event type constant. */

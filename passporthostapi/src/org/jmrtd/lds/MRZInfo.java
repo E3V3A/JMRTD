@@ -36,7 +36,7 @@ import net.sourceforge.scuba.data.Gender;
  * Data structure for storing the MRZ information
  * as found in DG1. Based on ICAO Doc 9303 part 1 and 3.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision$
  */

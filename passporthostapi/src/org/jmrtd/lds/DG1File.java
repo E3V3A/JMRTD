@@ -25,7 +25,6 @@ package org.jmrtd.lds;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -40,7 +39,7 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * 
  * @version $Revision$
  */
-public class DG1File extends DataGroup implements Serializable {
+public class DG1File extends DataGroup {
 
 	private static final long serialVersionUID = 5091606125728809058L;
 

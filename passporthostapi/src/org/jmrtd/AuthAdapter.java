@@ -25,7 +25,7 @@ package org.jmrtd;
 /**
  * Trivial implementation of AuthListener.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
  */

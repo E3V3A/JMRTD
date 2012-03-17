@@ -25,7 +25,7 @@ package org.jmrtd;
 /**
  * Interface for authentication event observers.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision$
  */

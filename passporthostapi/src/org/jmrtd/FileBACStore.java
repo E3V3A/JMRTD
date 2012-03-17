@@ -45,8 +45,8 @@ import net.sourceforge.scuba.util.FileUtil;
  *
  * @version $Revision: $
  */
-public class FileBACStore implements BACStore
-{
+public class FileBACStore implements BACStore {
+
 	private static final File
 		JMRTD_USER_DIR = FileUtil.getApplicationDataDir("jmrtd"),
 		DEFAULT_BACDB_FILE = new File(JMRTD_USER_DIR, "bacdb.txt");

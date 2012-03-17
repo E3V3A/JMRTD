@@ -27,7 +27,7 @@ import net.sourceforge.scuba.smartcards.CardTerminalListener;
 /**
  * Interface for passport insertion and removal observers.
  *
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Revision$
  */

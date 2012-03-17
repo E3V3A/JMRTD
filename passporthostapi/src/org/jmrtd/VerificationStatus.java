@@ -25,7 +25,7 @@ package org.jmrtd;
 /**
  * A data type for communicating document verification check information.
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision$
  */
