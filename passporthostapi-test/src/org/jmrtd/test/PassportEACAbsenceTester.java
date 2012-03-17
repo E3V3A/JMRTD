@@ -11,7 +11,7 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.lds.COMFile;
-import org.jmrtd.lds.LDSFile;
+import org.jmrtd.lds.AbstractLDSFile;
 import org.jmrtd.lds.SODFile;
 
 /**
@@ -57,7 +57,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         COMFile com = null;
         try {
             service.sendSelectFile(service.getWrapper(), fid);
-            CardFileInputStream in = service.readFile(fid);
+            CardFileInputStream in = service.getInputStream(fid);
             com = new COMFile(in);
         } catch (CardServiceException cse) {
             fail();
@@ -66,7 +66,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         }
         int[] tags = com.getTagList();
         for (int tag : tags) {
-            assertTrue(tag != LDSFile.EF_DG14_TAG);
+            assertTrue(tag != AbstractLDSFile.EF_DG14_TAG);
         }
     }
 
@@ -83,7 +83,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         SODFile sod = null;
         try {
             service.sendSelectFile(service.getWrapper(), fid);
-            CardFileInputStream in = service.readFile(fid);
+            CardFileInputStream in = service.getInputStream(fid);
             sod = new SODFile(in);
         } catch (CardServiceException cse) {
             fail();

@@ -44,7 +44,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  *
  * @version $Revision: $
  */
-public class FingerInfo extends ListInfo<FingerImageInfo> implements BiometricDataBlock {
+public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = 5808625058034008176L;
 

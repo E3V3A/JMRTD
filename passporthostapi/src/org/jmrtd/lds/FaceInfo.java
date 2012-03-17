@@ -42,7 +42,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  */
-public class FaceInfo extends ListInfo<FaceImageInfo> implements BiometricDataBlock {
+public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = -6053206262773400725L;
 

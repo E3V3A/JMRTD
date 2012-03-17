@@ -34,7 +34,7 @@ import java.io.Serializable;
  *
  * @version $Revision: $
  */
-abstract class AbstractInfo implements LDSInfo, Serializable {
+abstract class AbstractInfo implements LDSInfo {
 
 	private static final long serialVersionUID = -2340098256249194537L;
 

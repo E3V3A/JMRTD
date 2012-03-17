@@ -140,8 +140,8 @@ Code quality
 + Findbugs
 
 
-VERSION 0.4.7 (Q1 2012)
-----------------------
+VERSION 0.4.7 (2012-03-XX)
+--------------------------
 
 General
 + Abstraction of SCUBA smartcard layer.
@@ -149,10 +149,10 @@ General
 + Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
 + CardManager hot pluggable card terminal events (Pim Vullers contributed patches)
 + Cleanup SCUBA so that we have a smaller number of project
++ Consistent naming and param order in PassportService and Passport (readFile vs getInputStream)
 - Document number > 9 digits. MRZ document number field "spill over" to optional information field). Check docs.
-- JPEG2000 on MacOS X (jai_imageio fails, no fallback to pure java jj2000 code, why?)
-- Combination 32/64 bit Mach-O dylib for WSQ on MacOS X. Include WSQ shared objects for Windows, Linux 32 / 64 bit as well.
 - Test "creating an MRTD from scratch and uploading it to JMRTD applet" scenario
+- Test Android ajmrtd interop.
 
 LDS
 + Moved progressive mode stuff out of FaceInfo
@@ -175,6 +175,10 @@ GUI
 Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max Guenther)
 
+ImageIO
+- JPEG2000 on MacOS X (jai_imageio fails, no fallback to pure java jj2000 code, why?)
++ WSQ combination 32/64 bit Mach-O dylib on MacOS X. Include WSQ shared objects for Windows, Linux 32 / 64 bit as well.
+
 Code quality
 + Check unit tests
 + Check JavaDoc
@@ -196,7 +200,7 @@ General
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Check image/jpeg2000 mime-type. Should this be image/jp2 according to RFC3745?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
-- Latest C sources from NIST for WSQ?
+- Latest C sources from NIST for WSQ (version 3.1)?
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.

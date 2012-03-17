@@ -22,6 +22,8 @@
 
 package org.jmrtd.lds;
 
+import java.io.Serializable;
+
 /**
  * Interface for all data structures in the LDS.
  * 
@@ -29,7 +31,7 @@ package org.jmrtd.lds;
  * 
  * @version $Revision: $
  */
-interface LDSInfo {
+interface LDSInfo extends Serializable {
 	
 	/**
 	 * Gets the encoded contents of this LDS info.

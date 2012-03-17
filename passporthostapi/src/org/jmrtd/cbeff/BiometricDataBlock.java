@@ -22,6 +22,8 @@
 
 package org.jmrtd.cbeff;
 
+import java.io.Serializable;
+
 /**
  * Biometric data block.
  * 
@@ -31,7 +33,7 @@ package org.jmrtd.cbeff;
  * 
  * @since 0.4.7
  */
-public interface BiometricDataBlock {
+public interface BiometricDataBlock extends Serializable {
 
 	/**
 	 * Gets the standard biometric header of this biometric data block

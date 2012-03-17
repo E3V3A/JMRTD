@@ -53,7 +53,7 @@ import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
-import org.jmrtd.lds.LDSFile;
+import org.jmrtd.lds.AbstractLDSFile;
 import org.jmrtd.lds.SODFile;
 
 public class SODFileTest extends TestCase {
@@ -220,7 +220,7 @@ public class SODFileTest extends TestCase {
 
 			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 
-			int[] dgPresenceList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
+			int[] dgPresenceList = { AbstractLDSFile.EF_DG1_TAG, AbstractLDSFile.EF_DG2_TAG };
 			COMFile com = new COMFile("1.7", "4.0.0", dgPresenceList);
 			FileOutputStream comOut = new FileOutputStream("t:/EF_COM.bin");			
 			comOut.write(com.getEncoded());

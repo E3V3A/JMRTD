@@ -38,7 +38,7 @@ import java.util.List;
  * 
  * @version $Revision: $
  */
-public class IrisBiometricSubtypeInfo extends ListInfo<IrisImageInfo> {
+public class IrisBiometricSubtypeInfo extends AbstractListInfo<IrisImageInfo> {
 
 	private static final long serialVersionUID = -6588640634764878039L;
 

@@ -341,7 +341,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 			short fid = PassportService.EF_DG14;
 
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = readFile(fid);
+			CardFileInputStream in = getInputStream(fid);
 			DG14File dg14 = new DG14File(in);
 			cardKey = dg14.getChipAuthenticationPublicKeyInfos().get(-1);
 			resetCard();
@@ -363,7 +363,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 		short fid = PassportService.EF_DG15;
 		try {
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = readFile(fid);
+			CardFileInputStream in = getInputStream(fid);
 			DG15File dg15 = new DG15File(in);
 			publicKey = dg15.getPublicKey();
 			resetCard();
@@ -380,7 +380,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 			doBAC();
 			short fid = PassportService.EF_CVCA;
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = readFile(fid);
+			CardFileInputStream in = getInputStream(fid);
 			result = new CVCAFile(in);
 			resetCard();
 		}catch(CardServiceException e) {

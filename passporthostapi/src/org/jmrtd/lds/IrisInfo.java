@@ -47,7 +47,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  * 
  * @version $Revision: $
  */
-public class IrisInfo extends ListInfo<IrisBiometricSubtypeInfo> implements BiometricDataBlock {
+public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = -3415309711643815511L;
 

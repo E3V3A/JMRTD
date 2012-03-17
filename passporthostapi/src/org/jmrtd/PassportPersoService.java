@@ -520,7 +520,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		for(short i : passportFiles) {
 			InputStream is = null;
 			try {
-				is = service.readFile(i);
+				is = service.getInputStream(i);
 			} catch (CardServiceException e) {
 				continue;
 			}		

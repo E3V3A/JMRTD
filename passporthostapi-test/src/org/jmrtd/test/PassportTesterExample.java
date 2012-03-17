@@ -16,12 +16,12 @@ public class PassportTesterExample extends PassportTesterBase {
 		traceApdu = true;
 		try {
 			service.doBAC(new BACKeySpec("XX1234587", getDate("19760803"), getDate("20140507")));
-			CardFileInputStream in = service.readFile(PassportService.EF_DG1);
+			CardFileInputStream in = service.getInputStream(PassportService.EF_DG1);
 			assertNotNull(in);
 			in = null;
 			resetCard();
 			try {
-				in = service.readFile(PassportService.EF_DG1);
+				in = service.getInputStream(PassportService.EF_DG1);
 				fail();
 			} catch (CardServiceException e) {
 				assertNull(in);

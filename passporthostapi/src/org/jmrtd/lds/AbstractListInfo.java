@@ -38,7 +38,7 @@ import java.util.List;
  *
  * @param <R> the type of the elements
  */
-abstract class ListInfo<R> extends AbstractInfo {
+abstract class AbstractListInfo<R> extends AbstractInfo {
 
 	private static final long serialVersionUID = 2970076896364365191L;
 
@@ -67,10 +67,10 @@ abstract class ListInfo<R> extends AbstractInfo {
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
 		if (other == this) { return true; }
-		if (!(other instanceof ListInfo<?>)) { return false; }
+		if (!(other instanceof AbstractListInfo<?>)) { return false; }
 		try {
 			@SuppressWarnings("unchecked")
-			ListInfo<R> otherRecord = (ListInfo<R>)other;
+			AbstractListInfo<R> otherRecord = (AbstractListInfo<R>)other;
 			List<R> subRecords = getSubRecords();
 			List<R> otherSubRecords = otherRecord.getSubRecords();
 			int subRecordCount = subRecords.size();

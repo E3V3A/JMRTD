@@ -27,7 +27,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.Serializable;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 
@@ -41,7 +40,7 @@ import org.jmrtd.PassportService;
  * 
  * @version $Revision: 1320 $
  */
-public abstract class LDSFile implements LDSInfo, Serializable {
+public abstract class AbstractLDSFile implements LDSInfo {
 
 	private static final long serialVersionUID = -4908935713109830409L;
 
@@ -70,7 +69,7 @@ public abstract class LDSFile implements LDSInfo, Serializable {
 	 * Constructor only visible to the other
 	 * classes in this package.
 	 */
-	LDSFile() {
+	AbstractLDSFile() {
 	}
 
 	/**
@@ -105,7 +104,7 @@ public abstract class LDSFile implements LDSInfo, Serializable {
 	 * 
 	 * @throws IOException on reading error from the input stream
 	 */
-	public static LDSFile getInstance(InputStream inputStream) throws IOException {
+	public static AbstractLDSFile getInstance(InputStream inputStream) throws IOException {
 		TLVInputStream tlvIn = new TLVInputStream(new BufferedInputStream(inputStream, 8));
 		tlvIn.mark(5);
 		int tag = tlvIn.readTag();

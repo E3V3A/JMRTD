@@ -338,7 +338,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/** Dump file to console */
 	public void print(short fid) throws CardServiceException {
 		System.out.printf("Checking out file 0x0%X :", fid);
-		CardFileInputStream in = service.readFile(fid);
+		CardFileInputStream in = service.getInputStream(fid);
 		byte[] contents = toByteArray(in);
 		System.out.println(Hex.bytesToHexString(contents));
 	}

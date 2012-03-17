@@ -81,7 +81,7 @@ import org.jmrtd.lds.MRZInfo;
  *        open() ==&gt;&lt;br /&gt;
  *        doBAC(...) ==&gt;&lt;br /&gt;
  *        doAA() ==&gt;&lt;br /&gt;
- *        readFile(...)&lt;sup&gt;*&lt;/sup&gt; ==&gt;&lt;br /&gt;
+ *        getInputStream(...)&lt;sup&gt;*&lt;/sup&gt; ==&gt;&lt;br /&gt;
  *        close()
  * </pre>
  *
@@ -149,7 +149,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	/** The security document. */
 	public static final short EF_SOD = 0x011D;
 
-	/** File indicating which data groups are present. */
+	/** The data group presence list. */
 	public static final short EF_COM = 0x011E;
 
 	/**
@@ -160,7 +160,6 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	public static final short EF_CVCA = 0x011C;
 
 	/** Short file identifiers for the DGs */
-
 	public static final byte
 	SF_DG1 = 0x01,
 	SF_DG2 = 0x02,
@@ -225,7 +224,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	private transient MessageDigest aaDigest;
 	private transient Cipher aaCipher;
 	protected Random random;
-	private PassportFileSystem fs;
+	private MRTDFileSystem fs;
 
 	/**
 	 * Creates a new passport service for accessing the passport.
@@ -246,7 +245,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
-			fs = new PassportFileSystem();
+			fs = new MRTDFileSystem();
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}
@@ -527,6 +526,27 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		}
 	}
 
+
+	/**
+	 * Adds an authentication event listener.
+	 * 
+	 * @param l
+	 *            listener
+	 */
+	public void addAuthenticationListener(AuthListener l) {
+		authListeners.add(l);
+	}
+
+	/**
+	 * Removes an authentication event listener.
+	 * 
+	 * @param l
+	 *            listener
+	 */
+	public void removeAuthenticationListener(AuthListener l) {
+		authListeners.remove(l);
+	}
+	
 	// For ECDSA the EAC 1.11 specification requires the signature to be
 	// stripped down from any ASN.1 wrappers, as so:
 	private byte[] getRawECDSASignature(byte[] signature, int keySize) throws IOException {
@@ -557,36 +577,12 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		return result;
 	}
 
-
-
 	private byte[] wrapDO(byte tag, byte[] data) {
 		byte[] result = new byte[data.length + 2];
 		result[0] = tag;
 		result[1] = (byte) data.length;
 		System.arraycopy(data, 0, result, 2, data.length);
 		return result;
-	}
-
-
-
-	/**
-	 * Adds an authentication event listener.
-	 * 
-	 * @param l
-	 *            listener
-	 */
-	public void addAuthenticationListener(AuthListener l) {
-		authListeners.add(l);
-	}
-
-	/**
-	 * Removes an authentication event listener.
-	 * 
-	 * @param l
-	 *            listener
-	 */
-	public void removeAuthenticationListener(AuthListener l) {
-		authListeners.remove(l);
 	}
 
 	/**
@@ -653,41 +649,6 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	}
 
 	/**
-	 * Performs the <i>Active Authentication</i> protocol. This method just
-	 * gives the response from the card without checking. Use
-	 * {@link #doAA(PublicKey)} instead.
-	 * 
-	 * @param publicKey
-	 *            the public key to use (usually read from the card)
-	 * @param challenge
-	 *            the random challenge of exactly 8 bytes
-	 * 
-	 * @return response from the card
-	 */
-	public byte[] sendAA(PublicKey publicKey, byte[] challenge)	throws CardServiceException {
-		if (publicKey == null) {
-			throw new IllegalArgumentException("AA failed: bad key");
-		}
-		if (challenge == null || challenge.length != 8) {
-			throw new IllegalArgumentException("AA failed: bad challenge");
-		}
-		byte[] response = sendInternalAuthenticate(wrapper, challenge);
-		return response;
-	}
-
-	/**
-	 * Notifies listeners about AA event.
-	 * 
-	 * @param event
-	 *            AA event.
-	 */
-	protected void notifyAAPerformed(AAEvent event) {
-		for (AuthListener l : authListeners) {
-			l.performedAA(event);
-		}
-	}
-
-	/**
 	 * Closes this service.
 	 */
 	public void close() {
@@ -711,8 +672,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 
 	/**
 	 * @deprecated hack
-	 * @param wrapper
-	 *            wrapper
+	 * 
+	 * @param wrapper wrapper
 	 */
 	public void setWrapper(SecureMessagingWrapper<C, R> wrapper) {
 		this.wrapper = wrapper;
@@ -721,26 +682,69 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	}
 	
 	/**
-	 * Gets the file indicated by a file identifier.
+	 * Gets the file as an input stream indicated by a file identifier.
+	 * The resulting input stream will send APDUs to the card.
 	 * 
-	 * @param fid
-	 *            ICAO file identifier
+	 * @param fid ICAO file identifier
 	 * 
-	 * @return the file
+	 * @return the file as an input stream
 	 * 
-	 * @throws IOException
-	 *             if the file cannot be read
+	 * @throws IOException if the file cannot be read
 	 */
-	public CardFileInputStream readFile(short fid) throws CardServiceException {
+	public CardFileInputStream getInputStream(short fid) throws CardServiceException {
 		fs.selectFile(fid);
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
 
-	private class PassportFileSystem implements FileSystemStructured, Serializable
-	{
+	/* ONLY PRIVATE METHODS BELOW */
+	
+	/**
+	 * Performs the <i>Active Authentication</i> protocol. This method just
+	 * gives the response from the card without checking. Use
+	 * {@link #doAA(PublicKey)} instead.
+	 * 
+	 * @param publicKey
+	 *            the public key to use (usually read from the card)
+	 * @param challenge
+	 *            the random challenge of exactly 8 bytes
+	 * 
+	 * @return response from the card
+	 */
+	private byte[] sendAA(PublicKey publicKey, byte[] challenge)	throws CardServiceException {
+		if (publicKey == null) {
+			throw new IllegalArgumentException("AA failed: bad key");
+		}
+		if (challenge == null || challenge.length != 8) {
+			throw new IllegalArgumentException("AA failed: bad challenge");
+		}
+		byte[] response = sendInternalAuthenticate(wrapper, challenge);
+		return response;
+	}
+	
+	/**
+	 * Notifies listeners about AA event.
+	 * 
+	 * @param event
+	 *            AA event.
+	 */
+	private void notifyAAPerformed(AAEvent event) {
+		for (AuthListener l : authListeners) {
+			l.performedAA(event);
+		}
+	}
+
+	/**
+	 * A file system for ICAO MRTDs.
+	 * 
+	 * @author The JMRTD team (info@jmrtd.org)
+	 *
+	 * @version $Revision$
+	 */
+	private class MRTDFileSystem implements FileSystemStructured, Serializable {
+
 		private static final long serialVersionUID = -4357282016708205020L;
 
-		private PassportFileInfo selectedFile;
+		private MRTDFileInfo selectedFile;
 
 		public synchronized byte[] readBinary(int offset, int length)
 		throws CardServiceException {
@@ -751,11 +755,11 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		public synchronized void selectFile(short fid)
 		throws CardServiceException {
 			sendSelectFile(wrapper, fid);
-			selectedFile = new PassportFileInfo(fid, getFileLength());
+			selectedFile = new MRTDFileInfo(fid, getFileLength());
 		}
 
 		public synchronized FileInfo[] getSelectedPath() {
-			return new PassportFileInfo[]{ selectedFile };
+			return new MRTDFileInfo[]{ selectedFile };
 		}
 
 		public synchronized void selectFile(short[] path) throws CardServiceException {
@@ -785,14 +789,14 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		}
 	}
 
-	private static class PassportFileInfo extends FileInfo implements Serializable
-	{
+	private static class MRTDFileInfo extends FileInfo implements Serializable {
+
 		private static final long serialVersionUID = 6727369753765119839L;
 
 		private short fid;
 		private int length;
 
-		public PassportFileInfo(short fid, int length) { this.fid = fid; this.length = length; }
+		public MRTDFileInfo(short fid, int length) { this.fid = fid; this.length = length; }
 
 		public short getFID() { return fid; }
 

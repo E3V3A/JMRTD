@@ -41,7 +41,7 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @version $Revision$
  */
-public class MRZInfo extends AbstractInfo implements Serializable {
+public class MRZInfo extends AbstractInfo {
 
 	private static final long serialVersionUID = 7054965914471297804L;
 

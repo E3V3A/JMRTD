@@ -22,6 +22,7 @@
 
 package org.jmrtd.cbeff;
 
+import java.io.Serializable;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -35,7 +36,9 @@ import java.util.TreeMap;
  * 
  * @since 0.4.7
  */
-public class StandardBiometricHeader {
+public class StandardBiometricHeader implements Serializable {
+
+	private static final long serialVersionUID = 4113147521594478513L;
 
 	private SortedMap<Integer, byte[]> elements;
 	
