@@ -137,7 +137,7 @@ public class PreferencesDialog extends JDialog {
 			@Override
 			public void cardTerminalAdded(CardTerminalEvent cte) {
 				CardTerminal terminal = cte.getTerminal();
-				LOGGER.info("DEBUG: preferences: add terminal " + terminal.getName());
+				LOGGER.info("Adding terminal to preferences " + terminal.getName());
 				boolean isChecked = !(state.isTerminalPresent(terminal) && !state.isTerminalChecked(terminal));
 				addTerminal(terminal, isChecked);
 
@@ -146,7 +146,7 @@ public class PreferencesDialog extends JDialog {
 			@Override
 			public void cardTerminalRemoved(CardTerminalEvent cte) {
 				CardTerminal terminal = cte.getTerminal();
-				LOGGER.info("DEBUG: preferences: remove terminal " + terminal.getName());
+				LOGGER.info("Removing terminal from preferences " + terminal.getName());
 				removeTerminal(terminal);
 			}
 		};

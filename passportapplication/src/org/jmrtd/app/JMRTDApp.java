@@ -227,6 +227,7 @@ public class JMRTDApp {
 			mainFrame.setVisible(true);
 			try {
 				addTerminalProvider(cardManager, "ACR122", "net.sourceforge.scuba.smartcards.ACR122Provider");
+				LOGGER.info("Added ACR terminal provider");
 			} catch (Exception e) {
 				LOGGER.warning("Not adding ACR terminal provider: " + e.getMessage());
 			}
