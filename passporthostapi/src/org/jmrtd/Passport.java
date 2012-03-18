@@ -398,8 +398,9 @@ public class Passport<C, R> {
 	 */
 	public synchronized InputStream getInputStream(final short fid) throws CardServiceException {
 		if (couldNotRead.contains(fid)) {
-			LOGGER.warning("Could not read from file with FID " + Integer.toHexString(fid));
-			throw new CardServiceException("Could not read " + Integer.toHexString(fid));
+			String fileName = LDSFileUtil.lookupFileNameByFID(fid);
+			LOGGER.warning("Could not read  " + fileName);
+			throw new CardServiceException("Could not read " + fileName);
 		}
 		try {
 			InputStream inputStream = null;
@@ -969,7 +970,7 @@ public class Passport<C, R> {
 		if (couldNotRead.contains(fid)) { return; }
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
-			String message = "Cannot read " + LDSFileUtil.toString(LDSFileUtil.lookupTagByFID(fid));
+			String message = "Cannot read " + LDSFileUtil.lookupFileNameByTag(LDSFileUtil.lookupTagByFID(fid));
 			LOGGER.warning(message + " (not starting thread)");
 			couldNotRead.add(fid);
 			return;

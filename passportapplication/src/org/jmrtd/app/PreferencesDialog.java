@@ -64,6 +64,7 @@ import javax.swing.JTabbedPane;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardTerminalEvent;
 import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
 import net.sourceforge.scuba.swing.URIListEditor;
@@ -353,7 +354,7 @@ public class PreferencesDialog extends JDialog {
 		updateGUIFromState(state);
 		validate();
 	}
-	
+
 	private void removeTerminal(CardTerminal terminal) {
 		if (terminal == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
 		JCheckBox checkBox = cardTerminalPollingCheckBoxMap.remove(terminal);
@@ -389,9 +390,16 @@ public class PreferencesDialog extends JDialog {
 	}
 
 	private void updateGUIFromState(PreferencesState state) {
-		for (CardTerminal terminal: cardTerminalPollingCheckBoxMap.keySet()) {
-			JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal);
-			checkBox.setSelected(state.isTerminalChecked(terminal));
+		CardManager cm = CardManager.getInstance();
+		List<CardTerminal> cmTerminals = cm.getTerminals();
+		for (CardTerminal terminal: cmTerminals) {
+			//		for (CardTerminal terminal: cardTerminalPollingCheckBoxMap.keySet()) {
+			if (cardTerminalPollingCheckBoxMap.keySet().contains(terminal)) {
+				JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal);
+				checkBox.setSelected(state.isTerminalChecked(terminal));
+			} else {
+				addTerminal(terminal, cm.isPolling(terminal));
+			}
 		}
 		for (ReadingMode mode: readingModeRadioButtonMap.keySet()) {
 			JRadioButton radioButton = readingModeRadioButtonMap.get(mode);

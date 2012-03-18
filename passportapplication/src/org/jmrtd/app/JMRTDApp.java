@@ -271,9 +271,9 @@ public class JMRTDApp {
 	}
 
 	private static void addTerminalProvider(CardManager cardManager, String providerName, String providerClassName) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchAlgorithmException {
-		Class<?> acrProviderClass = Class.forName(providerClassName);
-		Provider acrProvider = (Provider)acrProviderClass.newInstance();
-		TerminalFactory acrFactory = TerminalFactory.getInstance(providerName, null, acrProvider);
+		Class<?> providerClass = Class.forName(providerClassName);
+		Provider provider = (Provider)providerClass.newInstance();
+		TerminalFactory acrFactory = TerminalFactory.getInstance(providerName, null, provider);
 		cardManager.addTerminals(acrFactory, true);
 	}
 

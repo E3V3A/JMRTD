@@ -270,12 +270,12 @@ public class LDSFileUtil {
 	/**
 	 * Returns a mnemonic name corresponding to the file represented by the
 	 * given ICAO tag, such as "EF_COM", "EF_SOD", or "EF_DG1".
-	 * 
+	 *
 	 * @param tag an ICAO tag (the first byte of the EF)
-	 * 
+	 *
 	 * @return a mnemonic name corresponding to the file represented by the given ICAO tag
 	 */
-	public static String toString(int tag) {
+	public static String lookupFileNameByTag(int tag) {
 		switch (tag) {
 		case LDSFile.EF_COM_TAG: return "EF_COM";
 		case LDSFile.EF_DG1_TAG: return "EF_DG1";
@@ -295,8 +295,40 @@ public class LDSFileUtil {
 		case LDSFile.EF_DG15_TAG: return "EF_DG15";
 		case LDSFile.EF_DG16_TAG: return "EF_DG16";
 		case LDSFile.EF_SOD_TAG: return "EF_SOD";
-		default:
-			throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+		default: return "File with tag 0x" + Integer.toHexString(tag);
 		}
 	}
+	
+	/**
+	 * Returns a mnemonic name corresponding to the file represented by the
+	 * given file identifier, such as "EF_COM", "EF_SOD", or "EF_DG1".
+	 * 
+	 * @param tag an ICAO tag (the first byte of the EF)
+	 * 
+	 * @return a mnemonic name corresponding to the file represented by the given ICAO tag
+	 */
+	public static String lookupFileNameByFID(int fid) {
+		switch (fid) {
+		case PassportService.EF_COM: return "EF_COM";
+		case PassportService.EF_DG1: return "EF_DG1";
+		case PassportService.EF_DG2: return "EF_DG2";
+		case PassportService.EF_DG3: return "EF_DG3";
+		case PassportService.EF_DG4: return "EF_DG4";
+		case PassportService.EF_DG5: return "EF_DG5";
+		case PassportService.EF_DG6: return "EF_DG6";
+		case PassportService.EF_DG7: return "EF_DG7";
+		case PassportService.EF_DG8: return "EF_DG8";
+		case PassportService.EF_DG9: return "EF_DG9";
+		case PassportService.EF_DG10: return "EF_DG10";
+		case PassportService.EF_DG11: return "EF_DG11";
+		case PassportService.EF_DG12: return "EF_DG12";
+		case PassportService.EF_DG13: return "EF_DG13";
+		case PassportService.EF_DG14: return "EF_DG14";
+		case PassportService.EF_DG15: return "EF_DG15";
+		case PassportService.EF_DG16: return "EF_DG16";
+		case PassportService.EF_SOD: return "EF_SOD";
+		default: return "File with FID 0x" + Integer.toHexString(fid);
+		}
+	}
+
 }
