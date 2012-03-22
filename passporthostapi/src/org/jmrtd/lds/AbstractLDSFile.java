@@ -65,7 +65,21 @@ abstract class AbstractLDSFile implements LDSFile {
 		}
 	}
 	
-	protected abstract void readObject(InputStream in) throws IOException;
-	
-	protected abstract void writeObject(OutputStream out) throws IOException;
+	/**
+	 * Reads the file from an input stream.
+	 * 
+	 * @param inputStream the input stream to read from
+	 * 
+	 * @throws IOException if reading fails
+	 */
+	protected abstract void readObject(InputStream inputStream) throws IOException;
+
+	/**
+	 * Writes the file to an output stream.
+	 * 
+	 * @param outputStream the output stream to write to
+	 * 
+	 * @throws IOException if writing fails
+	 */
+	protected abstract void writeObject(OutputStream outputStream) throws IOException;
 }

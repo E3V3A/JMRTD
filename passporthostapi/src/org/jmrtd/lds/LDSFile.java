@@ -22,10 +22,19 @@
 
 package org.jmrtd.lds;
 
-
+/**
+ * LDS element at file level.
+ * 
+ * @author The JMRTD team (info@jmrtd.org)
+ *
+ * @version $Revision: $
+ */
 public interface LDSFile extends LDSInfo {
-	/** ICAO specific datagroup tag. There is also the CVCA file that has no tag! */
 
+	/**
+	 * ICAO specific datagroup tag.
+	 * In EAC documents there is also the CVCA file that has no tag!
+	 */
 	public static final int
 	EF_COM_TAG = 0x60,
 	EF_DG1_TAG = 0x61,
@@ -45,4 +54,6 @@ public interface LDSFile extends LDSInfo {
 	EF_DG15_TAG = 0x6F,
 	EF_DG16_TAG = 0x70,
 	EF_SOD_TAG = 0x77;
+	
+	int getLength();
 }

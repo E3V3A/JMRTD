@@ -95,9 +95,9 @@ import org.jmrtd.lds.MRZInfo;
  * @version $Revision:352 $
  */
 public class PassportService<C, R> extends PassportApduService<C, R> implements Serializable {
-	
+
 	private static final long serialVersionUID = 1751933705552226972L;
-	
+
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
 
@@ -288,8 +288,13 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 */
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
-			//			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), SDF.format(bacKey.getDateOfBirth()), SDF.format(bacKey.getDateOfExpiry()));
-			byte[] keySeed = Util.computeKeySeed(bacKey.getDocumentNumber(), bacKey.getDateOfBirth(), bacKey.getDateOfExpiry());
+			String documentNumber = bacKey.getDocumentNumber();
+			if (documentNumber == null || documentNumber.length() < 9) {
+				throw new IllegalArgumentException("Document number must have length at least 9");
+			}
+			String dateOfBirth = bacKey.getDateOfBirth();
+			String dateOfExpiry = bacKey.getDateOfExpiry();
+			byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			byte[] rndICC = sendGetChallenge();
@@ -430,8 +435,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 					tlvSigOut.writeValue(cert.getSignature());
 					tlvSigOut.close();
 					byte[] sig = sigOut.toByteArray();
-					
-					
+
+
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
 					// certificate
@@ -546,7 +551,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	public void removeAuthenticationListener(AuthListener l) {
 		authListeners.remove(l);
 	}
-	
+
 	// For ECDSA the EAC 1.11 specification requires the signature to be
 	// stripped down from any ASN.1 wrappers, as so:
 	private byte[] getRawECDSASignature(byte[] signature, int keySize) throws IOException {
@@ -680,7 +685,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		BACEvent event = new BACEvent(this, null, null, null, null, true);
 		notifyBACPerformed(event);
 	}
-	
+
 	/**
 	 * Gets the file as an input stream indicated by a file identifier.
 	 * The resulting input stream will send APDUs to the card.
@@ -697,7 +702,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	}
 
 	/* ONLY PRIVATE METHODS BELOW */
-	
+
 	/**
 	 * Performs the <i>Active Authentication</i> protocol. This method just
 	 * gives the response from the card without checking. Use
@@ -720,7 +725,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		byte[] response = sendInternalAuthenticate(wrapper, challenge);
 		return response;
 	}
-	
+
 	/**
 	 * Notifies listeners about AA event.
 	 * 

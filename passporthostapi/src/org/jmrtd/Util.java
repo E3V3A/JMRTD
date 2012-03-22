@@ -84,33 +84,31 @@ public class Util {
 	/**
 	 * Computes the static key seed, based on information from the MRZ.
 	 *
-	 * @param docNrStr a string containing the document number.
-	 * @param dateOfBirthStr a string containing the date of birth (YYMMDD).
-	 * @param dateOfExpiryStr a string containing the date of expiry (YYMMDD).
+	 * @param documentNumber a string containing the document number.
+	 * @param dateOfBirth a string containing the date of birth (YYMMDD).
+	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD).
 	 *
 	 * @return a byte array of length 16 containing the key seed.
 	 */
-	public static byte[] computeKeySeed(String docNrStr,
-			String dateOfBirthStr,
-			String dateOfExpiryStr)
+	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry)
 	throws UnsupportedEncodingException, GeneralSecurityException {
-		if (docNrStr.length() != 9
-				|| dateOfBirthStr.length() != 6
-				|| dateOfExpiryStr.length() != 6) {
+		if (documentNumber.length() < 9
+				|| dateOfBirth.length() != 6
+				|| dateOfExpiry.length() != 6) {
 			throw new UnsupportedEncodingException("Wrong length MRZ input");
 		}
 
 		/* Check digits... */
-		byte[] cd1 = { (byte)MRZInfo.checkDigit(docNrStr) };
-		byte[] cd2 = { (byte)MRZInfo.checkDigit(dateOfBirthStr) };
-		byte[] cd3 = { (byte)MRZInfo.checkDigit(dateOfExpiryStr) };
+		byte[] cd1 = { (byte)MRZInfo.checkDigit(documentNumber) };
+		byte[] cd2 = { (byte)MRZInfo.checkDigit(dateOfBirth) };
+		byte[] cd3 = { (byte)MRZInfo.checkDigit(dateOfExpiry) };
 
 		MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
-		shaDigest.update(docNrStr.getBytes("UTF-8"));
+		shaDigest.update(documentNumber.getBytes("UTF-8"));
 		shaDigest.update(cd1);
-		shaDigest.update(dateOfBirthStr.getBytes("UTF-8"));
+		shaDigest.update(dateOfBirth.getBytes("UTF-8"));
 		shaDigest.update(cd2);
-		shaDigest.update(dateOfExpiryStr.getBytes("UTF-8"));
+		shaDigest.update(dateOfExpiry.getBytes("UTF-8"));
 		shaDigest.update(cd3);
 
 		byte[] hash = shaDigest.digest();

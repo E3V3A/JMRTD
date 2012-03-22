@@ -125,7 +125,7 @@ public class JMRTDApp {
 	static {
 		/* So that BC stuff knows about CVC certificates. */
 		BC_PROVIDER.put("CertificateFactory.CVC", JMRTD_PROVIDER.get("CertificateFactory.CVC"));
-		Security.insertProviderAt(BC_PROVIDER, 1);
+//		Security.insertProviderAt(BC_PROVIDER, 1);
 		Security.addProvider(JMRTD_PROVIDER);
 
 		Provider[] providers = Security.getProviders();

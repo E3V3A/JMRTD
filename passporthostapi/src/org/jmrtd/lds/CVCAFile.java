@@ -62,32 +62,6 @@ public class CVCAFile extends AbstractLDSFile {
 		}
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = new DataInputStream(in);
-		int tag = dataIn.read();
-		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
-		int length = dataIn.read();
-		if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
-		byte[] data = new byte[length];
-		dataIn.readFully(data);
-		caReference = new String(data);
-		tag = dataIn.read();
-		if (tag != 0) {
-			if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
-			length = dataIn.read();
-			if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
-			data = new byte[length];
-			dataIn.readFully(data);
-			altCaReference = new String(data);
-			tag = dataIn.read();
-		}
-		while (tag != -1) {
-			if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
-			tag = dataIn.read();
-		}
-
-	}
-
 	/**
 	 * Constructs a new CVCA file with the given certificate references
 	 * 
@@ -115,6 +89,32 @@ public class CVCAFile extends AbstractLDSFile {
 		this(caReference, null);
 	}
 
+
+	protected void readObject(InputStream in) throws IOException {
+		DataInputStream dataIn = new DataInputStream(in);
+		int tag = dataIn.read();
+		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+		int length = dataIn.read();
+		if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
+		byte[] data = new byte[length];
+		dataIn.readFully(data);
+		caReference = new String(data);
+		tag = dataIn.read();
+		if (tag != 0) {
+			if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+			length = dataIn.read();
+			if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
+			data = new byte[length];
+			dataIn.readFully(data);
+			altCaReference = new String(data);
+			tag = dataIn.read();
+		}
+		while (tag != -1) {
+			if (tag != 0) { throw new IllegalArgumentException("Bad file padding."); }
+			tag = dataIn.read();
+		}
+	}
+	
 	protected void writeObject(OutputStream out) throws IOException {
 		byte[] result = new byte[LENGTH];
 		result[0] = CAR_TAG;
@@ -149,11 +149,23 @@ public class CVCAFile extends AbstractLDSFile {
 		return altCaReference == null ? null : new CVCPrincipal(altCaReference);
 	}
 
+	/**
+	 * Gets a textual representation of this CVCAFile.
+	 * 
+	 * @return a textual representation of this CVCAFile
+	 */
 	public String toString() {
 		return "CA reference: \"" + caReference + "\""
 		+ ((altCaReference != null) ? ", Alternative CA reference: " + altCaReference : "");
 	}
 
+	/**
+	 * Tests whether this CVCAFile is equal to the provided object.
+	 * 
+	 * @param other some other object
+	 * 
+	 * @return whether this CVCAFile equals the other object
+	 */
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
 		if (!this.getClass().equals(other.getClass())) { return false; }
@@ -163,9 +175,23 @@ public class CVCAFile extends AbstractLDSFile {
 				|| (altCaReference != null && altCaReference.equals(otherCVCAFile.altCaReference)));
 	}
 
+	/**
+	 * Computes a hash code of this CVCAFile.
+	 * 
+	 * @return a hash code
+	 */
 	public int hashCode() {
 		return 11 * caReference.hashCode()
 		+ ((altCaReference != null) ? 13 * altCaReference.hashCode() : 0)
 		+ 5;
+	}
+	
+	/**
+	 * Gets the length of the content of this CVCA file. This always returns {@value #LENGTH}.
+	 * 
+	 * @return {@value #LENGTH}
+	 */
+	public int getLength() {
+		return LENGTH;
 	}
 }

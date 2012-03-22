@@ -298,9 +298,9 @@ public class MRZInfo extends AbstractLDSInfo {
 		if (documentType == DOC_TYPE_ID1) {
 			/* Assume it's an ID1 document */
 
-			/* line 1 */
+			/* top line */
 			writeIssuingState(dataOut);
-			if (documentNumber.length() > 9 && (optionalData1 == null || equalsModuloFillerChars(optionalData1, ""))) {
+			if (documentNumber.length() > 9 && equalsModuloFillerChars(optionalData1, "")) {
 				/*
 				 * If document number has more than 9 character, the 9 principal
 				 * character shall be shown in the MRZ in character positions 1 to 9.
@@ -312,17 +312,19 @@ public class MRZInfo extends AbstractLDSInfo {
 				 * filler character.
 				 * 
 				 * Corresponds to Doc 9303 pt 3 vol 1 page V-10 (note j) (FIXED by Paulo Assumcao)
+				 * 
+				 * Also see R3-p1_v2_sIV_0041 in Supplement to Doc 9303, release 11.
 				 */
 				writeString(documentNumber.substring(0, 9), dataOut, 9);
-				dataOut.write('<');
-				writeString(documentNumber.substring(9, documentNumber.length()) + documentNumberCheckDigit, dataOut, 15);
+				dataOut.write('<'); /* NOTE: instead of check digit */
+				writeString(documentNumber.substring(9, documentNumber.length()) + documentNumberCheckDigit + "<", dataOut, 15);
 			} else {
 				writeString(documentNumber, dataOut, 9); /* FIXME: max size of field */
 				dataOut.write(documentNumberCheckDigit);
 				writeString(optionalData1, dataOut, 15); /* FIXME: max size of field */
 			}
 
-			/* line 2 */
+			/* middle line */
 			writeDateOfBirth(dataOut);
 			dataOut.write(dateOfBirthCheckDigit);
 			writeGender(dataOut);
@@ -332,16 +334,16 @@ public class MRZInfo extends AbstractLDSInfo {
 			writeString(optionalData2, dataOut, 11);
 			dataOut.write(compositeCheckDigit);
 
-			/* third line */
+			/* bottom line */
 			writeName(dataOut, 30);
 		} else {
 			/* Assume it's a ID3 document */
 
-			/* first line */
+			/* top line */
 			writeIssuingState(dataOut);
 			writeName(dataOut, 39);
 
-			/* second line */
+			/* bottom line */
 			writeString(documentNumber, dataOut, 9);
 			dataOut.write(documentNumberCheckDigit);
 			writeNationality(dataOut);
@@ -877,7 +879,8 @@ public class MRZInfo extends AbstractLDSInfo {
 	 */
 	public static boolean equalsModuloFillerChars(String str1, String str2) {
 		if (str1 == str2) { return true; }
-		if ((str1 == null && str2 != null) || (str1 != null && str2 == null)) { return false; }
+		if (str1 == null) { str1 = ""; }
+		if (str2 == null) { str2 = ""; }
 		int length = Math.max(str1.length(), str2.length());
 		return mrzFormat(str1, length).equals(mrzFormat(str2, length));
 	}

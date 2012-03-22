@@ -44,8 +44,8 @@ public class BACKeySpec implements KeySpec {
 	private String dateOfExpiry;
 
 	public BACKeySpec(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-		if (documentNumber == null || documentNumber.length() > 9) {
-			throw new IllegalArgumentException("Document number should have length 9");
+		if (documentNumber == null) {
+			throw new IllegalArgumentException("Illegal document number");
 		}
 		while (documentNumber.length() < 9) { documentNumber += "<"; }
 		this.documentNumber = documentNumber.trim();
