@@ -1,5 +1,6 @@
-package org.jmrtd.imageio;
+/* $Id: $ */
 
+package org.jmrtd.imageio;
 
 import javax.imageio.metadata.IIOInvalidTreeException;
 import javax.imageio.metadata.IIOMetadata;

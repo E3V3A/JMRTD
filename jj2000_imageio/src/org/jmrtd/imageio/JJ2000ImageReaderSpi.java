@@ -1,5 +1,6 @@
-package org.jmrtd.imageio;
+/* $Id: $ */
 
+package org.jmrtd.imageio;
 
 import java.io.IOException;
 import java.util.Locale;

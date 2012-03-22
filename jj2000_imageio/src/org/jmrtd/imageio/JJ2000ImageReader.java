@@ -1,8 +1,9 @@
+/* $Id: $ */
+
 package org.jmrtd.imageio;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
