@@ -418,7 +418,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	public boolean checkDocSignature(Certificate docSigningCert)
 	throws GeneralSecurityException {
 
-		byte[] eContent = getEContent(signedData);	
+		byte[] eContent = getEContent(signedData);
 		byte[] signature = getEncryptedDigest(signedData);
 
 		String encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getAlgorithm().getId();

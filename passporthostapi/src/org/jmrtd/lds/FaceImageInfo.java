@@ -33,6 +33,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.util.ImageUtil;
 
 /**
  * Data structure for storing facial image data. This represents
@@ -751,8 +752,8 @@ public class FaceImageInfo extends AbstractImageInfo {
 
 	private static String toMimeType(int compressionAlg) {
 		switch (compressionAlg) {
-		case IMAGE_DATA_TYPE_JPEG: return "image/jpeg";
-		case IMAGE_DATA_TYPE_JPEG2000: return "image/jpeg2000"; /* FIXME; Check ietf rfc3745, shouldn't this be "image/jp2"? */
+		case IMAGE_DATA_TYPE_JPEG: return ImageUtil.JPEG_MIME_TYPE;
+		case IMAGE_DATA_TYPE_JPEG2000: return ImageUtil.JPEG2000_MIME_TYPE;
 		}
 		return null;
 	}

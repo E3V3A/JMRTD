@@ -28,6 +28,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import net.sourceforge.scuba.util.ImageUtil;
+
 /**
  * Iris image header and image data
  * based on Section 6.5.3 and Table 4 of
@@ -260,17 +262,16 @@ public class IrisImageInfo extends AbstractImageInfo {
 	}
 
 	private static String getMimeTypeFromImageFormat(int imageFormat) {
-		String mimeType = null;
 		switch (imageFormat) {
 		case IrisInfo.IMAGEFORMAT_MONO_RAW:
-		case IrisInfo.IMAGEFORMAT_RGB_RAW: mimeType = "image/x-raw"; break;
+		case IrisInfo.IMAGEFORMAT_RGB_RAW: return ImageUtil.WSQ_MIME_TYPE;
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG:
 		case IrisInfo.IMAGEFORMAT_RGB_JPEG:
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG_LS:
-		case IrisInfo.IMAGEFORMAT_RGB_JPEG_LS:  mimeType = "image/jpeg"; break;
+		case IrisInfo.IMAGEFORMAT_RGB_JPEG_LS:  return ImageUtil.JPEG_MIME_TYPE;
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG2000:
-		case IrisInfo.IMAGEFORMAT_RGB_JPEG2000: mimeType = "image/jpeg2000"; break;
+		case IrisInfo.IMAGEFORMAT_RGB_JPEG2000: return ImageUtil.JPEG2000_MIME_TYPE;
 		}
-		return mimeType;
+		return null;
 	}
 }
