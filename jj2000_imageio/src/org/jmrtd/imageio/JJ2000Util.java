@@ -2,7 +2,6 @@
 
 package org.jmrtd.imageio;
 
-import icc.ICCProfileException;
 import icc.ICCProfiler;
 
 import java.awt.image.BufferedImage;
@@ -32,7 +31,6 @@ import jj2000.j2k.util.ParameterList;
 import jj2000.j2k.wavelet.synthesis.InverseWT;
 import colorspace.ColorSpace;
 import colorspace.ColorSpace.CSEnum;
-import colorspace.ColorSpaceException;
 
 /**
  * Utility class for access to jj2000 library.
@@ -187,10 +185,8 @@ class JJ2000Util {
 					FacilityManager.getMsgLogger().printmsg(MsgLogger.ERROR, "" + palettized);
 					FacilityManager.getMsgLogger().printmsg(MsgLogger.ERROR, "" + color);
 				}
-			} catch (ColorSpaceException e) {
+			} catch (Exception e) {
 				throw new IOException("error processing jp2 colorspace information: " + e.getMessage());
-			} catch (ICCProfileException ie) {
-				throw new IOException("error processing jp2 colorspace information: " + ie.getMessage());
 			}
 		} else { // Skip colorspace mapping
 			color = ictransf;
