@@ -47,7 +47,6 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -102,6 +101,7 @@ import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.EACEvent;
+import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportPersoService;
 import org.jmrtd.PassportService;
@@ -160,6 +160,8 @@ public class DocumentEditFrame extends JMRTDFrame {
 	private static final Icon LOAD_CERT_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder_page_white"));
 	private static final Icon LOAD_KEY_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("folder_key"));
 	private static final Icon UPLOAD_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("drive_burn"));
+
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -395,11 +397,11 @@ public class DocumentEditFrame extends JMRTDFrame {
 	}
 
 	private void setMRZ(MRZInfo mrzInfo) {
-		
+
 		DG1File dg1 = new DG1File(mrzInfo);
 		passport.putFile(PassportService.EF_DG1, dg1.getEncoded());
 		treePanel.reload();
-		
+
 		mrzPanel.setMRZ(mrzInfo);
 
 		dg1EditPanel.setMRZ(mrzInfo);
@@ -565,6 +567,11 @@ public class DocumentEditFrame extends JMRTDFrame {
 		generateAAKeys.setAction(getAAGenerateAction());
 
 		menu.addSeparator();
+
+		/* Replace EAC private key with another private key from file... */
+		JMenuItem loadEACPrivateKeyFromFile = new JMenuItem();
+		menu.add(loadEACPrivateKeyFromFile);
+		loadEACPrivateKeyFromFile.setAction(getLoadEACKeysAction());
 
 		/* Generate new EAC key pair */
 		JMenuItem generateEACKeys = new JMenuItem();
@@ -956,6 +963,66 @@ public class DocumentEditFrame extends JMRTDFrame {
 		return action;
 	}
 
+	private Action getLoadEACKeysAction() {
+		Action action = actionMap.get("LoadEACKeys");
+		if (action != null) { return action; }
+		final Preferences preferences = Preferences.userNodeForPackage(getClass());
+		action = new AbstractAction() {
+
+			private static final long serialVersionUID = -6337563458744158650L;
+
+			public void actionPerformed(ActionEvent e) {
+				JFileChooser fileChooser = new JFileChooser();
+				String directory = preferences.get(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, null);
+				if (directory != null) {
+					fileChooser.setCurrentDirectory(new File(directory));
+				}
+				fileChooser.setFileFilter(FileUtil.KEY_FILE_FILTER);
+				int choice = fileChooser.showOpenDialog(getContentPane());
+				switch (choice) {
+				case JFileChooser.APPROVE_OPTION:
+					File file = fileChooser.getSelectedFile();
+					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
+					PrivateKey privKey = readPrivateKeyFromFile(file, "EC");
+					if (privKey == null) {
+						LOGGER.severe("Could not load EAC keys"); // FIXME: GUI feedback
+					} else {
+						try {
+							PublicKey pubKey = getECPublicKeyFromPrivateKey(privKey);
+							passport.setEACPrivateKey(privKey);
+							passport.setEACPublicKey(pubKey);
+						} catch (GeneralSecurityException gse) {
+							gse.printStackTrace();
+							LOGGER.severe("Could not load EAC keys"); // FIXME: GUI feedback
+						}
+					}
+					break;
+				default:
+					break;
+				}
+			}
+		};
+		action.putValue(Action.SMALL_ICON, LOAD_KEY_ICON);
+		action.putValue(Action.LARGE_ICON_KEY, LOAD_KEY_ICON);
+		action.putValue(Action.SHORT_DESCRIPTION, "Import (and replace) Extended Access Control keys (in PKCS#8 format) from file");
+		action.putValue(Action.NAME, "Import EAC keys...");
+		actionMap.put("LoadEACKeys", action);
+		return action;
+	}
+
+	/*
+	 * FIXME: Hack based on BC classes. Untested, and should probably go in some utility class.
+	 * See http://stackoverflow.com/questions/5186793/fileformat-for-ec-public-private-keys. 
+	 */
+	private static PublicKey getECPublicKeyFromPrivateKey(PrivateKey privateKey) throws GeneralSecurityException {
+		KeyFactory keyFactory = KeyFactory.getInstance("EC", BC_PROVIDER);
+		org.bouncycastle.jce.provider.JCEECPrivateKey priv = (org.bouncycastle.jce.provider.JCEECPrivateKey)privateKey;
+		org.bouncycastle.jce.spec.ECParameterSpec params = priv.getParameters();
+		org.bouncycastle.jce.spec.ECPublicKeySpec pubKS = new org.bouncycastle.jce.spec.ECPublicKeySpec(params.getG().multiply(priv.getD()), params);
+		PublicKey publicKey = keyFactory.generatePublic(pubKS);
+		return publicKey;
+	}
+
 	private Action getGenerateEACKeys() {
 		Action action = new AbstractAction() {
 
@@ -963,14 +1030,9 @@ public class DocumentEditFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					String preferredProvider = "BC";
-					Provider provider = Security.getProvider(preferredProvider);
-					KeyPairGenerator generator = KeyPairGenerator.getInstance(
-							"ECDH", provider);
-					generator.initialize(new ECGenParameterSpec(
-							PassportPersoService.EC_CURVE_NAME));
+					KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH", BC_PROVIDER);
+					generator.initialize(new ECGenParameterSpec(PassportPersoService.EC_CURVE_NAME));
 					KeyPair keyPair = generator.generateKeyPair();
-
 					passport.setEACPrivateKey(keyPair.getPrivate());
 					passport.setEACPublicKey(keyPair.getPublic());
 				} catch (GeneralSecurityException ex) {
@@ -1003,7 +1065,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					PrivateKey key = readPrivateRSAKeyFromFile(file);
+					PrivateKey key = readPrivateKeyFromFile(file, "RSA");
 					passport.setDocSigningPrivateKey(key);
 					break;
 				default:
@@ -1036,7 +1098,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					PublicKey pubKey = readPublicRSAKeyFromFile(file);
+					PublicKey pubKey = readPublicKeyFromFile(file, "RSA");
 					if(pubKey != null) {
 						DG15File dg15 = new DG15File(pubKey);
 						passport.putFile(PassportService.EF_DG15, dg15.getEncoded());
@@ -1095,7 +1157,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 				case JFileChooser.APPROVE_OPTION:
 					File file = fileChooser.getSelectedFile();
 					preferences.put(JMRTDApp.CERT_AND_KEY_FILES_DIR_KEY, file.getParent());
-					passport.setAAPrivateKey(readPrivateRSAKeyFromFile(file));
+					passport.setAAPrivateKey(readPrivateKeyFromFile(file, "RSA"));
 					break;
 				default:
 					break;
@@ -1294,6 +1356,9 @@ public class DocumentEditFrame extends JMRTDFrame {
 		Action action = actionMap.get("ChangeDocTypeToID" + requestedDocumentType);
 		if (action != null) { return action; }
 		action = new AbstractAction() {
+
+			private static final long serialVersionUID = -648071841610376908L;
+
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				try {
@@ -1340,13 +1405,19 @@ public class DocumentEditFrame extends JMRTDFrame {
 		return action;
 	}
 
-	private static PrivateKey readPrivateRSAKeyFromFile(File file) {
+	private static PrivateKey readPrivateKeyFromFile(File file, String algorithmName) {
 		try {
 			byte[] key = new byte[(int)file.length()];
 			DataInputStream in = new DataInputStream(new FileInputStream(file));
 			in.readFully(key);
 			in.close();
-			KeyFactory kf = KeyFactory.getInstance("RSA");
+			KeyFactory kf = null;
+			if ("EC".equals(algorithmName)) {
+				kf = KeyFactory.getInstance(algorithmName, BC_PROVIDER);
+			} else {
+				/* e.g., "RSA" */
+				kf = KeyFactory.getInstance(algorithmName);
+			}
 			PKCS8EncodedKeySpec keysp = new PKCS8EncodedKeySpec(key);
 			return kf.generatePrivate(keysp);
 		} catch (Exception e) {
@@ -1355,19 +1426,22 @@ public class DocumentEditFrame extends JMRTDFrame {
 		}
 	}
 
-	private static PublicKey readPublicRSAKeyFromFile(File file) {
-		try {
-			KeyFactory kf = KeyFactory.getInstance("RSA");
-			byte[] key = new byte[(int)file.length()];
-			DataInputStream in = new DataInputStream(new FileInputStream(file));
-			in.readFully(key);
-			in.close();
-			X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
-			return kf.generatePublic(keysp);
-		} catch (Exception e) {
-			e.printStackTrace();
-			return null;
+	private static PublicKey readPublicKeyFromFile(File file, String algorithmName) {
+		if ("RSA".equals(algorithmName)) {
+			try {
+				KeyFactory kf = KeyFactory.getInstance(algorithmName);
+				byte[] key = new byte[(int)file.length()];
+				DataInputStream in = new DataInputStream(new FileInputStream(file));
+				in.readFully(key);
+				in.close();
+				X509EncodedKeySpec keysp = new X509EncodedKeySpec(key);
+				return kf.generatePublic(keysp);
+			} catch (Exception e) {
+				e.printStackTrace();
+				return null;
+			}
 		}
+		return null;
 	}
 
 	private static Certificate readCertFromFile(File file, String algorithmName) {
