@@ -91,7 +91,7 @@ public class JJ2000ImageReader extends ImageReader {
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		List<ImageTypeSpecifier> list = new ArrayList<ImageTypeSpecifier>();
-		list.add(ImageTypeSpecifier.createFromRenderedImage(image)); // (8, DataBuffer.TYPE_INT, false));
+		list.add(ImageTypeSpecifier.createFromRenderedImage(image));
 		return list.iterator();
 	}
 

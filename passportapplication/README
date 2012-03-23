@@ -42,32 +42,38 @@ Dependencies (might be included in distribution)
    * Requires jdk1.6 or above.
    
    * Project SCUBA:
-        This is the low level smart card reader stuff.
-        URL: http://scuba.sourceforge.net/.
+        This is the low level smart card reader library.
+           (http://scuba.sourceforge.net/)
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath.
-        URL: http://www.bouncycastle.org/
+           (http://www.bouncycastle.org/)
 
    * EJBCA Cert-CVC:
         The cert-cvc.jar needs to be in classpath.
-        URL: http://ejbca.org/
-
-   * ImageIO:
-        Distribution may contain JAI ImageIO (https://jai-imageio.dev.java.net/)
-        Distribution may contain results from the JJ2000 project (http://code.google.com/p/jj2000/)
-        Distribution may contain the NIST WSQ library (http://ffpis.sourceforge.net)
+           (http://ejbca.org/)
 
 Optional software (may be necessary for building the project)
 
+   * ImageIO:
+        Distribution may contain JAI ImageIO
+           (https://jai-imageio.dev.java.net/)
+        Distribution may contain results from the JJ2000 project
+           (http://code.google.com/p/jj2000/)
+        Distribution may contain the NIST WSQ library
+           (http://ffpis.sourceforge.net,
+           http://www.nist.gov/itl/iad/ig/nbis.cfm)
+
    * ApduIO, Java Card simulator:
-        When making from source, expects a copy or link to apduio.jar (or stub) in lib directory.
-        The Java Card Kit is closed source software from Sun Microsystems, Inc.
-        See http://java.sun.com/javacard/devkit/.
+        When making from source, expects a copy or link to
+        apduio.jar (or stub) in lib directory. The Java Card
+        Kit is closed source software from Sun Microsystems, Inc.
+        (http://java.sun.com/javacard/devkit/)
 
    * JCOP toolset:
-        When making from source, expects a copy or link to offcard.jar (or stub) in lib directory.
-        The JCOP plugin for Eclipse is proprietary software from NXP Semiconductors.
+        When making from source, expects a copy or link to
+        offcard.jar (or stub) in lib directory. The JCOP plugin for
+        Eclipse is proprietary software from NXP Semiconductors.
 
    * GlobalPlatform
         gpshell tool for installing to JCOP cards.
@@ -80,5 +86,7 @@ Optional software (may be necessary for building the project)
 Acknowledgments
 
    * Icons, fonts and other artwork:
-        Distribution may contain icons by Mark James (http://www.famfamfam.com/)
-   		Distribution may contain fonts by Matthew Skala (http://ansuz.sooke.bc.ca/page/fonts)
+        Distribution may contain icons by Mark James
+           (http://www.famfamfam.com/)
+        Distribution may contain fonts by Matthew Skala
+           (http://ansuz.sooke.bc.ca/page/fonts)

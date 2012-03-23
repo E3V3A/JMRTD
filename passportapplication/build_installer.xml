@@ -269,6 +269,8 @@
 		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
 		<condition property="is_os_windows">
 	  		<or>
+	  			<equals arg1="${os.name}" arg2="Windows 7" />
+	  			<equals arg1="${os.name}" arg2="Windows 8" />
 	  			<equals arg1="${os.name}" arg2="Windows 95" />
 	  			<equals arg1="${os.name}" arg2="Windows 98" />
 	  			<equals arg1="${os.name}" arg2="Windows 2000" />
@@ -292,6 +294,7 @@
 			<or>
 				<equals arg1="${os.name}" arg2="Mac OS" />
 				<equals arg1="${os.name}" arg2="Mac OS X" />
+				<equals arg1="${os.name}" arg2="Darwin" />
 			</or>
 		</condition>
 	</target>
