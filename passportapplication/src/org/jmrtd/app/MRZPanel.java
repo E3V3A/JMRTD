@@ -43,8 +43,11 @@ public class MRZPanel extends JPanel {
 
 	private static final long serialVersionUID = -8078528859489283298L;
 
-	private static final String MRZ_FONT_NAME = "OCR-B_10_BT.ttf";
-
+//	private static final String MRZ_FONT_NAME = "OCR-B_10_BT.ttf";
+	
+	/* Version available from http://ansuz.sooke.bc.ca/page/fonts#ocrb */
+	private static final String MRZ_FONT_NAME = "OCRB.ttf";
+	
 	private Font mrzFont;
 
 	private MRZInfo info;

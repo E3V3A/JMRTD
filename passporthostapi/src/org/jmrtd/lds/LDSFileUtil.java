@@ -303,7 +303,7 @@ public class LDSFileUtil {
 	 * Returns a mnemonic name corresponding to the file represented by the
 	 * given file identifier, such as "EF_COM", "EF_SOD", or "EF_DG1".
 	 * 
-	 * @param tag an ICAO tag (the first byte of the EF)
+	 * @param fid an LDS file identifiers
 	 * 
 	 * @return a mnemonic name corresponding to the file represented by the given ICAO tag
 	 */

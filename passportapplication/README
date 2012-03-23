@@ -39,7 +39,7 @@ Files
 
 Dependencies (might be included in distribution)
 
-   * Requires jdk1.6.
+   * Requires jdk1.6 or above.
    
    * Project SCUBA:
         This is the low level smart card reader stuff.
@@ -53,16 +53,12 @@ Dependencies (might be included in distribution)
         The cert-cvc.jar needs to be in classpath.
         URL: http://ejbca.org/
 
-   * JAI ImageIO for interpreting JPEG 2000 data:
-        Needs to be installed in jre/lib,
-        jai_imageio.jar in jre/lib/ext, some libs in jre/lib/i386.
-        URL: https://jai-imageio.dev.java.net/
+   * ImageIO:
+        Distribution may contain JAI ImageIO (https://jai-imageio.dev.java.net/)
+        Distribution may contain results from the JJ2000 project (http://code.google.com/p/jj2000/)
+        Distribution may contain the NIST WSQ library (http://ffpis.sourceforge.net)
 
-   * famfamfam.com icons:
-        GUI code may contain icons by Mark James
-        URL: http://www.famfamfam.com/
-
-Optional stuff (may be necessary for building the project)
+Optional software (may be necessary for building the project)
 
    * ApduIO, Java Card simulator:
         When making from source, expects a copy or link to apduio.jar (or stub) in lib directory.
@@ -80,3 +76,9 @@ Optional stuff (may be necessary for building the project)
    * RFIDIOt
         mrpkey.py command line tool for testing/reading/writing/cloning
         See http://rfidiot.org/.
+
+Acknowledgments
+
+   * Icons, fonts and other artwork:
+        Distribution may contain icons by Mark James (http://www.famfamfam.com/)
+   		Distribution may contain fonts by Matthew Skala (http://ansuz.sooke.bc.ca/page/fonts)
