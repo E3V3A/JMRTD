@@ -49,9 +49,12 @@ import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.Passport;
+import org.jmrtd.PassportService;
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.ISO781611;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.lds.COMFile;
+import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.DG11File;
 import org.jmrtd.lds.DG12File;
 import org.jmrtd.lds.DG14File;
@@ -135,18 +138,48 @@ public class LDSTreePanel extends JPanel {
 		}
 	}
 
-	private MutableTreeNode buildTree(LDSFile passportFile) {
-		if (passportFile instanceof COMFile) {
-			return buildTreeFromCOMFile((COMFile)passportFile);
+	private MutableTreeNode buildTree(short fid, InputStream inputStream) {
+		switch (fid) {
+		case PassportService.EF_CVCA:
+			return buildTreeFromCVCAFile(new CVCAFile(inputStream));
+		case PassportService.EF_COM:
+			try {
+				return buildTreeFromCOMFile(new COMFile(inputStream));
+			} catch (Exception e) {
+				e.printStackTrace();
+				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+			}
+		case PassportService.EF_SOD:
+			try {
+				return buildTreeFromSODFile(new SODFile(inputStream));
+			} catch (Exception e) {
+				e.printStackTrace();
+				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+			}
+		case PassportService.EF_DG1:
+		case PassportService.EF_DG2:
+		case PassportService.EF_DG3:
+		case PassportService.EF_DG4:
+		case PassportService.EF_DG5:
+		case PassportService.EF_DG6:
+		case PassportService.EF_DG7:
+		case PassportService.EF_DG8:
+		case PassportService.EF_DG9:
+		case PassportService.EF_DG10:
+		case PassportService.EF_DG11:
+		case PassportService.EF_DG12:
+		case PassportService.EF_DG13:
+		case PassportService.EF_DG14:
+		case PassportService.EF_DG15:
+		case PassportService.EF_DG16:
+			try {
+				return buildTreeFromDataGroup((DataGroup)LDSFileUtil.getLDSFile(inputStream));
+			} catch (Exception e) {
+				e.printStackTrace();
+				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+			}
+		default: return new DefaultMutableTreeNode("File " + Integer.toHexString(fid));
 		}
-		if (passportFile instanceof SODFile) {
-			return buildTreeFromSODFile((SODFile)passportFile);
-		}
-		if (passportFile instanceof DataGroup) {
-			return buildTreeFromDataGroup((DataGroup)passportFile);
-		}
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode(passportFile);
-		return node;
 	}
 
 	private MutableTreeNode buildTreeFromCOMFile(COMFile com) {
@@ -188,6 +221,15 @@ public class LDSTreePanel extends JPanel {
 		} catch (Exception ce) {
 			ce.printStackTrace();
 		}
+		return node;
+	}
+
+	private MutableTreeNode buildTreeFromCVCAFile(CVCAFile cvcaFile) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("CVCA");
+		CVCPrincipal caRef = cvcaFile.getCAReference();
+		CVCPrincipal altCARef = cvcaFile.getAltCAReference();
+		node.add(new DefaultMutableTreeNode("CA reference: " + (caRef == null ? "" : "\"" + caRef.toString() + "\"")));
+		node.add(new DefaultMutableTreeNode("Alt. CA reference: " + (altCARef == null ? "" : "\"" + altCARef.toString() + "\"")));
 		return node;
 	}
 
@@ -565,8 +607,9 @@ public class LDSTreePanel extends JPanel {
 				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); return null; }
 				try {
 					InputStream inputStream = passport.getInputStream(fid);
-					return buildTree(LDSFileUtil.getLDSFile(inputStream));
+					return buildTree(fid, inputStream);
 				} catch (Exception cse) {
+					cse.printStackTrace();
 					try {
 						int dgNumber = LDSFileUtil.lookupDataGroupNumberByFID(fid);
 						return new DefaultMutableTreeNode("DG" + dgNumber);

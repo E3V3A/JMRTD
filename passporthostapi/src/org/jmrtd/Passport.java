@@ -672,7 +672,7 @@ public class Passport<C, R> {
 	 */
 	public List<Short> getFileList() {
 		List<Short> result = new ArrayList<Short>();
-		result.addAll(fileLengths.keySet());
+		result.addAll(rawStreams.keySet());
 		result.addAll(couldNotRead);
 		Collections.sort(result);
 		return result;
@@ -800,7 +800,9 @@ public class Passport<C, R> {
 		CVCAFile cvcaFile = null;
 
 		/* Find out if we need to do EAC. */
-		if (Arrays.asList(comTagList).contains(LDSFile.EF_DG14_TAG)) {
+		boolean isDG14Present = false;
+		for (int tag: comTagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
+		if (isDG14Present) {
 			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
 			dg14File = new DG14File(dg14In);
 
