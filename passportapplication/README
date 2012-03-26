@@ -43,15 +43,15 @@ Dependencies (might be included in distribution)
    
    * Project SCUBA:
         This is the low level smart card reader library.
-           (http://scuba.sourceforge.net/)
+        (http://scuba.sourceforge.net/)
 
    * Bouncycastle for crypto and ASN1 decoding:
         The jar needs to be in classpath.
-           (http://www.bouncycastle.org/)
+        (http://www.bouncycastle.org/)
 
    * EJBCA Cert-CVC:
         The cert-cvc.jar needs to be in classpath.
-           (http://ejbca.org/)
+        (http://ejbca.org/)
 
 Optional software (may be necessary for building the project)
 
@@ -77,16 +77,20 @@ Optional software (may be necessary for building the project)
 
    * GlobalPlatform
         gpshell tool for installing to JCOP cards.
-        See http://sourceforge.net/projects/globalplatform/.
+        (http://sourceforge.net/projects/globalplatform/)
 
    * RFIDIOt
-        mrpkey.py command line tool for testing/reading/writing/cloning
-        See http://rfidiot.org/.
+        mrpkey.py command line tool for testing/reading/writing/cloning.
+        (http://rfidiot.org/)
 
-Acknowledgments
+Artwork
 
-   * Icons, fonts and other artwork:
-        Distribution may contain icons by Mark James
-           (http://www.famfamfam.com/)
-        Distribution may contain fonts by Matthew Skala
-           (http://ansuz.sooke.bc.ca/page/fonts)
+   * The JMRTD logo is based on an AIGA DOT pictogram
+     (number 39, to be precise)
+   * Icons in the famfamfam set are by Mark James
+     (http://www.famfamfam.com/)
+   * The distribution may contain the OCR-B font by Matthew Skala
+     (http://ansuz.sooke.bc.ca/page/fonts)
+   * The passport stamps pictures in the installer are based on photos
+     by Jon Rawlinson
+     (http://www.flickr.com/people/london/)

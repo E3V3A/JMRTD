@@ -781,7 +781,7 @@ public class Passport<C, R> {
 	 * @throws CardServiceException on error
 	 */
 	private void readFromService(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
-		if (service == null) { throw new IllegalArgumentException("service parameter cannot be null"); }
+		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
 		filesBytes = new HashMap<Short, byte[]>();

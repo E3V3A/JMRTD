@@ -79,6 +79,7 @@ import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
+import org.jmrtd.lds.LDSInfo;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
@@ -138,7 +139,7 @@ public class LDSTreePanel extends JPanel {
 		}
 	}
 
-	private MutableTreeNode buildTree(short fid, InputStream inputStream) {
+	private LDSTreeNode buildTree(short fid, InputStream inputStream) {
 		switch (fid) {
 		case PassportService.EF_CVCA:
 			return buildTreeFromCVCAFile(new CVCAFile(inputStream));
@@ -147,14 +148,14 @@ public class LDSTreePanel extends JPanel {
 				return buildTreeFromCOMFile(new COMFile(inputStream));
 			} catch (Exception e) {
 				e.printStackTrace();
-				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+				return new LDSTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
 			}
 		case PassportService.EF_SOD:
 			try {
 				return buildTreeFromSODFile(new SODFile(inputStream));
 			} catch (Exception e) {
 				e.printStackTrace();
-				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+				return new LDSTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
 			}
 		case PassportService.EF_DG1:
 		case PassportService.EF_DG2:
@@ -176,14 +177,14 @@ public class LDSTreePanel extends JPanel {
 				return buildTreeFromDataGroup((DataGroup)LDSFileUtil.getLDSFile(inputStream));
 			} catch (Exception e) {
 				e.printStackTrace();
-				return new DefaultMutableTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+				return new LDSTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
 			}
-		default: return new DefaultMutableTreeNode("File " + Integer.toHexString(fid));
+		default: return new LDSTreeNode("File " + Integer.toHexString(fid));
 		}
 	}
 
-	private MutableTreeNode buildTreeFromCOMFile(COMFile com) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("COM");
+	private LDSTreeNode buildTreeFromCOMFile(COMFile com) {
+		LDSTreeNode node = new LDSTreeNode("COM", com);
 		node.add(new DefaultMutableTreeNode("LDS Version: " + com.getLDSVersion()));
 		node.add(new DefaultMutableTreeNode("Unicode version: " + com.getUnicodeVersion()));
 		DefaultMutableTreeNode tagsNode = new DefaultMutableTreeNode("Datagroups");
@@ -200,8 +201,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromSODFile(SODFile sod) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("SOd");
+	private LDSTreeNode buildTreeFromSODFile(SODFile sod) {
+		LDSTreeNode node = new LDSTreeNode("SOd", sod);
 		node.add(new DefaultMutableTreeNode("LDS version: " + sod.getLDSVersion()));
 		node.add(new DefaultMutableTreeNode("Unicode version: " + sod.getUnicodeVersion()));
 		DefaultMutableTreeNode hashesNode = new DefaultMutableTreeNode("Hashes");
@@ -224,8 +225,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromCVCAFile(CVCAFile cvcaFile) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("CVCA");
+	private LDSTreeNode buildTreeFromCVCAFile(CVCAFile cvcaFile) {
+		LDSTreeNode node = new LDSTreeNode("CVCA", cvcaFile);
 		CVCPrincipal caRef = cvcaFile.getCAReference();
 		CVCPrincipal altCARef = cvcaFile.getAltCAReference();
 		node.add(new DefaultMutableTreeNode("CA reference: " + (caRef == null ? "" : "\"" + caRef.toString() + "\"")));
@@ -233,7 +234,7 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDataGroup(DataGroup dataGroup) {
+	private LDSTreeNode buildTreeFromDataGroup(DataGroup dataGroup) {
 		switch(dataGroup.getTag()) {
 		case LDSFile.EF_DG1_TAG:
 			return buildTreeFromDG1((DG1File)dataGroup);
@@ -258,11 +259,11 @@ public class LDSTreePanel extends JPanel {
 		case LDSFile.EF_DG15_TAG:
 			return buildTreeFromDG15((DG15File)dataGroup);
 		}
-		return new DefaultMutableTreeNode(dataGroup);
+		return new LDSTreeNode(dataGroup);
 	}
 
-	private MutableTreeNode buildTreeFromDG1(DG1File dg1) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG1");
+	private LDSTreeNode buildTreeFromDG1(DG1File dg1) {
+		LDSTreeNode node = new LDSTreeNode("DG1", dg1);
 		MRZInfo mrzInfo = dg1.getMRZInfo();
 		node.add(new DefaultMutableTreeNode("Document code: " + mrzInfo.getDocumentCode()));		
 		node.add(new DefaultMutableTreeNode("Document number: " + mrzInfo.getDocumentNumber()));
@@ -281,8 +282,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG2(DG2File dg2) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG2");
+	private LDSTreeNode buildTreeFromDG2(DG2File dg2) {
+		LDSTreeNode node = new LDSTreeNode("DG2", dg2);
 		List<FaceInfo> faceInfos = dg2.getFaceInfos();
 		for (FaceInfo faceInfo: faceInfos) {
 			node.add(buildTreeFromFaceInfo(faceInfo));
@@ -290,8 +291,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG3(DG3File dg3) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG3");
+	private LDSTreeNode buildTreeFromDG3(DG3File dg3) {
+		LDSTreeNode node = new LDSTreeNode("DG3", dg3);
 		List<FingerInfo> fingerInfos = dg3.getFingerInfos();
 		for (FingerInfo fingerInfo: fingerInfos) {
 			node.add(buildTreeFromFingerInfo(fingerInfo));
@@ -299,9 +300,9 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG4(DG4File dg3) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG4");
-		List<IrisInfo> irisInfos = dg3.getIrisInfos();
+	private LDSTreeNode buildTreeFromDG4(DG4File dg4) {
+		LDSTreeNode node = new LDSTreeNode("DG4", dg4);
+		List<IrisInfo> irisInfos = dg4.getIrisInfos();
 		for (IrisInfo irisInfo: irisInfos) {
 			node.add(buildTreeFromIrisInfo(irisInfo));
 		}
@@ -309,8 +310,8 @@ public class LDSTreePanel extends JPanel {
 	}
 
 
-	private MutableTreeNode buildTreeFromDG5(DG5File dg5) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG5");
+	private LDSTreeNode buildTreeFromDG5(DG5File dg5) {
+		LDSTreeNode node = new LDSTreeNode("DG5", dg5);
 		List<DisplayedImageInfo> imageInfos = dg5.getImages();
 		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
 		node.add(imagesNode);
@@ -321,8 +322,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG6(DG6File dg6) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG6");
+	private LDSTreeNode buildTreeFromDG6(DG6File dg6) {
+		LDSTreeNode node = new LDSTreeNode("DG6", dg6);
 		List<DisplayedImageInfo> imageInfos = dg6.getImages();
 		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
 		node.add(imagesNode);
@@ -333,8 +334,8 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG7(DG7File dg7) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG7");
+	private LDSTreeNode buildTreeFromDG7(DG7File dg7) {
+		LDSTreeNode node = new LDSTreeNode("DG7", dg7);
 		List<DisplayedImageInfo> imageInfos = dg7.getImages();
 		DefaultMutableTreeNode imagesNode = new DefaultMutableTreeNode("Images (" + imageInfos.size() + ")");
 		node.add(imagesNode);
@@ -345,41 +346,41 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG11(DG11File dataGroup) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG11");
-		List<Integer> tagsPresent = dataGroup.getTagPresenceList();
+	private LDSTreeNode buildTreeFromDG11(DG11File dg11) {
+		LDSTreeNode node = new LDSTreeNode("DG11", dg11);
+		List<Integer> tagsPresent = dg11.getTagPresenceList();
 		if (tagsPresent.contains(DG11File.FULL_NAME_TAG)) {
-			node.add(new DefaultMutableTreeNode("Full name primary identifier: " + dataGroup.getFullNamePrimaryIdentifier()));
-			List<String> fullNameSecondaryIdentifiers = dataGroup.getFullNameSecondaryIdentifiers();
+			node.add(new DefaultMutableTreeNode("Full name primary identifier: " + dg11.getFullNamePrimaryIdentifier()));
+			List<String> fullNameSecondaryIdentifiers = dg11.getFullNameSecondaryIdentifiers();
 			DefaultMutableTreeNode fullNameSecondaryIdentifiersNode = new DefaultMutableTreeNode("Full name secondary identifiers");
 			node.add(fullNameSecondaryIdentifiersNode);
 			for (String fullNameSecondaryIdentifier: fullNameSecondaryIdentifiers) {
 				fullNameSecondaryIdentifiersNode.add(new DefaultMutableTreeNode(fullNameSecondaryIdentifier));
 			}
 		}
-		if (tagsPresent.contains(DG11File.FULL_DATE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Full date of birth: " + dataGroup.getFullDateOfBirth())); }
-		if (tagsPresent.contains(DG11File.PLACE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Place of birth: " + dataGroup.getPlaceOfBirth())); }
-		if (tagsPresent.contains(DG11File.TITLE_TAG)) { node.add(new DefaultMutableTreeNode("Title: " + dataGroup.getTitle())); }
-		if (tagsPresent.contains(DG11File.PROFESSION_TAG)) { node.add(new DefaultMutableTreeNode("Profession: " + dataGroup.getProfession())); }
-		if (tagsPresent.contains(DG11File.TELEPHONE_TAG)) { node.add(new DefaultMutableTreeNode("Telephone: " + dataGroup.getTelephone())); }
-		if (tagsPresent.contains(DG11File.PERSONAL_SUMMARY_TAG)) { node.add(new DefaultMutableTreeNode("Personal summary: " + dataGroup.getPersonalSummary())); }
-		if (tagsPresent.contains(DG11File.CUSTODY_INFORMATION_TAG)) { node.add(new DefaultMutableTreeNode("Custody information: " + dataGroup.getCustodyInformation())); }
-		if (tagsPresent.contains(DG11File.PERMANENT_ADDRESS_TAG)) { node.add(new DefaultMutableTreeNode("Permanent address:" + dataGroup.getPermanentAddress())); }
-		if (tagsPresent.contains(DG11File.PROOF_OF_CITIZENSHIP_TAG)) { node.add(new DefaultMutableTreeNode("Proof of citizenship: byte[" + dataGroup.getProofOfCitizenship().length + "]")); }
-		if (tagsPresent.contains(DG11File.PERSONAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personal number: " + dataGroup.getPersonalNumber())); }
-		if (tagsPresent.contains(DG11File.OTHER_VALID_TD_NUMBERS_TAG)) { node.add(new DefaultMutableTreeNode("Other valid TD numbers: " + dataGroup.getOtherValidTDNumbers())); }
+		if (tagsPresent.contains(DG11File.FULL_DATE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Full date of birth: " + dg11.getFullDateOfBirth())); }
+		if (tagsPresent.contains(DG11File.PLACE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Place of birth: " + dg11.getPlaceOfBirth())); }
+		if (tagsPresent.contains(DG11File.TITLE_TAG)) { node.add(new DefaultMutableTreeNode("Title: " + dg11.getTitle())); }
+		if (tagsPresent.contains(DG11File.PROFESSION_TAG)) { node.add(new DefaultMutableTreeNode("Profession: " + dg11.getProfession())); }
+		if (tagsPresent.contains(DG11File.TELEPHONE_TAG)) { node.add(new DefaultMutableTreeNode("Telephone: " + dg11.getTelephone())); }
+		if (tagsPresent.contains(DG11File.PERSONAL_SUMMARY_TAG)) { node.add(new DefaultMutableTreeNode("Personal summary: " + dg11.getPersonalSummary())); }
+		if (tagsPresent.contains(DG11File.CUSTODY_INFORMATION_TAG)) { node.add(new DefaultMutableTreeNode("Custody information: " + dg11.getCustodyInformation())); }
+		if (tagsPresent.contains(DG11File.PERMANENT_ADDRESS_TAG)) { node.add(new DefaultMutableTreeNode("Permanent address:" + dg11.getPermanentAddress())); }
+		if (tagsPresent.contains(DG11File.PROOF_OF_CITIZENSHIP_TAG)) { node.add(new DefaultMutableTreeNode("Proof of citizenship: byte[" + dg11.getProofOfCitizenship().length + "]")); }
+		if (tagsPresent.contains(DG11File.PERSONAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personal number: " + dg11.getPersonalNumber())); }
+		if (tagsPresent.contains(DG11File.OTHER_VALID_TD_NUMBERS_TAG)) { node.add(new DefaultMutableTreeNode("Other valid TD numbers: " + dg11.getOtherValidTDNumbers())); }
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG12(DG12File dataGroup) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG12");
-		List<Integer> tagsPresent = dataGroup.getTagPresenceList();
-		if (tagsPresent.contains(DG12File.DATE_AND_TIME_OF_PERSONALIZATION)) { node.add(new DefaultMutableTreeNode("Date and time of personalization: " + dataGroup.getDateAndTimeOfPersonalization())); }
-		if (tagsPresent.contains(DG12File.DATE_OF_ISSUE_TAG)) { node.add(new DefaultMutableTreeNode("Date of issue: " + dataGroup.getDateOfIssue())); }
-		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dataGroup.getEndorsementsAndObservations())); }
+	private LDSTreeNode buildTreeFromDG12(DG12File dg12) {
+		LDSTreeNode node = new LDSTreeNode("DG12", dg12);
+		List<Integer> tagsPresent = dg12.getTagPresenceList();
+		if (tagsPresent.contains(DG12File.DATE_AND_TIME_OF_PERSONALIZATION)) { node.add(new DefaultMutableTreeNode("Date and time of personalization: " + dg12.getDateAndTimeOfPersonalization())); }
+		if (tagsPresent.contains(DG12File.DATE_OF_ISSUE_TAG)) { node.add(new DefaultMutableTreeNode("Date of issue: " + dg12.getDateOfIssue())); }
+		if (tagsPresent.contains(DG12File.ENDORSEMENTS_AND_OBSERVATIONS_TAG)) { node.add(new DefaultMutableTreeNode("Endorsements and observations: " + dg12.getEndorsementsAndObservations())); }
 		if (tagsPresent.contains(DG12File.IMAGE_OF_FRONT_TAG)) {
 			DefaultMutableTreeNode imageNode = new DefaultMutableTreeNode("Image of front");
-			byte[] imageBytes = dataGroup.getImageOfFront();
+			byte[] imageBytes = dg12.getImageOfFront();
 			imageNode.add(new DefaultMutableTreeNode("Encoded length: " + imageBytes.length));
 			try {
 				BufferedImage image = ImageUtil.read(new ByteArrayInputStream(imageBytes), imageBytes.length, "image/jpeg");
@@ -390,7 +391,7 @@ public class LDSTreePanel extends JPanel {
 		}
 		if (tagsPresent.contains(DG12File.IMAGE_OF_REAR_TAG)) {
 			DefaultMutableTreeNode imageNode = new DefaultMutableTreeNode("Image of rear");
-			byte[] imageBytes = dataGroup.getImageOfRear();
+			byte[] imageBytes = dg12.getImageOfRear();
 			imageNode.add(new DefaultMutableTreeNode("Encoded length: " + imageBytes.length));
 			try {
 				BufferedImage image = ImageUtil.read(new ByteArrayInputStream(imageBytes), imageBytes.length, "image/jpeg");
@@ -399,15 +400,15 @@ public class LDSTreePanel extends JPanel {
 				imageNode.add(new DefaultMutableTreeNode("Error decoding image"));
 			}
 		}
-		if (tagsPresent.contains(DG12File.ISSUING_AUTHORITY_TAG)) { node.add(new DefaultMutableTreeNode("Issuing authority: " + dataGroup.getIssuingAuthority())); }
-		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Name of other person: " + dataGroup.getNameOfOtherPerson())); }
-		if (tagsPresent.contains(DG12File.PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personalization sytem serial number: " + dataGroup.getPersonalizationSystemSerialNumber())); }
-		if (tagsPresent.contains(DG12File.TAX_OR_EXIT_REQUIREMENTS_TAG)) { node.add(new DefaultMutableTreeNode("a: " + dataGroup.getTaxOrExitRequirements())); }
+		if (tagsPresent.contains(DG12File.ISSUING_AUTHORITY_TAG)) { node.add(new DefaultMutableTreeNode("Issuing authority: " + dg12.getIssuingAuthority())); }
+		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Name of other person: " + dg12.getNameOfOtherPerson())); }
+		if (tagsPresent.contains(DG12File.PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personalization sytem serial number: " + dg12.getPersonalizationSystemSerialNumber())); }
+		if (tagsPresent.contains(DG12File.TAX_OR_EXIT_REQUIREMENTS_TAG)) { node.add(new DefaultMutableTreeNode("a: " + dg12.getTaxOrExitRequirements())); }
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG14(DG14File dg14) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG14");
+	private LDSTreeNode buildTreeFromDG14(DG14File dg14) {
+		LDSTreeNode node = new LDSTreeNode("DG14", dg14);
 		DefaultMutableTreeNode cvcaFileIdsNode = new DefaultMutableTreeNode("TA");
 		node.add(cvcaFileIdsNode);
 		List<Integer> cvcaFileIds = dg14.getCVCAFileIds();
@@ -431,12 +432,104 @@ public class LDSTreePanel extends JPanel {
 		return node;
 	}
 
-	private MutableTreeNode buildTreeFromDG15(DG15File dg15) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("DG15");
+	private LDSTreeNode buildTreeFromDG15(DG15File dg15) {
+		LDSTreeNode node = new LDSTreeNode("DG15", dg15);
 		PublicKey publicKey = dg15.getPublicKey();
 		node.add(buildTreeFromPublicKey(publicKey));
 		return node;
 	}
+
+	private LDSTreeNode buildTreeFromFaceInfo(FaceInfo faceInfo) {
+		LDSTreeNode node = new LDSTreeNode("FaceInfo", faceInfo);
+		node.add(buildTreeFromSBH(faceInfo));
+		for (FaceImageInfo faceImageInfo: faceInfo.getFaceImageInfos()) {
+			DefaultMutableTreeNode headerNode = new DefaultMutableTreeNode("Image header");
+			headerNode.add(new DefaultMutableTreeNode("Quality: " + faceImageInfo.getQuality()));
+			headerNode.add(new DefaultMutableTreeNode("Color space: " + faceImageInfo.getColorSpace()));
+			headerNode.add(new DefaultMutableTreeNode("Device type: " + faceImageInfo.getDeviceType()));
+			headerNode.add(new DefaultMutableTreeNode("Expression: " + faceImageInfo.getExpression()));
+			headerNode.add(new DefaultMutableTreeNode("Eye color: " + faceImageInfo.getEyeColor()));
+			headerNode.add(new DefaultMutableTreeNode("Feature mask: " + faceImageInfo.getFeatureMask()));
+			FeaturePoint[] featurePoints = faceImageInfo.getFeaturePoints();
+			DefaultMutableTreeNode fpNode = new DefaultMutableTreeNode("Feature points (" + featurePoints.length + ")");
+			for (FeaturePoint featurePoint: featurePoints) {
+				fpNode.add(new DefaultMutableTreeNode(featurePoint.toString()));
+			}
+			headerNode.add(fpNode);
+			node.add(headerNode);
+			LDSTreeNode imageNode = buildTreeFromImageInfo(faceImageInfo);
+			node.add(imageNode);
+		}
+		return node;
+	}
+
+	private LDSTreeNode buildTreeFromFingerInfo(FingerInfo fingerInfo) {
+		LDSTreeNode node = new LDSTreeNode("FingerInfo", fingerInfo);
+		node.add(buildTreeFromSBH(fingerInfo));
+		for (FingerImageInfo fingerImageInfo: fingerInfo.getFingerImageInfos()) {
+			node.add(buildTreeFromImageInfo(fingerImageInfo));
+		}
+		return node;
+	}
+
+	private LDSTreeNode buildTreeFromIrisInfo(IrisInfo irisInfo) {
+		LDSTreeNode node = new LDSTreeNode("IrisInfo", irisInfo);
+		node.add(buildTreeFromSBH(irisInfo));
+		for (IrisBiometricSubtypeInfo irisBiometricSubtypeInfo: irisInfo.getIrisBiometricSubtypeInfos()) {
+			node.add(buildTreeFromIrisBiometricSubtypeInfo(irisBiometricSubtypeInfo));
+		}
+		return node;
+	}
+
+	private LDSTreeNode buildTreeFromIrisBiometricSubtypeInfo(IrisBiometricSubtypeInfo irisBiometricSubtypeInfo) {
+		LDSTreeNode node = new LDSTreeNode("IrisBiometricSubtypeInfo", irisBiometricSubtypeInfo);
+		for (IrisImageInfo irisImageInfo: irisBiometricSubtypeInfo.getIrisImageInfos()) {
+			node.add(buildTreeFromImageInfo(irisImageInfo));
+		}
+		return node;
+	}	
+
+	private MutableTreeNode buildTreeFromSBH(BiometricDataBlock bdb) {
+		DefaultMutableTreeNode node = new DefaultMutableTreeNode("SBH");
+		Map<Integer, byte[]> sbh = bdb.getStandardBiometricHeader().getElements();
+		for (Map.Entry<Integer, byte[]> entry: sbh.entrySet()) {
+			int key = entry.getKey();
+			byte[] value = entry.getValue();
+			node.add(new DefaultMutableTreeNode(getSBHKey(key) + " (" + Integer.toHexString(key) + "): " + Hex.bytesToHexString(value)));
+		}
+		return node;
+	}
+
+	private String getSBHKey(int key) {
+		switch(key) {
+		case ISO781611.PATRON_HEADER_VERSION_TAG: return "Patron header version";
+		case ISO781611.BIOMETRIC_TYPE_TAG: return "Biometric type";
+		case ISO781611.BIOMETRIC_SUBTYPE_TAG: return "Biometric sub-type";
+		case ISO781611.CREATION_DATE_AND_TIME_TAG: return "Creation date and time";
+		case ISO781611.VALIDITY_PERIOD_TAG: return "Validity period";
+		case ISO781611.CREATOR_OF_BIOMETRIC_REFERENCE_DATA: return "Creator of biometric reference data";
+		case ISO781611.FORMAT_OWNER_TAG: return "Format owner";
+		case ISO781611.FORMAT_TYPE_TAG: return "Format type";
+		default: return "Unknown";
+		}
+	}
+
+	private LDSTreeNode buildTreeFromImageInfo(ImageInfo imageInfo) {
+		LDSTreeNode node = new LDSTreeNode("Image", imageInfo);
+		node.add(new DefaultMutableTreeNode("Mime-type: \"" + imageInfo.getMimeType() + "\""));
+		node.add(new DefaultMutableTreeNode("Encoded record length: " + imageInfo.getRecordLength()));
+		node.add(new DefaultMutableTreeNode("Encoded image length: " + imageInfo.getImageLength()));
+		node.add(new DefaultMutableTreeNode("Reported dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));
+		try{
+			BufferedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
+			addNodes(image, node);
+		} catch(IOException e){
+			node.add(new DefaultMutableTreeNode("Actual dimensions: unable to decode image"));
+		}
+
+		return node;
+	}
+	
 
 	private MutableTreeNode buildTreeFromCertificate(Certificate certificate, String nodeName) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode(nodeName);
@@ -469,97 +562,6 @@ public class LDSTreePanel extends JPanel {
 			node.add(new DefaultMutableTreeNode("Y: " + dhPublicKey.getY()));
 			node.add(new DefaultMutableTreeNode("Params: " + dhPublicKey.getParams()));
 		}
-		return node;
-	}
-
-	private MutableTreeNode buildTreeFromFaceInfo(FaceInfo faceInfo) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("FaceInfo");
-		node.add(buildTreeFromSBH(faceInfo));
-		for (FaceImageInfo faceImageInfo: faceInfo.getFaceImageInfos()) {
-			DefaultMutableTreeNode headerNode = new DefaultMutableTreeNode("Image header");
-			headerNode.add(new DefaultMutableTreeNode("Quality: " + faceImageInfo.getQuality()));
-			headerNode.add(new DefaultMutableTreeNode("Color space: " + faceImageInfo.getColorSpace()));
-			headerNode.add(new DefaultMutableTreeNode("Device type: " + faceImageInfo.getDeviceType()));
-			headerNode.add(new DefaultMutableTreeNode("Expression: " + faceImageInfo.getExpression()));
-			headerNode.add(new DefaultMutableTreeNode("Eye color: " + faceImageInfo.getEyeColor()));
-			headerNode.add(new DefaultMutableTreeNode("Feature mask: " + faceImageInfo.getFeatureMask()));
-			FeaturePoint[] featurePoints = faceImageInfo.getFeaturePoints();
-			DefaultMutableTreeNode fpNode = new DefaultMutableTreeNode("Feature points (" + featurePoints.length + ")");
-			for (FeaturePoint featurePoint: featurePoints) {
-				fpNode.add(new DefaultMutableTreeNode(featurePoint.toString()));
-			}
-			headerNode.add(fpNode);
-			node.add(headerNode);
-			MutableTreeNode imageNode = buildTreeFromImageInfo(faceImageInfo);
-			node.add(imageNode);
-		}
-		return node;
-	}
-
-	private MutableTreeNode buildTreeFromFingerInfo(FingerInfo fingerInfo) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("FingerInfo");
-		node.add(buildTreeFromSBH(fingerInfo));
-		for (FingerImageInfo fingerImageInfo: fingerInfo.getFingerImageInfos()) {
-			node.add(buildTreeFromImageInfo(fingerImageInfo));
-		}
-		return node;
-	}
-
-	private MutableTreeNode buildTreeFromIrisInfo(IrisInfo irisInfo) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("IrisInfo");
-		node.add(buildTreeFromSBH(irisInfo));
-		for (IrisBiometricSubtypeInfo irisBiometricSubtypeInfo: irisInfo.getIrisBiometricSubtypeInfos()) {
-			node.add(buildTreeFromIrisBiometricSubtypeInfo(irisBiometricSubtypeInfo));
-		}
-		return node;
-	}
-
-	private MutableTreeNode buildTreeFromIrisBiometricSubtypeInfo(IrisBiometricSubtypeInfo irisBiometricSubtypeInfo) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("IrisBiometricSubtypeInfo");
-		for (IrisImageInfo irisImageInfo: irisBiometricSubtypeInfo.getIrisImageInfos()) {
-			node.add(buildTreeFromImageInfo(irisImageInfo));
-		}
-		return node;
-	}	
-
-	private MutableTreeNode buildTreeFromSBH(BiometricDataBlock bdb) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("SBH");
-		Map<Integer, byte[]> sbh = bdb.getStandardBiometricHeader().getElements();
-		for (Map.Entry<Integer, byte[]> entry: sbh.entrySet()) {
-			int key = entry.getKey();
-			byte[] value = entry.getValue();
-			node.add(new DefaultMutableTreeNode(getSBHKey(key) + " (" + Integer.toHexString(key) + "): " + Hex.bytesToHexString(value)));
-		}
-		return node;
-	}
-
-	private String getSBHKey(int key) {
-		switch(key) {
-		case ISO781611.PATRON_HEADER_VERSION_TAG: return "Patron header version";
-		case ISO781611.BIOMETRIC_TYPE_TAG: return "Biometric type";
-		case ISO781611.BIOMETRIC_SUBTYPE_TAG: return "Biometric sub-type";
-		case ISO781611.CREATION_DATE_AND_TIME_TAG: return "Creation date and time";
-		case ISO781611.VALIDITY_PERIOD_TAG: return "Validity period";
-		case ISO781611.CREATOR_OF_BIOMETRIC_REFERENCE_DATA: return "Creator of biometric reference data";
-		case ISO781611.FORMAT_OWNER_TAG: return "Format owner";
-		case ISO781611.FORMAT_TYPE_TAG: return "Format type";
-		default: return "Unknown";
-		}
-	}
-
-	private MutableTreeNode buildTreeFromImageInfo(ImageInfo imageInfo) {
-		DefaultMutableTreeNode node = new DefaultMutableTreeNode("Image");
-		node.add(new DefaultMutableTreeNode("Mime-type: \"" + imageInfo.getMimeType() + "\""));
-		node.add(new DefaultMutableTreeNode("Encoded record length: " + imageInfo.getRecordLength()));
-		node.add(new DefaultMutableTreeNode("Encoded image length: " + imageInfo.getImageLength()));
-		node.add(new DefaultMutableTreeNode("Reported dimensions: " + imageInfo.getWidth() + " x " + imageInfo.getHeight()));
-		try{
-			BufferedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
-			addNodes(image, node);
-		} catch(IOException e){
-			node.add(new DefaultMutableTreeNode("Actual dimensions: unable to decode image"));
-		}
-
 		return node;
 	}
 
@@ -641,6 +643,27 @@ public class LDSTreePanel extends JPanel {
 			} else {
 				return super.isLeaf(node);
 			}
+		}
+	}
+	
+	private class LDSTreeNode extends DefaultMutableTreeNode {
+		
+		private LDSInfo ldsInfo;
+		
+		public LDSTreeNode(Object userObject) {
+			super(userObject);
+			if (userObject instanceof LDSInfo) {
+				this.ldsInfo = (LDSInfo)userObject;
+			}
+		}
+		
+		public LDSTreeNode(Object userObject, LDSInfo ldsInfo) {
+			super(userObject);
+			this.ldsInfo = ldsInfo;
+		}
+		
+		public LDSInfo getLDSInfo() {
+			return ldsInfo;
 		}
 	}
 }

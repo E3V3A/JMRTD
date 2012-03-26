@@ -156,7 +156,7 @@
 				    <resources>
 				        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
 				        <!-- res id="InfoPanel.info" src="README" / -->
-				        <res id="Installer.image" src="images/jmrtd_installer_splash.png" />
+				        <res id="Installer.image" src="images/jmrtd_splash_izpack_installer.jpg" />
 				        <res id="Heading.image" src="images/jmrtd_logo-48x48.png"/>
 						<res id="shortcutSpec.xml" src="jmrtd_installer_shortcuts_windows.xml" />
 						<res id="Unix_shortcutSpec.xml" src="jmrtd_installer_shortcuts_unix.xml" />

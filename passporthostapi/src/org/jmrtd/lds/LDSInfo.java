@@ -31,7 +31,7 @@ import java.io.Serializable;
  * 
  * @version $Revision: $
  */
-interface LDSInfo extends Serializable {
+public interface LDSInfo extends Serializable {
 
 	/**
 	 * Gets the encoded contents of this LDS info.
