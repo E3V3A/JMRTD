@@ -46,17 +46,19 @@ import java.util.logging.Logger;
 import javax.security.auth.x500.X500Principal;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
@@ -89,7 +91,7 @@ import org.jmrtd.JMRTDSecurityProvider;
 public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 
 	private static final long serialVersionUID = -1081347374739311111L;
-	
+
 	//	private static final String SHA1_HASH_ALG_OID = "1.3.14.3.2.26";
 	//	private static final String SHA1_WITH_RSA_ENC_OID = "1.2.840.113549.1.1.5";
 	//	private static final String SHA256_HASH_ALG_OID = "2.16.840.1.101.3.4.2.1";
@@ -143,11 +145,17 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			X509Certificate docSigningCertificate)
 	throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
-		signedData = createSignedData(digestAlgorithm,
-				digestEncryptionAlgorithm,
-				dataGroupHashes,
-				encryptedDigest,
-				docSigningCertificate);
+		try {
+			signedData = createSignedData(digestAlgorithm,
+					digestEncryptionAlgorithm,
+					dataGroupHashes,
+					encryptedDigest,
+					docSigningCertificate);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 	/**
@@ -169,11 +177,17 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			X509Certificate docSigningCertificate, String provider)
 	throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
-		signedData = createSignedData(digestAlgorithm,
-				digestEncryptionAlgorithm,
-				dataGroupHashes,
-				privateKey,
-				docSigningCertificate, provider);
+		try {
+			signedData = createSignedData(digestAlgorithm,
+					digestEncryptionAlgorithm,
+					dataGroupHashes,
+					privateKey,
+					docSigningCertificate, provider);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 
@@ -197,11 +211,17 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			String ldsVersion, String unicodeVersion)
 	throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
-		signedData = createSignedData(digestAlgorithm,
-				digestEncryptionAlgorithm,
-				dataGroupHashes,
-				privateKey,
-				docSigningCertificate, provider, ldsVersion, unicodeVersion);
+		try {
+			signedData = createSignedData(digestAlgorithm,
+					digestEncryptionAlgorithm,
+					dataGroupHashes,
+					privateKey,
+					docSigningCertificate, provider, ldsVersion, unicodeVersion);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 	/**
@@ -222,11 +242,17 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			X509Certificate docSigningCertificate)
 	throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
-		signedData = createSignedData(digestAlgorithm,
-				digestEncryptionAlgorithm,
-				dataGroupHashes,
-				privateKey,
-				docSigningCertificate, null);
+		try {
+			signedData = createSignedData(digestAlgorithm,
+					digestEncryptionAlgorithm,
+					dataGroupHashes,
+					privateKey,
+					docSigningCertificate, null);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
+			throw new IllegalArgumentException(ioe.getMessage());
+		}
 	}
 
 	/**
@@ -241,11 +267,11 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 	protected void readContent(InputStream inputStream) throws IOException {
 		ASN1InputStream asn1in = new ASN1InputStream(inputStream);
-		DERSequence sequence = (DERSequence)asn1in.readObject();
+		ASN1Sequence sequence = (ASN1Sequence)asn1in.readObject();
 		if (sequence.size() != 2) {
 			throw new IOException("Was expecting a DER sequence of length 2, found a DER sequence of length " + sequence.size());
 		}
-		String contentTypeOID = ((DERObjectIdentifier)sequence.getObjectAt(0)).getId();
+		String contentTypeOID = ((ASN1ObjectIdentifier)sequence.getObjectAt(0)).getId();
 		if (!RFC_3369_SIGNED_DATA_OID.equals(contentTypeOID)) {
 			throw new IOException("Was expecting signed-data content type OID (" + RFC_3369_SIGNED_DATA_OID + "), found " + contentTypeOID);
 		}
@@ -254,17 +280,19 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		if (tagNo != 0) {
 			throw new IOException("Was expecting tag 0, found " + Integer.toHexString(tagNo));
 		}		
-		DERObject content = taggedContent.getObject();
+		ASN1Primitive content = taggedContent.getObject();
 		if (!(content instanceof ASN1Sequence)) {
 			throw new IOException("Was expecting an ASN.1 sequence as content");
 		}
-		this.signedData = new SignedData((ASN1Sequence)content);
+		this.signedData = SignedData.getInstance((ASN1Sequence)content);
 	}
 
 	protected void writeContent(OutputStream out) throws IOException {
-		ASN1Encodable[] fileContents = { new ASN1ObjectIdentifier(RFC_3369_SIGNED_DATA_OID), new DERTaggedObject(0, signedData) };
-		ASN1Sequence fileContentsObject = new DERSequence(fileContents);
-		byte[] fileContentsBytes = fileContentsObject.getDEREncoded();
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(new ASN1ObjectIdentifier(RFC_3369_SIGNED_DATA_OID));
+		v.add(new DERTaggedObject(0, signedData));
+		ASN1Sequence fileContentsObject = new DLSequence(v);
+		byte[] fileContentsBytes = fileContentsObject.getEncoded(ASN1Encoding.DER);
 		out.write(fileContentsBytes);
 	}
 
@@ -293,7 +321,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	public byte[] getEncryptedDigest() {
 		return getEncryptedDigest(signedData);
 	}
-	
+
 	/**
 	 * Gets the e-content inside the signed data strucure.
 	 * 
@@ -380,8 +408,9 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		}
 		X509CertificateObject certObject = null;
 		for (int i = 0; i < certs.size(); i++) {
-			X509CertificateStructure e = new X509CertificateStructure((DERSequence)certs.getObjectAt(i));
-			certObject = new X509CertificateObject(e);
+			/* FIXME: X509CertificateStructure is deprecated in favor oforg.bouncycastle.asn1.x509.Certificate */
+			X509CertificateStructure ee = new X509CertificateStructure((ASN1Sequence)certs.getObjectAt(i));
+			certObject = new X509CertificateObject(ee);
 			certSpec = certObject.getEncoded();
 		}
 
@@ -492,10 +521,16 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * @return a certificate issuer
 	 */
 	public X500Principal getIssuerX500Principal() {
-		IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
-		X500Name name = issuerAndSerialNumber.getName();
-		X500Principal x500Principal = new X500Principal(name.getDEREncoded());		
-		return x500Principal;
+		try {
+			IssuerAndSerialNumber issuerAndSerialNumber = getIssuerAndSerialNumber();
+			X500Name name = issuerAndSerialNumber.getName();
+			X500Principal x500Principal = new X500Principal(name.getEncoded(ASN1Encoding.DER));		
+			return x500Principal;
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.severe("Could not get issuer: " + ioe.getMessage());
+			return null;
+		}
 	}
 
 	/**
@@ -543,7 +578,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			LOGGER.warning("Found " + signerInfos.size() + " signerInfos");
 		}
 		for (int i = 0; i < signerInfos.size(); i++) {
-			SignerInfo info = new SignerInfo((DERSequence)signerInfos.getObjectAt(i));
+			SignerInfo info = new SignerInfo((ASN1Sequence)signerInfos.getObjectAt(i));
 			return info;
 		}
 		return null;
@@ -571,8 +606,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			ASN1InputStream inputStream = new ASN1InputStream(new ByteArrayInputStream(eContent.getOctets()));
 
 			Object firstObject = inputStream.readObject();
-			if (!(firstObject instanceof DERSequence)) {
-				throw new IllegalStateException("Expected DERSequence, found " + firstObject.getClass().getSimpleName());
+			if (!(firstObject instanceof ASN1Sequence)) {
+				throw new IllegalStateException("Expected ASN1Sequence, found " + firstObject.getClass().getSimpleName());
 			}
 			LDSSecurityObject sod = LDSSecurityObject.getInstance(firstObject);
 			Object nextObject = inputStream.readObject();
@@ -614,15 +649,17 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		} else {
 			/* Signed attributes present (i.e. a structure containing a hash of the content), return that structure to be signed... */
 			/* This option is taken by ICAO passports. */
-			byte[] attributesBytes = signedAttributesSet.getDEREncoded();
+			byte[] attributesBytes = null;
 			String digAlg = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
 			try {
+				attributesBytes = signedAttributesSet.getEncoded(ASN1Encoding.DER);
+
 				/* We'd better check that the content actually digests to the hash value contained! ;) */
 				Enumeration<?> attributes = signedAttributesSet.getObjects();
 				byte[] storedDigestedContent = null;
 				while (attributes.hasMoreElements()) {
-					Attribute attribute = new Attribute((DERSequence)attributes.nextElement());
-					DERObjectIdentifier attrType = attribute.getAttrType();
+					Attribute attribute = Attribute.getInstance((ASN1Sequence)attributes.nextElement());
+					ASN1ObjectIdentifier attrType = attribute.getAttrType();
 					if (RFC_3369_MESSAGE_DIGEST_OID.equals(attrType.getId())) {
 						ASN1Set attrValuesSet = attribute.getAttrValues();
 						if (attrValuesSet.size() != 1) {
@@ -641,7 +678,10 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 				}
 			} catch (NoSuchAlgorithmException nsae) {
 				nsae.printStackTrace();
-				LOGGER.warning("Error checking signedAttribute in eContent! No such algorithm " + digAlg);
+				LOGGER.warning("Error checking signedAttributes in eContent! No such algorithm: \"" + digAlg + "\"");
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				LOGGER.severe("Error getting signedAttributes: " + ioe.getMessage());
 			}
 			return attributesBytes;
 		}
@@ -676,7 +716,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			Map<Integer, byte[]> dataGroupHashes,
 			byte[] encryptedDigest,
 			X509Certificate docSigningCertificate)
-	throws NoSuchAlgorithmException, CertificateException {
+	throws NoSuchAlgorithmException, CertificateException, IOException {
 		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
 		ContentInfo contentInfo = createContentInfo(digestAlgorithm, dataGroupHashes);
 		byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
@@ -690,7 +730,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			String digestEncryptionAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
 			X509Certificate docSigningCertificate, String provider)
-	throws NoSuchAlgorithmException, CertificateException {
+	throws NoSuchAlgorithmException, CertificateException, IOException {
 		return createSignedData(digestAlgorithm, digestEncryptionAlgorithm,
 				dataGroupHashes, privateKey, docSigningCertificate, provider,
 				null, null);
@@ -701,7 +741,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
 			X509Certificate docSigningCertificate, String provider,
 			String ldsVersion, String unicodeVersion)
-	throws NoSuchAlgorithmException, CertificateException {
+	throws NoSuchAlgorithmException, CertificateException, IOException {
 		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
 		ContentInfo contentInfo = createContentInfo(digestAlgorithm,
 				dataGroupHashes, ldsVersion, unicodeVersion);
@@ -710,8 +750,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 		byte[] encryptedDigest = null;
 		try {
-			byte[] dataToBeSigned = createAuthenticatedAttributes(
-					digestAlgorithm, content).getDEREncoded();
+			byte[] dataToBeSigned = createAuthenticatedAttributes(digestAlgorithm, content).getEncoded(ASN1Encoding.DER);
 			Signature s = null;
 			if (provider != null) {
 				s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
@@ -736,8 +775,10 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
 		ASN1ObjectIdentifier algorithmIdentifier = new ASN1ObjectIdentifier(lookupOIDByMnemonic(digestAlgorithm));
-		ASN1Encodable[] result = { algorithmIdentifier };
-		return new DERSequence(result);
+//		ASN1Primitive[] result = { algorithmIdentifier };
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(algorithmIdentifier);
+		return new DLSequence(v);
 	}
 
 	private static ASN1Sequence createCertificate(X509Certificate cert) throws CertificateException {
@@ -758,7 +799,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	private static ContentInfo createContentInfo(
 			String digestAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes)
-	throws NoSuchAlgorithmException {
+	throws NoSuchAlgorithmException, IOException {
 		return createContentInfo(digestAlgorithm, dataGroupHashes, null,
 				null);
 	}
@@ -766,8 +807,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	private static ContentInfo createContentInfo(
 			String digestAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes,
-			String ldsVersion, String unicodeVersion)
-	throws NoSuchAlgorithmException {
+			String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, IOException {
 		DataGroupHash[] dataGroupHashesArray = new DataGroupHash[dataGroupHashes.size()];
 		int i = 0;
 		for (int dataGroupNumber: dataGroupHashes.keySet()) {
@@ -775,7 +815,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			DataGroupHash hash = new DataGroupHash(dataGroupNumber, new DEROctetString(hashBytes));
 			dataGroupHashesArray[i++] = hash;
 		}
-		AlgorithmIdentifier digestAlgorithmIdentifier = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm));
+		AlgorithmIdentifier digestAlgorithmIdentifier = AlgorithmIdentifier.getInstance(lookupOIDByMnemonic(digestAlgorithm));
 		LDSVersionInfo ldsVersionInfo;
 		LDSSecurityObject securityObject = null;
 		if (ldsVersion == null) {
@@ -819,12 +859,12 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
 		Attribute contentTypeAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_CONTENT_TYPE_OID), createSingletonSet(new ASN1ObjectIdentifier(ICAO_SOD_OID)));
 		Attribute messageDigestAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_MESSAGE_DIGEST_OID), createSingletonSet(digestedContent));
-		ASN1Encodable[] result = { contentTypeAttribute.toASN1Object(), messageDigestAttribute.toASN1Object() };
-		return new DERSet(result);
+		ASN1Object[] result = { contentTypeAttribute.toASN1Primitive(), messageDigestAttribute.toASN1Primitive() };
+		return new DLSet(result);
 	}
 
-	private static ASN1Set createSingletonSet(ASN1Encodable e) {
-		return new DERSet(new ASN1Encodable[] { e });
+	private static ASN1Set createSingletonSet(ASN1Object e) {
+		return new DLSet(new ASN1Encodable[] { e });
 	}
 
 	/**

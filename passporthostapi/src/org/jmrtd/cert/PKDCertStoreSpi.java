@@ -59,10 +59,10 @@ import javax.naming.directory.SearchResult;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObject;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.SignedData;
@@ -224,8 +224,8 @@ public class PKDCertStoreSpi extends CertStoreSpi
 
 		for (byte[] binary: binaries) {
 			try {
-				DERSequence derSequence = (DERSequence)DERSequence.getInstance(binary);
-				List<SignedData> signedDataList = getSignedDataFromDERObject(derSequence, null);
+				ASN1Sequence sequence = (ASN1Sequence)ASN1Sequence.getInstance(binary);
+				List<SignedData> signedDataList = getSignedDataFromDERObject(sequence, null);
 				for (SignedData signedData: signedDataList) {
 
 					//			ASN1Set certificatesASN1Set = signedData.getCertificates();
@@ -293,17 +293,17 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 
 		if (o instanceof DERTaggedObject) {
-			DERObject childObject = ((DERTaggedObject)o).getObject();
+			ASN1Primitive childObject = ((DERTaggedObject)o).getObject();
 			return getSignedDataFromDERObject(childObject, result);
-		} else if (o instanceof DERSequence) {
-			Enumeration<?> derObjects = ((DERSequence)o).getObjects();
+		} else if (o instanceof ASN1Sequence) {
+			Enumeration<?> derObjects = ((ASN1Sequence)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				result = getSignedDataFromDERObject(nextObject, result);
 			}
 			return result;
-		} else if (o instanceof DERSet) {
-			Enumeration<?> derObjects = ((DERSet)o).getObjects();
+		} else if (o instanceof ASN1Set) {
+			Enumeration<?> derObjects = ((ASN1Set)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				result = getSignedDataFromDERObject(nextObject, result);
@@ -315,7 +315,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			ASN1InputStream derInputStream = new ASN1InputStream(new ByteArrayInputStream(octets));
 			try {
 				while (true) {
-					DERObject derObject = derInputStream.readObject();
+					ASN1Primitive derObject = derInputStream.readObject();
 					if (derObject == null) { break; }
 					result = getSignedDataFromDERObject(derObject, result);
 				}
@@ -338,17 +338,17 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		}
 
 		if (o instanceof DERTaggedObject) {
-			DERObject childObject = ((DERTaggedObject)o).getObject();
+			ASN1Primitive childObject = ((DERTaggedObject)o).getObject();
 			return getCertificatesFromDERObject(childObject, certificates);
-		} else if (o instanceof DERSequence) {
-			Enumeration<?> derObjects = ((DERSequence)o).getObjects();
+		} else if (o instanceof ASN1Sequence) {
+			Enumeration<?> derObjects = ((ASN1Sequence)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				certificates = getCertificatesFromDERObject(nextObject, certificates);
 			}
 			return certificates;
-		} else if (o instanceof DERSet) {
-			Enumeration<?> derObjects = ((DERSet)o).getObjects();
+		} else if (o instanceof ASN1Set) {
+			Enumeration<?> derObjects = ((ASN1Set)o).getObjects();
 			while (derObjects.hasMoreElements()) {
 				Object nextObject = derObjects.nextElement();
 				certificates = getCertificatesFromDERObject(nextObject, certificates);
@@ -360,7 +360,7 @@ public class PKDCertStoreSpi extends CertStoreSpi
 			ASN1InputStream derInputStream = new ASN1InputStream(new ByteArrayInputStream(octets));
 			try {
 				while (true) {
-					DERObject derObject = derInputStream.readObject();
+					ASN1Primitive derObject = derInputStream.readObject();
 					if (derObject == null) { break; }
 					certificates = getCertificatesFromDERObject(derObject, certificates);
 				}

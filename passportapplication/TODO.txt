@@ -147,12 +147,13 @@ General
 + Abstraction of SCUBA smartcard layer.
 + Implementation of SCUBA smartcard layer for j2se and Android 2.3.
 + Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
-+ CardManager hot pluggable card terminal events (Pim Vullers contributed patches).
+- CardManager hot pluggable card terminal events (Pim Vullers contributed patches). Stable in GUI (preferences)?
++ Latest Bouncy Castle 1.47.
 + Cleanup SCUBA so that we have a smaller number of project.
 + Consistent naming and param order in PassportService and Passport (readFile vs getInputStream).
 + Document number > 9 digits. MRZ document number field "spill over" to optional information field).
-- Test "creating an MRTD from scratch and uploading it to JMRTD applet" scenario.
-- Test Android ajmrtd interop.
+- Test "creating an MRTD from scratch and uploading it to JMRTD applet" scenario (both BAC and EAC).
+- Test Android ajmrtd, at least make sure ajmrtd compiles against current passporthostapi and scuba_smartcards.
 
 LDS
 + Moved progressive mode stuff out of FaceInfo.
@@ -175,7 +176,7 @@ Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max Guenther)
 
 ImageIO
-+ Added JJ2000 (pure Java JPEG2000) based ImageIO provider.
++ Added a JJ2000 (pure Java JPEG2000) based ImageIO provider, as an alternative to JAI ImageIO.
 + WSQ combination 32/64 bit Mach-O dylib on MacOS X. Include WSQ shared objects for Windows, Linux 32 / 64 bit as well.
 
 Code quality

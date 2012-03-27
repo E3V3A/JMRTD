@@ -26,10 +26,11 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.security.NoSuchAlgorithmException;
 
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
@@ -61,8 +62,10 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	 * Returns a DER object with this SecurityInfo data (DER sequence)
 	 * 
 	 * @return a DER object with this SecurityInfo data
+	 * 
+	 * @deprecated Remove this method from visible interface (because of dependency on BC API)
 	 */
-	abstract DERObject getDERObject();
+	abstract ASN1Primitive getDERObject();
 	
 	/**
 	 * Writes this SecurityInfo to output stream.
@@ -72,9 +75,9 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	 * @throws IOException if writing fails
 	 */
 	public void writeObject(OutputStream outputStream) throws IOException {
-		DERObject derEncoded = getDERObject();
+		ASN1Primitive derEncoded = getDERObject();
 		if (derEncoded == null) { throw new IOException("Could not decode from DER."); }
-		byte[] derEncodedBytes = derEncoded.getDEREncoded();
+		byte[] derEncodedBytes = derEncoded.getEncoded(ASN1Encoding.DER);
 		if (derEncodedBytes == null) { throw new IOException("Could not decode from DER."); }
 		outputStream.write(derEncodedBytes);
 	}
@@ -93,38 +96,38 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	 * 
 	 * @return a concrete security info object
 	 */
-	static SecurityInfo getInstance(DERObject obj) {
+	static SecurityInfo getInstance(ASN1Primitive obj) {
 		try {
-			DERSequence sequence = (DERSequence)obj;
-			String oid = ((DERObjectIdentifier)sequence.getObjectAt(0)).getId();
-			DERObject requiredData = sequence.getObjectAt(1).getDERObject();
-			DERObject optionalData = null;
+			ASN1Sequence sequence = (ASN1Sequence)obj;
+			String oid = ((ASN1ObjectIdentifier)sequence.getObjectAt(0)).getId();
+			ASN1Primitive requiredData = sequence.getObjectAt(1).toASN1Primitive();
+			ASN1Primitive optionalData = null;
 			if (sequence.size() == 3) {
-				optionalData = sequence.getObjectAt(2).getDERObject();
+				optionalData = sequence.getObjectAt(2).toASN1Primitive();
 			}
 
 			if (ChipAuthenticationPublicKeyInfo.checkRequiredIdentifier(oid)) {
-				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((DERSequence)requiredData);
+				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)requiredData);
 				if (optionalData == null) {
 					return new ChipAuthenticationPublicKeyInfo(oid, subjectPublicKeyInfo);
 				} else {
-					int keyId = ((DERInteger)optionalData).getValue().intValue();
+					int keyId = ((ASN1Integer)optionalData).getValue().intValue();
 					return new ChipAuthenticationPublicKeyInfo(oid, subjectPublicKeyInfo, keyId);
 				}
 			} else if (ChipAuthenticationInfo.checkRequiredIdentifier(oid)) {
-				int version = ((DERInteger)requiredData).getValue().intValue();
+				int version = ((ASN1Integer)requiredData).getValue().intValue();
 				if (optionalData == null) {
 					return new ChipAuthenticationInfo(oid, version);
 				} else {
-					int keyId = ((DERInteger)optionalData).getValue().intValue();
+					int keyId = ((ASN1Integer)optionalData).getValue().intValue();
 					return new ChipAuthenticationInfo(oid, version, keyId);
 				}
 			} else if (TerminalAuthenticationInfo.checkRequiredIdentifier(oid)) {
-				int version = ((DERInteger)requiredData).getValue().intValue();
+				int version = ((ASN1Integer)requiredData).getValue().intValue();
 				if (optionalData == null) {
 					return new TerminalAuthenticationInfo(oid, version);
 				} else {
-					DERSequence efCVCA = (DERSequence)optionalData;
+					ASN1Sequence efCVCA = (ASN1Sequence)optionalData;
 					return new TerminalAuthenticationInfo(oid, version, efCVCA);
 				}
 			}

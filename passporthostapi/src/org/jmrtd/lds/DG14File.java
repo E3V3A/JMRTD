@@ -35,9 +35,11 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DLSet;
 
 /**
  * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see
@@ -138,21 +140,22 @@ public class DG14File extends DataGroup {
 	protected void readContent(InputStream in) throws IOException {
 		securityInfos = new HashSet<SecurityInfo>();
 		ASN1InputStream asn1In = new ASN1InputStream(in);
-		DERSet set = (DERSet)asn1In.readObject();
+		ASN1Set set = (ASN1Set)asn1In.readObject();
 		for (int i = 0; i < set.size(); i++) {
-			DERObject object = set.getObjectAt(i).getDERObject();
+			ASN1Primitive object = set.getObjectAt(i).toASN1Primitive();
 			SecurityInfo securityInfo = SecurityInfo.getInstance(object);
 			securityInfos.add(securityInfo);
 		}
 	}
 
+	/* FIXME: rewrite (using writeObject instead of getDERObject) to remove interface dependency on BC. */
 	protected void writeContent(OutputStream out) throws IOException {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
 		for (SecurityInfo si : securityInfos) {
 			vector.add(si.getDERObject());
 		}
-		DERSet derSet = new DERSet(vector);
-		out.write(derSet.getDEREncoded());
+		ASN1Set derSet = new DLSet(vector);
+		out.write(derSet.getEncoded(ASN1Encoding.DER));
 	}
 
 	/**

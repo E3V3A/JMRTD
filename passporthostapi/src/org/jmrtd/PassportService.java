@@ -59,9 +59,9 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -312,7 +312,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+			wrapper = new SecureMessagingWrapper<C, R>(ksEnc, ksMac, ssc);
 			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
 			notifyBACPerformed(event);
 			state = BAC_AUTHENTICATED_STATE;
@@ -395,7 +395,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
 			long ssc = 0;
-			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+			wrapper = new SecureMessagingWrapper<C, R>(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
 			return keyPair;
 		} catch (GeneralSecurityException e) {
@@ -558,11 +558,10 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 		ASN1InputStream asn1In = new ASN1InputStream(signature);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		try {
-			DERSequence obj = (DERSequence) asn1In.readObject();
-
-			Enumeration<DERObject> e = obj.getObjects();
+			ASN1Sequence obj = (ASN1Sequence)asn1In.readObject();
+			Enumeration<ASN1Primitive> e = obj.getObjects();
 			while (e.hasMoreElements()) {
-				DERInteger i = (DERInteger) e.nextElement();
+				ASN1Integer i = (ASN1Integer)e.nextElement();
 				byte[] t = i.getValue().toByteArray();
 				t = alignKeyDataToSize(t, keySize);
 				out.write(t);

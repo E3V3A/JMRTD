@@ -61,6 +61,7 @@ public class DG14FileTest extends TestCase {
 			KeyPairGenerator keyGen1 = KeyPairGenerator.getInstance("EC", BC_PROVIDER);
 			keyGen1.initialize(192);
 			KeyPair keyPair1 = keyGen1.generateKeyPair();
+			assertNotNull(keyPair1);
 
 			/* Using SunJCE here, since BC sometimes hangs?!?! Bug in BC?
 			 *
@@ -72,9 +73,12 @@ public class DG14FileTest extends TestCase {
 
 			System.out.println("DEBUG: DG14FileTest: Generating key pair 2");
 			KeyPair keyPair2 = keyGen2.generateKeyPair();
+			assertNotNull(keyPair2);
 
 			PublicKey publicKey1 = keyPair1.getPublic();
+			assertNotNull(publicKey1);
 			PublicKey publicKey2 = keyPair2.getPublic();
+			assertNotNull(publicKey2);
 
 			keys.put(1, publicKey1);
 			keys.put(2, publicKey2);
@@ -92,6 +96,9 @@ public class DG14FileTest extends TestCase {
 			System.out.println("DEBUG: DG14FileTest: End");
 
 			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getChipAuthenticationPublicKeyInfos();
+			assertNotNull(dg14PublicKeys);
+
+			System.out.println(dg14PublicKeys);
 
 			assertEquals(keys.keySet(), dg14PublicKeys.keySet());
 			for (int i: keys.keySet()) {
@@ -122,21 +129,26 @@ public class DG14FileTest extends TestCase {
 	}
 
 	public void testEncodeDecode() {
-		DG14File dg14 = getSampleObject();
-		byte[] encoded = dg14.getEncoded();
-		assertNotNull(encoded);
-		
-		DG14File copy = new DG14File(new ByteArrayInputStream(encoded));
-		assertEquals(dg14, copy);
-		
-		byte[] copyEncoded = dg14.getEncoded();
-		assertNotNull(copyEncoded);
-		
-		DG14File copyOfCopy = new DG14File(new ByteArrayInputStream(copyEncoded));
-		assertEquals(dg14, copyOfCopy);
-		assertEquals(copyOfCopy, copy);
+		try {
+			DG14File dg14 = getSampleObject();
+			byte[] encoded = dg14.getEncoded();
+			assertNotNull(encoded);
+
+			DG14File copy = new DG14File(new ByteArrayInputStream(encoded));
+			assertEquals(dg14, copy);
+
+			byte[] copyEncoded = dg14.getEncoded();
+			assertNotNull(copyEncoded);
+
+			DG14File copyOfCopy = new DG14File(new ByteArrayInputStream(copyEncoded));
+			assertEquals(dg14, copyOfCopy);
+			assertEquals(copyOfCopy, copy);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
-	
+
 	public void testDecodeEncode() {
 		DG14File dg14 = getSampleObject();
 		Collection<SecurityInfo> securityInfos = dg14.getSecurityInfos();
@@ -150,11 +162,11 @@ public class DG14FileTest extends TestCase {
 		assertNotNull(copyEncoded);
 		assertTrue(Arrays.equals(encoded, copyEncoded));
 	}
-	
+
 	public void testDecodeEncode1() {
 		DG14File dg14 = getSampleObject();
 	}
-	
+
 	public DG14File getSampleObject() {
 		try {
 			/* Using BC here, since SunJCE doesn't support EC. */

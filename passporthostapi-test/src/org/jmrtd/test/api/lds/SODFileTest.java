@@ -78,6 +78,7 @@ public class SODFileTest extends TestCase {
 			assertEquals(sodFile, copy);
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}

@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -33,17 +34,20 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.DHParameter;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.jmrtd.JMRTDSecurityProvider;
 
 /**
  * A concrete SecurityInfo structure that stores chip authentication public
@@ -69,6 +73,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = 5687291829854501771L;
 
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	
 	private String oid;
 	private SubjectPublicKeyInfo subjectPublicKeyInfo;
 	private int keyId;
@@ -113,14 +119,14 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), -1);
 	}
 
-	DERObject getDERObject() {
+	ASN1Primitive getDERObject() {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
-		vector.add(new DERObjectIdentifier(oid));
-		vector.add((DERSequence)subjectPublicKeyInfo.getDERObject());
+		vector.add(new ASN1ObjectIdentifier(oid));
+		vector.add((ASN1Sequence)subjectPublicKeyInfo.toASN1Primitive());
 		if (keyId >= 0) {
-			vector.add(new DERInteger(keyId));
+			vector.add(new ASN1Integer(keyId));
 		}
-		return new DERSequence(vector);
+		return new DLSequence(vector);
 	}
 
 	public String getObjectIdentifier() {
@@ -194,26 +200,34 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	public int hashCode() {
 		return 	123 + 1337 * (oid.hashCode() + keyId + subjectPublicKeyInfo.hashCode());
 	}
-	
+
 	public boolean equals(Object other) {
 		if (other == null) { return false; }
 		if (other == this) { return true; }
 		if (!ChipAuthenticationPublicKeyInfo.class.equals(other.getClass())) { return false; }
 		ChipAuthenticationPublicKeyInfo otherInfo = (ChipAuthenticationPublicKeyInfo)other;
 		return oid.equals(otherInfo.oid)
-			&& keyId == otherInfo.keyId
-			&& subjectPublicKeyInfo.equals(otherInfo.subjectPublicKeyInfo)
-			;
+		&& keyId == otherInfo.keyId
+		&& subjectPublicKeyInfo.equals(otherInfo.subjectPublicKeyInfo)
+		;
 	}
-	
+
 	private static PublicKey getPublicKey(SubjectPublicKeyInfo spki) {
 		try {
-			byte[] encodedPublicKeyInfoBytes = spki.getDEREncoded();
+			byte[] encodedPublicKeyInfoBytes = spki.getEncoded(ASN1Encoding.DER);
 			KeySpec keySpec = new X509EncodedKeySpec(encodedPublicKeyInfoBytes);
-			KeyFactory factory = KeyFactory.getInstance("DH");
-			return factory.generatePublic(keySpec);
-		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			try {
+				KeyFactory factory = KeyFactory.getInstance("DH");
+				return factory.generatePublic(keySpec);
+			} catch (GeneralSecurityException gse) {
+				KeyFactory factory = KeyFactory.getInstance("EC", BC_PROVIDER);
+				return factory.generatePublic(keySpec);
+			}
+		} catch (GeneralSecurityException gse2) {
+			gse2.printStackTrace();
+			return null;
+		} catch (Exception ioe) {
+			ioe.printStackTrace();
 			return null;
 		}
 	}
@@ -230,18 +244,18 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 			String algorithm = publicKey.getAlgorithm();
 			if ("EC".equals(algorithm) || "ECDH".equals(algorithm)) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
-				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((DERSequence)asn1In.readObject());
+				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)asn1In.readObject());
 				asn1In.close();
 				AlgorithmIdentifier algorithmIdentifier = subjectPublicKeyInfo.getAlgorithmId();
 				String algOID = algorithmIdentifier.getAlgorithm().getId();
 				if (!ID_EC_PUBLIC_KEY.equals(algOID)) {
 					throw new IllegalStateException("Was expecting id-ecPublicKey (" + ID_EC_PUBLIC_KEY_TYPE + "), found " + algOID);
 				}
-				DERObject derEncodedParams = algorithmIdentifier.getParameters().getDERObject();
+				ASN1Primitive derEncodedParams = algorithmIdentifier.getParameters().toASN1Primitive();
 				X9ECParameters params = null;
-				if (derEncodedParams instanceof DERObjectIdentifier) {
-					DERObjectIdentifier paramsOID = (DERObjectIdentifier)derEncodedParams;
-					
+				if (derEncodedParams instanceof ASN1ObjectIdentifier) {
+					ASN1ObjectIdentifier paramsOID = (ASN1ObjectIdentifier)derEncodedParams;
+
 					/* It's a named curve from X9.62. */
 					params = X962NamedCurves.getByOID(paramsOID);
 					if (params == null) { throw new IllegalStateException("Could not find X9.62 named curve for OID " + paramsOID.getId()); }
@@ -258,7 +272,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
 				if (publicKey instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
 					org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
-					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithmId().getAlgorithm(), params.getDERObject());
+					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithmId().getAlgorithm(), params.toASN1Primitive());
 					org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
 					// In case we would like to compress the point:
 					// p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
@@ -272,8 +286,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 				DHParameterSpec dhSpec = dhPublicKey.getParams();
 				return new SubjectPublicKeyInfo(
 						new AlgorithmIdentifier(EACObjectIdentifiers.id_PK_DH,
-								new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).getDERObject()),
-								new DERInteger(dhPublicKey.getY()));
+								new DHParameter(dhSpec.getP(), dhSpec.getG(), dhSpec.getL()).toASN1Primitive()),
+								new ASN1Integer(dhPublicKey.getY()));
 			} else {
 				throw new IllegalArgumentException("Unrecognized key type, found " + publicKey.getAlgorithm() + ", should be DH or ECDH");
 			}

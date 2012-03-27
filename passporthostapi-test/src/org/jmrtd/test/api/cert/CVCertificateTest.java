@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyStore;
 import java.security.PublicKey;
@@ -135,20 +134,11 @@ public class CVCertificateTest extends TestCase
 	}
 	
 	private File getCertFile() throws URISyntaxException {
-//		File certsDir = getCertsDir();
-//		File certFile = new File(certsDir, filenameTerminal);
 		File certsDir = new File(FileUtil.getBaseDirAsFile(), "certs");
 		File certFile = new File(certsDir, "certIS_orig.cvcert");
 		if (!certFile.exists()) {
 			fail("Cert file doesn't exist: \"" + certFile.getAbsolutePath() + "\"");
 		}
 		return certFile;
-	}
-	
-	private File getCertsDir() throws URISyntaxException {
-		URI certsDirURI = new URI(TEST_CERT_DIR);
-		File certsDir = new File(certsDirURI.getPath());
-		if (!certsDir.exists()) { certsDir.mkdir(); }
-		return certsDir;
 	}
 }

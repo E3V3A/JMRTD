@@ -30,6 +30,8 @@
 	<property name="crefprovider_build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider_build" location="${basedir}/../jcopprovider/bin" />
 
+	<property name="certcvc_dir" location="${basedir}/../certcvc-mo" />
+
 	<property name="wsq_imageio_dir" location="${basedir}/../wsq_imageio" />
 	<property name="wsq_imageio_jar" value="wsq_imageio.jar" />
 	<property name="jj2000_imageio_dir" location="${basedir}/../jj2000_imageio" />

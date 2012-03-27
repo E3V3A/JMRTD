@@ -26,11 +26,12 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DLSequence;
 
 /**
  * A concrete SecurityInfo structure that stores terminal authentication
@@ -59,7 +60,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 
 	private String oid;
 	private int version;
-	private DERSequence efCVCA; /* FIXME: this contains just a file identifier? Why not byte (or short?) instead of DERSequence? -- MO */
+	private ASN1Sequence efCVCA; /* FIXME: this contains just a file identifier? Why not byte (or short?) instead of ASN1Sequence? -- MO */
 
 	/**
 	 * Constructs a new object.
@@ -71,7 +72,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 * @param efCVCA
 	 *            the file ID information of the efCVCA file
 	 */
-	TerminalAuthenticationInfo(String oid, int version, DERSequence efCVCA) {
+	TerminalAuthenticationInfo(String oid, int version, ASN1Sequence efCVCA) {
 		this.oid = oid;
 		this.version = version;
 		this.efCVCA = efCVCA;
@@ -108,25 +109,23 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 *            short file id for the above file, -1 if none
 	 */
 	public TerminalAuthenticationInfo(Integer fileId, Integer shortFileId) {
-		this(ID_TA_OID, VERSION_NUM, shortFileId
-				.byteValue() != -1 ? new DERSequence(new ASN1Encodable[] {
-						new DEROctetString(Hex.hexStringToBytes(Hex
-								.shortToHexString(fileId.shortValue()))),
-								new DEROctetString(Hex.hexStringToBytes(Hex
-										.byteToHexString(shortFileId.byteValue()))) })
-		: new DERSequence(new ASN1Encodable[] { new DEROctetString(Hex
-				.hexStringToBytes(Hex.shortToHexString(fileId
-						.shortValue()))) }));
+		this(ID_TA_OID, VERSION_NUM, shortFileId.byteValue() != -1 ? new DLSequence(new ASN1Encodable[] {
+			new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue()))),
+			new DEROctetString(Hex.hexStringToBytes(Hex.byteToHexString(shortFileId.byteValue())))
+			})
+		: new DLSequence(new ASN1Encodable[] {
+				new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue())))
+			}));
 	}
 
-	DERObject getDERObject() {
+	ASN1Primitive getDERObject() {
 		ASN1EncodableVector v = new ASN1EncodableVector();
-		v.add(new DERObjectIdentifier(oid));
-		v.add(new DERInteger(version));
+		v.add(new ASN1ObjectIdentifier(oid));
+		v.add(new ASN1Integer(version));
 		if (efCVCA != null) {
 			v.add(efCVCA);
 		}
-		return new DERSequence(v);
+		return new DLSequence(v);
 	}
 
 	/**
@@ -145,8 +144,8 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 */
 	public int getFileID() {
 		if (efCVCA == null) { return -1; }
-		DERSequence s = (DERSequence) efCVCA;
-		DEROctetString fid = (DEROctetString) s.getObjectAt(0);
+		ASN1Sequence s = (ASN1Sequence)efCVCA;
+		DEROctetString fid = (DEROctetString)s.getObjectAt(0);
 		byte[] fidBytes = fid.getOctets();
 		return Hex.hexStringToInt(Hex.bytesToHexString(fidBytes));
 	}
@@ -159,7 +158,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 */
 	public byte getShortFileID() {
 		if (efCVCA == null) { return -1; }
-		DERSequence s = (DERSequence) efCVCA;
+		ASN1Sequence s = (ASN1Sequence)efCVCA;
 		if (s.size() != 2) { return -1; }
 		return ((DEROctetString) s.getObjectAt(1)).getOctets()[0];
 	}
@@ -212,8 +211,8 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 			if (!checkRequiredIdentifier(oid)) { throw new IllegalArgumentException("Wrong identifier: " + oid); }
 			if (version != VERSION_NUM) { throw new IllegalArgumentException("Wrong version"); }
 			if (efCVCA != null) {
-				DERSequence sequence = (DERSequence) efCVCA;
-				DEROctetString fid = (DEROctetString) sequence.getObjectAt(0);
+				ASN1Sequence sequence = (ASN1Sequence)efCVCA;
+				DEROctetString fid = (DEROctetString)sequence.getObjectAt(0);
 				if (fid.getOctets().length != 2) { throw new IllegalArgumentException("Malformed FID."); }
 				if (sequence.size() == 2) {
 					DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);

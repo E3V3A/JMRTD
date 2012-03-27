@@ -23,10 +23,10 @@
 package org.jmrtd.lds;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.DERInteger;
-import org.bouncycastle.asn1.DERObject;
-import org.bouncycastle.asn1.DERObjectIdentifier;
-import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DLSequence;
 
 /**
  * A concrete SecurityInfo structure that stores chip authentication info,
@@ -87,14 +87,14 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 		this(oid, version, -1);
 	}
 
-	DERObject getDERObject() {
+	ASN1Primitive getDERObject() {
 		ASN1EncodableVector v = new ASN1EncodableVector();
-		v.add(new DERObjectIdentifier(oid));
-		v.add(new DERInteger(version));
+		v.add(new ASN1ObjectIdentifier(oid));
+		v.add(new ASN1Integer(version));
 		if (keyId >= 0) {
-			v.add(new DERInteger(keyId));
+			v.add(new ASN1Integer(keyId));
 		}
-		return new DERSequence(v);
+		return new DLSequence(v);
 	}
 	
 	public String getObjectIdentifier() {
