@@ -4,8 +4,8 @@ import java.util.Locale;
 
 import javax.imageio.ImageWriteParam;
 
-public class WSQImageWriteParam extends ImageWriteParam
-{
+public class WSQImageWriteParam extends ImageWriteParam {
+
 	private int ppi;
 	private double bitRate;
 	

@@ -16,8 +16,8 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 
-public class WSQImageWriter extends ImageWriter
-{
+public class WSQImageWriter extends ImageWriter {
+
 	private ImageOutputStream stream;
 
 	public WSQImageWriter(ImageWriterSpi provider) {
@@ -41,13 +41,11 @@ public class WSQImageWriter extends ImageWriter
 		return new WSQImageWriteParam(getLocale());
 	}
 
-	public IIOMetadata convertImageMetadata(IIOMetadata inData,
-			ImageTypeSpecifier imageType, ImageWriteParam param) {
+	public IIOMetadata convertImageMetadata(IIOMetadata inData, ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return null;
 	}
 
-	public IIOMetadata convertStreamMetadata(IIOMetadata inData,
-			ImageWriteParam param) {
+	public IIOMetadata convertStreamMetadata(IIOMetadata inData, ImageWriteParam param) {
 		if (inData instanceof WSQMetadata) {
 			return inData;
 		} else {
@@ -55,8 +53,7 @@ public class WSQImageWriter extends ImageWriter
 		}
 	}
 
-	public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType,
-			ImageWriteParam param) {
+	public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return new WSQMetadata();
 	}
 
@@ -64,8 +61,7 @@ public class WSQImageWriter extends ImageWriter
 		return null;
 	}
 
-	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param)
-	throws IOException {
+	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param) throws IOException {
 		double bitRate = 1.5;
 		int ppi = 75;
 		if (param instanceof WSQImageWriteParam) {

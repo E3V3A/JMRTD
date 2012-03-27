@@ -8,8 +8,8 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
 
-public class WSQImageWriterSpi extends ImageWriterSpi
-{
+public class WSQImageWriterSpi extends ImageWriterSpi {
+
 	static final String vendorName = "JMRTD";
 	static final String version = "0.0.1";
 	static final String writerClassName =

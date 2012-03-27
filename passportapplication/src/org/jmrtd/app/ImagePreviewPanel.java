@@ -30,6 +30,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -54,17 +55,19 @@ public class ImagePreviewPanel extends JPanel {
 
 	private static final long serialVersionUID = 9113961215076977525L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final Icon IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("picture"));
 	private static final Icon FACE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("user"));
 	private static final Icon FINGER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("thumb_up"));
 	private static final Icon IRIS_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("eye"));
 	private static final Icon MAGNIFIER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("magnifier"));
 	private static final Icon WRITTEN_SIGNATURE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("text_signature"));
-	
+
 	private int width, height;
 	private JTabbedPane tabbedPane;
 	private List<ImageInfo> infos;
-	
+
 	/**
 	 * Constructs an instance of this component.
 	 * 
@@ -86,7 +89,7 @@ public class ImagePreviewPanel extends JPanel {
 	public int getSelectedIndex() {
 		return tabbedPane.getSelectedIndex();
 	}
-	
+
 	public ImageInfo getSelectedDisplayedImage() {
 		return infos.get(tabbedPane.getSelectedIndex());
 	}
@@ -109,19 +112,34 @@ public class ImagePreviewPanel extends JPanel {
 			infos.add(info);
 			tabbedPane.addTab(Integer.toString(index + 1), icon, panel);
 			revalidate(); repaint();
-//			if (info instanceof FaceImageInfo) {
-//				((FaceImageInfo)info).addImageReadUpdateListener(new ImageReadUpdateListener() {
-//					public void passComplete(BufferedImage image, double percentage) {
-//						if (image == null) { return; }
-//						BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-//						label.setIcon(new ImageIcon(scaledImage));
-//						revalidate(); repaint();
-//					}
-//				});
-//			}
-			image = ImageUtil.read(info.getImageInputStream(), info.getImageLength(), info.getMimeType());
-			image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-			label.setIcon(new ImageIcon(image));
+			//			if (info instanceof FaceImageInfo) {
+			//				((FaceImageInfo)info).addImageReadUpdateListener(new ImageReadUpdateListener() {
+			//					public void passComplete(BufferedImage image, double percentage) {
+			//						if (image == null) { return; }
+			//						BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+			//						label.setIcon(new ImageIcon(scaledImage));
+			//						revalidate(); repaint();
+			//					}
+			//				});
+			//			}
+			boolean isImageDecodable = false;
+			try {
+				image = ImageUtil.read(info.getImageInputStream(), info.getImageLength(), info.getMimeType());
+				image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+				isImageDecodable = true;
+			} catch (UnsatisfiedLinkError e) {
+				/* FIXME: Our image decoders should be better behaved... */
+				LOGGER.warning("Got UnsatisfiedLinkError while decoding \"" + info.getMimeType() + "\" image");
+				isImageDecodable = false;
+			} catch (Exception e) {
+				e.printStackTrace();
+				isImageDecodable = false;				
+			}
+			if (isImageDecodable) {
+				label.setIcon(new ImageIcon(image));
+			} else {
+				label.setIcon(null);
+			}
 			revalidate(); repaint();
 		} catch (Exception e) {
 			/* We'll just skip this image then. */
@@ -133,7 +151,7 @@ public class ImagePreviewPanel extends JPanel {
 		infos.remove(index);
 		revalidate(); repaint();
 	}
-	
+
 	public void addMouseListener(MouseListener l) {
 		super.addMouseListener(l);
 		tabbedPane.addMouseListener(l);

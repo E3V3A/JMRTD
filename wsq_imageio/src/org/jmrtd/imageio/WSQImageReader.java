@@ -2,7 +2,6 @@ package org.jmrtd.imageio;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,8 +16,7 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-public class WSQImageReader extends ImageReader
-{	
+public class WSQImageReader extends ImageReader {	
 	ImageInputStream stream;
 	int width, height;
 	private BufferedImage image;
@@ -115,7 +113,7 @@ public class WSQImageReader extends ImageReader
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		List<ImageTypeSpecifier> list = new ArrayList<ImageTypeSpecifier>();
-		list.add(ImageTypeSpecifier.createGrayscale(8, DataBuffer.TYPE_BYTE, false));
+		list.add(ImageTypeSpecifier.createFromRenderedImage(image)); // createGrayscale(8, DataBuffer.TYPE_BYTE, false));
 		return list.iterator();
 	}
 

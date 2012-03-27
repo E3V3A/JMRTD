@@ -5,8 +5,8 @@ import javax.imageio.metadata.IIOMetadata;
 
 import org.w3c.dom.Node;
 
-public class WSQMetadata extends IIOMetadata
-{
+public class WSQMetadata extends IIOMetadata {
+
 	@Override
 	public Node getAsTree(String formatName) {
 		// TODO Auto-generated method stub

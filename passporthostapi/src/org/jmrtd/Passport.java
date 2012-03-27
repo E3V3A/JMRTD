@@ -922,7 +922,7 @@ public class Passport<C, R> {
 			}			
 			return chainCertificates;
 		} catch (Exception e) {
-			e.printStackTrace();
+			// e.printStackTrace();
 			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
 		return null;

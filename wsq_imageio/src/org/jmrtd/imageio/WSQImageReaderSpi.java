@@ -7,8 +7,8 @@ import javax.imageio.ImageReader;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-public class WSQImageReaderSpi extends ImageReaderSpi
-{
+public class WSQImageReaderSpi extends ImageReaderSpi {
+
 	static final String vendorName = "JMRTD";
 	static final String version = "0.0.1";
 	static final String readerClassName = "org.jmrtd.imageio.WSQImageReader";
