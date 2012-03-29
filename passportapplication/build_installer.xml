@@ -34,6 +34,12 @@
 
 	<property name="wsq_imageio_dir" location="${basedir}/../wsq_imageio" />
 	<property name="wsq_imageio_jar" value="wsq_imageio.jar" />
+	<property name="wsq_imageio_binary_windows_i386" location="${basedir}/../wsq_imageio/windows/i386/j2wsq.dll" />
+	<property name="wsq_imageio_binary_windows_x86_64" location="${basedir}/../wsq_imageio/windows/x86_64/j2wsq.dll" />
+	<property name="wsq_imageio_binary_linux_i386" location="${basedir}/../wsq_imageio/linux/i386/libj2wsq.so" />
+	<property name="wsq_imageio_binary_linux_x86_64" location="${basedir}/../wsq_imageio/linux/x86_64/libj2wsq.so" />
+	<property name="wsq_imageio_binary_macosx" location="${basedir}/../wsq_imageio/macosx/libj2wsq.dylib" />
+
 	<property name="jj2000_imageio_dir" location="${basedir}/../jj2000_imageio" />
 	<property name="jj2000_imageio_jar" value="jj2000_imageio.jar" />
 
@@ -76,13 +82,20 @@
 		
 		<!-- Copy ImageIO related jars and binaries -->
 		<copy todir="${distlib}">
-			<fileset dir="${jai_imageio_jar_dir}" includes="${jai_imageio_jar}" />
-			<fileset dir="${jai_imageio_jar_dir}" includes="${clibwrapper_jiio_jar}" />
-			<fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" />
-			<fileset dir="${wsq_imageio_dir}" includes="${wsq_imageio_jar},${wsq_imageio_lib}" />
+			<!-- fileset dir="${jai_imageio_jar_dir}" includes="${jai_imageio_jar}" / -->
+			<!-- fileset dir="${jai_imageio_jar_dir}" includes="${clibwrapper_jiio_jar}" / -->
+			<!-- fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" / -->
+			<fileset dir="${wsq_imageio_dir}" includes="${wsq_imageio_jar}" />
 			<fileset dir="${jj2000_imageio_dir}" includes="${jj2000_imageio_jar}" />
 			<fileset dir="${jj2000_dir}" includes="${jj2000_jar}" />
 		</copy>
+		
+		<!-- WSQ specific binaries for different platforms -->
+		<copy file="${wsq_imageio_binary_windows_i386}" todir="${distlib}/i386" failonerror="false" />
+		<copy file="${wsq_imageio_binary_windows_x86_64}" todir="${distlib}/x86_64" failonerror="false" />
+		<copy file="${wsq_imageio_binary_macosx}" todir="${distlib}" failonerror="false" />
+		<copy file="${wsq_imageio_binary_linux_i386}" todir="${distlib}/i386" failonerror="false" />
+		<copy file="${wsq_imageio_binary_linux_x86_64}" todir="${distlib}/x86_64" failonerror="false" />
 	</target>
 
 	<target name="dist" depends="extensions, compile" description="Generates the distribution .jar file">
@@ -105,7 +118,7 @@
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${bcprov_jar} ${jai_imageio_jar} ${clibwrapper_jiio_jar} ${certcvc_jar} ${wsq_imageio_jar} ${jj2000_imageio_jar}" />
+				<attribute name="Class-path" value="${bcprov_jar} ${clibwrapper_jiio_jar} ${certcvc_jar} ${wsq_imageio_jar} ${jj2000_imageio_jar}" /> <!-- NOTE: ${jai_imageio_jar} -->
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
