@@ -2,13 +2,11 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_data"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_storage_j2se"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_indep"/>
 	<classpathentry kind="var" path="CERT_CVC_LIB"/>
-	<classpathentry kind="var" path="SC_PROV"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_j2se"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards"/>
+	<classpathentry kind="var" path="BC_PROV"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
