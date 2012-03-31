@@ -10,11 +10,12 @@
 	<property name="src" location="src" />
 	<property name="build" location="bin" />
 	
+	<property name="jj2000_dir" location="c:/Software/jj2000-read-only/target" />
 	<property name="jj2000_jar" value="jj2000-5.2-SNAPSHOT.jar" />
 
 	<target name="compile" depends="" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" destdir="${build}" />
+		<javac srcdir="${src}" classpath="${jj2000_dir}/${jj2000_jar}" destdir="${build}" />
 	</target>
 
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
