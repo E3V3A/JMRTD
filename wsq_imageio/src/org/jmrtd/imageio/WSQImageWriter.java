@@ -19,10 +19,17 @@ import javax.imageio.stream.ImageOutputStream;
 public class WSQImageWriter extends ImageWriter {
 
 	private ImageOutputStream stream;
+	private boolean isLibraryLoaded;
 
 	public WSQImageWriter(ImageWriterSpi provider) {
 		super(provider);
-		WSQUtil.loadLibrary();
+		this.isLibraryLoaded = false;
+		try {
+			WSQUtil.loadLibrary();
+			this.isLibraryLoaded = true;
+		} catch (Error t) {
+			this.isLibraryLoaded = false;
+		}
 	}
 
 	public void setOutput(Object output) {
@@ -62,6 +69,7 @@ public class WSQImageWriter extends ImageWriter {
 	}
 
 	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param) throws IOException {
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		double bitRate = 1.5;
 		int ppi = 75;
 		if (param instanceof WSQImageWriteParam) {
@@ -72,7 +80,7 @@ public class WSQImageWriter extends ImageWriter {
 		RenderedImage renderedImg = image.getRenderedImage();
 
 		Rectangle sourceRegion =
-			new Rectangle(0, 0, renderedImg.getWidth(), renderedImg.getHeight());
+				new Rectangle(0, 0, renderedImg.getWidth(), renderedImg.getHeight());
 		int sourceXSubsampling = 1;
 		int sourceYSubsampling = 1;
 		int[] sourceBands = null;

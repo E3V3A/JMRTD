@@ -20,10 +20,17 @@ public class WSQImageReader extends ImageReader {
 	ImageInputStream stream;
 	int width, height;
 	private BufferedImage image;
+	private boolean isLibraryLoaded;
 
 	public WSQImageReader(ImageReaderSpi provider) {
 		super(provider);
-		WSQUtil.loadLibrary();
+		this.isLibraryLoaded = false;
+		try {
+			WSQUtil.loadLibrary();
+			this.isLibraryLoaded = true;
+		} catch (Error t) {
+			this.isLibraryLoaded = false;
+		}
 	}
 
 	public void setInput(Object input) {
@@ -37,6 +44,10 @@ public class WSQImageReader extends ImageReader {
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
 		super.setInput(input, seekForwardOnly, ignoreMetaData);
 		if (input == null) {
+			this.image = null;
+			return;
+		}
+		if (!isLibraryLoaded) {
 			this.image = null;
 			return;
 		}
@@ -58,6 +69,7 @@ public class WSQImageReader extends ImageReader {
 
 	private byte[] readBytes(Object input) throws IOException {
 		if (input == null) { return null; }
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		if (input instanceof ImageInputStream) {
 			this.stream = (ImageInputStream)input;
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -82,6 +94,7 @@ public class WSQImageReader extends ImageReader {
 	}
 
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		try {
 			Point destinationOffset = new Point(0, 0);
@@ -96,16 +109,19 @@ public class WSQImageReader extends ImageReader {
 	}
 
 	public int getWidth(int imageIndex) throws IOException {
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		return width;
 	}
 
 	public int getHeight(int imageIndex) throws IOException {
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		return height;
 	}
 
 	public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
+		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		return null;
 	}
