@@ -20,7 +20,7 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.app;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -37,6 +37,9 @@ import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
 import net.sourceforge.scuba.util.FileUtil;
+
+import org.jmrtd.BACKeySpec;
+import org.jmrtd.BACStore;
 
 /**
  * Flat file based database for BAC entries.

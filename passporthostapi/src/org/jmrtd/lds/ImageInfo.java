@@ -31,6 +31,12 @@ import java.io.InputStream;
  */
 public interface ImageInfo extends LDSInfo {
 
+	/** Mime-types. */
+	static String
+	JPEG_MIME_TYPE = "image/jpeg",
+	JPEG2000_MIME_TYPE = "image/jp2",
+	WSQ_MIME_TYPE = "image/x-wsq";
+	
 	/** Type of image. */
 	static final int
 	TYPE_PORTRAIT = 0,

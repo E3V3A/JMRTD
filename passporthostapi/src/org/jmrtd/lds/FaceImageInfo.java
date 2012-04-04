@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.util.ImageUtil;
 
 /**
  * Data structure for storing facial image data. This represents
@@ -49,7 +48,7 @@ import net.sourceforge.scuba.util.ImageUtil;
 public class FaceImageInfo extends AbstractImageInfo {
 
 	private static final long serialVersionUID = -1751069410327594067L;
-
+	
 	/** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
 	public enum EyeColor {
 		UNSPECIFIED { public int toInt() { return EYE_COLOR_UNSPECIFIED;} }, 
@@ -164,7 +163,7 @@ public class FaceImageInfo extends AbstractImageInfo {
 
 	/** Indexes into poseAngle array. */
 	private static final int YAW = 0, PITCH = 1, ROLL = 2;
-
+	
 	private long recordLength;
 	private Gender gender;
 	private EyeColor eyeColor;
@@ -752,8 +751,8 @@ public class FaceImageInfo extends AbstractImageInfo {
 
 	private static String toMimeType(int compressionAlg) {
 		switch (compressionAlg) {
-		case IMAGE_DATA_TYPE_JPEG: return ImageUtil.JPEG_MIME_TYPE;
-		case IMAGE_DATA_TYPE_JPEG2000: return ImageUtil.JPEG2000_MIME_TYPE;
+		case IMAGE_DATA_TYPE_JPEG: return JPEG_MIME_TYPE;
+		case IMAGE_DATA_TYPE_JPEG2000: return JPEG2000_MIME_TYPE;
 		}
 		return null;
 	}

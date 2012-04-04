@@ -77,7 +77,6 @@ import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.OSXAdapter;
 
 import org.jmrtd.BACStore;
-import org.jmrtd.FileBACStore;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
