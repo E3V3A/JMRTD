@@ -23,9 +23,8 @@
 package org.jmrtd;
 
 import java.security.PublicKey;
+import java.util.Arrays;
 import java.util.EventObject;
-
-import net.sourceforge.scuba.util.Hex;
 
 /**
  * Event to indicate AA protocol was executed.
@@ -105,8 +104,8 @@ public class AAEvent extends EventObject {
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("AAEvent [");
-		result.append("m1 = " + Hex.bytesToHexString(m1) + ", ");
-		result.append("m2 = " + Hex.bytesToHexString(m2) + ", ");
+		result.append("m1 = " + Arrays.toString(m1) + ", ");
+		result.append("m2 = " + Arrays.toString(m2) + ", ");
 		result.append(success);
 		result.append("]");
 		return result.toString();

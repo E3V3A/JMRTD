@@ -39,6 +39,8 @@ import javax.crypto.spec.DHParameterSpec;
 
 import junit.framework.TestCase;
 
+import net.sourceforge.scuba.util.Hex;
+
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.lds.ChipAuthenticationInfo;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
@@ -53,7 +55,7 @@ public class DG14FileTest extends TestCase {
 		Security.addProvider(BC_PROVIDER);
 	}
 
-	public void testReflexive() {
+	public void testConstruct() {
 		try {
 			Map<Integer, PublicKey> keys = new TreeMap<Integer, PublicKey>();
 
@@ -90,30 +92,6 @@ public class DG14FileTest extends TestCase {
 			algs.put(1, SecurityInfo.ID_CA_DH_3DES_CBC_CBC_OID);
 			algs.put(2, SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID);
 
-			DG14File dg14File = new DG14File(keys, algs, null, null);
-			assertNotNull(dg14File);
-
-			System.out.println("DEBUG: DG14FileTest: End");
-
-			Map<Integer, PublicKey> dg14PublicKeys = dg14File.getChipAuthenticationPublicKeyInfos();
-			assertNotNull(dg14PublicKeys);
-
-			System.out.println(dg14PublicKeys);
-
-			assertEquals(keys.keySet(), dg14PublicKeys.keySet());
-			for (int i: keys.keySet()) {
-				PublicKey publicKey = (PublicKey)keys.get(i);
-				PublicKey dg14PublicKey = (PublicKey)dg14PublicKeys.get(i);
-				if (publicKey instanceof DHPublicKey) {
-					assertTrue(equalsDHPublicKey((DHPublicKey)publicKey, dg14PublicKey));
-				} else {
-					assertNotNull(publicKey);
-					assertNotNull(dg14PublicKey);
-					assertEquals(publicKey, dg14PublicKey);
-				}
-			}
-			assertEquals(algs, dg14File.getChipAuthenticationInfos());
-
 			List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
 			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, 1));
 			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, 2));	
@@ -121,13 +99,15 @@ public class DG14FileTest extends TestCase {
 			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 2));
 			securityInfos.add(new TerminalAuthenticationInfo());
 			DG14File dg14File2 = new DG14File(securityInfos);
-
-			assertEquals(dg14File, dg14File2);
+			assertNotNull(dg14File2.getChipAuthenticationInfos());
+			assertNotNull(dg14File2.getChipAuthenticationPublicKeyInfos());
+			assertNotNull(dg14File2.getSecurityInfos());
+			assertNotNull(dg14File2.getCVCAFileIds());
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
 	}
-
+	
 	public void testEncodeDecode() {
 		try {
 			DG14File dg14 = getSampleObject();

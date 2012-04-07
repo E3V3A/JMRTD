@@ -22,8 +22,6 @@
 
 package org.jmrtd.lds;
 
-import net.sourceforge.scuba.util.Hex;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -60,7 +58,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 
 	private String oid;
 	private int version;
-	private ASN1Sequence efCVCA; /* FIXME: this contains just a file identifier? Why not byte (or short?) instead of ASN1Sequence? -- MO */
+	private ASN1Sequence efCVCA; /* FIXME: this contains just a file identifier, and possibly a short file identifier? Why not byte (or short?) instead of ASN1Sequence? -- MO */
 
 	/**
 	 * Constructs a new object.
@@ -101,21 +99,15 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 
 	/**
 	 * Constructs a new object with the required object identifier and version
-	 * number and:
+	 * number and file identifier and short file identifier (possibly -1).
 	 * 
 	 * @param fileId
 	 *            a file identifier reference to the efCVCA file
 	 * @param shortFileId
 	 *            short file id for the above file, -1 if none
 	 */
-	public TerminalAuthenticationInfo(Integer fileId, Integer shortFileId) {
-		this(ID_TA_OID, VERSION_NUM, shortFileId.byteValue() != -1 ? new DLSequence(new ASN1Encodable[] {
-			new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue()))),
-			new DEROctetString(Hex.hexStringToBytes(Hex.byteToHexString(shortFileId.byteValue())))
-			})
-		: new DLSequence(new ASN1Encodable[] {
-				new DEROctetString(Hex.hexStringToBytes(Hex.shortToHexString(fileId.shortValue())))
-			}));
+	public TerminalAuthenticationInfo(short fileId, byte shortFileId) {
+		this(ID_TA_OID, VERSION_NUM, constructEFCVCA(fileId, shortFileId));
 	}
 
 	ASN1Primitive getDERObject() {
@@ -142,12 +134,8 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 * 
 	 * @return the efCVCA file identifier stored in this file
 	 */
-	public int getFileID() {
-		if (efCVCA == null) { return -1; }
-		ASN1Sequence s = (ASN1Sequence)efCVCA;
-		DEROctetString fid = (DEROctetString)s.getObjectAt(0);
-		byte[] fidBytes = fid.getOctets();
-		return Hex.hexStringToInt(Hex.bytesToHexString(fidBytes));
+	public int getFileId() {
+		return getFileId(efCVCA);
 	}
 
 	/**
@@ -156,27 +144,24 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 	 * 
 	 * @return the efCVCA short file identifier stored in this file
 	 */
-	public byte getShortFileID() {
-		if (efCVCA == null) { return -1; }
-		ASN1Sequence s = (ASN1Sequence)efCVCA;
-		if (s.size() != 2) { return -1; }
-		return ((DEROctetString) s.getObjectAt(1)).getOctets()[0];
+	public byte getShortFileId() {
+		return getShortFileId(efCVCA);
 	}
 
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("TerminalAuthenticationInfo");
 		result.append("[");
-		result.append("fileID = " + getFileID());
+		result.append("fileID = " + getFileId());
 		result.append("]");
 		return result.toString();
 	}
 
 	public int hashCode() {
 		return 123
-		+ 7 * (oid == null ? 0 : oid.hashCode())
-		+ 5 * version
-		+ 3 * (efCVCA == null ? 1 : efCVCA.hashCode());
+				+ 7 * (oid == null ? 0 : oid.hashCode())
+				+ 5 * version
+				+ 3 * (efCVCA == null ? 1 : efCVCA.hashCode());
 	}
 
 	public boolean equals(Object other) {
@@ -188,7 +173,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 		if (efCVCA != null && otherTerminalAuthenticationInfo.efCVCA == null) { return false; }
 		return getDERObject().equals(otherTerminalAuthenticationInfo.getDERObject());
 	}
-	
+
 	/* ONLY NON-PUBLIC METHODS BELOW */
 
 	/**
@@ -211,11 +196,10 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 			if (!checkRequiredIdentifier(oid)) { throw new IllegalArgumentException("Wrong identifier: " + oid); }
 			if (version != VERSION_NUM) { throw new IllegalArgumentException("Wrong version"); }
 			if (efCVCA != null) {
-				ASN1Sequence sequence = (ASN1Sequence)efCVCA;
-				DEROctetString fid = (DEROctetString)sequence.getObjectAt(0);
+				DEROctetString fid = (DEROctetString)efCVCA.getObjectAt(0);
 				if (fid.getOctets().length != 2) { throw new IllegalArgumentException("Malformed FID."); }
-				if (sequence.size() == 2) {
-					DEROctetString sfi = (DEROctetString) sequence.getObjectAt(1);
+				if (efCVCA.size() == 2) {
+					DEROctetString sfi = (DEROctetString)efCVCA.getObjectAt(1);
 					if (sfi.getOctets().length != 1) {
 						throw new IllegalArgumentException("Malformed SFI.");
 					}
@@ -225,5 +209,30 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Malformed TerminalAuthenticationInfo.");
 		}
+	}
+	
+	private static ASN1Sequence constructEFCVCA(short fileId, byte shortFileId) {
+		if (shortFileId != -1) {
+			return new DLSequence(new ASN1Encodable[] {
+					new DEROctetString(new byte[] { (byte)((fileId & 0xFF00) >> 8), (byte)(fileId & 0xFF) }),
+					new DEROctetString(new byte[] { (byte)(shortFileId & 0xFF) }) });
+		} else {
+			return new DLSequence(new ASN1Encodable[] {
+					new DEROctetString(new byte[] { (byte)((fileId & 0xFF00) >> 8), (byte)(fileId & 0xFF) }) });
+		}
+	}
+
+	private static short getFileId(ASN1Sequence efCVCA) {
+		if (efCVCA == null) { return -1; }
+		ASN1Sequence s = (ASN1Sequence)efCVCA;
+		DEROctetString fid = (DEROctetString)s.getObjectAt(0);
+		byte[] bytes = fid.getOctets();
+		return (short)(((bytes[0] & 0xFF) << 8) | (bytes[1] & 0xFF));		
+	}
+
+	private static byte getShortFileId(ASN1Sequence efCVCA) {
+		if (efCVCA == null) { return -1; }
+		if (efCVCA.size() != 2) { return -1; }
+		return ((DEROctetString)efCVCA.getObjectAt(1)).getOctets()[0];
 	}
 }

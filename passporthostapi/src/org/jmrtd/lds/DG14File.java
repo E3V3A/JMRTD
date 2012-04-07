@@ -77,66 +77,6 @@ public class DG14File extends DataGroup {
 		super(EF_DG14_TAG, in);
 	}
 
-	/**
-	 * Constructs a new DG14 file from the provided data.
-	 * 
-	 * @param chipAuthenticationPublicKeyInfos
-	 *            the map of (EC or DH) public keys indexed by key identifiers.
-	 *            If only one key, the index can be -1.
-	 * @param chipAuthenticationInfos
-	 *            the map of protocol identifiers for EAC indexed by key
-	 *            identifiers. If only one protocol identifier, the index can be
-	 *            -1.
-	 * @param cvcaFileIdList
-	 *            the list of file identifiers of the efCVCA file(s)
-	 * @param cvcaShortFileIdMap
-	 *            a mapping of file identifiers (see above) to short file
-	 *            identifiers (can be empty)
-	 */
-	// FIXME: why not simply use the List<SecurityInfo>() constructor?
-	public DG14File(
-			Map<Integer, PublicKey> chipAuthenticationPublicKeyInfos,
-			Map<Integer, String> chipAuthenticationInfos,
-			List<Integer> cvcaFileIdList,
-			Map<Integer, Integer> cvcaShortFileIdMap) {
-		super(EF_DG14_TAG);
-		if (chipAuthenticationPublicKeyInfos.size() == 0) {
-			throw new IllegalArgumentException("Need at least one key.");
-		}
-		securityInfos = new HashSet<SecurityInfo>();
-		if (chipAuthenticationPublicKeyInfos.size() == 1 && chipAuthenticationPublicKeyInfos.containsKey(-1)) {
-			PublicKey publicKey = chipAuthenticationPublicKeyInfos.get(-1);
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey));
-		} else {
-			for (Map.Entry<Integer, PublicKey> entry: chipAuthenticationPublicKeyInfos.entrySet()) {
-				int i = entry.getKey();
-				PublicKey publicKey = entry.getValue();
-				if (i < 0) {
-					throw new IllegalArgumentException("Wrong key Id: " + i);
-				}
-				securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey, i));
-			}
-		}
-		if (chipAuthenticationInfos != null && chipAuthenticationInfos.size() > 0) {
-			if (chipAuthenticationInfos.size() == 1 && chipAuthenticationInfos.containsKey(-1)) {
-				securityInfos.add(new ChipAuthenticationInfo(chipAuthenticationInfos.get(-1),
-						ChipAuthenticationInfo.VERSION_NUM));
-			} else {
-				for (int i : chipAuthenticationInfos.keySet()) {
-					securityInfos.add(new ChipAuthenticationInfo(chipAuthenticationInfos.get(i),
-							ChipAuthenticationInfo.VERSION_NUM, i));
-				}
-			}
-		}
-		if (cvcaFileIdList == null || cvcaFileIdList.size() == 0) {
-			securityInfos.add(new TerminalAuthenticationInfo(SecurityInfo.ID_TA_OID, TerminalAuthenticationInfo.VERSION_NUM));
-		} else {
-			for (Integer i : cvcaFileIdList) {
-				securityInfos.add(new TerminalAuthenticationInfo(i, cvcaShortFileIdMap.containsKey(i) ? cvcaShortFileIdMap.get(i) : -1));
-			}
-		}
-	}
-
 	protected void readContent(InputStream in) throws IOException {
 		securityInfos = new HashSet<SecurityInfo>();
 		ASN1InputStream asn1In = new ASN1InputStream(in);
@@ -168,7 +108,7 @@ public class DG14File extends DataGroup {
 		List<Integer> cvcaFiles = new ArrayList<Integer>();
 		for (SecurityInfo si : securityInfos) {
 			if (si instanceof TerminalAuthenticationInfo) {
-				int i = ((TerminalAuthenticationInfo) si).getFileID();
+				int i = ((TerminalAuthenticationInfo) si).getFileId();
 				if (i != -1) {
 					cvcaFiles.add(i);
 				}
@@ -187,8 +127,8 @@ public class DG14File extends DataGroup {
 	public byte getCVCAShortFileId(int fileId) {
 		for (SecurityInfo si : securityInfos) {
 			if (si instanceof TerminalAuthenticationInfo) {
-				if (((TerminalAuthenticationInfo) si).getFileID() == fileId) {
-					return ((TerminalAuthenticationInfo) si).getShortFileID();
+				if (((TerminalAuthenticationInfo) si).getFileId() == fileId) {
+					return ((TerminalAuthenticationInfo) si).getShortFileId();
 				}
 			}
 		}
