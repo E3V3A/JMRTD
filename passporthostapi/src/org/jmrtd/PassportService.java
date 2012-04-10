@@ -330,26 +330,26 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 * 
 	 * @param keyId
 	 *            passport's public key id (stored in DG14), -1 if none.
-	 * @param key
+	 * @param publicKey
 	 *            passport's public key (stored in DG14).
 	 * @throws CardServiceException
 	 *             if CA failed or some error occurred
 	 */
-	public synchronized KeyPair doCA(int keyId, PublicKey key)
+	public synchronized KeyPair doCA(int keyId, PublicKey publicKey)
 	throws CardServiceException {
 		try {
-			if (key == null) {
-				throw new IllegalArgumentException();
+			if (publicKey == null) {
+				throw new IllegalArgumentException("Public key is null");
 			}
-			String algName = (key instanceof ECPublicKey) ? "ECDH" : "DH";
+			String algName = (publicKey instanceof ECPublicKey) ? "ECDH" : "DH";
 			KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
 			AlgorithmParameterSpec spec = null;
 			if ("DH".equals(algName)) {
-				DHPublicKey k = (DHPublicKey) key;
-				spec = k.getParams();
+				DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
+				spec = dhPublicKey.getParams();
 			} else {
-				ECPublicKey k = (ECPublicKey) key;
-				spec = k.getParams();
+				ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
+				spec = ecPublicKey.getParams();
 			}
 			genKey.initialize(spec);
 
@@ -357,30 +357,29 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 
 			KeyAgreement agreement = KeyAgreement.getInstance(algName);
 			agreement.init(keyPair.getPrivate());
-			agreement.doPhase(key, true);
+			agreement.doPhase(publicKey, true);
 
 			MessageDigest md = MessageDigest.getInstance("SHA1");
 			byte[] secret = agreement.generateSecret();
 
 			// TODO: this SHA1ing may have to be removed?
-			// TODO: this hashing is needed for our passport applet
-			// implementation
+			// TODO: this hashing is needed for our passport applet implementation
 			// byte[] secret = md.digest(secret);
 
 			byte[] keyData = null;
 			byte[] idData = null;
 			if ("DH".equals(algName)) {
-				DHPublicKey k = (DHPublicKey) keyPair.getPublic();
-				keyData = k.getY().toByteArray();
+				DHPublicKey dhPublicKey = (DHPublicKey) keyPair.getPublic();
+				keyData = dhPublicKey.getY().toByteArray();
 				// TODO: this is probably wrong, what should be hashed?
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.bouncycastle.jce.interfaces.ECPublicKey k =
+				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
 					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
-				keyData = k.getQ().getEncoded();
-				byte[] t = k.getQ().getX().toBigInteger().toByteArray();
-				eacKeyHash = alignKeyDataToSize(t, k.getParameters().getCurve().getFieldSize() / 8);
+				keyData = ecPublicKey.getQ().getEncoded();
+				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
+				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
 			}
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId != -1) {
