@@ -110,7 +110,7 @@ public class Passport<C, R> {
 	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-
+	
 	/** Maps FID to stream. */
 	private Map<Short, InputStream> rawStreams;
 
@@ -249,10 +249,10 @@ public class Passport<C, R> {
 		}
 
 		/* Try entries from BACStore. */
+		List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
 		if (isBACPassport) {
 			int tries = MAX_TRIES_PER_BAC_ENTRY;
 			List<BACKeySpec> bacEntries = bacStore.getEntries();
-			List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
 			try {
 				/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
 				while (bacKeySpec == null && tries-- > 0) {
@@ -280,7 +280,7 @@ public class Passport<C, R> {
 		}
 		if (isBACPassport && bacKeySpec == null) {
 			/* Passport requires BAC, but we failed to authenticate. */
-			throw new CardServiceException("Basic Access denied!");
+			throw new BACDeniedException("Basic Access denied!", triedBACEntries);
 		}
 		try {
 			readFromService(service, bacKeySpec, trustManager);

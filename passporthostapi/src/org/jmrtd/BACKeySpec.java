@@ -22,6 +22,7 @@
 
 package org.jmrtd;
 
+import java.io.Serializable;
 import java.security.spec.KeySpec;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -33,7 +34,7 @@ import java.util.Date;
  *
  * @version $Revision: 764 $
  */
-public class BACKeySpec implements KeySpec {
+public class BACKeySpec implements KeySpec, Serializable {
 
 	private static final long serialVersionUID = -1059774581180524710L;
 

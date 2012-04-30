@@ -335,12 +335,9 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 * @throws CardServiceException
 	 *             if CA failed or some error occurred
 	 */
-	public synchronized KeyPair doCA(int keyId, PublicKey publicKey)
-	throws CardServiceException {
+	public synchronized KeyPair doCA(int keyId, PublicKey publicKey) throws CardServiceException {
+		if (publicKey == null) { throw new IllegalArgumentException("Public key is null"); }
 		try {
-			if (publicKey == null) {
-				throw new IllegalArgumentException("Public key is null");
-			}
 			String algName = (publicKey instanceof ECPublicKey) ? "ECDH" : "DH";
 			KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
 			AlgorithmParameterSpec spec = null;

@@ -66,9 +66,13 @@ public class JMRTDSecurityProvider extends Provider {
 	BC_PROVIDER_CLASS_NAME = "org.bouncycastle.jce.provider.BouncyCastleProvider",
 	SC_PROVIDER_CLASS_NAME = "org.spongycastle.jce.provider.BouncyCastleProvider";
 
-	private static final Provider SUN_PROVIDER = getProviderOrNull(SUN_PROVIDER_CLASS_NAME);
-	private static final Provider BC_PROVIDER = getProviderOrNull(BC_PROVIDER_CLASS_NAME);
-	private static final Provider SC_PROVIDER = getProviderOrNull(SC_PROVIDER_CLASS_NAME);
+//	private static final Provider SUN_PROVIDER = null; // getProviderOrNull(SUN_PROVIDER_CLASS_NAME);
+	private static final Provider BC_PROVIDER =
+			// new org.spongycastle.jce.provider.BouncyCastleProvider();
+			getProviderOrNull(BC_PROVIDER_CLASS_NAME);
+	private static final Provider SC_PROVIDER =
+			// new org.spongycastle.jce.provider.BouncyCastleProvider();
+			getProviderOrNull(SC_PROVIDER_CLASS_NAME);
 	private static final Provider JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	static {
@@ -100,7 +104,7 @@ public class JMRTDSecurityProvider extends Provider {
 			/* But these work fine. */
 			replicateFromProvider("CertificateFactory", "X.509", getBouncyCastleProvider());
 			replicateFromProvider("CertStore", "Collection", getBouncyCastleProvider());
-			replicateFromProvider("KeyStore", "JKS", SUN_PROVIDER);
+//			replicateFromProvider("KeyStore", "JKS", SUN_PROVIDER);
 			replicateFromProvider("MessageDigest", "SHA1", getBouncyCastleProvider());
 			replicateFromProvider("Signature", "SHA1withRSA/ISO9796-2", getBouncyCastleProvider());
 			replicateFromProvider("Signature", "MD2withRSA", getBouncyCastleProvider());

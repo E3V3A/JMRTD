@@ -111,7 +111,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 		plainTextAPDUListeners = new HashSet<APDUListener<C,R>>();
 		plainAPDUCount = 0;
 		try {
-			mac = Mac.getInstance("ISO9797Alg3Mac");
+			mac = Mac.getInstance("ISO9797Alg3Mac", JMRTDSecurityProvider.getBouncyCastleProvider());
 			cipher = Cipher.getInstance("DESede/CBC/NoPadding");
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();

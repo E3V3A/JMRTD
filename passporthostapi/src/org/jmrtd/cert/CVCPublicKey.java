@@ -55,7 +55,6 @@ public class CVCPublicKey implements PublicKey {
      *
      * @return the name of the algorithm associated with this key.
      */
-	@Override
 	public String getAlgorithm() {
 		OIDField oid = null;
 		try {
@@ -76,7 +75,6 @@ public class CVCPublicKey implements PublicKey {
      * @return the encoded key, or null if the key does not support
      * encoding.
      */
-	@Override
 	public byte[] getEncoded() {
 		return publicKey.getEncoded();
 	}
@@ -87,7 +85,6 @@ public class CVCPublicKey implements PublicKey {
      *
      * @return the primary encoding format of the key.
      */
-	@Override
 	public String getFormat() {
 		return publicKey.getFormat();
 	}
