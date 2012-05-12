@@ -68,17 +68,17 @@ public class JMRTDSecurityProvider extends Provider {
 
 //	private static final Provider SUN_PROVIDER = null; // getProviderOrNull(SUN_PROVIDER_CLASS_NAME);
 	private static final Provider BC_PROVIDER =
-			// new org.spongycastle.jce.provider.BouncyCastleProvider();
-			getProviderOrNull(BC_PROVIDER_CLASS_NAME);
+			 new org.spongycastle.jce.provider.BouncyCastleProvider();
+//			getProviderOrNull(BC_PROVIDER_CLASS_NAME);
 	private static final Provider SC_PROVIDER =
-			// new org.spongycastle.jce.provider.BouncyCastleProvider();
-			getProviderOrNull(SC_PROVIDER_CLASS_NAME);
+			 new org.spongycastle.jce.provider.BouncyCastleProvider();
+//			getProviderOrNull(SC_PROVIDER_CLASS_NAME);
 	private static final Provider JMRTD_PROVIDER = new JMRTDSecurityProvider();
 
 	static {
-		//		if (BC_PROVIDER != null) { Security.insertProviderAt(BC_PROVIDER, 1); }
-		//		if (SC_PROVIDER != null) { Security.insertProviderAt(SC_PROVIDER, 2); }
-		//		if (JMRTD_PROVIDER != null) { Security.insertProviderAt(JMRTD_PROVIDER, 3); }
+				if (BC_PROVIDER != null) { Security.insertProviderAt(BC_PROVIDER, 1); }
+				if (SC_PROVIDER != null) { Security.insertProviderAt(SC_PROVIDER, 2); }
+				if (JMRTD_PROVIDER != null) { Security.insertProviderAt(JMRTD_PROVIDER, 3); }
 	}
 
 	private JMRTDSecurityProvider() {
@@ -232,23 +232,23 @@ public class JMRTDSecurityProvider extends Provider {
 		return null;
 	}
 	
-	private static Provider getProviderOrNull(String className) {
-		try {
-			Class<?> providerClass = Class.forName(className);
-			Provider[] providers = Security.getProviders();
-			for (Provider provider: providers) {
-				if (provider.getClass().equals(providerClass)) {
-					return provider;
-				}
-			}
-			return (Provider)providerClass.newInstance();
-		} catch (IllegalAccessException iae) {
-			// iae.printStackTrace();
-		} catch (InstantiationException ie) {
-			// ie.printStackTrace();
-		} catch (ClassNotFoundException cnfe) {
-			// cnfe.printStackTrace();
-		}
-		return null;
-	}
+//	private static Provider getProviderOrNull(String className) {
+//		try {
+//			Class<?> providerClass = Class.forName(className);
+//			Provider[] providers = Security.getProviders();
+//			for (Provider provider: providers) {
+//				if (provider.getClass().equals(providerClass)) {
+//					return provider;
+//				}
+//			}
+//			return (Provider)providerClass.newInstance();
+//		} catch (IllegalAccessException iae) {
+//			// iae.printStackTrace();
+//		} catch (InstantiationException ie) {
+//			// ie.printStackTrace();
+//		} catch (ClassNotFoundException cnfe) {
+//			// cnfe.printStackTrace();
+//		}
+//		return null;
+//	}
 }

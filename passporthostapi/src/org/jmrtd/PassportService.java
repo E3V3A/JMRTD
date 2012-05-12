@@ -58,11 +58,11 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.jce.interfaces.ECPrivateKey;
+import org.spongycastle.asn1.ASN1InputStream;
+import org.spongycastle.asn1.ASN1Integer;
+import org.spongycastle.asn1.ASN1Primitive;
+import org.spongycastle.asn1.ASN1Sequence;
+import org.spongycastle.jce.interfaces.ECPrivateKey;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
@@ -240,7 +240,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	public PassportService(CardService<C,R> service) throws CardServiceException {
 		super(service);
 		try {
-			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2");
+			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", JMRTDSecurityProvider.getBouncyCastleProvider());
 			aaDigest = MessageDigest.getInstance("SHA1");
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
@@ -372,8 +372,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
-					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+				org.spongycastle.jce.interfaces.ECPublicKey ecPublicKey =
+					(org.spongycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);

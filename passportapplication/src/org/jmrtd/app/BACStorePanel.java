@@ -48,6 +48,7 @@ import javax.swing.table.TableCellEditor;
 
 import net.sourceforge.scuba.util.IconUtil;
 
+import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
 
@@ -130,7 +131,7 @@ public class BACStorePanel extends JPanel {
 	 * 
 	 * @param bacKeySpec a BAC key spec
 	 */
-	public void addEntry(BACKeySpec bacKeySpec) {
+	public void addEntry(BACKey bacKeySpec) {
 		store.addEntry(bacKeySpec);
 		table.revalidate();
 	}
@@ -161,7 +162,7 @@ public class BACStorePanel extends JPanel {
 				case DATE_OF_EXPIRY_COLUMN: dateOfExpiry = SDF.parse(changedValue); break;
 				}
 
-				BACKeySpec entry = new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry);
+				BACKey entry = new BACKey(documentNumber, dateOfBirth, dateOfExpiry);
 
 				store.removeEntry(editingRow);
 				store.addEntry(editingRow, entry);
@@ -231,12 +232,12 @@ public class BACStorePanel extends JPanel {
 						JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE,
 						null, null, null);
 				if (choice == JOptionPane.OK_OPTION) {
-					BACKeySpec bacKeySpec = null;
+					BACKey bacKeySpec = null;
 					try {
 						String documentNumber = entryField.getDocumentNumber();
 						Date dateOfBirth = entryField.getDateOfBirth();
 						Date dateOfExpiry = entryField.getDateOfExpiry();
-						bacKeySpec = new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry);
+						bacKeySpec = new BACKey(documentNumber, dateOfBirth, dateOfExpiry);
 					} catch (Exception e) {
 						/* FIXME: something is wrong with the entered BAC key, tell user in popup dialog. */
 						LOGGER.warning("Failed to add BAC entry");

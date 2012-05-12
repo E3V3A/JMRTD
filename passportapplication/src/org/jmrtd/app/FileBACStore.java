@@ -38,6 +38,7 @@ import java.util.logging.Logger;
 
 import net.sourceforge.scuba.util.FileUtil;
 
+import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
 
@@ -212,7 +213,7 @@ public class FileBACStore implements BACStore {
 				String line = d.readLine();
 				if (line == null) { break; }
 				String[] fields = getFields(line);
-				entries.add(new BACKeySpec(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
+				entries.add(new BACKey(fields[0], SDF.parse(fields[1]), SDF.parse(fields[2])));
 			}
 			d.close();
 		} catch (FileNotFoundException fnfe) {

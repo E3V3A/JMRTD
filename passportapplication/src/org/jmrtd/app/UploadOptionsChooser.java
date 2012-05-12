@@ -54,6 +54,7 @@ import javax.swing.filechooser.FileFilter;
 
 import net.sourceforge.scuba.smartcards.CardManager;
 
+import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 
 /**
@@ -130,9 +131,9 @@ public class UploadOptionsChooser { // extends JComponent
 		return privateKey;
 	}
 
-	public BACKeySpec getBACEntry() {
+	public BACKey getBACEntry() {
 		BACEntryField bef = panel.bacEntryField;
-		return new BACKeySpec(bef.getDocumentNumber(), bef.getDateOfBirth(), bef.getDateOfExpiry());
+		return new BACKey(bef.getDocumentNumber(), bef.getDateOfBirth(), bef.getDateOfExpiry());
 	}
 	
 	private class UploadOptionsPanel extends JPanel

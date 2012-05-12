@@ -99,6 +99,7 @@ import net.sourceforge.scuba.util.ImageUtil;
 import org.jmrtd.AAEvent;
 import org.jmrtd.AuthListener;
 import org.jmrtd.BACEvent;
+import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.EACEvent;
 import org.jmrtd.JMRTDSecurityProvider;
@@ -1275,7 +1276,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 						InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
 						DG1File dg1 = new DG1File(dg1In);
 						MRZInfo mrzInfo = dg1.getMRZInfo();
-						bacEntry = new BACKeySpec(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
+						bacEntry = new BACKey(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
 					} catch (CardServiceException cse) {
 						cse.printStackTrace();
 						// bacEntry = null;

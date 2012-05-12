@@ -107,7 +107,7 @@ public class Passport<C, R> {
 
 	private static final int BUFFER_SIZE = 243;
 
-	private static final int MAX_TRIES_PER_BAC_ENTRY = 10;
+	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 10;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 	
@@ -222,6 +222,20 @@ public class Passport<C, R> {
 	 * @throws CardServiceException on error
 	 */
 	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
+		this(service, trustManager, bacStore, DEFAULT_MAX_TRIES_PER_BAC_ENTRY);
+	}
+	
+	/**
+	 * Creates a document by reading it from a service.
+	 * 
+	 * @param service the service to read from
+	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * @param bacStore the BAC entries
+	 * @param maxTriesPerBACEntry the number of times each BAC entry will be tried before giving up
+	 * 
+	 * @throws CardServiceException on error
+	 */
+	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
 		this.service = service;
 		this.trustManager = trustManager;
@@ -249,9 +263,9 @@ public class Passport<C, R> {
 		}
 
 		/* Try entries from BACStore. */
-		List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
+		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
 		if (isBACPassport) {
-			int tries = MAX_TRIES_PER_BAC_ENTRY;
+			int tries = maxTriesPerBACEntry;
 			List<BACKeySpec> bacEntries = bacStore.getEntries();
 			try {
 				/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
@@ -299,7 +313,7 @@ public class Passport<C, R> {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws CardServiceException {
+	public Passport(PassportService<C, R> service, BACKey bacKeySpec, MRTDTrustStore trustManager) throws CardServiceException {
 		this();
 		this.trustManager = trustManager;
 		try {
