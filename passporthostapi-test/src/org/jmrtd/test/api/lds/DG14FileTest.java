@@ -39,8 +39,6 @@ import javax.crypto.spec.DHParameterSpec;
 
 import junit.framework.TestCase;
 
-import net.sourceforge.scuba.util.Hex;
-
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.lds.ChipAuthenticationInfo;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;

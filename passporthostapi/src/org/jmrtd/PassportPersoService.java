@@ -232,8 +232,8 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 			}
 		}
 
-		org.spongycastle.jce.interfaces.ECPrivateKey ktmp = (org.spongycastle.jce.interfaces.ECPrivateKey)privateKey;
-		org.spongycastle.math.ec.ECPoint point = ktmp.getParameters().getG();
+		org.bouncycastle.jce.interfaces.ECPrivateKey ecPrivateKey = (org.bouncycastle.jce.interfaces.ECPrivateKey)privateKey;
+		org.bouncycastle.math.ec.ECPoint point = ecPrivateKey.getParameters().getG();
 		byte[] gArray = point.getEncoded();
 		byte[] sArray = privateKey.getS().toByteArray();
 		pArray = tagData((byte) 0x81, pArray);
@@ -266,6 +266,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 	}
 
 	// For quick and dirty tagging of data
+	// FIXME: Woj, you know we have TLVOutputStream for quicker and way less dirty tagging ;) -- MO
 	private static byte[] tagData(byte tag, byte[] data) {
 		byte[] result = new byte[data.length + 2];
 		System.arraycopy(data, 0, result, 2, data.length);
@@ -509,7 +510,8 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 	/**
 	 * Dumps the content of a passport as a zip file
 	 * 
-	 * @throws IOException 
+	 * @throws IOException
+	 * @deprecated Client code should take care of this
 	 */
 	public void dumpPassport(File f) throws IOException {
 		ZipOutputStream zip = new ZipOutputStream(new FileOutputStream(f));

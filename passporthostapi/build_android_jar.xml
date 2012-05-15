@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="jmrtd" default="jmrtd" basedir=".">
+
+	<property name="version" value="0.4.8b" />
+
+	<!-- Select only one -->
+	<!-- property name="bcprov" value="bcprov-jdk15on-147.jar" / -->
+	<property name="bcprov" value="scprov-jdk15on-1.47.0.1.jar" />
+
+	<property name="certcvc" value="cert-cvc.jar" />
+
+	<path id="compile.classpath">
+		<fileset dir="../bjmrtd/libs" includes="${bcprov},${certcvc}" />
+	</path>
+
+	<target name="init">
+		<mkdir dir="build" />
+	</target>
+
+	<target name="clean">
+		<delete dir="build" />
+		<delete file="jmrtd.jar" />
+	</target>
+
+	<target name="compile" depends="init">
+		<javac destdir="build" debug="on" includeantruntime="no"
+			encoding="iso8859-1" target="1.6">
+			<classpath refid="compile.classpath" />
+			<src
+				path="src:../scuba_util/src:../scuba_smartcards/src:../scuba_sc_indep/src" />
+		</javac>
+	</target>
+
+	<target name="jmrtd" depends="compile">
+		<jar jarfile="jmrtd.jar">
+			<manifest>
+				<attribute name="Class-path" value="${bcprov} ${certcvc}" />
+				<attribute name="Implementation-Title" value="JMRTD host API for Android" />
+				<attribute name="Implementation-Version" value="${version}" />
+				<attribute name="Implementation-Vendor" value="The JMRTD Team" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<fileset dir="build" includes="**/*.class" />
+		</jar>
+	</target>
+
+</project>

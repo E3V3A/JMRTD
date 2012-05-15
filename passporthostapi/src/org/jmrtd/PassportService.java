@@ -58,11 +58,10 @@ import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.ASN1Integer;
-import org.spongycastle.asn1.ASN1Primitive;
-import org.spongycastle.asn1.ASN1Sequence;
-import org.spongycastle.jce.interfaces.ECPrivateKey;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
@@ -372,8 +371,8 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else {
-				org.spongycastle.jce.interfaces.ECPublicKey ecPublicKey =
-					(org.spongycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
+					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
@@ -466,7 +465,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			sig.update(dtbs.toByteArray());
 			byte[] signature = sig.sign();
 			if (sigAlg.endsWith("ECDSA")) {
-				int keySize = ((ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8;
+				int keySize = ((org.bouncycastle.jce.interfaces.ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8;
 				signature = getRawECDSASignature(signature, keySize);
 			}
 

@@ -174,13 +174,26 @@ Android
 + Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max Guenther).
 
 ImageIO
-+ Added a JJ2000 (pure Java JPEG2000) based ImageIO provider, as an alternative to JAI ImageIO.
++ Added a JJ2000 (pure Java JPEG2000) based ImageIO provider (read only), as an alternative to JAI ImageIO.
 + WSQ native libs for i386/x86_64 MacOS X, Windows, Linux.
 
 Code quality
 + Check unit tests
 + Check JavaDoc
 + Check Findbugs
+
+
+VERSION 0.4.8 (FUTURE)
+----------------------
+
+Android
+- Easier build of jmrtd.jar for developers
+- Demo app
+- Robustness
+
+ImageIO
+- Problem with JJ2000 decoding (artifacts).
+- Also have an image writer based on JJ2000.
 
 
 0.5.x (FUTURE)
@@ -193,10 +206,8 @@ General
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- No longer rely on jai_imageio. Use jj2000 as alternative.
 - Implement BAC as KeyStore?
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
-- Check image/jpeg2000 mime-type. Should this be image/jp2 according to RFC3745?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
 - Latest C sources from NIST for WSQ (version 3.1)?
 

@@ -33,20 +33,20 @@ import java.security.spec.X509EncodedKeySpec;
 import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 
-import org.spongycastle.asn1.ASN1EncodableVector;
-import org.spongycastle.asn1.ASN1Encoding;
-import org.spongycastle.asn1.ASN1InputStream;
-import org.spongycastle.asn1.ASN1Integer;
-import org.spongycastle.asn1.ASN1ObjectIdentifier;
-import org.spongycastle.asn1.ASN1Primitive;
-import org.spongycastle.asn1.ASN1Sequence;
-import org.spongycastle.asn1.DLSequence;
-import org.spongycastle.asn1.eac.EACObjectIdentifiers;
-import org.spongycastle.asn1.pkcs.DHParameter;
-import org.spongycastle.asn1.x509.AlgorithmIdentifier;
-import org.spongycastle.asn1.x509.SubjectPublicKeyInfo;
-import org.spongycastle.asn1.x9.X962NamedCurves;
-import org.spongycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.DHParameter;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x9.X962NamedCurves;
+import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.jmrtd.JMRTDSecurityProvider;
 
 /**
@@ -261,8 +261,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 					if (params == null) { throw new IllegalStateException("Could not find X9.62 named curve for OID " + paramsOID.getId()); }
 
 					/* Reconstruct the parameters. */
-					org.spongycastle.math.ec.ECPoint generator = params.getG();
-					org.spongycastle.math.ec.ECCurve curve = generator.getCurve();
+					org.bouncycastle.math.ec.ECPoint generator = params.getG();
+					org.bouncycastle.math.ec.ECCurve curve = generator.getCurve();
 					generator = curve.createPoint(generator.getX().toBigInteger(), generator.getY().toBigInteger(), false);
 					params = new X9ECParameters(params.getCurve(), generator, params.getN(), params.getH(), params.getSeed());
 				} else {
@@ -270,10 +270,10 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 					return subjectPublicKeyInfo;
 				}
 
-				if (publicKey instanceof org.spongycastle.jce.interfaces.ECPublicKey) {
-					org.spongycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.spongycastle.jce.interfaces.ECPublicKey)publicKey;
+				if (publicKey instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
+					org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
 					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithmId().getAlgorithm(), params.toASN1Primitive());
-					org.spongycastle.math.ec.ECPoint q = ecPublicKey.getQ();
+					org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
 					// In case we would like to compress the point:
 					// p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
 					subjectPublicKeyInfo = new SubjectPublicKeyInfo(id, q.getEncoded());

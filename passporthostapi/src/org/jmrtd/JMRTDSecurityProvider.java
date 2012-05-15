@@ -68,10 +68,10 @@ public class JMRTDSecurityProvider extends Provider {
 
 //	private static final Provider SUN_PROVIDER = null; // getProviderOrNull(SUN_PROVIDER_CLASS_NAME);
 	private static final Provider BC_PROVIDER =
-			 new org.spongycastle.jce.provider.BouncyCastleProvider();
+			 new org.bouncycastle.jce.provider.BouncyCastleProvider();
 //			getProviderOrNull(BC_PROVIDER_CLASS_NAME);
 	private static final Provider SC_PROVIDER =
-			 new org.spongycastle.jce.provider.BouncyCastleProvider();
+			 new org.bouncycastle.jce.provider.BouncyCastleProvider();
 //			getProviderOrNull(SC_PROVIDER_CLASS_NAME);
 	private static final Provider JMRTD_PROVIDER = new JMRTDSecurityProvider();
 

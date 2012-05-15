@@ -26,6 +26,7 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
+import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
@@ -280,7 +281,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 	 */
 	public boolean doBAC() {
 		try {
-			super.doBAC(new BACKeySpec(documentNumber, dateOfBirth, dateOfExpiry));
+			super.doBAC(new BACKey(documentNumber, dateOfBirth, dateOfExpiry));
 			return true;
 		} catch (CardServiceException e) {
 			return false;
@@ -295,7 +296,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 	 */
 	public boolean failBAC() {
 		try {
-			super.doBAC(new BACKeySpec("AA1234567", dateOfBirth, dateOfExpiry));
+			super.doBAC(new BACKey("AA1234567", dateOfBirth, dateOfExpiry));
 			return true;
 		} catch (CardServiceException e) {
 			// e.printStackTrace();
