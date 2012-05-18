@@ -7,7 +7,7 @@
 
 <project name="bjmrtd" default="jars" basedir=".">
 
-    <property name="software" value="/win/Software" />
+    <property name="software" value="c:/Software" />
 	<property name="bcprov" value="bcprov-jdk15on-147.jar" />
 
 	<path id="compile.classpath">
