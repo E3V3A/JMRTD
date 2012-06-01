@@ -1,0 +1,28 @@
+How to build the android client
+
+Download and install the android SDK from http://developer.android.com.
+
+Install the support package as described on http://developer.android.com/sdk/compatibility-library.html. 
+Place android-suppport-v4.jar in libs.
+
+Check out the source for jj2000-read-only from http://code.google.com/p/jj2000/
+Build jj2000-5.2-SNAPSHOT.jar with "mvn install"
+Place the jj2000-5.2-SNAPSHOT.jar in libs.
+
+Download jarjar-1.3.jar from http://code.google.com/p/jarjar/downloads/list
+Place jarjar-1.3.jar in libs.
+
+Download scprovjdk15on-1.47.0.1.jar from (for example) http://mvnrepository.com/artifact/com.madgag/scprov-jdk15on/1.47.0.1.
+Place scprovjdk15on-1.47.0.1.jar in libs.
+
+Run "ant -f build_jar_deps.xml" to build the jars in libs:
+- cert.cvc.jar
+- jmrtd.jar
+
+This ant command will, as a subtask, check out all projects the client depends on into the subdirectory external.
+The svn command is needed on your machine in order to do this.
+- https://jmrtd.svn.sourceforge.net/svnroot/jmrtd/passporthostapi
+- https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_sc_indep
+- https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_smartcards
+- https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_util
+- https://svn.cesecore.eu/svn/ejbca/tags/cert-cvc_1_3_0/cert-cvc
