@@ -186,14 +186,31 @@ Code quality
 VERSION 0.4.8 (FUTURE)
 ----------------------
 
+General
+- Deal with PKD code that relies on javax.naming.* (currently not supported in Android).
+
+GUI
+- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box.
+- Updating tree view in edit mode based on LDS model in passporthostapi, instead of TreeModel in passportapplication.
+- Ability to add (and delete) complete DGs from tree view in edit mode from binary files.
+- Wire shark style viewing of files in content pane in tree view.
+- Multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
+
 Android
-- Easier build of jmrtd.jar for developers
-- Demo app
-- Robustness
++ Easier build of jmrtd.jar for developers.
+- Demo app.
+- Robustness.
+- Optically scan MRZ with JavaOCR.
 
 ImageIO
 - Problem with JJ2000 decoding (artifacts).
 - Also have an image writer based on JJ2000.
+- Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
+
+Code quality
+- Check unit tests
+- Check JavaDoc
+- Check Findbugs
 
 
 0.5.x (FUTURE)
@@ -260,12 +277,11 @@ Website and documentation
 
 
 VERSION 0.9.x (DISTANT FUTURE)
-----------------------
+------------------------------
 
 Features
 - JPEG2000 and WSQ image support in pure Java.
 - Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
-- Android NFC support.
 
 Code quality
 - Unit tests

@@ -131,22 +131,22 @@ public class DG1EditPanel extends JPanel {
 		switch(field) {
 		case DOCUMENT_CODE: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentCode(), 2);
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setDocumentCode(tf.getText());
-					notifyActionPerformed(new ActionEvent(this, 0, "Document code changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setDocumentCode(tf.getText());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Document code changed"));
+//				}
+//			});
 			return tf;			
 		}
 		case SURNAME: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPrimaryIdentifier());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setPrimaryIdentifier(tf.getText());
-					notifyActionPerformed(new ActionEvent(this, 0, "Primary identifier changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setPrimaryIdentifier(tf.getText());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Primary identifier changed"));
+//				}
+//			});
 			return tf;
 		}
 		case GIVEN_NAMES: {
@@ -157,82 +157,82 @@ public class DG1EditPanel extends JPanel {
 				if (i < (firstNames.length - 1)) { nameStr.append(" "); }
 			}
 			final MRZEntryField tf = makeMRZEntryField(nameStr.toString());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setSecondaryIdentifiers(tf.getText());
-					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setSecondaryIdentifiers(tf.getText());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Secondary identifier changed"));
+//				}
+//			});
 			return tf;
 		}
 		case DOCUMENT_NUMBER: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getDocumentNumber(), 9);
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setDocumentNumber(tf.getText());
-					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setDocumentNumber(tf.getText());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Document number changed"));
+//				}
+//			});
 			return tf;
 		}
 		case PERSONAL_NUMBER: {
 			final MRZEntryField tf = makeMRZEntryField(nfo.getPersonalNumber(), 14);
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setPersonalNumber(tf.getText());
-					notifyActionPerformed(new ActionEvent(this, 0, "Personal number changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setPersonalNumber(tf.getText());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Personal number changed"));
+//				}
+//			});
 			return tf;
 		}
 		case NATIONALITY: {
 			final CountryEntryField tf = makeCountryField(nfo.getNationality());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setNationality(tf.getCountry().toAlpha3Code());
-					notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setNationality(tf.getCountry().toAlpha3Code());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Nationality changed"));
+//				}
+//			});
 			return tf;
 		}
 		case ISSUING_STATE: {
 			final CountryEntryField tf = makeCountryField(nfo.getIssuingState());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setIssuingState(tf.getCountry().toAlpha3Code());
-					notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setIssuingState(tf.getCountry().toAlpha3Code());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Issuing state changed"));
+//				}
+//			});
 			return tf;
 		}
 		case DATE_OF_BIRTH: {
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfBirth());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setDateOfBirth(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
-					notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setDateOfBirth(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
+//					notifyActionPerformed(new ActionEvent(this, 0, "Date of birth changed"));
+//				}
+//			});
 			return tf;
 		}
 		case DATE_OF_EXPIRY: {
 			final DateEntryField tf = makeDateEntryField(nfo.getDateOfExpiry());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setDateOfExpiry(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
-					notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setDateOfExpiry(tf.toCompactString(DateEntryField.YEAR_MODE_2_DIGITS));
+//					notifyActionPerformed(new ActionEvent(this, 0, "Date of expiry changed"));
+//				}
+//			});
 			return tf;
 		}
 		case GENDER: {
 			final GenderEntryField tf = makeGenderEntryField(nfo.getGender());
-			tf.addActionListener(new ActionListener() {
-				public void actionPerformed(ActionEvent e) {
-					mrzInfo.setGender(tf.getGender());
-					notifyActionPerformed(new ActionEvent(this, 0, "Gender changed"));
-				}
-			});
+//			tf.addActionListener(new ActionListener() {
+//				public void actionPerformed(ActionEvent e) {
+//					mrzInfo.setGender(tf.getGender());
+//					notifyActionPerformed(new ActionEvent(this, 0, "Gender changed"));
+//				}
+//			});
 			return tf;
 		}
 		}

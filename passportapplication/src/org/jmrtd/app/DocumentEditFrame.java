@@ -1321,6 +1321,10 @@ public class DocumentEditFrame extends JMRTDFrame {
 						}
 						for (short fid: passport.getFileList()) {
 							byte[] fileBytes = passport.getFileBytes(fid);
+							if (fileBytes == null) {
+								LOGGER.warning("DEBUG: skipping " + Integer.toHexString(fid) + ", file not present?");
+								continue;
+							}
 							persoService.createFile(fid, (short)fileBytes.length);
 							persoService.selectFile(fid);
 							ByteArrayInputStream in = new ByteArrayInputStream(fileBytes);
