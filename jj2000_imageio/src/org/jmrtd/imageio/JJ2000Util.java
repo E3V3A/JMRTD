@@ -211,6 +211,8 @@ class JJ2000Util {
 		// Find the list of tile to decode.
 		Coord nT = decodedImage.getNumTiles(null);
 
+//		int maxDepth = Integer.MIN_VALUE;
+		
 		// Loop on vertical tiles
 		for (int y = 0; y < nT.y; y++) {
 			// Loop on horizontal tiles
@@ -227,6 +229,7 @@ class JJ2000Util {
 					blk[c].data = null;
 					blk[c] = (DataBlkInt)decodedImage.getInternCompData(blk[c], c);
 					depths[c] = decodedImage.getNomRangeBits(c);
+//					if (depths[c] > maxDepth) { maxDepth = depths[c]; }
 				}
 			}
 		}
@@ -265,8 +268,7 @@ class JJ2000Util {
 		int[] gData = blk[1].getDataInt();
 		int[] bData = blk[2].getDataInt();
 
-		if (rData.length != gData.length || gData.length != bData.length
-				|| bData.length != rData.length) {
+		if (rData.length != gData.length || gData.length != bData.length || bData.length != rData.length) {
 			throw new IllegalArgumentException("different dimensions for bands");
 		}
 
@@ -274,16 +276,31 @@ class JJ2000Util {
 			throw new IllegalArgumentException("different depths for bands");
 		}
 
-		int depth1 = depths[0];
+		int depth = depths[0];
 
 		int[] pixels = new int[rData.length];
-		for (int j = 0; j < rData.length; j++) {
-			int r = rData[j] + (1 << (depth1 - 1));
-			int g = gData[j] + (1 << (depth1 - 1));
-			int b = bData[j] + (1 << (depth1 - 1));
+//		int minR = Integer.MAX_VALUE, maxR = Integer.MIN_VALUE;
+//		int minG = Integer.MAX_VALUE, maxG = Integer.MIN_VALUE;
+//		int minB = Integer.MAX_VALUE, maxB = Integer.MIN_VALUE;
 
-			pixels[j] = 0xFF000000 | ((r & 0xFF) << (2 * depth1))
-			| ((g & 0xFF) << depth1) | (b & 0xFF);
+		for (int j = 0; j < rData.length; j++) {
+			
+			/* Signed values, should be in [-128 .. 127] (for depth = 8). */
+			int r = rData[j];
+			int g = gData[j];
+			int b = bData[j];
+		
+			/* Determine min and max per band. For debugging. Turns out values outside [-128 .. 127] are possible in samples!?! FIXME: check with spec. */
+//			if (r < minR) { minR = r; } if (r > maxR) { maxR = r; }
+//			if (g < minG) { minG = g; } if (g > maxG) { maxG = g; }
+//			if (b < minB) { minB = b; } if (b > maxB) { maxB = b; }			
+
+			/* Transform by adding 127 (for depth = 8) to get values in [0 .. 255]. Inputs from outside [-128 .. 127] are rounded up or down to 0 resp. 255. */
+			if (r < -(1 << (depth - 1))) { r = 0x00; } else if (r > ((1 << (depth - 1)) - 1)) { r = (1 << depth) - 1; } else { r += (1 << (depth -1)); }
+			if (g < -(1 << (depth - 1))) { g = 0x00; } else if (g > ((1 << (depth - 1)) - 1)) { g = (1 << depth) - 1; } else { g += (1 << (depth -1)); }
+			if (b < -(1 << (depth - 1))) { b = 0x00; } else if (b > ((1 << (depth - 1)) - 1)) { b = (1 << depth) - 1; } else { b += (1 << (depth -1)); }
+			
+			pixels[j] = 0xFF000000 | ((r & 0xFF) << (2 * depth)) | ((g & 0xFF) << depth) | (b & 0xFF);
 		}
 		return pixels;
 	}
