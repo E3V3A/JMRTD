@@ -174,7 +174,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 	private void sendSelectApplet() throws CardServiceException {
 		int sw = sendSelectApplet(APPLET_AID);
 		if (sw != 0x00009000) {
-			throw new CardServiceException("Could not select passport");
+			throw new CardServiceException("Could not select passport. SW = " + Integer.toHexString(sw));
 		}
 	}
 	

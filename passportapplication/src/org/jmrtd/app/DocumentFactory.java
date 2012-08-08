@@ -74,8 +74,10 @@ import org.jmrtd.lds.SODFile;
  * @author The JMRTD team (info@jmrtd.org)
  *
  * @version $Id: $
+ * 
+ * @since 0.4.7
  */
-public class MRTDFactory {
+public class DocumentFactory {
 
 	private static final Calendar CALENDAR = Calendar.getInstance(); 
 

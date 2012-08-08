@@ -135,7 +135,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 			capdu = wrapper.wrap(capdu);
 		}
 
-		R rapdu = service.transmit(capdu);
+		R rapdu = transmit(capdu);
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
 		IResponseAPDU rAcc = sc.accesR(rapdu);
 		if (wrapper != null) {
@@ -325,7 +325,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		R rapdu = service.transmit(capdu);
+		R rapdu = transmit(capdu);
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
 		IResponseAPDU rAcc = sc.accesR(rapdu);
 		if (wrapper != null) {
@@ -354,7 +354,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		R rapdu = service.transmit(capdu);
+		R rapdu = transmit(capdu);
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
 		IResponseAPDU rAcc = sc.accesR(rapdu);
 
@@ -549,7 +549,9 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		service.open();
 	}
 
-	public R transmit(C apdu) throws CardServiceException {
-		return service.transmit(apdu);
+	public R transmit(C capdu) throws CardServiceException {
+		R rapdu =  service.transmit(capdu);
+		notifyExchangedAPDU(0, capdu, rapdu);
+		return rapdu;
 	}
 }

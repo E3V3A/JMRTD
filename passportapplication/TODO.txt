@@ -151,7 +151,7 @@ General
 + Latest Bouncy Castle 1.47.
 + Cleanup SCUBA so that we have a smaller number of project.
 + Consistent naming and param order in PassportService and Passport (readFile vs getInputStream).
-+ Document number > 9 digits. MRZ document number field "spill over" to optional information field).
++ Document number > 9 digits. MRZ document number field "spill over" to optional information field.
 
 LDS
 + Moved progressive mode stuff out of FaceInfo.
@@ -187,25 +187,32 @@ VERSION 0.4.8 (FUTURE)
 ----------------------
 
 General
-- Deal with PKD code that relies on javax.naming.* (currently not supported in Android).
+- Deal with PKD code that relies on javax.naming.* (currently not supported in Android and temporarily removed from core passporthostapi).
+- Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
 
 GUI
-- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box.
+- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box (is correct in display mode though).
 - Updating tree view in edit mode based on LDS model in passporthostapi, instead of TreeModel in passportapplication.
 - Ability to add (and delete) complete DGs from tree view in edit mode from binary files.
+- Cleanup dynamic EAC menu in DocumentViewFrame and DocumentEditFrame.
+- Allow creation of documents with EAC from edit mode.
 - Wire shark style viewing of files in content pane in tree view.
-- Multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
+- Bug showing multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
+- Show IrisInfo in edit mode?!?
 
 Android
-+ Easier build of jmrtd.jar for developers.
-- Demo app.
-- Robustness.
-- Optically scan MRZ with JavaOCR.
++ Easier build of jmrtd.jar for developers, no manual rewriting.
+- Demo app showing verification based on CSCA.
+- Robustness, consistency.
+- Optically scan MRZ with JavaOCR on Android.
 
 ImageIO
-- Problem with JJ2000 decoding (artifacts).
++ Problem with JJ2000 decoding (artifacts).
 - Also have an image writer based on JJ2000.
 - Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
+
+Java Card
+- Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
 
 Code quality
 - Check unit tests

@@ -65,6 +65,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
+import javax.smartcardio.CardNotPresentException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -87,6 +88,8 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.data.Gender;
+import net.sourceforge.scuba.smartcards.APDUEvent;
+import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
@@ -168,7 +171,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 
 	private ImagePreviewPanel displayPreviewPanel;
 
-	private JPanel panel, westPanel, centerPanel, southPanel;
+	private JPanel panel, westPanel, centerPanel;
 	private JMenu viewMenu;
 
 	private DG1EditPanel dg1EditPanel;
@@ -181,8 +184,11 @@ public class DocumentEditFrame extends JMRTDFrame {
 
 	private ActionMap actionMap;
 
-	public DocumentEditFrame(Passport passport, ReadingMode readingMode) {
+	private APDUListener<CommandAPDU, ResponseAPDU> apduListener;
+
+	public DocumentEditFrame(Passport passport, ReadingMode readingMode, APDUListener<CommandAPDU, ResponseAPDU> apduListener) {
 		super(PASSPORT_FRAME_TITLE);
+		this.apduListener = apduListener;
 		LOGGER.setLevel(Level.ALL);
 		this.passport = passport;
 		actionMap = new ActionMap();
@@ -341,7 +347,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 				}
 			} catch (Exception ioe) {
 				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
-				+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
+						+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
 				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
 				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
 				continue;
@@ -404,14 +410,15 @@ public class DocumentEditFrame extends JMRTDFrame {
 		treePanel.reload();
 
 		mrzPanel.setMRZ(mrzInfo);
-
 		dg1EditPanel.setMRZ(mrzInfo);
 
-		if (centerPanel.getComponentCount() > 0) {
-			centerPanel.removeAll();
+		//		if (centerPanel.getComponentCount() > 0) {
+		//			centerPanel.removeAll();
+		//		}
+		if (centerPanel.getComponentCount() == 0) {
+			centerPanel.add(dg1EditPanel, BorderLayout.CENTER);
+			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 		}
-		centerPanel.add(dg1EditPanel, BorderLayout.CENTER);
-		centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 		centerPanel.revalidate();
 		centerPanel.repaint();
 	}
@@ -1282,16 +1289,19 @@ public class DocumentEditFrame extends JMRTDFrame {
 						// bacEntry = null;
 					}
 				}
+				List<Short> fileList = passport.getFileList();
 				PublicKey aaPublicKey = null;
-				try {
-					InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-					if (dg15In != null) {
-						DG15File dg15 = new DG15File(dg15In);
-						aaPublicKey = dg15.getPublicKey();
+				if (fileList.contains(PassportService.EF_DG15)) {
+					try {
+						InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
+						if (dg15In != null) {
+							DG15File dg15 = new DG15File(dg15In);
+							aaPublicKey = dg15.getPublicKey();
+						}
+					} catch (CardServiceException cse) {
+						cse.printStackTrace();
+						// aaPublicKey = null;
 					}
-				} catch (CardServiceException cse) {
-					cse.printStackTrace();
-					// aaPublicKey = null;
 				}
 				UploadOptionsChooser chooser = new UploadOptionsChooser(bacEntry, aaPublicKey);
 				int choice = chooser.showOptionsDialog(getContentPane());
@@ -1301,8 +1311,9 @@ public class DocumentEditFrame extends JMRTDFrame {
 					boolean wasPolling = cm.isPolling(terminal);
 					try {
 						cm.stopPolling(terminal);
-						// FIXME: have to wait for the poller?
-						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
+						// FIXME: have to wait for the poller to actually stop?
+						PassportPersoService<CommandAPDU, ResponseAPDU> persoService = new PassportPersoService<CommandAPDU, ResponseAPDU>(new TerminalCardService(terminal));
+						if (apduListener != null) { persoService.addAPDUListener(apduListener); }
 						persoService.open();
 						if (chooser.isBACSelected()) {
 							persoService.setBAC(bacEntry.getDocumentNumber(), bacEntry.getDateOfBirth(), bacEntry.getDateOfExpiry());
@@ -1338,6 +1349,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 						//					} catch (IOException ioe) {
 						//						/* NOTE: Do nothing. */
 					} catch (CardServiceException cse) {
+						// FIXME: show dialog to user, e.g. when no card present or other error.
 						cse.printStackTrace();
 						//					} catch (GeneralSecurityException gse) {
 						//						gse.printStackTrace();

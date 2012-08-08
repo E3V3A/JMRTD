@@ -210,7 +210,7 @@ public class JMRTDApp {
 			menuBar.add(createHelpMenu());
 			mainFrame.setJMenuBar(menuBar);
 
-			/* On OS X "About" and "Preferences" go in the JMRTD menu */
+			/* On OS X "About" and "Preferences" go in the JMRTD menu. */
 			if (isOSX) {
 				try {
 					OSXAdapter.setAboutHandler(this, getClass().getDeclaredMethod("showAboutDialog", (Class[])null));
@@ -337,7 +337,7 @@ public class JMRTDApp {
 	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
 		try {
 			Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
-			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode());
+			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
 		} catch (CardServiceException cse) {
@@ -419,8 +419,8 @@ public class JMRTDApp {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport<CommandAPDU, ResponseAPDU> passport = MRTDFactory.createEmptyMRTD("P<", trustManager);
-					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
+					Passport<CommandAPDU, ResponseAPDU> passport = DocumentFactory.createEmptyMRTD("P<", trustManager);
+					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 					passportFrame.pack();
 					passportFrame.setVisible(true);
 				} catch (Exception ex) {
@@ -457,8 +457,7 @@ public class JMRTDApp {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(file, trustManager);
-
-						DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE);
+						DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 						passportFrame.pack();
 						passportFrame.setVisible(true);
 					} catch (/* IO */ Exception ioe) {

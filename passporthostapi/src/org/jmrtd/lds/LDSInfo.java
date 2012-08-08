@@ -25,7 +25,7 @@ package org.jmrtd.lds;
 import java.io.Serializable;
 
 /**
- * Interface for all data structures in the LDS.
+ * Top level interface for all data structures in the LDS.
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 

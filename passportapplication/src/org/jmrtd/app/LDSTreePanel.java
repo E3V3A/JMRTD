@@ -86,6 +86,8 @@ import org.jmrtd.lds.SODFile;
 /**
  * Panel for navigating the LDS (in edit mode).
  * 
+ * FIXME: Create a top level LDS struct in passporthostapi and make treemodel depend on that.
+ * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: $
@@ -100,7 +102,7 @@ public class LDSTreePanel extends JPanel {
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
-	private MRTDTreeModel treeModel;
+	private LDSTreeModel treeModel;
 
 	/**
 	 * Constructs a new tree panel.
@@ -129,7 +131,7 @@ public class LDSTreePanel extends JPanel {
 	private void setDocument(Passport document) {
 		try {
 			if (getComponentCount() > 0) { removeAll(); }
-			treeModel = new MRTDTreeModel(document);
+			treeModel = new LDSTreeModel(document);
 			add(new JScrollPane(new JTree(treeModel)));
 			revalidate();
 			repaint();
@@ -590,13 +592,13 @@ public class LDSTreePanel extends JPanel {
 		node.add(new DefaultMutableTreeNode("Actual image type: " + imageTypeToString(image.getType())));
 	}
 
-	private class MRTDTreeModel extends DefaultTreeModel {
+	private class LDSTreeModel extends DefaultTreeModel {
 
 		private static final long serialVersionUID = 3694551659268775436L;
 
 		private Passport passport;
 
-		public MRTDTreeModel(Passport passport) {
+		public LDSTreeModel(Passport passport) {
 			super(new DefaultMutableTreeNode("MRTD"));
 			this.passport = passport;
 		}

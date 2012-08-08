@@ -40,7 +40,7 @@ import org.jmrtd.PassportService;
 public class LDSFileUtil {
 
 	/**
-	 * Factory method for creating passport files for a given input stream.
+	 * Factory method for creating LDS files for a given input stream.
 	 * 
 	 * @param inputStream a given input stream
 	 * 
@@ -330,5 +330,4 @@ public class LDSFileUtil {
 		default: return "File with FID 0x" + Integer.toHexString(fid);
 		}
 	}
-
 }

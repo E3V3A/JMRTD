@@ -68,6 +68,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
+import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.FileUtil;
@@ -147,8 +148,10 @@ public class DocumentViewFrame extends JMRTDFrame {
 	private EACEvent eacEvent;
 
 	private VerificationIndicator verificationIndicator;
+	
+	private APDUListener<CommandAPDU, ResponseAPDU> apduListener;
 
-	public DocumentViewFrame(Passport passport, ReadingMode readingMode) {
+	public DocumentViewFrame(Passport passport, ReadingMode readingMode, APDUListener<CommandAPDU, ResponseAPDU> apduListener) {
 		super(PASSPORT_FRAME_TITLE);
 		actionMap = new ActionMap();
 		this.passport = passport;
@@ -467,7 +470,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 				SwingUtilities.invokeLater(new Runnable() {
 					@Override
 					public void run() {
-						/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE);
+						/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduListener);
 					}
 				});
 				dispose();
