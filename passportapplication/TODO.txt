@@ -208,8 +208,10 @@ Android
 
 ImageIO
 + Problem with JJ2000 decoding (artifacts).
++ Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
 - Also have an image writer based on JJ2000.
-- Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
+- Also have an image writer for JNBIS?
+- Patch by Paulo Costa implements metadata in standardized way.
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
