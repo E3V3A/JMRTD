@@ -24,9 +24,13 @@ package org.jmrtd.test.api.lds;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -34,6 +38,7 @@ import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.ImageUtil;
 
+import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.ImageInfo;
@@ -66,6 +71,32 @@ public class FingerImageInfoTest extends TestCase
 	public void testEncodeDecode() {
 		FingerImageInfo testObject = createRightIndexFingerTestObject();
 		testEncodeDecode(testObject);
+	}
+
+	public void testBSI() {
+		try {
+//			FingerImageInfo imageInfo = createBSITestObject();
+//			testEncodeDecode(imageInfo);
+//			DataInputStream inputStream = new DataInputStream(imageInfo.getImageInputStream());
+//			byte[] imageBytes = new byte[imageInfo.getImageLength()];
+//			inputStream.readFully(imageBytes);
+//			
+//			FileOutputStream outputStream = new FileOutputStream("t:/paspoort/test/bsi/fp.wsq");
+//			outputStream.write(imageBytes);
+//			outputStream.flush();
+//			outputStream.close();
+			
+			File inputFile = new File("t:/paspoort/test/bsi/fp.wsq");
+			DataInputStream inputStream = new DataInputStream(new FileInputStream(inputFile));
+			byte[] imageBytes = new byte[(int)inputFile.length()];
+			inputStream.readFully(imageBytes);
+			BufferedImage image = ImageIO.read(new ByteArrayInputStream(imageBytes));
+			System.out.println("DEBUG: image.getWidth() = " + image.getWidth());
+			System.out.println("DEBUG: image.getHeight() = " + image.getHeight());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 
 	public void testEncodeDecode(FingerImageInfo original) {
@@ -149,7 +180,7 @@ public class FingerImageInfoTest extends TestCase
 		int type = imageInfo.getType();
 		assertEquals(type, ImageInfo.TYPE_FINGER);
 	}
-	
+
 	public void testLength() {
 		FingerImageInfo fingerImageInfo = createRightIndexFingerTestObject();
 		int imageLength = fingerImageInfo.getImageLength();
@@ -230,6 +261,20 @@ public class FingerImageInfoTest extends TestCase
 					position,
 					viewCount, viewNumber, quality, impressionType, width, height, getSampleWSQBytes(), FingerInfo.COMPRESSION_WSQ);
 			return testObject;
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+			return null;
+		}
+	}
+
+	public static FingerImageInfo createBSITestObject() {
+		try {
+			DG3File dg3 = new DG3File(new FileInputStream("t:/paspoort/test/bsi/Datagroup3.bin"));
+			List<FingerInfo> fingerInfos = dg3.getFingerInfos();
+			FingerInfo fingerInfo = fingerInfos.get(1);
+			List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
+			return fingerImageInfos.get(0);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

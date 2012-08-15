@@ -417,7 +417,7 @@ public class PPDisplayAct extends Activity {
 				FaceImageInfo faceImageInfo = params[0];
 				InputStream faceImageInputStream = faceImageInfo.getImageInputStream();
 				String mimeType = faceImageInfo.getMimeType();
-				return ImageUtil.getImage(faceImageInputStream, mimeType);
+				return ImageUtil.read(faceImageInputStream, mimeType);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				return null;

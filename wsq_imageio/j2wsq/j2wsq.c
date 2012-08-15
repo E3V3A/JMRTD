@@ -50,7 +50,6 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ
   NISTCOM *nistcom = NULL;
   int width, height, depth, ppi, lossy; 
   int wsq_decore_ret, nistcom_ret;
-    
   /* Parse WSQ Image */
   wsq_decore_ret = wsq_decode_mem(&odata, &width, &height, &depth, &ppi, &lossy, idata, idata_len);
   if (wsq_decore_ret==0) {
@@ -68,7 +67,7 @@ JNIEXPORT jobject JNICALL Java_org_jmrtd_imageio_WSQImageReader_decodeWSQ
   /* WSQ Metadata */
   
   nistcom_ret    = getc_nistcom_wsq(&nistcom, idata, idata_len);
-  if (nistcom_ret==0) {
+  if (nistcom_ret==0 && nistcom != NULL) {
     int i;
     for (i=0; i<nistcom->num; i++) {
       if (nistcom->names[i]) {
