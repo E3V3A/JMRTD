@@ -9,30 +9,35 @@ import javax.imageio.stream.ImageInputStream;
 
 public class WSQImageReaderSpi extends ImageReaderSpi {
 
-	static final String vendorName = "JMRTD";
-	static final String version = "0.0.1";
-	static final String readerClassName = "org.jmrtd.imageio.WSQImageReader";
-	static final String[] names = { "WSQ FBI" };
+	static final String   vendorName = "JMRTD";
+	static final String   version = "0.0.2";
+	static final String   readerClassName = "org.jmrtd.imageio.WSQImageReader";
+	static final String[] names = { "WSQ", "wsq", "WSQ FBI" };
 	static final String[] suffixes = { "wsq" };
 	static final String[] MIMETypes = { "image/x-wsq" };
-	static final String[] writerSpiNames = { };
+	static final String[] writerSpiNames = { "org.jmrtd.imageio.WSQImageWriterSpi" };
 
 	// Metadata formats, more information below
-	static final boolean supportsStandardStreamMetadataFormat = false;
-	static final String nativeStreamMetadataFormatName = null;
-	static final String nativeStreamMetadataFormatClassName = null;
+	static final boolean  supportsStandardStreamMetadataFormat = false;
+	static final String   nativeStreamMetadataFormatName = null;
+	static final String   nativeStreamMetadataFormatClassName = null;
 	static final String[] extraStreamMetadataFormatNames = null;
 	static final String[] extraStreamMetadataFormatClassNames = null;
-	static final boolean supportsStandardImageMetadataFormat = false;
-	static final String nativeImageMetadataFormatName = "org.jmrtd.imageio.WSQMetadata_1.0";
-	static final String nativeImageMetadataFormatClassName = "org.jmrtd.imageio.WSQMetadata";
+	static final boolean  supportsStandardImageMetadataFormat = true;
+	static final String   nativeImageMetadataFormatName = "org.jmrtd.imageio.WSQMetadata_1.0";
+	static final String   nativeImageMetadataFormatClassName = "org.jmrtd.imageio.WSQMetadataFormat";
 	static final String[] extraImageMetadataFormatNames = null;
 	static final String[] extraImageMetadataFormatClassNames = null;
 
 	public WSQImageReaderSpi() {
-		super(vendorName, version, names, suffixes, MIMETypes,
+		super(
+				vendorName, 
+				version, 
+				names, 
+				suffixes, 
+				MIMETypes,
 				readerClassName,
-				STANDARD_INPUT_TYPE, // Accept ImageInputStreams
+				new Class[] { ImageInputStream.class }, // Accept ImageInputStreams
 				writerSpiNames,
 				supportsStandardStreamMetadataFormat,
 				nativeStreamMetadataFormatName,
@@ -46,7 +51,7 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 	}
 
 	public String getDescription(Locale locale) {
-		return "Description goes here";
+		return "Wavelet Scalar Quantization (WSQ)";
 	}
 
 	public boolean canDecodeInput(Object input) throws IOException {
@@ -57,11 +62,10 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 		inStream.mark();
 		int header = inStream.readUnsignedShort();
 		inStream.reset();
-		return (header & 0xFFFF) == 0xFFA0;
+		return header == 0xFFA0;
 	}
 
 	public ImageReader createReaderInstance(Object extension) {
 		return new WSQImageReader(this);
 	}
 }
-

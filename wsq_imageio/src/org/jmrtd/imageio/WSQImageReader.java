@@ -1,12 +1,11 @@
 package org.jmrtd.imageio;
 
-import java.awt.Point;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageReadParam;
@@ -16,126 +15,127 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-public class WSQImageReader extends ImageReader {	
-	ImageInputStream stream;
-	int width, height;
+public class WSQImageReader extends ImageReader {
+	private WSQMetadata metadata;
 	private BufferedImage image;
-	private boolean isLibraryLoaded;
+	private Throwable parseException = null;
 
 	public WSQImageReader(ImageReaderSpi provider) {
 		super(provider);
-		this.isLibraryLoaded = false;
-		try {
-			WSQUtil.loadLibrary();
-			this.isLibraryLoaded = true;
-		} catch (Error t) {
-			this.isLibraryLoaded = false;
-		}
-	}
-
-	public void setInput(Object input) {
-		super.setInput(input); // NOTE: should be setInput(input, false, false);
-	}
-
-	public void setInput(Object input, boolean seekForwardOnly) {
-		super.setInput(input, seekForwardOnly);  // NOTE: should be setInput(input, seekForwardOnly, false);
 	}
 
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
 		super.setInput(input, seekForwardOnly, ignoreMetaData);
-		if (input == null) {
-			this.image = null;
+		
+		this.parseException = null;
+		this.image = null;
+		this.metadata = null;
+	}
+
+	public void parseInput(int imageIndex) throws IIOException {
+		//Invalid index
+		if (imageIndex != 0)
+			throw new IndexOutOfBoundsException("ImageIndex="+imageIndex);
+
+		//Already parsed!
+		if (image != null)
 			return;
+
+		//Haven't tried yet
+		if (parseException == null) {		
+			try {
+				/* In-progress: Use JNBIS Library
+				Bitmap bitmap = new WsqDecoder().decode(readBytes());
+				image = new BufferedImage(bitmap.getWidth(), bitmap.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+				WritableRaster raster = image.getRaster();
+				raster.setDataElements(0, 0, bitmap.getWidth(), bitmap.getHeight(), bitmap.getPixels());
+				metadata = new WSQMetadata(bitmap.getPpi()); */
+				
+				WSQUtil.loadLibrary();
+				metadata = new WSQMetadata(); 
+				image = decodeWSQ(readBytes(), metadata);
+			} catch (Throwable t) {
+				metadata = null;
+				image=null;
+				parseException = t;
+			}
 		}
-		if (!isLibraryLoaded) {
-			this.image = null;
-			return;
-		}
+
+		//Failed
+		if (parseException != null)
+			throw new IIOException("Failed to decode WSQ Image", parseException);
+	}
+
+	private byte[] readBytes() throws IIOException {
 		try {
-			/* We're reading the complete image already, just to get the width and height. */
-			byte[] inputBytes = readBytes(input);
-			this.image = decodeWSQ(inputBytes);
-			this.width = image.getWidth();
-			this.height = image.getHeight();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			this.image = null;
+			ImageInputStream stream = (ImageInputStream)getInput();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+	
+			int lastB=-1;
+			while (true) {
+				int B = stream.read();
+				if (B < 0)
+					throw new EOFException();
+	
+				out.write(B);
+				if (out.size()==2) {
+					if (lastB!=0xFF || B!=0xA0) {
+						throw new IIOException("Missing WSQ Header 0xFF 0xA0");
+					}						
+				}
+	
+				//Check EOI Mark
+				if (lastB==0xFF && B==0xA1)
+					break;
+	
+				lastB=B;
+			}
+			out.flush();
+			return out.toByteArray();
+		} catch (IIOException e) {
+			throw e;
+		} catch (Throwable t) {
+			throw new IIOException(t.getMessage(), t);
 		}
 	}
 
 	public int getNumImages(boolean allowSearch) throws IIOException {
+		parseInput(0);
 		return 1;
 	}
 
-	private byte[] readBytes(Object input) throws IOException {
-		if (input == null) { return null; }
-		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
-		if (input instanceof ImageInputStream) {
-			this.stream = (ImageInputStream)input;
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			while (true) {
-				int b = stream.read();
-				if (b < 0) { break; }
-				out.write(b);
-
-				/* NOTE: Check EOI marker FFA1 */
-				if (b  == 0xFF) {
-					int b1 = stream.read();
-					if (b1 < 0) { break; }
-					out.write(b1);
-					if (b1 == 0xA1) { break; }
-				}
-			}
-			out.flush();
-			return out.toByteArray();
-		} else {
-			throw new IllegalArgumentException("bad input");
-		}
-	}
-
+	@Override
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
-		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
-		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		try {
-			Point destinationOffset = new Point(0, 0);
-			if (param != null) { destinationOffset = param.getDestinationOffset(); }
-			BufferedImage dst = getDestination(param, getImageTypes(0), width, height);
-			dst.getRaster().setRect((int)destinationOffset.getX(), (int)destinationOffset.getY(), image.getRaster());
-			return dst;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IIOException(ioe.getMessage());
-		}
+		parseInput(imageIndex);
+		
+		//TODO:Subsampling accordingly to ImageReadParam
+		
+		return image;
 	}
 
 	public int getWidth(int imageIndex) throws IOException {
-		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
-		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		return width;
+		parseInput(imageIndex);
+		return image.getWidth();
 	}
 
 	public int getHeight(int imageIndex) throws IOException {
-		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
-		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		return height;
+		parseInput(imageIndex);
+		return image.getHeight();
 	}
 
 	public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
-		if (!isLibraryLoaded) { throw new IllegalStateException("Unsatisfied link in WSQ reader/writer"); }
-		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		return null;
+		parseInput(imageIndex);
+		return metadata;
 	}
 
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
-		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
-		List<ImageTypeSpecifier> list = new ArrayList<ImageTypeSpecifier>();
-		list.add(ImageTypeSpecifier.createFromRenderedImage(image)); // createGrayscale(8, DataBuffer.TYPE_BYTE, false));
-		return list.iterator();
+		parseInput(imageIndex);
+		return Collections.singletonList( ImageTypeSpecifier.createFromRenderedImage(image) ).iterator();
 	}
 
 	public IIOMetadata getStreamMetadata() throws IOException {
 		return null;
 	}
 
-	private native BufferedImage decodeWSQ(byte[] in) throws IOException;
+	private native BufferedImage decodeWSQ(byte[] in, WSQMetadata metadata) throws IOException;
 }

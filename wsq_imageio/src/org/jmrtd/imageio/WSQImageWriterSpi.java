@@ -1,43 +1,43 @@
 package org.jmrtd.imageio;
 
-import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.Locale;
 
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
+import javax.imageio.stream.ImageOutputStream;
 
 public class WSQImageWriterSpi extends ImageWriterSpi {
 
 	static final String vendorName = "JMRTD";
-	static final String version = "0.0.1";
-	static final String writerClassName =
-		"org.jmrtd.imageio.WSQImageWriter";
-	static final String[] names = { "wsq" };
+	static final String version = "0.0.2";
+	static final String writerClassName = "org.jmrtd.imageio.WSQImageWriter";
+	static final String[] names = { "WSQ", "wsq", "WSQ FBI" };
 	static final String[] suffixes = { "wsq" };
 	static final String[] MIMETypes = { "image/x-wsq" };
-	static final String[] readerSpiNames = {
-	"org.jmrtd.imageio.WSQImageReaderSpi" };
+	static final String[] readerSpiNames = { "org.jmrtd.imageio.WSQImageReaderSpi" };
 
-	static final boolean supportsStandardStreamMetadataFormat = false;
-	static final String nativeStreamMetadataFormatName = null;
-	static final String nativeStreamMetadataFormatClassName = null;
+	static final boolean  supportsStandardStreamMetadataFormat = false;
+	static final String   nativeStreamMetadataFormatName = null;
+	static final String   nativeStreamMetadataFormatClassName = null;
 	static final String[] extraStreamMetadataFormatNames = null;
 	static final String[] extraStreamMetadataFormatClassNames = null;
-	static final boolean supportsStandardImageMetadataFormat = false;
-	static final String nativeImageMetadataFormatName =
-		"org.jmrtd.imageio.WSQMetadata_1.0";
-	static final String nativeImageMetadataFormatClassName =
-		"org.jmrtd.imageio.WSQMetadata";
+	static final boolean  supportsStandardImageMetadataFormat = true;
+	static final String   nativeImageMetadataFormatName = "org.jmrtd.imageio.WSQMetadata_1.0";
+	static final String   nativeImageMetadataFormatClassName = "org.jmrtd.imageio.WSQMetadataFormat";
 	static final String[] extraImageMetadataFormatNames = null;
 	static final String[] extraImageMetadataFormatClassNames = null;
 
 	public WSQImageWriterSpi() {
-		super(vendorName, version,
-				names, suffixes, MIMETypes,
+		super(
+				vendorName, 
+				version,
+				names, 
+				suffixes, 
+				MIMETypes,
 				writerClassName,
-				STANDARD_OUTPUT_TYPE, // Write to ImageOutputStreams
+				new Class[] { ImageOutputStream.class }, // Write to ImageOutputStreams
 				readerSpiNames,
 				supportsStandardStreamMetadataFormat,
 				nativeStreamMetadataFormatName,
@@ -52,8 +52,9 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 	}
 
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
-		/* FIXME: also check dimensions? */
-		return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
+		//Can encode any image, but it will be converted to grayscale.
+		return true; 
+		//return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
 	}
 
 	public ImageWriter createWriterInstance(Object extension) throws IOException {
@@ -61,6 +62,6 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 	}
 
 	public String getDescription(Locale locale) {
-		return "Description goes here";
+		return "Wavelet Scalar Quantization (WSQ)";
 	}
 }

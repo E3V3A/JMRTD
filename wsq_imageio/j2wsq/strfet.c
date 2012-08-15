@@ -18,6 +18,7 @@
 ***********************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <fet.h>
 
@@ -60,7 +61,7 @@ int string2fet(FET **ofet, char *istr)
 {
    int ret;
    char *iptr, *optr;
-   char name[MAXFETLENGTH], value[MAXFETLENGTH], *vptr;
+   char name[MAXFETLENGTH], value[MAXFETLENGTH];
    FET *fet;
 
    ret = allocfet_ret(&fet, MAXFETS);
@@ -96,13 +97,9 @@ int string2fet(FET **ofet, char *istr)
          fprintf(stderr, "ERROR : string2fet : empty name string found\n");
          return(-2);
       }
-      if(strlen(value) == 0)
-         vptr = (char *)NULL;
-      else
-         vptr = value;
 
       /* Store name and value pair into FET. */
-      ret = updatefet_ret(name, vptr, fet);
+      ret = updatefet_ret(name, value, fet);
       if(ret){
          freefet(fet);
          return(ret);

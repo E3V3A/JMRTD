@@ -209,10 +209,10 @@ Android
 ImageIO
 + Problem with JJ2000 decoding (artifacts).
 + Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
++ Patch by Paulo Costa implements metadata in standardized way.
+- Update to latest NBIS C code and base wsq_imageio on that.
 - Also have an image writer based on JJ2000?
-- Patch by Paulo Costa implements metadata in standardized way.
 - Also have an image writer for JNBIS?
-- Update to latest NBIS C code.
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
@@ -271,7 +271,7 @@ Code quality
 
 ASN.1 parsing
 - Remove dependencies on BC for ASN.1 / TLV, at least from public interface.
-- Test TLV input streams based on chaosinmotion stuff. Write tests. If ok, use those instead.
+- Test TLV input streams based on chaosinmotion or bnotes stuff. Write tests. If ok, use those instead.
 - ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
 
 SCUBA

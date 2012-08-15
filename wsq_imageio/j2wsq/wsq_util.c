@@ -369,8 +369,6 @@ int quantize(
             }
          }
       }
-      else
-         fprintf(stderr, "%d -> %3.6f\n", cnt, quant_vals->qbss[cnt]);
    }
 
    *osip = sip;
