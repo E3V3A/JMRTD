@@ -45,6 +45,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 	private byte[] imageBytes; /* FIXME: replace imageBytes with an InputStream (or ByteBuffer, ByteArrayOutputStream, Piped*Stream, TeeInputStream)? */
 	private int width, height;
 
+	/* PACKAGE ONLY VISIBLE CONSTRUCTORS BELOW */
+	
 	AbstractImageInfo() {
 	}
 
@@ -63,6 +65,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 		this.height = height;
 	}
 
+	/* PUBLIC CONSRTUCTORS BELOW */
+	
 	/**
 	 * Constructs an abstract image info.
 	 * 

@@ -95,6 +95,8 @@ import org.jmrtd.lds.SecurityInfo;
  * 
  * Also contains the document verification logic.
  * 
+ * FIXME: probably should split this up in a class in org.jmrtd.lds for aggregating LDS infos, a class for accessing an MRTD on ICC (performing all necessary access and verification protocols)
+ * 
  * @param <C> the command APDU class to use
  * @param <R> the response APDU class to use
  * 
@@ -244,7 +246,7 @@ public class Passport<C, R> {
 			service.open();
 		} catch (Exception e) {
 			e.printStackTrace();
-			throw new CardServiceException("Cannot open passport. " + e.getMessage());
+			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
 		this.bacKeySpec = null;
 
@@ -693,7 +695,7 @@ public class Passport<C, R> {
 	}
 
 	/**
-	 * Verifies the passport using the security related mechanisms.
+	 * Verifies the document using the security related mechanisms.
 	 * Adjusts the verificationIndicator to show the user the verification status.
 	 * 
 	 * Assumes passport object is non-null and read from the service.
