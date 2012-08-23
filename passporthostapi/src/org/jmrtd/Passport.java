@@ -97,15 +97,12 @@ import org.jmrtd.lds.SecurityInfo;
  * 
  * FIXME: probably should split this up in a class in org.jmrtd.lds for aggregating LDS infos, a class for accessing an MRTD on ICC (performing all necessary access and verification protocols)
  * 
- * @param <C> the command APDU class to use
- * @param <R> the response APDU class to use
- * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision: $
  */
-public class Passport<C, R> {
+public class Passport {
 
 	private static final int BUFFER_SIZE = 243;
 
@@ -160,7 +157,7 @@ public class Passport<C, R> {
 	private BACKeySpec bacKeySpec;
 	private MRTDTrustStore trustManager;
 
-	private PassportService<C, R> service;
+	private PassportService service;
 
 	private Passport() {
 		this.progressListeners = new HashSet<ProgressListener>();
@@ -223,7 +220,7 @@ public class Passport<C, R> {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this(service, trustManager, bacStore, DEFAULT_MAX_TRIES_PER_BAC_ENTRY);
 	}
 	
@@ -237,7 +234,7 @@ public class Passport<C, R> {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService<C, R> service, MRTDTrustStore trustManager, BACStore bacStore, int maxTriesPerBACEntry) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
 		this.service = service;
 		this.trustManager = trustManager;
@@ -315,7 +312,7 @@ public class Passport<C, R> {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService<C, R> service, BACKey bacKeySpec, MRTDTrustStore trustManager) throws CardServiceException {
+	public Passport(PassportService service, BACKey bacKeySpec, MRTDTrustStore trustManager) throws CardServiceException {
 		this();
 		this.trustManager = trustManager;
 		try {
@@ -796,7 +793,7 @@ public class Passport<C, R> {
 	 * @throws IOException on error
 	 * @throws CardServiceException on error
 	 */
-	private void readFromService(PassportService<C, R> service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
+	private void readFromService(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		rawStreams = new HashMap<Short, InputStream>();
 		bufferedStreams = new HashMap<Short, InputStream>();
@@ -944,7 +941,7 @@ public class Passport<C, R> {
 		return null;
 	}
 
-	private BufferedInputStream preReadFile(PassportService<C, R> service, short fid) throws CardServiceException {
+	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {
 			int length = fileLengths.get(fid); 
 			BufferedInputStream bufferedIn = new BufferedInputStream(rawStreams.get(fid), length + 1);
@@ -963,7 +960,7 @@ public class Passport<C, R> {
 		}
 	}
 
-	private void setupFile(PassportService<C, R> service, short fid) throws CardServiceException {
+	private void setupFile(PassportService service, short fid) throws CardServiceException {
 		if (rawStreams.containsKey(fid)) {
 			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
 			return;
@@ -984,7 +981,7 @@ public class Passport<C, R> {
 	 * @throws IOException
 	 */
 	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
-		final Passport<C, R> passport = this;
+		final Passport passport = this;
 		if (couldNotRead.contains(fid)) { return; }
 		final InputStream unBufferedIn = rawStreams.get(fid);
 		if (unBufferedIn == null) {
@@ -1045,7 +1042,7 @@ public class Passport<C, R> {
 	}
 
 	/** Check active authentication. */
-	private void verifyAA(PassportService<C, R> service) {
+	private void verifyAA(PassportService service) {
 		try {
 			InputStream sodIn = getInputStream(PassportService.EF_SOD);
 			SODFile	sod = new SODFile(sodIn);

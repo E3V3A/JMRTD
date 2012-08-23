@@ -143,7 +143,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 	private JProgressBar progressBar;
 	private JMenu viewMenu;
 
-	private Passport<CommandAPDU, ResponseAPDU> passport;
+	private Passport passport;
 
 	private EACEvent eacEvent;
 

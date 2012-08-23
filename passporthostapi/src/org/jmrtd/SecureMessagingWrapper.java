@@ -158,7 +158,7 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 	public R unwrap(R responseAPDU, int len) {
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
 		try {
-			byte[] rapdu =  sc.accesR(responseAPDU).getBytes();
+			byte[] rapdu =  sc.accessR(responseAPDU).getBytes();
 			if (rapdu.length == 2) {
 				// no sense in unwrapping - card indicates SM error
 				throw new IllegalStateException("Card indicates SM error, SW = " + Hex.bytesToHexString(rapdu));
@@ -189,7 +189,7 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 	private C wrapCommandAPDU(C c)
 	throws GeneralSecurityException, IOException {
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		ICommandAPDU cAcc = sc.accesC(c);
+		ICommandAPDU cAcc = sc.accessC(c);
 
 		int lc = cAcc.getNc();
 		int le = cAcc.getNe();

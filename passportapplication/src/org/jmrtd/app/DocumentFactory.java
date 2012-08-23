@@ -98,7 +98,7 @@ public class DocumentFactory {
 	 * 
 	 * @throws GeneralSecurityException if something wrong
 	 */
-	public static Passport<CommandAPDU,ResponseAPDU> createEmptyMRTD(String docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
+	public static Passport createEmptyMRTD(String docType, MRTDTrustStore trustManager) throws GeneralSecurityException {
 
 		/* EF.COM */
 		int[] tagList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };

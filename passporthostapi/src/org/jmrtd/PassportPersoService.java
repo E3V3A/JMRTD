@@ -27,16 +27,11 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.ECFieldF2m;
-import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -66,7 +61,7 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision$
  */
-public class PassportPersoService<C,R> extends CardService<C,R> {
+public class PassportPersoService<C, R> extends CardService<C, R> {
 
 	private static final long serialVersionUID = 4975606132249105202L;
 
@@ -82,54 +77,27 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 	private static final byte ECPRIVATE_TAG = 0x63;
 	private static final byte CVCERTIFICATE_TAG = 0x64;
 
-	/**
-	 * The name of the EC curve for DH key pair generation (this is the only one
-	 * that our passport applet supports. 
-	 */
-	public static final String EC_CURVE_NAME = "c2pnb163v1";
+	private PassportService<C, R> service;
+	
+	/** Usage of the ScubaSmartcard Abstractions  */
+	private transient ScubaSmartcards<C, R> sc;
 
-	private PassportService<C,R> service;
-
-	public PassportPersoService(CardService<C,R> service)
+	public PassportPersoService(CardService<C, R> service)
 	throws CardServiceException {
+		this.sc = ScubaSmartcards.getInstance();
 		this.service = (service instanceof PassportService) ? (PassportService<C, R>)service : new PassportService<C, R>(service);
-	}
-
-	/**
-	 * Generates an RSA keypair fit for Active Authentication.
-	 * 
-	 * @return a KeyPair
-	 * @throws GeneralSecurityException
-	 * @throws NoSuchAlgorithmException if crypto algorithm could not be provided by JCE providers
-	 * @deprecated Leave this responsibility to the client
-	 */
-	public static KeyPair generateAAKeyPair() throws GeneralSecurityException, NoSuchAlgorithmException {
-		KeyPairGenerator generator = null;
-		try {
-			generator = KeyPairGenerator.getInstance("RSA", BC_PROVIDER);
-		} catch (NoSuchAlgorithmException nsae) {
-			generator = KeyPairGenerator.getInstance("RSA");
-		}
-		generator.initialize(new RSAKeyGenParameterSpec(1024, RSAKeyGenParameterSpec.F4));
-		KeyPair keyPair = generator.generateKeyPair();
-		return keyPair;
 	}
 
 	private C createPutDataApdu(byte p1, byte p2, byte[] data) {
 		byte cla = 0;
 		byte ins = INS_PUT_DATA;
-
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-
 		return sc.createCommandAPDU(cla, ins, p1, p2, data);
 	}
 
 	private byte[] putData(byte p1, byte p2,
 			byte[] data) throws CardServiceException {
 		C capdu = createPutDataApdu(p1, p2, data);
-		SecureMessagingWrapper<C,R> wrapper = service.getWrapper();
-
-
+		SecureMessagingWrapper<C, R> wrapper = service.getWrapper();
 
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
@@ -137,7 +105,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 
 		R rapdu = transmit(capdu);
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		IResponseAPDU rAcc = sc.accesR(rapdu);
+		IResponseAPDU rAcc = sc.accessR(rapdu);
 		if (wrapper != null) {
 			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
 		}
@@ -312,14 +280,11 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		byte[] data = { 0x63, 4, (byte) ((length >>> 8) & 0xff),
 				(byte) (length & 0xff), (byte) ((fid >>> 8) & 0xff),
 				(byte) (fid & 0xff) };
-
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-
 		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_CREATE_FILE, p1, p2, data, le);
 		return apdu;
 	}
 
-	private byte[] sendCreateFile(SecureMessagingWrapper<C,R> wrapper, short fid,
+	private byte[] sendCreateFile(SecureMessagingWrapper<C, R> wrapper, short fid,
 			short length) throws CardServiceException {
 		C capdu = createCreateFileAPDU(fid, length);
 		if (wrapper != null) {
@@ -327,7 +292,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		}
 		R rapdu = transmit(capdu);
 		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		IResponseAPDU rAcc = sc.accesR(rapdu);
+		IResponseAPDU rAcc = sc.accessR(rapdu);
 		if (wrapper != null) {
 			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
 		}
@@ -340,14 +305,11 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 		byte p2 = (byte) (offset & 0xff);
 		byte[] chunk = new byte[data_len];
 		System.arraycopy(data, 0, chunk, 0, data_len);
-
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-
 		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
 		return apdu;
 	}
 
-	private byte[] sendUpdateBinary(SecureMessagingWrapper<C,R> wrapper,
+	private byte[] sendUpdateBinary(SecureMessagingWrapper<C, R> wrapper,
 			short offset, int data_len, byte[] data)
 	throws CardServiceException {
 		C capdu = createUpdateBinaryAPDU(offset, data_len, data);
@@ -355,8 +317,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 			capdu = wrapper.wrap(capdu);
 		}
 		R rapdu = transmit(capdu);
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		IResponseAPDU rAcc = sc.accesR(rapdu);
+		IResponseAPDU rAcc = sc.accessR(rapdu);
 
 		if (wrapper != null) {
 			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
@@ -365,14 +326,13 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 
 	}
 
-	private int getPlainDataMaxLength(SecureMessagingWrapper<C,R> wrapper) {
+	private int getPlainDataMaxLength(SecureMessagingWrapper<C, R> wrapper) {
 		int maxWithoutSM = 0xff;
 		byte[] dummyData = new byte[maxWithoutSM];
-
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+		
 		C dummy = sc.createCommandAPDU((byte) 0, (byte) 0, (byte) 0, (byte) 0, dummyData);
-		ICommandAPDU dummyAcc = sc.accesC(dummy);
-		ICommandAPDU cWrappedAcc = sc.accesC(wrapper.wrap(dummy));
+		ICommandAPDU dummyAcc = sc.accessC(dummy);
+		ICommandAPDU cWrappedAcc = sc.accessC(wrapper.wrap(dummy));
 
 		byte[] wrappedApdu = cWrappedAcc.getBytes();
 		int x = wrappedApdu.length - dummyAcc.getBytes().length;
@@ -390,7 +350,7 @@ public class PassportPersoService<C,R> extends CardService<C,R> {
 	 * @throws CardServiceException
 	 */
 	public void writeFile(short fid, InputStream i) throws CardServiceException {
-		SecureMessagingWrapper<C,R> wrapper = service.getWrapper();
+		SecureMessagingWrapper<C, R> wrapper = service.getWrapper();
 		try {
 			int length = 0xff;
 			if (wrapper != null) {

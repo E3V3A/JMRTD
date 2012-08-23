@@ -166,6 +166,12 @@ public class DocumentEditFrame extends JMRTDFrame {
 	private static final Icon UPLOAD_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("drive_burn"));
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	
+	/**
+	 * The name of the EC curve for DH key pair generation (this is the only one
+	 * that our passport applet supports. 
+	 */
+	private static final String EC_CURVE_NAME = "c2pnb163v1";
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
@@ -178,7 +184,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 	private LDSTreePanel treePanel;
 	private MRZPanel mrzPanel;
 
-	private Passport<CommandAPDU, ResponseAPDU> passport;
+	private Passport passport;
 
 	private EACEvent eacEvent;
 
@@ -1039,7 +1045,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 			public void actionPerformed(ActionEvent e) {
 				try {
 					KeyPairGenerator generator = KeyPairGenerator.getInstance("ECDH", BC_PROVIDER);
-					generator.initialize(new ECGenParameterSpec(PassportPersoService.EC_CURVE_NAME));
+					generator.initialize(new ECGenParameterSpec(EC_CURVE_NAME));
 					KeyPair keyPair = generator.generateKeyPair();
 					passport.setEACPrivateKey(keyPair.getPrivate());
 					passport.setEACPublicKey(keyPair.getPublic());

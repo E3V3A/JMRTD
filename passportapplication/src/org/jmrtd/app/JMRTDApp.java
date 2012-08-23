@@ -162,7 +162,7 @@ public class JMRTDApp {
 			cardManager = CardManager.getInstance();
 
 			this.isOSX = isOSX;
-
+			
 			mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
 
 			aboutDialog = new AboutDialog(mainFrame);
@@ -336,7 +336,7 @@ public class JMRTDApp {
 	 */
 	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
 		try {
-			Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(service, trustManager, bacStore);
+			Passport passport = new Passport(service, trustManager, bacStore);
 			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
@@ -419,7 +419,7 @@ public class JMRTDApp {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					Passport<CommandAPDU, ResponseAPDU> passport = DocumentFactory.createEmptyMRTD("P<", trustManager);
+					Passport passport = DocumentFactory.createEmptyMRTD("P<", trustManager);
 					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 					passportFrame.pack();
 					passportFrame.setVisible(true);
@@ -456,7 +456,7 @@ public class JMRTDApp {
 					try {
 						File file = fileChooser.getSelectedFile();
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport<CommandAPDU, ResponseAPDU> passport = new Passport<CommandAPDU, ResponseAPDU>(file, trustManager);
+						Passport passport = new Passport(file, trustManager);
 						DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 						passportFrame.pack();
 						passportFrame.setVisible(true);

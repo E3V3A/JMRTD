@@ -182,7 +182,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 		if (wrapper == null) { return transmit(capdu); }
 		C wrappedCapdu = wrapper.wrap(capdu);
 		R wrappedRapdu = transmit(wrappedCapdu);
-		R rapdu = wrapper.unwrap(wrappedRapdu, sc.accesR(wrappedRapdu).getBytes().length);
+		R rapdu = wrapper.unwrap(wrappedRapdu, sc.accessR(wrappedRapdu).getBytes().length);
 		notifyExchangedPlainTextAPDU(++plainAPDUCount, capdu, rapdu);
 		return rapdu;
 	}
@@ -334,7 +334,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 	throws CardServiceException {
 		R r = transmit(createSelectAppletAPDU(aid));
 
-		return sc.accesR(r).getSW(); 
+		return sc.accessR(r).getSW(); 
 	}
 
 	/**
@@ -354,12 +354,12 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 			return;
 		}
 
-		short sw = (short) sc.accesR(rapdu).getSW();
+		short sw = (short) sc.accessR(rapdu).getSW();
 		if (sw == ISO7816.SW_FILE_NOT_FOUND) {
 			throw new CardServiceException("File not found.");
 		}
 		if (sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Error occured, SW=" + Integer.toHexString(sw) + " command was " + Hex.bytesToHexString(sc.accesC(capdu).getBytes()));
+			throw new CardServiceException("Error occured, SW=" + Integer.toHexString(sw) + " command was " + Hex.bytesToHexString(sc.accessC(capdu).getBytes()));
 		}
 	}
 
@@ -420,7 +420,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 			C capdu = createReadBinaryAPDU(offset, le, longRead);
 			rapdu = transmit(wrapper, capdu);
 
-			rAcc = sc.accesR(rapdu);
+			rAcc = sc.accessR(rapdu);
 
 			int sw = rAcc.getSW();
 			if (sw == ISO7816.SW_END_OF_FILE) {
@@ -467,7 +467,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 		C capdu = createGetChallengeAPDU();
 		R rapdu = transmit(wrapper, capdu);
 
-		return sc.accesR(rapdu).getData();
+		return sc.accessR(rapdu).getData();
 	}
 
 	/**
@@ -486,7 +486,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 		C capdu = createInternalAuthenticateAPDU(rndIFD);
 		R rapdu = transmit(wrapper, capdu);
 
-		return sc.accesR(rapdu).getData();
+		return sc.accessR(rapdu).getData();
 	}
 
 	/**
@@ -515,7 +515,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 	throws CardServiceException {
 		try {
 			R rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC,	kIFD, kEnc, kMac));
-			IResponseAPDU rAcc = sc.accesR(rapdu);
+			IResponseAPDU rAcc = sc.accessR(rapdu);
 			byte[] rapduBytes = rAcc.getBytes();
 			if (rapduBytes == null) {
 				throw new CardServiceException("Mutual authentication failed");
@@ -572,7 +572,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 
 		C capdu = createMutualAuthAPDU(signature);
 		R rapdu = transmit(wrapper, capdu);
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException(
 			"Sending External Authenticate failed.");
@@ -610,7 +610,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 
 		C capdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x41, 0xA6, data);
 		R rapdu = transmit(wrapper, capdu);
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE KAT failed.");
 		}
@@ -631,7 +631,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 
 		C capdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xB6, data);
 		R rapdu = transmit(wrapper, capdu);
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE KAT failed.");
 		}
@@ -652,7 +652,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 
 		C capdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xA4, data);
 		R rapdu = transmit(wrapper, capdu);
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE AT failed.");
 		}
@@ -669,7 +669,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 
 		C capdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_PSO, 0, 0xBE, certData);
 		R rapdu = transmit(wrapper, capdu);
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending PSO failed.");
 		}
@@ -696,7 +696,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 				C capdu = createPSOAPDU(certData, offset, blockSize, false);
 				R rapdu = transmit(wrapper, capdu);
 
-				int sw = sc.accesR(rapdu).getSW();
+				int sw = sc.accessR(rapdu).getSW();
 				if ((short) sw != ISO7816.SW_NO_ERROR) {
 					throw new CardServiceException("Sending PSO failed.");
 				}
@@ -708,7 +708,7 @@ public class PassportApduService<C,R> extends CardService<C,R> {
 		C capdu = createPSOAPDU(certData, offset, length, true);
 		R rapdu = transmit(wrapper, capdu);
 
-		int sw = sc.accesR(rapdu).getSW();
+		int sw = sc.accessR(rapdu).getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending PSO failed.");
 		}
