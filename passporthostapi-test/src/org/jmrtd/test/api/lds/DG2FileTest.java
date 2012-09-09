@@ -143,6 +143,7 @@ public class DG2FileTest extends TestCase
 
 		FaceInfoTest faceInfoTest = new FaceInfoTest("DG2FileTest");
 		List<FaceInfo> faceInfos = dg2File.getFaceInfos();
+		System.out.println("DEBUG: faceInfos: " + faceInfos.size());
 		for (FaceInfo faceInfo: faceInfos) {
 			faceInfoTest.testMandatorySBHFields(faceInfo);
 			faceInfoTest.testOptionalSBHFields(faceInfo);

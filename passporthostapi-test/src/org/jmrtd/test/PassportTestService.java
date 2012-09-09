@@ -27,7 +27,6 @@ import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.jmrtd.BACKey;
-import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 import org.jmrtd.SecureMessagingWrapper;
 import org.jmrtd.Util;

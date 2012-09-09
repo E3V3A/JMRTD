@@ -187,6 +187,7 @@ VERSION 0.4.8 (FUTURE)
 ----------------------
 
 General
+- Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - Deal with PKD code that relies on javax.naming.* (currently not supported in Android and temporarily removed from core passporthostapi).
 - Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
 
@@ -201,7 +202,7 @@ GUI
 - Show IrisInfo in edit mode?!?
 
 Android
-+ Easier build of jmrtd.jar for developers, no manual rewriting.
++ Easier build of jmrtd.jar for developers, no more manual rewriting to work around Bouncy Castle thanks to jarjar.
 - Demo app showing verification based on CSCA.
 - Robustness, consistency.
 - Optically scan MRZ with JavaOCR on Android.

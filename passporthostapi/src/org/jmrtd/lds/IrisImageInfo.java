@@ -67,12 +67,6 @@ public class IrisImageInfo extends AbstractImageInfo {
 	private int rotationAngle;
 	private int rotationAngleUncertainty;
 
-	private IrisImageInfo(int imageFormat) {
-		super(TYPE_IRIS);
-		this.imageFormat = imageFormat;
-		setMimeType(getMimeTypeFromImageFormat(imageFormat));
-	}
-
 	/**
 	 * Constructs an iris image info.
 	 * 
@@ -86,8 +80,8 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * @param imageFormat the image format used for encoding
 	 */
 	public IrisImageInfo(int imageNumber, int quality, int rotationAngle, int rotationAngleUncertainty,
-			int width, int height, byte[] imageBytes, int imageFormat) {
-		super(TYPE_IRIS, width, height, imageBytes, getMimeTypeFromImageFormat(imageFormat));
+			int width, int height, InputStream imageBytes, int imageLength, int imageFormat) throws IOException {
+		super(TYPE_IRIS, width, height, imageBytes, imageLength, getMimeTypeFromImageFormat(imageFormat));
 		if (imageBytes == null) { throw new IllegalArgumentException("Null image bytes"); }
 		this.imageNumber = imageNumber;
 		this.quality = quality;
@@ -104,9 +98,9 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * @param imageBytes the encoded image
 	 * @param imageFormat the image format used for encoding
 	 */
-	public IrisImageInfo(int imageNumber, int width, int height, byte[] imageBytes, int imageFormat) {
+	public IrisImageInfo(int imageNumber, int width, int height, InputStream imageBytes, int imageLength, int imageFormat) throws IOException {
 		this(imageNumber, IMAGE_QUAL_UNDEF, ROT_ANGLE_UNDEF, ROT_UNCERTAIN_UNDEF,
-				width, height, imageBytes, imageFormat);
+				width, height, imageBytes, imageLength, imageFormat);
 	}
 
 	/**
@@ -117,7 +111,9 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * @throws IOException if input cannot be read
 	 */
 	IrisImageInfo(InputStream in, int imageFormat) throws IOException {
-		this(imageFormat);
+		super(TYPE_IRIS);
+		this.imageFormat = imageFormat;
+		setMimeType(getMimeTypeFromImageFormat(imageFormat));
 		readObject(in);
 	}
 

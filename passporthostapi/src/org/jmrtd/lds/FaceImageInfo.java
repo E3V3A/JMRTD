@@ -180,62 +180,6 @@ public class FaceImageInfo extends AbstractImageInfo {
 	private int deviceType;
 	private int quality;
 
-	private FaceImageInfo() {
-		super(TYPE_PORTRAIT);
-	}
-
-	/**
-	 * Constructs a new face information data structure instance.
-	 * 
-	 * @param gender gender
-	 * @param eyeColor eye color
-	 * @param hairColor hair color
-	 * @param featureMask feature mask (least significant 3 bytes)
-	 * @param expression expression
-	 * @param poseAngle (encoded) pose angle
-	 * @param poseAngleUncertainty pose angle uncertainty
-	 * @param faceImageType face image type (basic, full-frontal, token-frontal)
-	 * @param sourceType source type
-	 * @param deviceType capture device type (unspecified is <code>0x00</code>)
-	 * @param imageBytes image
-	 * @param imageDataType either IMAGE_DATA_TYPE_JPEG or IMAGE_DATA_TYPE_JPEG2000
-	 */
-	public FaceImageInfo(Gender gender, EyeColor eyeColor, int hairColor,
-			int featureMask,
-			int expression,
-			int[] poseAngle, int[] poseAngleUncertainty,
-			int faceImageType,
-			int colorSpace,
-			int sourceType,
-			int deviceType,
-			int quality,
-			FeaturePoint[] featurePoints,
-			int width, int height,
-			byte[] imageBytes, int imageDataType) {
-		super(TYPE_PORTRAIT, width, height, imageBytes, toMimeType(imageDataType));
-		if (imageBytes == null) { throw new IllegalArgumentException("Null image"); }
-		this.gender = gender;
-		this.eyeColor = eyeColor;
-		this.featureMask = featureMask;
-		this.hairColor = hairColor;
-		this.expression = expression;
-		this.colorSpace = colorSpace;
-		this.sourceType = sourceType;
-		this.deviceType = deviceType;
-		this.poseAngle = new int[3];
-		System.arraycopy(poseAngle, 0, this.poseAngle, 0, 3);
-		this.poseAngleUncertainty = new int[3];
-		System.arraycopy(poseAngleUncertainty, 0, this.poseAngleUncertainty, 0, 3);
-		this.faceImageType = faceImageType;
-		int featurePointCount = featurePoints == null ? 0 : featurePoints.length;
-		this.featurePoints = new FeaturePoint[featurePointCount];
-		if (featurePointCount > 0) {
-			System.arraycopy(featurePoints, 0, this.featurePoints, 0, featurePointCount);
-		}
-		this.imageDataType = imageDataType;
-		this.recordLength = 20 + 8 * featurePointCount + 12 + imageBytes.length;
-	}
-
 	/**
 	 * Constructs a new face information data structure instance.
 	 * 
@@ -248,7 +192,8 @@ public class FaceImageInfo extends AbstractImageInfo {
 	 * @param poseAngleUncertainty pose angle uncertainty
 	 * @param sourceType source type
 	 * @param deviceType capture device type (unspecified is <code>0x00</code>)
-	 * @param imageInputStream image
+	 * @param imageInputStream encoded image bytes
+	 * @param imageLength length of encoded image
 	 * @param imageDataType either IMAGE_DATA_TYPE_JPEG or IMAGE_DATA_TYPE_JPEG2000
 	 */
 	public FaceImageInfo(Gender gender, EyeColor eyeColor,
@@ -291,17 +236,17 @@ public class FaceImageInfo extends AbstractImageInfo {
 	/**
 	 * Constructs a new face information structure from binary encoding.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
-	public FaceImageInfo(InputStream in) throws IOException {
-		this();
-		readObject(in);
+	public FaceImageInfo(InputStream inputStream) throws IOException {
+		super(TYPE_PORTRAIT);
+		readObject(inputStream);
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
+	protected void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = (inputStream instanceof DataInputStream) ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		/* Facial Information Block (20), see ISO 19794-5 5.5 */
 		recordLength = dataIn.readInt() & 0xFFFFFFFFL; /* 4 */
@@ -360,7 +305,7 @@ public class FaceImageInfo extends AbstractImageInfo {
 		 */
 		setMimeType(toMimeType(imageDataType));
 		long imageLength = recordLength - 20 - 8 * featurePointCount - 12;
-		readImage(in, imageLength);
+		readImage(inputStream, imageLength);
 	}
 
 	/**

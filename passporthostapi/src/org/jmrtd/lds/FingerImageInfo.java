@@ -107,11 +107,6 @@ public class FingerImageInfo extends AbstractImageInfo {
 
 	private int compressionAlgorithm;
 
-	FingerImageInfo(int compressionAlgorithm) {
-		super(TYPE_FINGER, FingerInfo.toMimeType(compressionAlgorithm));
-		this.compressionAlgorithm = compressionAlgorithm;
-	}
-
 	/**
 	 * Constructs a finger image info.
 	 * 
@@ -122,13 +117,14 @@ public class FingerImageInfo extends AbstractImageInfo {
 	 * @param impressionType impression type accordign to ISO 19794-4
 	 * @param width width
 	 * @param height height
-	 * @param imageBytes encoded image
+	 * @param imageBytes encoded image bytes
+	 * @param imageLength length of encoded image
 	 * @param compressionAlgorithm image encoding type according to ISO 19794-4
 	 */
 	public FingerImageInfo(int position,
 			int viewCount, int viewNumber, int quality, int impressionType,
-			int width, int height, byte[] imageBytes, int compressionAlgorithm) {
-		super(TYPE_FINGER, width, height, imageBytes, FingerInfo.toMimeType(compressionAlgorithm));
+			int width, int height, InputStream imageBytes, int imageLength, int compressionAlgorithm) throws IOException {
+		super(TYPE_FINGER, width, height, imageBytes, imageLength, FingerInfo.toMimeType(compressionAlgorithm));
 		if (0 > quality || quality > 100) { throw new IllegalArgumentException("Quality needs to be a number between 0 and 100"); }
 		if (imageBytes == null) { throw new IllegalArgumentException("Null image"); }
 		this.position = position;
@@ -137,7 +133,7 @@ public class FingerImageInfo extends AbstractImageInfo {
 		this.quality = quality;
 		this.impressionType = impressionType;
 		this.compressionAlgorithm = compressionAlgorithm;
-		this.recordLength = imageBytes.length + 14;
+		this.recordLength = imageLength + 14;
 	}
 
 	/**
@@ -149,7 +145,8 @@ public class FingerImageInfo extends AbstractImageInfo {
 	 * @throws IOException if input cannot be read
 	 */
 	public FingerImageInfo(InputStream in, int compressionAlgorithm) throws IOException {
-		this(compressionAlgorithm);
+		super(TYPE_FINGER, FingerInfo.toMimeType(compressionAlgorithm));
+		this.compressionAlgorithm = compressionAlgorithm;
 		this.compressionAlgorithm = compressionAlgorithm;
 		readObject(in);
 	}

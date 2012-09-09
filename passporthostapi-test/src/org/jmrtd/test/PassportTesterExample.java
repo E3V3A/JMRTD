@@ -4,7 +4,6 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 
 import org.jmrtd.BACKey;
-import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 
 public class PassportTesterExample extends PassportTesterBase {

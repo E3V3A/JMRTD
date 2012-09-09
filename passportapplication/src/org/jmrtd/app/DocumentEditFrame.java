@@ -65,7 +65,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
-import javax.smartcardio.CardNotPresentException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CommandAPDU;
 import javax.smartcardio.ResponseAPDU;
@@ -88,7 +87,6 @@ import javax.swing.JSplitPane;
 import javax.swing.JTextArea;
 
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -856,7 +854,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 								0x0000, // quality
 								new FeaturePoint[0],
 								width, height,
-								imageBytes, FaceImageInfo.IMAGE_DATA_TYPE_JPEG);
+								new ByteArrayInputStream(imageBytes), imageBytes.length, FaceImageInfo.IMAGE_DATA_TYPE_JPEG);
 						FaceInfo faceInfo = new FaceInfo(Arrays.asList(new FaceImageInfo[] { faceImageInfo }));
 						InputStream dg2In = passport.getInputStream(PassportService.EF_DG2);
 						DG2File dg2 = new DG2File(dg2In);

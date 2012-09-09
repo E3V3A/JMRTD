@@ -27,9 +27,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -257,9 +255,10 @@ public class FingerImageInfoTest extends TestCase
 			int viewNumber = 1;
 			int quality = 69;
 			int impressionType = FingerImageInfo.IMPRESSION_TYPE_LIVE_SCAN_PLAIN;
+			byte[] imageBytes = getSampleWSQBytes();
 			FingerImageInfo testObject = new FingerImageInfo(
 					position,
-					viewCount, viewNumber, quality, impressionType, width, height, getSampleWSQBytes(), FingerInfo.COMPRESSION_WSQ);
+					viewCount, viewNumber, quality, impressionType, width, height, new ByteArrayInputStream(imageBytes), imageBytes.length, FingerInfo.COMPRESSION_WSQ);
 			return testObject;
 		} catch (Exception e) {
 			e.printStackTrace();

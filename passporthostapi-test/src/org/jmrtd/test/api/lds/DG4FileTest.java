@@ -119,7 +119,7 @@ public class DG4FileTest extends TestCase
 			byte[] imageBytes = imageOut.toByteArray();
 
 			int imageFormat = IrisInfo.IMAGEFORMAT_RGB_JPEG;
-			IrisImageInfo irisImageInfo = new IrisImageInfo(0, 300, 200, imageBytes, IrisInfo.IMAGEFORMAT_RGB_JPEG);
+			IrisImageInfo irisImageInfo = new IrisImageInfo(0, 300, 200, new ByteArrayInputStream(imageBytes), imageBytes.length, IrisInfo.IMAGEFORMAT_RGB_JPEG);
 
 			int biometricSubtype = IrisBiometricSubtypeInfo.EYE_UNDEF;
 			IrisBiometricSubtypeInfo irisBiometricSubtypeInfo = new IrisBiometricSubtypeInfo(biometricSubtype, imageFormat, Arrays.asList(new IrisImageInfo[] { irisImageInfo }));

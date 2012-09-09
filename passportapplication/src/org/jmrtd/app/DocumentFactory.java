@@ -49,8 +49,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.imageio.ImageIO;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
@@ -144,36 +142,41 @@ public class DocumentFactory {
 	}
 
 	private static FaceImageInfo createFaceImageInfo() {
-		int width = 449, height = 599;
-		byte[] jpegImageBytes = createTrivialJPEGBytes(width, height);
-		Gender gender = Gender.UNSPECIFIED;
-		EyeColor eyeColor = EyeColor.UNSPECIFIED;
-		int hairColor = FaceImageInfo.HAIR_COLOR_UNSPECIFIED;
-		int featureMask = 0;
-		short expression = FaceImageInfo.EXPRESSION_UNSPECIFIED;
-		int[] poseAngle = { 0, 0, 0 };
-		int[] poseAngleUncertainty = { 0, 0, 0 };
-		int faceImageType = FaceImageInfo.FACE_IMAGE_TYPE_FULL_FRONTAL;
-		int colorSpace = 0x00;
-		int sourceType = FaceImageInfo.SOURCE_TYPE_UNSPECIFIED;
-		int deviceType = 0x0000;
-		int quality = 0x0000;
-		int imageDataType = FaceImageInfo.IMAGE_DATA_TYPE_JPEG;	
-		FeaturePoint[] featurePoints = { };
-		FaceImageInfo imageInfo = new FaceImageInfo(
-				gender,  eyeColor, hairColor,
-				featureMask,
-				expression,
-				poseAngle, poseAngleUncertainty,
-				faceImageType,
-				colorSpace,
-				sourceType,
-				deviceType,
-				quality,
-				featurePoints,
-				width, height,
-				jpegImageBytes, imageDataType);
-		return imageInfo;
+		try {
+			int width = 449, height = 599;
+			byte[] jpegImageBytes = createTrivialJPEGBytes(width, height);
+			Gender gender = Gender.UNSPECIFIED;
+			EyeColor eyeColor = EyeColor.UNSPECIFIED;
+			int hairColor = FaceImageInfo.HAIR_COLOR_UNSPECIFIED;
+			int featureMask = 0;
+			short expression = FaceImageInfo.EXPRESSION_UNSPECIFIED;
+			int[] poseAngle = { 0, 0, 0 };
+			int[] poseAngleUncertainty = { 0, 0, 0 };
+			int faceImageType = FaceImageInfo.FACE_IMAGE_TYPE_FULL_FRONTAL;
+			int colorSpace = 0x00;
+			int sourceType = FaceImageInfo.SOURCE_TYPE_UNSPECIFIED;
+			int deviceType = 0x0000;
+			int quality = 0x0000;
+			int imageDataType = FaceImageInfo.IMAGE_DATA_TYPE_JPEG;	
+			FeaturePoint[] featurePoints = { };
+			FaceImageInfo imageInfo = new FaceImageInfo(
+					gender,  eyeColor, hairColor,
+					featureMask,
+					expression,
+					poseAngle, poseAngleUncertainty,
+					faceImageType,
+					colorSpace,
+					sourceType,
+					deviceType,
+					quality,
+					featurePoints,
+					width, height,
+					new ByteArrayInputStream(jpegImageBytes), jpegImageBytes.length, imageDataType);
+			return imageInfo;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	private static byte[] createTrivialJPEGBytes(int width, int height) {

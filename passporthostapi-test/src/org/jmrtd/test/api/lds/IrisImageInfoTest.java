@@ -1,6 +1,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
@@ -52,7 +53,7 @@ public class IrisImageInfoTest extends TestCase {
 			ImageUtil.write(image, "image/jpeg", encodedImageOut);
 			encodedImageOut.flush();
 			byte[] imageBytes = encodedImageOut.toByteArray();
-			IrisImageInfo irisImageInfo = new IrisImageInfo(1, image.getWidth(), image.getHeight(), imageBytes, IrisInfo.IMAGEFORMAT_MONO_JPEG);
+			IrisImageInfo irisImageInfo = new IrisImageInfo(1, image.getWidth(), image.getHeight(), new ByteArrayInputStream(imageBytes), imageBytes.length, IrisInfo.IMAGEFORMAT_MONO_JPEG);
 			return irisImageInfo;
 		} catch (IOException e) {
 			e.printStackTrace();

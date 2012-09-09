@@ -113,15 +113,15 @@ public class DG12File extends DataGroup {
 	/**
 	 * Constructs a new file.
 	 * 
-	 * @param in
+	 * @param inputStream
 	 * @throws IOException
 	 */
-	public DG12File(InputStream in) throws IOException {
-		super(EF_DG12_TAG, in);
+	public DG12File(InputStream inputStream) throws IOException {
+		super(EF_DG12_TAG, inputStream);
 	}
 
-	protected void readContent(InputStream in) throws IOException {	
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	protected void readContent(InputStream inputStream) throws IOException {	
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tag = tlvIn.readTag();
 		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
 		int length = tlvIn.readLength();
@@ -336,8 +336,8 @@ public class DG12File extends DataGroup {
 		return result.toString();
 	}
 
-	protected void writeContent(OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+	protected void writeContent(OutputStream outputStream) throws IOException {
+		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
 		tlvOut.writeTag(TAG_LIST_TAG);
 		List<Integer> tags = getTagPresenceList();
 		DataOutputStream dataOut = new DataOutputStream(tlvOut);
@@ -349,6 +349,9 @@ public class DG12File extends DataGroup {
 		for (int tag: tags) {
 			tlvOut.writeTag(tag);
 			switch (tag) {
+			case ISSUING_AUTHORITY_TAG:
+				tlvOut.writeValue(issuingAuthority.trim().replace(' ', '<').getBytes());
+				break;
 			case DATE_OF_ISSUE_TAG:
 				tlvOut.writeValue(Hex.hexStringToBytes(SDF.format(dateOfIssue)));
 				break;

@@ -24,6 +24,7 @@ package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -46,7 +47,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 	private int width, height;
 
 	/* PACKAGE ONLY VISIBLE CONSTRUCTORS BELOW */
-	
+
 	AbstractImageInfo() {
 	}
 
@@ -59,30 +60,13 @@ abstract class AbstractImageInfo implements ImageInfo {
 		this.mimeType = mimeType;
 	}
 
-	AbstractImageInfo(int type, int width, int height, String mimeType) {
+	private AbstractImageInfo(int type, int width, int height, String mimeType) {
 		this(type, mimeType);
 		this.width = width;
 		this.height = height;
 	}
 
 	/* PUBLIC CONSRTUCTORS BELOW */
-	
-	/**
-	 * Constructs an abstract image info.
-	 * 
-	 * @param type type image info
-	 * @param width width of image
-	 * @param height height of image
-	 * @param imageBytes encoded image
-	 * @param mimeType mime-type of image
-	 */
-	public AbstractImageInfo(int type, int width, int height, byte[] imageBytes, String mimeType) {
-		this(type, width, height, mimeType);
-		if (imageBytes != null) {
-			this.imageBytes = new byte[imageBytes.length];
-			System.arraycopy(imageBytes, 0, this.imageBytes, 0, imageBytes.length);
-		}
-	}
 
 	/**
 	 * Constructs an abstract image info.
@@ -90,15 +74,17 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * @param type type of image info
 	 * @param width width of image
 	 * @param height height of image
-	 * @param in encoded image
+	 * @param inputStream encoded image
 	 * @param imageLength length of encoded image
 	 * @param mimeType mime-type of encoded image
 	 * 
 	 * @throws IOException if reading fails
 	 */
-	public AbstractImageInfo(int type, int width, int height, InputStream in, long imageLength, String mimeType) throws IOException {
+	public AbstractImageInfo(int type, int width, int height, InputStream inputStream, long imageLength, String mimeType) throws IOException {
 		this(type, width, height, mimeType);
-		readImage(in, imageLength);
+		SubInputStream subInputStream = new SubInputStream(0, imageLength, inputStream);
+		subInputStream.reset();
+		readImage(subInputStream, imageLength);
 	}
 
 	/**
@@ -160,7 +146,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		result.append(this.getClass().getSimpleName());
 		result.append(" [");
 		result.append("type: " + typeToString(type) + ", ");
-		result.append("size: " + (imageBytes == null ? 0 : imageBytes.length));
+		result.append("size: " + getImageLength());
 		result.append("]");
 		return result.toString();
 	}
@@ -169,7 +155,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		int result = 1234567891;
 		result = 3 * result + 5 * type;
 		result += 5 * (mimeType == null ? 1337 : mimeType.hashCode()) + 7;
-		result += 7 * (imageBytes == null ? 1337 : imageBytes.length) + 11;
+		result += 7 * getImageLength() + 11;
 		return result;
 	}
 
@@ -179,8 +165,9 @@ abstract class AbstractImageInfo implements ImageInfo {
 		if (!other.getClass().equals(this.getClass())) { return false; }
 		AbstractImageInfo otherImageInfo = (AbstractImageInfo)other;
 		return (imageBytes == otherImageInfo.imageBytes || imageBytes != null && Arrays.equals(imageBytes, otherImageInfo.imageBytes))
-		&& (mimeType == null && otherImageInfo.mimeType == null || mimeType != null && mimeType.equals(otherImageInfo.mimeType))
-		&& type == otherImageInfo.type;
+				// && getImageLength() == otherImageInfo.getImageLength()
+				&& (mimeType == null && otherImageInfo.mimeType == null || mimeType != null && mimeType.equals(otherImageInfo.mimeType))
+				&& type == otherImageInfo.type;
 	}
 
 	/**
@@ -193,6 +180,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		try {
 			writeObject(out);
 		} catch (IOException ioe) {
+			ioe.printStackTrace();
 			return null;
 		}
 		return out.toByteArray();
@@ -204,7 +192,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * @return the record length
 	 */
 	public abstract long getRecordLength();
-	
+
 	/**
 	 * Gets the encoded image as an input stream.
 	 * 
@@ -214,18 +202,18 @@ abstract class AbstractImageInfo implements ImageInfo {
 		return new ByteArrayInputStream(imageBytes);
 	}
 
-	protected void readImage(InputStream in, long imageLength) throws IOException {
-		imageBytes = new byte[(int)(imageLength & 0x00000000FFFFFFFFL)];
+	protected void readImage(InputStream inputStream, long imageLength) throws IOException {
+		this.imageBytes = new byte[(int)(imageLength & 0x00000000FFFFFFFFL)];
 		int bytesRead = 0;
 		while (bytesRead < imageLength) {
-			int bytesJustNowRead = in.read(imageBytes, bytesRead, (int)(imageLength - bytesRead));
+			int bytesJustNowRead = inputStream.read(imageBytes, bytesRead, (int)(imageLength - bytesRead));
 			if (bytesJustNowRead < 0) { throw new IOException("EOF detected after " + bytesRead + " bytes. Was expecting image length " + imageLength + " bytes (i.e., " + (imageLength - bytesRead) + " more bytes)."); }
 			bytesRead += bytesJustNowRead;
 		}
 	}
 
-	protected void writeImage(OutputStream out) throws IOException {
-		out.write(imageBytes);
+	protected void writeImage(OutputStream outputStream) throws IOException {
+		outputStream.write(imageBytes);
 	}
 
 	final protected void setMimeType(String mimeType) {
@@ -245,11 +233,12 @@ abstract class AbstractImageInfo implements ImageInfo {
 	}
 
 	final protected void setImageBytes(byte[] imageBytes) {
-		if (imageBytes == null) {
-			this.imageBytes = null;
-		} else {
-			this.imageBytes = new byte[imageBytes.length];
-			System.arraycopy(imageBytes, 0, this.imageBytes, 0, imageBytes.length);
+		if (imageBytes == null) { this.imageBytes = null; return; }
+
+		try {
+			readImage(new ByteArrayInputStream(imageBytes), imageBytes.length);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -266,6 +255,35 @@ abstract class AbstractImageInfo implements ImageInfo {
 		case TYPE_FINGER: return "Finger";
 		case TYPE_IRIS: return "Iris";
 		default: throw new NumberFormatException("Unknown type: " + Integer.toHexString(type));
+		}
+	}
+
+	/**
+	 * NOTE: EXPERIMENTAL
+	 * See <a href="http://stackoverflow.com/q/11925971/27190">this question on SO</a>.
+	 */
+	class SubInputStream extends FilterInputStream {
+
+		private long offset;
+
+		public SubInputStream(long offset, long length, InputStream carrier) {
+			super(carrier);
+			this.offset = offset;
+			mark((int)length);
+		}
+
+		@Override
+		public void reset() throws IOException {
+			in.reset();
+			in.skip(offset);
+		}
+
+		public SubInputStream subStream(long offset, long length) {
+			return new SubInputStream(this.offset + offset, length, in);
+		}
+
+		public Object syncObject() {
+			return in;
 		}
 	}
 }
