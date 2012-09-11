@@ -82,8 +82,7 @@ public class ISO781611Encoder<B extends BiometricDataBlock> implements ISO781611
 		tlvOut.writeValueEnd(); /* BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG, i.e. 7F61 */
 	}
 
-	private void writeBIT(TLVOutputStream out, int index, SimpleCBEFFInfo<B> cbeffInfo) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+	private void writeBIT(TLVOutputStream tlvOut, int index, SimpleCBEFFInfo<B> cbeffInfo) throws IOException {
 		if (!(cbeffInfo instanceof SimpleCBEFFInfo)) {
 			throw new IllegalArgumentException("Encoder does not support level > 2 nesting");
 		}

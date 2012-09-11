@@ -31,8 +31,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.prefs.Preferences;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -47,6 +45,8 @@ import javax.swing.JToolBar;
 
 import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
 import net.sourceforge.scuba.util.IconUtil;
@@ -68,7 +68,7 @@ public class APDUTraceFrame extends JMRTDFrame {
 	
 	private JTextArea area;
 	
-	private APDUListener<CommandAPDU,ResponseAPDU> apduListener;
+	private APDUListener apduListener;
 
 	/**
 	 * Constructs an APDU trace frame.
@@ -85,10 +85,10 @@ public class APDUTraceFrame extends JMRTDFrame {
 	public APDUTraceFrame(String title) {
 		super(title);
 		final APDUTraceFrame frame = this;
-		this.apduListener = new APDUListener<CommandAPDU,ResponseAPDU>() {
+		this.apduListener = new APDUListener() {
 
 			@Override
-			public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
+			public void exchangedAPDU(APDUEvent e) {
 				frame.exchangedAPDU(e);
 			}
 			
@@ -116,7 +116,7 @@ public class APDUTraceFrame extends JMRTDFrame {
 	 * 
 	 * @return an APDU listener
 	 */
-	public APDUListener<CommandAPDU, ResponseAPDU> getRawAPDUListener() {
+	public APDUListener getRawAPDUListener() {
 		return apduListener;
 	}
 
@@ -125,7 +125,7 @@ public class APDUTraceFrame extends JMRTDFrame {
 	 * 
 	 * @return an APDU listener
 	 */
-	public APDUListener<CommandAPDU, ResponseAPDU> getPlainTextAPDUListener() {
+	public APDUListener getPlainTextAPDUListener() {
 		return apduListener;
 	}
 
@@ -136,9 +136,9 @@ public class APDUTraceFrame extends JMRTDFrame {
 	 * 
 	 * @param e the event indicating an APDU was exchanged
 	 */
-	private synchronized void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
-		CommandAPDU capdu = e.getCommandAPDU();
-		ResponseAPDU rapdu = e.getResponseAPDU();
+	private synchronized void exchangedAPDU(APDUEvent e) {
+		ICommandAPDU capdu = e.getCommandAPDU();
+		IResponseAPDU rapdu = e.getResponseAPDU();
 		area.append(e.getType() + ". C:\n" + Hex.bytesToPrettyString(capdu.getBytes()) + "\n");
 		area.append(e.getType() + ". R:\n" + Hex.bytesToPrettyString(rapdu.getBytes()) + "\n");
 		area.setCaretPosition(area.getDocument().getLength() - 1);

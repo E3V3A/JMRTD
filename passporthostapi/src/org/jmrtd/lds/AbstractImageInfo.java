@@ -24,7 +24,6 @@ package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -82,9 +81,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 */
 	public AbstractImageInfo(int type, int width, int height, InputStream inputStream, long imageLength, String mimeType) throws IOException {
 		this(type, width, height, mimeType);
-		SubInputStream subInputStream = new SubInputStream(0, imageLength, inputStream);
-		subInputStream.reset();
-		readImage(subInputStream, imageLength);
+
+		readImage(inputStream, imageLength);
 	}
 
 	/**
@@ -258,32 +256,49 @@ abstract class AbstractImageInfo implements ImageInfo {
 		}
 	}
 
-	/**
-	 * NOTE: EXPERIMENTAL
-	 * See <a href="http://stackoverflow.com/q/11925971/27190">this question on SO</a>.
-	 */
-	class SubInputStream extends FilterInputStream {
+	class ImageReadingState {
 
-		private long offset;
+		private InputStream input;
+		private int offsetInInput;
+		private byte[] buffer;
+		private int buffCount;
 
-		public SubInputStream(long offset, long length, InputStream carrier) {
-			super(carrier);
-			this.offset = offset;
-			mark((int)length);
+		public ImageReadingState(InputStream input, int offsetInInput, int length) {
+			this.buffer = new byte[length];
+			this.buffCount = 0;
+			this.input = input;
+			this.offsetInInput = offsetInInput;
 		}
 
-		@Override
-		public void reset() throws IOException {
-			in.reset();
-			in.skip(offset);
-		}
+		public InputStream getInputStream() {
+			return new InputStream() {
 
-		public SubInputStream subStream(long offset, long length) {
-			return new SubInputStream(this.offset + offset, length, in);
-		}
+				private int counter = 0;
 
-		public Object syncObject() {
-			return in;
+				@Override
+				public int read() throws IOException {
+					synchronized(input) {
+						input.reset();
+						input.skip(offsetInInput + counter);
+						if (counter >= buffer.length) {
+							return -1;
+						} else if (counter < buffCount) {
+							int b = buffer[counter] & 0xFF;
+							counter++;
+							return b;
+						} else if (counter > buffCount) {
+							throw new IllegalStateException("Buffer contains " + buffCount + " bytes, reader state at " + counter);
+						} else {
+							int b = input.read();
+							if (b < 0) { throw new IllegalStateException("Input EOF reached, but only " + counter + " bytes read, was expecting " + buffer.length); }
+							buffer[buffCount] = (byte)b;
+							buffCount ++;
+							counter ++;
+							return b;
+						}
+					}
+				}	
+			};
 		}
 	}
 }

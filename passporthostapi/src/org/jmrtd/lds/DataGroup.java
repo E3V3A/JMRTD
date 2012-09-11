@@ -56,19 +56,26 @@ public abstract class DataGroup extends AbstractLDSFile {
 	 * given input stream. Tag and length are read, so the input stream
 	 * is positioned just before the value.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 */
-	protected DataGroup(int dataGroupTag, InputStream in) {
+	protected DataGroup(int dataGroupTag, InputStream inputStream) {
 		try {
 			this.dataGroupTag = dataGroupTag;
-			readObject(in);
+			readObject(inputStream);
 		} catch (IOException ioe) {
 			throw new IllegalArgumentException("Could not decode: " + ioe.toString());
 		}
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);	
+	/**
+	 * Reads the contents of this datagroup, including tag and length from an inputstream.
+	 * 
+	 * @param inputStream the stream to read from
+	 * 
+	 * @throws IOException if reading from the stream fails
+	 */
+	protected void readObject(InputStream inputStream) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tag = tlvIn.readTag();
 		if (tag != dataGroupTag) {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
@@ -77,26 +84,26 @@ public abstract class DataGroup extends AbstractLDSFile {
 		readContent(tlvIn);
 	}
 
-	protected void writeObject(OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+	protected void writeObject(OutputStream outputStream) throws IOException {
+		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
 		tlvOut.writeTag(getTag());
 		writeContent(tlvOut);
 		tlvOut.writeValueEnd(); /* dataGroupTag */
 	}
 
 	/**
-	 * Reas the contents of the datagroup from an inputstream.
+	 * Reads the contents of the datagroup from an inputstream.
 	 * Client code implementing this method should only read the contents
 	 * from the inputstream, not the tag or length of the datagroup.
 	 */
-	protected abstract void readContent(InputStream in) throws IOException;
+	protected abstract void readContent(InputStream inputStream) throws IOException;
 
 	/**
 	 * Writes the contents of the datagroup to an outputstream.
 	 * Client code implementing this method should only write the contents
 	 * to the outputstream, not the tag or length of the datagroup.
 	 */
-	protected abstract void writeContent(OutputStream out) throws IOException;
+	protected abstract void writeContent(OutputStream outputStream) throws IOException;
 
 	/**
 	 * Gets a textual representation of this file.

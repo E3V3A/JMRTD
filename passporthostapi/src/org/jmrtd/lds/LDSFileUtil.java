@@ -49,29 +49,30 @@ public class LDSFileUtil {
 	 * @throws IOException on reading error from the input stream
 	 */
 	public static AbstractLDSFile getLDSFile(InputStream inputStream) throws IOException {
-		TLVInputStream tlvIn = new TLVInputStream(new BufferedInputStream(inputStream, 8));
-		tlvIn.mark(5);
+		BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 8);
+		bufferedIn.mark(5);
+		TLVInputStream tlvIn = new TLVInputStream(bufferedIn);
 		int tag = tlvIn.readTag();
-		tlvIn.reset();
+		bufferedIn.reset();
 		switch (tag) {
-		case LDSFile.EF_COM_TAG: return new COMFile(tlvIn);
-		case LDSFile.EF_DG1_TAG: return new DG1File(tlvIn);
-		case LDSFile.EF_DG2_TAG: return new DG2File(tlvIn);
-		case LDSFile.EF_DG3_TAG: return new DG3File(tlvIn);
-		case LDSFile.EF_DG4_TAG: return new DG4File(tlvIn);
-		case LDSFile.EF_DG5_TAG: return new DG5File(tlvIn);
-		case LDSFile.EF_DG6_TAG: return new DG6File(tlvIn);
-		case LDSFile.EF_DG7_TAG: return new DG7File(tlvIn);
+		case LDSFile.EF_COM_TAG: return new COMFile(bufferedIn);
+		case LDSFile.EF_DG1_TAG: return new DG1File(bufferedIn);
+		case LDSFile.EF_DG2_TAG: return new DG2File(bufferedIn);
+		case LDSFile.EF_DG3_TAG: return new DG3File(bufferedIn);
+		case LDSFile.EF_DG4_TAG: return new DG4File(bufferedIn);
+		case LDSFile.EF_DG5_TAG: return new DG5File(bufferedIn);
+		case LDSFile.EF_DG6_TAG: return new DG6File(bufferedIn);
+		case LDSFile.EF_DG7_TAG: return new DG7File(bufferedIn);
 		case LDSFile.EF_DG8_TAG: throw new IllegalArgumentException("DG8 files are not yet supported");
 		case LDSFile.EF_DG9_TAG: throw new IllegalArgumentException("DG9 files are not yet supported");
 		case LDSFile.EF_DG10_TAG: throw new IllegalArgumentException("DG10 files are not yet supported");
-		case LDSFile.EF_DG11_TAG: return new DG11File(tlvIn);
-		case LDSFile.EF_DG12_TAG: return new DG12File(tlvIn);
+		case LDSFile.EF_DG11_TAG: return new DG11File(bufferedIn);
+		case LDSFile.EF_DG12_TAG: return new DG12File(bufferedIn);
 		case LDSFile.EF_DG13_TAG: throw new IllegalArgumentException("DG13 files are not yet supported");
-		case LDSFile.EF_DG14_TAG: return new DG14File(tlvIn);
-		case LDSFile.EF_DG15_TAG: return new DG15File(tlvIn);
+		case LDSFile.EF_DG14_TAG: return new DG14File(bufferedIn);
+		case LDSFile.EF_DG15_TAG: return new DG15File(bufferedIn);
 		case LDSFile.EF_DG16_TAG: throw new IllegalArgumentException("DG16 files are not yet supported");
-		case LDSFile.EF_SOD_TAG: return new SODFile(tlvIn);
+		case LDSFile.EF_SOD_TAG: return new SODFile(bufferedIn);
 		default:
 			throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
 		}

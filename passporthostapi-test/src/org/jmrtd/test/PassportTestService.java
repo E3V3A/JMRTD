@@ -16,13 +16,14 @@ import javax.crypto.SecretKey;
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CardTerminals;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
@@ -87,7 +88,7 @@ import org.jmrtd.lds.DG15File;
  * 
  * @author erikpoll
  */
-public class PassportTestService extends PassportService<CommandAPDU, ResponseAPDU> {
+public class PassportTestService extends PassportService {
 
 	private static final long serialVersionUID = -8688610916582311419L;
 
@@ -149,7 +150,7 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 		return service;
 	}
 
-	protected PassportTestService(CardService<CommandAPDU, ResponseAPDU> service)
+	protected PassportTestService(CardService service)
 	throws CardServiceException {
 		super(service);
 	}
@@ -502,11 +503,11 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 	 *             if useSM is true but there is no SM session active
 	 */
 	public int sendGetChallengeAndStore(boolean useSM) throws CardServiceException {
-		CommandAPDU capdu = createGetChallengeAPDU();
+		ICommandAPDU capdu = createGetChallengeAPDU();
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
 		}
-		ResponseAPDU rapdu = transmit(capdu);
+		IResponseAPDU rapdu = transmit(capdu);
 		if (useSM) {
 			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
 		}
@@ -550,12 +551,11 @@ public class PassportTestService extends PassportService<CommandAPDU, ResponseAP
 	 *             if useSM is true but there is no SM session active
 	 */
 	public int sendAnyInstruction(byte ins, boolean useSM) throws CardServiceException {
-		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins,
-				(byte) 0x00, (byte) 0x00);
+		ICommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins, (byte) 0x00, (byte) 0x00);
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
 		}
-		ResponseAPDU rapdu = transmit(capdu);
+		IResponseAPDU rapdu = transmit(capdu);
 		if (useSM) {
 			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
 		}

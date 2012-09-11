@@ -49,8 +49,6 @@ import java.util.prefs.Preferences;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -149,9 +147,9 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 	private VerificationIndicator verificationIndicator;
 	
-	private APDUListener<CommandAPDU, ResponseAPDU> apduListener;
+	private APDUListener apduListener;
 
-	public DocumentViewFrame(Passport passport, ReadingMode readingMode, APDUListener<CommandAPDU, ResponseAPDU> apduListener) {
+	public DocumentViewFrame(Passport passport, ReadingMode readingMode, APDUListener apduListener) {
 		super(PASSPORT_FRAME_TITLE);
 		actionMap = new ActionMap();
 		this.passport = passport;

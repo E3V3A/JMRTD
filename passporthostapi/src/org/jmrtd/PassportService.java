@@ -93,7 +93,7 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision:352 $
  */
-public class PassportService<C, R> extends PassportApduService<C, R> implements Serializable {
+public class PassportService extends PassportApduService implements Serializable {
 
 	private static final long serialVersionUID = 1751933705552226972L;
 
@@ -217,7 +217,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	/**
 	 * @deprecated visibility will be set to private
 	 */
-	protected SecureMessagingWrapper<C, R> wrapper;
+	protected SecureMessagingWrapper wrapper;
 
 	private transient Signature aaSignature;
 	private transient MessageDigest aaDigest;
@@ -236,7 +236,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 *             when the available JCE providers cannot provide the necessary
 	 *             cryptographic primitives.
 	 */
-	public PassportService(CardService<C,R> service) throws CardServiceException {
+	public PassportService(CardService service) throws CardServiceException {
 		super(service);
 		try {
 			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", JMRTDSecurityProvider.getBouncyCastleProvider());
@@ -311,7 +311,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 			long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-			wrapper = new SecureMessagingWrapper<C, R>(ksEnc, ksMac, ssc);
+			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
 			notifyBACPerformed(event);
 			state = BAC_AUTHENTICATED_STATE;
@@ -390,7 +390,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
 			long ssc = 0;
-			wrapper = new SecureMessagingWrapper<C, R>(ksEnc, ksMac, ssc);
+			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
 			return keyPair;
 		} catch (GeneralSecurityException e) {
@@ -665,7 +665,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 * 
 	 * @return the wrapper
 	 */
-	public SecureMessagingWrapper<C, R> getWrapper() {
+	public SecureMessagingWrapper getWrapper() {
 		return wrapper;
 	}
 
@@ -674,7 +674,7 @@ public class PassportService<C, R> extends PassportApduService<C, R> implements 
 	 * 
 	 * @param wrapper wrapper
 	 */
-	public void setWrapper(SecureMessagingWrapper<C, R> wrapper) {
+	public void setWrapper(SecureMessagingWrapper wrapper) {
 		this.wrapper = wrapper;
 		BACEvent event = new BACEvent(this, null, null, null, null, true);
 		notifyBACPerformed(event);

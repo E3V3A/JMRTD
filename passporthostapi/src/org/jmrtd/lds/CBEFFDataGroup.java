@@ -67,12 +67,12 @@ abstract class CBEFFDataGroup<R extends BiometricDataBlock> extends DataGroup {
 	/**
 	 * Constructs an instance.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 * @param dataGroupTag the datagroup tag to use
 	 * @param biometricDataGroupTag the biometric data block tag to use (either <code>5F2E</code> or <code>7F2E</code>).
 	 */
-	CBEFFDataGroup(int dataGroupTag, InputStream in) {
-		super(dataGroupTag, in);
+	CBEFFDataGroup(int dataGroupTag, InputStream inputStream) {
+		super(dataGroupTag, inputStream);
 		this.random = new Random();
 	}
 

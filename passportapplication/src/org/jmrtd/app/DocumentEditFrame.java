@@ -66,8 +66,6 @@ import java.util.zip.ZipOutputStream;
 
 import javax.imageio.ImageIO;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -188,9 +186,9 @@ public class DocumentEditFrame extends JMRTDFrame {
 
 	private ActionMap actionMap;
 
-	private APDUListener<CommandAPDU, ResponseAPDU> apduListener;
+	private APDUListener apduListener;
 
-	public DocumentEditFrame(Passport passport, ReadingMode readingMode, APDUListener<CommandAPDU, ResponseAPDU> apduListener) {
+	public DocumentEditFrame(Passport passport, ReadingMode readingMode, APDUListener apduListener) {
 		super(PASSPORT_FRAME_TITLE);
 		this.apduListener = apduListener;
 		LOGGER.setLevel(Level.ALL);
@@ -1316,7 +1314,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 					try {
 						cm.stopPolling(terminal);
 						// FIXME: have to wait for the poller to actually stop?
-						PassportPersoService<CommandAPDU, ResponseAPDU> persoService = new PassportPersoService<CommandAPDU, ResponseAPDU>(new TerminalCardService(terminal));
+						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
 						if (apduListener != null) { persoService.addAPDUListener(apduListener); }
 						persoService.open();
 						if (chooser.isBACSelected()) {

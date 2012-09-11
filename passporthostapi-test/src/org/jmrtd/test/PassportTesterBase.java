@@ -16,14 +16,14 @@ import java.util.Date;
 
 import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CardTerminals;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
@@ -31,7 +31,7 @@ import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 public abstract class PassportTesterBase extends TestCase implements
-		APDUListener<CommandAPDU, ResponseAPDU> {
+		APDUListener {
 
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
@@ -43,7 +43,7 @@ public abstract class PassportTesterBase extends TestCase implements
 	protected PassportTestService service = null;
 
 	/** The last response APDU received (SM wrapped when SM is active?) */
-	protected ResponseAPDU last_rapdu = null;
+	protected IResponseAPDU last_rapdu = null;
 
 	public PassportTesterBase(String name) {
 		super(name);
@@ -101,9 +101,9 @@ public abstract class PassportTesterBase extends TestCase implements
 
 	protected boolean traceApdu = false;
 
-	public void exchangedAPDU(APDUEvent<CommandAPDU, ResponseAPDU> e) {
-		CommandAPDU capdu = e.getCommandAPDU();
-		ResponseAPDU rapdu = e.getResponseAPDU();
+	public void exchangedAPDU(APDUEvent e) {
+		ICommandAPDU capdu = e.getCommandAPDU();
+		IResponseAPDU rapdu = e.getResponseAPDU();
 		last_rapdu = rapdu;
 		if (traceApdu) {
 			System.out.println("C: " + Hex.bytesToHexString(capdu.getBytes()));

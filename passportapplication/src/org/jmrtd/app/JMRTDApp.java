@@ -41,8 +41,6 @@ import java.util.prefs.Preferences;
 
 import javax.smartcardio.CardException;
 import javax.smartcardio.CardTerminal;
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
 import javax.smartcardio.TerminalFactory;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -69,8 +67,6 @@ import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
-import net.sourceforge.scuba.smartcards.SCFactory;
-import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
@@ -155,9 +151,6 @@ public class JMRTDApp {
 	 */
 	public JMRTDApp(boolean isOSX) {
 		try {	
-			ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
-			SCFactory apduFactory = new SCFactory();
-			sc.init(apduFactory);
 			actionMap = new ActionMap();
 			cardManager = CardManager.getInstance();
 
@@ -230,11 +223,11 @@ public class JMRTDApp {
 			} catch (Exception e) {
 				LOGGER.warning("Not adding ACR terminal provider: " + e.getMessage());
 			}
-			cardManager.addCardTerminalListener(new CardTerminalListener<CommandAPDU, ResponseAPDU>() {
+			cardManager.addCardTerminalListener(new CardTerminalListener() {
 				@Override
-				public void cardInserted(CardEvent<CommandAPDU, ResponseAPDU> ce) {
+				public void cardInserted(CardEvent ce) {
 					try {
-						PassportService<CommandAPDU, ResponseAPDU> service = new PassportService<CommandAPDU, ResponseAPDU>(ce.getService());
+						PassportService service = new PassportService(ce.getService());
 						if (apduTraceFrame != null) {
 							service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
 						}
@@ -246,8 +239,8 @@ public class JMRTDApp {
 				}
 
 				@Override
-				public void cardRemoved(CardEvent<CommandAPDU, ResponseAPDU> ce) {
-					CardService<CommandAPDU, ResponseAPDU> service = ce.getService();
+				public void cardRemoved(CardEvent ce) {
+					CardService service = ce.getService();
 					if (service != null) {
 						service.close();
 					}
@@ -334,7 +327,7 @@ public class JMRTDApp {
 	 * @param service
 	 * @throws CardServiceException
 	 */
-	private void readPassport(PassportService<CommandAPDU, ResponseAPDU> service) throws CardServiceException {
+	private void readPassport(PassportService service) throws CardServiceException {
 		try {
 			Passport passport = new Passport(service, trustManager, bacStore);
 			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame.getRawAPDUListener());
@@ -533,11 +526,11 @@ public class JMRTDApp {
 								if (/* cardManager.isPolling(terminal) && */ terminal.isCardPresent()) {
 									boolean isPolling = cardManager.isPolling(terminal);
 									if (isPolling) { cardManager.stopPolling(terminal); }
-									CardService<CommandAPDU, ResponseAPDU> service = cardManager.getService(terminal);
+									CardService service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
 									service = new TerminalCardService(terminal);
 									if (apduTraceFrame != null) { service.addAPDUListener(apduTraceFrame.getRawAPDUListener()); }
-									PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(service);
+									PassportService passportService = new PassportService(service);
 									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener()); }
 									readPassport(passportService);
 

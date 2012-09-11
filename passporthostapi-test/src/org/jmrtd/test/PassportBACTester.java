@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import javax.smartcardio.CommandAPDU;
-import javax.smartcardio.ResponseAPDU;
-
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;
@@ -200,9 +201,9 @@ public class PassportBACTester extends PassportTesterBase {
 				continue; // results in strange error
 			}
 			;
-			CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+			ICommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
 					(byte) ins, (byte) 0x00, (byte) 0x00);
-			ResponseAPDU rapdu = service.transmit(capdu);
+			IResponseAPDU rapdu = service.transmit(capdu);
 			if (rapdu.getSW() != 0x6D00) // " instruction not supported"
 			{
 				System.out.printf(" %X ", ins);
@@ -235,10 +236,10 @@ public class PassportBACTester extends PassportTesterBase {
 				continue; // results in strange error
 			}
 			;
-			CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+			ICommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
 					(byte) ins, (byte) 0x00, (byte) 0x00);
 			capdu = service.getWrapper().wrap(capdu);
-			ResponseAPDU rapdu = service.transmit(capdu);
+			IResponseAPDU rapdu = service.transmit(capdu);
 			rapdu = service.getWrapper().unwrap(rapdu, rapdu.getBytes().length);
 			if (rapdu.getSW() != 0x6D00) // " instruction not supported"
 			{
@@ -274,16 +275,16 @@ public class PassportBACTester extends PassportTesterBase {
 		traceApdu = true;
 		System.out.println("** Checking known instructions before BAC **");
 		for (int i = 0; i < instructions.length; i++) {
-			CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
+			ICommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,
 					instructions[i], (byte) 0x00, (byte) 0x00);
-			ResponseAPDU rapdu = service.transmit(capdu);
+			IResponseAPDU rapdu = service.transmit(capdu);
 			assertFalse(rapdu.getSW() == 0x6D00);
 		}
 
 		// 0x22
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, (byte) 0x22,
 				(byte) 0x81, (byte) 0xA4);
-		ResponseAPDU rapdu = service.transmit(capdu);
+		IResponseAPDU rapdu = service.transmit(capdu);
 	}
 
 	/**

@@ -73,14 +73,14 @@ public class ISO781611Decoder implements ISO781611 {
 	/**
 	 * Reads a BIT group from an input stream.
 	 * 
-	 * @param in the input stream to read from
+	 * @param inputStream the input stream to read from
 	 * 
 	 * @return a complex CBEFF info representing the BIT group
 	 * 
 	 * @throws IOException if reading fails
 	 */
-	private ComplexCBEFFInfo readBITGroup(InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private ComplexCBEFFInfo readBITGroup(InputStream inputStream) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tag = tlvIn.readTag();
 		switch (tag) {
 		case BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG: return readBITGroup(tag, tlvIn);
@@ -90,8 +90,8 @@ public class ISO781611Decoder implements ISO781611 {
 		}
 	}
 	
-	private ComplexCBEFFInfo readBITGroup(int tag, InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private ComplexCBEFFInfo readBITGroup(int tag, InputStream inputStream) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		ComplexCBEFFInfo result = new ComplexCBEFFInfo();
 		if (tag != BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) { /* 7F61 */
 			throw new IllegalArgumentException("Expected tag " + Integer.toHexString(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG) + ", found " + Integer.toHexString(tag));
@@ -118,21 +118,21 @@ public class ISO781611Decoder implements ISO781611 {
 	/**
 	 * Reads a BIT from the input stream.
 	 * 
-	 * @param in the input stream to read from
+	 * @param inputStream the input stream to read from
 	 * @param index index of this BIT within the BIT group
 	 * 
 	 * @return a CBEFF info representing the BIT
 	 * 
 	 * @throws IOException if reading fails
 	 */
-	private CBEFFInfo readBIT(InputStream in, int index) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private CBEFFInfo readBIT(InputStream inputStream, int index) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tag = tlvIn.readTag();
 		return readBIT(tag, tlvIn, index);	
 	}
 	
-	private CBEFFInfo readBIT(int tag, InputStream in, int index) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private CBEFFInfo readBIT(int tag, InputStream inputStream, int index) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		if (tag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
 			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(tag));
 		}
@@ -159,8 +159,8 @@ public class ISO781611Decoder implements ISO781611 {
 	 *  A1, A2, ...
 	 *  Will contain DOs as described in ISO 7816-11 Annex C.
 	 */
-	private StandardBiometricHeader readBHT(InputStream in, int bhtTag, int bhtLength, int index) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private StandardBiometricHeader readBHT(InputStream inputStream, int bhtTag, int bhtLength, int index) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int expectedBHTTag = (BIOMETRIC_HEADER_TEMPLATE_BASE_TAG /* + index */) & 0xFF;
 		if (bhtTag != expectedBHTTag) {
 			String warning = "Expected tag " + Integer.toHexString(expectedBHTTag)
@@ -222,8 +222,8 @@ public class ISO781611Decoder implements ISO781611 {
 		return null;
 	}
 
-	private BiometricDataBlock readBiometricDataBlock(InputStream in, StandardBiometricHeader sbh, int index) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	private BiometricDataBlock readBiometricDataBlock(InputStream inputStream, StandardBiometricHeader sbh, int index) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int bioDataBlockTag = tlvIn.readTag();
 		if (bioDataBlockTag != BIOMETRIC_DATA_BLOCK_TAG /* 5F2E */ &&
 				bioDataBlockTag != BIOMETRIC_DATA_BLOCK_CONSTRUCTED_TAG /* 7F2E */) {

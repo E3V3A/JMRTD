@@ -39,10 +39,10 @@ import java.util.zip.ZipOutputStream;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ICommandAPDU;
 import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ScubaSmartcards;
 import net.sourceforge.scuba.tlv.ASN1Constants;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
@@ -61,7 +61,7 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * @version $Revision$
  */
-public class PassportPersoService<C, R> extends CardService<C, R> {
+public class PassportPersoService extends CardService {
 
 	private static final long serialVersionUID = 4975606132249105202L;
 
@@ -77,39 +77,33 @@ public class PassportPersoService<C, R> extends CardService<C, R> {
 	private static final byte ECPRIVATE_TAG = 0x63;
 	private static final byte CVCERTIFICATE_TAG = 0x64;
 
-	private PassportService<C, R> service;
-	
-	/** Usage of the ScubaSmartcard Abstractions  */
-	private transient ScubaSmartcards<C, R> sc;
+	private PassportService service;
 
-	public PassportPersoService(CardService<C, R> service)
+	public PassportPersoService(CardService service)
 	throws CardServiceException {
-		this.sc = ScubaSmartcards.getInstance();
-		this.service = (service instanceof PassportService) ? (PassportService<C, R>)service : new PassportService<C, R>(service);
+		this.service = (service instanceof PassportService) ? (PassportService)service : new PassportService(service);
 	}
 
-	private C createPutDataApdu(byte p1, byte p2, byte[] data) {
+	private ICommandAPDU createPutDataApdu(byte p1, byte p2, byte[] data) {
 		byte cla = 0;
 		byte ins = INS_PUT_DATA;
-		return sc.createCommandAPDU(cla, ins, p1, p2, data);
+		return new CommandAPDU(cla, ins, p1, p2, data);
 	}
 
 	private byte[] putData(byte p1, byte p2,
 			byte[] data) throws CardServiceException {
-		C capdu = createPutDataApdu(p1, p2, data);
-		SecureMessagingWrapper<C, R> wrapper = service.getWrapper();
+		ICommandAPDU capdu = createPutDataApdu(p1, p2, data);
+		SecureMessagingWrapper wrapper = service.getWrapper();
 
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
 
-		R rapdu = transmit(capdu);
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		IResponseAPDU rAcc = sc.accessR(rapdu);
+		IResponseAPDU rapdu = transmit(capdu);
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
 		}
-		return rAcc.getData();
+		return rapdu.getData();
 	}
 
 	/**
@@ -273,69 +267,63 @@ public class PassportPersoService<C, R> extends CardService<C, R> {
 		sendCreateFile(service.getWrapper(), fid, length);
 	}
 
-	private C createCreateFileAPDU(short fid, short length) {
+	private ICommandAPDU createCreateFileAPDU(short fid, short length) {
 		byte p1 = (byte) 0x00;
 		byte p2 = (byte) 0x00;
 		int le = 0;
 		byte[] data = { 0x63, 4, (byte) ((length >>> 8) & 0xff),
 				(byte) (length & 0xff), (byte) ((fid >>> 8) & 0xff),
 				(byte) (fid & 0xff) };
-		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_CREATE_FILE, p1, p2, data, le);
+		ICommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_CREATE_FILE, p1, p2, data, le);
 		return apdu;
 	}
 
-	private byte[] sendCreateFile(SecureMessagingWrapper<C, R> wrapper, short fid,
-			short length) throws CardServiceException {
-		C capdu = createCreateFileAPDU(fid, length);
+	private byte[] sendCreateFile(SecureMessagingWrapper wrapper, short fid, short length) throws CardServiceException {
+		ICommandAPDU capdu = createCreateFileAPDU(fid, length);
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		R rapdu = transmit(capdu);
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		IResponseAPDU rAcc = sc.accessR(rapdu);
+		IResponseAPDU rapdu = transmit(capdu);
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
 		}
-		return rAcc.getData();
+		return rapdu.getData();
 	}
 
-	private C createUpdateBinaryAPDU(short offset, int data_len,
-			byte[] data) {
+	private ICommandAPDU createUpdateBinaryAPDU(short offset, int data_len, byte[] data) {
 		byte p1 = (byte) ((offset >>> 8) & 0xff);
 		byte p2 = (byte) (offset & 0xff);
 		byte[] chunk = new byte[data_len];
 		System.arraycopy(data, 0, chunk, 0, data_len);
-		C apdu = sc.createCommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
+		ICommandAPDU apdu = new CommandAPDU(ISO7816.CLA_ISO7816,	ISO7816.INS_UPDATE_BINARY, p1, p2, chunk);
 		return apdu;
 	}
 
-	private byte[] sendUpdateBinary(SecureMessagingWrapper<C, R> wrapper,
+	private byte[] sendUpdateBinary(SecureMessagingWrapper wrapper,
 			short offset, int data_len, byte[] data)
 	throws CardServiceException {
-		C capdu = createUpdateBinaryAPDU(offset, data_len, data);
+		ICommandAPDU capdu = createUpdateBinaryAPDU(offset, data_len, data);
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
 		}
-		R rapdu = transmit(capdu);
-		IResponseAPDU rAcc = sc.accessR(rapdu);
+		IResponseAPDU rapdu = transmit(capdu);
 
 		if (wrapper != null) {
-			rapdu = wrapper.unwrap(rapdu, rAcc.getBytes().length);
+			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
 		}
-		return rAcc.getData();
+		return rapdu.getData();
 
 	}
 
-	private int getPlainDataMaxLength(SecureMessagingWrapper<C, R> wrapper) {
+	private int getPlainDataMaxLength(SecureMessagingWrapper wrapper) {
 		int maxWithoutSM = 0xff;
 		byte[] dummyData = new byte[maxWithoutSM];
 		
-		C dummy = sc.createCommandAPDU((byte) 0, (byte) 0, (byte) 0, (byte) 0, dummyData);
-		ICommandAPDU dummyAcc = sc.accessC(dummy);
-		ICommandAPDU cWrappedAcc = sc.accessC(wrapper.wrap(dummy));
+		ICommandAPDU dummy = new CommandAPDU((byte) 0, (byte) 0, (byte) 0, (byte) 0, dummyData);
+		ICommandAPDU cWrapped = wrapper.wrap(dummy);
 
-		byte[] wrappedApdu = cWrappedAcc.getBytes();
-		int x = wrappedApdu.length - dummyAcc.getBytes().length;
+		byte[] wrappedApdu = cWrapped.getBytes();
+		int x = wrappedApdu.length - dummy.getBytes().length;
 		int lowestMod8 = ((maxWithoutSM - x) / 8) * 8;
 		return lowestMod8;
 	}
@@ -350,7 +338,7 @@ public class PassportPersoService<C, R> extends CardService<C, R> {
 	 * @throws CardServiceException
 	 */
 	public void writeFile(short fid, InputStream i) throws CardServiceException {
-		SecureMessagingWrapper<C, R> wrapper = service.getWrapper();
+		SecureMessagingWrapper wrapper = service.getWrapper();
 		try {
 			int length = 0xff;
 			if (wrapper != null) {
@@ -509,8 +497,8 @@ public class PassportPersoService<C, R> extends CardService<C, R> {
 		service.open();
 	}
 
-	public R transmit(C capdu) throws CardServiceException {
-		R rapdu =  service.transmit(capdu);
+	public IResponseAPDU transmit(ICommandAPDU capdu) throws CardServiceException {
+		IResponseAPDU rapdu =  service.transmit(capdu);
 		notifyExchangedAPDU(0, capdu, rapdu);
 		return rapdu;
 	}

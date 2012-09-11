@@ -37,9 +37,11 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
 import net.sourceforge.scuba.smartcards.APDUWrapper;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ScubaSmartcards;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
 
@@ -58,7 +60,7 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @version $Revision$
  */
-public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializable {
+public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 	private static final long serialVersionUID = -2859033943345961793L;
 
@@ -133,7 +135,7 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 	 *
 	 * @return length of the command apdu after wrapping.
 	 */
-	public C wrap(C commandAPDU) {
+	public ICommandAPDU wrap(ICommandAPDU commandAPDU) {
 		try {
 			return wrapCommandAPDU(commandAPDU);
 		} catch (GeneralSecurityException gse) {
@@ -155,16 +157,15 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 	 * 
 	 * @return a new byte array containing the unwrapped buffer.
 	 */
-	public R unwrap(R responseAPDU, int len) {
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
+	public IResponseAPDU unwrap(IResponseAPDU responseAPDU, int len) {
 		try {
-			byte[] rapdu =  sc.accessR(responseAPDU).getBytes();
+			byte[] rapdu = responseAPDU.getBytes();
 			if (rapdu.length == 2) {
 				// no sense in unwrapping - card indicates SM error
 				throw new IllegalStateException("Card indicates SM error, SW = " + Hex.bytesToHexString(rapdu));
 				/* FIXME: wouldn't it be cleaner to throw a CardServiceException? */
 			}
-			return sc.createResponseAPDU(unwrapResponseAPDU(rapdu, len));
+			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
 			throw new IllegalStateException(gse.toString());
@@ -186,21 +187,19 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 	 */
 	/*@ requires apdu != null && 4 <= len && len <= apdu.length;
 	 */
-	private C wrapCommandAPDU(C c)
+	private ICommandAPDU wrapCommandAPDU(ICommandAPDU commandAPDU)
 	throws GeneralSecurityException, IOException {
-		ScubaSmartcards<C, R> sc = ScubaSmartcards.getInstance();
-		ICommandAPDU cAcc = sc.accessC(c);
 
-		int lc = cAcc.getNc();
-		int le = cAcc.getNe();
+		int lc = commandAPDU.getNc();
+		int le = commandAPDU.getNe();
 
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-		byte[] maskedHeader = new byte[] {(byte)(cAcc.getCLA() | (byte)0x0C), (byte)cAcc.getINS(), (byte)cAcc.getP1(), (byte)cAcc.getP2()};
+		byte[] maskedHeader = new byte[] {(byte)(commandAPDU.getCLA() | (byte)0x0C), (byte)commandAPDU.getINS(), (byte)commandAPDU.getP1(), (byte)commandAPDU.getP2()};
 
 		byte[] paddedHeader = Util.pad(maskedHeader);
 
-		boolean hasDO85 = ((byte)cAcc.getINS() == ISO7816.INS_READ_BINARY2);
+		boolean hasDO85 = ((byte)commandAPDU.getINS() == ISO7816.INS_READ_BINARY2);
 
 		byte[] do8587 = new byte[0];
 		/* byte[] do8E = new byte[0]; */ /* FIXME: FindBugs told me this is a dead store -- MO */
@@ -215,7 +214,7 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 		}
 
 		if (lc > 0) {
-			byte[] data = Util.pad(cAcc.getData());
+			byte[] data = Util.pad(commandAPDU.getData());
 			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
 			byte[] ciphertext = cipher.doFinal(data);
 
@@ -258,7 +257,7 @@ public class SecureMessagingWrapper<C,R> implements APDUWrapper<C,R>, Serializab
 		bOut.write(do8E);
 		byte[] data = bOut.toByteArray();
 
-		C wc = sc.createCommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3], data, 256);
+		ICommandAPDU wc = new CommandAPDU(maskedHeader[0], maskedHeader[1], maskedHeader[2], maskedHeader[3], data, 256);
 		return wc;
 	}
 
