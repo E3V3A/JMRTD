@@ -204,7 +204,7 @@ public class PPDisplayAct extends Activity {
 				ISCFactory<CommandAPDU, ResponseAPDU> factory = new SCFactory();
 				ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
 				sc.init(factory);
-				PassportService<CommandAPDU, ResponseAPDU> passportService = new PassportService<CommandAPDU, ResponseAPDU>(service);
+				PassportService passportService = new PassportService(service);
 
 				/* Try all BACs */
 //				BACStore abacStore = new MemoryBACStore();

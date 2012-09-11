@@ -155,7 +155,7 @@ public class JMRTDApp {
 			cardManager = CardManager.getInstance();
 
 			this.isOSX = isOSX;
-			
+
 			mainFrame = new JMRTDFrame(MAIN_FRAME_TITLE);
 
 			aboutDialog = new AboutDialog(mainFrame);
@@ -231,8 +231,12 @@ public class JMRTDApp {
 						if (apduTraceFrame != null) {
 							service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
 						}
-						service.open();
-						readPassport(service);
+						try {
+							service.open();
+							readPassport(service);
+						} catch (CardServiceException cse) {
+							LOGGER.info("Could not open passport: " + cse.getMessage());
+						}
 					} catch (Exception e) {
 						e.printStackTrace();
 					}
@@ -330,7 +334,7 @@ public class JMRTDApp {
 	private void readPassport(PassportService service) throws CardServiceException {
 		try {
 			Passport passport = new Passport(service, trustManager, bacStore);
-			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame.getRawAPDUListener());
+			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
 		} catch (CardServiceException cse) {

@@ -210,13 +210,16 @@ Android
 ImageIO
 + Problem with JJ2000 decoding (artifacts).
 + Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
-+ Patch by Paulo Costa implements metadata in standardized way.
++ Patch by Paulo Costa for wsq_imageio, implements metadata in standardized way.
 - Update to latest NBIS C code and base wsq_imageio on that.
 - Also have an image writer based on JJ2000?
-- Also have an image writer for JNBIS?
++ Also have an image writer for JNBIS?
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
+
+SCUBA
++ Check abstraction of smartcardio. Remove generic params. (Patch by Pim Vullers).
 
 Code quality
 - Check unit tests
@@ -280,7 +283,6 @@ SCUBA
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (see also http://alud.sourceforge.net/, can we JNI wrap this?).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
-- Check abstraction of smartcardio.
 
 Website and documentation
 - A FAQ would be nice

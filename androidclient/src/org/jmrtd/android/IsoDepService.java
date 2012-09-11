@@ -29,11 +29,12 @@ import java.io.IOException;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.indep.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ICommandAPDU;
+import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.indep.ResponseAPDU;
 import android.nfc.tech.IsoDep;
 
-public class IsoDepService extends CardService<CommandAPDU, ResponseAPDU> {
+public class IsoDepService extends CardService {
 
 	private static final long serialVersionUID = -3632172111055888506L;
 
@@ -63,7 +64,7 @@ public class IsoDepService extends CardService<CommandAPDU, ResponseAPDU> {
 	}
 
 	@Override
-	public ResponseAPDU transmit(CommandAPDU apdu) throws CardServiceException {
+	public IResponseAPDU transmit(ICommandAPDU apdu) throws CardServiceException {
 		try {
 			return new ResponseAPDU(picc.transceive(apdu.getBytes()));
 		} catch (IOException e) {
