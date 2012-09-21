@@ -7,11 +7,10 @@
 	<classpathentry kind="var" path="BC_PROV"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_j2se"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_indep"/>
-	<classpathentry kind="lib" path="/wsq_imageio/wsq_imageio.jar"/>
-	<classpathentry kind="lib" path="/jj2000_imageio/jj2000_imageio.jar"/>
-	<classpathentry kind="var" path="JJ2000_LIB" sourcepath="/JJ2000_LIB"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util_j2se"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_j2se"/>
+	<classpathentry kind="var" path="BC_PKIX"/>
+	<classpathentry kind="var" path="JJ2000_IMAGEIO_LIB"/>
+	<classpathentry kind="var" path="WSQ_IMAGEIO_LIB"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

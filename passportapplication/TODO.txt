@@ -213,7 +213,7 @@ ImageIO
 + Patch by Paulo Costa for wsq_imageio, implements metadata in standardized way.
 - Update to latest NBIS C code and base wsq_imageio on that.
 - Also have an image writer based on JJ2000?
-+ Also have an image writer for JNBIS?
++ Also have an image writer based on JNBIS?
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
