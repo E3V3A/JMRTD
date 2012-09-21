@@ -12,5 +12,6 @@
 	<classpathentry kind="var" path="BC_PKIX"/>
 	<classpathentry kind="var" path="JJ2000_IMAGEIO_LIB"/>
 	<classpathentry kind="var" path="WSQ_IMAGEIO_LIB"/>
+	<classpathentry kind="var" path="JJ2000_LIB"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
