@@ -14,6 +14,7 @@
 	<property name="jj2000_jar" value="jj2000-5.2-SNAPSHOT.jar" />
 
 	<target name="compile" depends="" description="Compiles the source ">
+		<mkdir dir="${build}"  />
 		<!-- Compile the java code from ${src} into ${build} -->
 		<javac srcdir="${src}" classpath="${jj2000_dir}/${jj2000_jar}" destdir="${build}" />
 	</target>

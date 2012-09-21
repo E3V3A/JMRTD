@@ -4,6 +4,7 @@ package org.jmrtd.imageio;
 
 import java.awt.Point;
 import java.awt.image.BufferedImage;
+import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -46,7 +47,11 @@ public class JJ2000ImageReader extends ImageReader {
 		try {
 			/* We're reading the complete image already, just to get the width and height. */
 			byte[] inputBytes = readBytes(input);
-			this.image = JJ2000Util.read(new ByteArrayInputStream(inputBytes));
+			Bitmap bitmap = JJ2000Util.read(new ByteArrayInputStream(inputBytes));			
+            int[] pixels = bitmap.getPixels();
+            this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            WritableRaster raster = image.getRaster();
+            raster.setDataElements(0, 0, width, height, pixels);			
 			this.width = image.getWidth();
 			this.height = image.getHeight();
 		} catch (IOException ioe) {
