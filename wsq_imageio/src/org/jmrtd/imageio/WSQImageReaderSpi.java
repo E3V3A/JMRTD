@@ -24,6 +24,7 @@ import java.util.Locale;
 import javax.imageio.ImageReader;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 
 public class WSQImageReaderSpi extends ImageReaderSpi {
 
@@ -55,7 +56,7 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 				suffixes, 
 				MIMETypes,
 				readerClassName,
-				STANDARD_INPUT_TYPE, // Accept ImageInputStreams
+				new Class[] { ImageInputStream.class }, // Accept ImageInputStreams
 				writerSpiNames,
 				supportsStandardStreamMetadataFormat,
 				nativeStreamMetadataFormatName,
