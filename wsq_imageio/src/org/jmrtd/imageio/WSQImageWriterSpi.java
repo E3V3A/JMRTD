@@ -51,16 +51,19 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 				extraImageMetadataFormatClassNames);
 	}
 
+	@Override
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
 		//Can encode any image, but it will be converted to grayscale.
 		return true; 
 		//return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
 	}
 
+	@Override
 	public ImageWriter createWriterInstance(Object extension) throws IOException {
 		return new WSQImageWriter(this);
 	}
 
+	@Override
 	public String getDescription(Locale locale) {
 		return "Wavelet Scalar Quantization (WSQ)";
 	}

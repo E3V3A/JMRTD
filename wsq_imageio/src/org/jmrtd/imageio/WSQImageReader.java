@@ -1,8 +1,25 @@
+/*
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ * 
+ * $Id: $
+ */
+
 package org.jmrtd.imageio;
 
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.EOFException;
+import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -15,127 +32,101 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
+import org.jmrtd.jnbis.Bitmap;
+import org.jmrtd.jnbis.WSQDecoder;
+
 public class WSQImageReader extends ImageReader {
+
 	private WSQMetadata metadata;
 	private BufferedImage image;
-	private Throwable parseException = null;
 
 	public WSQImageReader(ImageReaderSpi provider) {
 		super(provider);
 	}
 
+	@Override
+	public void setInput(Object input) {
+		super.setInput(input); // NOTE: should be setInput(input, false, false);
+	}
+
+	@Override
+	public void setInput(Object input, boolean seekForwardOnly) {
+		super.setInput(input, seekForwardOnly);  // NOTE: should be setInput(input, seekForwardOnly, false);
+	}
+
+	@Override
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
 		super.setInput(input, seekForwardOnly, ignoreMetaData);
-		
-		this.parseException = null;
-		this.image = null;
-		this.metadata = null;
 	}
 
-	public void parseInput(int imageIndex) throws IIOException {
-		//Invalid index
-		if (imageIndex != 0)
-			throw new IndexOutOfBoundsException("ImageIndex="+imageIndex);
-
-		//Already parsed!
-		if (image != null)
-			return;
-
-		//Haven't tried yet
-		if (parseException == null) {		
-			try {
-				/* In-progress: Use JNBIS Library
-				Bitmap bitmap = new WsqDecoder().decode(readBytes());
-				image = new BufferedImage(bitmap.getWidth(), bitmap.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-				WritableRaster raster = image.getRaster();
-				raster.setDataElements(0, 0, bitmap.getWidth(), bitmap.getHeight(), bitmap.getPixels());
-				metadata = new WSQMetadata(bitmap.getPpi()); */
-				
-				WSQUtil.loadLibrary();
-				metadata = new WSQMetadata(); 
-				image = decodeWSQ(readBytes(), metadata);
-			} catch (Throwable t) {
-				metadata = null;
-				image=null;
-				parseException = t;
-			}
-		}
-
-		//Failed
-		if (parseException != null)
-			throw new IIOException("Failed to decode WSQ Image", parseException);
-	}
-
-	private byte[] readBytes() throws IIOException {
-		try {
-			ImageInputStream stream = (ImageInputStream)getInput();
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-	
-			int lastB=-1;
-			while (true) {
-				int B = stream.read();
-				if (B < 0)
-					throw new EOFException();
-	
-				out.write(B);
-				if (out.size()==2) {
-					if (lastB!=0xFF || B!=0xA0) {
-						throw new IIOException("Missing WSQ Header 0xFF 0xA0");
-					}						
-				}
-	
-				//Check EOI Mark
-				if (lastB==0xFF && B==0xA1)
-					break;
-	
-				lastB=B;
-			}
-			out.flush();
-			return out.toByteArray();
-		} catch (IIOException e) {
-			throw e;
-		} catch (Throwable t) {
-			throw new IIOException(t.getMessage(), t);
-		}
-	}
-
+	@Override
 	public int getNumImages(boolean allowSearch) throws IIOException {
-		parseInput(0);
+		processInput(0);
 		return 1;
 	}
 
 	@Override
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
-		parseInput(imageIndex);
-		
+		processInput(imageIndex);
+
 		//TODO:Subsampling accordingly to ImageReadParam
-		
+
 		return image;
 	}
 
+	@Override
 	public int getWidth(int imageIndex) throws IOException {
-		parseInput(imageIndex);
+		processInput(imageIndex);
 		return image.getWidth();
 	}
 
+	@Override
 	public int getHeight(int imageIndex) throws IOException {
-		parseInput(imageIndex);
+		processInput(imageIndex);
 		return image.getHeight();
 	}
 
+	@Override
 	public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
-		parseInput(imageIndex);
+		processInput(imageIndex);
 		return metadata;
 	}
 
+	@Override
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
-		parseInput(imageIndex);
-		return Collections.singletonList( ImageTypeSpecifier.createFromRenderedImage(image) ).iterator();
+		processInput(imageIndex);
+		return Collections.singletonList(ImageTypeSpecifier.createFromRenderedImage(image)).iterator();
 	}
 
+	@Override
 	public IIOMetadata getStreamMetadata() throws IOException {
 		return null;
 	}
 
-	private native BufferedImage decodeWSQ(byte[] in, WSQMetadata metadata) throws IOException;
+	private void processInput(int imageIndex) {
+		try {
+			if (imageIndex != 0) { throw new IndexOutOfBoundsException("imageIndex " + imageIndex); }
+
+			/* Alread processed */
+			if (image != null) { return; }
+
+			Object input = getInput();
+			if (input == null) {
+				this.image = null;
+				return;
+			}
+			if (!(input instanceof ImageInputStream)) { throw new IllegalArgumentException("bad input: " + input.getClass().getCanonicalName()); }
+			Bitmap bitmap = WSQDecoder.decode(new ImageInputStreamAdapter((ImageInputStream)input));
+			this.metadata = new WSQMetadata(bitmap.getPpi());
+			int width = bitmap.getWidth();
+			int height = bitmap.getHeight();
+			byte[] pixels = bitmap.getPixels();
+			this.image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
+			WritableRaster raster = image.getRaster();
+			raster.setDataElements(0, 0, width, height, pixels);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			this.image = null;
+		}
+	}
 }

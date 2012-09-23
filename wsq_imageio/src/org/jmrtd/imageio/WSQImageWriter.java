@@ -2,7 +2,7 @@ package org.jmrtd.imageio;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
-import java.io.IOException;
+import java.awt.image.WritableRaster;
 
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
@@ -13,10 +13,15 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 
+import org.jmrtd.jnbis.Bitmap;
+import org.jmrtd.jnbis.WSQEncoder;
+
 public class WSQImageWriter extends ImageWriter {
-	public static final double DEFAULT_PPI=-1; //Unknown PPI
-	public static final double DEFAULT_BITRATE=1.5;
-	
+
+	public static final double DEFAULT_PPI = -1; //Unknown PPI
+
+	public static final double DEFAULT_BITRATE = 1.5; // MO - shouldn't this also be -1 if unknown?
+
 	public WSQImageWriter(ImageWriterSpi provider) {
 		super(provider);
 	}
@@ -26,34 +31,37 @@ public class WSQImageWriter extends ImageWriter {
 	 * 
 	 * @see javax.imageio.ImageWriter#getDefaultWriteParam()
 	 */
+	@Override
 	public ImageWriteParam getDefaultWriteParam() {
 		return new WSQImageWriteParam(getLocale());
 	}
 
+	@Override
 	public IIOMetadata convertImageMetadata(IIOMetadata inData, ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return null;
 	}
 
+	@Override
 	public IIOMetadata convertStreamMetadata(IIOMetadata inData, ImageWriteParam param) {
 		if (inData instanceof WSQMetadata) {
 			return inData;
-		} else {
-			return null;
 		}
+		return null;
 	}
 
+	@Override
 	public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return new WSQMetadata();
 	}
 
+	@Override
 	public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
 		return null;
 	}
 
+	@Override
 	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param) throws IIOException {
 		try {
-			WSQUtil.loadLibrary();
-
 			double bitRate = DEFAULT_BITRATE;
 			double ppi = DEFAULT_PPI;
 
@@ -75,13 +83,19 @@ public class WSQImageWriter extends ImageWriter {
 					bitRate = wsqParam.getBitRate();
 			}
 
-			BufferedImage bufferedImg = convertRenderedImage( image.getRenderedImage() );
+			BufferedImage bufferedImage = convertRenderedImage(image.getRenderedImage());
 
-			//TODO:Subsampling accordingly to ImageWriteParam
+			//TODO: Subsampling accordingly to ImageWriteParam
 
-			byte[] encodedBytes = encodeWSQ(bufferedImg, bitRate, (int)Math.round(ppi), metadata.getNistcom());
-			((ImageOutputStream)getOutput()).write(encodedBytes);
-			((ImageOutputStream)getOutput()).flush();
+			Object output = getOutput();
+			if (output == null || !(output instanceof ImageOutputStream)) { throw new IllegalStateException("bad output"); }
+
+			ImageOutputStream imageOutputStream = (ImageOutputStream)output;
+			WritableRaster raster = bufferedImage.getRaster();
+			byte[] pixels = new byte[raster.getWidth() * raster.getHeight()];
+			raster.getDataElements(0, 0, raster.getWidth(), raster.getHeight(), pixels);
+			Bitmap bitmap = new Bitmap(pixels, bufferedImage.getWidth(), bufferedImage.getHeight(), (int)(Math.round(ppi)), 8, 1);			
+			WSQEncoder.encode(new ImageOutputStreamAdapter(imageOutputStream), bitmap, bitRate, metadata.getNistcom());
 		} catch (Throwable t) {
 			throw new IIOException(t.getMessage(), t);
 		}
@@ -90,16 +104,15 @@ public class WSQImageWriter extends ImageWriter {
 	/**
 	 * Converts the given image into a BufferedImage of type {@link BufferedImage#TYPE_BYTE_GRAY}. 
 	 */
-	private BufferedImage convertRenderedImage(RenderedImage img) {
-		if (img instanceof BufferedImage) {
-			BufferedImage buf = (BufferedImage)img;
-			if (buf.getType()==BufferedImage.TYPE_BYTE_GRAY)
-				return buf;
+	private BufferedImage convertRenderedImage(RenderedImage renderedImage) {
+		if (renderedImage instanceof BufferedImage) {
+			BufferedImage bufferedImage = (BufferedImage)renderedImage;
+			if (bufferedImage.getType() == BufferedImage.TYPE_BYTE_GRAY) {
+				return bufferedImage;
+			}
 		}
-		BufferedImage result = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
-		img.copyData(result.getRaster());
+		BufferedImage result = new BufferedImage(renderedImage.getWidth(), renderedImage.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+		renderedImage.copyData(result.getRaster());
 		return result;
 	}
-
-	private native byte[] encodeWSQ(BufferedImage img, double bitRate, int ppi, String nistcom) throws IOException;
 }
