@@ -3,7 +3,7 @@
 <project name="wsq_imageio" default="dist" basedir=".">
 
 	<description>
-		ImageIO provider for WSQ format
+		ImageIO provider for WSQ format based on fork of JNBIS (http://code.google.com/p/jnbis)
 	</description>
 
 	<!-- Global properties for this build -->
@@ -24,13 +24,13 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="wsq_imageio.jar">
 			<manifest>
-				<!-- attribute name="Main-class" value="org.jmrtd.imageio.test.WSQTest" / -->
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="JMRTD"/>
 				<attribute name="Implementation-Title" value="wsq_imageio"/>
-				<attribute name="Implementation-Version" value="0.0.1"/>
+				<attribute name="Implementation-Version" value="0.0.2"/>
 			</manifest>
+			<fileset dir="${build}" includes="org/jmrtd/jnbis/*.class" />
 			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
 			<fileset dir="" includes="META-INF/**/*" />					
 		</jar>	
