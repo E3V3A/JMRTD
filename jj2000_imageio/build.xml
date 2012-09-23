@@ -23,7 +23,7 @@
 		
 		<mkdir dir="META-INF/services" />
 		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jmrtd.imageio.JJ2000ImageReaderSpi</echo>
-		<!-- echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jmrtd.imageio.JJ2000ImageWriterSpi</echo -->
+		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jmrtd.imageio.JJ2000ImageWriterSpi</echo>
 
 		<!-- Create the distribution jar file -->
 		<jar jarfile="jj2000_imageio.jar">
@@ -33,9 +33,10 @@
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="JMRTD"/>
 				<attribute name="Implementation-Title" value="jj2000_imageio"/>
-				<attribute name="Implementation-Version" value="0.0.1"/>
+				<attribute name="Implementation-Version" value="0.0.2"/>
 			</manifest>
 			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
+			<fileset dir="${build}/" includes="org/jmrtd/jj2000/*.class" />
 			<fileset dir="" includes="META-INF/**/*" />					
 		</jar>	
 	</target>

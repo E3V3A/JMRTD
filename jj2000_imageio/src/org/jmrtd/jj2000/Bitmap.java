@@ -16,7 +16,7 @@
  * $Id: $
  */
 
-package org.jmrtd.imageio;
+package org.jmrtd.jj2000;
 
 import java.io.Serializable;
 

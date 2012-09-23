@@ -20,6 +20,9 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
+import org.jmrtd.jj2000.Bitmap;
+import org.jmrtd.jj2000.JJ2000Decoder;
+
 public class JJ2000ImageReader extends ImageReader {
 
 	ImageInputStream stream;
@@ -47,13 +50,13 @@ public class JJ2000ImageReader extends ImageReader {
 		try {
 			/* We're reading the complete image already, just to get the width and height. */
 			byte[] inputBytes = readBytes(input);
-			Bitmap bitmap = JJ2000Util.read(new ByteArrayInputStream(inputBytes));			
-            int[] pixels = bitmap.getPixels();
+			Bitmap bitmap = JJ2000Decoder.decode(new ByteArrayInputStream(inputBytes));
+			this.width = bitmap.getWidth();
+			this.height = bitmap.getHeight();
+			int[] pixels = bitmap.getPixels();
             this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
             WritableRaster raster = image.getRaster();
-            raster.setDataElements(0, 0, width, height, pixels);			
-			this.width = image.getWidth();
-			this.height = image.getHeight();
+            raster.setDataElements(0, 0, width, height, pixels);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			this.image = null;
