@@ -44,6 +44,7 @@ public class WSQTest {
 	public void testEncode() {
 		try {
 			File file = new File(WSQ_FILE_IN);
+			System.out.println("DEBUG: WSQ_FILE_IN length = " + file.length());
 			Bitmap bitmap = WSQDecoder.decode(new FileInputStream(file));
 			OutputStream outputStream = new FileOutputStream(WSQ_FILE_OUT);
 			float bitrate = 0.75f;
@@ -54,6 +55,7 @@ public class WSQTest {
 			outputStream.close();
 			
 			file = new File(WSQ_FILE_OUT);
+			System.out.println("DEBUG: WSQ_FILE_OUT length = " + file.length());
 			bitmap = WSQDecoder.decode(new FileInputStream(file));
 			System.out.println("bitmap = " + bitmap);
 			BufferedImage image = convert(bitmap);

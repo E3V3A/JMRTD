@@ -24,7 +24,6 @@ import java.util.Locale;
 import javax.imageio.ImageReader;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
-import javax.imageio.stream.ImageOutputStream;
 
 public class WSQImageReaderSpi extends ImageReaderSpi {
 
@@ -56,7 +55,7 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 				suffixes, 
 				MIMETypes,
 				readerClassName,
-				new Class[] { ImageInputStream.class }, // Accept ImageInputStreams
+				STANDARD_INPUT_TYPE, // Accept ImageInputStreams
 				writerSpiNames,
 				supportsStandardStreamMetadataFormat,
 				nativeStreamMetadataFormatName,
@@ -69,12 +68,10 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 				extraImageMetadataFormatClassNames);
 	}
 
-	@Override
 	public String getDescription(Locale locale) {
 		return "Wavelet Scalar Quantization (WSQ)";
 	}
 
-	@Override
 	public boolean canDecodeInput(Object input) throws IOException {
 		if (!(input instanceof ImageInputStream)) {
 			return false;
@@ -86,7 +83,6 @@ public class WSQImageReaderSpi extends ImageReaderSpi {
 		return header == 0xFFA0;
 	}
 
-	@Override
 	public ImageReader createReaderInstance(Object extension) {
 		return new WSQImageReader(this);
 	}

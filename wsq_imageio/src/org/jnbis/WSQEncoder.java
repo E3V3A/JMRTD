@@ -24,11 +24,14 @@
 
 package org.jnbis;
 
+import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -44,11 +47,31 @@ import org.jnbis.WSQHelper.Token;
  */
 public class WSQEncoder implements WSQConstants, NISTConstants {
 
-	public static void encode(OutputStream outputStream, Bitmap bitmap, double bitRate, String comment_text) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
+	public static void encode(OutputStream os, Bitmap bitmap, double bitRate, String ... comments) throws IOException {
+		encode(os, bitmap, bitRate, null, comments);
+	}
 
-		int depth = bitmap.getDepth();
-		int ppi = bitmap.getPpi();
+	public static void encode(DataOutput dataOutput, Bitmap bitmap, double bitRate, String ... comments) throws IOException {
+		encode(dataOutput, bitmap, bitRate, null, comments);
+	}
+	
+	public static void encode(OutputStream os, Bitmap bitmap, double bitRate, Map<String, String> metadata, String ... comments) throws IOException {
+		encode((DataOutput)new DataOutputStream(os), bitmap, bitRate, metadata, comments);
+	}
+	
+	public static void encode(DataOutput dataOutput, Bitmap _bitmap, double bitRate, Map<String, String> metadata, String ... comments) throws IOException {
+		BitmapWithMetadata bitmap;
+		if (_bitmap instanceof BitmapWithMetadata) {
+			bitmap = (BitmapWithMetadata)_bitmap;
+		} else {
+			bitmap = new BitmapWithMetadata(_bitmap.getPixels(), _bitmap.getWidth(), _bitmap.getHeight(), _bitmap.getPpi(), _bitmap.getDepth(), _bitmap.getLossyflag());
+		}
+		if (metadata != null)
+			bitmap.getMetadata().putAll(metadata);
+		if (comments != null)
+			for (String s:comments)
+				if (s != null)
+					bitmap.getComments().add(s);
 		
 		float[] fdata;	/* floating point pixel image  */
 		int[] qdata;	/* quantized image pointer     */
@@ -90,18 +113,18 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 
 		/* Add a Start Of Image (SOI) marker to the WSQ buffer. */
-		dataOutputStream.writeShort(SOI_WSQ);
+		dataOutput.writeShort(SOI_WSQ);
 
-		putc_nistcom_wsq(dataOutputStream, comment_text, bitmap.getWidth(), bitmap.getHeight(), depth, ppi, 1 /* lossy */, (float)bitRate);
+		putc_nistcom_wsq(dataOutput, bitmap, (float)bitRate, metadata, comments);
 
 		/* Store the Wavelet filter taps to the WSQ buffer. */
-		putc_transform_table(dataOutputStream, token.tableDTT.lofilt, MAX_LOFILT, token.tableDTT.hifilt, MAX_HIFILT);
+		putc_transform_table(dataOutput, token.tableDTT.lofilt, MAX_LOFILT, token.tableDTT.hifilt, MAX_HIFILT);
 
 		/* Store the quantization parameters to the WSQ buffer. */
-		putc_quantization_table(dataOutputStream, token);
+		putc_quantization_table(dataOutput, token);
 
 		/* Store a frame header to the WSQ buffer. */
-		putc_frame_header_wsq(dataOutputStream, bitmap.getWidth(), bitmap.getHeight(), m_shift.value, r_scale.value);
+		putc_frame_header_wsq(dataOutput, bitmap.getWidth(), bitmap.getHeight(), m_shift.value, r_scale.value);
 
 		/* ENCODE Block 1 */
 
@@ -109,13 +132,13 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		hufftable = gen_hufftable_wsq(token, huffbits, huffvalues, qdata, 0, new int[] { qsize1.value });
 
 		/* Store Huffman table for Block 1 to WSQ buffer. */
-		putc_huffman_table(dataOutputStream, DHT_WSQ, 0, huffbits.value, huffvalues.value);
+		putc_huffman_table(dataOutput, DHT_WSQ, 0, huffbits.value, huffvalues.value);
 
 		/* Store Block 1's header to WSQ buffer. */
-		putc_block_header(dataOutputStream, 0);
+		putc_block_header(dataOutput, 0);
 
 		/* Compress Block 1 data. */
-		compress_block(dataOutputStream, qdata, 0, qsize1.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
+		compress_block(dataOutput, qdata, 0, qsize1.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
 
 		/* ENCODE Block 2 */
 
@@ -123,26 +146,24 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		hufftable = gen_hufftable_wsq(token, huffbits, huffvalues, qdata, qsize1.value, new int[] { qsize2.value, qsize3.value });
 
 		/* Store Huffman table for Blocks 2 & 3 to WSQ buffer. */
-		putc_huffman_table(dataOutputStream, DHT_WSQ, 1, huffbits.value, huffvalues.value);
+		putc_huffman_table(dataOutput, DHT_WSQ, 1, huffbits.value, huffvalues.value);
 
 		/* Store Block 2's header to WSQ buffer. */
-		putc_block_header(dataOutputStream, 1);
+		putc_block_header(dataOutput, 1);
 
 		/* Compress Block 2 data. */
-		compress_block(dataOutputStream, qdata, qsize1.value, qsize2.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
+		compress_block(dataOutput, qdata, qsize1.value, qsize2.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
 
 		/* ENCODE Block 3 */
 
 		/* Store Block 3's header to WSQ buffer. */
-		putc_block_header(dataOutputStream, 1);
+		putc_block_header(dataOutput, 1);
 
 		/* Compress Block 3 data. */
-		compress_block(dataOutputStream, qdata, qsize1.value + qsize2.value, qsize3.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
+		compress_block(dataOutput, qdata, qsize1.value + qsize2.value, qsize3.value, MAX_HUFFCOEFF, MAX_HUFFZRUN, hufftable);
 
 		/* Add a End Of Image (EOI) marker to the WSQ buffer. */
-		dataOutputStream.writeShort(EOI_WSQ);
-
-		dataOutputStream.flush();
+		dataOutput.writeShort(EOI_WSQ);
 	}
 
 	/**
@@ -192,7 +213,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		r_scale.value /= (float)128.0;
 
 		for(cnt = 0; cnt < data.length; cnt++) {
-			fip[cnt] = ((data[cnt] & 0xFF) - m_shift.value) / r_scale.value;
+			fip[cnt] = ((float)(data[cnt] & 0xFF) - m_shift.value) / r_scale.value;
 		}
 		return fip;
 	}
@@ -443,11 +464,13 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		int lenx = 0, leny = 0; /* dimensions of area to calculate variance */
 		int skipx, skipy;       /* pixels to skip to get to area for variance calculation */
 		int row, col;           /* dimension counters */
-		float ssq;             /* sum of squares */
-		float sum2;            /* variance calculation parameter */
-		float sum_pix;         /* sum of pixels */
+		float ssq;              /* sum of squares */
+		float sum2;             /* variance calculation parameter */
+		float sum_pix;          /* sum of pixels */
+		float vsum;             /* variance sum for subbands 0-3 */
 
-		for(int cvr = 0; cvr < NUM_SUBBANDS; cvr++) {
+		vsum = 0;
+		for(int cvr = 0; cvr < 4; cvr++) {
 			fp = ((token.qtree[cvr].y) * width) + token.qtree[cvr].x;
 			ssq = 0.0f;
 			sum_pix = 0.0f;
@@ -467,8 +490,55 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				}
 			}
 			sum2 = (sum_pix * sum_pix)/(lenx * leny);
-			token.quant_vals.var[cvr] = ((ssq - sum2)/((lenx * leny)-1.0f));
+			token.quant_vals.var[cvr] = (float)((ssq - sum2)/((lenx * leny)-1.0f));
+			vsum += token.quant_vals.var[cvr];
 		}
+		
+		//This part is needed to comply with WSQ 3.1
+		if(vsum < 20000.0) {
+		      for(int cvr = 0; cvr < NUM_SUBBANDS; cvr++) {
+		         fp = (token.qtree[cvr].y * width) + token.qtree[cvr].x;
+		         ssq = 0;
+		         sum_pix = 0;
+
+		         lenx = token.qtree[cvr].lenx;
+		         leny = token.qtree[cvr].leny;
+
+		         for(row = 0; row < leny; row++, fp += (width - lenx)) {
+		            for(col = 0; col < lenx; col++) {
+		               sum_pix += fip[fp];
+		               ssq += fip[fp] * fip[fp];
+		               fp++;
+		            }
+		         }
+		         sum2 = (sum_pix * sum_pix)/(lenx * leny);
+		         token.quant_vals.var[cvr] = (float)((ssq - sum2)/((lenx * leny)-1.0));
+		      }
+		   }
+		   else {
+		      for(int cvr = 4; cvr < NUM_SUBBANDS; cvr++) {
+		         fp = (token.qtree[cvr].y * width) + token.qtree[cvr].x;
+		         ssq = 0;
+		         sum_pix = 0;
+
+		         skipx = token.qtree[cvr].lenx / 8;
+		         skipy = (9 * token.qtree[cvr].leny)/32;
+		   
+		         lenx = (3 * token.qtree[cvr].lenx)/4;
+		         leny = (7 * token.qtree[cvr].leny)/16;
+
+		         fp += (skipy * width) + skipx;
+		         for(row = 0; row < leny; row++, fp += (width - lenx)) {
+		            for(col = 0; col < lenx; col++) {
+		               sum_pix += fip[fp];
+		               ssq += fip[fp] * fip[fp];
+		               fp++;
+		            }
+		         }
+		         sum2 = (sum_pix * sum_pix)/(lenx * leny);
+		         token.quant_vals.var[cvr] = (float)((ssq - sum2)/((lenx * leny)-1.0));
+		      }
+		   }
 	}
 
 	/**
@@ -658,7 +728,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		return sip;
 	}
 
+	/************************************************************************/
 	/* Compute quantized WSQ subband block sizes.                           */
+	/************************************************************************/
 	private static void quant_block_sizes(Token token, Ref<Integer> oqsize1, Ref<Integer> oqsize2, Ref<Integer> oqsize3) {
 		int qsize1, qsize2, qsize3;
 		int node;
@@ -694,11 +766,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		oqsize3.value = qsize3;
 	}
 
-	private static void putc_huffman_table(OutputStream outputStream, int marker, int tableId, int[] huffbits, int[] huffvalues) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-
+	private static void putc_huffman_table(DataOutput dataOutput, int marker, int tableId, int[] huffbits, int[] huffvalues) throws IOException {
 		/* DHT */
-		dataOutputStream.writeShort(marker);
+		dataOutput.writeShort(marker);
 
 		/* "value(2) + table id(1) + bits(16)" */
 		int table_len = 3 + MAX_HUFFBITS;
@@ -708,19 +778,19 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 
 		/* Table Len */
-		dataOutputStream.writeShort(table_len & 0xFFFF);
+		dataOutput.writeShort(table_len & 0xFFFF);
 
 		/* Table ID */
-		dataOutputStream.writeByte(tableId & 0xFF);
+		dataOutput.writeByte(tableId & 0xFF);
 
 		/* Huffbits (MAX_HUFFBITS) */
 		for (int i = 0; i < MAX_HUFFBITS; i++){
-			dataOutputStream.writeByte(huffbits[i] & 0xFF);
+			dataOutput.writeByte(huffbits[i] & 0xFF);
 		}
 
 		/* Huffvalues (MAX_HUFFCOUNTS) */
 		for (int i = 0; i < table_len-values_offset; i++){
-			dataOutputStream.writeByte(huffvalues[i] & 0xFF);
+			dataOutput.writeByte(huffvalues[i] & 0xFF);
 		}
 	}
 
@@ -731,26 +801,24 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	 * @param f m_shift image shifting parameter
 	 * @param g r_scale image scaling parameter
 	 */
-	private static void putc_frame_header_wsq(OutputStream outputStream, int width, int height, float m_shift, float r_scale) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-
+	private static void putc_frame_header_wsq(DataOutput dataOutput, int width, int height, float m_shift, float r_scale) throws IOException {
 		float flt_tmp;         /* temp variable */
 		int scale_ex;         /* exponent scaling parameter */
 
 		int shrt_dat;       /* temp variable */
-		dataOutputStream.writeShort(SOF_WSQ); /* +2 = 2 */
+		dataOutput.writeShort(SOF_WSQ); /* +2 = 2 */
 
 		/* size of frame header */
-		dataOutputStream.writeShort(17);
+		dataOutput.writeShort(17);
 
 		/* black pixel */
-		dataOutputStream.writeByte(0); /* +1 = 3 */
+		dataOutput.writeByte(0); /* +1 = 3 */
 
 		/* white pixel */
-		dataOutputStream.writeByte(255); /* +1 = 4 */
+		dataOutput.writeByte(255); /* +1 = 4 */
 
-		dataOutputStream.writeShort(height); /* +2 = 5 */
-		dataOutputStream.writeShort(width); /* +2 = 7 */
+		dataOutput.writeShort(height); /* +2 = 5 */
+		dataOutput.writeShort(width); /* +2 = 7 */
 
 		flt_tmp = m_shift;
 		scale_ex = 0;
@@ -760,12 +828,12 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				flt_tmp *= 10;
 			}
 			scale_ex -= 1;
-			shrt_dat = Math.round(flt_tmp / 10.0f);
+			shrt_dat = (int)Math.round(flt_tmp / 10.0f);
 		} else {
 			shrt_dat = 0;
 		}
-		dataOutputStream.writeByte(scale_ex & 0xFF); /* +1 = 9 */
-		dataOutputStream.writeShort(shrt_dat); /* +2 = 11 */
+		dataOutput.writeByte(scale_ex & 0xFF); /* +1 = 9 */
+		dataOutput.writeShort(shrt_dat); /* +2 = 11 */
 
 		flt_tmp = r_scale;
 		scale_ex = 0;
@@ -775,20 +843,18 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				flt_tmp *= 10;
 			}
 			scale_ex -= 1;
-			shrt_dat = Math.round(flt_tmp / 10.0f);
+			shrt_dat = (int)Math.round(flt_tmp / 10.0f);
 		} else {
 			shrt_dat = 0;
 		}
-		dataOutputStream.writeByte(scale_ex); /* +1 = 12 */
-		dataOutputStream.writeShort(shrt_dat); /* +2 = 13 */
+		dataOutput.writeByte(scale_ex); /* +1 = 12 */
+		dataOutput.writeShort(shrt_dat); /* +2 = 13 */
 
-		dataOutputStream.writeByte(0); /* +1 = 15 */
-		dataOutputStream.writeShort(0); /* +2 = 17 */
+		dataOutput.writeByte(0); /* +1 = 15 */
+		dataOutput.writeShort(0); /* +2 = 17 */
 	}
 
-	private static void putc_transform_table(OutputStream outputStream, float[] lofilt, int losz, float[] hifilt, int hisz) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-
+	private static void putc_transform_table(DataOutput dataOutput, float[] lofilt, int losz, float[] hifilt, int hisz) throws IOException {
 		long coef;				/* filter coefficient indicator */
 		long int_dat;			/* temp variable */
 		double dbl_tmp;			/* temp variable */
@@ -801,18 +867,18 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		if (hisz < 0 || hisz > Integer.MAX_VALUE / 2) {
 			throw new IllegalStateException("Writing transform table: hisz out of range");
 		}
-		dataOutputStream.writeShort(DTT_WSQ);
+		dataOutput.writeShort(DTT_WSQ);
 
 		/* table size */
-		dataOutputStream.writeShort(58);
+		dataOutput.writeShort(58);
 
 		/* number analysis lowpass coefficients */
-		dataOutputStream.writeByte(losz);
+		dataOutput.writeByte(losz);
 
 		/* number analysis highpass coefficients */
-		dataOutputStream.writeByte(hisz);
+		dataOutput.writeByte(hisz);
 
-		for(coef = (losz>>1); (coef & 0xFFFFFFFFL) < losz; coef++) {
+		for(coef = (losz>>1); (long)(coef & 0xFFFFFFFFL) < (long)losz; coef++) {
 			dbl_tmp = lofilt[(int)(coef & 0xFFFFFFFFL)];
 			if(dbl_tmp >= 0.0) {
 				sign = 0;
@@ -835,9 +901,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				throw new IllegalStateException("ERROR: putc_transform_table : lofilt[%d] to high at %f"/* , coef, dbl_tmp */);
 			}
 
-			dataOutputStream.writeByte(sign & 0xFF);
-			dataOutputStream.writeByte(scale_ex & 0xFF);
-			dataOutputStream.writeInt((int)(int_dat & 0xFFFFFFFFL));
+			dataOutput.writeByte(sign & 0xFF);
+			dataOutput.writeByte(scale_ex & 0xFF);
+			dataOutput.writeInt((int)(int_dat & 0xFFFFFFFFL));
 		}
 
 		for(coef = (hisz>>1); (int)(coef & 0xFFFFFFFFL) < (long)hisz; coef++) {
@@ -862,33 +928,31 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				dbl_tmp = hifilt[(int)(coef & 0xFFFFFFFFL)];
 				throw new IllegalStateException("ERROR: putc_transform_table : hifilt[" + coef + "] to high at " + dbl_tmp + "");
 			}
-			dataOutputStream.writeByte(sign & 0xFF);
-			dataOutputStream.writeByte(scale_ex & 0xFF);
-			dataOutputStream.writeInt((int)(int_dat & 0xFFFFFFFFL));
+			dataOutput.writeByte(sign & 0xFF);
+			dataOutput.writeByte(scale_ex & 0xFF);
+			dataOutput.writeInt((int)(int_dat & 0xFFFFFFFFL));
 		}
 	}
 
 	/**
 	 * Stores quantization table in the output buffer.
 	 */
-	private static void putc_quantization_table(OutputStream outputStream, Token token)   /* quantization parameters  */
+	private static void putc_quantization_table(DataOutput dataOutput, Token token)   /* quantization parameters  */
 			throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-
 		int scale_ex, scale_ex2; /* exponent scaling parameters */
 		int shrt_dat, shrt_dat2;  /* temp variables */
 		float flt_tmp;            /* temp variable */
 
-		dataOutputStream.writeShort(DQT_WSQ);
+		dataOutput.writeShort(DQT_WSQ);
 
 		/* table size */
-		dataOutputStream.writeShort(389);
+		dataOutput.writeShort(389);
 
 		/* exponent scaling value */
-		dataOutputStream.writeByte(2);
+		dataOutput.writeByte(2);
 
 		/* quantizer bin center parameter */
-		dataOutputStream.writeShort(44);
+		dataOutput.writeShort(44);
 
 		for(int sub = 0; sub < 64; sub ++) {
 			if (sub >= 0 && sub < 60) {
@@ -933,10 +997,10 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				shrt_dat2 = 0;
 			}
 
-			dataOutputStream.writeByte(scale_ex & 0xFF);
-			dataOutputStream.writeShort(shrt_dat & 0xFFFF);
-			dataOutputStream.writeByte(scale_ex2 & 0xFF);
-			dataOutputStream.writeShort(shrt_dat2 & 0xFFFF);
+			dataOutput.writeByte(scale_ex & 0xFF);
+			dataOutput.writeShort(shrt_dat & 0xFFFF);
+			dataOutput.writeByte(scale_ex2 & 0xFF);
+			dataOutput.writeShort(shrt_dat2 & 0xFFFF);
 		}
 	}
 
@@ -946,71 +1010,64 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	 * @param token token
 	 * @param table huffman table indicator
 	 */
-	private static void putc_block_header(OutputStream outputStream, int table) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-		dataOutputStream.writeShort(SOB_WSQ);
+	private static void putc_block_header(DataOutput dataOutput, int table) throws IOException {
+		dataOutput.writeShort(SOB_WSQ);
 
 		/* block header size */
-		dataOutputStream.writeShort(3);
+		dataOutput.writeShort(3);
 
-		dataOutputStream.writeByte(table & 0xFF);
+		dataOutput.writeByte(table & 0xFF);
 	}
 
-	private static void putc_nistcom_wsq(OutputStream outputStream, String comment_text, int w, int h, int d, int ppi, int lossyflag, float r_bitrate) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-		int gencomflag;
-		Map<String, String> nistcom;
-		String comstr;
-
-		/* Add Comment(s) here. */
-		nistcom = null;
-		gencomflag = 0;
-		if(comment_text != null){
-			/* if NISTCOM ... */
-			if (comment_text.startsWith(NCM_HEADER)) {
-				nistcom = stringToFet(comment_text);
-			} else {
-				/* If general comment ... */
-				gencomflag = 1;
-			}
-		}
-		/* Otherwise, no comment passed ... */
-
-		/* Combine image attributes to NISTCOM. */
-		if (nistcom == null) { nistcom = new HashMap<String, String>(); }
-		combine_wsq_nistcom(nistcom, w, h, d, ppi, lossyflag, r_bitrate);
-
-		/* Put NISTCOM ... */
-		/* NISTCOM to string. */
-		comstr = fetToString(nistcom);
-
-		/* Put NISTCOM comment string. */
-		putc_comment(dataOutputStream, COM_WSQ, comstr);
-
-		/* If general comment exists ... */
-		if(gencomflag != 0){
-			/* Put general comment to its own segment. */
-			putc_comment(dataOutputStream, COM_WSQ, comment_text);
-		}
+	private static void putc_nistcom_wsq(DataOutput dataOutput, Bitmap bitmap, float r_bitrate, Map<String, String> metadata, String[] comments) throws IOException {
+		Map<String, String> nistcom = new LinkedHashMap<String, String>();
+		//These attributes will be filled later
+		nistcom.put(NCM_HEADER     , "---"); 
+		nistcom.put(NCM_PIX_WIDTH  , "---");
+		nistcom.put(NCM_PIX_HEIGHT , "---");
+		nistcom.put(NCM_PIX_DEPTH  , "---");
+		nistcom.put(NCM_PPI        , "---");
+		nistcom.put(NCM_LOSSY      , "---");
+		nistcom.put(NCM_COLORSPACE , "---");
+		nistcom.put(NCM_COMPRESSION, "---");
+		nistcom.put(NCM_WSQ_RATE   , "---");
+		
+		if (metadata != null)
+			nistcom.putAll(metadata);
+		
+		nistcom.put(NCM_HEADER     , Integer.toString(nistcom.size()));
+		nistcom.put(NCM_PIX_WIDTH  , Integer.toString(bitmap.getWidth()));
+		nistcom.put(NCM_PIX_HEIGHT , Integer.toString(bitmap.getHeight()));
+		nistcom.put(NCM_PPI        , Integer.toString(bitmap.getPpi()));
+		nistcom.put(NCM_PIX_DEPTH  , "8"); //WSQ has always 8 bpp
+		nistcom.put(NCM_LOSSY      , "1"); //WSQ is always lossy
+		nistcom.put(NCM_COLORSPACE , "GRAY");
+		nistcom.put(NCM_COMPRESSION, "WSQ");
+		nistcom.put(NCM_WSQ_RATE   , Float.toString(r_bitrate));
+		
+		putc_comment(dataOutput, COM_WSQ, fetToString(nistcom));
+		if (comments != null)
+			for (String s : comments) 
+				if (s != null)
+					putc_comment(dataOutput, COM_WSQ, s);
 	}
 
 	/**
 	 * Puts comment field in output buffer.
 	 * MO, from tableio.c in ffpis_img
 	 * 
-	 * @param outputStream
+	 * @param dataOutput
 	 * @param marker
 	 * @param comment
 	 */
-	private static void putc_comment(OutputStream outputStream, int marker, String comment) throws IOException {
-		DataOutputStream dataOutputStream = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
-		dataOutputStream.writeShort(marker);
+	private static void putc_comment(DataOutput dataOutput, int marker, String comment) throws IOException {
+		dataOutput.writeShort(marker);
 
 		/* comment size */
 		int hdr_size = 2 + comment.length();
-		dataOutputStream.writeShort(hdr_size & 0xFFFF);
+		dataOutput.writeShort(hdr_size & 0xFFFF);
 
-		dataOutputStream.write(comment.getBytes()); // FIXME: should be UTF-8. Check FBI spec.
+		dataOutput.write(comment.getBytes()); // FIXME: should be UTF-8. Check FBI spec.
 	}
 
 	/**
@@ -1068,8 +1125,10 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		return hufftable2;
 	}
 
+	/*****************************************************************/
 	/* This routine counts the number of occurences of each category */
 	/* in the huffman coding tables.                                 */
+	/*****************************************************************/
 	private static int[] count_block(
 			// int **ocounts,     /* output count for each huffman catetory */
 			int max_huffcounts, /* maximum number of counts */
@@ -1353,7 +1412,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	}
 
 
+	/****************************************************************/
 	/*routine to insure that no huffman code size is greater than 16*/
+	/****************************************************************/
 	private static void sort_huffbits(int[] bits) {
 		int i, j;
 		int l1, l2, l3;
@@ -1399,7 +1460,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 	}
 
+	/****************************************************************************/
 	/*This routine defines the huffman codes needed for each difference category*/
+	/****************************************************************************/
 	private static void build_huffcodes(WSQHelper.HuffCode[] huffcode_table) {
 		int pointer = 0;                     /*pointer to code word information*/
 		int temp_code = 0;        /*used to construct code word*/
@@ -1456,7 +1519,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	}
 
 	/* Routine "codes" the quantized image using the huffman tables. */
-	private static void compress_block(OutputStream outputStream,
+	private static void compress_block(DataOutput dataOutput,
 			int[] sip,          /* quantized image */
 			int offset,
 			int length,
@@ -1497,26 +1560,26 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 				if (pix > MaxCoeff) { 
 					if (pix > 255) {
 						/* 16bit pos esc */
-						write_bits(outputStream, codes[103].size, codes[103].code , outbit, bits, bytes);
-						write_bits(outputStream, 16, pix , outbit, bits, bytes);
+						write_bits(dataOutput, codes[103].size, codes[103].code , outbit, bits, bytes);
+						write_bits(dataOutput, 16, pix , outbit, bits, bytes);
 					} else {
 						/* 8bit pos esc */
-						write_bits(outputStream, codes[101].size, codes[101].code , outbit, bits, bytes);
-						write_bits(outputStream, 8, pix , outbit, bits, bytes);
+						write_bits(dataOutput, codes[101].size, codes[101].code , outbit, bits, bytes);
+						write_bits(dataOutput, 8, pix , outbit, bits, bytes);
 					}
 				} else if (pix < LoMaxCoeff) {
 					if (pix < -255) {
 						/* 16bit neg esc */
-						write_bits(outputStream, codes[104].size, codes[104].code , outbit, bits, bytes);
-						write_bits(outputStream, 16, -(pix ), outbit, bits, bytes);
+						write_bits(dataOutput, codes[104].size, codes[104].code , outbit, bits, bytes);
+						write_bits(dataOutput, 16, -(pix ), outbit, bits, bytes);
 					} else {
 						/* 8bit neg esc */
-						write_bits(outputStream, codes[102].size, codes[102].code , outbit, bits, bytes);
-						write_bits(outputStream, 8, -(pix ), outbit, bits, bytes);
+						write_bits(dataOutput, codes[102].size, codes[102].code , outbit, bits, bytes);
+						write_bits(dataOutput, 8, -(pix ), outbit, bits, bytes);
 					}
 				} else {
 					/* within table */
-					write_bits(outputStream, codes[pix + 180].size, codes[pix + 180].code , outbit, bits, bytes);
+					write_bits(dataOutput, codes[pix + 180].size, codes[pix + 180].code , outbit, bits, bytes);
 				}
 				break;
 
@@ -1525,17 +1588,17 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 					++rcnt;
 					break;
 				}
-				if (rcnt <= MaxZRun) {
+				if (rcnt <= (int)MaxZRun) {
 					/* log zero run length */
-					write_bits(outputStream, codes[rcnt].size, codes[rcnt].code , outbit, bits, bytes);
+					write_bits(dataOutput, codes[rcnt].size, codes[rcnt].code , outbit, bits, bytes);
 				} else if (rcnt <= 0xFF) {
 					/* 8bit zrun esc */
-					write_bits(outputStream, codes[105].size, codes[105].code , outbit, bits, bytes);
-					write_bits(outputStream, 8, rcnt , outbit, bits, bytes);
+					write_bits(dataOutput, codes[105].size, codes[105].code , outbit, bits, bytes);
+					write_bits(dataOutput, 8, rcnt , outbit, bits, bytes);
 				} else if (rcnt <= 0xFFFF) {
 					/* 16bit zrun esc */
-					write_bits(outputStream, codes[106].size, codes[106].code , outbit, bits, bytes);
-					write_bits(outputStream, 16, rcnt , outbit, bits, bytes);					
+					write_bits(dataOutput, codes[106].size, codes[106].code , outbit, bits, bytes);
+					write_bits(dataOutput, 16, rcnt , outbit, bits, bytes);					
 				} else {
 					throw new IllegalStateException("ERROR : compress_block : zrun too large.");
 				}
@@ -1545,26 +1608,26 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 						/** log current pix **/
 						if (pix > 255) {
 							/* 16bit pos esc */
-							write_bits(outputStream, codes[103].size, codes[103].code , outbit, bits, bytes);
-							write_bits(outputStream, 16, pix, outbit, bits, bytes);
+							write_bits(dataOutput, codes[103].size, codes[103].code , outbit, bits, bytes);
+							write_bits(dataOutput, 16, pix, outbit, bits, bytes);
 						} else {
 							/* 8bit pos esc */
-							write_bits(outputStream, codes[101].size, codes[101].code , outbit, bits, bytes);
-							write_bits(outputStream, 8, pix , outbit, bits, bytes);
+							write_bits(dataOutput, codes[101].size, codes[101].code , outbit, bits, bytes);
+							write_bits(dataOutput, 8, pix , outbit, bits, bytes);
 						}
 					} else if (pix < LoMaxCoeff) {
 						if (pix < -255) {
 							/* 16bit neg esc */
-							write_bits(outputStream, codes[104].size, codes[104].code , outbit, bits, bytes);
-							write_bits(outputStream, 16, -pix, outbit, bits, bytes);
+							write_bits(dataOutput, codes[104].size, codes[104].code , outbit, bits, bytes);
+							write_bits(dataOutput, 16, -pix, outbit, bits, bytes);
 						} else {
 							/* 8bit neg esc */
-							write_bits(outputStream, codes[102].size, codes[102].code, outbit, bits, bytes);
-							write_bits(outputStream, 8, -pix, outbit, bits, bytes);
+							write_bits(dataOutput, codes[102].size, codes[102].code, outbit, bits, bytes);
+							write_bits(dataOutput, 8, -pix, outbit, bits, bytes);
 						}
 					} else {
 						/* within table */
-						write_bits(outputStream, codes[pix + 180].size, codes[pix + 180].code , outbit, bits, bytes);
+						write_bits(dataOutput, codes[pix + 180].size, codes[pix + 180].code , outbit, bits, bytes);
 					}
 					state = COEFF_CODE;
 				} else {
@@ -1576,76 +1639,44 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 		if (state == RUN_CODE) {
 			if (rcnt <= MaxZRun) {
-				write_bits(outputStream, codes[rcnt].size, codes[rcnt].code , outbit, bits, bytes);
+				write_bits(dataOutput, codes[rcnt].size, codes[rcnt].code , outbit, bits, bytes);
 			} else if (rcnt <= 0xFF) {
-				write_bits(outputStream, codes[105].size, codes[105].code , outbit, bits, bytes);
-				write_bits(outputStream, 8, rcnt , outbit, bits, bytes);
+				write_bits(dataOutput, codes[105].size, codes[105].code , outbit, bits, bytes);
+				write_bits(dataOutput, 8, rcnt , outbit, bits, bytes);
 			} else if (rcnt <= 0xFFFF) {
-				write_bits(outputStream, codes[106].size, codes[106].code , outbit, bits, bytes);
-				write_bits(outputStream, 16, rcnt , outbit, bits, bytes);
+				write_bits(dataOutput, codes[106].size, codes[106].code , outbit, bits, bytes);
+				write_bits(dataOutput, 16, rcnt , outbit, bits, bytes);
 			} else {
 				throw new IllegalStateException("ERROR : compress_block : zrun2 too large.");
 			}
 		}
 
-		flush_bits(outputStream, outbit, bits, bytes);
-	}
-
-	private static void combine_wsq_nistcom(Map<String, String> metaDataProperties, int w, int h, int d, int ppi, int lossyflag, float r_bitrate) {
-		metaDataProperties.put(NCM_HEADER, "6");
-		metaDataProperties.put(NCM_PIX_WIDTH, Integer.toString(w));
-		metaDataProperties.put(NCM_PIX_HEIGHT, Integer.toString(h));
-		metaDataProperties.put(NCM_PIX_DEPTH, Integer.toString(d));
-		metaDataProperties.put(NCM_PPI, Integer.toString(ppi));
-		String lossyString = metaDataProperties.get(NCM_LOSSY);
-		if (!"0".equals(lossyString) && lossyflag == 0) {
-			/* If LOSSY value found AND is set AND requesting to unset ... */
-			System.err.println("DEBUG: WARNING : combine_nistcom : request to unset lossy flag ignored");
-		} else {
-			metaDataProperties.put(NCM_LOSSY, Integer.toString(lossyflag));
-		}
-		metaDataProperties.put(NCM_HEADER, Integer.toString(metaDataProperties.size()));
-
-		metaDataProperties.put(NCM_COLORSPACE, "GRAY");
-		metaDataProperties.put(NCM_COMPRESSION, "WSQ");
-		metaDataProperties.put(NCM_WSQ_RATE, Float.toString(r_bitrate));
-		metaDataProperties.put(NCM_HEADER, Integer.toString(metaDataProperties.size()));
-	}
-
-	private static Map<String, String> stringToFet(String comment) {
-		Map<String, String> metaDataProperties = new HashMap<String, String>();
-		if (comment == null) { return metaDataProperties; }
-		comment = comment.trim();
-		String[] entries = comment.split("\\n");
-		for (String entry: entries) {
-			entry = entry.trim();
-			if ("".equals(entry)) { continue; }
-			String[] parts = entry.split("\\s");
-			if (parts.length != 2) { System.err.println("DEBUG: skipping comment with " + parts.length + " parts"); continue; }
-			String key = parts[0];
-			String value = parts[1];
-			metaDataProperties.put(key, value);
-		}
-		return metaDataProperties;
+		flush_bits(dataOutput, outbit, bits, bytes);
 	}
 
 	private static String fetToString(Map<String, String> fet) {
-		StringBuffer result = new StringBuffer();
-		Set<Map.Entry<String, String>> entries = fet.entrySet();
-		for (Map.Entry<String, String> entry: entries) {
-			String key = entry.getKey();
-			String value = entry.getValue();
-			result.append(key);
-			result.append(" ");
-			result.append(value);
-			result.append("\n");
+		try {
+			StringBuffer result = new StringBuffer();
+			Set<Map.Entry<String, String>> entries = fet.entrySet();
+			for (Map.Entry<String, String> entry: entries) {
+				if (entry.getKey()==null) continue;
+				if (entry.getValue()==null) continue;
+				String key   = URLEncoder.encode(entry.getKey()  , "UTF-8");
+				String value = URLEncoder.encode(entry.getValue(), "UTF-8");
+				result.append(key);
+				result.append(" ");
+				result.append(value);
+				result.append("\n");
+			}
+			return result.toString();
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
 		}
-		return result.toString();
 	}
 
 	/*Routine to write "compressed" bits to output buffer. */
 	private static void write_bits(
-			OutputStream outbuf,
+			DataOutput outbuf,
 			int size,          /* numbers bits of code to write into buffer   */
 			int code, /* info to write into buffer                   */
 			Ref<Integer> outbit,               /* current bit location in out buffer byte     */
@@ -1676,7 +1707,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	/* Routine to "flush" left over bits in last */
 	/* byte after compressing a block.           */
 	private static void flush_bits(
-			OutputStream outbuf, /* output data buffer */
+			DataOutput outbuf, /* output data buffer */
 			Ref<Integer> outbit,            /* current bit location in out buffer byte */
 			Ref<Integer> bits,    /* byte to write to output buffer */
 			Ref<Integer> bytes)             /* count of number bytes written to the buffer */

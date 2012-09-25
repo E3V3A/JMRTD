@@ -2,7 +2,6 @@ package org.jnbis.imageio;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
-import java.awt.image.WritableRaster;
 
 import javax.imageio.IIOException;
 import javax.imageio.IIOImage;
@@ -31,17 +30,14 @@ public class WSQImageWriter extends ImageWriter {
 	 * 
 	 * @see javax.imageio.ImageWriter#getDefaultWriteParam()
 	 */
-	@Override
 	public ImageWriteParam getDefaultWriteParam() {
 		return new WSQImageWriteParam(getLocale());
 	}
 
-	@Override
 	public IIOMetadata convertImageMetadata(IIOMetadata inData, ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return null;
 	}
 
-	@Override
 	public IIOMetadata convertStreamMetadata(IIOMetadata inData, ImageWriteParam param) {
 		if (inData instanceof WSQMetadata) {
 			return inData;
@@ -49,17 +45,14 @@ public class WSQImageWriter extends ImageWriter {
 		return null;
 	}
 
-	@Override
 	public IIOMetadata getDefaultImageMetadata(ImageTypeSpecifier imageType, ImageWriteParam param) {
 		return new WSQMetadata();
 	}
 
-	@Override
 	public IIOMetadata getDefaultStreamMetadata(ImageWriteParam param) {
 		return null;
 	}
 
-	@Override
 	public void write(IIOMetadata streamMetaData, IIOImage image, ImageWriteParam param) throws IIOException {
 		try {
 			double bitRate = DEFAULT_BITRATE;
@@ -88,14 +81,15 @@ public class WSQImageWriter extends ImageWriter {
 			//TODO: Subsampling accordingly to ImageWriteParam
 
 			Object output = getOutput();
-			if (output == null || !(output instanceof ImageOutputStream)) { throw new IllegalStateException("bad output"); }
-
-			ImageOutputStream imageOutputStream = (ImageOutputStream)output;
-			WritableRaster raster = bufferedImage.getRaster();
-			byte[] pixels = new byte[raster.getWidth() * raster.getHeight()];
-			raster.getDataElements(0, 0, raster.getWidth(), raster.getHeight(), pixels);
-			Bitmap bitmap = new Bitmap(pixels, bufferedImage.getWidth(), bufferedImage.getHeight(), (int)(Math.round(ppi)), 8, 1);			
-			WSQEncoder.encode(new ImageOutputStreamAdapter(imageOutputStream), bitmap, bitRate, metadata.getNistcom());
+			if (output == null || !(output instanceof ImageOutputStream)) { throw new IllegalStateException("bad output"); }			
+			
+			Bitmap bitmap = new Bitmap(
+					(byte[])bufferedImage.getRaster().getDataElements(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), null),
+					bufferedImage.getWidth(), 
+					bufferedImage.getHeight(),
+					(int)Math.round(ppi),
+					8, 1);					
+			WSQEncoder.encode( (ImageOutputStream)getOutput(), bitmap, bitRate, metadata.nistcom, "Made with JNBIS");
 		} catch (Throwable t) {
 			throw new IIOException(t.getMessage(), t);
 		}

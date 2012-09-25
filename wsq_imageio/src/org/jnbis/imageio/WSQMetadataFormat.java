@@ -39,6 +39,15 @@ public class WSQMetadataFormat extends IIOMetadataFormatImpl {
         		DATATYPE_STRING, 
         		false, //Value==null => Remove the key 
         		null);
+        
+        addElement(
+        		"comment",
+        		nativeMetadataFormatName,
+        		CHILD_POLICY_EMPTY);
+        addAttribute("comment", "value",
+        		DATATYPE_STRING, 
+        		false, //Value==null => Remove the key 
+        		null);
     }
     
 	@Override

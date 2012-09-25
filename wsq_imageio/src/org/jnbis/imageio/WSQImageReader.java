@@ -19,10 +19,10 @@
 package org.jnbis.imageio;
 
 import java.awt.image.BufferedImage;
-import java.awt.image.WritableRaster;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.imageio.IIOException;
 import javax.imageio.ImageReadParam;
@@ -32,7 +32,7 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-import org.jnbis.Bitmap;
+import org.jnbis.BitmapWithMetadata;
 import org.jnbis.WSQDecoder;
 
 public class WSQImageReader extends ImageReader {
@@ -44,28 +44,23 @@ public class WSQImageReader extends ImageReader {
 		super(provider);
 	}
 
-	@Override
 	public void setInput(Object input) {
 		super.setInput(input); // NOTE: should be setInput(input, false, false);
 	}
 
-	@Override
 	public void setInput(Object input, boolean seekForwardOnly) {
 		super.setInput(input, seekForwardOnly);  // NOTE: should be setInput(input, seekForwardOnly, false);
 	}
 
-	@Override
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
 		super.setInput(input, seekForwardOnly, ignoreMetaData);
 	}
 
-	@Override
 	public int getNumImages(boolean allowSearch) throws IIOException {
 		processInput(0);
 		return 1;
 	}
 
-	@Override
 	public BufferedImage read(int imageIndex, ImageReadParam param) throws IIOException {
 		processInput(imageIndex);
 
@@ -74,31 +69,26 @@ public class WSQImageReader extends ImageReader {
 		return image;
 	}
 
-	@Override
 	public int getWidth(int imageIndex) throws IOException {
 		processInput(imageIndex);
 		return image.getWidth();
 	}
 
-	@Override
 	public int getHeight(int imageIndex) throws IOException {
 		processInput(imageIndex);
 		return image.getHeight();
 	}
 
-	@Override
 	public IIOMetadata getImageMetadata(int imageIndex) throws IOException {
 		processInput(imageIndex);
 		return metadata;
 	}
 
-	@Override
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
 		processInput(imageIndex);
 		return Collections.singletonList(ImageTypeSpecifier.createFromRenderedImage(image)).iterator();
 	}
 
-	@Override
 	public IIOMetadata getStreamMetadata() throws IOException {
 		return null;
 	}
@@ -116,14 +106,21 @@ public class WSQImageReader extends ImageReader {
 				return;
 			}
 			if (!(input instanceof ImageInputStream)) { throw new IllegalArgumentException("bad input: " + input.getClass().getCanonicalName()); }
-			Bitmap bitmap = WSQDecoder.decode(new ImageInputStreamAdapter((ImageInputStream)input));
-			this.metadata = new WSQMetadata(bitmap.getPpi());
-			int width = bitmap.getWidth();
-			int height = bitmap.getHeight();
-			byte[] pixels = bitmap.getPixels();
-			this.image = new BufferedImage(width, height, BufferedImage.TYPE_BYTE_GRAY);
-			WritableRaster raster = image.getRaster();
-			raster.setDataElements(0, 0, width, height, pixels);
+			
+			BitmapWithMetadata bitmap = WSQDecoder.decode((ImageInputStream)getInput());
+			metadata = new WSQMetadata(); 
+			
+			for (Map.Entry<String, String> entry : bitmap.getMetadata().entrySet()) {
+				//System.out.println(entry.getKey() + ": " + entry.getValue());
+				metadata.setProperty(entry.getKey(), entry.getValue());
+			}
+			for (String s:bitmap.getComments()) {
+				//System.out.println("//"+s);
+				metadata.addComment(s);
+			}
+			
+			image = new BufferedImage(bitmap.getWidth(), bitmap.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+			image.getRaster().setDataElements(0, 0, bitmap.getWidth(), bitmap.getHeight(), bitmap.getPixels());
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			this.image = null;

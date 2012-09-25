@@ -12,11 +12,11 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 
 	static final String vendorName = "JMRTD";
 	static final String version = "0.0.2";
-	static final String writerClassName = "org.jmrtd.imageio.WSQImageWriter";
+	static final String writerClassName = "org.jnbis.imageio.WSQImageWriter";
 	static final String[] names = { "WSQ", "wsq", "WSQ FBI" };
 	static final String[] suffixes = { "wsq" };
 	static final String[] MIMETypes = { "image/x-wsq" };
-	static final String[] readerSpiNames = { "org.jmrtd.imageio.WSQImageReaderSpi" };
+	static final String[] readerSpiNames = { "org.jnbis.imageio.WSQImageReaderSpi" };
 
 	static final boolean  supportsStandardStreamMetadataFormat = false;
 	static final String   nativeStreamMetadataFormatName = null;
@@ -24,8 +24,8 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 	static final String[] extraStreamMetadataFormatNames = null;
 	static final String[] extraStreamMetadataFormatClassNames = null;
 	static final boolean  supportsStandardImageMetadataFormat = true;
-	static final String   nativeImageMetadataFormatName = "org.jmrtd.imageio.WSQMetadata_1.0";
-	static final String   nativeImageMetadataFormatClassName = "org.jmrtd.imageio.WSQMetadataFormat";
+	static final String   nativeImageMetadataFormatName = "org.jnbis.imageio.WSQMetadata_1.0";
+	static final String   nativeImageMetadataFormatClassName = "org.jnbis.imageio.WSQMetadataFormat";
 	static final String[] extraImageMetadataFormatNames = null;
 	static final String[] extraImageMetadataFormatClassNames = null;
 
@@ -51,19 +51,16 @@ public class WSQImageWriterSpi extends ImageWriterSpi {
 				extraImageMetadataFormatClassNames);
 	}
 
-	@Override
 	public boolean canEncodeImage(ImageTypeSpecifier imageType) {
 		//Can encode any image, but it will be converted to grayscale.
 		return true; 
 		//return imageType.getBufferedImageType() == BufferedImage.TYPE_BYTE_GRAY;
 	}
 
-	@Override
 	public ImageWriter createWriterInstance(Object extension) throws IOException {
 		return new WSQImageWriter(this);
 	}
 
-	@Override
 	public String getDescription(Locale locale) {
 		return "Wavelet Scalar Quantization (WSQ)";
 	}

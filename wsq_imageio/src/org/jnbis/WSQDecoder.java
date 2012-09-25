@@ -21,11 +21,17 @@
 
 package org.jnbis;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.HashMap;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import org.jnbis.WSQHelper.Token;
 
@@ -38,23 +44,28 @@ import org.jnbis.WSQHelper.Token;
  */
 public class WSQDecoder implements WSQConstants, NISTConstants {
 
-	public static Bitmap decode(InputStream inputStream) throws IOException {
+	public static BitmapWithMetadata decode(InputStream is) throws IOException {
+		if (is instanceof DataInput)
+			return decode((DataInput)is);
+		else
+			return decode((DataInput)new DataInputStream(is));
+	}
+	
+	public static BitmapWithMetadata decode(DataInput dataInput) throws IOException {
 		Token token = new Token();
 
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
 		/* Read the SOI marker. */
-		getCMarkerWSQ(dataInputStream, SOI_WSQ);
+		getCMarkerWSQ(dataInput, SOI_WSQ);
 
 		/* Read in supporting tables up to the SOF marker. */
-		int marker = getCMarkerWSQ(dataInputStream, TBLS_N_SOF);
+		int marker = getCMarkerWSQ(dataInput, TBLS_N_SOF);
 		while (marker != SOF_WSQ) {
-			getCTableWSQ(dataInputStream, token, marker);
-			marker = getCMarkerWSQ(dataInputStream, TBLS_N_SOF);
+			getCTableWSQ(dataInput, token, marker);
+			marker = getCMarkerWSQ(dataInput, TBLS_N_SOF);
 		}
 
 		/* Read in the Frame Header. */
-		WSQHelper.HeaderFrm frmHeaderWSQ = getCFrameHeaderWSQ(dataInputStream);
+		WSQHelper.HeaderFrm frmHeaderWSQ = getCFrameHeaderWSQ(dataInput);
 		int width = frmHeaderWSQ.width;
 		int height = frmHeaderWSQ.height;
 
@@ -62,25 +73,45 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		WSQHelper.buildWSQTrees(token, width, height);
 
 		/* Decode the Huffman encoded buffer blocks. */
-		int[] qdata = huffmanDecodeDataMem(dataInputStream, token, width * height);
+		int[] qdata = huffmanDecodeDataMem(dataInput, token, width * height);
 
 		/* Decode the quantize wavelet subband buffer. */
 		float[] fdata = unquantize(token, qdata, width, height);
-
-		int ppi = getCPpiWSQ(token);
 
 		wsqReconstruct(token, fdata, width, height);
 
 		/* Convert floating point pixels to unsigned char pixels. */
 		byte[] cdata = convertImageToByte(fdata, width, height, frmHeaderWSQ.mShift, frmHeaderWSQ.rScale);
 
-		return new Bitmap(cdata, width, height, ppi, 8, 1);
+		
+		Map<String,String> nistcom = new LinkedHashMap<String,String>();
+		List<String> comments = new ArrayList<String>();
+		for (String comment : token.comments) {
+			try {
+				nistcom.putAll(stringToFet(comment));
+			} catch (Exception e) {
+				comments.add(comment);
+			}
+		}
+		nistcom.remove(NCM_HEADER);
+		nistcom.put(NCM_PIX_WIDTH , Integer.toString(width));
+		nistcom.put(NCM_PIX_HEIGHT, Integer.toString(height));
+		nistcom.put(NCM_PIX_DEPTH, "8");
+		nistcom.put(NCM_LOSSY, "1");
+		nistcom.put(NCM_COLORSPACE , "GRAY");
+		nistcom.put(NCM_COMPRESSION, "WSQ");
+		boolean ppiOk=false;
+		try {
+			if (Integer.parseInt(nistcom.get(NCM_PPI)) > 0) 
+				ppiOk = true;
+		} catch (Throwable t){}
+		if (!ppiOk)
+			nistcom.put(NCM_PPI, "-1");
+		return new BitmapWithMetadata(cdata, width, height, Integer.parseInt(nistcom.get(NCM_PPI)), 8, 1, nistcom, comments.toArray(new String[0]));
 	}
 
-	private static int getCMarkerWSQ(InputStream inputStream, int type) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
-		int marker = dataInputStream.readUnsignedShort();
+	private static int getCMarkerWSQ(DataInput dataInput, int type) throws IOException {
+		int marker = dataInput.readUnsignedShort();
 
 		switch (type) {
 		case SOI_WSQ:
@@ -127,20 +158,19 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		}
 	}
 
-	private static void getCTableWSQ(InputStream inputStream, Token token, int marker) throws IOException {
+	private static void getCTableWSQ(DataInput DataInput, Token token, int marker) throws IOException {
 		switch (marker) {
 		case DTT_WSQ:
-			getCTransformTable(inputStream, token);
+			getCTransformTable(DataInput, token);
 			return;
 		case DQT_WSQ:
-			getCQuantizationTable(inputStream, token);
+			getCQuantizationTable(DataInput, token);
 			return;
 		case DHT_WSQ:
-			getCHuffmanTableWSQ(inputStream, token);
+			getCHuffmanTableWSQ(DataInput, token);
 			return;
 		case COM_WSQ:
-			String comment = getCComment(inputStream, token);
-			token.metaDataProperties.putAll(stringToFet(comment));
+			token.comments.add(getCComment(DataInput, token));
 			return;
 		default:
 			throw new RuntimeException("ERROR: getCTableWSQ : Invalid table defined : " + Integer.toHexString(marker));
@@ -148,39 +178,43 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 	}
 
 	private static Map<String, String> stringToFet(String comment) {
-		Map<String, String> result = new HashMap<String, String>();
-		if (comment == null) { return result; }
-		comment = comment.trim();
-		String[] entries = comment.split("\\n");
-		for (String entry: entries) {
-			entry = entry.trim();
-			if ("".equals(entry)) { continue; }
-			String[] parts = entry.split("\\s");
-			if (parts.length != 2) { System.err.println("DEBUG: skipping comment with " + parts.length + " parts"); continue; }
-			String key = parts[0];
-			String value = parts[1];
-			result.put(key, value);
+		try {
+			if (!comment.startsWith(NCM_HEADER))
+				throw new IllegalArgumentException("Not a NISTCOM header");
+
+			Scanner in = new Scanner(comment);
+			Map<String, String> result = new LinkedHashMap<String, String>();
+			while (in.hasNextLine()) {
+				String line = in.nextLine();			
+				int split = line.indexOf(" ");
+				if (split < 0) {
+					System.err.println("Illegal NISTCOM header: Missing separator on line '" + line + "'");
+					continue;
+				}
+				String key   = URLDecoder.decode(line.substring(0, split), "UTF-8");
+				String value = URLDecoder.decode(line.substring(split+1 ), "UTF-8");
+				result.put(key, value);
+
+			}
+			return result;
+		} catch (UnsupportedEncodingException e) {
+			throw new RuntimeException(e);
 		}
-		return result;
 	}
 
-	private static String getCComment(InputStream inputStream, Token token) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
-		int size = dataInputStream.readUnsignedShort() - 2;
+	private static String getCComment(DataInput dataInput, Token token) throws IOException {
+		int size = dataInput.readUnsignedShort() - 2;
 		byte[] bytes = new byte[size];
-		dataInputStream.readFully(bytes);
+		dataInput.readFully(bytes);
 		return new String(bytes, "UTF-8");
 	}
 
-	private static void getCTransformTable(InputStream inputStream, Token token) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
+	private static void getCTransformTable(DataInput dataInput, Token token) throws IOException {
 		// read header Size;
-		dataInputStream.readUnsignedShort();
+		dataInput.readUnsignedShort();
 
-		token.tableDTT.hisz = dataInputStream.readUnsignedByte();
-		token.tableDTT.losz = dataInputStream.readUnsignedByte();
+		token.tableDTT.hisz = dataInput.readUnsignedByte();
+		token.tableDTT.losz = dataInput.readUnsignedByte();
 
 		token.tableDTT.hifilt = new float[token.tableDTT.hisz];
 		token.tableDTT.lofilt = new float[token.tableDTT.losz];
@@ -196,11 +230,11 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 
 		aSize--;
 		for (int cnt = 0; cnt <= aSize; cnt++) {
-			int sign = dataInputStream.readUnsignedByte();
-			int scale = dataInputStream.readUnsignedByte();
-			long shrtDat = dataInputStream.readInt() & 0xFFFFFFFFL;
+			int sign = dataInput.readUnsignedByte();
+			int scale = dataInput.readUnsignedByte();
+			long shrtDat = dataInput.readInt() & 0xFFFFFFFFL;
 
-			aLofilt[cnt] = shrtDat;
+			aLofilt[cnt] = (float) shrtDat;
 
 			while (scale > 0) {
 				aLofilt[cnt] /= 10.0;
@@ -232,11 +266,11 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 
 		aSize--;
 		for (int cnt = 0; cnt <= aSize; cnt++) {
-			int sign = dataInputStream.readUnsignedByte();
-			int scale = dataInputStream.readUnsignedByte();
-			long shrtDat = dataInputStream.readInt() & 0xFFFFFFFFL;
+			int sign = dataInput.readUnsignedByte();
+			int scale = dataInput.readUnsignedByte();
+			long shrtDat = dataInput.readInt() & 0xFFFFFFFFL;
 
-			aHifilt[cnt] = shrtDat;
+			aHifilt[cnt] = (float) shrtDat;
 
 			while (scale > 0) {
 				aHifilt[cnt] /= 10.0;
@@ -262,31 +296,29 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		token.tableDTT.hidef = 1;
 	}
 
-	public static void getCQuantizationTable(InputStream inputStream, Token token) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
+	public static void getCQuantizationTable(DataInput dataInput, Token token) throws IOException {
+		dataInput.readUnsignedShort(); /* header size */
+		int scale = dataInput.readUnsignedByte(); /* scaling parameter */
+		int shrtDat = dataInput.readUnsignedShort(); /* counter and temp short buffer */
 
-		dataInputStream.readUnsignedShort(); /* header size */
-		int scale = dataInputStream.readUnsignedByte(); /* scaling parameter */
-		int shrtDat = dataInputStream.readUnsignedShort(); /* counter and temp short buffer */
-
-		token.tableDQT.binCenter = shrtDat;
+		token.tableDQT.binCenter = (float) shrtDat;
 		while (scale > 0) {
 			token.tableDQT.binCenter /= 10.0;
 			scale--;
 		}
 
 		for (int cnt = 0; cnt < WSQHelper.Table_DQT.MAX_SUBBANDS; cnt++) {
-			scale = dataInputStream.readUnsignedByte();
-			shrtDat = dataInputStream.readUnsignedShort();
-			token.tableDQT.qBin[cnt] = shrtDat;
+			scale = dataInput.readUnsignedByte();
+			shrtDat = dataInput.readUnsignedShort();
+			token.tableDQT.qBin[cnt] = (float) shrtDat;
 			while (scale > 0) {
 				token.tableDQT.qBin[cnt] /= 10.0;
 				scale--;
 			}
 
-			scale = dataInputStream.readUnsignedByte();
-			shrtDat = dataInputStream.readUnsignedShort();
-			token.tableDQT.zBin[cnt] = shrtDat;
+			scale = dataInput.readUnsignedByte();
+			shrtDat = dataInput.readUnsignedShort();
+			token.tableDQT.zBin[cnt] = (float) shrtDat;
 			while (scale > 0) {
 				token.tableDQT.zBin[cnt] /= 10.0;
 				scale--;
@@ -296,20 +328,20 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		token.tableDQT.dqtDef = 1;
 	}
 
-	public static void getCHuffmanTableWSQ(InputStream inputStream, Token token) throws IOException {
+	public static void getCHuffmanTableWSQ(DataInput DataInput, Token token) throws IOException {
 		/* First time, read table len. */
-		WSQHelper.HuffmanTable firstHuffmanTable = getCHuffmanTable(inputStream, token, MAX_HUFFCOUNTS_WSQ, 0, true);
+		WSQHelper.HuffmanTable firstHuffmanTable = getCHuffmanTable(DataInput, token, MAX_HUFFCOUNTS_WSQ, 0, true);
 
 		/* Store table into global structure list. */
 		int tableId = firstHuffmanTable.tableId;
-		token.tableDHT[tableId].huffbits = firstHuffmanTable.huffbits.clone();
-		token.tableDHT[tableId].huffvalues = firstHuffmanTable.huffvalues.clone();
+		token.tableDHT[tableId].huffbits = (int[]) firstHuffmanTable.huffbits.clone();
+		token.tableDHT[tableId].huffvalues = (int[]) firstHuffmanTable.huffvalues.clone();
 		token.tableDHT[tableId].tabdef = 1;
 
 		int bytesLeft = firstHuffmanTable.bytesLeft;
 		while (bytesLeft != 0) {
 			/* Read next table without rading table len. */
-			WSQHelper.HuffmanTable huffmantable = getCHuffmanTable(inputStream, token, MAX_HUFFCOUNTS_WSQ, bytesLeft, false);
+			WSQHelper.HuffmanTable huffmantable = getCHuffmanTable(DataInput, token, MAX_HUFFCOUNTS_WSQ, bytesLeft, false);
 
 			/* If table is already defined ... */
 			tableId = huffmantable.tableId;
@@ -318,21 +350,19 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 			}
 
 			/* Store table into global structure list. */
-			token.tableDHT[tableId].huffbits = huffmantable.huffbits.clone();
-			token.tableDHT[tableId].huffvalues = huffmantable.huffvalues.clone();
+			token.tableDHT[tableId].huffbits = (int[]) huffmantable.huffbits.clone();
+			token.tableDHT[tableId].huffvalues = (int[]) huffmantable.huffvalues.clone();
 			token.tableDHT[tableId].tabdef = 1;
 			bytesLeft = huffmantable.bytesLeft;
 		}
 	}
 
-	private static WSQHelper.HuffmanTable getCHuffmanTable(InputStream inputStream, Token token, int maxHuffcounts, int bytesLeft, boolean readTableLen) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
+	private static WSQHelper.HuffmanTable getCHuffmanTable(DataInput dataInput, Token token, int maxHuffcounts, int bytesLeft, boolean readTableLen) throws IOException {
 		WSQHelper.HuffmanTable huffmanTable = new WSQHelper.HuffmanTable();
 
 		/* table_len */
 		if (readTableLen) {
-			huffmanTable.tableLen = dataInputStream.readUnsignedShort();
+			huffmanTable.tableLen = dataInput.readUnsignedShort();
 			huffmanTable.bytesLeft = huffmanTable.tableLen - 2;
 			bytesLeft = huffmanTable.bytesLeft;
 		} else {
@@ -345,7 +375,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		}
 
 		/* Table ID */
-		huffmanTable.tableId = dataInputStream.readUnsignedByte();
+		huffmanTable.tableId = dataInput.readUnsignedByte();
 		huffmanTable.bytesLeft--;
 
 
@@ -353,7 +383,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		int numHufvals = 0;
 		/* L1 ... L16 */
 		for (int i = 0; i < MAX_HUFFBITS; i++) {
-			huffmanTable.huffbits[i] = dataInputStream.readUnsignedByte();
+			huffmanTable.huffbits[i] = dataInput.readUnsignedByte();
 			numHufvals += huffmanTable.huffbits[i];
 		}
 		huffmanTable.bytesLeft -= MAX_HUFFBITS;
@@ -368,64 +398,51 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 
 		/* V1,1 ... V16,16 */
 		for (int i = 0; i < numHufvals; i++) {
-			huffmanTable.huffvalues[i] = dataInputStream.readUnsignedByte();
+			huffmanTable.huffvalues[i] = dataInput.readUnsignedByte();
 		}
 		huffmanTable.bytesLeft -= numHufvals;
 
 		return huffmanTable;
 	}
 
-	private static WSQHelper.HeaderFrm getCFrameHeaderWSQ(InputStream inputStream) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
+	private static WSQHelper.HeaderFrm getCFrameHeaderWSQ(DataInput dataInput) throws IOException {
 		WSQHelper.HeaderFrm headerFrm = new WSQHelper.HeaderFrm();
 
-		/* int hdrSize = */ dataInputStream.readUnsignedShort(); /* header size */
+		/* int hdrSize = */ dataInput.readUnsignedShort(); /* header size */
 
-		headerFrm.black = dataInputStream.readUnsignedByte();
-		headerFrm.white = dataInputStream.readUnsignedByte();
-		headerFrm.height = dataInputStream.readUnsignedShort();
-		headerFrm.width = dataInputStream.readUnsignedShort();
-		int scale = dataInputStream.readUnsignedByte(); /* exponent scaling parameter */
-		int shrtDat = dataInputStream.readUnsignedShort(); /* buffer pointer */
-		headerFrm.mShift = shrtDat;
+		headerFrm.black = dataInput.readUnsignedByte();
+		headerFrm.white = dataInput.readUnsignedByte();
+		headerFrm.height = dataInput.readUnsignedShort();
+		headerFrm.width = dataInput.readUnsignedShort();
+		int scale = dataInput.readUnsignedByte(); /* exponent scaling parameter */
+		int shrtDat = dataInput.readUnsignedShort(); /* buffer pointer */
+		headerFrm.mShift = (float) shrtDat;
 		while (scale > 0) {
 			headerFrm.mShift /= 10.0;
 			scale--;
 		}
 
-		scale = dataInputStream.readUnsignedByte();
-		shrtDat = dataInputStream.readUnsignedShort();
-		headerFrm.rScale = shrtDat;
+		scale = dataInput.readUnsignedByte();
+		shrtDat = dataInput.readUnsignedShort();
+		headerFrm.rScale = (float) shrtDat;
 		while (scale > 0) {
 			headerFrm.rScale /= 10.0;
 			scale--;
 		}
 
-		headerFrm.wsqEncoder = dataInputStream.readUnsignedByte();
-		headerFrm.software = dataInputStream.readUnsignedShort();
+		headerFrm.wsqEncoder = dataInput.readUnsignedByte();
+		headerFrm.software = dataInput.readUnsignedShort();
 
 		return headerFrm;
 	}
 
-	private static int getCPpiWSQ(Token token) {
-		try {
-			String ppiValue = token.metaDataProperties.get(NCM_PPI);
-			if (ppiValue == null) { return -1; }
-			return Integer.parseInt(ppiValue.trim());
-		} catch (NumberFormatException nfe) {
-			return -1;
-		}
-	}
-
-	private static int[] huffmanDecodeDataMem(InputStream inputStream, Token token, int size) throws IOException {
+	private static int[] huffmanDecodeDataMem(DataInput DataInput, Token token, int size) throws IOException {
 		int[] qdata = new int[size];
-
 		int[] maxcode = new int[MAX_HUFFBITS + 1];
 		int[] mincode = new int[MAX_HUFFBITS + 1];
 		int[] valptr = new int[MAX_HUFFBITS + 1];
 
-		WSQHelper.Ref<Integer> marker = new WSQHelper.Ref<Integer>(getCMarkerWSQ(inputStream, TBLS_N_SOB));
+		WSQHelper.Ref<Integer> marker = new WSQHelper.Ref<Integer>(getCMarkerWSQ(DataInput, TBLS_N_SOB));
 
 		WSQHelper.Ref<Integer> bitCount = new WSQHelper.Ref<Integer>(0); /* bit count for getc_nextbits_wsq routine */
 		WSQHelper.Ref<Integer> nextByte = new WSQHelper.Ref<Integer>(0); /*next byte of buffer*/
@@ -436,10 +453,10 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 
 			if (marker.value != 0) {
 				while (marker.value != SOB_WSQ) {
-					getCTableWSQ(inputStream, token, marker.value);
-					marker.value = getCMarkerWSQ(inputStream, TBLS_N_SOB);
+					getCTableWSQ(DataInput, token, marker.value);
+					marker.value = getCMarkerWSQ(DataInput, TBLS_N_SOB);
 				}
-				hufftableId = getCBlockHeader(inputStream); /* huffman table number */
+				hufftableId = getCBlockHeader(DataInput); /* huffman table number */
 
 				if (token.tableDHT[hufftableId].tabdef != 1) {
 					throw new RuntimeException("ERROR : huffmanDecodeDataMem : huffman table undefined.");
@@ -458,7 +475,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 			}
 
 			/* get next huffman category code from compressed input buffer stream */
-			int nodeptr = decodeDataMem(inputStream, mincode, maxcode, valptr, token.tableDHT[hufftableId].huffvalues, bitCount, marker, nextByte);
+			int nodeptr = decodeDataMem(DataInput, mincode, maxcode, valptr, token.tableDHT[hufftableId].huffvalues, bitCount, marker, nextByte);
 			/* nodeptr  pointers for decoding */
 
 			if (nodeptr == -1) {
@@ -472,20 +489,20 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 			} else if (nodeptr > 106 && nodeptr < 0xff) {
 				qdata[ip++] = nodeptr - 180;
 			} else if (nodeptr == 101) {
-				qdata[ip++] = getCNextbitsWSQ(inputStream,  marker, bitCount, 8, nextByte);
+				qdata[ip++] = getCNextbitsWSQ(DataInput,  marker, bitCount, 8, nextByte);
 			} else if (nodeptr == 102) {
-				qdata[ip++] = -getCNextbitsWSQ(inputStream, marker, bitCount, 8, nextByte);
+				qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
 			} else if (nodeptr == 103) {
-				qdata[ip++] = getCNextbitsWSQ(inputStream, marker, bitCount, 16, nextByte);
+				qdata[ip++] = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
 			} else if (nodeptr == 104) {
-				qdata[ip++] = -getCNextbitsWSQ(inputStream, marker, bitCount, 16, nextByte);
+				qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
 			} else if (nodeptr == 105) {
-				int n = getCNextbitsWSQ(inputStream, marker, bitCount, 8, nextByte);
+				int n = getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
 				while (n-- > 0) {
 					qdata[ip++] = 0;
 				}
 			} else if (nodeptr == 106) {
-				int n = getCNextbitsWSQ(inputStream, marker, bitCount, 16, nextByte);
+				int n = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
 				while (n-- > 0) {
 					qdata[ip++] = 0;
 				}
@@ -497,11 +514,9 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		return qdata;
 	}
 
-	private static int getCBlockHeader(InputStream inputStream) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
-		dataInputStream.readUnsignedShort(); /* block header size */
-		return dataInputStream.readUnsignedByte();
+	private static int getCBlockHeader(DataInput dataInput) throws IOException {
+		dataInput.readUnsignedShort(); /* block header size */
+		return dataInput.readUnsignedByte();
 	}
 
 	private static WSQHelper.HuffCode[] buildHuffsizes(int[] huffbits, int maxHuffcounts) {
@@ -574,16 +589,16 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		}
 	}
 
-	private static int decodeDataMem(InputStream inputStream, int[] mincode, int[] maxcode, int[] valptr, int[] huffvalues, WSQHelper.Ref<Integer> bitCount, WSQHelper.Ref<Integer> marker, WSQHelper.Ref<Integer> nextByte) throws IOException {
+	private static int decodeDataMem(DataInput DataInput, int[] mincode, int[] maxcode, int[] valptr, int[] huffvalues, WSQHelper.Ref<Integer> bitCount, WSQHelper.Ref<Integer> marker, WSQHelper.Ref<Integer> nextByte) throws IOException {
 
-		short code = (short) getCNextbitsWSQ(inputStream, marker, bitCount, 1, nextByte);   /* becomes a huffman code word  (one bit at a time) */
+		short code = (short) getCNextbitsWSQ(DataInput, marker, bitCount, 1, nextByte);   /* becomes a huffman code word  (one bit at a time) */
 		if (marker.value != 0) {
 			return -1;
 		}
 
 		int inx;
 		for (inx = 1; code > maxcode[inx]; inx++) {
-			int tbits = getCNextbitsWSQ(inputStream, marker, bitCount, 1, nextByte);  /* becomes a huffman code word  (one bit at a time)*/
+			int tbits = getCNextbitsWSQ(DataInput, marker, bitCount, 1, nextByte);  /* becomes a huffman code word  (one bit at a time)*/
 			code = (short) ((code << 1) + tbits);
 
 			if (marker.value != 0) {
@@ -595,15 +610,13 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		return huffvalues[inx2];
 	}
 
-	private static int getCNextbitsWSQ(InputStream inputStream, WSQHelper.Ref<Integer> marker, WSQHelper.Ref<Integer> bitCount, int bitsReq, WSQHelper.Ref<Integer> nextByte) throws IOException {
-		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
-
+	private static int getCNextbitsWSQ(DataInput dataInput, WSQHelper.Ref<Integer> marker, WSQHelper.Ref<Integer> bitCount, int bitsReq, WSQHelper.Ref<Integer> nextByte) throws IOException {
 		if (bitCount.value == 0) {
-			nextByte.value = dataInputStream.readUnsignedByte();
+			nextByte.value = dataInput.readUnsignedByte();
 
 			bitCount.value = 8;
 			if (nextByte.value == 0xFF) {
-				int code2 = dataInputStream.readUnsignedByte();  /*stuffed byte of buffer*/
+				int code2 = dataInput.readUnsignedByte();  /*stuffed byte of buffer*/
 
 				if (code2 != 0x00 && bitsReq == 1) {
 					marker.value = (nextByte.value << 8) | code2;
@@ -626,7 +639,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 			bitsNeeded = bitsReq - bitCount.value; /*additional bits required to finish request*/
 			bits = nextByte.value << bitsNeeded;
 			bitCount.value = 0;
-			tbits = getCNextbitsWSQ(inputStream, marker, bitCount, bitsNeeded, nextByte);
+			tbits = getCNextbitsWSQ(dataInput, marker, bitCount, bitsNeeded, nextByte);
 			bits |= tbits;
 		}
 
@@ -897,7 +910,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 								if (asym != 0 && da_ev != 0) {
 									hre = 1;
 									fhre--;
-									sfac = fhre;
+									sfac = (float) fhre;
 									if (sfac == 0.0)
 										hre = 0;
 								}
@@ -1012,7 +1025,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 							if (asym != 0 && da_ev != 0) {
 								hre = 1;
 								fhre--;
-								sfac = fhre;
+								sfac = (float) fhre;
 								if (sfac == 0.0)
 									hre = 0;
 							}

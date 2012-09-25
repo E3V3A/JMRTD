@@ -1,8 +1,10 @@
 package org.jnbis.imageio;
 
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -43,6 +45,8 @@ public class WSQMetadata extends IIOMetadata {
 
 	/** NistCom key/value pairs */
 	Map<String, String> nistcom = new LinkedHashMap<String, String>();
+	/** General Comments */
+	List<String> comments = new ArrayList<String>();
 
 	/** Creates a new (empty) WSQ Metadata */
 	public WSQMetadata() {
@@ -163,11 +167,6 @@ public class WSQMetadata extends IIOMetadata {
 	 * @return <code>true</code> if the modification was successfull, <code>false</code> otherwise.
 	 */
 	public boolean setProperty(String key, String value) {
-		//System.out.println("Nistcom "+key+"="+value);
-		key=key.trim().replaceAll("\\s+", "_");
-		if (value != null)
-			value = value.trim().replaceAll("[\\n\\r\\s]+", " ");
-
 		//Non-writable property
 		if (NISTCOM_DISCARD.contains(key)) { 
 			return false; 
@@ -491,5 +490,14 @@ public class WSQMetadata extends IIOMetadata {
 	@Override
 	public String toString() {
 		return "WSQ metadata: " + nistcom;
+	}
+
+	public void addComment(String s) {
+		if (s != null)
+			comments.add(s);
+	}
+	
+	public List<String> getComments() {
+		return comments;
 	}
 }

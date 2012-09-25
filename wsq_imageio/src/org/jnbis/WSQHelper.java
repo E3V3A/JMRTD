@@ -21,8 +21,8 @@
 
 package org.jnbis;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Based on JNBIS:
@@ -212,30 +212,22 @@ public class WSQHelper {
 	 * This appears to be the global state of decoder (and now also encoder).
 	 */
 	static class Token {
-		TableDHT[] tableDHT;
-		TableDTT tableDTT;
-		Table_DQT tableDQT;
+		TableDHT[]   tableDHT = new TableDHT[MAX_DHT_TABLES];
+		TableDTT     tableDTT = new TableDTT();
+		Table_DQT    tableDQT = new Table_DQT();
 
 		WavletTree[] wtree;
-		QuantTree[] qtree;
+		QuantTree[]  qtree;
 
-		Quantization quant_vals;
+		Quantization quant_vals = new Quantization();
+		List<String> comments = new ArrayList<String>();
 
-		Map<String, String> metaDataProperties;
-		
 		public Token() {
-			tableDTT = new TableDTT();
-			tableDQT = new Table_DQT();
-
 			/* Init DHT Tables to 0. */
-			tableDHT = new TableDHT[MAX_DHT_TABLES];
 			for (int i = 0; i < MAX_DHT_TABLES; i++) {
 				tableDHT[i] = new TableDHT();
 				tableDHT[i].tabdef = 0;
 			}
-
-			quant_vals = new Quantization();
-			metaDataProperties = new HashMap<String, String>();
 		}
 	}
 

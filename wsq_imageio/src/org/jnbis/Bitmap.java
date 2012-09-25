@@ -83,8 +83,7 @@ public class Bitmap implements Serializable {
         return lossyflag;
     }
     
-    @Override
-	public String toString() {
+    public String toString() {
     	StringBuffer result = new StringBuffer();
     	result.append("Bitmap [");
     	result.append(width);
