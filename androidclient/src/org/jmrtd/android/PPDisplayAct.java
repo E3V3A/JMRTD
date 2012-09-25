@@ -33,11 +33,6 @@ import java.util.Collections;
 import java.util.List;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ISCFactory;
-import net.sourceforge.scuba.smartcards.ScubaSmartcards;
-import net.sourceforge.scuba.smartcards.indep.CommandAPDU;
-import net.sourceforge.scuba.smartcards.indep.ResponseAPDU;
-import net.sourceforge.scuba.smartcards.indep.SCFactory;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.MRTDTrustStore;
@@ -201,9 +196,6 @@ public class PPDisplayAct extends Activity {
 				Log.v(TAG, "isoDep = " + isoDep);
 				IsoDepService service = new IsoDepService(isoDep);
 				service.open();
-				ISCFactory<CommandAPDU, ResponseAPDU> factory = new SCFactory();
-				ScubaSmartcards<CommandAPDU, ResponseAPDU> sc = ScubaSmartcards.getInstance();
-				sc.init(factory);
 				PassportService passportService = new PassportService(service);
 
 				/* Try all BACs */

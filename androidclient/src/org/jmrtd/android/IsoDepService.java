@@ -31,7 +31,7 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ICommandAPDU;
 import net.sourceforge.scuba.smartcards.IResponseAPDU;
-import net.sourceforge.scuba.smartcards.indep.ResponseAPDU;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import android.nfc.tech.IsoDep;
 
 public class IsoDepService extends CardService {
