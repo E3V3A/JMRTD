@@ -16,7 +16,7 @@
  * $Id: $
  */
 
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
@@ -32,8 +32,8 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
 
-import org.jmrtd.jnbis.Bitmap;
-import org.jmrtd.jnbis.WSQDecoder;
+import org.jnbis.Bitmap;
+import org.jnbis.WSQDecoder;
 
 public class WSQImageReader extends ImageReader {
 

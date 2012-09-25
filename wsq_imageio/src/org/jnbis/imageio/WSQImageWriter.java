@@ -1,4 +1,4 @@
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
@@ -13,8 +13,8 @@ import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 
-import org.jmrtd.jnbis.Bitmap;
-import org.jmrtd.jnbis.WSQEncoder;
+import org.jnbis.Bitmap;
+import org.jnbis.WSQEncoder;
 
 public class WSQImageWriter extends ImageWriter {
 

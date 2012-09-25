@@ -19,7 +19,7 @@
  * $Id: $
  */
 
-package org.jmrtd.jnbis;
+package org.jnbis;
 
 import java.io.DataInputStream;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jmrtd.jnbis.WSQHelper.Token;
+import org.jnbis.WSQHelper.Token;
 
 /**
  * WSQDecoder based on NBIS and/or JNBIS.

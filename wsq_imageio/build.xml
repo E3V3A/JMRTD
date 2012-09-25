@@ -18,8 +18,8 @@
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
 		
 		<mkdir dir="META-INF/services" />
-		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jmrtd.imageio.WSQImageReaderSpi</echo>
-		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jmrtd.imageio.WSQImageWriterSpi</echo>
+		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jnbis.imageio.WSQImageReaderSpi</echo>
+		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jnbis.imageio.WSQImageWriterSpi</echo>
 		
 		<!-- Create the distribution jar file -->
 		<jar jarfile="wsq_imageio.jar">
@@ -30,8 +30,8 @@
 				<attribute name="Implementation-Title" value="wsq_imageio"/>
 				<attribute name="Implementation-Version" value="0.0.2"/>
 			</manifest>
-			<fileset dir="${build}" includes="org/jmrtd/jnbis/*.class" />
-			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
+			<fileset dir="${build}" includes="org/jnbis/*.class" />
+			<fileset dir="${build}/" includes="org/jnbis/imageio/*.class" />
 			<fileset dir="" includes="META-INF/**/*" />					
 		</jar>	
 	</target>

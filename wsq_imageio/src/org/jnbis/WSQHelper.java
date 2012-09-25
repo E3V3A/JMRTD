@@ -19,7 +19,7 @@
  * $Id: $
  */
 
-package org.jmrtd.jnbis;
+package org.jnbis;
 
 import java.util.HashMap;
 import java.util.Map;

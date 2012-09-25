@@ -1,4 +1,4 @@
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.metadata.IIOMetadataFormat;

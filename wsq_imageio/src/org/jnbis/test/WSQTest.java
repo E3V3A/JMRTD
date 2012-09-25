@@ -1,4 +1,4 @@
-package org.jmrtd.jnbis.test;
+package org.jnbis.test;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -14,9 +14,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.jmrtd.jnbis.Bitmap;
-import org.jmrtd.jnbis.WSQDecoder;
-import org.jmrtd.jnbis.WSQEncoder;
+import org.jnbis.Bitmap;
+import org.jnbis.WSQDecoder;
+import org.jnbis.WSQEncoder;
 
 public class WSQTest {
 

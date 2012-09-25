@@ -9,7 +9,7 @@
  * For details see accompanying license terms.
  */
 
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import java.io.IOException;
 import java.io.OutputStream;

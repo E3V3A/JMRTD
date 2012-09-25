@@ -22,7 +22,7 @@
  * $Id: $
  */
 
-package org.jmrtd.jnbis;
+package org.jnbis;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
@@ -32,8 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.jmrtd.jnbis.WSQHelper.Ref;
-import org.jmrtd.jnbis.WSQHelper.Token;
+import org.jnbis.WSQHelper.Ref;
+import org.jnbis.WSQHelper.Token;
 
 /**
  * WSQ encoder based on NBIS.

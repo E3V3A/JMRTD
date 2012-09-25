@@ -17,7 +17,7 @@
 
 /* $Id$ */
 
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import java.io.IOException;
 import java.io.InputStream;

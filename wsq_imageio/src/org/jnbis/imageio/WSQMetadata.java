@@ -1,4 +1,4 @@
-package org.jmrtd.imageio;
+package org.jnbis.imageio;
 
 import java.util.AbstractMap;
 import java.util.HashSet;

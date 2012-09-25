@@ -20,7 +20,7 @@
  * $Id: $
  */
 
-package org.jmrtd.jnbis;
+package org.jnbis;
 
 public interface WSQConstants {
 
