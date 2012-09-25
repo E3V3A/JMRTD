@@ -278,8 +278,6 @@ abstract class AbstractImageInfo implements ImageInfo {
 				@Override
 				public int read() throws IOException {
 					synchronized(input) {
-						input.reset();
-						input.skip(offsetInInput + counter);
 						if (counter >= buffer.length) {
 							return -1;
 						} else if (counter < buffCount) {
@@ -289,6 +287,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 						} else if (counter > buffCount) {
 							throw new IllegalStateException("Buffer contains " + buffCount + " bytes, reader state at " + counter);
 						} else {
+							input.reset();
+							input.skip(offsetInInput + counter);
 							int b = input.read();
 							if (b < 0) { throw new IllegalStateException("Input EOF reached, but only " + counter + " bytes read, was expecting " + buffer.length); }
 							buffer[buffCount] = (byte)b;

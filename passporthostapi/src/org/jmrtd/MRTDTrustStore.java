@@ -55,6 +55,8 @@ import java.util.logging.Logger;
 import javax.security.auth.x500.X500Principal;
 
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
+import org.jmrtd.cert.PKDCertStoreParameters;
+import org.jmrtd.cert.PKDMasterListCertStoreParameters;
 
 /**
  * Provides lookup for certificates, keys, CRLs used in
@@ -313,17 +315,17 @@ public class MRTDTrustStore {
 	}
 
 	private void addAsPKDStoreCSCACertStore(URI uri) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, CertStoreException {
-//		/* PKD store */
-//		String server = uri.getHost();
-//		int port = uri.getPort();
-//		CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
-//		CertStoreParameters cscaParams = port < 0 ? new PKDMasterListCertStoreParameters(server) : new PKDMasterListCertStoreParameters(server, port);
-//		CertStore certStore = CertStore.getInstance("PKD", params);
-//		if (certStore != null) { addCSCAStore(certStore); }
-//		CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
-//		if (cscaStore != null) { addCSCAStore(cscaStore); }
-//		Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
-//		addCSCAAnchors(getAsAnchors(rootCerts));
+		/* PKD store */
+		String server = uri.getHost();
+		int port = uri.getPort();
+		CertStoreParameters params = port < 0 ? new PKDCertStoreParameters(server) : new PKDCertStoreParameters(server, port);
+		CertStoreParameters cscaParams = port < 0 ? new PKDMasterListCertStoreParameters(server) : new PKDMasterListCertStoreParameters(server, port);
+		CertStore certStore = CertStore.getInstance("PKD", params);
+		if (certStore != null) { addCSCAStore(certStore); }
+		CertStore cscaStore = CertStore.getInstance("PKD", cscaParams);
+		if (cscaStore != null) { addCSCAStore(cscaStore); }
+		Collection<? extends Certificate> rootCerts = cscaStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
 
 	private void addAsKeyStoreCSCACertStore(URI uri) throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {

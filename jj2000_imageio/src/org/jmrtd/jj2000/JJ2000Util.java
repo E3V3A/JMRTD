@@ -1,6 +1,6 @@
 package org.jmrtd.jj2000;
 
-public class JJ2000Util {
+class JJ2000Util {
 
 	private JJ2000Util() {
 	}

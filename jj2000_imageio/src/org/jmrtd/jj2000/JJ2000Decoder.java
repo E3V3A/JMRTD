@@ -7,7 +7,8 @@ import icc.ICCProfiler;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Vector;
+import java.util.ArrayList;
+import java.util.List;
 
 import jj2000.j2k.codestream.HeaderInfo;
 import jj2000.j2k.codestream.reader.BitstreamReaderAgent;
@@ -283,69 +284,60 @@ public class JJ2000Decoder {
 	}
 
 	private static String[][] getAllDecoderParameters() {
-		Vector<String[]> vec = new Vector<String[]>();
-		int i;
+		List<String[]> pl = new ArrayList<String[]>();
 
 		String[][] str = BitstreamReaderAgent.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = EntropyDecoder.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = ROIDeScaler.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = Dequantizer.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = InvCompTransf.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = HeaderDecoder.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = ICCProfiler.getParameterInfo();
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
 		str = DECODER_PINFO;
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				vec.addElement(str[i]);
+			for (int i = str.length - 1; i >= 0; i--) {
+				pl.add(str[i]);
 			}
 		}
-
-		str = new String[vec.size()][4];
+		str = new String[pl.size()][4];
 		if (str != null) {
-			for (i = str.length - 1; i >= 0; i--) {
-				str[i] = (String[]) vec.elementAt(i);
+			for (int i = str.length - 1; i >= 0; i--) {
+				str[i] = (String[]) pl.get(i);
 			}
 		}
 
