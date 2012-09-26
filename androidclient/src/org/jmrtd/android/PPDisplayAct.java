@@ -194,7 +194,7 @@ public class PPDisplayAct extends Activity {
 			try {
 				IsoDep isoDep = params[0];
 				Log.v(TAG, "isoDep = " + isoDep);
-				IsoDepService service = new IsoDepService(isoDep);
+				IsoDepCardService service = new IsoDepCardService(isoDep);
 				service.open();
 				PassportService passportService = new PassportService(service);
 

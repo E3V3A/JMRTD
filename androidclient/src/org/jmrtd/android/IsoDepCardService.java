@@ -34,14 +34,14 @@ import net.sourceforge.scuba.smartcards.IResponseAPDU;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import android.nfc.tech.IsoDep;
 
-public class IsoDepService extends CardService {
+public class IsoDepCardService extends CardService {
 
 	private static final long serialVersionUID = -3632172111055888506L;
 
 	private boolean isOpen = false;
 	private IsoDep picc;
 
-	public IsoDepService(IsoDep picc) {
+	public IsoDepCardService(IsoDep picc) {
 		super();
 		this.picc = picc;
 	}

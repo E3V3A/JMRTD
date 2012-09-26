@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-	<string name="app_name">bjmrtd</string>
+	<string name="app_name">JMRTD</string>
 	<string name="menu_opt_info">info</string>
 	<string name="knownBACsHeading">List of known BACs</string>
 	<string name="saveImageLabel">save Image to gallery</string>

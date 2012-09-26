@@ -208,18 +208,19 @@ Android
 - Optically scan MRZ with JavaOCR on Android.
 
 ImageIO
-+ Problem with JJ2000 decoding (artifacts).
-+ Check out  https://code.google.com/p/jnbis/ as alternative for native NIST WSQ code.
-+ Patch by Paulo Costa for wsq_imageio, implements metadata in standardized way.
-- Update to latest NBIS C code and base wsq_imageio on that.
-- Also have an image writer based on JJ2000?
-+ Also have an image writer based on JNBIS?
++ Problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
++ Use pure Java WSQ based on JNBIS. (credits to Mohammad Shamsi)
++ Metadata for WSQ imageio. (credits to Paulo Costa)
++ Update to latest NBIS C code and base wsq_imageio on that. (credits to Paulo Costa)
++ Also have an image writer based on JJ2000, custom interface and imageio interface.
++ Also have an image writer based on JNBIS, custom interface and imageio interface.
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
 
 SCUBA
-+ Check abstraction of smartcardio. Remove generic params. (Patch by Pim Vullers).
++ Check abstraction of smartcardio. Remove generic params. (credits to Pim Vullers).
+- Separate scuba.jar (differences per platform) and jmrtd.jar (same on all platforms).
 
 Code quality
 - Check unit tests
