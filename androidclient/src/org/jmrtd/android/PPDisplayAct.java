@@ -33,6 +33,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.IsoDepCardService;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.MRTDTrustStore;

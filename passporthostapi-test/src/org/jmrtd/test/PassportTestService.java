@@ -22,8 +22,8 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ICommandAPDU;
-import net.sourceforge.scuba.smartcards.IResponseAPDU;
+import net.sourceforge.scuba.smartcards.CommandAPDU;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.TerminalCardService;
 
@@ -503,11 +503,11 @@ public class PassportTestService extends PassportService {
 	 *             if useSM is true but there is no SM session active
 	 */
 	public int sendGetChallengeAndStore(boolean useSM) throws CardServiceException {
-		ICommandAPDU capdu = createGetChallengeAPDU();
+		CommandAPDU capdu = createGetChallengeAPDU();
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
 		}
-		IResponseAPDU rapdu = transmit(capdu);
+		ResponseAPDU rapdu = transmit(capdu);
 		if (useSM) {
 			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
 		}
@@ -551,11 +551,11 @@ public class PassportTestService extends PassportService {
 	 *             if useSM is true but there is no SM session active
 	 */
 	public int sendAnyInstruction(byte ins, boolean useSM) throws CardServiceException {
-		ICommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins, (byte) 0x00, (byte) 0x00);
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ins, (byte) 0x00, (byte) 0x00);
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
 		}
-		IResponseAPDU rapdu = transmit(capdu);
+		ResponseAPDU rapdu = transmit(capdu);
 		if (useSM) {
 			rapdu = getWrapper().unwrap(rapdu, rapdu.getBytes().length);
 		}
