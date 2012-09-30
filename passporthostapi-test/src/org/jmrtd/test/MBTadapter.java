@@ -16,8 +16,8 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CardTerminals;
 import javax.smartcardio.TerminalFactory;
 
+import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
 
 import org.jmrtd.JMRTDSecurityProvider;
 
@@ -49,8 +49,7 @@ public class MBTadapter
 			CardTerminals terminals = tf.terminals();
 			for (CardTerminal terminal : terminals
 					.list(CardTerminals.State.CARD_PRESENT)) {
-				service = new PassportTestService(new TerminalCardService(
-						terminal));
+				service = new PassportTestService(CardService.getInstance(terminal));
 				if (service != null) {
 					service.open();
 					break;

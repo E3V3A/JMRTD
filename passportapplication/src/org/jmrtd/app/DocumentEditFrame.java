@@ -87,8 +87,8 @@ import javax.swing.JTextArea;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardManager;
+import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.swing.ImagePanel;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
@@ -1314,7 +1314,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 					try {
 						cm.stopPolling(terminal);
 						// FIXME: have to wait for the poller to actually stop?
-						PassportPersoService persoService = new PassportPersoService(new TerminalCardService(terminal));
+						PassportPersoService persoService = new PassportPersoService(CardService.getInstance(terminal));
 						if (apduListener != null) { persoService.addAPDUListener(apduListener); }
 						persoService.open();
 						if (chooser.isBACSelected()) {

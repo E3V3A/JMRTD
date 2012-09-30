@@ -21,10 +21,10 @@ import javax.smartcardio.TerminalFactory;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.JMRTDSecurityProvider;
@@ -52,8 +52,7 @@ public abstract class PassportTesterBase extends TestCase implements
 			CardTerminals terminals = tf.terminals();
 			for (CardTerminal terminal : terminals
 					.list(CardTerminals.State.CARD_PRESENT)) {
-				service = new PassportTestService(new TerminalCardService(
-						terminal));
+				service = new PassportTestService(CardService.getInstance(terminal));
 				service.addAPDUListener(this);
 				if (service != null) {
 					service.open();

@@ -67,7 +67,6 @@ import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
 import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.OSXAdapter;
@@ -532,7 +531,7 @@ public class JMRTDApp {
 									if (isPolling) { cardManager.stopPolling(terminal); }
 									CardService service = cardManager.getService(terminal);
 									if (service != null) { service.close(); }
-									service = new TerminalCardService(terminal);
+									service = CardService.getInstance(terminal);
 									if (apduTraceFrame != null) { service.addAPDUListener(apduTraceFrame.getRawAPDUListener()); }
 									PassportService passportService = new PassportService(service);
 									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener()); }

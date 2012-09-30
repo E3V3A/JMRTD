@@ -22,10 +22,8 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.TerminalCardService;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 
 import org.jmrtd.BACKey;
 import org.jmrtd.PassportService;
@@ -138,7 +136,7 @@ public class PassportTestService extends PassportService {
 		CardTerminals terminals = tf.terminals();
 		for (CardTerminal terminal : terminals
 				.list(CardTerminals.State.CARD_PRESENT)) {
-			service = new PassportTestService(new TerminalCardService(terminal));
+			service = new PassportTestService(CardService.getInstance(terminal));
 			if (service != null) {
 				service.open();
 				break;

@@ -32,8 +32,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.IsoDepCardService;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.MRTDTrustStore;
@@ -195,7 +195,8 @@ public class PPDisplayAct extends Activity {
 			try {
 				IsoDep isoDep = params[0];
 				Log.v(TAG, "isoDep = " + isoDep);
-				IsoDepCardService service = new IsoDepCardService(isoDep);
+				CardService service = CardService.getInstance(isoDep);
+				Log.v(TAG, "service = " + service);
 				service.open();
 				PassportService passportService = new PassportService(service);
 
