@@ -26,13 +26,11 @@ class BitmapDataSrc extends ImgReader {
 		this.nomRangeBits = 8;
 	}
 
-	@Override
 	public int getFixedPoint(int c) {
 		if (c < 0 || c >= nc) { throw new IllegalArgumentException(); }
 		return 0;
 	}
 
-	@Override
 	public int getNomRangeBits(int c) {
 		if (c < 0 || c >= nc) { throw new IllegalArgumentException(); }
 		return nomRangeBits;
@@ -48,12 +46,10 @@ class BitmapDataSrc extends ImgReader {
 		return false;
 	}
 
-	@Override
 	public DataBlk getInternCompData(DataBlk blk, int c) {
 		return getCompData(blk, c);
 	}
 
-	@Override
 	public DataBlk getCompData(DataBlk blk, int c) {
 		if (c < 0 || c >= nc) { throw new IllegalArgumentException(); }
 		int[] pixels = bitmap.getPixels();

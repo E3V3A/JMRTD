@@ -52,9 +52,6 @@ import org.jmrtd.lds.MRZInfo;
 
 /**
  * Service for initializing blank passport reference applets.
- * 
- * @param <C> the command APDU class to use
- * @param <R> the response APDU class to use
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 

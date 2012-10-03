@@ -41,7 +41,7 @@
 					value="Keijo Kurkinen, Swedish National Police Board" />
 				<attribute name="License" value="LGPL" />
 			</manifest>
-			<zipfileset dir="${software}/cert-cvc-1.3.0" includes="cert-cvc.jar" />
+			<zipgroupfileset dir="${software}/cert-cvc-1.3.0" includes="cert-cvc*.jar" />
 			<rule pattern="org.bouncycastle.**" result="org.spongycastle.@1" />
 		</jarjar>
 
@@ -68,9 +68,29 @@
 			<zipgroupfileset dir="../scuba_sc_android/bin" includes="*.jar" />
 		</jar>
 
+		<jar destfile="libs/jj2000_imageutil.jar">
+			<manifest>
+				<attribute name="Implementation-Title" value="JMRTD JPEG2000 support" />
+				<attribute name="Implementation-Version" value="0.0.1" />
+				<attribute name="Implementation-Vendor" value="The JMRTD team" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<fileset dir="../jj2000_imageio/bin" includes="**/*.class" excludes="org/jmrtd/imageio/**/*.class,org/jmrtd/jj2000/test/**.*.class" />
+			<zipgroupfileset dir="${software}/jj2000-read-only/target" includes="jj2000-*.jar" />
+		</jar>
+		
+		<jar destfile="libs/wsq_imageutil.jar">
+			<manifest>
+				<attribute name="Implementation-Title" value="JMRTD WSQ support" />
+				<attribute name="Implementation-Version" value="0.0.1" />
+				<attribute name="Implementation-Vendor" value="The JMRTD team" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<fileset dir="../wsq_imageio/bin" includes="**/*.class" excludes="org/jnbis/imageio/**/*.class,org/jnbis/test/**.*.class" />
+		</jar>
+
 		<copy todir="libs">
-			<fileset dir="${software}" includes="scprov-jdk15on-1.47.0.1.jar" />
-			<fileset dir="${software}/jj2000-read-only/target" includes="jj2000-5.2-SNAPSHOT.jar" />			
+			<fileset dir="${software}" includes="scprov-jdk15on-1.47.0.1.jar" />	
 		</copy>
 		
 	</target>

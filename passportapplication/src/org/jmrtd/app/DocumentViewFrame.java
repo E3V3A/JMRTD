@@ -146,7 +146,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 	private EACEvent eacEvent;
 
 	private VerificationIndicator verificationIndicator;
-	
+
 	private APDUListener apduListener;
 
 	public DocumentViewFrame(Passport passport, ReadingMode readingMode, APDUListener apduListener) {
@@ -250,13 +250,18 @@ public class DocumentViewFrame extends JMRTDFrame {
 					/* NOTE: Already processed this one. */
 					break;
 				case PassportService.EF_DG2:
-					DG2File dg2 = new DG2File(in);
-					List<FaceInfo> faceInfos = dg2.getFaceInfos();
-					for (FaceInfo faceInfo: faceInfos) {
-						List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
-						for (FaceImageInfo faceImageInfo: faceImageInfos) {
-							displayPreviewPanel.addDisplayedImage(faceImageInfo);
+					try {
+						DG2File dg2 = new DG2File(in);
+						List<FaceInfo> faceInfos = dg2.getFaceInfos();
+						for (FaceInfo faceInfo: faceInfos) {
+							List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
+							for (FaceImageInfo faceImageInfo: faceImageInfos) {
+								displayPreviewPanel.addDisplayedImage(faceImageInfo);
+							}
 						}
+					} catch (Exception e) {
+						System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 1");
+						e.printStackTrace();
 					}
 					break;
 				case PassportService.EF_DG3:
@@ -310,7 +315,12 @@ public class DocumentViewFrame extends JMRTDFrame {
 					updateViewMenu();
 					break;
 				case PassportService.EF_DG15:
-					/* DG15File dg15 = */ new DG15File(in);
+					try {
+						/* DG15File dg15 = */ new DG15File(in);
+					} catch (Exception e) {
+						System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught. -- MO 2");
+						e.printStackTrace();
+					}
 					break;
 				case PassportService.EF_SOD:
 					/* NOTE: Already processed this one above. */
@@ -329,7 +339,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 				}
 			} catch (Exception ioe) {
 				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
-				+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
+						+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
 				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
 				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
 				continue;

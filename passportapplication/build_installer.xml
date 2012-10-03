@@ -26,23 +26,17 @@
 	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
 	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
 
-	<property name="acrprovider_build" location="${basedir}/../acrprovider/bin" />
+	<property name="acr122provider_build" location="${basedir}/../acr122provider/bin" />
 	<property name="crefprovider_build" location="${basedir}/../crefprovider/bin" />
 	<property name="jcopprovider_build" location="${basedir}/../jcopprovider/bin" />
 
 	<property name="wsq_imageio_dir" location="${basedir}/../wsq_imageio" />
 	<property name="wsq_imageio_jar" value="wsq_imageio.jar" />
-	<property name="wsq_imageio_binary_windows_i386" location="${basedir}/../wsq_imageio/windows/i386/j2wsq.dll" />
-	<property name="wsq_imageio_binary_windows_x86_64" location="${basedir}/../wsq_imageio/windows/x86_64/j2wsq.dll" />
-	<property name="wsq_imageio_binary_linux_i386" location="${basedir}/../wsq_imageio/linux/i386/libj2wsq.so" />
-	<property name="wsq_imageio_binary_linux_x86_64" location="${basedir}/../wsq_imageio/linux/x86_64/libj2wsq.so" />
-	<property name="wsq_imageio_binary_macosx" location="${basedir}/../wsq_imageio/macosx/libj2wsq.dylib" />
 
 	<property name="jj2000_imageio_dir" location="${basedir}/../jj2000_imageio" />
 	<property name="jj2000_imageio_jar" value="jj2000_imageio.jar" />
 
 	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards/src" />
-	<property name="scuba_sc_indep_src" location="${basedir}/../scuba_sc_indep/src" />
 	<property name="scuba_sc_j2se_src" location="${basedir}/../scuba_sc_j2se/src" />
 	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
 	<property name="scuba_util_j2se_src" location="${basedir}/../scuba_util_j2se/src" />
@@ -65,7 +59,7 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${scuba_util_src}:${scuba_util_j2se_src}:${scuba_smartcards_src}:${scuba_sc_indep_src}:${scuba_sc_j2se_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
+		<javac srcdir="${src}:${scuba_util_src}:${scuba_util_j2se_src}:${scuba_smartcards_src}:${scuba_sc_j2se_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
 	</target>
 
 	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		
@@ -89,12 +83,6 @@
 			<fileset dir="${jj2000_dir}" includes="${jj2000_jar}" />
 		</copy>
 		
-		<!-- WSQ specific binaries for different platforms -->
-		<copy file="${wsq_imageio_binary_windows_i386}" todir="${distlib}/i386" failonerror="false" />
-		<copy file="${wsq_imageio_binary_windows_x86_64}" todir="${distlib}/x86_64" failonerror="false" />
-		<copy file="${wsq_imageio_binary_macosx}" todir="${distlib}" failonerror="false" />
-		<copy file="${wsq_imageio_binary_linux_i386}" todir="${distlib}/i386" failonerror="false" />
-		<copy file="${wsq_imageio_binary_linux_x86_64}" todir="${distlib}/x86_64" failonerror="false" />
 	</target>
 
 	<target name="dist" depends="extensions, compile" description="Generates the distribution .jar file">
@@ -125,7 +113,7 @@
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
 			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${acrprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${acr122provider_build}/" includes="**/*.class" erroronmissingdir="false" />
 			<fileset dir="${crefprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
 			<fileset dir="${jcopprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
@@ -276,7 +264,7 @@
 	<!-- Conditional stuff is set below -->
 
 	<target name="check_conditional_properties" description="Sets some properties depending on build platform">
-		<available file="${acrprovider_build}" property="is_acr_available" />
+		<available file="${acr122provider_build}" property="is_acr_available" />
 		<available file="${crefprovider_build}" property="is_cref_available" />
 		<available file="${jcopprovider_build}" property="is_jcop_available" />
 		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />

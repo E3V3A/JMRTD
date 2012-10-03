@@ -84,9 +84,6 @@ import org.jmrtd.lds.MRZInfo;
  *        close()
  * </pre>
  *
- * @param <C> the command APDU class to use
- * @param <R> the response APDU class to use
- *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)

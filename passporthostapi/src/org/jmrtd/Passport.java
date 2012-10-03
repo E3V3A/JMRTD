@@ -1066,7 +1066,11 @@ public class Passport {
 			verificationStatus.setAA(Verdict.FAILED);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED);           
+			verificationStatus.setAA(Verdict.FAILED);
+		} catch (Exception e) {
+			System.out.println("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
+			e.printStackTrace();
+			verificationStatus.setAA(Verdict.FAILED);
 		}
 	}
 

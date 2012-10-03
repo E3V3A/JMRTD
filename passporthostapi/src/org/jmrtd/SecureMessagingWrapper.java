@@ -50,9 +50,6 @@ import net.sourceforge.scuba.util.Hex;
 /**
  * Secure messaging wrapper for apdus. Based on Section E.3 of ICAO-TR-PKI.
  *
- * @param <C> the command APDU class to use
- * @param <R> the response APDU class to use
- *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
