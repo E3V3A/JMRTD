@@ -29,8 +29,10 @@ import org.jmrtd.BACKeySpec;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.nfc.NfcAdapter;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.Log;
@@ -122,8 +124,18 @@ public class BacsAct extends Activity {
 	public void onResume() {
 		super.onResume();
 		Log.v(TAG, "onResume");
+		enableForegroundDispatch(PPDisplayAct.class);
 	}
 
+	private void enableForegroundDispatch(Class<?> targetClass) {
+		NfcAdapter adapter = NfcAdapter.getDefaultAdapter(this);
+		Intent intent = new Intent(getApplicationContext(), targetClass);
+		intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+		PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+		String[][] filter = new String[][] { new String[] { "android.nfc.tech.IsoDep" } };
+		adapter.enableForegroundDispatch(this, pendingIntent, null, filter);
+	}
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);

@@ -22,6 +22,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -90,6 +91,11 @@ public class DG15FileTest extends TestCase
 	}
 
 	public void testFile(InputStream in) {
-		testReflexive(new DG15File(in));
+		try {
+			testReflexive(new DG15File(in));
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			fail(ioe.getMessage());
+		}
 	}
 }

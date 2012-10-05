@@ -366,7 +366,7 @@ public class PassportTestService extends PassportService {
 			DG15File dg15 = new DG15File(in);
 			publicKey = dg15.getPublicKey();
 			resetCard();
-		}catch(CardServiceException e) {
+		} catch(Exception e) {
 			return false;
 		}
 		return true;
@@ -379,10 +379,10 @@ public class PassportTestService extends PassportService {
 			doBAC();
 			short fid = PassportService.EF_CVCA;
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = getInputStream(fid);
-			result = new CVCAFile(in);
+			CardFileInputStream inputStream = getInputStream(fid);
+			result = new CVCAFile(inputStream);
 			resetCard();
-		}catch(CardServiceException e) {
+		} catch(CardServiceException e) {
 			return null;
 		}
 		return result;

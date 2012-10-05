@@ -75,7 +75,7 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 	 *
 	 * @param in an input stream
 	 */
-	public DG3File(InputStream in) {
+	public DG3File(InputStream in) throws IOException {
 		super(EF_DG3_TAG, in);
 	}
 

@@ -70,6 +70,7 @@ import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceImageInfo.EyeColor;
 import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
@@ -138,7 +139,7 @@ public class DocumentFactory {
 		hashes.put(1, digest.digest(dg1.getEncoded()));
 		hashes.put(2, digest.digest(dg2.getEncoded()));
 		SODFile sodFile = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
-		return new Passport(comFile, Arrays.asList(new DataGroup[] { dg1, dg2 }), sodFile, docSigningPrivateKey, trustManager);
+		return new Passport(new LDS(comFile, Arrays.asList(new DataGroup[] { dg1, dg2 }), sodFile), docSigningPrivateKey, trustManager);
 	}
 
 	private static FaceImageInfo createFaceImageInfo() {

@@ -29,7 +29,7 @@ package org.jmrtd.lds;
  *
  * @version $Revision: $
  */
-public interface LDSFile extends LDSInfo {
+public interface LDSFile extends LDSElement {
 
 	/**
 	 * ICAO specific datagroup tag.

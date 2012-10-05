@@ -213,6 +213,16 @@ public class DocumentViewFrame extends JMRTDFrame {
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
+			
+			/* START DEBUG */
+			System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 21");
+			e.printStackTrace();
+			String errorMessage = "DEBUG: Uncaught exception 21: "
+					+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+			JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem displaying / verifying", JOptionPane.WARNING_MESSAGE);
+			/* END DEBUG */	
+			
 			dispose();
 			return;
 		}
@@ -232,126 +242,182 @@ public class DocumentViewFrame extends JMRTDFrame {
 	 */
 	private void displayInputStreams() {
 		try {
-			displayHolderInfo();
+			displayDG1Info();
 		} catch (Exception e) {
 			e.printStackTrace();
 			return;
 		}
 
-		for (short fid: passport.getFileList()) {
-			try {
-				InputStream in = passport.getInputStream(fid);
-				if (in == null) { LOGGER.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
-				switch (fid) {
-				case PassportService.EF_COM:
-					/* NOTE: Already processed this one. */
-					break;
-				case PassportService.EF_DG1:
-					/* NOTE: Already processed this one. */
-					break;
-				case PassportService.EF_DG2:
-					try {
-						DG2File dg2 = new DG2File(in);
-						List<FaceInfo> faceInfos = dg2.getFaceInfos();
-						for (FaceInfo faceInfo: faceInfos) {
-							List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
-							for (FaceImageInfo faceImageInfo: faceImageInfos) {
-								displayPreviewPanel.addDisplayedImage(faceImageInfo);
+		try { /* DEBUG DEBUG */
+
+			for (short fid: passport.getFileList()) {
+				try {
+					InputStream inputStream = passport.getInputStream(fid);
+					if (inputStream == null) { LOGGER.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
+					switch (fid) {
+					case PassportService.EF_COM:
+						/* NOTE: Already processed this one. */
+						break;
+					case PassportService.EF_DG1:
+						/* NOTE: Already processed this one. */
+						break;
+					case PassportService.EF_DG2:
+						try {
+							DG2File dg2 = new DG2File(inputStream);
+							List<FaceInfo> faceInfos = dg2.getFaceInfos();
+							for (FaceInfo faceInfo: faceInfos) {
+								List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
+								for (FaceImageInfo faceImageInfo: faceImageInfos) {
+									displayPreviewPanel.addDisplayedImage(faceImageInfo);
+								}
+							}
+						} catch (Exception e) {
+							/* START DEBUG */
+							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 2");
+							e.printStackTrace();
+							String errorMessage = "DEBUG: Exception reading file " + Integer.toHexString(fid) + ": \n"
+									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+							/* END DEBUG */
+						}
+						break;
+					case PassportService.EF_DG3:
+						try {
+							DG3File dg3 = new DG3File(inputStream);
+							if (eacEvent == null || !eacEvent.isSuccess()) {
+								LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
+							}
+							List<FingerInfo> fingerInfos = dg3.getFingerInfos();
+							for (FingerInfo fingerInfo: fingerInfos) {
+								List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
+								for (FingerImageInfo fingerImageInfo: fingerImageInfos) {
+									displayPreviewPanel.addDisplayedImage(fingerImageInfo);
+								}
+							}
+						} catch (Exception e) {
+							/* START DEBUG */
+							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 3");
+							e.printStackTrace();
+							String errorMessage = "DEBUG: Exception reading file " + Integer.toHexString(fid) + ": \n"
+									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+							/* END DEBUG */
+						}
+						break;
+					case PassportService.EF_DG4:
+						DG4File dg4 = new DG4File(inputStream);
+						if (eacEvent == null || !eacEvent.isSuccess()) {
+							LOGGER.warning("Starting to read DG4, but eacEvent = " + eacEvent);
+						}
+						List<IrisInfo> irisInfos = dg4.getIrisInfos();
+						for (IrisInfo irisInfo: irisInfos) {
+							List<IrisBiometricSubtypeInfo> irisBiometricSubtypeInfos = irisInfo.getIrisBiometricSubtypeInfos();
+							for (IrisBiometricSubtypeInfo irisBiometricSubtypeInfo: irisBiometricSubtypeInfos) {
+								List<IrisImageInfo> irisImageInfos = irisBiometricSubtypeInfo.getIrisImageInfos();
+								for (IrisImageInfo irisImageInfo: irisImageInfos) {
+									displayPreviewPanel.addDisplayedImage(irisImageInfo);
+								}
 							}
 						}
-					} catch (Exception e) {
-						System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 1");
-						e.printStackTrace();
-					}
-					break;
-				case PassportService.EF_DG3:
-					DG3File dg3 = new DG3File(in);
-					if (eacEvent == null || !eacEvent.isSuccess()) {
-						LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
-					}
-					List<FingerInfo> fingerInfos = dg3.getFingerInfos();
-					for (FingerInfo fingerInfo: fingerInfos) {
-						List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();
-						for (FingerImageInfo fingerImageInfo: fingerImageInfos) {
-							displayPreviewPanel.addDisplayedImage(fingerImageInfo);
+						break;
+					case PassportService.EF_DG5:
+						DG5File dg5 = new DG5File(inputStream);
+						break;
+					case PassportService.EF_DG6:
+						/* DG6File dg6 = */ new DG6File(inputStream);
+						break;
+					case PassportService.EF_DG7:
+						DG7File dg7 = new DG7File(inputStream);
+						List<DisplayedImageInfo> infos = dg7.getImages();
+						for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info); }
+						break;
+					case PassportService.EF_DG11:
+						/* DG11File dg11 = */ new DG11File(inputStream);
+						break;
+					case PassportService.EF_DG12:
+						/* DG12File dg12 = */ new DG12File(inputStream);
+						break;
+					case PassportService.EF_DG14:
+						try {
+							/* DG14File dg14 = */ new DG14File(inputStream);
+							updateViewMenu();
+						} catch (Exception e) {
+							/* START DEBUG */
+							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 14");
+							e.printStackTrace();
+							String errorMessage = "DEBUG: Exception reading DG14 file " + Integer.toHexString(fid) + ": \n"
+									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+							/* END DEBUG */	
 						}
-					}
-					break;
-				case PassportService.EF_DG4:
-					DG4File dg4 = new DG4File(in);
-					if (eacEvent == null || !eacEvent.isSuccess()) {
-						LOGGER.warning("Starting to read DG4, but eacEvent = " + eacEvent);
-					}
-					List<IrisInfo> irisInfos = dg4.getIrisInfos();
-					for (IrisInfo irisInfo: irisInfos) {
-						List<IrisBiometricSubtypeInfo> irisBiometricSubtypeInfos = irisInfo.getIrisBiometricSubtypeInfos();
-						for (IrisBiometricSubtypeInfo irisBiometricSubtypeInfo: irisBiometricSubtypeInfos) {
-							List<IrisImageInfo> irisImageInfos = irisBiometricSubtypeInfo.getIrisImageInfos();
-							for (IrisImageInfo irisImageInfo: irisImageInfos) {
-								displayPreviewPanel.addDisplayedImage(irisImageInfo);
-							}
+						break;
+					case PassportService.EF_DG15:
+						try {
+							/* DG15File dg15 = */ new DG15File(inputStream);
+						} catch (Exception e) {
+							/* START DEBUG */
+							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 15");
+							e.printStackTrace();
+							String errorMessage = "DEBUG: Exception reading DG15 file " + Integer.toHexString(fid) + ": \n"
+									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+						/* END DEBUG */					}
+						break;
+					case PassportService.EF_SOD:
+						/* NOTE: Already processed this one above. */
+						break;
+					case PassportService.EF_CVCA:
+						try {
+							/* CVCAFile cvca = */ new CVCAFile(inputStream);
+						} catch (Exception e) {
+							/* START DEBUG */
+							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO CVCA");
+							e.printStackTrace();
+							String errorMessage = "DEBUG: Exception reading CVCA file " + Integer.toHexString(fid) + ": \n"
+									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+							/* END DEBUG */	
 						}
+						break;
+					default:
+						String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
+						if ((fid & 0x010F) == fid) {
+							int tag = LDSFileUtil.lookupTagByFID(fid);
+							int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+							message = "Displaying of DG" + dgNumber + " not supported!";
+						}
+						JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
 					}
-					break;
-				case PassportService.EF_DG5:
-					DG5File dg5 = new DG5File(in);
-					break;
-				case PassportService.EF_DG6:
-					/* DG6File dg6 = */ new DG6File(in);
-					break;
-				case PassportService.EF_DG7:
-					DG7File dg7 = new DG7File(in);
-					List<DisplayedImageInfo> infos = dg7.getImages();
-					for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info); }
-					break;
-				case PassportService.EF_DG11:
-					/* DG11File dg11 = */ new DG11File(in);
-					break;
-				case PassportService.EF_DG12:
-					/* DG12File dg12 = */ new DG12File(in);
-					break;
-				case PassportService.EF_DG14:
-					/* DG14File dg14 = */ new DG14File(in);
-					updateViewMenu();
-					break;
-				case PassportService.EF_DG15:
-					try {
-						/* DG15File dg15 = */ new DG15File(in);
-					} catch (Exception e) {
-						System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught. -- MO 2");
-						e.printStackTrace();
-					}
-					break;
-				case PassportService.EF_SOD:
-					/* NOTE: Already processed this one above. */
-					break;
-				case PassportService.EF_CVCA:
-					/* CVCAFile cvca = */ new CVCAFile(in);
-					break;
-				default:
-					String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
-					if ((fid & 0x010F) == fid) {
-						int tag = LDSFileUtil.lookupTagByFID(fid);
-						int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
-						message = "Displaying of DG" + dgNumber + " not supported!";
-					}
-					JOptionPane.showMessageDialog(getContentPane(), message, "File not supported", JOptionPane.WARNING_MESSAGE);
+				} catch (Exception ioe) {
+					String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
+							+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
+					JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+					JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+					continue;
 				}
-			} catch (Exception ioe) {
-				String errorMessage = "Exception reading file " + Integer.toHexString(fid) + ": \n"
-						+ ioe.getClass().getSimpleName() + "\n" + ioe.getMessage() + "\n";
-				JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
-				JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
-				continue;
 			}
+		} catch (Throwable e) {
+			/* START DEBUG */
+			System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO method exit");
+			e.printStackTrace();
+			String errorMessage = "DEBUG: Uncaught exception: \n"
+					+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
+			JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
+			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
+			/* END DEBUG */	
 		}
 	}
 
 	private void updateViewMenu() {
 		try {
-			InputStream dg14in = passport.getInputStream(PassportService.EF_DG14);
-			if (dg14in == null) { return; }
-			DG14File dg14 = new DG14File(dg14in);
+			InputStream dg14InputStream = passport.getInputStream(PassportService.EF_DG14);
+			if (dg14InputStream == null) { return; }
+			DG14File dg14 = new DG14File(dg14InputStream);
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
 			Map<Integer, PublicKey> publicKeyMap = dg14.getChipAuthenticationPublicKeyInfos();
@@ -364,13 +430,16 @@ public class DocumentViewFrame extends JMRTDFrame {
 			createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			LOGGER.severe("Could not decode DG14. " + ex.getMessage());
 		}
 	}
 
-	private void displayHolderInfo() throws IOException {
+	private void displayDG1Info() throws IOException {
 		try {
-			InputStream dg1In = passport.getInputStream(PassportService.EF_DG1);
-			DG1File dg1 = new DG1File(dg1In);
+			InputStream dg1InputStream = passport.getInputStream(PassportService.EF_DG1);
+			DG1File dg1 = new DG1File(dg1InputStream);
 			MRZInfo mrzInfo = dg1.getMRZInfo();
 			BACKeySpec bacEntry = passport.getBACKeySpec();
 			if (bacEntry != null &&
@@ -695,14 +764,17 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					InputStream dg3In = passport.getInputStream(PassportService.EF_DG3);
-					DG3File dg3 = new DG3File(dg3In);
+					InputStream dg3InputStream = passport.getInputStream(PassportService.EF_DG3);
+					DG3File dg3 = new DG3File(dg3InputStream);
 					List<FingerInfo> fingerInfos = dg3.getFingerInfos();
 					FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerInfos);
 					fingerPrintFrame.setVisible(true);
 					fingerPrintFrame.pack();
 				} catch (CardServiceException cse) {
 					cse.printStackTrace();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					LOGGER.severe("Could not decode DG3. " + ex.getMessage());
 				}
 			}
 		};
@@ -724,15 +796,15 @@ public class DocumentViewFrame extends JMRTDFrame {
 				JTextArea area = new JTextArea(15, 45);
 				try {
 					// FIXME: make a special frame for viewing this? (Includes certificates, etc.)
-					InputStream dg14In =  passport.getInputStream(PassportService.EF_DG14);
-					DG14File dg14 = new DG14File(dg14In);
+					InputStream dg14InputStream =  passport.getInputStream(PassportService.EF_DG14);
+					DG14File dg14 = new DG14File(dg14InputStream);
 					Collection<SecurityInfo> securityInfos = dg14.getSecurityInfos();
 					for (SecurityInfo si: securityInfos) {
 						area.append(si.getClass().getSimpleName() + ":\n");
 						area.append("   " + si.toString() + "\n");
 					}
-					InputStream cvcaIn = passport.getInputStream(PassportService.EF_CVCA);
-					CVCAFile cvca = new CVCAFile(cvcaIn);
+					InputStream cvcaInputStream = passport.getInputStream(PassportService.EF_CVCA);
+					CVCAFile cvca = new CVCAFile(cvcaInputStream);
 					CVCPrincipal caReference = cvca.getCAReference();
 					CVCPrincipal altCAReference = cvca.getAltCAReference();
 					if (caReference != null) { area.append("CA reference:\n   " + caReference.toString() + "\n"); }
@@ -799,14 +871,17 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					InputStream dg15In = passport.getInputStream(PassportService.EF_DG15);
-					DG15File dg15 = new DG15File(dg15In);
+					InputStream dg15InputStream = passport.getInputStream(PassportService.EF_DG15);
+					DG15File dg15 = new DG15File(dg15InputStream);
 					PublicKey pubKey = dg15.getPublicKey();
 					KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
 					keyFrame.pack();
 					keyFrame.setVisible(true);
 				} catch (CardServiceException cse) {
 					cse.printStackTrace();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+					LOGGER.severe("Could not decode DG15. " + ex.getMessage());
 				}
 			}
 		};

@@ -63,7 +63,7 @@ public class DG15File extends DataGroup {
 	 * 
 	 * @param in an input stream
 	 */
-	public DG15File(InputStream in) {
+	public DG15File(InputStream in) throws IOException {
 		super(EF_DG15_TAG, in);
 	}
 	

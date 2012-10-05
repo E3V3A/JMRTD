@@ -33,7 +33,7 @@ import java.io.OutputStream;
  *
  * @version $Revision: $
  */
-abstract class AbstractLDSInfo implements LDSInfo {
+abstract class AbstractLDSInfo implements LDSElement {
 
 	private static final long serialVersionUID = -2340098256249194537L;
 

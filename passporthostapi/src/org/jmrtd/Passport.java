@@ -81,6 +81,7 @@ import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DataGroup;
+import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.SODFile;
@@ -109,7 +110,7 @@ public class Passport {
 	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 10;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-	
+
 	/** Maps FID to stream. */
 	private Map<Short, InputStream> rawStreams;
 
@@ -137,9 +138,7 @@ public class Passport {
 
 	private short cvcaFID = PassportService.EF_CVCA;
 
-	/* Our local copies of the COM and SOD files: */
-	private COMFile comFile;
-	private SODFile sodFile;
+	private LDS lds;
 
 	private boolean isPKIXRevocationCheckingEnabled = false;
 	private boolean hasEACSupport = false;
@@ -174,8 +173,7 @@ public class Passport {
 	 * 
 	 * @throws GeneralSecurityException if error
 	 */
-	public Passport(COMFile comFile, Collection<DataGroup> dataGroups, SODFile sodFile,
-			PrivateKey docSigningPrivateKey, MRTDTrustStore trustManager) throws GeneralSecurityException {
+	public Passport(LDS lds, PrivateKey docSigningPrivateKey, MRTDTrustStore trustManager) throws GeneralSecurityException {
 		this();
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
@@ -187,14 +185,14 @@ public class Passport {
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new ArrayList<Short>();
 
-		this.comFile = comFile;
-		byte[] comBytes = comFile.getEncoded();
+		this.lds = lds;
+		byte[] comBytes = lds.getCOMFile().getEncoded();
 		int fileLength = comBytes.length;
 		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(PassportService.EF_COM, fileLength);
 		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
 
-		for (DataGroup dg: dataGroups) {
+		for (DataGroup dg: lds.getDataGroups()) {
 			byte[] dgBytes = dg.getEncoded();
 			fileLength = dgBytes.length;
 			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
@@ -203,8 +201,7 @@ public class Passport {
 			rawStreams.put(fid, new ByteArrayInputStream(dgBytes));
 		}
 
-		this.sodFile = sodFile;
-		byte[] sodBytes = sodFile.getEncoded();
+		byte[] sodBytes = lds.getSODFile().getEncoded();
 		fileLength = sodBytes.length;
 		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(PassportService.EF_SOD, fileLength);
@@ -223,7 +220,7 @@ public class Passport {
 	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
 		this(service, trustManager, bacStore, DEFAULT_MAX_TRIES_PER_BAC_ENTRY);
 	}
-	
+
 	/**
 	 * Creates a document by reading it from a service.
 	 * 
@@ -341,65 +338,72 @@ public class Passport {
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new ArrayList<Short>();
 
+		COMFile comFile = null;
+		SODFile sodFile = null;
 		ZipFile zipFile = new ZipFile(file);
-		Enumeration<? extends ZipEntry> entries = zipFile.entries();
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
-			if (entry == null) { break; }
-			String fileName = entry.getName();
-			long sizeAsLong = entry.getSize();
-			if (sizeAsLong < 0) {
-				throw new IOException("ZipEntry has negative size.");
-			}
-			int size = (int)(sizeAsLong & 0x00000000FFFFFFFFL);
-			try {
-				int fid = -1;
-				int delimIndex = fileName.lastIndexOf('.');
-				String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
-				if (delimIndex >= 0
-						&& !fileName.endsWith(".bin")
-						&& !fileName.endsWith(".BIN")
-						&& !fileName.endsWith(".dat")
-						&& !fileName.endsWith(".DAT")) {
-					LOGGER.warning("Skipping file \"" + fileName + "\" in \"" + file.getName() + "\"");
-					continue;					
+		try {
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				if (entry == null) { break; }
+				String fileName = entry.getName();
+				long sizeAsLong = entry.getSize();
+				if (sizeAsLong < 0) {
+					throw new IOException("ZipEntry has negative size.");
 				}
-
-				if (baseName.length() == 4) {
-					try {
-						/* Filename <FID>.bin? */
-						fid = Hex.hexStringToShort(baseName);
-					} catch (NumberFormatException nfe) {
-						/* ...guess not */ 
+				int size = (int)(sizeAsLong & 0x00000000FFFFFFFFL);
+				try {
+					int fid = -1;
+					int delimIndex = fileName.lastIndexOf('.');
+					String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
+					if (delimIndex >= 0
+							&& !fileName.endsWith(".bin")
+							&& !fileName.endsWith(".BIN")
+							&& !fileName.endsWith(".dat")
+							&& !fileName.endsWith(".DAT")) {
+						LOGGER.warning("Skipping file \"" + fileName + "\" in \"" + file.getName() + "\"");
+						continue;					
 					}
-				}
 
-				byte[] bytes = new byte[size];
-				int fileLength = bytes.length;
-				InputStream zipEntryIn = zipFile.getInputStream(entry);
-				DataInputStream dataIn = new DataInputStream(zipEntryIn);
-				dataIn.readFully(bytes);
-				dataIn.close();
-				int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
-				if (fid < 0) {
-					/* FIXME: untested! */
-					fid = tagBasedFID;
+					if (baseName.length() == 4) {
+						try {
+							/* Filename <FID>.bin? */
+							fid = Hex.hexStringToShort(baseName);
+						} catch (NumberFormatException nfe) {
+							/* ...guess not */ 
+						}
+					}
+
+					byte[] bytes = new byte[size];
+					int fileLength = bytes.length;
+					InputStream zipEntryIn = zipFile.getInputStream(entry);
+					DataInputStream dataIn = new DataInputStream(zipEntryIn);
+					dataIn.readFully(bytes);
+					dataIn.close();
+					int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
+					if (fid < 0) {
+						/* FIXME: untested! */
+						fid = tagBasedFID;
+					}
+					if (fid != tagBasedFID) {
+						LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
+					}
+					totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+					fileLengths.put((short)fid, fileLength);
+					rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
+					if(fid == PassportService.EF_COM) {
+						comFile = new COMFile(new ByteArrayInputStream(bytes));
+					} else if (fid == PassportService.EF_SOD) {
+						sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
+					}
+				} catch (NumberFormatException nfe) {
+					/* NOTE: ignore this file */
+					LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
 				}
-				if (fid != tagBasedFID) {
-					LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
-				}
-				totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-				fileLengths.put((short)fid, fileLength);
-				rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
-				if(fid == PassportService.EF_COM) {
-					comFile = new COMFile(new ByteArrayInputStream(bytes));
-				} else if (fid == PassportService.EF_SOD) {
-					sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
-				}
-			} catch (NumberFormatException nfe) {
-				/* NOTE: ignore this file */
-				LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
+				this.lds = new LDS(comFile, Collections.<DataGroup>emptySet(), sodFile);
 			}
+		} finally {
+			zipFile.close();
 		}
 	}
 
@@ -460,6 +464,11 @@ public class Passport {
 		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 			updateCOMSODFile(null);
 		}
+		try {
+			lds.add(inputStream);
+		} catch (IOException ioe) {
+			System.out.println("DEBUG: failed to add to LDS");
+		}
 		verificationStatus.setAll(Verdict.UNKNOWN);
 	}
 
@@ -470,6 +479,8 @@ public class Passport {
 	 */
 	public void updateCOMSODFile(X509Certificate newCertificate) {
 		try {
+			COMFile comFile = lds.getCOMFile();
+			SODFile sodFile = lds.getSODFile();
 			String digestAlg = sodFile.getDigestAlgorithm();
 			String signatureAlg = sodFile.getDigestEncryptionAlgorithm();
 			X509Certificate cert = newCertificate != null ? newCertificate : sodFile.getDocSigningCertificate();
@@ -495,6 +506,7 @@ public class Passport {
 			}
 			putFile(PassportService.EF_SOD, sodFile.getEncoded());
 			putFile(PassportService.EF_COM, comFile.getEncoded());
+			this.lds = new LDS(comFile, lds.getDataGroups(), sodFile);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -801,10 +813,10 @@ public class Passport {
 		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new ArrayList<Short>();
 		InputStream comIn = preReadFile(service, PassportService.EF_COM);
-		comFile = new COMFile(comIn);
+		COMFile comFile = new COMFile(comIn);
 		int[] comTagList = comFile.getTagList();
 		InputStream sodIn = preReadFile(service, PassportService.EF_SOD);
-		sodFile = new SODFile(sodIn);
+		SODFile sodFile = new SODFile(sodIn);
 		InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
 		DG1File dg1File = new DG1File(dg1In);
 		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
@@ -833,6 +845,12 @@ public class Passport {
 				// FIXME: Try with all cvcaStores?
 				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
 			}
+		}
+
+		if (isDG14Present) {
+			this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File, dg14File }), cvcaFile, sodFile);
+		} else {
+			this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File }), sodFile);
 		}
 
 		/* Start reading each of the files. */

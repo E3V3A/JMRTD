@@ -73,7 +73,7 @@ public class DG14File extends DataGroup {
 	 * @param in
 	 *            the input stream to parse the data from
 	 */
-	public DG14File(InputStream in) {
+	public DG14File(InputStream in) throws IOException {
 		super(EF_DG14_TAG, in);
 	}
 

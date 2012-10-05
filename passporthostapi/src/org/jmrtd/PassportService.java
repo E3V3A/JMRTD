@@ -769,15 +769,15 @@ public class PassportService extends PassportApduService implements Serializable
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
-				byte[] prefix = readBinary(0, 8);
-				ByteArrayInputStream baIn = new ByteArrayInputStream(prefix);
-				TLVInputStream tlvIn = new TLVInputStream(baIn);
-				int tag = tlvIn.readTag();
+				byte[] prefix = readBinary(0, 32);
+				ByteArrayInputStream baInputStream = new ByteArrayInputStream(prefix);
+				TLVInputStream tlvInputStream = new TLVInputStream(baInputStream);
+				int tag = tlvInputStream.readTag();
 				if (tag == CVCAFile.CAR_TAG) {
 					return CVCAFile.LENGTH;
 				}
-				int vLength = tlvIn.readLength();
-				int tlLength = prefix.length - baIn.available();
+				int vLength = tlvInputStream.readLength();
+				int tlLength = prefix.length - baInputStream.available();
 				return tlLength + vLength;
 			} catch (IOException ioe) {
 				throw new CardServiceException(ioe.toString());

@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class DG5File extends DisplayedImageDataGroup {
 	 * 
 	 * @param in an input stream
 	 */
-	public DG5File(InputStream in) {
+	public DG5File(InputStream in) throws IOException {
 		super(EF_DG5_TAG, in);
 	}
 }

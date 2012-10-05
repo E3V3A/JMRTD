@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.IOException;
 import java.io.InputStream;
 
 /**
@@ -40,7 +41,7 @@ public class DG6File extends DisplayedImageDataGroup {
 	 * 
 	 * @param in an input stream
 	 */
-	public DG6File(InputStream in) {
+	public DG6File(InputStream in) throws IOException {
 		super(EF_DG6_TAG, in);
 	}
 }

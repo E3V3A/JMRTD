@@ -64,7 +64,7 @@ public class DG1File extends DataGroup {
 	 *
 	 * @throws IOException if something goes wrong
 	 */
-	public DG1File(InputStream in) {
+	public DG1File(InputStream in) throws IOException {
 		super(EF_DG1_TAG, in);
 	}
 	

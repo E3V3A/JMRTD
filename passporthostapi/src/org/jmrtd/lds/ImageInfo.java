@@ -29,7 +29,7 @@ import java.io.InputStream;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  */
-public interface ImageInfo extends LDSInfo {
+public interface ImageInfo extends LDSElement {
 
 	/** Mime-types. */
 	static String

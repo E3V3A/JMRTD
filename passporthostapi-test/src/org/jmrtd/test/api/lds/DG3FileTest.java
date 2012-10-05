@@ -181,6 +181,7 @@ public class DG3FileTest extends TestCase
 	}
 
 	public void testEncodeDecode() {
+		try {
 		DG3File dg3 = getTestObject();
 		byte[] dg3Bytes = dg3.getEncoded();
 		assertNotNull(dg3Bytes);
@@ -190,9 +191,14 @@ public class DG3FileTest extends TestCase
 		assertNotNull(copyBytes);
 		
 		assertTrue(Arrays.equals(dg3Bytes, copyBytes));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 	
 	public void testZeroInstanceTestObjectNotEquals() {
+		try {
 		DG3File dg3 = new DG3File(new LinkedList<FingerInfo>());
 		byte[] dg3Bytes = dg3.getEncoded();
 		assertNotNull(dg3Bytes);
@@ -208,6 +214,10 @@ public class DG3FileTest extends TestCase
 		assertNotNull(copyBytes);
 		
 		assertFalse(Arrays.equals(dg3Bytes, copyBytes));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 	
 	public void testCreate() {

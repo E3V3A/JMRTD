@@ -69,7 +69,7 @@ abstract class DisplayedImageDataGroup extends DataGroup {
 	 * @param dataGroupTag a tag indicating DG5, DG6, or DG7
 	 * @param in an input stream
 	 */
-	public DisplayedImageDataGroup(int dataGroupTag, InputStream in) {
+	public DisplayedImageDataGroup(int dataGroupTag, InputStream in) throws IOException {
 		super(dataGroupTag, in);
 		if (this.imageInfos == null) { this.imageInfos = new ArrayList<DisplayedImageInfo>(); }
 		checkTypesConsistentWithTag();

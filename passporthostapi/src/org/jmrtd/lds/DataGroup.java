@@ -39,7 +39,7 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
 public abstract class DataGroup extends AbstractLDSFile {
 
 	private static final long serialVersionUID = -4761360877353069639L;
-	
+
 	private int dataGroupTag;
 	private int dataGroupLength;
 
@@ -58,13 +58,9 @@ public abstract class DataGroup extends AbstractLDSFile {
 	 * 
 	 * @param inputStream an input stream
 	 */
-	protected DataGroup(int dataGroupTag, InputStream inputStream) {
-		try {
-			this.dataGroupTag = dataGroupTag;
-			readObject(inputStream);
-		} catch (IOException ioe) {
-			throw new IllegalArgumentException("Could not decode: " + ioe.toString());
-		}
+	protected DataGroup(int dataGroupTag, InputStream inputStream) throws IOException {
+		this.dataGroupTag = dataGroupTag;
+		readObject(inputStream);
 	}
 
 	/**

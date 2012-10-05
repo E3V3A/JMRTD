@@ -174,12 +174,17 @@ public class DG2FileTest extends TestCase
 			return null;
 		}
 	}
-	
+
 	public static DG2File getTestObject() throws IOException {
 		return new DG2File(new FileInputStream(TEST_FILE));
 	}
 
 	public void testFile(InputStream in) {
-		testDecodeEncode(new DG2File(in), 3);
+		try {
+			testDecodeEncode(new DG2File(in), 3);
+		} catch (IOException e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
 	}
 }

@@ -49,8 +49,8 @@ public class LDSFileUtil {
 	 * @throws IOException on reading error from the input stream
 	 */
 	public static AbstractLDSFile getLDSFile(InputStream inputStream) throws IOException {
-		BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 8);
-		bufferedIn.mark(5);
+		BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 40);
+		bufferedIn.mark(39);
 		TLVInputStream tlvIn = new TLVInputStream(bufferedIn);
 		int tag = tlvIn.readTag();
 		bufferedIn.reset();
@@ -74,7 +74,13 @@ public class LDSFileUtil {
 		case LDSFile.EF_DG16_TAG: throw new IllegalArgumentException("DG16 files are not yet supported");
 		case LDSFile.EF_SOD_TAG: return new SODFile(bufferedIn);
 		default:
-			throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+			try {
+				/* Just try, will read 36 bytes at most, and we can reset bufferedIn. */
+				return new CVCAFile(bufferedIn);
+			} catch (Exception e) {
+				bufferedIn.reset();
+				throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+			}
 		}
 	}
 
@@ -267,7 +273,7 @@ public class LDSFileUtil {
 			throw new NumberFormatException("Unknown fid " + Integer.toHexString(fid));
 		}
 	}
-	
+
 	/**
 	 * Returns a mnemonic name corresponding to the file represented by the
 	 * given ICAO tag, such as "EF_COM", "EF_SOD", or "EF_DG1".
@@ -299,7 +305,7 @@ public class LDSFileUtil {
 		default: return "File with tag 0x" + Integer.toHexString(tag);
 		}
 	}
-	
+
 	/**
 	 * Returns a mnemonic name corresponding to the file represented by the
 	 * given file identifier, such as "EF_COM", "EF_SOD", or "EF_DG1".

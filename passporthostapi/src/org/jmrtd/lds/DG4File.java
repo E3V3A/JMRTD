@@ -75,7 +75,7 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	 * 
 	 * @param in an input stream
 	 */
-	public DG4File(InputStream in) {
+	public DG4File(InputStream in) throws IOException {
 		super(EF_DG4_TAG, in);
 	}
 	

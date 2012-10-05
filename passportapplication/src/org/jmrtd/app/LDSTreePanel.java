@@ -79,7 +79,7 @@ import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
-import org.jmrtd.lds.LDSInfo;
+import org.jmrtd.lds.LDSElement;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
@@ -650,21 +650,21 @@ public class LDSTreePanel extends JPanel {
 	
 	private class LDSTreeNode extends DefaultMutableTreeNode {
 		
-		private LDSInfo ldsInfo;
+		private LDSElement ldsInfo;
 		
 		public LDSTreeNode(Object userObject) {
 			super(userObject);
-			if (userObject instanceof LDSInfo) {
-				this.ldsInfo = (LDSInfo)userObject;
+			if (userObject instanceof LDSElement) {
+				this.ldsInfo = (LDSElement)userObject;
 			}
 		}
 		
-		public LDSTreeNode(Object userObject, LDSInfo ldsInfo) {
+		public LDSTreeNode(Object userObject, LDSElement ldsInfo) {
 			super(userObject);
 			this.ldsInfo = ldsInfo;
 		}
 		
-		public LDSInfo getLDSInfo() {
+		public LDSElement getLDSInfo() {
 			return ldsInfo;
 		}
 	}

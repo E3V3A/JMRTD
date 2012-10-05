@@ -49,7 +49,7 @@ public class JonasFlensbakTest extends TestCase {
 			dg2FileTest.testElements(dg2File);
 			dg2FileTest.testReflexive(dg2File);
 			dg2FileTest.testDecodeEncode(dg2File, 3);
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -106,7 +106,7 @@ public class JonasFlensbakTest extends TestCase {
 				}
 			}
 			dg3FileTest.testElements(dg3File);
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
@@ -129,7 +129,7 @@ public class JonasFlensbakTest extends TestCase {
 				}
 			}
 			dg3FileTest.testElements(dg3File);
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}		
@@ -193,7 +193,7 @@ public class JonasFlensbakTest extends TestCase {
 			dg7FileTest.testElements(dg7File);
 			dg7FileTest.testEncodeDecode(dg7File);
 			dg7FileTest.testType(dg7File);			
-		} catch (FileNotFoundException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}

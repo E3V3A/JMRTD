@@ -77,7 +77,7 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	 *
 	 * @param in an input stream
 	 */
-	public DG2File(InputStream in) {
+	public DG2File(InputStream in) throws IOException {
 		super(EF_DG2_TAG, in);
 	}
 

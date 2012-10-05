@@ -184,9 +184,9 @@ public class DG7FileTest extends TestCase
 			displayedImageInfoTest.testEncodeDecode(imageInfo);
 			displayedImageInfoTest.testExtractImage(imageInfo, 800, 266);
 			displayedImageInfoTest.testValidType(imageInfo);
-		} catch (FileNotFoundException fnfe) {
-			fnfe.printStackTrace();
-			fail(fnfe.toString());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.toString());
 		}
 	}
 
