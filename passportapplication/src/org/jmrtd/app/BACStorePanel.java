@@ -220,7 +220,7 @@ public class BACStorePanel extends JPanel {
 	/**
 	 * Add the entry in the entryField to the store (and thus to the table).
 	 */
-	private Action getAddAction() {
+	/* package visible */ Action getAddAction() {
 		Action action = actionMap.get("Add");
 		if (action != null) { return action; }
 		action = new AbstractAction() {

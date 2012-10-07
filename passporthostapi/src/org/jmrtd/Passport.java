@@ -107,7 +107,7 @@ public class Passport {
 
 	private static final int BUFFER_SIZE = 243;
 
-	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 10;
+	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
@@ -238,6 +238,8 @@ public class Passport {
 		this.verificationStatus = new VerificationStatus();
 		try {
 			service.open();
+		} catch (CardServiceException cse) {
+			throw cse;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new CardServiceException("Cannot open document. " + e.getMessage());

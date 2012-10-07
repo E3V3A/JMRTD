@@ -71,6 +71,7 @@ import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.IconUtil;
 import net.sourceforge.scuba.util.OSXAdapter;
 
+import org.jmrtd.BACDeniedException;
 import org.jmrtd.BACStore;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.MRTDTrustStore;
@@ -140,6 +141,8 @@ public class JMRTDApp {
 
 	private AboutDialog aboutDialog;
 	private PreferencesDialog preferencesDialog;
+	
+	private BACStorePanel bacStorePanel;
 
 	private APDUTraceFrame apduTraceFrame;
 
@@ -188,7 +191,7 @@ public class JMRTDApp {
 				preferencesDialog.addCSCAStoreLocation(defaultCSCAURI);
 				/* NOTE: GUI will perhaps need updating, delay until end of constructor. */
 			}
-			BACStorePanel bacStorePanel = new BACStorePanel(bacStore);
+			bacStorePanel = new BACStorePanel(bacStore);
 
 			Container contentPane = mainFrame.getContentPane();
 			contentPane.setLayout(new BorderLayout());
@@ -268,8 +271,8 @@ public class JMRTDApp {
 	private static void addTerminalProvider(CardManager cardManager, String providerName, String providerClassName) throws ClassNotFoundException, InstantiationException, IllegalAccessException, NoSuchAlgorithmException {
 		Class<?> providerClass = Class.forName(providerClassName);
 		Provider provider = (Provider)providerClass.newInstance();
-		TerminalFactory acrFactory = TerminalFactory.getInstance(providerName, null, provider);
-		cardManager.addTerminals(acrFactory, true);
+		TerminalFactory factory = TerminalFactory.getInstance(providerName, null, provider);
+		cardManager.addTerminals(factory, true);
 	}
 
 	private void updateFromPreferences() {
@@ -332,16 +335,14 @@ public class JMRTDApp {
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
 		try {
-			Passport passport = new Passport(service, trustManager, bacStore);
+			Passport passport = new Passport(service, trustManager, bacStore, 1);
 			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
+		} catch (BACDeniedException bde) {
+			bacStorePanel.getAddAction().actionPerformed(new ActionEvent(this, 0, "Add BAC"));
 		} catch (CardServiceException cse) {
-			String errMessage = cse.getMessage();
-			if (errMessage.contains("BAC") && errMessage.contains("denied")) {
-				System.out.println("This would be a good place to tell the GUI user that BAC failed");
-				JOptionPane.showMessageDialog(mainFrame, "BAC failed", "Oops...", JOptionPane.ERROR_MESSAGE);
-			}
+			cse.printStackTrace();
 		}
 	}
 
@@ -621,6 +622,7 @@ public class JMRTDApp {
 	 * @param arg command line arguments.
 	 */
 	public static void main(String[] arg) {
+
 		SwingUtilities.invokeLater(new Runnable() {
 
 			@Override

@@ -172,11 +172,28 @@ public class PassportApduService extends CardService {
 	}
 	
 	private ResponseAPDU transmit(SecureMessagingWrapper wrapper, CommandAPDU capdu) throws CardServiceException {
-		if (wrapper == null) { return transmit(capdu); }
-		CommandAPDU wrappedCapdu = wrapper.wrap(capdu);
-		ResponseAPDU wrappedRapdu = transmit(wrappedCapdu);
-		ResponseAPDU rapdu = wrapper.unwrap(wrappedRapdu, wrappedRapdu.getBytes().length);
-		notifyExchangedPlainTextAPDU(++plainAPDUCount, capdu, rapdu);
+		CommandAPDU plainCapdu = capdu;
+		if (wrapper != null) {
+			capdu = wrapper.wrap(capdu);
+		}
+		ResponseAPDU rapdu = transmit(capdu);
+		if (wrapper != null) {
+			rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+			notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);
+		}
+		int sw = rapdu.getSW();
+		if ((sw & ISO7816.SW_CORRECT_LENGTH_00) == ISO7816.SW_CORRECT_LENGTH_00) {
+			int ne = (sw & 0xFF);
+			plainCapdu = new CommandAPDU(plainCapdu.getCLA(), plainCapdu.getINS(), plainCapdu.getP1(), plainCapdu.getP2(), plainCapdu.getData(), ne);
+			if (wrapper != null) {
+				capdu = wrapper.wrap(plainCapdu);
+			}
+			rapdu = transmit(capdu);
+			if (wrapper != null) {
+				rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+				notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);
+			}
+		}
 		return rapdu;
 	}
 
@@ -385,7 +402,7 @@ public class PassportApduService extends CardService {
 	 * @param longRead
 	 *            whether it should be a long (INS=B1) read
 	 * 
-	 * @return a byte array of length <code>le</code> with (the specified part
+	 * @return a byte array of length at most <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
 	 */
 	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper,
