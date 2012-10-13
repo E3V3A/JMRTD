@@ -1,7 +1,7 @@
 /*
  * @(#)ImageOutputStreamAdapter.java  1.1  2011-01-07
  *
- * Copyright © 2010 Werner Randelshofer, Immensee, Switzerland.
+ * Copyright (c) 2010 Werner Randelshofer, Immensee, Switzerland.
  * All rights reserved.
  *
  * You may not use, copy or modify this file, except in compliance with the
