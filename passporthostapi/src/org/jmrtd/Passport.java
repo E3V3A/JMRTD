@@ -985,10 +985,10 @@ public class Passport {
 			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
 			return;
 		}
-		CardFileInputStream cardIn = service.getInputStream(fid);
-		int fileLength = cardIn.getFileLength();
-		cardIn.mark(fileLength + 1);
-		rawStreams.put(fid, cardIn);
+		CardFileInputStream cardInputStream = service.getInputStream(fid);
+		int fileLength = cardInputStream.getFileLength();
+		cardInputStream.mark(fileLength + 1);
+		rawStreams.put(fid, cardInputStream);
 		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		fileLengths.put(fid, fileLength);        
 	}
