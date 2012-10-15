@@ -44,7 +44,7 @@
 		<!-- Create the distribution jar file -->
 		<jar jarfile="jmrtd_application.jar">
 			<manifest>
-			    <attribute name="Class-path" value="bcprov-jdk15on-147.jar bcpkix-jdk15on-147.jar cert-cvc.jar scuba.jar jmrtd.jar" />
+			    <attribute name="Class-path" value="jj2000_imageio.jar wsq_imageio.jar bcprov-jdk15on-147.jar bcpkix-jdk15on-147.jar cert-cvc.jar scuba.jar jmrtd.jar" />
 			    <attribute name="Main-class" value="org.jmrtd.app.JMRTDApp" />
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
