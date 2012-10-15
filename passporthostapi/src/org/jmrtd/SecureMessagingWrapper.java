@@ -41,7 +41,6 @@ import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.tlv.TLVUtil;
-import net.sourceforge.scuba.util.Hex;
 
 /*
  * TODO: Can we use TLVInputStream instead of those readDOXX methods? -- MO
@@ -157,7 +156,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			byte[] rapdu = responseAPDU.getBytes();
 			if (rapdu.length == 2) {
 				// no sense in unwrapping - card indicates SM error
-				throw new IllegalStateException("Card indicates SM error, SW = " + Hex.bytesToHexString(rapdu));
+				throw new IllegalStateException("Card indicates SM error, SW = " + Integer.toHexString(responseAPDU.getSW() & 0xFFFF));
 				/* FIXME: wouldn't it be cleaner to throw a CardServiceException? */
 			}
 			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
@@ -335,9 +334,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			if(!do85) {
 				buf = inputStream.readUnsignedByte(); /* should be 0x01... */
 				if (buf != 0x01) {
-					throw new IllegalStateException(
-							"DO'87 expected 0x01 marker, found "
-							+ Hex.byteToHexString((byte) buf));
+					throw new IllegalStateException("DO'87 expected 0x01 marker, found " + Integer.toHexString(buf & 0xFF));
 				}
 			}
 		} else {
