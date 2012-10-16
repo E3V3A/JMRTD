@@ -174,7 +174,7 @@ public class MRTDTrustStore {
 				/* The scheme is probably "file" or "http"? Going to just open a connection. */
 				try {
 					addAsKeyStoreCSCACertStore(uri);
-				} catch (KeyStoreException kse) {
+				} catch (Exception kse) {
 					try {
 						addAsSingletonCSCACertStore(uri);
 					} catch (Exception e) {
@@ -335,7 +335,7 @@ public class MRTDTrustStore {
 		Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
 		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
-	
+
 	/**
 	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
 	 * 

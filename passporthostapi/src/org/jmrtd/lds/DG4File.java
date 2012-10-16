@@ -73,14 +73,14 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	/**
 	 * Constructs a new file based on an input stream.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 */
-	public DG4File(InputStream in) throws IOException {
-		super(EF_DG4_TAG, in);
+	public DG4File(InputStream inputStream) throws IOException {
+		super(EF_DG4_TAG, inputStream);
 	}
 	
-	protected void readContent(InputStream in) throws IOException {
-		ComplexCBEFFInfo cbeffInfo = DECODER.decode(in);
+	protected void readContent(InputStream inputStream) throws IOException {
+		ComplexCBEFFInfo cbeffInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = cbeffInfo.getSubRecords();
 		for (CBEFFInfo record: records) {
 			if (!(record instanceof SimpleCBEFFInfo<?>)) {
@@ -97,17 +97,17 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 		/* FIXME: by symmetry, shouldn't there be a readOptionalRandomData here? */
 	}
 
-	protected void writeContent(OutputStream out) throws IOException {
+	protected void writeContent(OutputStream outputStream) throws IOException {
 		ComplexCBEFFInfo cbeffInfo = new ComplexCBEFFInfo();
 		List<IrisInfo> irisInfos = getSubRecords();
 		for (IrisInfo irisInfo: irisInfos) {
 			SimpleCBEFFInfo<IrisInfo> simpleCBEFFInfo = new SimpleCBEFFInfo<IrisInfo>(irisInfo);
 			cbeffInfo.add(simpleCBEFFInfo);
 		}
-		ENCODER.encode(cbeffInfo, out);
+		ENCODER.encode(cbeffInfo, outputStream);
 		
 		/* NOTE: Supplement to ICAO Doc 9303 R7-p1_v2_sIII_0057. */
-		writeOptionalRandomData(out);
+		writeOptionalRandomData(outputStream);
 	}
 	
 	/**

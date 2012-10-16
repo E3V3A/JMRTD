@@ -106,15 +106,15 @@ public class IrisImageInfo extends AbstractImageInfo {
 	/**
 	 * Constructs a new iris image record.
 	 * 
-	 * @param in input stream
+	 * @param inputStream input stream
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
-	IrisImageInfo(InputStream in, int imageFormat) throws IOException {
+	IrisImageInfo(InputStream inputStream, int imageFormat) throws IOException {
 		super(TYPE_IRIS);
 		this.imageFormat = imageFormat;
 		setMimeType(getMimeTypeFromImageFormat(imageFormat));
-		readObject(in);
+		readObject(inputStream);
 	}
 
 	/**
@@ -190,8 +190,8 @@ public class IrisImageInfo extends AbstractImageInfo {
 		return result.toString();
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = (in instanceof DataInputStream) ? (DataInputStream)in : new DataInputStream(in);
+	protected void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		this.imageNumber = dataIn.readUnsignedShort();				/* 2 */
 		this.quality = dataIn.readUnsignedByte();					/* + 1 = 3 */
@@ -220,8 +220,8 @@ public class IrisImageInfo extends AbstractImageInfo {
 		 * Size of image data, bytes, 0 - 4294967295.
 		 */
 		long imageLength = dataIn.readInt() & 0x00000000FFFFFFFFL;	/* + 4 = 11 */
-		
-		readImage(dataIn, imageLength);
+
+		readImage(inputStream, imageLength);
 	}
 
 	protected void writeObject(OutputStream out) throws IOException {

@@ -76,13 +76,13 @@ public class DisplayedImageInfo extends AbstractImageInfo {
 	 * Reads the displayed image. This method should be implemented by concrete
 	 * subclasses. The 5F2E or 7F2E tag and the length are already read.
 	 * 
-	 * @param in the input stream positioned so that biometric data block tag and length are already read
+	 * @param inputStream the input stream positioned so that biometric data block tag and length are already read
 	 *
 	 * @throws IOException if reading fails
 	 */
-	protected void readObject(InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
-		
+	protected void readObject(InputStream inputStream) throws IOException {
+		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
+
 		displayedImageTag = tlvIn.readTag();
 		if (displayedImageTag != DISPLAYED_PORTRAIT_TAG /* 5F40 */
 				&& displayedImageTag != DISPLAYED_SIGNATURE_OR_MARK_TAG /* 5F43 */) {
@@ -98,8 +98,8 @@ public class DisplayedImageInfo extends AbstractImageInfo {
 		readImage(tlvIn, imageLength);
 	}
 
-	protected void writeObject(OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+	protected void writeObject(OutputStream outputStream) throws IOException {
+		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
 		tlvOut.writeTag(getDisplayedImageTagFromType(getType()));
 		writeImage(tlvOut);
 		tlvOut.writeValueEnd();		

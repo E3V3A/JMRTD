@@ -139,16 +139,16 @@ public class FingerImageInfo extends AbstractImageInfo {
 	/**
 	 * Constructs a new finger information record.
 	 * 
-	 * @param in input stream
+	 * @param inputStream input stream
 	 * @param compressionAlgorithm image format type (which is given in the general record header, not for each individual image)
 	 * 
 	 * @throws IOException if input cannot be read
 	 */
-	public FingerImageInfo(InputStream in, int compressionAlgorithm) throws IOException {
+	public FingerImageInfo(InputStream inputStream, int compressionAlgorithm) throws IOException {
 		super(TYPE_FINGER, FingerInfo.toMimeType(compressionAlgorithm));
 		this.compressionAlgorithm = compressionAlgorithm;
 		this.compressionAlgorithm = compressionAlgorithm;
-		readObject(in);
+		readObject(inputStream);
 	}
 
 	/**
@@ -215,8 +215,8 @@ public class FingerImageInfo extends AbstractImageInfo {
 		return impressionType;
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = in instanceof DataInputStream ? (DataInputStream)in : new DataInputStream(in);
+	protected void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		/* Finger image header (14), see Table 4, 7.2 in Annex F. */
 		/* NOTE: sometimes called "finger header", "finger record header" */
@@ -231,7 +231,8 @@ public class FingerImageInfo extends AbstractImageInfo {
 		/* int RFU = */ dataIn.readUnsignedByte(); /* Should be 0x0000 */
 
 		long imageLength = recordLength - 14;
-		readImage(in, imageLength);
+
+		readImage(inputStream, imageLength);
 	}
 
 	/**

@@ -77,7 +77,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
 		}
 		dataGroupLength = tlvIn.readLength();
-		readContent(tlvIn);
+		readContent(inputStream);
 	}
 
 	protected void writeObject(OutputStream outputStream) throws IOException {

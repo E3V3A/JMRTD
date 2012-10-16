@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,9 +30,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_DG15 file.
@@ -67,10 +65,11 @@ public class DG15File extends DataGroup {
 		super(EF_DG15_TAG, in);
 	}
 	
-	protected void readContent(InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
+	protected void readContent(InputStream inputStream) throws IOException {
+		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 		try {
-			byte[] value = tlvIn.readValue();			
+			byte[] value = new byte[getLength()];
+			dataInputStream.readFully(value);
 			X509EncodedKeySpec pubKeySpec = new X509EncodedKeySpec(value);
 			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
 			publicKey = keyFactory.generatePublic(pubKeySpec);
@@ -80,9 +79,7 @@ public class DG15File extends DataGroup {
 	}
 
 	protected void writeContent(OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
-		byte[] publicKeyBytes = publicKey.getEncoded();
-		tlvOut.writeValue(publicKeyBytes);
+		out.write(publicKey.getEncoded());
 	}
 
 	/**

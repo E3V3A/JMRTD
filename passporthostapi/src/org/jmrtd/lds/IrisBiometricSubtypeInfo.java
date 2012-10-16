@@ -93,7 +93,7 @@ public class IrisBiometricSubtypeInfo extends AbstractListInfo<IrisImageInfo> {
 
 		/* Images */
 		for (int imageIndex = 0; imageIndex < imageCount; imageIndex++) {
-			IrisImageInfo irisImageInfo = new IrisImageInfo(dataIn, imageFormat);
+			IrisImageInfo irisImageInfo = new IrisImageInfo(inputStream, imageFormat);
 			add(irisImageInfo);
 		}
 	}

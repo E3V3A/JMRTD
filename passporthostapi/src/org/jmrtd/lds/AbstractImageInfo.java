@@ -200,8 +200,15 @@ abstract class AbstractImageInfo implements ImageInfo {
 		return new ByteArrayInputStream(imageBytes);
 	}
 
+	/**
+	 * Clients should call this method to read the imagebytes.
+	 * 
+	 * @param inputStream
+	 * @param imageLength
+	 * @throws IOException
+	 */
 	protected void readImage(InputStream inputStream, long imageLength) throws IOException {
-		this.imageBytes = new byte[(int)(imageLength & 0x00000000FFFFFFFFL)];
+		this.imageBytes = new byte[(int)(imageLength & 0x00000000FFFFFFFFL)];		
 		int bytesRead = 0;
 		while (bytesRead < imageLength) {
 			int bytesJustNowRead = inputStream.read(imageBytes, bytesRead, (int)(imageLength - bytesRead));

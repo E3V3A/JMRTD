@@ -104,7 +104,7 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 	 * @throws IOException when decoding fails
 	 */
 	public FaceInfo(StandardBiometricHeader sbh, InputStream inputStream) throws IOException {
-		this.sbh = sbh;
+		this.sbh = sbh;		
 		readObject(inputStream);
 	}
 
@@ -132,9 +132,9 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 		long constructedDataLength = 0L;
 
 		int faceCount = dataIn.readUnsignedShort();										/* + 2 = 14 */
-
+		
 		for (int i = 0; i < faceCount; i++) {
-			FaceImageInfo faceImageInfo = new FaceImageInfo(dataIn);
+			FaceImageInfo faceImageInfo = new FaceImageInfo(inputStream);
 			constructedDataLength += faceImageInfo.getRecordLength();
 			add(faceImageInfo);
 		}

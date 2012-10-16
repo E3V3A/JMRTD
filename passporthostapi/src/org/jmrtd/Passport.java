@@ -165,9 +165,7 @@ public class Passport {
 	/**
 	 * Creates a document from LDS data structures.
 	 * 
-	 * @param comFile the EF_COM
-	 * @param dataGroups the data groups
-	 * @param sodFile the EF_SOd
+	 * @param lds the logical data structure
 	 * @param docSigningPrivateKey the document signing private key
 	 * @param trustManager the trust manager (CSCA, CVCA)
 	 * 

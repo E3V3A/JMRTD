@@ -315,7 +315,7 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 
 		long constructedDataLength = 0L;
 		for (int i = 0; i < fingerCount; i++) {
-			FingerImageInfo fingerImageInfo = new FingerImageInfo(dataIn, compressionAlgorithm);
+			FingerImageInfo fingerImageInfo = new FingerImageInfo(inputStream, compressionAlgorithm);
 			constructedDataLength += fingerImageInfo.getRecordLength();
 			add(fingerImageInfo);
 		}

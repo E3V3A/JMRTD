@@ -94,7 +94,8 @@ public class KeyStoreCertStoreParameters implements Cloneable, CertStoreParamete
 				LOGGER.info("KeystoreCertStore will use provider for KeyStore: " + ks.getProvider().getClass().getCanonicalName());
 				ks.load(inputStream, password);
 			} catch (IOException ioe) {
-				ioe.printStackTrace();
+				LOGGER.warning("Cannot read this file \"" + location + "\" as keystore");
+				// ioe.printStackTrace();
 			}
 			inputStream.close();
 			JMRTDSecurityProvider.endPreferBouncyCastleProvider(n);

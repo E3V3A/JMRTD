@@ -264,7 +264,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 
 		/* Iris Record Header (45) */
 
-		DataInputStream dataIn = (inputStream instanceof DataInputStream) ? (DataInputStream)inputStream : new DataInputStream(inputStream);
+		DataInputStream dataIn = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		int iir0 = dataIn.readInt(); /* format id (e.g. "IIR" 0x00) */				/* 4 */
 		if (iir0 != FORMAT_IDENTIFIER) { throw new IllegalArgumentException("'IIR' marker expected! Found " + Integer.toHexString(iir0)); }
@@ -323,7 +323,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 
 		/* A record contains biometric subtype (or: 'feature') blocks (which contain image data blocks)... */
 		for (int i = 0; i < irisBiometricSubtypeCount; i++) {
-			IrisBiometricSubtypeInfo irisBiometricSubtypeInfo = new IrisBiometricSubtypeInfo(dataIn, imageFormat);
+			IrisBiometricSubtypeInfo irisBiometricSubtypeInfo = new IrisBiometricSubtypeInfo(inputStream, imageFormat);
 			constructedDataLength += irisBiometricSubtypeInfo.getRecordLength();
 			add(irisBiometricSubtypeInfo);
 		}
@@ -353,7 +353,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 
 		/* Iris Record Header (45) */
 
-		DataOutputStream dataOut = (outputStream instanceof DataOutputStream) ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
+		DataOutputStream dataOut = outputStream instanceof DataOutputStream ? (DataOutputStream)outputStream : new DataOutputStream(outputStream);
 
 		dataOut.writeInt(FORMAT_IDENTIFIER); /* header (e.g. "IIR", 0x00) */		/* 4 */
 		dataOut.writeInt(VERSION_NUMBER); /* version in ASCII (e.g. "010" 0x00) */	/* +4 = 8 */
@@ -383,7 +383,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 		dataOut.write(deviceUniqueId); /* array of length 16 */						/* + 16 = 45 */
 
 		for (IrisBiometricSubtypeInfo irisFeatureInfo: irisFeatureInfos) {
-			irisFeatureInfo.writeObject(dataOut);
+			irisFeatureInfo.writeObject(outputStream);
 		}
 	}
 

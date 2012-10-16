@@ -52,8 +52,8 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	private static final long serialVersionUID = 414300652684010416L;
 
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FaceInfo>() {
-		public FaceInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
-			return new FaceInfo(sbh, in);
+		public FaceInfo decode(InputStream inputStream, StandardBiometricHeader sbh, int index, int length) throws IOException {
+			return new FaceInfo(sbh, inputStream);
 		}
 	});
 
@@ -75,14 +75,14 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	/**
 	 * Creates a new file based on an input stream.
 	 *
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 */
-	public DG2File(InputStream in) throws IOException {
-		super(EF_DG2_TAG, in);
+	public DG2File(InputStream inputStream) throws IOException {
+		super(EF_DG2_TAG, inputStream);
 	}
 
-	protected void readContent(InputStream in) throws IOException {
-		ComplexCBEFFInfo complexCBEFFInfo = DECODER.decode(in);
+	protected void readContent(InputStream inputStream) throws IOException {
+		ComplexCBEFFInfo complexCBEFFInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = complexCBEFFInfo.getSubRecords();
 		for (CBEFFInfo cbeffInfo: records) {
 			if (!(cbeffInfo instanceof SimpleCBEFFInfo<?>)) {
@@ -100,14 +100,14 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 		/* FIXME: by symmetry, shouldn't there be a readOptionalRandomData here? */
 	}
 
-	protected void writeContent(OutputStream out) throws IOException {
+	protected void writeContent(OutputStream outputStream) throws IOException {
 		ComplexCBEFFInfo cbeffInfo = new ComplexCBEFFInfo();
 		List<FaceInfo> faceInfos = getSubRecords();
 		for (FaceInfo faceInfo: faceInfos) {
 			SimpleCBEFFInfo<FaceInfo> simpleCBEFFInfo = new SimpleCBEFFInfo<FaceInfo>(faceInfo);
 			cbeffInfo.add(simpleCBEFFInfo);
 		}
-		ENCODER.encode(cbeffInfo, out);
+		ENCODER.encode(cbeffInfo, outputStream);
 	}
 
 
