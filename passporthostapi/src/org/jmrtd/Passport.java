@@ -1032,7 +1032,7 @@ public class Passport {
 					byte[] copyOutBytes = copyOut.toByteArray();
 					filesBytes.put(fid, copyOutBytes);
 					copyOut.close();
-				} catch (IOException ioe) {
+				} catch (Exception ioe) {
 					ioe.printStackTrace();
 					/* FIXME: what if something goes wrong inside this thread? */
 					couldNotRead.add(fid);

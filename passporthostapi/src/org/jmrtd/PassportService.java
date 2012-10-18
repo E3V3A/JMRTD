@@ -41,8 +41,11 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.TreeMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -369,7 +372,7 @@ public class PassportService extends PassportApduService implements Serializable
 				eacKeyHash = md.digest(keyData);
 			} else {
 				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
-					(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+						(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
@@ -406,7 +409,7 @@ public class PassportService extends PassportApduService implements Serializable
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg,
 			byte[] caKeyHash, String documentNumber)
-	throws CardServiceException {
+					throws CardServiceException {
 		// FIXME caReference is not really needed, we get one from the first certificate
 		try {
 			if (caKeyHash == null) {
@@ -477,7 +480,7 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
-	throws CardServiceException {
+			throws CardServiceException {
 		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
 
@@ -508,7 +511,7 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized void doEAC(int keyId, PublicKey key,
 			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
 			PrivateKey terminalKey, String documentNumber)
-	throws CardServiceException {
+					throws CardServiceException {
 		KeyPair keyPair = null;
 		byte[] rpicc = null;
 		try {
@@ -527,8 +530,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Adds an authentication event listener.
 	 * 
-	 * @param l
-	 *            listener
+	 * @param l listener
 	 */
 	public void addAuthenticationListener(AuthListener l) {
 		authListeners.add(l);
@@ -537,8 +539,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Removes an authentication event listener.
 	 * 
-	 * @param l
-	 *            listener
+	 * @param l listener
 	 */
 	public void removeAuthenticationListener(AuthListener l) {
 		authListeners.remove(l);
@@ -740,48 +741,88 @@ public class PassportService extends PassportApduService implements Serializable
 
 		private static final long serialVersionUID = -4357282016708205020L;
 
-		private MRTDFileInfo selectedFile;
+		private short selectedFID;
 
-		public synchronized byte[] readBinary(int offset, int length)
-		throws CardServiceException {
-			boolean readLong = (offset > 0x7FFF);
-			return sendReadBinary(wrapper, offset, length, readLong);
+		private Map<Short, MRTDFileInfo> files;
+
+		public MRTDFileSystem() {
+			files = new HashMap<Short, MRTDFileInfo>();
 		}
 
-		public synchronized void selectFile(short fid)
-		throws CardServiceException {
+		public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
+			MRTDFileInfo fileInfo = null;
+			try {
+				if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
+				boolean readLong = (offset > 0x7FFF);
+				byte[] bytes = sendReadBinary(wrapper, offset, length, readLong);
+				fileInfo = files.get(selectedFID);
+				if (fileInfo != null) {
+					fileInfo.addFragment(offset, bytes);
+				}
+				return bytes;
+			} catch (CardServiceException cse) {
+				throw new CardServiceException("Send binary failed on file " + fileInfo + ": " + cse.getMessage(), cse.getSW());
+			} catch (Exception e) {
+				throw new CardServiceException("Send binary failed on file " + fileInfo);
+			}
+		}
+
+		public synchronized void selectFile(short fid) throws CardServiceException {
+			if (selectedFID == fid) { return; }
 			sendSelectFile(wrapper, fid);
-			selectedFile = new MRTDFileInfo(fid, getFileLength());
+			selectedFID = fid;
 		}
 
 		public synchronized FileInfo[] getSelectedPath() {
-			return new MRTDFileInfo[]{ selectedFile };
+			try {
+				MRTDFileInfo fileInfo = getFileInfo();
+				return new MRTDFileInfo[]{ fileInfo };
+			} catch (CardServiceException cse) {
+				cse.printStackTrace();
+				return null;
+			}
 		}
 
-		public synchronized void selectFile(short[] path) throws CardServiceException {
-			if (path == null) { throw new CardServiceException("Path is null"); }
-			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
-			short fid = path[path.length - 1];
-			selectFile(fid);
-		}
+		//		public synchronized void selectFile(short[] path) throws CardServiceException {
+		//			if (path == null) { throw new CardServiceException("Path is null"); }
+		//			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
+		//			short fid = path[path.length - 1];
+		//			selectFile(fid);
+		//		}
 
-		private synchronized int getFileLength() throws CardServiceException {
+		private synchronized MRTDFileInfo getFileInfo() throws CardServiceException {
+			if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
+
+			MRTDFileInfo fileInfo = files.get(selectedFID);
+			if (fileInfo != null) { return fileInfo; }
+
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
 				byte[] prefix = readBinary(0, 8);
 				ByteArrayInputStream baInputStream = new ByteArrayInputStream(prefix);
 				TLVInputStream tlvInputStream = new TLVInputStream(baInputStream);
+				int fileLength = 0;
 				int tag = tlvInputStream.readTag();
 				if (tag == CVCAFile.CAR_TAG) {
-					return CVCAFile.LENGTH;
+					fileLength = CVCAFile.LENGTH;
+				} else {
+					int vLength = tlvInputStream.readLength();
+					int tlLength = prefix.length - baInputStream.available();
+					fileLength = tlLength + vLength;
 				}
-				int vLength = tlvInputStream.readLength();
-				int tlLength = prefix.length - baInputStream.available();
-				return tlLength + vLength;
+				fileInfo = new MRTDFileInfo(selectedFID, fileLength);
+				fileInfo.addFragment(0, prefix);
+				files.put(selectedFID, fileInfo);
+				return fileInfo;
 			} catch (IOException ioe) {
 				throw new CardServiceException(ioe.toString());
 			}
+		}
+
+		private synchronized int getFileLength() throws CardServiceException {
+			MRTDFileInfo fileInfo = getFileInfo();
+			return fileInfo.getFileLength();
 		}
 	}
 
@@ -792,10 +833,21 @@ public class PassportService extends PassportApduService implements Serializable
 		private short fid;
 		private int length;
 
-		public MRTDFileInfo(short fid, int length) { this.fid = fid; this.length = length; }
+		/** Indexed by offset. */
+		private Map<Integer, byte[]> fragments;
+
+		public MRTDFileInfo(short fid, int length) {
+			this.fid = fid;
+			this.length = length;
+			this.fragments = new TreeMap<Integer, byte[]>();
+		}
 
 		public short getFID() { return fid; }
 
-		public int getFileLength() { return length; }	
+		public int getFileLength() { return length; }
+
+		public void addFragment(int offset, byte[] bytes) {
+			fragments.put(offset, bytes);
+		}
 	}
 }
