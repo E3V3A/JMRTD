@@ -12,7 +12,7 @@
 
 	<target name="compile" depends="" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" destdir="${build}" />
+		<javac target="1.6" srcdir="${src}" destdir="${build}" />
 	</target>
 	
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">

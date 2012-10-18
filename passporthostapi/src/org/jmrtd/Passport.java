@@ -421,11 +421,11 @@ public class Passport {
 		}
 		try {
 			InputStream inputStream = null;
-			byte[] file = filesBytes.get(fid);
-			if (file != null) {
+			byte[] fileBytes = filesBytes.get(fid);
+			if (fileBytes != null) {
 				/* Already completely read this file. */
-				inputStream = new ByteArrayInputStream(file);
-				inputStream.mark(file.length + 1);
+				inputStream = new ByteArrayInputStream(fileBytes);
+				inputStream.mark(fileBytes.length + 1);
 			} else {
 				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
 
@@ -858,7 +858,7 @@ public class Passport {
 			try {
 				short fid = LDSFileUtil.lookupFIDByTag(tag);
 				try {
-					setupFile(service, fid);
+					preReadFile(service, fid);
 				} catch(CardServiceException ex) {
 					/* NOTE: Most likely EAC protected file. */
 					LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
@@ -967,29 +967,29 @@ public class Passport {
 			rawStreams.put(fid, bufferedIn);
 			return bufferedIn;
 		} else {
-			CardFileInputStream cardIn = service.getInputStream(fid);
-			int length = cardIn.getFileLength();
-			BufferedInputStream bufferedIn = new BufferedInputStream(cardIn, length + 1);
-			totalLength += length; notifyProgressListeners(bytesRead, totalLength);
-			fileLengths.put(fid, length);
-			bufferedIn.mark(length + 1);
+			CardFileInputStream cardInputStream = service.getInputStream(fid);
+			int fileLength = cardInputStream.getFileLength();
+			BufferedInputStream bufferedIn = new BufferedInputStream(cardInputStream, fileLength + 1);
+			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+			fileLengths.put(fid, fileLength);
+			bufferedIn.mark(fileLength + 1);
 			rawStreams.put(fid, bufferedIn);
 			return bufferedIn;
 		}
 	}
 
-	private void setupFile(PassportService service, short fid) throws CardServiceException {
-		if (rawStreams.containsKey(fid)) {
-			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
-			return;
-		}
-		CardFileInputStream cardInputStream = service.getInputStream(fid);
-		int fileLength = cardInputStream.getFileLength();
-		cardInputStream.mark(fileLength + 1);
-		rawStreams.put(fid, cardInputStream);
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-		fileLengths.put(fid, fileLength);        
-	}
+//	private void setupFile(PassportService service, short fid) throws CardServiceException {
+//		if (rawStreams.containsKey(fid)) {
+//			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
+//			return;
+//		}
+//		CardFileInputStream cardInputStream = service.getInputStream(fid);
+//		int fileLength = cardInputStream.getFileLength();
+//		cardInputStream.mark(fileLength + 1);
+//		rawStreams.put(fid, cardInputStream);
+//		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+//		fileLengths.put(fid, fileLength);        
+//	}
 
 	/**
 	 * Starts a thread to read the raw (unbuffered) inputstream and copy its bytes into a buffer

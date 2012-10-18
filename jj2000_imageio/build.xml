@@ -21,7 +21,7 @@
 	<target name="compile" depends="" description="Compiles the source ">
 		<mkdir dir="${build}"  />
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}" classpath="${jj2000_lib}" destdir="${build}" />
+		<javac srcdir="${src}" classpath="${jj2000_lib}" destdir="${build}" target="1.6" />
 	</target>
 
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
