@@ -42,10 +42,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.TreeMap;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -754,16 +754,16 @@ public class PassportService extends PassportApduService implements Serializable
 			try {
 				if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
 				boolean readLong = (offset > 0x7FFF);
-				byte[] bytes = sendReadBinary(wrapper, offset, length, readLong);
 				fileInfo = files.get(selectedFID);
+				byte[] bytes = sendReadBinary(wrapper, offset, length, readLong);
 				if (fileInfo != null) {
 					fileInfo.addFragment(offset, bytes);
 				}
 				return bytes;
 			} catch (CardServiceException cse) {
-				throw new CardServiceException("Send binary failed on file " + fileInfo + ": " + cse.getMessage(), cse.getSW());
+				throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo) + ": " + cse.getMessage(), cse.getSW());
 			} catch (Exception e) {
-				throw new CardServiceException("Send binary failed on file " + fileInfo);
+				throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo));
 			}
 		}
 
@@ -771,6 +771,9 @@ public class PassportService extends PassportApduService implements Serializable
 			if (selectedFID == fid) { return; }
 			sendSelectFile(wrapper, fid);
 			selectedFID = fid;
+
+			/* This will determine file length if the file was not selected before. */
+			getFileInfo();
 		}
 
 		public synchronized FileInfo[] getSelectedPath() {
@@ -795,7 +798,8 @@ public class PassportService extends PassportApduService implements Serializable
 
 			MRTDFileInfo fileInfo = files.get(selectedFID);
 			if (fileInfo != null) { return fileInfo; }
-
+			assert(fileInfo.getFileLength() > 0);
+			
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
@@ -819,11 +823,6 @@ public class PassportService extends PassportApduService implements Serializable
 				throw new CardServiceException(ioe.toString());
 			}
 		}
-
-		private synchronized int getFileLength() throws CardServiceException {
-			MRTDFileInfo fileInfo = getFileInfo();
-			return fileInfo.getFileLength();
-		}
 	}
 
 	private static class MRTDFileInfo extends FileInfo implements Serializable {
@@ -833,13 +832,16 @@ public class PassportService extends PassportApduService implements Serializable
 		private short fid;
 		private int length;
 
-		/** Indexed by offset. */
-		private Map<Integer, byte[]> fragments;
+		private byte[] buffer;
+
+		/** Administration of which parts of buffer are filled. */
+		private Collection<Fragment> fragments;
 
 		public MRTDFileInfo(short fid, int length) {
 			this.fid = fid;
 			this.length = length;
-			this.fragments = new TreeMap<Integer, byte[]>();
+			this.buffer = new byte[length];
+			this.fragments = new HashSet<Fragment>();
 		}
 
 		public short getFID() { return fid; }
@@ -847,7 +849,61 @@ public class PassportService extends PassportApduService implements Serializable
 		public int getFileLength() { return length; }
 
 		public void addFragment(int offset, byte[] bytes) {
-			fragments.put(offset, bytes);
+			System.arraycopy(bytes, 0, buffer, offset, bytes.length);
+			int thisLength = bytes.length;
+			for (Fragment other: fragments) {
+				/* On partial overlap we change this fragment, possibly remove the other overlapping fragments we encounter. */
+				if (other.offset <= offset && offset + bytes.length <= other.offset + other.length) {
+					/*
+					 * [...other fragment.........]
+					 *    [...this fragment...]
+					 *    
+					 * Already contained. Don't add.
+					 */
+					return;
+				} else if (other.offset <= offset && offset < other.offset + other.length) {
+					/*
+					 * [...other fragment...]
+					 *         [...this fragment...]
+					 */
+					thisLength = offset + length - other.offset;
+					offset = other.offset;
+					fragments.remove(other);
+				} else if (offset <= other.offset && other.offset < offset + bytes.length) {
+					/*
+					 *            [...other fragment...]
+					 * [...this fragment...]
+					 * or:
+					 *    [...other fragment...]
+					 * [...this fragment...........]
+					 *  
+					 */
+					thisLength = Math.max(length , other.offset + other.length - offset);
+					fragments.remove(other);
+				}
+			}
+			fragments.add(new Fragment(offset, thisLength));
+		}
+
+		private static class Fragment {
+			private int offset, length;
+
+			public Fragment(int offset, int length) {
+				this.offset = offset;
+				this.length = length;
+			}
+
+			public boolean equals(Object otherObject) {
+				if (otherObject == null) { return false; }
+				if (otherObject == this) { return true; }
+				if (!otherObject.getClass().equals(Fragment.class)) { return false; }
+				Fragment otherFragment = (Fragment)otherObject;
+				return otherFragment.offset == offset && otherFragment.length == length;
+			}
+			
+			public int hashCode() {
+				return 2 * offset + 3 * length + 5;
+			}
 		}
 	}
 }
