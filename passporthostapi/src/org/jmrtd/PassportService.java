@@ -798,8 +798,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 			MRTDFileInfo fileInfo = files.get(selectedFID);
 			if (fileInfo != null) { return fileInfo; }
-			assert(fileInfo.getFileLength() > 0);
-			
+
 			try {
 				/* Each passport file consists of a TLV structure. */
 				/* Woj: no, not each, CVCA does not and has a fixed length */
@@ -848,41 +847,54 @@ public class PassportService extends PassportApduService implements Serializable
 
 		public int getFileLength() { return length; }
 
+		public String toString() {
+			return Integer.toHexString(fid);
+		}
+
 		public void addFragment(int offset, byte[] bytes) {
 			System.arraycopy(bytes, 0, buffer, offset, bytes.length);
+			int thisOffset = offset;
 			int thisLength = bytes.length;
 			for (Fragment other: fragments) {
 				/* On partial overlap we change this fragment, possibly remove the other overlapping fragments we encounter. */
-				if (other.offset <= offset && offset + bytes.length <= other.offset + other.length) {
+				if (other.offset <= thisOffset && thisOffset + thisLength <= other.offset + other.length) {
 					/*
 					 * [...other fragment.........]
 					 *    [...this fragment...]
 					 *    
-					 * Already contained. Don't add.
+					 * This fragment is already contained in other. Don't add and return immediately.
 					 */
 					return;
-				} else if (other.offset <= offset && offset < other.offset + other.length) {
+				} else if (other.offset <= thisOffset && thisOffset < other.offset + other.length) {
 					/*
 					 * [...other fragment...]
 					 *         [...this fragment...]
+					 *         
+					 * This fragment is partially contained in other. Extend this fragment to size of other, remove other.
 					 */
-					thisLength = offset + length - other.offset;
-					offset = other.offset;
+					thisLength = thisOffset + thisLength - other.offset;
+					thisOffset = other.offset;
 					fragments.remove(other);
-				} else if (offset <= other.offset && other.offset < offset + bytes.length) {
+				}  else if (thisOffset <= other.offset && other.offset + other.length <= thisOffset + thisLength) {
 					/*
-					 *            [...other fragment...]
-					 * [...this fragment...]
-					 * or:
 					 *    [...other fragment...]
 					 * [...this fragment...........]
-					 *  
+					 * 
+					 * The other fragment is contained in this fragment. Remove other.
 					 */
-					thisLength = Math.max(length , other.offset + other.length - offset);
+					fragments.remove(other);
+				} else if (offset <= other.offset && other.offset < thisOffset + thisLength) {
+					/*
+					 *        [...other fragment...]
+					 * [...this fragment...]
+					 * 
+					 * This fragment is partially contained in other. Extend this fragment to size of other, remove other.
+					 */
+					thisLength = other.offset + other.length - thisOffset;
 					fragments.remove(other);
 				}
 			}
-			fragments.add(new Fragment(offset, thisLength));
+			fragments.add(new Fragment(thisOffset, thisLength));			
 		}
 
 		private static class Fragment {
@@ -900,7 +912,7 @@ public class PassportService extends PassportApduService implements Serializable
 				Fragment otherFragment = (Fragment)otherObject;
 				return otherFragment.offset == offset && otherFragment.length == length;
 			}
-			
+
 			public int hashCode() {
 				return 2 * offset + 3 * length + 5;
 			}

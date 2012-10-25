@@ -858,6 +858,10 @@ public class Passport {
 			try {
 				short fid = LDSFileUtil.lookupFIDByTag(tag);
 				try {
+					if ((fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) {
+						/* Skip DG3 and DG4 if EAC was unsuccessful... */
+						continue;
+					}
 					setupFile(service, fid);
 				} catch(CardServiceException ex) {
 					/* NOTE: Most likely EAC protected file. */
@@ -967,14 +971,19 @@ public class Passport {
 			rawStreams.put(fid, bufferedIn);
 			return bufferedIn;
 		} else {
-			CardFileInputStream cardInputStream = service.getInputStream(fid);
-			int fileLength = cardInputStream.getFileLength();
-			BufferedInputStream bufferedIn = new BufferedInputStream(cardInputStream, fileLength + 1);
-			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-			fileLengths.put(fid, fileLength);
-			bufferedIn.mark(fileLength + 1);
-			rawStreams.put(fid, bufferedIn);
-			return bufferedIn;
+			try {
+				CardFileInputStream cardInputStream = service.getInputStream(fid);
+				int fileLength = cardInputStream.getFileLength();
+				BufferedInputStream bufferedIn = new BufferedInputStream(cardInputStream, fileLength + 1);
+				totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+				fileLengths.put(fid, fileLength);
+				bufferedIn.mark(fileLength + 1);
+				rawStreams.put(fid, bufferedIn);
+				return bufferedIn;
+			} catch (Exception e) {
+				couldNotRead.add(fid);
+				throw new CardServiceException("Could not read " + Integer.toHexString(fid));
+			}
 		}
 	}
 
@@ -983,12 +992,17 @@ public class Passport {
 			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
 			return;
 		}
-		CardFileInputStream cardInputStream = service.getInputStream(fid);
-		int fileLength = cardInputStream.getFileLength();
-		cardInputStream.mark(fileLength + 1);
-		rawStreams.put(fid, cardInputStream);
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-		fileLengths.put(fid, fileLength);        
+		try {
+			CardFileInputStream cardInputStream = null;
+			cardInputStream = service.getInputStream(fid);
+			int fileLength = cardInputStream.getFileLength();
+			cardInputStream.mark(fileLength + 1);
+			rawStreams.put(fid, cardInputStream);
+			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
+			fileLengths.put(fid, fileLength);
+		} catch (Exception e) {
+			couldNotRead.add(fid);
+		}
 	}
 
 	/**
@@ -1032,8 +1046,8 @@ public class Passport {
 					byte[] copyOutBytes = copyOut.toByteArray();
 					filesBytes.put(fid, copyOutBytes);
 					copyOut.close();
-				} catch (Exception ioe) {
-					ioe.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
 					/* FIXME: what if something goes wrong inside this thread? */
 					couldNotRead.add(fid);
 					return;

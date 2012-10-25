@@ -77,9 +77,9 @@ import org.jmrtd.lds.ImageInfo;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
+import org.jmrtd.lds.LDSElement;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
-import org.jmrtd.lds.LDSElement;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
