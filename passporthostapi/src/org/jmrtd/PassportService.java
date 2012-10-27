@@ -22,7 +22,6 @@
 
 package org.jmrtd;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -41,10 +40,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -55,9 +51,6 @@ import javax.crypto.interfaces.DHPublicKey;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.FileInfo;
-import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 import net.sourceforge.scuba.util.Hex;
 
@@ -67,7 +60,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
-import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -244,7 +236,7 @@ public class PassportService extends PassportApduService implements Serializable
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
-			fs = new MRTDFileSystem();
+			fs = new MRTDFileSystem(this);
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}
@@ -322,6 +314,25 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
+	public synchronized void sendSelectFile(short fid) throws CardServiceException {
+		sendSelectFile(wrapper, fid);
+	}
+	
+	/**
+	 * Sends a <code>READ BINARY</code> command to the passport, use wrapper when secure channel set up.
+	 * 
+	 * @param offset
+	 *            offset into the file
+	 * @param le
+	 *            the expected length of the file to read
+	 * 
+	 * @return a byte array of length <code>le</code> with (the specified part
+	 *         of) the contents of the currently selected file
+	 */
+	public synchronized byte[] sendReadBinary(int offset, int le, boolean longRead) throws CardServiceException {
+		return sendReadBinary(wrapper, offset, le, longRead);
+	}
+	
 	/**
 	 * Perform CA (Chip Authentication) part of EAC. For details see TR-03110
 	 * ver. 1.11. In short, we authenticate the chip with (EC)DH key agreement
@@ -688,7 +699,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @throws IOException if the file cannot be read
 	 */
-	public CardFileInputStream getInputStream(short fid) throws CardServiceException {
+	public synchronized CardFileInputStream getInputStream(short fid) throws CardServiceException {
 		fs.selectFile(fid);
 		return new CardFileInputStream(maxBlockSize, fs);
 	}
@@ -727,195 +738,6 @@ public class PassportService extends PassportApduService implements Serializable
 	private void notifyAAPerformed(AAEvent event) {
 		for (AuthListener l : authListeners) {
 			l.performedAA(event);
-		}
-	}
-
-	/**
-	 * A file system for ICAO MRTDs.
-	 * 
-	 * @author The JMRTD team (info@jmrtd.org)
-	 *
-	 * @version $Revision$
-	 */
-	private class MRTDFileSystem implements FileSystemStructured, Serializable {
-
-		private static final long serialVersionUID = -4357282016708205020L;
-
-		private short selectedFID;
-
-		private Map<Short, MRTDFileInfo> files;
-
-		public MRTDFileSystem() {
-			files = new HashMap<Short, MRTDFileInfo>();
-		}
-
-		public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
-			MRTDFileInfo fileInfo = null;
-			try {
-				if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
-				boolean readLong = (offset > 0x7FFF);
-				fileInfo = files.get(selectedFID);
-				byte[] bytes = sendReadBinary(wrapper, offset, length, readLong);
-				if (fileInfo != null) {
-					fileInfo.addFragment(offset, bytes);
-				}
-				return bytes;
-			} catch (CardServiceException cse) {
-				throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo) + ": " + cse.getMessage(), cse.getSW());
-			} catch (Exception e) {
-				throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo));
-			}
-		}
-
-		public synchronized void selectFile(short fid) throws CardServiceException {
-			if (selectedFID == fid) { return; }
-			sendSelectFile(wrapper, fid);
-			selectedFID = fid;
-
-			/* This will determine file length if the file was not selected before. */
-			getFileInfo();
-		}
-
-		public synchronized FileInfo[] getSelectedPath() {
-			try {
-				MRTDFileInfo fileInfo = getFileInfo();
-				return new MRTDFileInfo[]{ fileInfo };
-			} catch (CardServiceException cse) {
-				cse.printStackTrace();
-				return null;
-			}
-		}
-
-		//		public synchronized void selectFile(short[] path) throws CardServiceException {
-		//			if (path == null) { throw new CardServiceException("Path is null"); }
-		//			if (path.length <= 0) { throw new CardServiceException("Cannot select empty path"); }
-		//			short fid = path[path.length - 1];
-		//			selectFile(fid);
-		//		}
-
-		private synchronized MRTDFileInfo getFileInfo() throws CardServiceException {
-			if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
-
-			MRTDFileInfo fileInfo = files.get(selectedFID);
-			if (fileInfo != null) { return fileInfo; }
-
-			try {
-				/* Each passport file consists of a TLV structure. */
-				/* Woj: no, not each, CVCA does not and has a fixed length */
-				byte[] prefix = readBinary(0, 8);
-				ByteArrayInputStream baInputStream = new ByteArrayInputStream(prefix);
-				TLVInputStream tlvInputStream = new TLVInputStream(baInputStream);
-				int fileLength = 0;
-				int tag = tlvInputStream.readTag();
-				if (tag == CVCAFile.CAR_TAG) {
-					fileLength = CVCAFile.LENGTH;
-				} else {
-					int vLength = tlvInputStream.readLength();
-					int tlLength = prefix.length - baInputStream.available();
-					fileLength = tlLength + vLength;
-				}
-				fileInfo = new MRTDFileInfo(selectedFID, fileLength);
-				fileInfo.addFragment(0, prefix);
-				files.put(selectedFID, fileInfo);
-				return fileInfo;
-			} catch (IOException ioe) {
-				throw new CardServiceException(ioe.toString());
-			}
-		}
-	}
-
-	private static class MRTDFileInfo extends FileInfo implements Serializable {
-
-		private static final long serialVersionUID = 6727369753765119839L;
-
-		private short fid;
-		private int length;
-
-		private byte[] buffer;
-
-		/** Administration of which parts of buffer are filled. */
-		private Collection<Fragment> fragments;
-
-		public MRTDFileInfo(short fid, int length) {
-			this.fid = fid;
-			this.length = length;
-			this.buffer = new byte[length];
-			this.fragments = new HashSet<Fragment>();
-		}
-
-		public short getFID() { return fid; }
-
-		public int getFileLength() { return length; }
-
-		public String toString() {
-			return Integer.toHexString(fid);
-		}
-
-		public void addFragment(int offset, byte[] bytes) {
-			System.arraycopy(bytes, 0, buffer, offset, bytes.length);
-			int thisOffset = offset;
-			int thisLength = bytes.length;
-			for (Fragment other: fragments) {
-				/* On partial overlap we change this fragment, possibly remove the other overlapping fragments we encounter. */
-				if (other.offset <= thisOffset && thisOffset + thisLength <= other.offset + other.length) {
-					/*
-					 * [...other fragment.........]
-					 *    [...this fragment...]
-					 *    
-					 * This fragment is already contained in other. Don't add and return immediately.
-					 */
-					return;
-				} else if (other.offset <= thisOffset && thisOffset < other.offset + other.length) {
-					/*
-					 * [...other fragment...]
-					 *         [...this fragment...]
-					 *         
-					 * This fragment is partially contained in other. Extend this fragment to size of other, remove other.
-					 */
-					thisLength = thisOffset + thisLength - other.offset;
-					thisOffset = other.offset;
-					fragments.remove(other);
-				}  else if (thisOffset <= other.offset && other.offset + other.length <= thisOffset + thisLength) {
-					/*
-					 *    [...other fragment...]
-					 * [...this fragment...........]
-					 * 
-					 * The other fragment is contained in this fragment. Remove other.
-					 */
-					fragments.remove(other);
-				} else if (offset <= other.offset && other.offset < thisOffset + thisLength) {
-					/*
-					 *        [...other fragment...]
-					 * [...this fragment...]
-					 * 
-					 * This fragment is partially contained in other. Extend this fragment to size of other, remove other.
-					 */
-					thisLength = other.offset + other.length - thisOffset;
-					fragments.remove(other);
-				}
-			}
-			fragments.add(new Fragment(thisOffset, thisLength));			
-		}
-
-		private static class Fragment {
-			private int offset, length;
-
-			public Fragment(int offset, int length) {
-				this.offset = offset;
-				this.length = length;
-			}
-
-			public boolean equals(Object otherObject) {
-				if (otherObject == null) { return false; }
-				if (otherObject == this) { return true; }
-				if (!otherObject.getClass().equals(Fragment.class)) { return false; }
-				Fragment otherFragment = (Fragment)otherObject;
-				return otherFragment.offset == offset && otherFragment.length == length;
-			}
-
-			public int hashCode() {
-				return 2 * offset + 3 * length + 5;
-			}
 		}
 	}
 }

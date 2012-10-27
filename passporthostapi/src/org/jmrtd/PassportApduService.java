@@ -347,6 +347,10 @@ public class PassportApduService extends CardService {
 		return r.getSW(); 
 	}
 
+	public synchronized void sendSelectFile(short fid) throws CardServiceException {
+		sendSelectFile(null, fid);
+	}
+	
 	/**
 	 * Sends a <code>SELECT FILE</code> command to the passport. Secure
 	 * messaging will be applied to the command and response apdu.
@@ -384,9 +388,9 @@ public class PassportApduService extends CardService {
 	 * @return a byte array of length <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
 	 */
-	public synchronized byte[] sendReadBinary(short offset, int le)
+	public synchronized byte[] sendReadBinary(short offset, int le, boolean longRead)
 	throws CardServiceException {
-		return sendReadBinary(null, offset, le, false);
+		return sendReadBinary(null, offset, le, longRead);
 	}
 
 	/**
@@ -405,9 +409,7 @@ public class PassportApduService extends CardService {
 	 * @return a byte array of length at most <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
 	 */
-	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper,
-			int offset, int le, boolean longRead) throws CardServiceException {
-
+	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean longRead) throws CardServiceException {
 		boolean repeatOnEOF = false;
 		ResponseAPDU rapdu = null;
 		do {
@@ -487,9 +489,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @return the response from the passport (status word removed)
 	 */
-	public synchronized byte[] sendInternalAuthenticate(
-			SecureMessagingWrapper wrapper, byte[] rndIFD)
-	throws CardServiceException {
+	public synchronized byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) throws CardServiceException {
 		CommandAPDU capdu = createInternalAuthenticateAPDU(rndIFD);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 
@@ -517,9 +517,7 @@ public class PassportApduService extends CardService {
 	 *         by the passport, decrypted (using <code>kEnc</code>) and verified
 	 *         (using <code>kMac</code>)
 	 */
-	public synchronized byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC,
-			byte[] kIFD, SecretKey kEnc, SecretKey kMac)
-	throws CardServiceException {
+	public synchronized byte[] sendMutualAuth(byte[] rndIFD, byte[] rndICC, byte[] kIFD, SecretKey kEnc, SecretKey kMac) throws CardServiceException {
 		try {
 			ResponseAPDU rapdu = transmit(createMutualAuthAPDU(rndIFD, rndICC,	kIFD, kEnc, kMac));
 			ResponseAPDU rAcc = rapdu;
@@ -581,8 +579,7 @@ public class PassportApduService extends CardService {
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException(
-			"Sending External Authenticate failed.");
+			throw new CardServiceException("Sending External Authenticate failed.");
 		}
 	}
 

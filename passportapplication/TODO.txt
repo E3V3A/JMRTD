@@ -189,7 +189,7 @@ VERSION 0.4.8 (FUTURE)
 General
 - Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - Deal with PKD code that relies on javax.naming.* (currently not supported in Android and temporarily removed from core passporthostapi).
-- Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
++ Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
 
 GUI
 - Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box (is correct in display mode though).

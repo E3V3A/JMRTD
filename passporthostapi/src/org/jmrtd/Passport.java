@@ -981,6 +981,7 @@ public class Passport {
 				rawStreams.put(fid, bufferedIn);
 				return bufferedIn;
 			} catch (Exception e) {
+				e.printStackTrace();
 				couldNotRead.add(fid);
 				throw new CardServiceException("Could not read " + Integer.toHexString(fid));
 			}
