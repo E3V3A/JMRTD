@@ -23,6 +23,7 @@
 package org.jmrtd.app;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Frame;
@@ -303,12 +304,12 @@ public class PreferencesDialog extends JDialog {
 	private JComponent createTerminalsPreferencesTab(Map<CardTerminal, Boolean> terminalList) {
 		cardTerminalsPreferencesPanel = new JPanel(new GridLayout(terminalList.size(), 1));
 		cardTerminalsPreferencesPanel.setBorder(BorderFactory.createTitledBorder("Card Terminals"));
-//		for (Entry<CardTerminal, Boolean> entry: terminalList.entrySet()) {
-//			CardTerminal terminal = entry.getKey();
-//			Boolean isCheckedValue = entry.getValue();
-//			boolean isChecked = isCheckedValue == null ? false : isCheckedValue; 
-//			addTerminal(terminal, isChecked);
-//		}
+		//		for (Entry<CardTerminal, Boolean> entry: terminalList.entrySet()) {
+		//			CardTerminal terminal = entry.getKey();
+		//			Boolean isCheckedValue = entry.getValue();
+		//			boolean isChecked = isCheckedValue == null ? false : isCheckedValue; 
+		//			addTerminal(terminal, isChecked);
+		//		}
 
 		ReadingMode[] modes = ReadingMode.values();
 		readingModeRadioButtonMap = new HashMap<ReadingMode, JRadioButton>();
@@ -339,19 +340,56 @@ public class PreferencesDialog extends JDialog {
 		return terminalSettingsTab;
 	}
 
-	private void addTerminal(CardTerminal terminal, boolean isChecked) {
+	private synchronized void addTerminal(CardTerminal terminal, boolean isChecked) {
 		if (terminal == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
-		JCheckBox checkBox = new JCheckBox(terminal.getName(), isChecked);
-		cardTerminalPollingCheckBoxMap.put(terminal.getName(), checkBox);
-		checkBox.setAction(getSetTerminalAction(terminal, checkBox));
+		String terminalName = terminal.getName();
+//		state.setTerminalChecked(terminal, isChecked);
+
+		/* Already have such a check box in the map? */
+		JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminalName);
+		if (checkBox == null) {
+			/* No, create one, add it  */
+			checkBox = new JCheckBox(terminalName, isChecked);
+			checkBox.setAction(getSetTerminalAction(terminal, checkBox));
+			cardTerminalPollingCheckBoxMap.put(terminalName, checkBox);
+		}
+		
+		/* Already have such a check box in the GUI? */
+		for (Component component: cardTerminalsPreferencesPanel.getComponents()) {
+			if (component instanceof JCheckBox) {
+				JCheckBox cb = (JCheckBox)component;
+				if (cb.getText().equals(terminalName)) {
+					if (checkBox != cb) { System.out.println("DEBUG: different checkbox instances in terminal preferences!"); }
+					cb.setSelected(state.isTerminalChecked(terminal));
+					validate();
+					return;
+				}
+			}
+		}
 		cardTerminalsPreferencesPanel.add(checkBox);
-		state.setTerminalChecked(terminal, isChecked);
+		validate();
 	}
 
-	private void removeTerminal(String terminalName) {
+	/**
+	 * Removes a terminal name and checkbox mapping from the checkbox map.
+	 * Removes the checkbox from the preferencespanel.
+	 * 
+	 * @param terminalName the name of the terminal
+	 */
+	private synchronized void removeTerminal(String terminalName) {
 		if (terminalName == null) { throw new IllegalArgumentException("Terminal cannot be null"); }
 		JCheckBox checkBox = cardTerminalPollingCheckBoxMap.remove(terminalName);
 		if (checkBox != null) { cardTerminalsPreferencesPanel.remove(checkBox); }
+		for (Component component: cardTerminalsPreferencesPanel.getComponents()) {
+			if (component instanceof JCheckBox) {
+				JCheckBox cb = (JCheckBox)component;
+				if (terminalName.equals(cb.getText())) {
+					System.out.println("DEBUG: removing excess terminal checkbox in terminal preferences!");
+					cardTerminalsPreferencesPanel.remove(cb);
+				}
+			}
+		}
+		validate();
 	}
 
 	private JComponent createCertificatesPanel() {
@@ -379,11 +417,13 @@ public class PreferencesDialog extends JDialog {
 		return panel;
 	}
 
-	private void updateGUIFromState(PreferencesState state) {
+	private synchronized void updateGUIFromState(PreferencesState state) {
 		CardManager cm = CardManager.getInstance();
-		List<CardTerminal> cmTerminals = cm.getTerminals();
-		/* Remove terminals no longer in CM. */
-		for (String terminalName: cardTerminalPollingCheckBoxMap.keySet()) {
+		Collection<CardTerminal> cmTerminals = new ArrayList<CardTerminal>(cm.getTerminals());
+		Collection<String> checkBoxTerminalNames = new ArrayList<String>(cardTerminalPollingCheckBoxMap.keySet());
+
+		/* Remove terminals no longer in CM. */		
+		for (String terminalName: checkBoxTerminalNames) {
 			boolean occursInCM = false;
 			for (CardTerminal terminal: cmTerminals) {
 				if (terminal.getName().equals(terminalName) && state.isTerminalPresent(terminal)) {
@@ -399,7 +439,9 @@ public class PreferencesDialog extends JDialog {
 				JCheckBox checkBox = cardTerminalPollingCheckBoxMap.get(terminal.getName());
 				checkBox.setSelected(state.isTerminalChecked(terminal));
 			} else {
-				addTerminal(terminal, cm.isPolling(terminal));
+				if (state.isTerminalPresent(terminal)) {
+					addTerminal(terminal, cm.isPolling(terminal));
+				}
 			}
 		}
 		for (ReadingMode mode: readingModeRadioButtonMap.keySet()) {
