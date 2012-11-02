@@ -187,25 +187,15 @@ VERSION 0.4.8 (FUTURE)
 ----------------------
 
 General
-- Clean up ImageInfo inputstream to allow progressive rendering in principle.
-- Deal with PKD code that relies on javax.naming.* (currently not supported in Android and temporarily removed from core passporthostapi).
 + Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
++ Cleanup and rename in LDS. Add a top level LDS class.
++ Reorganize file system code to eliminate sending unnecessary duplicate APDUs.
 
 GUI
-- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box (is correct in display mode though).
-- Updating tree view in edit mode based on LDS model in passporthostapi, instead of TreeModel in passportapplication.
-- Ability to add (and delete) complete DGs from tree view in edit mode from binary files.
-- Cleanup dynamic EAC menu in DocumentViewFrame and DocumentEditFrame.
-- Allow creation of documents with EAC from edit mode.
-- Wire shark style viewing of files in content pane in tree view.
-- Bug showing multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
-- Show IrisInfo in edit mode?!?
++ Bug showing multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
 
 Android
 + Easier build of jmrtd.jar for developers, no more manual rewriting to work around Bouncy Castle thanks to jarjar.
-- Demo app showing verification based on CSCA.
-- Robustness, consistency.
-- Optically scan MRZ with JavaOCR on Android.
 
 ImageIO
 + Problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
@@ -215,12 +205,12 @@ ImageIO
 + Also have an image writer based on JJ2000, custom interface and imageio interface.
 + Also have an image writer based on JNBIS, custom interface and imageio interface.
 
-Java Card
-- Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
-
 SCUBA
 + Check abstraction of smartcardio. Remove generic params. (credits to Pim Vullers).
-- Separate scuba.jar (differences per platform) and jmrtd.jar (same on all platforms).
++ Remove all Swing and AWT dependencies in SCUBA.
++ Separate scuba.jar (only small differences in package-only-visible classes per platform)
++ Separate jmrtd.jar (same on all platforms)
++ Separate jmrtd_application.jar (j2se only), contains main class.
 
 Code quality
 - Check unit tests
@@ -232,6 +222,8 @@ Code quality
 --------------
 
 General
+- Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
+- Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
@@ -242,6 +234,8 @@ General
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
 - Latest C sources from NIST for WSQ (version 3.1)?
+- Version for Embedded Java on Raspberry Pi and similar.
+- Version for Blackberry OS.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
@@ -256,11 +250,23 @@ GUI
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
 - Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
   Perhaps even present ASN.1 tree in a JTree.
+- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box (is correct in display mode though).
+- Updating tree view in edit mode based on LDS model in passporthostapi, instead of TreeModel in passportapplication.
+- Ability to add (and delete) complete DGs from tree view in edit mode from binary files.
+- Cleanup dynamic EAC menu in DocumentViewFrame and DocumentEditFrame.
+- Allow creation of documents with EAC from edit mode.
+- Wire shark style viewing of files in content pane in tree view.
+- Show IrisInfo in edit mode?!?
 
 Android
 - Full GUI, all DGs
 - Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
+- Demo app showing verification based on CSCA.
+- Robustness, consistency.
+
+Java Card
+- Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
 
 Bugs/temporary fixes
 - Fix padding error during AA on Omnikey 5121 on newer versions of NL NIK. Restore gracefully from session?
@@ -292,10 +298,6 @@ Website and documentation
 
 VERSION 0.9.x (DISTANT FUTURE)
 ------------------------------
-
-Features
-- JPEG2000 and WSQ image support in pure Java.
-- Nokia NFC relay terminal via Bluetooth. Implement a MIDlet for this.
 
 Code quality
 - Unit tests
