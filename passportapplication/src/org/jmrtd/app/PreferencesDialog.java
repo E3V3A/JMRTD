@@ -68,7 +68,8 @@ import javax.swing.event.ChangeListener;
 import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardTerminalEvent;
 import net.sourceforge.scuba.smartcards.TerminalFactoryListener;
-import net.sourceforge.scuba.swing.URIListEditor;
+
+import org.jmrtd.app.swing.URIListEditor;
 
 public class PreferencesDialog extends JDialog {
 

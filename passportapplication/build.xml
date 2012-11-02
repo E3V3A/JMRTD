@@ -36,7 +36,7 @@
 	<target name="compile" depends="" description="Compiles the source ">
 		<mkdir dir="${build}" />
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac target="1.6" srcdir="src:../scuba_util_j2se" classpath="${bcpkix_lib}:${bcprov_lib}:${certcvc_lib}:${scuba_lib}:${jmrtd_lib}" destdir="${build}" />		
+		<javac target="1.6" srcdir="src" classpath="${bcpkix_lib}:${bcprov_lib}:${certcvc_lib}:${scuba_lib}:${jmrtd_lib}" destdir="${build}" />		
 	</target>
 
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
@@ -56,7 +56,7 @@
 			<fileset dir="." includes="README,LICENSE" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
 			<fileset dir="." includes="fonts/OCRB.ttf" />
-			<fileset dir="../scuba_util_j2se" includes="images/*.zip" />
+			<fileset dir="." includes="images/famfamfam_silk.zip,flags.zip" />
 		</jar>	
 	</target>
 

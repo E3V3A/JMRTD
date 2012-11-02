@@ -42,8 +42,7 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import net.sourceforge.scuba.util.FileUtil;
-
+import org.jmrtd.app.util.FileUtil;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 public class TerminalCertificatesDialog extends JDialog implements ActionListener {

@@ -42,10 +42,9 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import net.sourceforge.scuba.swing.KeyPanel;
-import net.sourceforge.scuba.util.FileUtil;
-import net.sourceforge.scuba.util.IconUtil;
-
+import org.jmrtd.app.swing.KeyPanel;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**

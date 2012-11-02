@@ -40,9 +40,9 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 
-import net.sourceforge.scuba.swing.KeyPanel;
-import net.sourceforge.scuba.util.FileUtil;
-import net.sourceforge.scuba.util.IconUtil;
+import org.jmrtd.app.swing.KeyPanel;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Frame for displaying (and saving to file) keys.

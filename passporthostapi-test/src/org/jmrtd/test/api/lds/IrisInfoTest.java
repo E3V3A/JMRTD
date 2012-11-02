@@ -34,8 +34,8 @@ import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
 
-public class IrisInfoTest extends TestCase
-{
+public class IrisInfoTest extends TestCase {
+
 	public IrisInfoTest(String name) {
 		super(name);
 	}

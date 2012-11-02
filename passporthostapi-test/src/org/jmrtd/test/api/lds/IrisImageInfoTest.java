@@ -6,7 +6,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;

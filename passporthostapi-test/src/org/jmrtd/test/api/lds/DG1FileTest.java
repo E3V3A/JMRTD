@@ -31,8 +31,8 @@ import net.sourceforge.scuba.util.Hex;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.MRZInfo;
 
-public class DG1FileTest extends TestCase
-{
+public class DG1FileTest extends TestCase {
+
 	public DG1FileTest(String name) {
 		super(name);
 	}

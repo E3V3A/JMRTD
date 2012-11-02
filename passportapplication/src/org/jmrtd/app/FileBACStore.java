@@ -36,11 +36,10 @@ import java.util.List;
 import java.util.StringTokenizer;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.util.FileUtil;
-
 import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
+import org.jmrtd.app.util.FileUtil;
 
 /**
  * Flat file based database for BAC entries.

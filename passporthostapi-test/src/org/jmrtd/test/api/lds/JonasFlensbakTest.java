@@ -1,7 +1,6 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.util.List;
 
 import junit.framework.TestCase;

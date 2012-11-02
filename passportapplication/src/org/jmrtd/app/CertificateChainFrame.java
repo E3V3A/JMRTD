@@ -43,7 +43,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JToolBar;
 import javax.swing.filechooser.FileFilter;
 
-import net.sourceforge.scuba.swing.CertificateChainPanel;
+import org.jmrtd.app.swing.CertificateChainPanel;
 
 /**
  * Frame for displaying certifcate chains.

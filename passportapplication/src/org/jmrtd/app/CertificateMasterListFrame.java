@@ -63,7 +63,8 @@ import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
 import net.sourceforge.scuba.data.Country;
-import net.sourceforge.scuba.util.IconUtil;
+
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Frame to show the CSCA trust anchors, sorted by country.

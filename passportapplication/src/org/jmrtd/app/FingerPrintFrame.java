@@ -40,10 +40,9 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextArea;
 
-import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.IconUtil;
-import net.sourceforge.scuba.util.ImageUtil;
-
+import org.jmrtd.app.swing.ImagePanel;
+import org.jmrtd.app.util.IconUtil;
+import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 

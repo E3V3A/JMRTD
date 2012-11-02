@@ -30,13 +30,12 @@ import javax.imageio.ImageIO;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.ImageInfo;
 
-public class DisplayedImageInfoTest extends TestCase
-{
+public class DisplayedImageInfoTest extends TestCase {
+
 	public DisplayedImageInfoTest(String name) {
 		super(name);
 	}

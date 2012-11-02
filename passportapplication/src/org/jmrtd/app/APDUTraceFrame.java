@@ -47,9 +47,10 @@ import net.sourceforge.scuba.smartcards.APDUEvent;
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.IconUtil;
+
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Frame for tracing APDUs.

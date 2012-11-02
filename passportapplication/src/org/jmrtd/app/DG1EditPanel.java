@@ -35,11 +35,11 @@ import javax.swing.JPanel;
 import javax.swing.SpringLayout;
 
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.swing.CountryEntryField;
-import net.sourceforge.scuba.swing.DateEntryField;
-import net.sourceforge.scuba.swing.GenderEntryField;
-import net.sourceforge.scuba.swing.MRZEntryField;
 
+import org.jmrtd.app.swing.CountryEntryField;
+import org.jmrtd.app.swing.DateEntryField;
+import org.jmrtd.app.swing.GenderEntryField;
+import org.jmrtd.app.swing.MRZEntryField;
 import org.jmrtd.lds.ICAOCountry;
 import org.jmrtd.lds.MRZInfo;
 

@@ -37,8 +37,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceInfo;
 
-public class FaceInfoTest extends TestCase
-{
+public class FaceInfoTest extends TestCase {
+
 	public FaceInfoTest(String name) {
 		super(name);
 	}

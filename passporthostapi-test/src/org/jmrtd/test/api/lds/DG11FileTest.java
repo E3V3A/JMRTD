@@ -34,8 +34,8 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.DG11File;
 
-public class DG11FileTest extends TestCase
-{
+public class DG11FileTest extends TestCase {
+
 	public DG11FileTest(String name) {
 		super(name);
 	}

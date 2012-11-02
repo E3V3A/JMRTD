@@ -31,10 +31,9 @@ import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 
-import net.sourceforge.scuba.util.IconUtil;
-
 import org.jmrtd.VerificationStatus;
 import org.jmrtd.VerificationStatus.Verdict;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Component for displaying the verification status.

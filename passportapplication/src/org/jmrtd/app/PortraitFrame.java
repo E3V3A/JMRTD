@@ -49,11 +49,10 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JToolBar;
 
-import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.FileUtil;
-import net.sourceforge.scuba.util.IconUtil;
-import net.sourceforge.scuba.util.ImageUtil;
-
+import org.jmrtd.app.swing.ImagePanel;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
+import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.lds.FaceImageInfo;
 
 /**

@@ -30,15 +30,14 @@ import javax.imageio.ImageIO;
 import junit.framework.TestCase;
 import net.sourceforge.scuba.data.Gender;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceImageInfo.EyeColor;
 import org.jmrtd.lds.FaceImageInfo.FeaturePoint;
 import org.jmrtd.lds.ImageInfo;
 
-public class FaceImageInfoTest extends TestCase
-{
+public class FaceImageInfoTest extends TestCase {
+
 	public FaceImageInfoTest(String name) {
 		super(name);
 	}

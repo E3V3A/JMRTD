@@ -42,8 +42,8 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextPane;
 
-import net.sourceforge.scuba.util.FileUtil;
-import net.sourceforge.scuba.util.IconUtil;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Dialog with information about the product and project.

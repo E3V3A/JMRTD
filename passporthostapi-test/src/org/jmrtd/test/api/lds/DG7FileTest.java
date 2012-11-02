@@ -25,7 +25,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -40,8 +39,8 @@ import org.jmrtd.lds.DG7File;
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.ImageInfo;
 
-public class DG7FileTest extends TestCase
-{
+public class DG7FileTest extends TestCase {
+
 	public DG7FileTest(String name) {
 		super(name);
 	}

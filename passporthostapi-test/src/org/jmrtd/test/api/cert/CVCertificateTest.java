@@ -13,7 +13,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.util.FileUtil;
 
 import org.jmrtd.JMRTDSecurityProvider;
 
@@ -134,7 +133,7 @@ public class CVCertificateTest extends TestCase
 	}
 	
 	private File getCertFile() throws URISyntaxException {
-		File certsDir = new File(FileUtil.getBaseDirAsFile(), "certs");
+		File certsDir = new File("certs");
 		File certFile = new File(certsDir, "certIS_orig.cvcert");
 		if (!certFile.exists()) {
 			fail("Cert file doesn't exist: \"" + certFile.getAbsolutePath() + "\"");

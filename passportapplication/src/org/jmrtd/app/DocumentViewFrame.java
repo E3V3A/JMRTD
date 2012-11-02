@@ -68,11 +68,7 @@ import javax.swing.SwingUtilities;
 
 import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.swing.ImagePanel;
-import net.sourceforge.scuba.util.FileUtil;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.IconUtil;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.AuthAdapter;
 import org.jmrtd.BACKeySpec;
@@ -80,6 +76,10 @@ import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesDialog.ReadingMode;
+import org.jmrtd.app.swing.ImagePanel;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
+import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;

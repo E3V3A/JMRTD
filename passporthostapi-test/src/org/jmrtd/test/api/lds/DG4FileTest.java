@@ -31,15 +31,14 @@ import java.util.Arrays;
 import java.util.LinkedList;
 
 import junit.framework.TestCase;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DG4File;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
 
-public class DG4FileTest extends TestCase
-{
+public class DG4FileTest extends TestCase {
+
 	public static final String TEST_FILE = "t:/paspoort/test/bsi/Datagroup4.bin";
 
 	public DG4FileTest(String name) {

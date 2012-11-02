@@ -66,9 +66,6 @@ import net.sourceforge.scuba.smartcards.CardManager;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
-import net.sourceforge.scuba.util.FileUtil;
-import net.sourceforge.scuba.util.IconUtil;
-import net.sourceforge.scuba.util.OSXAdapter;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.BACStore;
@@ -77,6 +74,9 @@ import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.PreferencesDialog.ReadingMode;
+import org.jmrtd.app.util.FileUtil;
+import org.jmrtd.app.util.IconUtil;
+import org.jmrtd.app.util.OSXAdapter;
 
 /**
  * Simple graphical application to demonstrate the

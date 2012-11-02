@@ -46,10 +46,10 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
+import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.ISO781611;
 import org.jmrtd.cert.CVCPrincipal;

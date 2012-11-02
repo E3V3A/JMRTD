@@ -36,8 +36,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 
-public class FingerInfoTest extends TestCase
-{
+public class FingerInfoTest extends TestCase {
+
 	public FingerInfoTest(String name) {
 		super(name);
 	}

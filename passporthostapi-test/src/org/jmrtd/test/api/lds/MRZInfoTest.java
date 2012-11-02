@@ -36,8 +36,8 @@ import net.sourceforge.scuba.data.TestCountry;
 import org.jmrtd.lds.ICAOCountry;
 import org.jmrtd.lds.MRZInfo;
 
-public class MRZInfoTest extends TestCase
-{	
+public class MRZInfoTest extends TestCase {
+
 	/* ID 1 samples. */
 
 	private static final String MRZ_SUSANNA_SAMPLE_3LINE_ID1 = "IRGBRZU12345673<<<<<<<<<<<<<<<"

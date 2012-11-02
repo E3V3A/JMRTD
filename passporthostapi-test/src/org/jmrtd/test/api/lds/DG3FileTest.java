@@ -34,14 +34,13 @@ import java.util.List;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 
-public class DG3FileTest extends TestCase
-{
+public class DG3FileTest extends TestCase {
+
 	private static final //			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
 	String TEST_FILE = "t:/paspoort/test/woj-dg3-top-secret-0103.bin";
 

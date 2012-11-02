@@ -34,15 +34,14 @@ import javax.imageio.ImageIO;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
-import net.sourceforge.scuba.util.ImageUtil;
 
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.FingerImageInfo;
 import org.jmrtd.lds.FingerInfo;
 import org.jmrtd.lds.ImageInfo;
 
-public class FingerImageInfoTest extends TestCase
-{
+public class FingerImageInfoTest extends TestCase {
+
 	public FingerImageInfoTest(String name) {
 		super(name);
 	}

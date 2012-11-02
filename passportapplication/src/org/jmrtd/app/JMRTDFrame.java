@@ -28,7 +28,7 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
-import net.sourceforge.scuba.util.IconUtil;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Base class for JMRTD windows.

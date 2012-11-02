@@ -29,8 +29,8 @@ import junit.framework.TestCase;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.LDSFile;
 
-public class COMFileTest extends TestCase
-{
+public class COMFileTest extends TestCase {
+
 	public COMFileTest(String name) {
 		super(name);
 	}

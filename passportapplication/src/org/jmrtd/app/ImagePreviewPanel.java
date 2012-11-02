@@ -38,9 +38,8 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTabbedPane;
 
-import net.sourceforge.scuba.util.IconUtil;
-import net.sourceforge.scuba.util.ImageUtil;
-
+import org.jmrtd.app.util.IconUtil;
+import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.ImageInfo;
 

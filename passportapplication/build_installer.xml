@@ -39,7 +39,6 @@
 	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards/src" />
 	<property name="scuba_sc_j2se_src" location="${basedir}/../scuba_sc_j2se/src" />
 	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
-	<property name="scuba_util_j2se_src" location="${basedir}/../scuba_util_j2se/src" />
 
 	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
 		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
@@ -59,10 +58,10 @@
 	
 	<target name="compile" depends="init" description="Compiles the source ">
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac srcdir="${src}:${scuba_util_src}:${scuba_util_j2se_src}:${scuba_smartcards_src}:${scuba_sc_j2se_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${bcprov_dir}/${bcpkix_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
+		<javac srcdir="${src}:${scuba_util_src}:${scuba_smartcards_src}:${scuba_sc_j2se_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${bcprov_dir}/${bcpkix_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
 	</target>
 
-	<target name="extensions" depends="init" description="Copies extensions into distribution directory">		
+	<target name="dependencies" depends="init" description="Copies extensions into distribution directory">		
 		<!-- Copy bouncy castle -->
 		<copy todir="${distlib}">
 			<fileset file="${bcprov_dir}/${bcprov_jar}" />
@@ -82,11 +81,10 @@
 			<fileset dir="${wsq_imageio_dir}" includes="${wsq_imageio_jar}" />
 			<fileset dir="${jj2000_imageio_dir}" includes="${jj2000_imageio_jar}" />
 			<fileset dir="${jj2000_dir}" includes="${jj2000_jar}" />
-		</copy>
-		
+		</copy>		
 	</target>
 
-	<target name="dist" depends="extensions, compile" description="Generates the distribution .jar file">
+	<target name="dist" depends="dependencies, compile" description="Generates the distribution .jar file">
 		<!-- Create a new header for README containing version number -->
 		<concat append="false" force="true" destfile="${dist}/README">
 			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
@@ -101,26 +99,50 @@
 			<fileset dir="." includes="csca.ks" />
 		</copy>
 
-		<!-- Create the distribution jar file -->
+		<!--  Creat scuba.jar -->
+		<jar jarfile="${distlib}/scuba.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="SCUBA"/>
+				<attribute name="Implementation-Title" value="scuba"/>
+				<attribute name="Implementation-Version" value="0.0.3"/>
+			</manifest>
+			<fileset dir="${build}" includes="net/sourceforge/scuba/**/*.class" />
+			<fileset dir="${acr122provider_build}" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${crefprovider_build}" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${jcopprovider_build}" includes="**/*.class" erroronmissingdir="false" />						
+		</jar>
+
+		<!--  Create jmrtd.jar -->
 		<jar jarfile="${distlib}/jmrtd.jar">
+			<manifest>
+				<attribute name="Class-path" value="${bcprov_jar} ${bcpkix_jar} ${certcvc_jar}" />
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="${author_name}"/>
+				<attribute name="Implementation-Title" value="jmrtd"/>
+			</manifest>
+			<fileset dir="${passporthostapi_base}/bin" includes="**/*.class" />			
+		</jar>	
+		
+		<!-- Create the distribution jar file -->
+		<jar jarfile="${distlib}/jmrtd_application.jar">
 			<manifest>
 				<attribute name="Main-class" value="${app_main_class}" />
 				<attribute name="VMOptions" value="${vm_options}" />
-				<attribute name="Class-path" value="${bcprov_jar} ${bcpkix_jar} ${certcvc_jar} ${wsq_imageio_jar} ${jj2000_imageio_jar}" /> <!-- NOTE: ${jai_imageio_jar} -->
+				<attribute name="Class-path" value="jmrtd.jar scuba.jar ${bcprov_jar} ${bcpkix_jar} ${certcvc_jar} ${wsq_imageio_jar} ${jj2000_imageio_jar}" /> <!-- NOTE: ${jai_imageio_jar} -->
 				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
 				<attribute name="Built-Date" value="${TODAY}" />
 				<attribute name="Implementation-Vendor" value="${author_name}"/>
 				<attribute name="Implementation-Title" value="${app_name}"/>
 				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
 			</manifest>
-			<fileset dir="${build}/" includes="**/*.class" />
-			<fileset dir="${acr122provider_build}/" includes="**/*.class" erroronmissingdir="false" />
-			<fileset dir="${crefprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
-			<fileset dir="${jcopprovider_build}/" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${build}/" includes="org/jmrtd/app/**/*.class" />
 			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
-			<fileset dir="." includes="fonts/OCRB.ttf" />			
-			<fileset dir="${scuba_util_j2se_base}" includes="images/famfamfam_silk.zip,images/flags.zip" />
 			<fileset dir="${dist}" includes="README,LICENSE" />
+			<fileset dir="." includes="fonts/OCRB.ttf" />
+			<fileset dir="." includes="images/famfamfam_silk.zip,images/flags.zip" />
 		</jar>	
 	</target>
 
@@ -249,7 +271,7 @@
 			<link href="${bcprov_api_url}" />
 			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
 			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
-			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_util_j2se_src};${scuba_smartcards_src}" />
+			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_smartcards_src}" />
 			<package name="org.jmrtd" />
 			<package name="org.jmrtd.lds" />
 			<package name="org.jmrtd.cbeff" />

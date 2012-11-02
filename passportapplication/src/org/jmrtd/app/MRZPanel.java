@@ -28,8 +28,7 @@ import java.awt.Font;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
 
-import net.sourceforge.scuba.util.FontUtil;
-
+import org.jmrtd.app.util.FontUtil;
 import org.jmrtd.lds.MRZInfo;
 
 /**

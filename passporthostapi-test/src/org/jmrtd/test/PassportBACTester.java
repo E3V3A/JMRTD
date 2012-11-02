@@ -11,9 +11,8 @@ import java.util.Vector;
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
+import net.sourceforge.scuba.smartcards.ResponseAPDU;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.PassportService;

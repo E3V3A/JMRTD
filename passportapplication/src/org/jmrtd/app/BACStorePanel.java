@@ -46,11 +46,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableCellEditor;
 
-import net.sourceforge.scuba.util.IconUtil;
-
 import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.BACStore;
+import org.jmrtd.app.util.IconUtil;
 
 /**
  * Panel for managing the BAC store.

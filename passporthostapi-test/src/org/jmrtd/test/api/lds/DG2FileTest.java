@@ -35,8 +35,8 @@ import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceInfo;
 
-public class DG2FileTest extends TestCase
-{
+public class DG2FileTest extends TestCase {
+
 	private static final String TEST_FILE = "/t:/paspoort/test/0102.bin";
 
 	public DG2FileTest(String name) {

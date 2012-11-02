@@ -34,8 +34,8 @@ import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.lds.DG15File;
 
-public class DG15FileTest extends TestCase
-{
+public class DG15FileTest extends TestCase {
+
 	public DG15FileTest(String name) {
 		super(name);
 	}

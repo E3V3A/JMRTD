@@ -30,10 +30,9 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JLabel;
 
-import net.sourceforge.scuba.swing.DateEntryField;
-import net.sourceforge.scuba.swing.MRZEntryField;
-
 import org.jmrtd.BACKeySpec;
+import org.jmrtd.app.swing.DateEntryField;
+import org.jmrtd.app.swing.MRZEntryField;
 
 /**
  * Text field for entering BAC entries.

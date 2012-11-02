@@ -33,10 +33,10 @@ import javax.swing.SpringLayout;
 
 import net.sourceforge.scuba.data.Country;
 import net.sourceforge.scuba.data.Gender;
-import net.sourceforge.scuba.swing.CountryLabel;
-import net.sourceforge.scuba.swing.DateLabel;
-import net.sourceforge.scuba.swing.GenderLabel;
 
+import org.jmrtd.app.swing.CountryLabel;
+import org.jmrtd.app.swing.DateLabel;
+import org.jmrtd.app.swing.GenderLabel;
 import org.jmrtd.lds.ICAOCountry;
 import org.jmrtd.lds.MRZInfo;
 
