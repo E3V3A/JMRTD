@@ -183,25 +183,24 @@ Code quality
 + Check Findbugs
 
 
-VERSION 0.4.8 (FUTURE)
+VERSION 0.4.8 (2012-11-05)
 ----------------------
 
 General
-+ Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch").
-+ Cleanup and rename in LDS. Add a top level LDS class.
-+ Reorganize file system code to eliminate sending unnecessary duplicate APDUs.
++ Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch"). Now using non-deprecated certbuilder from bcpkix.jar.
++ Cleanup and rename in LDS. Added a top level LDS class.
++ Reorganize file system code to eliminate sending unnecessary duplicate APDUs and add caching of READ BINARY responses.
 
 GUI
-+ Bug showing multiple card terminals entries in terminals list in preferences. Due to recent hot plugging code in SCUBA by Pim.
++ Work around for bug showing multiple card terminals entries in terminals list in preferences after hot plugging card terminals.
 
 Android
 + Easier build of jmrtd.jar for developers, no more manual rewriting to work around Bouncy Castle thanks to jarjar.
 
 ImageIO
-+ Problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
++ Fixed problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
 + Use pure Java WSQ based on JNBIS. (credits to Mohammad Shamsi)
-+ Metadata for WSQ imageio. (credits to Paulo Costa)
-+ Update to latest NBIS C code and base wsq_imageio on that. (credits to Paulo Costa)
++ Metadata for WSQ imageio and WSQ v3.1 support. (credits to Paulo Costa)
 + Also have an image writer based on JJ2000, custom interface and imageio interface.
 + Also have an image writer based on JNBIS, custom interface and imageio interface.
 
@@ -209,13 +208,12 @@ SCUBA
 + Check abstraction of smartcardio. Remove generic params. (credits to Pim Vullers).
 + Remove all Swing and AWT dependencies in SCUBA.
 + Separate scuba.jar (only small differences in package-only-visible classes per platform)
-+ Separate jmrtd.jar (same on all platforms)
++ Separate jmrtd.jar (the same on all platforms)
 + Separate jmrtd_application.jar (j2se only), contains main class.
 
 Code quality
-- Check unit tests
-- Check JavaDoc
-- Check Findbugs
++ Check unit tests
++ Check JavaDoc
 
 
 0.5.x (FUTURE)

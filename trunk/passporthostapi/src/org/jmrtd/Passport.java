@@ -231,6 +231,7 @@ public class Passport {
 	 */
 	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
+		int lastKnownSW = -1;
 		this.service = service;
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
@@ -271,7 +272,7 @@ public class Passport {
 						for (BACKeySpec otherBACKeySpec: bacEntries) {
 							try {
 								if (!triedBACEntries.contains(otherBACKeySpec)) {
-									LOGGER.info("BAC: " + otherBACKeySpec);
+									LOGGER.info("Trying BAC: " + otherBACKeySpec);
 									service.doBAC(otherBACKeySpec);
 									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
 									bacKeySpec = otherBACKeySpec;
@@ -279,6 +280,7 @@ public class Passport {
 								}
 								Thread.sleep(500);
 							} catch (CardServiceException cse) {
+								lastKnownSW = cse.getSW();
 								/* NOTE: BAC failed? Try next BACEntry */
 							}
 						}
@@ -290,7 +292,7 @@ public class Passport {
 		}
 		if (isBACPassport && bacKeySpec == null) {
 			/* Passport requires BAC, but we failed to authenticate. */
-			throw new BACDeniedException("Basic Access denied!", triedBACEntries);
+			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 		}
 		try {
 			readFromService(service, bacKeySpec, trustManager);

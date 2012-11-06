@@ -47,8 +47,8 @@ public class BACDeniedException extends CardServiceException {
 	 * @param msg the message
 	 * @param triedEntries the BAC entries that were tried before BAC failed
 	 */
-	public BACDeniedException(String msg, List<BACKey> triedEntries) {
-		super(msg);
+	public BACDeniedException(String msg, List<BACKey> triedEntries, int sw) {
+		super(msg, sw);
 	}
 	
 	/**
