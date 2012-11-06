@@ -1,0 +1,4 @@
+The files with the "_orig" suffix are the original Dutch test passport certificates and keys.
+
+The files with the "_new" suffix are newly generated test passport certificates and keys
+for putting a new trust point on the passport.

@@ -1,0 +1,3 @@
+Main-Class: org.jmrtd.app.JMRTDApp
+VMOptions: -Xms250M -Xmx256M
+Class-path: bcprov-jdk16-146.jar jai_imageio.jar clibwrapper_jiio.jar cert-cvc.jar

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">JMRTD</string>
+	<string name="menu_opt_info">info</string>
+	<string name="knownBACsHeading">List of known BACs</string>
+	<string name="saveImageLabel">save Image to gallery</string>
+	<string name="faceImage">Face image</string>
+	<string name="closeLabel">close</string>
+	<string name="docInfoHeader">Document info</string>
+	<string name="personInfoHeader">Personal info</string>
+	<string name="selectDOB">Select Date of Birth </string>
+	<string name="selectDOE">Select Date of Expiry </string>
+</resources>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+   Builds jmrtd.jar and cert-cvc.jar in libs/ with references to scprov instead of bcprov.
+   Depends on the presence of a cert-cvc.jar and on the presence of a passporthostapi project in the current workspace.
+-->
+
+<project name="bjmrtd" default="jars" basedir=".">
+
+    <property name="software" value="./external" />
+	<property name="bcprov" value="bcprov-jdk15on-147.jar" />
+
+	<path id="compile.classpath">
+		<fileset dir="${software}/cert-cvc" includes="cert-cvc.jar" />
+		<fileset dir="${software}/cert-cvc/lib" includes="${bcprov}" />
+	</path>
+
+	<target name="init">
+		<mkdir dir="${software}/passporthostapi/build" />
+		<mkdir dir="libs" />
+	</target>
+
+	<target name="compile" depends="init">
+		<javac destdir="${software}/passporthostapi/build" debug="on"
+			includeantruntime="no" encoding="iso8859-1" target="1.6">
+			<classpath refid="compile.classpath" />
+			<src
+				path="${software}/passporthostapi/src:${software}/scuba_util/src:${software}/scuba_smartcards/src:${software}/scuba_sc_indep/src" />
+		</javac>
+	</target>
+
+	<target name="checkout">    
+	    <mkdir dir="external"/>
+   		<exec executable="svn" dir="./external">
+       		<arg line=" co https://jmrtd.svn.sourceforge.net/svnroot/jmrtd/passporthostapi passporthostapi"/>
+		</exec>
+   		<exec executable="svn" dir="./external">
+       		<arg line=" co https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_sc_indep scuba_sc_indep"/>
+		</exec>
+   		<exec executable="svn" dir="./external">
+       		<arg line=" co https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_smartcards scuba_smartcards"/>
+		</exec>
+   		<exec executable="svn" dir="./external">
+       		<arg line=" co https://scuba.svn.sourceforge.net/svnroot/scuba/scuba_util scuba_util"/>
+		</exec>
+   		<exec executable="svn" dir="./external">
+       		<arg line=" co https://svn.cesecore.eu/svn/ejbca/tags/cert-cvc_1_3_0/cert-cvc cert-cvc"/>
+		</exec>
+   								
+    </target>
+
+	<target name="jars" depends="checkout, compile">
+		<taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"
+			classpath="./libs/jarjar-1.3.jar" />
+
+		<jarjar jarfile="libs/cert-cvc.jar">
+			<manifest>
+				<attribute name="Implementation-Title"
+					value="EAC 1.11 Card Verifiable Certificate Library" />
+				<attribute name="Implementation-Version" value="1.3.0" />
+				<attribute name="Implementation-Vendor"
+					value="Keijo Kurkinen, Swedish National Police Board" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<zipfileset dir="${software}/cert-cvc" includes="cert-cvc.jar" />
+			<rule pattern="org.bouncycastle.**" result="org.spongycastle.@1" />
+		</jarjar>
+
+		<jarjar jarfile="libs/jmrtd.jar">
+			<manifest>
+				<attribute name="Implementation-Title" value="JMRTD host API (including SCUBA)" />
+				<attribute name="Implementation-Version" value="0.4.8b" />
+				<attribute name="Implementation-Vendor" value="The JMRTD team" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<fileset dir="${software}/passporthostapi/build" includes="**/*.class" />
+			<rule pattern="org.bouncycastle.**" result="org.spongycastle.@1" />
+		</jarjar>
+
+<!--
+		<copy todir="libs">
+			<fileset dir="${software}" includes="scprov-jdk15on-1.47.0.1.jar" />
+			<fileset dir="${software}/jj2000-read-only/target" includes="jj2000-5.2-SNAPSHOT.jar" />			
+		</copy>
+-->		
+	</target>
+
+</project>

@@ -1,0 +1,309 @@
+JMRTD/SCUBA TODO (it's not a changelog or backlog, it's not a roadmap, it's just a TODO file)
+
+
+VERSION 0.0.1 (2006-08-17)
+--------------------------
+
++ Initial release of the host API. 
+
+
+VERSION 0.0.2 (2007-12-31)
+--------------------------
+
++ Second release of the passport reader.
+
+
+VERSION 0.3 (2008-08-05)
+------------------------
+
++ Intermediate release to fix some bugs.
++ Oops. 0.3? That was supposed to be 0.0.3.
+
+
+VERSION 0.4.1 (2008-11-23)
+--------------------------
+
++ New GUI with preview of face image.
+
+
+VERSION 0.4.2 (2009-02-06)
+--------------------------
+
++ Added a preferences panel to the GUI
++ Non PCSC card terminals discovery by reflection
++ Progressive jpeg2k seems to work (if jai-imageio is installed) 
+
+
+VERSION 0.4.3 (2009-04-17)
+--------------------------
+
++ EAC support (thanks to Woj).
++ Split up GUI code and lib.
++ The low level smartcard stuff has been moved to a completely seperate project (SCUBA, see scuba.sourceforge.net) to allow
+  other projects (Woj's driving license, Woj's PKI applet host application) to use it
++ Some minor bug fixes (like, oh, initial select APDU was not according to spec :S.. Thanks to Jean-Francois Houzard for
+  bringing this to our attention.) 
+
+
+VERSION 0.4.4 (2010-02-13)
+--------------------------
+
+General
++ Revert back to one jmrtd.jar (includes all of SCUBA) in distribution.
++ Move LDS data classes (*File, *Info) into org.jmrtd.lds package.
++ Move BACStore to passporthostapi (from passportapplication).
++ Fix unit test (when run from package explorer hangs on DG14 tests).
++ Make loading of GRT compatible ZIP files possible. They seem to use EF_DG<X>.BIN naming inside ZIP files. Test it.
++ Store BACStore, CSCAStore, CVCAStore, preferences in APPDATA subdir, not in user.home/.jmrtd
+
+Preferences
++ Tabbed panes in preferences.
++ APDU tracing from preferences, at least for card manager (also for reload action?).
++ Preferences persistent storage based on JSR-10.
++ CSCA and CVCA folder settings from tab in preferences window.
++ Remember location of directory from which (passport) files were loaded, return there when opening new file.
+
+Dependencies
++ Latest JAI ImageIO 1.2
++ Latest Bouncy Castle 1.45
+
+Code quality
++ Check JavaDoc
++ Run Findbugs.
+
+Web site and documentation
++ Check new docs on ICAO site, update links.
++ Fix scmmicro.com broken links in install.shtml.
++ Add a link to http://wiki.yobi.be/wiki/EPassport#Manufacturers (which manufacturer makes ePassport for which country?) on csca.shtml.
+
+
+VERSION 0.4.5 (2010-08-22)
+---------------------------
+
+General
++ Use the Java Certification Path API (JSR 55) for searching certificates for SOD validation
++ LDAP interface (JNDI) to PKD. Tested with downloadable ldif from https://pkddownloadsg.icao.int/ on openldap.
++ Implement CSCA as CertStore (and for local files as KeyStore with CertStore interface).
++ Implement CVCA as KeyStore.
++ Moved BAC logic from PassportFrame to the Passport class.
++ Moved readFromService logic from PassportFrame to the Passport class.
++ Moved the verifySecurity logic from PassportFrame to the Passport class.
++ Implemented ImageIO support for WSQ finger print images, based on a JNI wrapper around http://sourceforge.net/ffpis.
++ Implemented (rudimentary) DG3, DG4, FingerInfo, IrisInfo (and related classes and interfaces).
++ Copy default files (e.g. CSCA certificates that come with the installation) to standard places during installation.
+
+GUI
++ Only go to editor mode if user explicitly indicates (default display mode should be not editable).
++ Display card EAC information (not only on successful EAC event).
+
+Bugs/temporary fixes
++ Remove image method in DisplayPreviewPanel only targets DG2 (displayed images could also be in DG3 - DG7, ...?)
++ Fixed some algorithmName guessing/heuristics based on OID in SODFile.
+
+Dependencies
++ Wrapper around cert-cvc so that CVCertificates subclass java.security.cert.Certificate.
++ cert-cvc latest.
++ Check/update README and Web site to reflect correct version numbers.
++ Latest JAI ImageIO 1.2
++ Latest Bouncy Castle 1.45
+
+Code quality
++ Check JavaDoc
++ Findbugs
+
+Website and documentation
++ Simpler front page (move stuff to "about")
+
+
+VERSION 0.4.6 (2011-04-03)
+--------------------------
+
+General
++ Use String instead of Data in BAC / MRZ entry
++ CSCA Master List via PKD cert store
++ More efficient use of filters based on selector in PKD cert store impl
++ SCUBA cardmanager uses Lock/Condition primitives instead of synchronized/wait
++ Allow adding individual cert files (instead of keystores) to CSCA trust store
++ Show CSCA Master List (trust anchors) in GUI
++ Many small FIXMEs, primarily in Passport and SODFile
++ Patches and feedback by various people (thanks!)
+
+Dependencies
++ Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken)
++ Latest Bouncy Castle 1.46
++ Latest cert-cvc 1.2.12 (with patch to OIDField)
+
+Code quality
++ Exception handling (e.g. re-throwing more general exception types, quelling, ... see open discussion on sf https://sourceforge.net/projects/jmrtd/forums/forum/580232/topic/3999263)
++ Check unit tests
++ Check JavaDoc
++ Findbugs
+
+
+VERSION 0.4.7 (2012-03-27)
+--------------------------
+
+General
++ Abstraction of SCUBA smartcard layer.
++ Implementation of SCUBA smartcard layer for j2se and Android 2.3.
++ Reported by Wim M.: The order of crypto providers matters? Test with SUN first, BC last. Appears to be fixed.
++ CardManager hot pluggable card terminal events (Pim Vullers contributed patches). Stable in GUI (preferences)?
++ Latest Bouncy Castle 1.47.
++ Cleanup SCUBA so that we have a smaller number of project.
++ Consistent naming and param order in PassportService and Passport (readFile vs getInputStream).
++ Document number > 9 digits. MRZ document number field "spill over" to optional information field.
+
+LDS
++ Moved progressive mode stuff out of FaceInfo.
++ Moved java.awt.* dependencies out of org.jmrtd.lds package.
++ Cleaned up CBEFF groups data groups and related types. Create seperate package org.jmrtd.cbeff.
++ Mapped terminology from ISO-19794 to DG2File, DG3File, DG4File, FaceInfo, FingerInfo, IrisInfo.
++ Finger and iris bio template I/O are at the same level as face bio template.
++ Implemented getEncoded() for all classes in org.jmrtd.lds package, especially DG3, DG4, FingerPrintInfo, IrisInfo. Uniformly use readObject() and writeObject().
++ Restructured LDS base classes. Introduced *ImageInfo and LDSInfo.
++ Started renaming classes, prefer "Document" and "MRTD" over "Passport".
++ In FaceInfo, angles (yaw, pitch etc.) value 0 should be treated as UNDEFINED; don't try to convert to degrees (for now), just use coded values.
+
+GUI
++ First attempt at tree view in editor mode. (Content panel not tree event driven yet, though.)
++ User should be able to select either ID-1 or ID-3 / document code "I<" etc. (3 or 2 line MRZ) in edit mode. Update tree view.
++ Show DG3 and DG4 in tree if present, even if not readable.
++ MacOS X: Top menu, About dialog, AppData dir (in FileUtil).
+
+Android
++ Proof of concept app on Nexus S (DG1, DG2, with BAC, basic GUI, by Max Guenther).
+
+ImageIO
++ Added a JJ2000 (pure Java JPEG2000) based ImageIO provider (read only), as an alternative to JAI ImageIO.
++ WSQ native libs for i386/x86_64 MacOS X, Windows, Linux.
+
+Code quality
++ Check unit tests
++ Check JavaDoc
++ Check Findbugs
+
+
+VERSION 0.4.8 (2012-11-05)
+----------------------
+
+General
++ Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch"). Now using non-deprecated certbuilder from bcpkix.jar.
++ Cleanup and rename in LDS. Added a top level LDS class.
++ Reorganize file system code to eliminate sending unnecessary duplicate APDUs and add caching of READ BINARY responses.
+
+GUI
++ Work around for bug showing multiple card terminals entries in terminals list in preferences after hot plugging card terminals.
+
+Android
++ Easier build of jmrtd.jar for developers, no more manual rewriting to work around Bouncy Castle thanks to jarjar.
+
+ImageIO
++ Fixed problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
++ Use pure Java WSQ based on JNBIS. (credits to Mohammad Shamsi)
++ Metadata for WSQ imageio and WSQ v3.1 support. (credits to Paulo Costa)
++ Also have an image writer based on JJ2000, custom interface and imageio interface.
++ Also have an image writer based on JNBIS, custom interface and imageio interface.
+
+SCUBA
++ Check abstraction of smartcardio. Remove generic params. (credits to Pim Vullers).
++ Remove all Swing and AWT dependencies in SCUBA.
++ Separate scuba.jar (only small differences in package-only-visible classes per platform)
++ Separate jmrtd.jar (the same on all platforms)
++ Separate jmrtd_application.jar (j2se only), contains main class.
+
+Code quality
++ Check unit tests
++ Check JavaDoc
+
+
+0.5.x (FUTURE)
+--------------
+
+General
+- Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
+- Clean up ImageInfo inputstream to allow progressive rendering in principle.
+- Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
+- CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
+- Check and compare date (current system time) and warn if certificate has expired
+- Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
+- Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
+- Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
+- Implement BAC as KeyStore?
+- Find some way to bring the progressive reading of JPEG, JPEG2000 back.
+- Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
+- Latest C sources from NIST for WSQ (version 3.1)?
+- Version for Embedded Java on Raspberry Pi and similar.
+- Version for Blackberry OS.
+
+MRZ
+- MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
+- MRZ character transliteration. Provide interface for custom rules. Implement reasonable default rules.
+- MRZ optional field rules (e.g., personal  number for Dutch case). Provide interface for custom rules. Implement reasonable default rules.
+- Check "V<", ID-2 MRZInfo.
+
+GUI
+- APDU tracing showing plain text APDUs when BAC based SM is used
+- Bug in loading document from file without SOd (is silently accepted, perhaps we should generate SOd?).
+- Improve certificate / trust store viewing and editing (both CSCA, CVCA)
+- In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
+- Alternative editor view (file tree style) on passport, showing all files available with option to save individual files as binary dumps.
+  Perhaps even present ASN.1 tree in a JTree.
+- Edit mode for German "D<<" documents shows wrong nationality and issuing country in combo box (is correct in display mode though).
+- Updating tree view in edit mode based on LDS model in passporthostapi, instead of TreeModel in passportapplication.
+- Ability to add (and delete) complete DGs from tree view in edit mode from binary files.
+- Cleanup dynamic EAC menu in DocumentViewFrame and DocumentEditFrame.
+- Allow creation of documents with EAC from edit mode.
+- Wire shark style viewing of files in content pane in tree view.
+- Show IrisInfo in edit mode?!?
+
+Android
+- Full GUI, all DGs
+- Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
+  distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
+- Demo app showing verification based on CSCA.
+- Robustness, consistency.
+
+Java Card
+- Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
+
+Bugs/temporary fixes
+- Fix padding error during AA on Omnikey 5121 on newer versions of NL NIK. Restore gracefully from session?
+- Omnikey 5121 buggy (fails BAC) when read for second time after polling start
+
+Code quality
+- Exception handling (e.g. re-throwing more general exception types, quelling, ...
+- Need EAC samples to test with...
+- Check unit tests
+- Check JavaDoc
+- Check Findbugs
+- Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
+
+ASN.1 parsing
+- Remove dependencies on BC for ASN.1 / TLV, at least from public interface.
+- Test TLV input streams based on chaosinmotion or bnotes stuff. Write tests. If ok, use those instead.
+- ASN.1 DGs based on JavaAsn1Compiler stuff (maybe just for testing, maybe generate bits of the actual DG*File and *Info classes).
+
+SCUBA
+- Cleanup. Declare all non-smart card stuff out of scope. Single jar.
+- Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
+- JCOP tools supported terminals such as Pegoda (see also http://alud.sourceforge.net/, can we JNI wrap this?).
+- Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
+
+Website and documentation
+- A FAQ would be nice
+- Compile-it-yourself instructions
+
+
+VERSION 0.9.x (DISTANT FUTURE)
+------------------------------
+
+Code quality
+- Unit tests
+- Check JavaDoc
+- Findbugs
+- Profiler
+- ESC/Java2
+
+Website and documentation
+- Proper system documentation
+- Proper user documentation

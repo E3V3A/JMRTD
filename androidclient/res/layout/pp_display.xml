@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <ProgressBar
+        android:id="@+id/ppd_progressW"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="4dp" />
+
+    <ImageView
+        android:id="@+id/pp_display_iv"
+        android:layout_width="180dp"
+        android:layout_height="240dp"
+        android:contentDescription="@string/faceImage"
+        />
+
+    <ScrollView
+        android:layout_width="wrap_content"
+	  	android:layout_height="wrap_content">
+    
+    <TableLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:stretchColumns="1" >
+
+        <TableRow android:layout_width="match_parent" >
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="@string/docInfoHeader" />
+        </TableRow>
+
+        <View
+            android:layout_height="1dip"
+            android:background="#FF909090" />
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="Document Number " />
+
+            <TextView
+                android:id="@+id/ppd_documentNumberW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="personalNumber " />
+
+            <TextView
+                android:id="@+id/ppd_personalNumberW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="issuingState" />
+
+            <TextView
+                android:id="@+id/ppd_issuingStateW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="dateOfExpiry" />
+
+            <TextView
+                android:id="@+id/ppd_dateOfExpiryW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <View
+            android:layout_height="4dip"
+            android:background="#FF909090" />
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="@string/personInfoHeader" />
+        </TableRow>
+
+        <View
+            android:layout_height="1dip"
+            android:background="#FF909090" />
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="primary identifier" />
+
+            <TextView
+                android:id="@+id/ppd_primaryIdentifierW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="secondary identifiers" />
+
+            <TextView
+                android:id="@+id/ppd_secondaryIdentifiersW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="gender" />
+
+            <TextView
+                android:id="@+id/ppd_genderW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="nationality" />
+
+            <TextView
+                android:id="@+id/ppd_nationalityW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <TableRow>
+
+            <TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="dateOfBirth" />
+
+            <TextView
+                android:id="@+id/ppd_dateOfBirthW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" />
+        </TableRow>
+
+        <View
+            android:layout_height="4dip"
+            android:background="#FF909090" />
+
+        <!-- Button
+            android:id="@+id/ppd_closeW"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:text="@string/closeLabel" / -->
+    </TableLayout>
+
+    </ScrollView>
+    
+</LinearLayout>

@@ -1,0 +1,54 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace nl.telin.authep.lib
+{
+    /// <summary>
+    /// Represents the basis of a passport DG File.
+    /// </summary>
+    public class IDGFile
+    {
+        /// <summary>
+        /// The 'raw' bytes of the DG file.
+        /// </summary>
+        protected byte[] raw;
+
+        /// <summary>
+        /// Get the 'raw' bytes of the DG file.
+        /// </summary>
+        public byte[] RawBytes { get { return raw; } }
+
+        /// <summary>
+        /// Number of the datagroup. Note that this is NOT the same as the tag.
+        /// </summary>
+        protected int dgNumber;
+
+        /// <summary>
+        /// Get the number of the datagroup. Note that this is NOT the same as the tag.
+        /// </summary>
+        public int DataGroupNumber { get { return dgNumber; } }
+
+        /// <summary>
+        /// ICAO specific datagroup tag.
+        /// </summary>
+        public const byte EF_COM_TAG = 0x60,
+                           EF_DG1_TAG = 0x61,
+                           EF_DG2_TAG = 0x75,
+                           EF_DG3_TAG = 0x63,
+                           EF_DG4_TAG = 0x76,
+                           EF_DG5_TAG = 0x65,
+                           EF_DG6_TAG = 0x66,
+                           EF_DG7_TAG = 0x67,
+                           EF_DG8_TAG = 0x68,
+                           EF_DG9_TAG = 0x69,
+                           EF_DG10_TAG = 0x6A,
+                           EF_DG11_TAG = 0x6B,
+                           EF_DG12_TAG = 0x6C,
+                           EF_DG13_TAG = 0x6D,
+                           EF_DG14_TAG = 0x6E,
+                           EF_DG15_TAG = 0x6F,
+                           EF_DG16_TAG = 0x70,
+                           EF_SOD_TAG = 0x77;
+    }
+}

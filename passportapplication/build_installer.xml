@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="jmrtd_app" default="all" basedir=".">
+
+	<description>
+		JMRTD application distribution build file
+	</description>
+
+	<!-- Global properties for this build -->
+	<property name="src" location="src" />
+	<property name="build" location="bin" />
+	<property name="dist" location="dist" />
+	<property name="distlib" location="${dist}/lib" />
+
+	<property file="jmrtd.properties" />
+	<property file="jmrtd_installer.properties" />
+
+	<property name="app_title" value="${app_name} ${app_version}" />
+	<property name="lib_title" value="${lib_name} ${app_version}" />
+	<property name="izpack-standalone-compiler" value="${izpack_dir}/lib/standalone-compiler.jar" />
+
+	<property name="passporthostapi_base" location="${basedir}/../passporthostapi" />
+	<property name="scuba_util_j2se_base" location="${basedir}/../scuba_util_j2se" />
+	
+	<property name="passporthostapi_src" location="${basedir}/../passporthostapi/src" />
+	<property name="jmrtd_dist" location="${basedir}/../passporthostapi/dist" />
+	<property name="jmrtd_jar" value="jmrtd-${app_version}.jar" />
+
+	<property name="acr122provider_build" location="${basedir}/../acr122provider/bin" />
+	<property name="crefprovider_build" location="${basedir}/../crefprovider/bin" />
+	<property name="jcopprovider_build" location="${basedir}/../jcopprovider/bin" />
+
+	<property name="wsq_imageio_dir" location="${basedir}/../wsq_imageio" />
+	<property name="wsq_imageio_jar" value="wsq_imageio.jar" />
+
+	<property name="jj2000_imageio_dir" location="${basedir}/../jj2000_imageio" />
+	<property name="jj2000_imageio_jar" value="jj2000_imageio.jar" />
+
+	<property name="scuba_smartcards_src" location="${basedir}/../scuba_smartcards/src" />
+	<property name="scuba_sc_j2se_src" location="${basedir}/../scuba_sc_j2se/src" />
+	<property name="scuba_util_src" location="${basedir}/../scuba_util/src" />
+
+	<target name="all" description="Build everything" depends="init, dist, doc, izpack_installer, jsmooth_installer">
+		<move failonerror="false" file="jmrtd_installer.jar" tofile="jmrtd_installer-${app_version}.jar" />
+		<move failonerror="false" file="jmrtd_installer.exe" tofile="jmrtd_installer-${app_version}.exe" />
+	</target>
+
+	<target name="init" depends="check_conditional_properties" description="Initializes some variables">
+		<!-- Create the time stamp -->
+		<tstamp />
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+
+		<!-- Create the distribution directory structure -->
+		<mkdir dir="${distlib}" />
+	</target>
+	
+	<target name="compile" depends="init" description="Compiles the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac srcdir="${src}:${scuba_util_src}:${scuba_smartcards_src}:${scuba_sc_j2se_src}:${passporthostapi_src}" includes="**/*.java" classpath="${bcprov_dir}/${bcprov_jar}:${bcprov_dir}/${bcpkix_jar}:${certcvc_dir}/${certcvc_jar}" destdir="${build}" source="${minimal_jre_version}" target="${minimal_jre_version}" />
+	</target>
+
+	<target name="dependencies" depends="init" description="Copies extensions into distribution directory">		
+		<!-- Copy bouncy castle -->
+		<copy todir="${distlib}">
+			<fileset file="${bcprov_dir}/${bcprov_jar}" />
+			<fileset file="${bcprov_dir}/${bcpkix_jar}" />
+		</copy>
+
+		<!-- Copy cert-cvc -->
+		<copy todir="${distlib}">
+			<fileset file="${certcvc_dir}/${certcvc_jar}" />
+		</copy>
+		
+		<!-- Copy ImageIO related jars and binaries -->
+		<copy todir="${distlib}">
+			<!-- fileset dir="${jai_imageio_jar_dir}" includes="${jai_imageio_jar}" / -->
+			<!-- fileset dir="${jai_imageio_jar_dir}" includes="${clibwrapper_jiio_jar}" / -->
+			<!-- fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" / -->
+			<fileset dir="${wsq_imageio_dir}" includes="${wsq_imageio_jar}" />
+			<fileset dir="${jj2000_imageio_dir}" includes="${jj2000_imageio_jar}" />
+			<fileset dir="${jj2000_dir}" includes="${jj2000_jar}" />
+		</copy>		
+	</target>
+
+	<target name="dist" depends="dependencies, compile" description="Generates the distribution .jar file">
+		<!-- Create a new header for README containing version number -->
+		<concat append="false" force="true" destfile="${dist}/README">
+			<header filtering="no" trimleading="yes">${app_title}-${DSTAMP}
+
+			</header>
+			<fileset dir="." includes="README" />
+		</concat>
+
+		<!-- Copy license, etc. -->
+		<copy todir="${dist}">
+			<fileset dir="." includes="LICENSE" />
+			<fileset dir="." includes="csca.ks" />
+		</copy>
+
+		<!--  Creat scuba.jar -->
+		<jar jarfile="${distlib}/scuba.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="SCUBA"/>
+				<attribute name="Implementation-Title" value="scuba"/>
+				<attribute name="Implementation-Version" value="0.0.3"/>
+			</manifest>
+			<fileset dir="${build}" includes="net/sourceforge/scuba/**/*.class" />
+			<fileset dir="${acr122provider_build}" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${crefprovider_build}" includes="**/*.class" erroronmissingdir="false" />
+			<fileset dir="${jcopprovider_build}" includes="**/*.class" erroronmissingdir="false" />						
+		</jar>
+
+		<!--  Create jmrtd.jar -->
+		<jar jarfile="${distlib}/jmrtd.jar">
+			<manifest>
+				<attribute name="Class-path" value="${bcprov_jar} ${bcpkix_jar} ${certcvc_jar}" />
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="${author_name}"/>
+				<attribute name="Implementation-Title" value="jmrtd"/>
+			</manifest>
+			<fileset dir="${passporthostapi_base}/bin" includes="**/*.class" />			
+		</jar>	
+		
+		<!-- Create the distribution jar file -->
+		<jar jarfile="${distlib}/jmrtd_application.jar">
+			<manifest>
+				<attribute name="Main-class" value="${app_main_class}" />
+				<attribute name="VMOptions" value="${vm_options}" />
+				<attribute name="Class-path" value="jmrtd.jar scuba.jar ${bcprov_jar} ${bcpkix_jar} ${certcvc_jar} ${wsq_imageio_jar} ${jj2000_imageio_jar}" /> <!-- NOTE: ${jai_imageio_jar} -->
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="${author_name}"/>
+				<attribute name="Implementation-Title" value="${app_name}"/>
+				<attribute name="Implementation-Version" value="${app_version}-${DSTAMP}"/>
+			</manifest>
+			<fileset dir="${build}/" includes="org/jmrtd/app/**/*.class" />
+			<fileset dir="." includes="images/jmrtd_logo-48x48.png,images/jmrtd_logo-100x100.png" />
+			<fileset dir="${dist}" includes="README,LICENSE" />
+			<fileset dir="." includes="fonts/OCRB.ttf" />
+			<fileset dir="." includes="images/famfamfam_silk.zip,images/flags.zip" />
+		</jar>	
+	</target>
+
+	<target name="izpack_installer" depends="init, dist" description="Generates an installer .jar file using IzPack" if="is_izpack_available">
+		<!-- Use IzPack to create the installer jar -->
+			<!-- Defines IzPack Ant task -->
+		<taskdef name="izpack"
+				classpath="${izpack-standalone-compiler}"
+				classname="com.izforge.izpack.ant.IzPackTask" />
+		
+		<izpack
+				output="jmrtd_installer.jar"
+				basedir="${basedir}"
+				izpackdir="${izpack_dir}">
+			<config><![CDATA[
+				<installation version="1.0">
+				    <info>
+				        <appname>@{lib_name}</appname>
+				        <appversion>@{app_version}</appversion>
+				        <authors>
+				            <author name="@{author_name}"
+				                    email="@{author_email}" />
+				        </authors>
+				        <url>@{author_url}</url>
+				        <javaversion>@{minimal_jre_version}</javaversion>
+				    </info>
+				    
+				    <guiprefs width="640" height="480" resizable="no">
+				        <modifier key="useHeadingPanel" value="yes" />
+				    </guiprefs>
+
+				    <locale>
+				        <langpack iso3="eng" />
+				    </locale>
+
+				    <resources>
+				        <!-- res id="LicencePanel.licence" src="LICENSE" / -->
+				        <!-- res id="InfoPanel.info" src="README" / -->
+				        <res id="Installer.image" src="images/jmrtd_splash_izpack_installer.jpg" />
+				        <res id="Heading.image" src="images/jmrtd_logo-48x48.png"/>
+						<res id="shortcutSpec.xml" src="jmrtd_installer_shortcuts_windows.xml" />
+						<res id="Unix_shortcutSpec.xml" src="jmrtd_installer_shortcuts_unix.xml" />
+				    </resources>
+
+				    <native type="izpack" name="ShellLink.dll" /> <!-- TBD: only on win -->
+
+				    <panels>
+				        <panel classname="HelloPanel" />
+				        <!-- panel classname="InfoPanel" / -->
+				        <panel classname="TargetPanel" /> 
+				        <!-- panel classname="PacksPanel" / -->
+				        <panel classname="InstallPanel" />
+				        <panel classname="ShortcutPanel" />
+				        <panel classname="SimpleFinishPanel" />
+				    </panels>
+				    
+				    <packs>
+				        <pack name="Passport API" required="yes">
+				            <description>The Passport API and host application</description>
+
+				            <file src="README" targetdir="$INSTALL_PATH" />
+							<parsable targetfile="$INSTALL_PATH/README" type="plain" />
+				
+				            <file src="LICENSE" targetdir="$INSTALL_PATH" />
+
+				            <file src="jmrtd.sh" targetdir="$INSTALL_PATH" />
+				            <parsable targetfile="$INSTALL_PATH/jmrtd.sh" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/jmrtd.sh" stage="never" />
+
+				            <file src="jmrtd.bat" targetdir="$INSTALL_PATH" />
+				            <parsable targetfile="$INSTALL_PATH/jmrtd.bat" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/jmrtd.bat" stage="never" />
+
+				            <file src="uninstall.bat" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
+				            <parsable targetfile="$INSTALL_PATH/uninstall.bat" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/uninstall.bat" stage="never" />
+						    <file src="images/jmrtd_spiral.ico" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
+				            <file src="images/uninstall.ico" targetdir="$INSTALL_PATH" /> <!-- TBD: only on win -->
+				
+				            <file src="uninstall.sh" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
+				            <parsable targetfile="$INSTALL_PATH/uninstall.sh" type="shell" />
+				            <executable targetfile="$INSTALL_PATH/uninstall.sh" stage="never" />
+				            <file src="images/jmrtd_spiral-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
+	        			    <file src="images/uninstall-48x48.png" targetdir="$INSTALL_PATH" /> <!-- TBD: only on unix -->
+				        
+				            <fileset dir="dist" src="lib/*" targetdir="$INSTALL_PATH" />
+				        </pack>
+				    </packs>
+
+				</installation>
+			]]></config>
+		</izpack>
+	</target>
+		
+	<target name="jsmooth_installer" depends="dist" description="Wraps installer in .exe file using JSmooth" if="is_jsmooth_available">
+		<!-- Use JSmooth to create a Windows executable from the installer jar -->
+		<taskdef name="jsmoothgen"
+			classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar"
+   		 	classname="net.charabia.jsmoothgen.ant.JSmoothGen" />
+		
+		<jsmoothgen
+			skeletonroot="${jsmooth_dir}/skeletons"
+			project="jmrtd_installer.jsmooth" />
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete failonerror="false" dir="${build}" />
+		<delete failonerror="false" dir="${dist}" />
+		<delete failonerror="false" file="jmrtd_installer.jar" />
+		<delete failonerror="false" file="jmrtd_installer.exe" />
+		<delete failonerror="false" file="jmrtd_installer-${app_version}.jar" />
+		<delete failonerror="false" file="jmrtd_installer-${app_version}.exe" />
+	</target>
+
+	<target name="doc" description="Generates API docs" if="build_java_doc">
+		<javadoc classpath="${jmrtd_dist}/${jmrtd_jar};${bcprov_dir}/${bcprov_jar};${bcprov_dir}/${bcpkix_jar};${certcvc_dir}/${certcvc_jar}"
+				destdir="apidocs"
+				package="false"
+				doctitle="${lib_title}"
+				windowtitle="${lib_title}"
+				header="${lib_title}"
+				packagenames="org.jmrtd,net.sourceforge.scuba.data,net.sourceforge.scuba.smartcards,net.sourceforge.scuba.smartcards.indep,net.sourceforge.scuba.tlv">
+			<link href="http://download.oracle.com/javase/7/docs/api/" />
+			<link href="http://download.oracle.com/javase/7/docs/jre/api/security/smartcardio/spec/" />
+			<link href="${bcprov_api_url}" />
+			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
+			<!-- link href="http://www.cs.ru.nl/~woj/jcopapi/" / -->
+			<sourcepath path="src;${passporthostapi_src};${scuba_util_src};${scuba_smartcards_src}" />
+			<package name="org.jmrtd" />
+			<package name="org.jmrtd.lds" />
+			<package name="org.jmrtd.cbeff" />
+			<package name="org.jmrtd.cert" />
+			<package name="net.sourceforge.scuba.data" />
+			<package name="net.sourceforge.scuba.smartcards" />
+			<package name="net.sourceforge.scuba.tlv" />
+		</javadoc>
+	
+		<zip destfile="jmrtd-doc-${app_version}-${DSTAMP}.zip" basedir="apidocs" />
+	</target>
+	
+	<!-- Conditional stuff is set below -->
+
+	<target name="check_conditional_properties" description="Sets some properties depending on build platform">
+		<available file="${acr122provider_build}" property="is_acr_available" />
+		<available file="${crefprovider_build}" property="is_cref_available" />
+		<available file="${jcopprovider_build}" property="is_jcop_available" />
+		<available classname="com.izforge.izpack.ant.IzPackTask" classpath="${izpack-standalone-compiler}" property="is_izpack_available" />
+		<available classname="net.charabia.jsmoothgen.ant.JSmoothGen" classpath="${jsmooth_dir}/lib/jsmoothgen-ant.jar" property="is_jsmooth_available" />
+		<condition property="is_os_windows">
+	  		<or>
+	  			<equals arg1="${os.name}" arg2="Windows 7" />
+	  			<equals arg1="${os.name}" arg2="Windows 8" />
+	  			<equals arg1="${os.name}" arg2="Windows 95" />
+	  			<equals arg1="${os.name}" arg2="Windows 98" />
+	  			<equals arg1="${os.name}" arg2="Windows 2000" />
+	  			<equals arg1="${os.name}" arg2="Windows XP" />
+	  			<equals arg1="${os.name}" arg2="Windows NT" />
+	  			<equals arg1="${os.name}" arg2="Windows Vista" />
+			</or>
+		</condition>
+		<condition property="is_os_unix">
+			<or>
+				<equals arg1="${os.name}" arg2="AIX" />
+				<equals arg1="${os.name}" arg2="Digital Unix" />
+				<equals arg1="${os.name}" arg2="FreeBSD" />
+				<equals arg1="${os.name}" arg2="HP UX" />
+				<equals arg1="${os.name}" arg2="Irix" />
+				<equals arg1="${os.name}" arg2="Linux" />
+				<equals arg1="${os.name}" arg2="Solaris" />
+			</or>
+		</condition>
+		<condition property="is_os_mac">
+			<or>
+				<equals arg1="${os.name}" arg2="Mac OS" />
+				<equals arg1="${os.name}" arg2="Mac OS X" />
+				<equals arg1="${os.name}" arg2="Darwin" />
+			</or>
+		</condition>
+	</target>
+
+</project>

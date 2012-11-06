@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="JMRTD API" default="dist" basedir=".">
+
+	<description>
+		JMRTD API jar.
+	</description>
+
+	<property name="default_bcprov_lib" value="c:/Software/crypto-147/jars/bcprov-jdk15on-147.jar" />
+	<property name="default_certcvc_lib" value="c:/Software/cert-cvc-1.3.0/cert-cvc.jar" />
+	<property name="default_scuba_lib" value="../scuba_sc_j2se/scuba.jar" />
+	
+	<property environment="env" />
+	
+	<condition property="bcprov_lib" value="${env.BCPROV_LIB}" else="${default_bcprov_lib}">
+    	<isset property="env.BCPROV_LIB" />
+	</condition>
+	<condition property="certcvc_lib" value="${env.CERTCVC_LIB}" else="${default_certcvc_lib}">
+    	<isset property="env.CERTCVC_LIB" />
+	</condition>
+	<condition property="scuba_lib" value="${env.SCUBA_LIB}" else="${default_scuba_lib}">
+    	<isset property="env.SCUBA_LIB" />
+	</condition>
+			
+	<property name="src" location="src" />
+	<property name="build" value="tmp/bin" />
+			
+	<target name="compile" depends="" description="Compiles the source ">
+		<mkdir dir="${build}" />
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac target="1.6" srcdir="src" classpath="${bcprov_lib}:${certcvc_lib}:${scuba_lib}" destdir="${build}" />		
+	</target>
+
+	<target name="dist" depends="compile" description="Generates the distribution .jar file">
+
+		<!-- Create the distribution jar file -->
+		<jar jarfile="jmrtd.jar">
+			<manifest>
+			    <attribute name="Class-path" value="scuba.jar" />
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="JMRTD"/>
+				<attribute name="Implementation-Title" value="jmrtd"/>
+				<attribute name="Implementation-Version" value="0.4.8b"/>
+			</manifest>
+			<fileset dir="${build}" includes="**/*.class" />
+		</jar>	
+	</target>
+
+</project>
