@@ -1,10 +1,10 @@
 package org.jmrtd.test;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Set;
 
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
@@ -57,7 +57,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         COMFile com = null;
         try {
             service.sendSelectFile(service.getWrapper(), fid);
-            CardFileInputStream in = service.getInputStream(fid);
+            InputStream in = service.getInputStream(fid);
             com = new COMFile(in);
         } catch (CardServiceException cse) {
             fail();
@@ -83,7 +83,7 @@ public class PassportEACAbsenceTester extends PassportTesterBase {
         SODFile sod = null;
         try {
             service.sendSelectFile(service.getWrapper(), fid);
-            CardFileInputStream in = service.getInputStream(fid);
+            InputStream in = service.getInputStream(fid);
             sod = new SODFile(in);
         } catch (CardServiceException cse) {
             fail();

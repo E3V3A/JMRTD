@@ -79,6 +79,8 @@ public class PPDisplayAct extends Activity {
 	//	private ProgressDialog progressDialog;
 	private Handler progressHandler;
 
+	private boolean isDisplaying;
+
 	private ImageView imageView;
 	private TextView documentNumberW;
 	private TextView personalNumberW;
@@ -101,6 +103,7 @@ public class PPDisplayAct extends Activity {
 		super.onCreate(savedInstanceState);
 		bacStore = new BACSpecDOStore(this);
 		setContentView(R.layout.pp_display);
+		isDisplaying = false;
 		prepareWidgets();
 	}
 
@@ -201,11 +204,11 @@ public class PPDisplayAct extends Activity {
 				PassportService passportService = new PassportService(service);
 
 				/* Try all BACs */
-//				BACStore abacStore = new MemoryBACStore();
-//				for (BACSpecDO bacSpec : bacStore) {
-//					if (bacSpec == null) { continue; }
-//					abacStore.addEntry(toBACKeySpec(bacSpec));
-//				}
+				//				BACStore abacStore = new MemoryBACStore();
+				//				for (BACSpecDO bacSpec : bacStore) {
+				//					if (bacSpec == null) { continue; }
+				//					abacStore.addEntry(toBACKeySpec(bacSpec));
+				//				}
 
 				try {
 					Passport passport = new Passport(passportService, new MRTDTrustStore(), bacStore, 1);
@@ -244,7 +247,7 @@ public class PPDisplayAct extends Activity {
 		}
 	}
 
-	private void handlePassportCreated(Passport passport) {
+	private void handlePassportCreated(final Passport passport) {
 		if (passport == null) { throw new IllegalArgumentException("Failed to get a passport"); }
 
 		//		if (progressDialog != null && progressDialog.isShowing()) {
@@ -252,6 +255,7 @@ public class PPDisplayAct extends Activity {
 		//		}
 		//		progressDialog = new ProgressDialog(this);
 
+		isDisplaying = true;
 		progressBar.setMax(passport.getTotalLength()); /* DEBUG */
 		progressBar.setProgress(passport.getBytesRead());
 
@@ -278,14 +282,31 @@ public class PPDisplayAct extends Activity {
 		};
 		//		progressDialog.show();
 
-		passport.addProgressListener(new Passport.ProgressListener() {
-			public void changed(int progress, int max) {
-				Message message = new Message();
-				message.arg1 = progress;
-				progressHandler.sendMessage(message);
-			}
+		new Thread(new Runnable() {
 
-		});
+			public void run() {
+				try {
+					while (isDisplaying) {
+						int progress = passport.getBytesRead();
+						Message message = new Message();
+						message.arg1 = progress;
+						progressHandler.sendMessage(message);
+						Thread.sleep(1000);
+					}
+				} catch (InterruptedException ie) {
+					/* NOTE: On interrupt we leave loop */
+				}
+			}			
+		}).start();
+
+		//		passport.addProgressListener(new Passport.ProgressListener() {
+		//			public void changed(int progress, int max) {
+		//				Message message = new Message();
+		//				message.arg1 = progress;
+		//				progressHandler.sendMessage(message);
+		//			}
+		//
+		//		});
 		new AsyncPassportInterpret().execute(passport);
 	}
 
@@ -360,6 +381,7 @@ public class PPDisplayAct extends Activity {
 		@Override
 		protected void onPostExecute(Integer i) {
 			//			progressDialog.dismiss();
+			isDisplaying = false;
 		}
 	}
 

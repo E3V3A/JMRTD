@@ -22,15 +22,12 @@
 
 package org.jmrtd;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -57,7 +54,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -67,7 +63,6 @@ import java.util.zip.ZipFile;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
@@ -88,15 +83,13 @@ import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
 /**
- * A passport object is basically a collection of buffered input streams for the
+ * A passport object is basically a collection of input streams for the
  * data groups, combined with some status information (progress).
  * 
  * Contains methods for creating instances from scratch, from file, and from
  * card service.
  * 
  * Also contains the document verification logic.
- * 
- * FIXME: probably should split this up in a class in org.jmrtd.lds for aggregating LDS infos, a class for accessing an MRTD on ICC (performing all necessary access and verification protocols)
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -105,34 +98,14 @@ import org.jmrtd.lds.SecurityInfo;
  */
 public class Passport {
 
-	private static final int BUFFER_SIZE = 243;
-
 	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	/** Maps FID to stream. */
-	private Map<Short, InputStream> rawStreams;
-
-	/** Maps FID to stream. */
-	private Map<Short, InputStream> bufferedStreams;
-
-	/** Maps FID to bytes. */
-	private Map<Short, byte[]> filesBytes;
-
-	/** Maps FID to file length. */
-	private Map<Short, Integer> fileLengths;
+	private Map<Short, InputStreamBuffer> fetchers;
 
 	/** FIDs that could not be read (because of EAC, e.g.). */
 	private Collection<Short> couldNotRead;
-
-	/** Bytes read so far. */
-	private int bytesRead;
-
-	/** Total bytes to read */
-	private int totalLength;
-
-	private Collection<ProgressListener> progressListeners;
 
 	private VerificationStatus verificationStatus;
 
@@ -159,7 +132,6 @@ public class Passport {
 	private PassportService service;
 
 	private Passport() {
-		this.progressListeners = new HashSet<ProgressListener>();
 	}
 
 	/**
@@ -177,33 +149,22 @@ public class Passport {
 		this.verificationStatus = new VerificationStatus();
 		this.docSigningPrivateKey = docSigningPrivateKey;
 
-		rawStreams = new HashMap<Short, InputStream>();
-		bufferedStreams = new HashMap<Short, InputStream>();
-		filesBytes = new HashMap<Short, byte[]>();
-		fileLengths = new HashMap<Short, Integer>();
 		couldNotRead = new ArrayList<Short>();
 
 		this.lds = lds;
 		byte[] comBytes = lds.getCOMFile().getEncoded();
-		int fileLength = comBytes.length;
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-		fileLengths.put(PassportService.EF_COM, fileLength);
-		rawStreams.put(PassportService.EF_COM, new ByteArrayInputStream(comBytes));
+
+		fetchers = new HashMap<Short, InputStreamBuffer>();
+		fetchers.put(PassportService.EF_COM, new InputStreamBuffer(comBytes));
 
 		for (DataGroup dg: lds.getDataGroups()) {
 			byte[] dgBytes = dg.getEncoded();
-			fileLength = dgBytes.length;
-			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 			short fid = LDSFileUtil.lookupFIDByTag(dg.getTag());
-			fileLengths.put(fid, fileLength);
-			rawStreams.put(fid, new ByteArrayInputStream(dgBytes));
+			fetchers.put(fid, new InputStreamBuffer(dgBytes));			
 		}
 
 		byte[] sodBytes = lds.getSODFile().getEncoded();
-		fileLength = sodBytes.length;
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-		fileLengths.put(PassportService.EF_SOD, fileLength);
-		rawStreams.put(PassportService.EF_SOD, new ByteArrayInputStream(sodBytes));
+		fetchers.put(PassportService.EF_SOD, new InputStreamBuffer(sodBytes));
 	}
 
 	/**
@@ -249,9 +210,9 @@ public class Passport {
 		boolean isBACPassport = false;
 		try {
 			/* Attempt to read EF.COM before BAC. */
-			CardFileInputStream comIn = service.getInputStream(PassportService.EF_COM);
-			new COMFile(comIn);
+			new COMFile(service.getInputStream(PassportService.EF_COM));
 			isBACPassport = false;
+
 		} catch (CardServiceException cse) {
 			isBACPassport = true;
 		} catch (IOException e) {
@@ -264,30 +225,26 @@ public class Passport {
 		if (isBACPassport) {
 			int tries = maxTriesPerBACEntry;
 			List<BACKeySpec> bacEntries = bacStore.getEntries();
-			try {
-				/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
-				while (bacKeySpec == null && tries-- > 0) {
-					/* NOTE: inner loop, loops through stored BAC entries. */
-					synchronized (bacStore) {
-						for (BACKeySpec otherBACKeySpec: bacEntries) {
-							try {
-								if (!triedBACEntries.contains(otherBACKeySpec)) {
-									LOGGER.info("Trying BAC: " + otherBACKeySpec);
-									service.doBAC(otherBACKeySpec);
-									/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-									bacKeySpec = otherBACKeySpec;
-									break; /* out of inner for loop */
-								}
-								Thread.sleep(500);
-							} catch (CardServiceException cse) {
-								lastKnownSW = cse.getSW();
-								/* NOTE: BAC failed? Try next BACEntry */
+
+			/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
+			while (bacKeySpec == null && tries-- > 0) {
+				/* NOTE: inner loop, loops through stored BAC entries. */
+				synchronized (bacStore) {
+					for (BACKeySpec otherBACKeySpec: bacEntries) {
+						try {
+							if (!triedBACEntries.contains(otherBACKeySpec)) {
+								LOGGER.info("Trying BAC: " + otherBACKeySpec);
+								service.doBAC(otherBACKeySpec);
+								/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
+								bacKeySpec = otherBACKeySpec;
+								break; /* out of inner for loop */
 							}
+						} catch (CardServiceException cse) {
+							lastKnownSW = cse.getSW();
+							/* NOTE: BAC failed? Try next BACEntry */
 						}
 					}
 				}
-			} catch (InterruptedException ie) {
-				/* NOTE: Interrupted? leave loop. */
 			}
 		}
 		if (isBACPassport && bacKeySpec == null) {
@@ -334,10 +291,7 @@ public class Passport {
 		this();
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
-		rawStreams = new HashMap<Short, InputStream>();
-		bufferedStreams = new HashMap<Short, InputStream>();
-		filesBytes = new HashMap<Short, byte[]>();
-		fileLengths = new HashMap<Short, Integer>();
+		fetchers = new HashMap<Short, InputStreamBuffer>();
 		couldNotRead = new ArrayList<Short>();
 
 		COMFile comFile = null;
@@ -390,10 +344,8 @@ public class Passport {
 					if (fid != tagBasedFID) {
 						LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
 					}
-					totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-					fileLengths.put((short)fid, fileLength);
-					rawStreams.put((short)fid, new ByteArrayInputStream(bytes));
-					if(fid == PassportService.EF_COM) {
+					fetchers.put((short)fid, new InputStreamBuffer(bytes));
+					if (fid == PassportService.EF_COM) {
 						comFile = new COMFile(new ByteArrayInputStream(bytes));
 					} else if (fid == PassportService.EF_SOD) {
 						sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
@@ -421,30 +373,9 @@ public class Passport {
 			LOGGER.warning("Could not read  " + fileName);
 			throw new CardServiceException("Could not read " + fileName);
 		}
-		try {
-			InputStream inputStream = null;
-			byte[] fileBytes = filesBytes.get(fid);
-			if (fileBytes != null) {
-				/* Already completely read this file. */
-				inputStream = new ByteArrayInputStream(fileBytes);
-				inputStream.mark(fileBytes.length + 1);
-			} else {
-				/* FIXME: why not simply return new BufferedInputStream(rawInputStreams.get(fid) ? */
-
-				/* Maybe partially read? Use the buffered stream. */
-				inputStream = bufferedStreams.get(fid); // FIXME: some thread may already be reading this one?
-				if (inputStream != null && inputStream.markSupported()) { inputStream.reset(); }
-			}
-			if (inputStream == null) {
-				/* Not read yet. Start reading it. */
-				startCopyingRawInputStream(fid);
-				inputStream = bufferedStreams.get(fid);              
-			}
-			return inputStream;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			throw new IllegalStateException("ERROR: " + ioe.toString());
-		}
+		InputStreamBuffer fetcher = fetchers.get(fid);
+		if (fetcher == null ) { throw new IllegalStateException("No fetcher for " + Integer.toHexString(fid)); }
+		return fetcher.getInputStream();
 	}
 
 	/**
@@ -455,14 +386,9 @@ public class Passport {
 	 */
 	public void putFile(short fid, byte[] bytes) {
 		if (bytes == null) { return; }
-		filesBytes.put(fid, bytes);
 		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-		int fileLength = bytes.length;
-		inputStream.mark(fileLength + 1);
-		bufferedStreams.put(fid, inputStream);
-		fileLengths.put(fid, fileLength);
+		fetchers.put(fid, new InputStreamBuffer(bytes));
 		// FIXME: is this necessary?
-		totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
 		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
 			updateCOMSODFile(null);
 		}
@@ -489,7 +415,7 @@ public class Passport {
 			byte[] signature = sodFile.getEncryptedDigest();
 			Map<Integer, byte[]> dgHashes = new TreeMap<Integer, byte[]>();
 			List<Short> dgFids = new ArrayList<Short>();
-			dgFids.addAll(fileLengths.keySet());
+			dgFids.addAll(fetchers.keySet());
 			Collections.sort(dgFids);
 			MessageDigest digest = null;
 			digest = MessageDigest.getInstance(digestAlg);
@@ -524,8 +450,6 @@ public class Passport {
 	 * @deprecated use {@link #getInputStream(short)} instead
 	 */
 	public byte[] getFileBytes(short fid) {
-		byte[] result = filesBytes.get(fid);
-		if (result != null) { return result; }
 		try {
 			InputStream inputStream = getInputStream(fid);
 			if (inputStream == null) { return null; }
@@ -680,7 +604,11 @@ public class Passport {
 	 * @return the total number of bytes in the document
 	 */
 	public int getTotalLength() {
-		return totalLength;
+		int result = 0;
+		for (InputStreamBuffer fetcher: fetchers.values()) {
+			result += fetcher.getLength();
+		}
+		return result;
 	}
 
 	/**
@@ -689,7 +617,13 @@ public class Passport {
 	 * @return the number of bytes read
 	 */
 	public int getBytesRead() {
-		return bytesRead;
+		int position = 0;
+		//		int length = 0;
+		for (InputStreamBuffer fetcher: fetchers.values()) {
+			position += fetcher.getPosition();
+			//			length += fetcher.getLength();
+		}
+		return position;
 	}
 
 	/**
@@ -699,7 +633,7 @@ public class Passport {
 	 */
 	public List<Short> getFileList() {
 		List<Short> result = new ArrayList<Short>();
-		result.addAll(rawStreams.keySet());
+		result.addAll(fetchers.keySet());
 		result.addAll(couldNotRead);
 		Collections.sort(result);
 		return result;
@@ -809,18 +743,18 @@ public class Passport {
 	 */
 	private void readFromService(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
-		rawStreams = new HashMap<Short, InputStream>();
-		bufferedStreams = new HashMap<Short, InputStream>();
-		filesBytes = new HashMap<Short, byte[]>();
-		fileLengths = new HashMap<Short, Integer>();
+		fetchers = new HashMap<Short, InputStreamBuffer>();
 		couldNotRead = new ArrayList<Short>();
-		InputStream comIn = preReadFile(service, PassportService.EF_COM);
-		COMFile comFile = new COMFile(comIn);
+
+		fetchers.put(PassportService.EF_COM, service.getInputStreamBuffer(PassportService.EF_COM));
+		fetchers.put(PassportService.EF_SOD, service.getInputStreamBuffer(PassportService.EF_SOD));
+		fetchers.put(PassportService.EF_DG1, service.getInputStreamBuffer(PassportService.EF_DG1));
+
+		COMFile comFile = new COMFile(getInputStream(PassportService.EF_COM));
+		SODFile sodFile = new SODFile(getInputStream(PassportService.EF_SOD));
+		DG1File dg1File = new DG1File(getInputStream(PassportService.EF_DG1));
+
 		int[] comTagList = comFile.getTagList();
-		InputStream sodIn = preReadFile(service, PassportService.EF_SOD);
-		SODFile sodFile = new SODFile(sodIn);
-		InputStream dg1In = preReadFile(service, PassportService.EF_DG1);
-		DG1File dg1File = new DG1File(dg1In);
 		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
 		DG14File dg14File = null;
@@ -830,7 +764,7 @@ public class Passport {
 		boolean isDG14Present = false;
 		for (int tag: comTagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
 		if (isDG14Present) {
-			InputStream dg14In = preReadFile(service, PassportService.EF_DG14);
+			InputStream dg14In = service.getInputStream(PassportService.EF_DG14);
 			dg14File = new DG14File(dg14In);
 
 			/* Now try to deal with EF.CVCA */
@@ -839,7 +773,7 @@ public class Passport {
 				if (cvcafids.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
 				cvcaFID = cvcafids.get(0).shortValue();
 			}
-			InputStream cvcaIn = preReadFile(service, cvcaFID);
+			InputStream cvcaIn = service.getInputStream(cvcaFID);
 			cvcaFile = new CVCAFile(cvcaIn);
 
 			/* Try to do EAC. */
@@ -864,7 +798,7 @@ public class Passport {
 						/* Skip DG3 and DG4 if EAC was unsuccessful... */
 						continue;
 					}
-					setupFile(service, fid);
+					fetchers.put(fid, service.getInputStreamBuffer(fid));
 				} catch(CardServiceException ex) {
 					/* NOTE: Most likely EAC protected file. */
 					LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
@@ -963,100 +897,6 @@ public class Passport {
 			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
 		return null;
-	}
-
-	private BufferedInputStream preReadFile(PassportService service, short fid) throws CardServiceException {
-		if (rawStreams.containsKey(fid)) {
-			int length = fileLengths.get(fid); 
-			BufferedInputStream bufferedIn = new BufferedInputStream(rawStreams.get(fid), length + 1);
-			bufferedIn.mark(length + 1);
-			rawStreams.put(fid, bufferedIn);
-			return bufferedIn;
-		} else {
-			try {
-				CardFileInputStream cardInputStream = service.getInputStream(fid);
-				int fileLength = cardInputStream.getFileLength();
-				BufferedInputStream bufferedIn = new BufferedInputStream(cardInputStream, fileLength + 1);
-				totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-				fileLengths.put(fid, fileLength);
-				bufferedIn.mark(fileLength + 1);
-				rawStreams.put(fid, bufferedIn);
-				return bufferedIn;
-			} catch (Exception e) {
-				e.printStackTrace();
-				couldNotRead.add(fid);
-				throw new CardServiceException("Could not read " + Integer.toHexString(fid));
-			}
-		}
-	}
-
-	private void setupFile(PassportService service, short fid) throws CardServiceException {
-		if (rawStreams.containsKey(fid)) {
-			LOGGER.info("Raw input stream for " + Integer.toHexString(fid) + " already set up.");
-			return;
-		}
-		try {
-			CardFileInputStream cardInputStream = null;
-			cardInputStream = service.getInputStream(fid);
-			int fileLength = cardInputStream.getFileLength();
-			cardInputStream.mark(fileLength + 1);
-			rawStreams.put(fid, cardInputStream);
-			totalLength += fileLength; notifyProgressListeners(bytesRead, totalLength);
-			fileLengths.put(fid, fileLength);
-		} catch (Exception e) {
-			couldNotRead.add(fid);
-		}
-	}
-
-	/**
-	 * Starts a thread to read the raw (unbuffered) inputstream and copy its bytes into a buffer
-	 * so that clients can read from those.
-	 *
-	 * @param fid indicates the file to copy
-	 * @throws IOException
-	 */
-	private synchronized void startCopyingRawInputStream(final short fid) throws IOException {
-		final Passport passport = this;
-		if (couldNotRead.contains(fid)) { return; }
-		final InputStream unBufferedIn = rawStreams.get(fid);
-		if (unBufferedIn == null) {
-			String message = "Cannot read " + LDSFileUtil.lookupFileNameByTag(LDSFileUtil.lookupTagByFID(fid));
-			LOGGER.warning(message + " (not starting thread)");
-			couldNotRead.add(fid);
-			return;
-		}
-		final int fileLength = fileLengths.get(fid);
-		unBufferedIn.reset();
-		final PipedInputStream pipedIn = new PipedInputStream(fileLength + 1);
-		final PipedOutputStream out = new PipedOutputStream(pipedIn);
-		final ByteArrayOutputStream copyOut = new ByteArrayOutputStream();
-		InputStream inputStream = new BufferedInputStream(pipedIn, fileLength + 1);
-		inputStream.mark(fileLength + 1);
-		bufferedStreams.put(fid, inputStream);
-		(new Thread(new Runnable() {
-			public void run() {
-				byte[] buf = new byte[BUFFER_SIZE];
-				try {
-					while (true) {
-						int bytesRead = unBufferedIn.read(buf);
-						if (bytesRead < 0) { break; }
-						out.write(buf, 0, bytesRead);
-						copyOut.write(buf, 0, bytesRead);
-						passport.bytesRead += bytesRead; notifyProgressListeners(passport.bytesRead, totalLength);
-					}
-					out.flush(); out.close();
-					copyOut.flush();
-					byte[] copyOutBytes = copyOut.toByteArray();
-					filesBytes.put(fid, copyOutBytes);
-					copyOut.close();
-				} catch (Exception e) {
-					e.printStackTrace();
-					/* FIXME: what if something goes wrong inside this thread? */
-					couldNotRead.add(fid);
-					return;
-				}
-			}
-		})).start();
 	}
 
 	/** Checks whether BAC was used. */
@@ -1253,31 +1093,5 @@ public class Passport {
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(Verdict.FAILED);
 		}
-	}
-
-	public void addProgressListener(ProgressListener l) {
-		progressListeners.add(l);
-	}
-
-	public void removeProgressListener(ProgressListener l) {
-		progressListeners.remove(l);
-	}
-
-	private void notifyProgressListeners(int progress, int max) {
-		if (progressListeners == null) { return; }
-		for (ProgressListener l: progressListeners) {
-			l.changed(progress, max);
-		}
-	}
-
-	/**
-	 * Document processing progress listener interface.
-	 * 
-	 * @author The JMRTD team (info@jmrtd.org)
-	 *
-	 * @version $Revision: $
-	 */
-	public interface ProgressListener {
-		void changed(int progress, int max);
 	}
 }

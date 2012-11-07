@@ -221,6 +221,7 @@ Code quality
 
 General
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
+- Implement PACE. Check status of OpenPACE project on SF.
 - Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
@@ -231,9 +232,9 @@ General
 - Implement BAC as KeyStore?
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
-- Latest C sources from NIST for WSQ (version 3.1)?
 - Version for Embedded Java on Raspberry Pi and similar.
 - Version for Blackberry OS.
++ Remove threading from JMRTD host API.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
