@@ -227,7 +227,6 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 					 * This fragment is already contained in other. Don't add and return immediately.
 					 */
 					return;
-//				} else if (other.getOffset() <= thisOffset && thisOffset < other.getOffset() + other.getLength()) {
 				} else if (other.getOffset() <= thisOffset && thisOffset <= other.getOffset() + other.getLength()) {
 					/*
 					 * [...other fragment...]
@@ -246,7 +245,6 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 					 * The other fragment is contained in this fragment. Remove other.
 					 */
 					fragments.remove(other);
-//				} else if (offset <= other.getOffset() && other.getOffset() < thisOffset + thisLength) {
 				} else if (other.getOffset() <= thisOffset && thisOffset <= other.getOffset() + other.getLength()) {
 					/*
 					 *        [...other fragment...]

@@ -144,6 +144,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 	private Passport passport;
 
 	private EACEvent eacEvent;
+	
+	private boolean isDisplaying;
 
 	private VerificationIndicator verificationIndicator;
 
@@ -197,6 +199,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 			long t = System.currentTimeMillis();
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t) / 1000));
 
+			isDisplaying = true;
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
@@ -225,6 +228,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 			
 			dispose();
 			return;
+		} finally {
+			isDisplaying = false;
 		}
 	}
 
@@ -467,11 +472,10 @@ public class DocumentViewFrame extends JMRTDFrame {
 		(new Thread(new Runnable() {
 			public void run() {
 				try {
-					int totalLength = passport.getTotalLength();
-					progressBar.setMaximum(totalLength);
-					while (passport.getBytesRead() <= totalLength) {
-						Thread.sleep(200);
+					while (isDisplaying) {
+						progressBar.setMaximum(passport.getTotalLength());
 						progressBar.setValue(passport.getBytesRead());
+						Thread.sleep(1000);
 					}
 				} catch (InterruptedException ie) {
 					/* NOTE: interrupted, end thread. */

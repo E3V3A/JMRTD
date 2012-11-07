@@ -1,6 +1,7 @@
 package org.jmrtd.test;
 
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -18,7 +19,6 @@ import javax.smartcardio.CardTerminal;
 import javax.smartcardio.CardTerminals;
 import javax.smartcardio.TerminalFactory;
 
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
@@ -340,7 +340,7 @@ public class PassportTestService extends PassportService {
 			short fid = PassportService.EF_DG14;
 
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = getInputStream(fid);
+			InputStream in = getInputStream(fid);
 			DG14File dg14 = new DG14File(in);
 			cardKey = dg14.getChipAuthenticationPublicKeyInfos().get(-1);
 			resetCard();
@@ -362,7 +362,7 @@ public class PassportTestService extends PassportService {
 		short fid = PassportService.EF_DG15;
 		try {
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream in = getInputStream(fid);
+			InputStream in = getInputStream(fid);
 			DG15File dg15 = new DG15File(in);
 			publicKey = dg15.getPublicKey();
 			resetCard();
@@ -379,7 +379,7 @@ public class PassportTestService extends PassportService {
 			doBAC();
 			short fid = PassportService.EF_CVCA;
 			sendSelectFile(getWrapper(), fid);
-			CardFileInputStream inputStream = getInputStream(fid);
+			InputStream inputStream = getInputStream(fid);
 			result = new CVCAFile(inputStream);
 			resetCard();
 		} catch(CardServiceException e) {

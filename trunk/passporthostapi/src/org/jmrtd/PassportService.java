@@ -24,6 +24,7 @@ package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.security.GeneralSecurityException;
@@ -40,7 +41,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -206,6 +209,8 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private Collection<AuthListener> authListeners;
 
+	private Map<Short, InputStreamBuffer> fetchers;
+
 	/**
 	 * @deprecated visibility will be set to private
 	 */
@@ -236,6 +241,7 @@ public class PassportService extends PassportApduService implements Serializable
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
+			fetchers = new HashMap<Short, InputStreamBuffer>();
 			fs = new MRTDFileSystem(this);
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
@@ -317,7 +323,7 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized void sendSelectFile(short fid) throws CardServiceException {
 		sendSelectFile(wrapper, fid);
 	}
-	
+
 	/**
 	 * Sends a <code>READ BINARY</code> command to the passport, use wrapper when secure channel set up.
 	 * 
@@ -332,7 +338,7 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized byte[] sendReadBinary(int offset, int le, boolean longRead) throws CardServiceException {
 		return sendReadBinary(wrapper, offset, le, longRead);
 	}
-	
+
 	/**
 	 * Perform CA (Chip Authentication) part of EAC. For details see TR-03110
 	 * ver. 1.11. In short, we authenticate the chip with (EC)DH key agreement
@@ -699,11 +705,26 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @throws IOException if the file cannot be read
 	 */
-	public synchronized CardFileInputStream getInputStream(short fid) throws CardServiceException {
-		fs.selectFile(fid);
-		return new CardFileInputStream(maxBlockSize, fs);
+	public synchronized InputStream getInputStream(short fid) throws CardServiceException {
+		return getInputStreamBuffer(fid).getInputStream();
 	}
 
+	/* ONLY PACKAGE VISIBLE METHODS BELOW */
+	
+	synchronized InputStreamBuffer getInputStreamBuffer(short fid) throws CardServiceException {
+		InputStreamBuffer fetcher = fetchers.get(fid);
+		if (fetcher != null) {
+			return fetcher;
+		} 
+		synchronized(fs) {
+			fs.selectFile(fid);
+			CardFileInputStream cardFileInputStream = new CardFileInputStream(maxBlockSize, fs);
+			fetcher = new InputStreamBuffer(cardFileInputStream, cardFileInputStream.getLength());
+			fetchers.put(fid, fetcher);
+			return fetcher;
+		}
+	}
+	
 	/* ONLY PRIVATE METHODS BELOW */
 
 	/**

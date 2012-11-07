@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
@@ -337,7 +336,7 @@ public class PassportBACTester extends PassportTesterBase {
 	/** Dump file to console */
 	public void print(short fid) throws CardServiceException {
 		System.out.printf("Checking out file 0x0%X :", fid);
-		CardFileInputStream in = service.getInputStream(fid);
+		InputStream in = service.getInputStream(fid);
 		byte[] contents = toByteArray(in);
 		System.out.println(Hex.bytesToHexString(contents));
 	}
