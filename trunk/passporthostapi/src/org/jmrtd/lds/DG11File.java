@@ -69,19 +69,21 @@ public class DG11File extends DataGroup {
 	private static final long serialVersionUID = 8566312538928662937L;
 
 	public static final int TAG_LIST_TAG = 0x5C,
-	FULL_NAME_TAG = 0x5F0E,
-	OTHER_NAME = 0x5F0F,
-	PERSONAL_NUMBER_TAG = 0x5F10,
-	FULL_DATE_OF_BIRTH_TAG = 0x5F2B, // In 'CCYYMMDD' format.
-	PLACE_OF_BIRTH_TAG = 0x5F11, // Fields separated by '<'
-	PERMANENT_ADDRESS_TAG = 0x5F42, // Fields separated by '<'
-	TELEPHONE_TAG = 0x5F12,
-	PROFESSION_TAG = 0x5F13,
-	TITLE_TAG = 0x5F14,
-	PERSONAL_SUMMARY_TAG = 0x5F15,
-	PROOF_OF_CITIZENSHIP_TAG = 0x5F16, // Compressed image per ISO/IEC 10918 
-	OTHER_VALID_TD_NUMBERS_TAG = 0x5F17, // Separated by '<'
-	CUSTODY_INFORMATION_TAG = 0x5F18;
+			FULL_NAME_TAG = 0x5F0E,
+			OTHER_NAME_TAG = 0x5F0F,
+			PERSONAL_NUMBER_TAG = 0x5F10,
+			FULL_DATE_OF_BIRTH_TAG = 0x5F2B, // In 'CCYYMMDD' format.
+			PLACE_OF_BIRTH_TAG = 0x5F11, // Fields separated by '<'
+			PERMANENT_ADDRESS_TAG = 0x5F42, // Fields separated by '<'
+			TELEPHONE_TAG = 0x5F12,
+			PROFESSION_TAG = 0x5F13,
+			TITLE_TAG = 0x5F14,
+			PERSONAL_SUMMARY_TAG = 0x5F15,
+			PROOF_OF_CITIZENSHIP_TAG = 0x5F16, // Compressed image per ISO/IEC 10918 
+			OTHER_VALID_TD_NUMBERS_TAG = 0x5F17, // Separated by '<'
+			CUSTODY_INFORMATION_TAG = 0x5F18,
+			CONTENT_SPECIFIC_CONSTRUCTED_TAG = 0xA0, // 5F0F is always used inside A0 constructed object
+			COUNT_TAG = 0x02; // Used in A0 constructed object to indicate single byte count of simple objects
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
@@ -89,6 +91,7 @@ public class DG11File extends DataGroup {
 
 	private String fullNamePrimaryIdentifier;
 	private List<String> fullNameSecondaryIdentifiers;
+	private List<String> otherNames;
 	private String personalNumber;
 	private Date fullDateOfBirth;
 	private List<String> placeOfBirth;
@@ -100,7 +103,6 @@ public class DG11File extends DataGroup {
 	private byte[] proofOfCitizenship;
 	private List<String> otherValidTDNumbers;
 	private String custodyInformation;
-	private byte[] otherName;
 
 	private List<Integer> tagPresenceList;
 
@@ -110,6 +112,7 @@ public class DG11File extends DataGroup {
 	 *
 	 * @param fullNamePrimaryIdentifier data element
 	 * @param fullNamesecondaryIdentifiers data element
+	 * @param otherNames data element
 	 * @param personalNumber data element
 	 * @param fullDateOfBirth data element
 	 * @param placeOfBirth data element
@@ -123,24 +126,26 @@ public class DG11File extends DataGroup {
 	 * @param custodyInformation data element
 	 */
 	public DG11File(String fullNamePrimaryIdentifier,
-			List<String> fullNamesecondaryIdentifiers, String personalNumber,
+			List<String> fullNamesecondaryIdentifiers,
+			List<String> otherNames, String personalNumber,
 			Date fullDateOfBirth, List<String> placeOfBirth, List<String> permanentAddress,
 			String telephone, String profession, String title,
 			String personalSummary, byte[] proofOfCitizenship,
 			List<String> otherValidTDNumbers, String custodyInformation) {
 		super(EF_DG11_TAG);
 		this.fullNamePrimaryIdentifier = fullNamePrimaryIdentifier;
-		this.fullNameSecondaryIdentifiers = fullNamesecondaryIdentifiers;
+		this.fullNameSecondaryIdentifiers = fullNameSecondaryIdentifiers == null ? new ArrayList<String>() : new ArrayList<String>(fullNamesecondaryIdentifiers);
+		this.otherNames = otherNames == null ? new ArrayList<String>() : new ArrayList<String>(otherNames);
 		this.personalNumber = personalNumber;
 		this.fullDateOfBirth = fullDateOfBirth;
-		this.placeOfBirth = placeOfBirth;
+		this.placeOfBirth = placeOfBirth == null ? new ArrayList<String>() : new ArrayList<String>(placeOfBirth);
 		this.permanentAddress = permanentAddress;
 		this.telephone = telephone;
 		this.profession = profession;
 		this.title = title;
 		this.personalSummary = personalSummary;
-		this.proofOfCitizenship = proofOfCitizenship;
-		this.otherValidTDNumbers = otherValidTDNumbers;
+		this.proofOfCitizenship = proofOfCitizenship; // FIXME: deep copy
+		this.otherValidTDNumbers = otherValidTDNumbers == null ? new ArrayList<String>() : new ArrayList<String>(otherValidTDNumbers);
 		this.custodyInformation = custodyInformation;
 	}
 
@@ -175,32 +180,50 @@ public class DG11File extends DataGroup {
 
 	private void readField(int fieldTag, TLVInputStream tlvIn) throws IOException {
 		int tag = tlvIn.readTag();
-		if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
-		tlvIn.readLength();
-		byte[] value = tlvIn.readValue();
-		switch (tag) {
-		case FULL_NAME_TAG: parseFullName(new String(value, "UTF-8")); break;
-		case OTHER_NAME: otherName = value; // FIXME: do something with this value
-		case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
-		case FULL_DATE_OF_BIRTH_TAG:
-			if (value.length == 8) {
-				/* NOTE: Belgian encoding */
-				parseFullDateOfBirth(new String(value, "UTF-8")); break;
-			} else {
-				/* NOTE: French encoding */
-				parseFullDateOfBirth(Hex.bytesToHexString(value));
+		if (tag == CONTENT_SPECIFIC_CONSTRUCTED_TAG) {
+			/* int contentSpecificLength = */ tlvIn.readLength();
+			int countTag = tlvIn.readTag();
+			if (countTag != COUNT_TAG) { throw new IllegalArgumentException("Expected " + Integer.toHexString(COUNT_TAG) + ", found " + Integer.toHexString(countTag)); }
+			int countLength = tlvIn.readLength();
+			if (countLength != 1) { throw new IllegalArgumentException("Expected length 1 count length, found " + countLength); }
+			byte[] countValue = tlvIn.readValue();
+			if (countValue == null || countValue.length != 1) { throw new IllegalArgumentException("Number of content specific fields should be encoded in single byte, found " + countValue); }
+			int count = countValue[0] & 0xFF;
+			for (int i = 0; i < count; i++) {
+				tag = tlvIn.readTag();
+				if (tag != OTHER_NAME_TAG) { throw new IllegalArgumentException("Expected " + Integer.toHexString(OTHER_NAME_TAG) + ", found " + Integer.toHexString(tag)); }
+				/* int otherNameLength = */ tlvIn.readLength();
+				byte[] value = tlvIn.readValue();
+				parseOtherName(new String(value));
 			}
-			break;
-		case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
-		case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(new String(value, "UTF-8")); break;
-		case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
-		case PROFESSION_TAG: parseProfession(new String(value, "UTF-8")); break;
-		case TITLE_TAG: parseTitle(new String(value, "UTF-8")); break;
-		case PERSONAL_SUMMARY_TAG: parsePersonalSummary(new String(value, "UTF-8")); break;
-		case PROOF_OF_CITIZENSHIP_TAG: parseProofOfCitizenShip(value); break;
-		case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(new String(value, "UTF-8")); break;
-		case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value, "UTF-8")); break;
-		default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));
+		} else {
+			if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
+			tlvIn.readLength();
+			byte[] value = tlvIn.readValue();
+			switch (tag) {
+			case FULL_NAME_TAG: parseFullName(new String(value, "UTF-8")); break;
+			case OTHER_NAME_TAG: parseOtherName(new String(value, "UTF-8")); break;
+			case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
+			case FULL_DATE_OF_BIRTH_TAG:
+				if (value.length == 8) {
+					/* NOTE: Belgian encoding */
+					parseFullDateOfBirth(new String(value, "UTF-8")); break;
+				} else {
+					/* NOTE: French encoding */
+					parseFullDateOfBirth(Hex.bytesToHexString(value));
+				}
+				break;
+			case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
+			case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(new String(value, "UTF-8")); break;
+			case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
+			case PROFESSION_TAG: parseProfession(new String(value, "UTF-8")); break;
+			case TITLE_TAG: parseTitle(new String(value, "UTF-8")); break;
+			case PERSONAL_SUMMARY_TAG: parsePersonalSummary(new String(value, "UTF-8")); break;
+			case PROOF_OF_CITIZENSHIP_TAG: parseProofOfCitizenShip(value); break;
+			case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(new String(value, "UTF-8")); break;
+			case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value, "UTF-8")); break;
+			default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));
+			}
 		}
 	}
 
@@ -272,6 +295,11 @@ public class DG11File extends DataGroup {
 
 	}
 
+	private synchronized void parseOtherName(String in) {
+		if (otherNames == null) { otherNames = new ArrayList<String>(); }
+		otherNames.add(in.trim());
+	}
+
 	private void parsePersonalNumber(String in) {
 		personalNumber = in.trim();
 	}
@@ -310,6 +338,9 @@ public class DG11File extends DataGroup {
 		if (fullNamePrimaryIdentifier != null
 				|| (fullNameSecondaryIdentifiers != null && fullNameSecondaryIdentifiers.size() > 0)) {
 			tagPresenceList.add(FULL_NAME_TAG);
+		}
+		if (otherNames != null && otherNames.size() > 0) {
+			tagPresenceList.add(OTHER_NAME_TAG);
 		}
 		if (personalNumber != null) {
 			tagPresenceList.add(PERSONAL_NUMBER_TAG);
@@ -363,6 +394,15 @@ public class DG11File extends DataGroup {
 	 */
 	public List<String> getFullNameSecondaryIdentifiers() {
 		return fullNameSecondaryIdentifiers;
+	}
+
+	/**
+	 * Gets the other names.
+	 * 
+	 * @return the other names, or empty list when not present
+	 */
+	public List<String> getOtherNames() {
+		return otherNames == null ? new ArrayList<String>() : new ArrayList<String>(otherNames);
 	}
 
 	/**
@@ -474,6 +514,7 @@ public class DG11File extends DataGroup {
 		result.append("DG11File [");
 		result.append(fullNamePrimaryIdentifier == null ? "" : fullNamePrimaryIdentifier); result.append(", ");
 		result.append(fullNameSecondaryIdentifiers == null || fullNameSecondaryIdentifiers.size() == 0 ? "[]" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
+		result.append(otherNames == null || otherNames.size() == 0 ? "[]" : otherNames); result.append(", ");
 		result.append(personalNumber == null ? "" : personalNumber); result.append(", ");
 		result.append(fullDateOfBirth == null ? "" : SDF.format(fullDateOfBirth)); result.append(", ");
 		result.append(placeOfBirth == null || placeOfBirth.size() == 0 ? "[]" : placeOfBirth.toString()); result.append(", ");
@@ -512,9 +553,9 @@ public class DG11File extends DataGroup {
 		dataOut.flush();
 		tlvOut.writeValueEnd(); /* TAG_LIST_TAG */
 		for (int tag: tags) {
-			tlvOut.writeTag(tag);
 			switch (tag) {
 			case FULL_NAME_TAG:
+				tlvOut.writeTag(tag);
 				if (fullNamePrimaryIdentifier !=  null) {
 					//					out.write(fullNamePrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
 					tlvOut.write(fullNamePrimaryIdentifier.trim().getBytes("UTF-8"));
@@ -532,16 +573,31 @@ public class DG11File extends DataGroup {
 				}
 				tlvOut.writeValueEnd(); /* FULL_NAME_TAG */
 				break;
+			case OTHER_NAME_TAG:
+				if (otherNames == null) { otherNames = new ArrayList<String>(); }
+				tlvOut.writeTag(CONTENT_SPECIFIC_CONSTRUCTED_TAG);
+				tlvOut.writeTag(COUNT_TAG);
+				tlvOut.write(otherNames.size());
+				tlvOut.writeValueEnd(); /* COUNT_TAG */
+				for (String otherName: otherNames) {
+					tlvOut.writeTag(OTHER_NAME_TAG);
+					tlvOut.writeValue(otherName.trim().replace(' ', '<').getBytes("UTF-8"));
+				}
+				tlvOut.writeValueEnd(); /* CONTENT_SPECIFIC_CONSTRUCTED_TAG */
+				break; 	
 			case PERSONAL_NUMBER_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(personalNumber.trim().getBytes("UTF-8"));
 				break;
 			case FULL_DATE_OF_BIRTH_TAG:
+				tlvOut.writeTag(tag);
 				String fullDateOfBirthString = SDF.format(fullDateOfBirth);
 				// byte[] fullDateOfBirthBytes = fullDateOfBirthString.getBytes("UTF-8");
 				byte[] fullDateOfBirthBytes = Hex.hexStringToBytes(fullDateOfBirthString);
 				tlvOut.writeValue(fullDateOfBirthBytes);		
 				break;
 			case PLACE_OF_BIRTH_TAG:
+				tlvOut.writeTag(tag);
 				isFirstOne = true;
 				for (String detail: placeOfBirth) {
 					if (detail != null) {
@@ -553,6 +609,7 @@ public class DG11File extends DataGroup {
 				tlvOut.writeValueEnd(); /* PLACE_OF_BIRTH_TAG */
 				break;
 			case PERMANENT_ADDRESS_TAG:
+				tlvOut.writeTag(tag);
 				isFirstOne = true;
 				for (String detail: permanentAddress) {
 					if (detail != null) {
@@ -564,21 +621,27 @@ public class DG11File extends DataGroup {
 				tlvOut.writeValueEnd(); /* PERMANENT_ADDRESS_TAG */
 				break;
 			case TELEPHONE_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(telephone.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			case PROFESSION_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(profession.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			case TITLE_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(title.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			case PERSONAL_SUMMARY_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(personalSummary.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			case PROOF_OF_CITIZENSHIP_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(proofOfCitizenship);
 				break;
 			case OTHER_VALID_TD_NUMBERS_TAG:
+				tlvOut.writeTag(tag);
 				isFirstOne = true;
 				for (String detail: otherValidTDNumbers) {
 					if (detail != null) {
@@ -589,6 +652,7 @@ public class DG11File extends DataGroup {
 				tlvOut.writeValueEnd(); /* OTHER_VALID_TD_NUMBERS_TAG */
 				break;
 			case CUSTODY_INFORMATION_TAG:
+				tlvOut.writeTag(tag);
 				tlvOut.writeValue(custodyInformation.trim().replace(' ', '<').getBytes("UTF-8"));
 				break;
 			default: throw new IllegalStateException("Unknown tag in DG11: " + Integer.toHexString(tag));

@@ -55,13 +55,11 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERInteger;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.MRZInfo;
@@ -398,11 +396,16 @@ public class PassportService extends PassportApduService implements Serializable
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId != -1) {
 				// TODO: what this key id format should exactly be?
-				String kId = Hex.intToHexString(keyId);
-				while (kId.startsWith("00")) {
-					kId = kId.substring(2);
+				//				String kId = Hex.intToHexString(keyId);
+				//				while (kId.startsWith("00")) {
+				//					kId = kId.substring(2);
+				//				}
+				try {
+					byte[] keyIdBytes = new ASN1Integer(keyId).getEncoded();
+					idData = wrapDO((byte) 0x84, keyIdBytes);
+				} catch (IOException ioe) {
+					throw new CardServiceException("Could not encode keyId = " + keyId);
 				}
-				idData = wrapDO((byte) 0x84, Hex.hexStringToBytes(kId));
 			}
 			sendMSEKAT(wrapper, keyData, idData);
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);

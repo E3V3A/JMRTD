@@ -77,9 +77,9 @@ public class DG14File extends DataGroup {
 		super(EF_DG14_TAG, in);
 	}
 
-	protected void readContent(InputStream in) throws IOException {
+	protected void readContent(InputStream inputStream) throws IOException {
 		securityInfos = new HashSet<SecurityInfo>();
-		ASN1InputStream asn1In = new ASN1InputStream(in);
+		ASN1InputStream asn1In = new ASN1InputStream(inputStream);
 		ASN1Set set = (ASN1Set)asn1In.readObject();
 		for (int i = 0; i < set.size(); i++) {
 			ASN1Primitive object = set.getObjectAt(i).toASN1Primitive();
@@ -89,13 +89,13 @@ public class DG14File extends DataGroup {
 	}
 
 	/* FIXME: rewrite (using writeObject instead of getDERObject) to remove interface dependency on BC. */
-	protected void writeContent(OutputStream out) throws IOException {
+	protected void writeContent(OutputStream outputStream) throws IOException {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
 		for (SecurityInfo si : securityInfos) {
 			vector.add(si.getDERObject());
 		}
 		ASN1Set derSet = new DLSet(vector);
-		out.write(derSet.getEncoded(ASN1Encoding.DER));
+		outputStream.write(derSet.getEncoded(ASN1Encoding.DER));
 	}
 
 	/**

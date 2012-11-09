@@ -403,7 +403,7 @@ public class LDSTreePanel extends JPanel {
 			}
 		}
 		if (tagsPresent.contains(DG12File.ISSUING_AUTHORITY_TAG)) { node.add(new DefaultMutableTreeNode("Issuing authority: " + dg12.getIssuingAuthority())); }
-		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Name of other person: " + dg12.getNameOfOtherPerson())); }
+		if (tagsPresent.contains(DG12File.NAME_OF_OTHER_PERSON_TAG)) { node.add(new DefaultMutableTreeNode("Names of other persons: " + dg12.getNamesOfOtherPersons())); }
 		if (tagsPresent.contains(DG12File.PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG)) { node.add(new DefaultMutableTreeNode("Personalization sytem serial number: " + dg12.getPersonalizationSystemSerialNumber())); }
 		if (tagsPresent.contains(DG12File.TAX_OR_EXIT_REQUIREMENTS_TAG)) { node.add(new DefaultMutableTreeNode("a: " + dg12.getTaxOrExitRequirements())); }
 		return node;
