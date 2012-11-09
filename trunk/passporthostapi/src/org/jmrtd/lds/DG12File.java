@@ -85,7 +85,7 @@ public class DG12File extends DataGroup {
 	 *
 	 * @param issuingAuthority
 	 * @param dateOfIssue
-	 * @param nameOfOtherPerson
+	 * @param namesOfOtherPersons
 	 * @param endorseMentsAndObservations
 	 * @param taxOrExitRequirements
 	 * @param imageOfFront

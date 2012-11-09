@@ -383,7 +383,7 @@ public class PassportTestService extends PassportService {
 			InputStream inputStream = getInputStream(fid);
 			result = new CVCAFile(inputStream);
 			resetCard();
-		} catch(CardServiceException e) {
+		} catch(Exception e) {
 			return null;
 		}
 		return result;
