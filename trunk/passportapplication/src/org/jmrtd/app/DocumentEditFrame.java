@@ -40,6 +40,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -373,8 +374,8 @@ public class DocumentEditFrame extends JMRTDFrame {
 			DG14File dg14 = new DG14File(dg14InputStream);
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
-			Map<Integer, PublicKey> publicKeyMap = null;
-			int cardPublicKeyId = 0;
+			Map<BigInteger, PublicKey> publicKeyMap = null;
+			BigInteger cardPublicKeyId = BigInteger.valueOf(-1);
 			if (eacEvent != null) {
 				terminalKey = eacEvent.getTerminalKey();
 				cvCertificates = eacEvent.getCVCertificates();
@@ -496,16 +497,16 @@ public class DocumentEditFrame extends JMRTDFrame {
 	}
 
 	private void createEACMenus(PrivateKey terminalKey, List<CardVerifiableCertificate> terminalCertificates,
-			Map<Integer, PublicKey> passportEACKeys, Integer usedId) {		
-		Set<Map.Entry<Integer, PublicKey>> entries = passportEACKeys != null ? passportEACKeys.entrySet() : new HashSet<Map.Entry<Integer, PublicKey>>();
+			Map<BigInteger, PublicKey> passportEACKeys, BigInteger usedId) {		
+		Set<Map.Entry<BigInteger, PublicKey>> entries = passportEACKeys != null ? passportEACKeys.entrySet() : new HashSet<Map.Entry<BigInteger, PublicKey>>();
 		int pubKeysCount = passportEACKeys != null ? passportEACKeys.size() : 0;
 
 		JMenu viewPassportKeyMenu = new JMenu("Passport EAC keys");
-		for (Map.Entry<Integer, PublicKey> entry: entries) {
-			int id = entry.getKey();
+		for (Map.Entry<BigInteger, PublicKey> entry: entries) {
+			BigInteger keyId = entry.getKey();
 			PublicKey publicKey = entry.getValue();
 			JMenuItem item = new JMenuItem();
-			item.setAction(getViewPassportKeyAction(id, publicKey, (pubKeysCount == 1) || usedId.equals(id)));
+			item.setAction(getViewPassportKeyAction(keyId, publicKey, (pubKeysCount == 1) || usedId.equals(keyId)));
 			viewPassportKeyMenu.add(item);
 		}
 		Component viewPassportKeyItem = pubKeysCount <= 1 ? viewPassportKeyMenu : viewPassportKeyMenu.getComponent(0);
@@ -631,7 +632,7 @@ public class DocumentEditFrame extends JMRTDFrame {
 		return action;
 	}
 
-	private Action getViewPassportKeyAction(Integer id, final PublicKey key, boolean eacUsed) {
+	private Action getViewPassportKeyAction(BigInteger keyId, final PublicKey key, boolean eacUsed) {
 		Action action = new AbstractAction() {
 
 			private static final long serialVersionUID = -4351062035608816679L;

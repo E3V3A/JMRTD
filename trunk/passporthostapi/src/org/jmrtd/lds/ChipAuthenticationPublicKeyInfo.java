@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -77,7 +78,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	
 	private String oid;
 	private SubjectPublicKeyInfo subjectPublicKeyInfo;
-	private int keyId;
+	private BigInteger keyId;
 
 	/**
 	 * Constructs a new object.
@@ -89,7 +90,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @param keyId
 	 *            the key identifier or -1 if not present
 	 */
-	ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo, int keyId) {
+	ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo, BigInteger keyId) {
 		this.oid = oid;
 		this.subjectPublicKeyInfo = publicKeyInfo;
 		this.keyId = keyId;
@@ -97,7 +98,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	}
 
 	ChipAuthenticationPublicKeyInfo(String oid, SubjectPublicKeyInfo publicKeyInfo) {
-		this(oid, publicKeyInfo, -1);
+		this(oid, publicKeyInfo, BigInteger.valueOf(-1));
 	}
 
 	/**
@@ -106,7 +107,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @param publicKey Either a DH public key or an EC public key
 	 * @param keyId
 	 */
-	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, int keyId) {
+	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, BigInteger keyId) {
 		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
 	}
 
@@ -116,14 +117,14 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @param publicKey Either a DH public key or an EC public key
 	 */
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey) {
-		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), -1);
+		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), BigInteger.valueOf(-1));
 	}
 
 	ASN1Primitive getDERObject() {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
 		vector.add(new ASN1ObjectIdentifier(oid));
 		vector.add((ASN1Sequence)subjectPublicKeyInfo.toASN1Primitive());
-		if (keyId >= 0) {
+		if (keyId.compareTo(BigInteger.ZERO) >= 0) {
 			vector.add(new ASN1Integer(keyId));
 		}
 		return new DLSequence(vector);
@@ -140,7 +141,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @return key identifier stored in this ChipAuthenticationPublicKeyInfo
 	 *         structure
 	 */
-	public int getKeyId() {
+	public BigInteger getKeyId() {
 		return keyId;
 	}
 
@@ -193,12 +194,12 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 		return "ChipAuthenticationPublicKeyInfo ["
 		+ "protocol = " + protocol + ", "
 		+ "chipAuthenticationPublicKey = " + getSubjectPublicKey().toString() + ", "
-		+ "keyId = " + Integer.toString(getKeyId()) +
+		+ "keyId = " + getKeyId().toString() +
 		"]";
 	}
 
 	public int hashCode() {
-		return 	123 + 1337 * (oid.hashCode() + keyId + subjectPublicKeyInfo.hashCode());
+		return 	123 + 1337 * (oid.hashCode() + keyId.hashCode() + subjectPublicKeyInfo.hashCode());
 	}
 
 	public boolean equals(Object other) {
@@ -207,9 +208,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 		if (!ChipAuthenticationPublicKeyInfo.class.equals(other.getClass())) { return false; }
 		ChipAuthenticationPublicKeyInfo otherInfo = (ChipAuthenticationPublicKeyInfo)other;
 		return oid.equals(otherInfo.oid)
-		&& keyId == otherInfo.keyId
-		&& subjectPublicKeyInfo.equals(otherInfo.subjectPublicKeyInfo)
-		;
+				&& keyId.equals(otherInfo.keyId)
+				&& subjectPublicKeyInfo.equals(otherInfo.subjectPublicKeyInfo);
 	}
 
 	private static PublicKey getPublicKey(SubjectPublicKeyInfo spki) {

@@ -22,6 +22,8 @@
 
 package org.jmrtd.lds;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -56,7 +58,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 
 	private String oid;
 	private int version;
-	private int keyId;
+	private BigInteger keyId;
 
 	/**
 	 * Constructs a new object.
@@ -68,7 +70,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	 * @param keyId
 	 *            the key identifier
 	 */
-	public ChipAuthenticationInfo(String oid, int version, int keyId) {
+	public ChipAuthenticationInfo(String oid, int version, BigInteger keyId) {
 		this.oid = oid;
 		this.version = version;
 		this.keyId = keyId;
@@ -84,14 +86,14 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	 *            has to be 1
 	 */
 	public ChipAuthenticationInfo(String oid, int version) {
-		this(oid, version, -1);
+		this(oid, version, BigInteger.valueOf(-1));
 	}
 
 	ASN1Primitive getDERObject() {
 		ASN1EncodableVector v = new ASN1EncodableVector();
 		v.add(new ASN1ObjectIdentifier(oid));
 		v.add(new ASN1Integer(version));
-		if (keyId >= 0) {
+		if (keyId.compareTo(BigInteger.ZERO) >= 0) {
 			v.add(new ASN1Integer(keyId));
 		}
 		return new DLSequence(v);
@@ -107,7 +109,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	 * 
 	 * @return key identifier stored in this ChipAuthenticationInfo structure
 	 */
-	public int getKeyId() {
+	public BigInteger getKeyId() {
 		return keyId;
 	}
 
@@ -145,7 +147,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	}
 	
 	public int hashCode() {
-		return 3 + 11 * (oid == null ? 0 : oid.hashCode()) + 61 * version + 1991 * keyId;
+		return 3 + 11 * (oid == null ? 0 : oid.hashCode()) + 61 * version + 1991 * keyId.hashCode();
 	}
 	
 	public boolean equals(Object other) {
@@ -155,6 +157,6 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 		ChipAuthenticationInfo otherChipAuthenticationInfo = (ChipAuthenticationInfo)other;
 		return oid.equals(otherChipAuthenticationInfo.oid)
 			&& version == otherChipAuthenticationInfo.version
-			&& keyId == otherChipAuthenticationInfo.keyId;
+			&& keyId.equals(otherChipAuthenticationInfo.keyId);
 	}
 }

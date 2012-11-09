@@ -3,6 +3,7 @@ package org.jmrtd.test;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -112,7 +113,7 @@ public class PassportTestService extends PassportService {
 		}
 	}
 
-	private int keyId = -1;
+	private BigInteger keyId = BigInteger.valueOf(-1);
 	private PublicKey cardKey;
 	private CVCPrincipal caReference = new CVCPrincipal("NLCVCAA00001");
 	private List<CardVerifiableCertificate> terminalCertificates;
@@ -427,7 +428,7 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean doCA() {
 		try {
-			super.doCA(-1, cardKey);
+			super.doCA(BigInteger.valueOf(-1), cardKey);
 			return true;
 		}catch(Exception e) {
 			return false;            

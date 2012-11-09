@@ -22,6 +22,7 @@
 package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Provider;
@@ -91,10 +92,10 @@ public class DG14FileTest extends TestCase {
 			algs.put(2, SecurityInfo.ID_CA_ECDH_3DES_CBC_CBC_OID);
 
 			List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, 1));
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, 2));	
-			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 1));
-			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 2));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, BigInteger.valueOf(1)));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, BigInteger.valueOf(2)));
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(1)));
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(2)));
 			securityInfos.add(new TerminalAuthenticationInfo());
 			DG14File dg14File2 = new DG14File(securityInfos);
 			assertNotNull(dg14File2.getChipAuthenticationInfos());
@@ -162,15 +163,60 @@ public class DG14FileTest extends TestCase {
 			assert(Arrays.equals(specSample, encoded));
 			DG14File copy = new DG14File(new ByteArrayInputStream(encoded));
 			assertEquals(dg14, copy);
-			
+
 			Collection<SecurityInfo> securityInfos = dg14.getSecurityInfos();
 			for (SecurityInfo securityInfo: securityInfos) {
-//				System.out.println("DEBUG: securityInfo " + securityInfo);
+				//				System.out.println("DEBUG: securityInfo " + securityInfo);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	public void testBenali() {
+		byte[] dg14bytes = new byte[] { (byte)0x6E, (byte)0x82, (byte)0x01, (byte)0x91, (byte)0x31, (byte)0x82, (byte)0x01, (byte)0x8D, (byte)0x30, (byte)0x82, (byte)0x01, (byte)0x57, (byte)0x06, (byte)0x09, (byte)0x04, (byte)0x00,
+				(byte)0x7F, (byte)0x00, (byte)0x07, (byte)0x02, (byte)0x02, (byte)0x01, (byte)0x02, (byte)0x30, (byte)0x82, (byte)0x01, (byte)0x36, (byte)0x30, (byte)0x81, (byte)0xEF, (byte)0x06, (byte)0x07,
+				(byte)0x2A, (byte)0x86, (byte)0x48, (byte)0xCE, (byte)0x3D, (byte)0x02, (byte)0x01, (byte)0x30, (byte)0x81, (byte)0xE3, (byte)0x02, (byte)0x01, (byte)0x01, (byte)0x30, (byte)0x2C, (byte)0x06,
+				(byte)0x07, (byte)0x2A, (byte)0x86, (byte)0x48, (byte)0xCE, (byte)0x3D, (byte)0x01, (byte)0x01, (byte)0x02, (byte)0x21, (byte)0x00, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0x00,
+				(byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0xFF,
+				(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0x30, (byte)0x44, (byte)0x04, (byte)0x20, (byte)0xFF,
+				(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+				(byte)0x00, (byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFC, (byte)0x04,
+				(byte)0x20, (byte)0x5A, (byte)0xC6, (byte)0x35, (byte)0xD8, (byte)0xAA, (byte)0x3A, (byte)0x93, (byte)0xE7, (byte)0xB3, (byte)0xEB, (byte)0xBD, (byte)0x55, (byte)0x76, (byte)0x98, (byte)0x86,
+				(byte)0xBC, (byte)0x65, (byte)0x1D, (byte)0x06, (byte)0xB0, (byte)0xCC, (byte)0x53, (byte)0xB0, (byte)0xF6, (byte)0x3B, (byte)0xCE, (byte)0x3C, (byte)0x3E, (byte)0x27, (byte)0xD2, (byte)0x60,
+				(byte)0x4B, (byte)0x04, (byte)0x41, (byte)0x04, (byte)0x6B, (byte)0x17, (byte)0xD1, (byte)0xF2, (byte)0xE1, (byte)0x2C, (byte)0x42, (byte)0x47, (byte)0xF8, (byte)0xBC, (byte)0xE6, (byte)0xE5,
+				(byte)0x63, (byte)0xA4, (byte)0x40, (byte)0xF2, (byte)0x77, (byte)0x03, (byte)0x7D, (byte)0x81, (byte)0x2D, (byte)0xEB, (byte)0x33, (byte)0xA0, (byte)0xF4, (byte)0xA1, (byte)0x39, (byte)0x45,
+				(byte)0xD8, (byte)0x98, (byte)0xC2, (byte)0x96, (byte)0x4F, (byte)0xE3, (byte)0x42, (byte)0xE2, (byte)0xFE, (byte)0x1A, (byte)0x7F, (byte)0x9B, (byte)0x8E, (byte)0xE7, (byte)0xEB, (byte)0x4A,
+				(byte)0x7C, (byte)0x0F, (byte)0x9E, (byte)0x16, (byte)0x2B, (byte)0xCE, (byte)0x33, (byte)0x57, (byte)0x6B, (byte)0x31, (byte)0x5E, (byte)0xCE, (byte)0xCB, (byte)0xB6, (byte)0x40,
+				(byte)0x68, (byte)0x37, (byte)0xBF, (byte)0x51, (byte)0xF5, (byte)0x02, (byte)0x21, (byte)0x00, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x00,
+				(byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xFF, (byte)0xBC, (byte)0xE6, (byte)0xFA, (byte)0xAD, (byte)0xA7, (byte)0x17, (byte)0x9E, (byte)0x84,
+				(byte)0xF3, (byte)0xB9, (byte)0xCA, (byte)0xC2, (byte)0xFC, (byte)0x63, (byte)0x25, (byte)0x51, (byte)0x02, (byte)0x04, (byte)0x00, (byte)0x00, (byte)0x00, (byte)0x01, (byte)0x03, (byte)0x42,
+				(byte)0x00, (byte)0x04, (byte)0xD9, (byte)0x5B, (byte)0x52, (byte)0x56, (byte)0x11, (byte)0x6E, (byte)0x04, (byte)0xD9, (byte)0xC3, (byte)0x76, (byte)0xC6, (byte)0xB5, (byte)0x9D, (byte)0x07,
+				(byte)0x6F, (byte)0x4A, (byte)0x2A, (byte)0x93, (byte)0x2B, (byte)0xC3, (byte)0x60, (byte)0x65, (byte)0x41, (byte)0xC1, (byte)0x93, (byte)0x1E, (byte)0x39, (byte)0x7F, (byte)0xF6, (byte)0xE5,
+				(byte)0xE7, (byte)0x1B, (byte)0x24, (byte)0x1C, (byte)0x26, (byte)0x31, (byte)0x69, (byte)0x07, (byte)0x09, (byte)0xB6, (byte)0x6F, (byte)0x31, (byte)0xE9, (byte)0xBC, (byte)0x09, (byte)0xEF,
+				(byte)0x7E, (byte)0xEB, (byte)0x74, (byte)0x4A, (byte)0x10, (byte)0x18, (byte)0x5C, (byte)0xBF, (byte)0x46, (byte)0x29, (byte)0xEF, (byte)0x45, (byte)0xE8, (byte)0xA1, (byte)0x44, (byte)0xC1,
+				(byte)0xC9, (byte)0xDD, (byte)0x02, (byte)0x10, (byte)0x41, (byte)0x6C, (byte)0x67, (byte)0x65, (byte)0x72, (byte)0x69, (byte)0x61, (byte)0x43, (byte)0x41, (byte)0x4B, (byte)0x65, (byte)0x79,
+				(byte)0x4E, (byte)0x61, (byte)0x6D, (byte)0x65, (byte)0x30, (byte)0x21, (byte)0x06, (byte)0x0A, (byte)0x04, (byte)0x00, (byte)0x7F, (byte)0x00, (byte)0x07, (byte)0x02, (byte)0x02, (byte)0x03,
+				(byte)0x02, (byte)0x01, (byte)0x02, (byte)0x01, (byte)0x01, (byte)0x02, (byte)0x10, (byte)0x41, (byte)0x6C, (byte)0x67, (byte)0x65, (byte)0x72, (byte)0x69, (byte)0x61, (byte)0x43, (byte)0x41,
+				(byte)0x4B, (byte)0x65, (byte)0x79, (byte)0x4E, (byte)0x61, (byte)0x6D, (byte)0x65, (byte)0x30, (byte)0x0D, (byte)0x06, (byte)0x08, (byte)0x04, (byte)0x00, (byte)0x7F, (byte)0x00, (byte)0x07,
+				(byte)0x02, (byte)0x02, (byte)0x02, (byte)0x02, (byte)0x01, (byte)0x01 };
+
+		try {
+//			FileOutputStream dg14Out = new FileOutputStream("c:/dg14out.bin");
+//			dg14Out.write(dg14bytes);
+//			dg14Out.flush();
+//			dg14Out.close();
+			
+			DG14File dg14 = new DG14File(new ByteArrayInputStream(dg14bytes));
+			for (SecurityInfo securityInfo: dg14.getSecurityInfos()) {
+				System.out.println("DEBUG: securityInfo = " + securityInfo);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
 	}
 
 	public DG14File getSampleObject() {
@@ -194,10 +240,10 @@ public class DG14FileTest extends TestCase {
 			PublicKey publicKey2 = keyPair2.getPublic();
 
 			List<SecurityInfo> securityInfos = new ArrayList<SecurityInfo>();
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, 1));
-			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, 2));	
-			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 1));
-			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, 2));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey1, BigInteger.valueOf(1)));
+			securityInfos.add(new ChipAuthenticationPublicKeyInfo(publicKey2, BigInteger.valueOf(2)));	
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(1)));
+			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(2)));
 			securityInfos.add(new TerminalAuthenticationInfo());
 			DG14File dg14 = new DG14File(securityInfos);
 			return dg14;

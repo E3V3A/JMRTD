@@ -216,13 +216,28 @@ Code quality
 + Check JavaDoc
 
 
+0.4.9 (FUTURE)
+--------------
+
+General
++ Remove threading from JMRTD host API.
++ DG11 and DG12 encoding of dates (see R7-p1_v2_sIII_0058).
++ DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
+- Clean up ImageInfo inputstream to allow progressive rendering in principle.
+- doCA with explicit keyId seems to use wrong encoding.
+
+Code quality
+- Check unit tests
+- Check JavaDoc
+- Check Findbugs
+
+
 0.5.x (FUTURE)
 --------------
 
 General
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
 - Implement PACE. Check status of OpenPACE project on SF.
-- Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
@@ -234,7 +249,6 @@ General
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
 - Version for Embedded Java on Raspberry Pi and similar.
 - Version for Blackberry OS.
-+ Remove threading from JMRTD host API.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
@@ -243,7 +257,6 @@ MRZ
 - Check "V<", ID-2 MRZInfo.
 
 GUI
-- APDU tracing showing plain text APDUs when BAC based SM is used
 - Bug in loading document from file without SOd (is silently accepted, perhaps we should generate SOd?).
 - Improve certificate / trust store viewing and editing (both CSCA, CVCA)
 - In general: better interaction, based on user purpose/task (inspection / security testing / personalization / identity provisioning).
