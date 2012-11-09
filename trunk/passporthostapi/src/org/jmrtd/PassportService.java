@@ -399,22 +399,8 @@ public class PassportService extends PassportApduService implements Serializable
 			}
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId.compareTo(BigInteger.ZERO) >= 0) {
-				// TODO: what this key id format should exactly be?
-				//				String kId = Hex.intToHexString(keyId);
-				//				while (kId.startsWith("00")) {
-				//					kId = kId.substring(2);
-				//				}
-				try {
-					byte[] keyIdBytes = new ASN1Integer(keyId).getEncoded();
-					int indexOfFirstNonZeroByte = 0;
-					for (;  indexOfFirstNonZeroByte < keyIdBytes.length && keyIdBytes[indexOfFirstNonZeroByte] == 0; indexOfFirstNonZeroByte++) { }
-					byte[] keyIdBytesWithoutLeadingZeroes = new byte[keyIdBytes.length - indexOfFirstNonZeroByte];
-					System.arraycopy(keyIdBytes, indexOfFirstNonZeroByte, keyIdBytesWithoutLeadingZeroes, 0, keyIdBytesWithoutLeadingZeroes.length);
-					System.out.println("DEBUG: keyIdBytesWithoutLeadingZeroes = " + Hex.bytesToHexString(keyIdBytesWithoutLeadingZeroes));
-					idData = wrapDO((byte) 0x84, keyIdBytesWithoutLeadingZeroes);
-				} catch (IOException ioe) {
-					throw new CardServiceException("Could not encode keyId = " + keyId);
-				}
+				byte[] keyIdBytes = keyId.toByteArray();
+				idData = wrapDO((byte) 0x84, keyIdBytes);
 			}
 			sendMSEKAT(wrapper, keyData, idData);
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
@@ -438,8 +424,7 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized byte[] doTA(CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg,
-			byte[] caKeyHash, String documentNumber)
-					throws CardServiceException {
+			byte[] caKeyHash, String documentNumber) throws CardServiceException {
 		// FIXME caReference is not really needed, we get one from the first certificate
 		try {
 			if (caKeyHash == null) {
@@ -450,7 +435,7 @@ public class PassportService extends PassportApduService implements Serializable
 			for (CardVerifiableCertificate cert : terminalCertificates) {
 				try{
 					if(certRef == null) {
-						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes());
+						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("UTF-8"));
 					}
 					sendMSEDST(wrapper, certRef);
 					byte[] body = cert.getCertBodyData();
@@ -460,7 +445,6 @@ public class PassportService extends PassportApduService implements Serializable
 					tlvSigOut.writeValue(cert.getSignature());
 					tlvSigOut.close();
 					byte[] sig = sigOut.toByteArray();
-
 
 					// true means do not do chaining, send all in one APDU
 					// the actual passport may require chaining (when the
@@ -509,8 +493,8 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey, byte[] caKeyHash, String documentNumber)
-			throws CardServiceException {
+	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
+			PrivateKey terminalKey, byte[] caKeyHash, String documentNumber) throws CardServiceException {
 		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
 

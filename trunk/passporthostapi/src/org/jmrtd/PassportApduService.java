@@ -630,14 +630,12 @@ public class PassportApduService extends CardService {
 	 * @throws CardServiceException
 	 *             on error
 	 */
-	public synchronized void sendMSEDST(SecureMessagingWrapper wrapper,
-			byte[] data) throws CardServiceException {
-
+	public synchronized void sendMSEDST(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xB6, data);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Sending MSE KAT failed.");
+			throw new CardServiceException("Sending MSE DST failed.");
 		}
 	}
 
