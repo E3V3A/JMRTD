@@ -58,7 +58,6 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -423,8 +422,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public synchronized byte[] doTA(CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
-			String taAlg,
-			byte[] caKeyHash, String documentNumber) throws CardServiceException {
+			String taAlg, byte[] caKeyHash, String documentNumber) throws CardServiceException {
 		// FIXME caReference is not really needed, we get one from the first certificate
 		try {
 			if (caKeyHash == null) {
@@ -465,9 +463,8 @@ public class PassportService extends PassportApduService implements Serializable
 
 			byte[] rpicc = sendGetChallenge(wrapper);
 			byte[] idpic = new byte[documentNumber.length() + 1];
-			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0,
-					documentNumber.length());
-			idpic[idpic.length - 1] = (byte) MRZInfo.checkDigit(documentNumber);
+			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
+			idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
 
 			ByteArrayOutputStream dtbs = new ByteArrayOutputStream();
 			dtbs.write(idpic);

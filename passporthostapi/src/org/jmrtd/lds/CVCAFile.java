@@ -53,13 +53,8 @@ public class CVCAFile extends AbstractLDSFile {
 	 * 
 	 * @param in stream with the data to be parsed
 	 */
-	public CVCAFile(InputStream in) {
-		try {
-			readObject(in);
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new IllegalArgumentException("Malformed input data");
-		}
+	public CVCAFile(InputStream in) throws IOException {
+		readObject(in);
 	}
 
 	/**
@@ -114,7 +109,7 @@ public class CVCAFile extends AbstractLDSFile {
 			tag = dataIn.read();
 		}
 	}
-	
+
 	protected void writeObject(OutputStream out) throws IOException {
 		byte[] result = new byte[LENGTH];
 		result[0] = CAR_TAG;
@@ -156,7 +151,7 @@ public class CVCAFile extends AbstractLDSFile {
 	 */
 	public String toString() {
 		return "CA reference: \"" + caReference + "\""
-		+ ((altCaReference != null) ? ", Alternative CA reference: " + altCaReference : "");
+				+ ((altCaReference != null) ? ", Alternative CA reference: " + altCaReference : "");
 	}
 
 	/**
@@ -171,8 +166,8 @@ public class CVCAFile extends AbstractLDSFile {
 		if (!this.getClass().equals(other.getClass())) { return false; }
 		CVCAFile otherCVCAFile = (CVCAFile)other;
 		return caReference.equals(otherCVCAFile.caReference)
-		&& ((altCaReference == null && otherCVCAFile.altCaReference == null)
-				|| (altCaReference != null && altCaReference.equals(otherCVCAFile.altCaReference)));
+				&& ((altCaReference == null && otherCVCAFile.altCaReference == null)
+						|| (altCaReference != null && altCaReference.equals(otherCVCAFile.altCaReference)));
 	}
 
 	/**
@@ -182,10 +177,10 @@ public class CVCAFile extends AbstractLDSFile {
 	 */
 	public int hashCode() {
 		return 11 * caReference.hashCode()
-		+ ((altCaReference != null) ? 13 * altCaReference.hashCode() : 0)
-		+ 5;
+				+ ((altCaReference != null) ? 13 * altCaReference.hashCode() : 0)
+				+ 5;
 	}
-	
+
 	/**
 	 * Gets the length of the content of this CVCA file. This always returns {@value #LENGTH}.
 	 * 

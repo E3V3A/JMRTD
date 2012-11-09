@@ -31,35 +31,43 @@ import org.jmrtd.lds.CVCAFile;
 
 public class CVCAFileTest extends TestCase {
 
-    public void test1() {
-        String name1 = "CAReference00001";
-        CVCAFile f = new CVCAFile(name1);
-        assertEquals(name1, f.getCAReference().getName());
-        assertEquals(null, f.getAltCAReference());
-    }
+	public void test1() {
+		String name1 = "CAReference00001";
+		CVCAFile f = new CVCAFile(name1);
+		assertEquals(name1, f.getCAReference().getName());
+		assertEquals(null, f.getAltCAReference());
+	}
 
-    public void test2() {
-        String name1 = "CAReference00001";
-        String name2 = "CAReference00002";
-        CVCAFile f = new CVCAFile(name1, name2);
-        assertEquals(name1, f.getCAReference().getName());
-        assertEquals(name2, f.getAltCAReference().getName());
-    }
+	public void test2() {
+		String name1 = "CAReference00001";
+		String name2 = "CAReference00002";
+		CVCAFile f = new CVCAFile(name1, name2);
+		assertEquals(name1, f.getCAReference().getName());
+		assertEquals(name2, f.getAltCAReference().getName());
+	}
 
-    public void testReflexive1() {
-        String name1 = "CAReference00001";
-        String name2 = "CAReference00002";
-        CVCAFile f = new CVCAFile(name1, name2);
-        InputStream in = new ByteArrayInputStream(f.getEncoded());
-        CVCAFile f2 = new CVCAFile(in);
-        assertTrue(Arrays.equals(f.getEncoded(), f2.getEncoded()));
-    }
+	public void testReflexive1() {
+		try {
+			String name1 = "CAReference00001";
+			String name2 = "CAReference00002";
+			CVCAFile f = new CVCAFile(name1, name2);
+			InputStream in = new ByteArrayInputStream(f.getEncoded());
+			CVCAFile f2 = new CVCAFile(in);
+			assertTrue(Arrays.equals(f.getEncoded(), f2.getEncoded()));
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
 
-    public void testReflexive2() {
-        String name1 = "CAReference00001";
-        CVCAFile f = new CVCAFile(name1);
-        InputStream in = new ByteArrayInputStream(f.getEncoded());
-        CVCAFile f2 = new CVCAFile(in);
-        assertTrue(Arrays.equals(f.getEncoded(), f2.getEncoded()));
-    }
+	public void testReflexive2() {
+		try {
+			String name1 = "CAReference00001";
+			CVCAFile f = new CVCAFile(name1);
+			InputStream in = new ByteArrayInputStream(f.getEncoded());
+			CVCAFile f2 = new CVCAFile(in);
+			assertTrue(Arrays.equals(f.getEncoded(), f2.getEncoded()));
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
 }

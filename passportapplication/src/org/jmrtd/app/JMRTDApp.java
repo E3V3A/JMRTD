@@ -334,8 +334,11 @@ public class JMRTDApp {
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
 		try {
+			System.out.println("DEBUG: creating passport object from service");
 			Passport passport = new Passport(service, trustManager, bacStore, 1);
+			System.out.println("DEBUG: creating document frame");
 			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
+			System.out.println("DEBUG: pack & setVisible(true) on document frame");		
 			passportFrame.pack();
 			passportFrame.setVisible(true);
 		} catch (BACDeniedException bde) {

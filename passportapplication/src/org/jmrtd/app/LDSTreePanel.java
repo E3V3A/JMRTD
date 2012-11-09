@@ -145,7 +145,12 @@ public class LDSTreePanel extends JPanel {
 	private LDSTreeNode buildTree(short fid, InputStream inputStream) {
 		switch (fid) {
 		case PassportService.EF_CVCA:
-			return buildTreeFromCVCAFile(new CVCAFile(inputStream));
+			try {
+				return buildTreeFromCVCAFile(new CVCAFile(inputStream));
+			} catch (Exception e) {
+				e.printStackTrace();
+				return new LDSTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
+			}
 		case PassportService.EF_COM:
 			try {
 				return buildTreeFromCOMFile(new COMFile(inputStream));
@@ -532,7 +537,7 @@ public class LDSTreePanel extends JPanel {
 
 		return node;
 	}
-	
+
 
 	private MutableTreeNode buildTreeFromCertificate(Certificate certificate, String nodeName) {
 		DefaultMutableTreeNode node = new DefaultMutableTreeNode(nodeName);
@@ -648,23 +653,23 @@ public class LDSTreePanel extends JPanel {
 			}
 		}
 	}
-	
+
 	private class LDSTreeNode extends DefaultMutableTreeNode {
-		
+
 		private LDSElement ldsInfo;
-		
+
 		public LDSTreeNode(Object userObject) {
 			super(userObject);
 			if (userObject instanceof LDSElement) {
 				this.ldsInfo = (LDSElement)userObject;
 			}
 		}
-		
+
 		public LDSTreeNode(Object userObject, LDSElement ldsInfo) {
 			super(userObject);
 			this.ldsInfo = ldsInfo;
 		}
-		
+
 		public LDSElement getLDSInfo() {
 			return ldsInfo;
 		}
