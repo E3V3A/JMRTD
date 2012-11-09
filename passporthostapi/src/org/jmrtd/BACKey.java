@@ -49,6 +49,12 @@ public class BACKey implements BACKeySpec {
 		if (documentNumber == null) {
 			throw new IllegalArgumentException("Illegal document number");
 		}
+		if (dateOfBirth == null || dateOfBirth.length() != 6) {
+			throw new IllegalArgumentException("Illegal date: " + dateOfBirth);
+		}
+		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
+			throw new IllegalArgumentException("Illegal date: " + dateOfExpiry);
+		}
 		while (documentNumber.length() < 9) { documentNumber += "<"; }
 		this.documentNumber = documentNumber.trim();
 		this.dateOfBirth = dateOfBirth;
@@ -72,6 +78,8 @@ public class BACKey implements BACKeySpec {
 	}
 
 	public String toString() {
+		assert(dateOfBirth != null && dateOfBirth.length() == 6);
+		assert(dateOfExpiry != null && dateOfExpiry.length() == 6);
 		return documentNumber + ", " + dateOfBirth + ", " + dateOfExpiry;
 	}
 

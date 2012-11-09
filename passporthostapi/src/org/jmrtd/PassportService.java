@@ -61,6 +61,7 @@ import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERInteger;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.MRZInfo;
@@ -710,7 +711,7 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	/* ONLY PACKAGE VISIBLE METHODS BELOW */
-	
+
 	synchronized InputStreamBuffer getInputStreamBuffer(short fid) throws CardServiceException {
 		InputStreamBuffer fetcher = fetchers.get(fid);
 		if (fetcher != null) {
@@ -724,7 +725,7 @@ public class PassportService extends PassportApduService implements Serializable
 			return fetcher;
 		}
 	}
-	
+
 	/* ONLY PRIVATE METHODS BELOW */
 
 	/**

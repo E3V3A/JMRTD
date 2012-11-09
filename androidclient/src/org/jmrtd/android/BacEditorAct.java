@@ -27,6 +27,7 @@ package org.jmrtd.android;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 import org.jmrtd.BACKeySpec;
@@ -61,15 +62,14 @@ public class BacEditorAct extends Activity {
 	private static final int DIALOG_ID_DOB = 0;
 	private static final int DIALOG_ID_DOE = 1;
 
-	
 	private EditText docNumW;
 	private Button selectDobW;
 	private Button selectDoeW;
 	private Button okButton;
 	private Button cancelButton;
 
-	private Date dob;
-	private Date doe;
+	private Calendar dob;
+	private Calendar doe;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -83,32 +83,38 @@ public class BacEditorAct extends Activity {
 	private void resolveIntent(Intent intent) {
 		if (intent.getExtras() != null) {
 			BACKeySpec bacKeySpec = intent.getExtras().getParcelable(EDIT_BAC);
+			if (dob == null) { dob = Calendar.getInstance(); }
+			if (doe == null) { doe = Calendar.getInstance(); }
 			if (bacKeySpec == null) { System.err.println("DEBUG: bacKeySpec == null"); }
 			if (bacKeySpec != null) {
 				docNumW.setText(bacKeySpec.getDocumentNumber());
 				try {
-					dob = SDF.parse(bacKeySpec.getDateOfBirth());
-					doe = SDF.parse(bacKeySpec.getDateOfExpiry());
+					dob.setTime(SDF.parse(bacKeySpec.getDateOfBirth()));
+					doe.setTime(SDF.parse(bacKeySpec.getDateOfExpiry()));
 				} catch (ParseException e) {
 					e.printStackTrace();
 				}
 				updateDisplay();
 			}
 		}
-		if (dob == null) { dob = new Date(); }
-		if (doe == null) { doe = new Date(); }
 	}
 
 	private void updateDisplay() {
 		String dobLabel = getResources().getString(R.string.selectDOB);
-		if (dob != null)
-			dobLabel += " " + SDF.format(dob);
-
+		if (dob != null) {
+			dobLabel += " " + SDF.format(dob.getTime());
+		}
+		
+//		System.err.println("DEBUG: ---> dob.getTime() = " + dob == null ? " null" : dob.getTime());
+//		System.err.println("DEBUG: ---> dobLabel = " + dobLabel);
 		selectDobW.setText(dobLabel);
 
 		String doeLabel = getResources().getString(R.string.selectDOE);
-		if (doe != null)
-			doeLabel += " " + SDF.format(doe);
+		if (doe != null) {
+			doeLabel += " " + SDF.format(doe.getTime());
+		}
+//		System.err.println("DEBUG: ---> doe.getTime() = " + doe == null ? "null" : doe.getTime());
+//		System.err.println("DEBUG: ---> doeLabel = " + doeLabel);
 
 		selectDoeW.setText(doeLabel);
 	}
@@ -136,10 +142,10 @@ public class BacEditorAct extends Activity {
 		});
 		okButton.setOnClickListener(new OnClickListener() {
 			public void onClick(View view) {
-				BACKeySpec bacEntry = new BACSpecDO(docNumW.getText().toString(), dob, doe);
+				BACKeySpec bacEntry = new BACSpecDO(docNumW.getText().toString(), dob.getTime(), doe.getTime());
 				BACSpecDOStore bacStore = new BACSpecDOStore(thisActivity);
 				try { bacStore.addEntry(bacEntry); } finally { bacStore.close(); }
-				BACSpecDO b = new BACSpecDO( docNumW.getText().toString(), dob, doe);
+				BACSpecDO b = new BACSpecDO( docNumW.getText().toString(), dob.getTime(), doe.getTime());
                 Intent i = new Intent().putExtra(EDIT_BAC, (Parcelable)b);
                 setResult(RESULT_OK, i);
                 bacStore.close(); /* DEBUG: untested */
@@ -159,31 +165,32 @@ public class BacEditorAct extends Activity {
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
 		case DIALOG_ID_DOB:
+			if (dob == null) { dob = Calendar.getInstance(); }
 			return createDatePickerDialog(dob);
 		case DIALOG_ID_DOE:
+			if (doe == null) { doe = Calendar.getInstance(); }
 			return createDatePickerDialog(doe);
 		}
 		return null;
 	}
 
-	private Dialog createDatePickerDialog(Date d) {
-		return new DatePickerDialog(this, new OnDateSetListener(d),
-				d.getYear() + 1900, d.getMonth(), d.getDate());
+	private Dialog createDatePickerDialog(Calendar cal) {
+		return new DatePickerDialog(this, new OnDateSetListener(cal),
+				cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DATE));
 	}
 
 	private class OnDateSetListener implements DatePickerDialog.OnDateSetListener {
 
-		private Date subject;
+		private Calendar cal;
 
-		public OnDateSetListener(Date subject) {
-			this.subject = subject;
+		public OnDateSetListener(Calendar cal) {
+			this.cal = cal;
 		}
 
-		public void onDateSet(DatePicker view, int year, int monthOfYear,
-				int dayOfMonth) {
-			subject.setYear(year);
-			subject.setMonth(monthOfYear);
-			subject.setDate(dayOfMonth);
+		public void onDateSet(DatePicker view, int year, int month, int date) {
+			cal.set(Calendar.YEAR, year);
+			cal.set(Calendar.MONTH, month);
+			cal.set(Calendar.DATE, date);
 			updateDisplay();
 		}
 	}

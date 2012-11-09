@@ -45,17 +45,21 @@ public class BACSpecDO extends BACKey implements Parcelable {
 	private static final long serialVersionUID = -3362366262542327922L;
 
 	public BACSpecDO(String documentNumber, String dateOfBirth, String dateOfExpiry) {
-		super(documentNumber, dateOfBirth, dateOfExpiry);
+		super(checkDocumentNumber(documentNumber), checkDateString(dateOfBirth), checkDateString(dateOfExpiry));
 	}
-
+	
 	public BACSpecDO(String documentNumber, Date dateOfBirth, Date dateOfExpiry) {
 		super(documentNumber, dateOfBirth, dateOfExpiry);
 	}
 
 	private BACSpecDO(Parcel in) {
-		setDocumentNumber(in.readString());
-		setDateOfBirth(in.readString());
-		setDateOfExpiry(in.readString());
+		String documentNumber = in.readString();
+		String dateOfBirth = in.readString();
+		String dateOfExpiry = in.readString();
+
+		setDocumentNumber(documentNumber);
+		setDateOfBirth(checkDateString(dateOfBirth));
+		setDateOfExpiry(checkDateString(dateOfExpiry));
 	}
 	
 	public int describeContents() {
@@ -63,13 +67,18 @@ public class BACSpecDO extends BACKey implements Parcelable {
 	}
 
 	public void writeToParcel(Parcel out, int flags) {
-		out.writeString(getDocumentNumber());
-		out.writeString(getDateOfBirth());
-		out.writeString(getDateOfExpiry());
+		String documentNumber = getDocumentNumber();
+		assert(documentNumber != null);
+		String dateOfBirth = getDateOfBirth();
+		assert(dateOfBirth != null && dateOfBirth.length() == 6);
+		String dateOfExpiry = getDateOfExpiry();
+		assert(dateOfExpiry != null && dateOfExpiry.length() == 6);		
+		out.writeString(documentNumber);
+		out.writeString(dateOfBirth);
+		out.writeString(dateOfExpiry);
 	}
 
-	public static final Parcelable.Creator<BACSpecDO> CREATOR
-	= new Parcelable.Creator<BACSpecDO>() {
+	public static final Parcelable.Creator<BACSpecDO> CREATOR = new Parcelable.Creator<BACSpecDO>() {
 		public BACSpecDO createFromParcel(Parcel in) {
 			return new BACSpecDO(in);
 		}
@@ -77,5 +86,16 @@ public class BACSpecDO extends BACKey implements Parcelable {
 		public BACSpecDO[] newArray(int size) {
 			return new BACSpecDO[size];
 		}
-	};	
+	};
+	
+	private static String checkDateString(String dateString) {
+		/* NOTE: workaround to fix parcel readString/writeString leaving out the leading '0' */
+		if (dateString == null || dateString.length() < 5 || dateString.length() > 6) { throw new IllegalArgumentException("Illegal date " + dateString); }
+		return dateString.length() == 5 ? "0" + dateString : dateString;
+	}
+	
+	private static String checkDocumentNumber(String documentNumber) {
+		if (documentNumber == null) { throw new IllegalArgumentException("Illegal documentNumber " + documentNumber); }
+		return documentNumber;
+	}
 }
