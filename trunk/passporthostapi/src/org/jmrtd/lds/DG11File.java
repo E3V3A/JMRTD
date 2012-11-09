@@ -70,6 +70,7 @@ public class DG11File extends DataGroup {
 
 	public static final int TAG_LIST_TAG = 0x5C,
 	FULL_NAME_TAG = 0x5F0E,
+	OTHER_NAME = 0x5F0F,
 	PERSONAL_NUMBER_TAG = 0x5F10,
 	FULL_DATE_OF_BIRTH_TAG = 0x5F2B, // In 'CCYYMMDD' format.
 	PLACE_OF_BIRTH_TAG = 0x5F11, // Fields separated by '<'
@@ -99,6 +100,7 @@ public class DG11File extends DataGroup {
 	private byte[] proofOfCitizenship;
 	private List<String> otherValidTDNumbers;
 	private String custodyInformation;
+	private byte[] otherName;
 
 	private List<Integer> tagPresenceList;
 
@@ -178,6 +180,7 @@ public class DG11File extends DataGroup {
 		byte[] value = tlvIn.readValue();
 		switch (tag) {
 		case FULL_NAME_TAG: parseFullName(new String(value, "UTF-8")); break;
+		case OTHER_NAME: otherName = value; // FIXME: do something with this value
 		case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
 		case FULL_DATE_OF_BIRTH_TAG:
 			if (value.length == 8) {
