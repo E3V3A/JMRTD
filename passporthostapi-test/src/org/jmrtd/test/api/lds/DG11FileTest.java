@@ -25,6 +25,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -42,7 +43,7 @@ public class DG11FileTest extends TestCase {
 
 	public void testToString() {
 		DG11File dg11File = createTestObject();
-		String expectedResult = "DG11File [, [], , 19711019, [], [], , , , , , [], ]";
+		String expectedResult = "DG11File [, [], [], , 19711019, [], [], , , , , , [], ]";
 		assertEquals(dg11File.toString(), expectedResult);
 	}
 
@@ -164,10 +165,51 @@ public class DG11FileTest extends TestCase {
 			fail(e.toString());
 		}
 	}
+	
+	public void testComplex() {
+		try {
+		DG11File dg11 = createComplexTestObject();
+		byte[] encoded = dg11.getEncoded();
+//		System.out.println("DEBUG: encoded = \n" + Hex.bytesToPrettyString(encoded));
+		DG11File copy = new DG11File(new ByteArrayInputStream(encoded));
+		byte[] copyEncoded = copy.getEncoded();
+//		System.out.println("DEBUG: copy encoded = \n" + Hex.bytesToPrettyString(copy.getEncoded()));
+		assert(Arrays.equals(encoded, copyEncoded));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
 
+	public static DG11File createComplexTestObject() {
+		String fullNamePrimaryIdentifier = "TEST";
+		List<String> fullNamesecondaryIdentifiers = Arrays.asList(new String[] { "FIRST", "SECOND" });
+		List<String> otherNames = Arrays.asList(new String[] { "FIRST OTHER", "SECOND OTHER", "THIRD OTHER" });
+		String personalNumber = "123456789";
+		Calendar cal = Calendar.getInstance();
+		cal.set(1971, 10 - 1, 19);
+		Date fullDateOfBirth = cal.getTime();
+		List<String> placeOfBirth = new ArrayList<String>();
+		List<String> permanentAddress = new ArrayList<String>();
+		String telephone = "";
+		String profession = "";
+		String title = "";
+		String personalSummary = "";
+		byte[] proofOfCitizenship = null;
+		List<String> otherValidTDNumbers = new ArrayList<String>();
+		String custodyInformation = "";
+		return new DG11File(fullNamePrimaryIdentifier,
+				fullNamesecondaryIdentifiers, otherNames, personalNumber,
+				fullDateOfBirth, placeOfBirth,  permanentAddress,
+				telephone, profession, title,
+				personalSummary, proofOfCitizenship,
+				otherValidTDNumbers, custodyInformation);
+	}
+	
 	public static DG11File createTestObject() {
 		String fullNamePrimaryIdentifier = "";
 		List<String> fullNamesecondaryIdentifiers = new ArrayList<String>();
+		List<String> otherNames = new ArrayList<String>();
 		String personalNumber = "";
 		Calendar cal = Calendar.getInstance();
 		cal.set(1971, 10 - 1, 19);
@@ -182,7 +224,7 @@ public class DG11FileTest extends TestCase {
 		List<String> otherValidTDNumbers = new ArrayList<String>();
 		String custodyInformation = "";
 		return new DG11File(fullNamePrimaryIdentifier,
-				fullNamesecondaryIdentifiers,  personalNumber,
+				fullNamesecondaryIdentifiers, otherNames, personalNumber,
 				fullDateOfBirth, placeOfBirth,  permanentAddress,
 				telephone, profession, title,
 				personalSummary, proofOfCitizenship,
