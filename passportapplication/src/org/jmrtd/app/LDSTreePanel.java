@@ -28,6 +28,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.math.BigInteger;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -419,14 +420,14 @@ public class LDSTreePanel extends JPanel {
 		}
 		DefaultMutableTreeNode caNode = new DefaultMutableTreeNode("CA");
 		node.add(caNode);
-		Map<Integer, String> caInfos = dg14.getChipAuthenticationInfos();
-		for (Map.Entry<Integer, String> entry: caInfos.entrySet()) {
+		Map<BigInteger, String> caInfos = dg14.getChipAuthenticationInfos();
+		for (Map.Entry<BigInteger, String> entry: caInfos.entrySet()) {
 			caNode.add(new DefaultMutableTreeNode(entry.getKey() + ": " + entry.getValue()));
 		}
 		DefaultMutableTreeNode caPubKeyNode = new DefaultMutableTreeNode("CA Public Keys");
 		node.add(caPubKeyNode);
-		Map<Integer, PublicKey> caPubKeyInfos = dg14.getChipAuthenticationPublicKeyInfos();
-		for (Map.Entry<Integer, PublicKey> entry: caPubKeyInfos.entrySet()) {
+		Map<BigInteger, PublicKey> caPubKeyInfos = dg14.getChipAuthenticationPublicKeyInfos();
+		for (Map.Entry<BigInteger, PublicKey> entry: caPubKeyInfos.entrySet()) {
 			DefaultMutableTreeNode entryNode = new DefaultMutableTreeNode(entry.getKey());
 			entryNode.add(buildTreeFromPublicKey(entry.getValue()));
 			caPubKeyNode.add(entryNode);

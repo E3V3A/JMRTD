@@ -604,11 +604,11 @@ public class Passport {
 	 * @return the total number of bytes in the document
 	 */
 	public int getTotalLength() {
-		int result = 0;
+		int length = 0;
 		for (InputStreamBuffer fetcher: fetchers.values()) {
-			result += fetcher.getLength();
+			length += fetcher.getLength();
 		}
-		return result;
+		return length;
 	}
 
 	/**
@@ -618,10 +618,8 @@ public class Passport {
 	 */
 	public int getBytesRead() {
 		int position = 0;
-		//		int length = 0;
 		for (InputStreamBuffer fetcher: fetchers.values()) {
 			position += fetcher.getPosition();
-			//			length += fetcher.getLength();
 		}
 		return position;
 	}
@@ -764,8 +762,9 @@ public class Passport {
 		boolean isDG14Present = false;
 		for (int tag: comTagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
 		if (isDG14Present) {
-			InputStream dg14In = service.getInputStream(PassportService.EF_DG14);
-			dg14File = new DG14File(dg14In);
+
+			fetchers.put(PassportService.EF_DG14, service.getInputStreamBuffer(PassportService.EF_DG14));
+			dg14File = new DG14File(getInputStream(PassportService.EF_DG14));
 
 			/* Now try to deal with EF.CVCA */
 			List<Integer> cvcafids = dg14File.getCVCAFileIds();
@@ -773,13 +772,18 @@ public class Passport {
 				if (cvcafids.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
 				cvcaFID = cvcafids.get(0).shortValue();
 			}
-			InputStream cvcaIn = service.getInputStream(cvcaFID);
-			cvcaFile = new CVCAFile(cvcaIn);
+
+			fetchers.put(cvcaFID, service.getInputStreamBuffer(cvcaFID));
+			cvcaFile = new CVCAFile(getInputStream(cvcaFID));
 
 			/* Try to do EAC. */
 			for (KeyStore cvcaStore: trustManager.getCVCAStores()) {
-				// FIXME: Try with all cvcaStores?
-				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
+				try {
+					doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
+				} catch (Exception e) {
+					LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
+					e.printStackTrace();
+				}
 			}
 		}
 
@@ -799,6 +803,7 @@ public class Passport {
 						continue;
 					}
 					fetchers.put(fid, service.getInputStreamBuffer(fid));
+					lds.add(getInputStream(fid));
 				} catch(CardServiceException ex) {
 					/* NOTE: Most likely EAC protected file. */
 					LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
@@ -812,7 +817,9 @@ public class Passport {
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
-		Map<Integer, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
+		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
+		boolean isKeyFound = false;
+		boolean isSucceeded = false;
 		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
 			if (caRef == null) { continue; }
 			try {
@@ -829,11 +836,13 @@ public class Passport {
 					if (privateKey == null) { continue; }
 					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(certPath.length);
 					for (Certificate c: certPath) { terminalCerts.add((CardVerifiableCertificate)c); }
-					for (Map.Entry<Integer, PublicKey> entry: cardKeys.entrySet()) {
-						int i = entry.getKey();
+					for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
+						BigInteger keyId = entry.getKey();
 						PublicKey publicKey = entry.getValue();
 						try {
-							service.doEAC(i, publicKey, caRef, terminalCerts, privateKey, documentNumber);
+							isKeyFound = true;
+							service.doEAC(keyId, publicKey, caRef, terminalCerts, privateKey, documentNumber);
+							isSucceeded = true;
 							verificationStatus.setEAC(Verdict.SUCCEEDED);
 							break;
 						} catch(CardServiceException cse) {
@@ -845,6 +854,12 @@ public class Passport {
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
+		}
+		if (!isKeyFound) {
+			throw new CardServiceException("EAC not performed. No key found.");
+		}
+		if (!isSucceeded) {
+			throw new CardServiceException("EAC failed");
 		}
 	}
 

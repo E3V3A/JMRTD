@@ -23,10 +23,13 @@
 package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -55,6 +58,7 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -350,7 +354,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @throws CardServiceException
 	 *             if CA failed or some error occurred
 	 */
-	public synchronized KeyPair doCA(int keyId, PublicKey publicKey) throws CardServiceException {
+	public synchronized KeyPair doCA(BigInteger keyId, PublicKey publicKey) throws CardServiceException {
 		if (publicKey == null) { throw new IllegalArgumentException("Public key is null"); }
 		try {
 			String algName = (publicKey instanceof ECPublicKey) ? "ECDH" : "DH";
@@ -394,7 +398,7 @@ public class PassportService extends PassportApduService implements Serializable
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
 			}
 			keyData = wrapDO((byte) 0x91, keyData);
-			if (keyId != -1) {
+			if (keyId.compareTo(BigInteger.ZERO) >= 0) {
 				// TODO: what this key id format should exactly be?
 				//				String kId = Hex.intToHexString(keyId);
 				//				while (kId.startsWith("00")) {
@@ -402,7 +406,12 @@ public class PassportService extends PassportApduService implements Serializable
 				//				}
 				try {
 					byte[] keyIdBytes = new ASN1Integer(keyId).getEncoded();
-					idData = wrapDO((byte) 0x84, keyIdBytes);
+					int indexOfFirstNonZeroByte = 0;
+					for (;  indexOfFirstNonZeroByte < keyIdBytes.length && keyIdBytes[indexOfFirstNonZeroByte] == 0; indexOfFirstNonZeroByte++) { }
+					byte[] keyIdBytesWithoutLeadingZeroes = new byte[keyIdBytes.length - indexOfFirstNonZeroByte];
+					System.arraycopy(keyIdBytes, indexOfFirstNonZeroByte, keyIdBytesWithoutLeadingZeroes, 0, keyIdBytesWithoutLeadingZeroes.length);
+					System.out.println("DEBUG: keyIdBytesWithoutLeadingZeroes = " + Hex.bytesToHexString(keyIdBytesWithoutLeadingZeroes));
+					idData = wrapDO((byte) 0x84, keyIdBytesWithoutLeadingZeroes);
 				} catch (IOException ioe) {
 					throw new CardServiceException("Could not encode keyId = " + keyId);
 				}
@@ -529,7 +538,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @throws CardServiceException
 	 *             on error
 	 */
-	public synchronized void doEAC(int keyId, PublicKey key,
+	public synchronized void doEAC(BigInteger keyId, PublicKey key,
 			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
 			PrivateKey terminalKey, String documentNumber)
 					throws CardServiceException {
@@ -763,6 +772,22 @@ public class PassportService extends PassportApduService implements Serializable
 	private void notifyAAPerformed(AAEvent event) {
 		for (AuthListener l : authListeners) {
 			l.performedAA(event);
+		}
+	}
+
+	public static void main(String[] arg) {
+		try {
+			byte[] bytes = { 0x41, 0x6C, 0x67, 0x65, 0x72, 0x69, 0x61, 0x43, 0x41, 0x4B, 0x65, 0x79, 0x4E, 0x61, 0x6D, 0x65 };
+			FileOutputStream out = new FileOutputStream("c:/bb.bin");
+			DataOutputStream dataOut = new DataOutputStream(out);
+			dataOut.write(bytes);
+			out.flush();
+			dataOut.close();
+			out.close();
+
+			BigInteger b = new BigInteger("1315007845");
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 }

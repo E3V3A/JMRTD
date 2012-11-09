@@ -22,6 +22,7 @@
 
 package org.jmrtd;
 
+import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -45,7 +46,7 @@ public class EACEvent extends EventObject {
 	private static final long serialVersionUID = 6992383777555486463L;
 
 	private PassportService service;
-	private int keyId;
+	private BigInteger keyId;
 	private PublicKey cardKey;
 	private KeyPair keyPair;
 	private CVCPrincipal caReference;
@@ -65,7 +66,7 @@ public class EACEvent extends EventObject {
 	 * @param success
 	 *            status of protocol
 	 */
-	public EACEvent(PassportService service, int keyId, PublicKey cardKey,
+	public EACEvent(PassportService service, BigInteger keyId, PublicKey cardKey,
 			KeyPair keyPair, CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String documentNumber, byte[] cardChallenge, boolean success) {
@@ -172,7 +173,7 @@ public class EACEvent extends EventObject {
 	 * 
 	 * @return the card's public key ID
 	 */
-	public int getCardPublicKeyId() {
+	public BigInteger getCardPublicKeyId() {
 		return keyId;
 	}
 

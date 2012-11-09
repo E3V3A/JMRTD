@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -142,13 +143,13 @@ public class DG14File extends DataGroup {
 	 * 
 	 * @return the mapping of key identifiers to EAC protocol identifiers
 	 */
-	public Map<Integer, String> getChipAuthenticationInfos() {
-		Map<Integer, String> map = new TreeMap<Integer, String>();
+	public Map<BigInteger, String> getChipAuthenticationInfos() {
+		Map<BigInteger, String> map = new TreeMap<BigInteger, String>();
 		for (SecurityInfo securityInfo : securityInfos) {
 			if (securityInfo instanceof ChipAuthenticationInfo) {
 				ChipAuthenticationInfo chipAuthNInfo = (ChipAuthenticationInfo)securityInfo;
 				map.put(chipAuthNInfo.getKeyId(), chipAuthNInfo.getObjectIdentifier());
-				if (chipAuthNInfo.getKeyId() == -1) {
+				if (chipAuthNInfo.getKeyId().compareTo(BigInteger.ZERO) < 0) {
 					return map;
 				}
 			}
@@ -162,8 +163,8 @@ public class DG14File extends DataGroup {
 	 * 
 	 * @return the mapping of key identifiers to public keys
 	 */
-	public Map<Integer, PublicKey> getChipAuthenticationPublicKeyInfos() {
-		Map<Integer, PublicKey> publicKeys = new TreeMap<Integer, PublicKey>();
+	public Map<BigInteger, PublicKey> getChipAuthenticationPublicKeyInfos() {
+		Map<BigInteger, PublicKey> publicKeys = new TreeMap<BigInteger, PublicKey>();
 		boolean foundOne = false;
 		for (SecurityInfo securityInfo: securityInfos) {
 			if (securityInfo instanceof ChipAuthenticationPublicKeyInfo) {
