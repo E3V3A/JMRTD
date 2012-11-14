@@ -26,8 +26,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-
 import org.jmrtd.PassportService;
 
 /**
@@ -48,38 +46,35 @@ public class LDSFileUtil {
 	 * 
 	 * @throws IOException on reading error from the input stream
 	 */
-	public static AbstractLDSFile getLDSFile(InputStream inputStream) throws IOException {
-		BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 40);
-		bufferedIn.mark(39);
-		TLVInputStream tlvIn = new TLVInputStream(bufferedIn);
-		int tag = tlvIn.readTag();
-		bufferedIn.reset();
-		switch (tag) {
-		case LDSFile.EF_COM_TAG: return new COMFile(bufferedIn);
-		case LDSFile.EF_DG1_TAG: return new DG1File(bufferedIn);
-		case LDSFile.EF_DG2_TAG: return new DG2File(bufferedIn);
-		case LDSFile.EF_DG3_TAG: return new DG3File(bufferedIn);
-		case LDSFile.EF_DG4_TAG: return new DG4File(bufferedIn);
-		case LDSFile.EF_DG5_TAG: return new DG5File(bufferedIn);
-		case LDSFile.EF_DG6_TAG: return new DG6File(bufferedIn);
-		case LDSFile.EF_DG7_TAG: return new DG7File(bufferedIn);
-		case LDSFile.EF_DG8_TAG: throw new IllegalArgumentException("DG8 files are not yet supported");
-		case LDSFile.EF_DG9_TAG: throw new IllegalArgumentException("DG9 files are not yet supported");
-		case LDSFile.EF_DG10_TAG: throw new IllegalArgumentException("DG10 files are not yet supported");
-		case LDSFile.EF_DG11_TAG: return new DG11File(bufferedIn);
-		case LDSFile.EF_DG12_TAG: return new DG12File(bufferedIn);
-		case LDSFile.EF_DG13_TAG: throw new IllegalArgumentException("DG13 files are not yet supported");
-		case LDSFile.EF_DG14_TAG: return new DG14File(bufferedIn);
-		case LDSFile.EF_DG15_TAG: return new DG15File(bufferedIn);
-		case LDSFile.EF_DG16_TAG: throw new IllegalArgumentException("DG16 files are not yet supported");
-		case LDSFile.EF_SOD_TAG: return new SODFile(bufferedIn);
+	public static AbstractLDSFile getLDSFile(short fid, InputStream inputStream) throws IOException {
+		switch (fid) {
+		case PassportService.EF_COM: return new COMFile(inputStream);
+		case PassportService.EF_DG1: return new DG1File(inputStream);
+		case PassportService.EF_DG2: return new DG2File(inputStream);
+		case PassportService.EF_DG3: return new DG3File(inputStream);
+		case PassportService.EF_DG4: return new DG4File(inputStream);
+		case PassportService.EF_DG5: return new DG5File(inputStream);
+		case PassportService.EF_DG6: return new DG6File(inputStream);
+		case PassportService.EF_DG7: return new DG7File(inputStream);
+		case PassportService.EF_DG8: throw new IllegalArgumentException("DG8 files are not yet supported");
+		case PassportService.EF_DG9: throw new IllegalArgumentException("DG9 files are not yet supported");
+		case PassportService.EF_DG10: throw new IllegalArgumentException("DG10 files are not yet supported");
+		case PassportService.EF_DG11: return new DG11File(inputStream);
+		case PassportService.EF_DG12: return new DG12File(inputStream);
+		case PassportService.EF_DG13: throw new IllegalArgumentException("DG13 files are not yet supported");
+		case PassportService.EF_DG14: return new DG14File(inputStream);
+		case PassportService.EF_DG15: return new DG15File(inputStream);
+		case PassportService.EF_DG16: throw new IllegalArgumentException("DG16 files are not yet supported");
+		case PassportService.EF_SOD: return new SODFile(inputStream);
 		default:
+			BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 37);
 			try {
+				bufferedIn.mark(37);
 				/* Just try, will read 36 bytes at most, and we can reset bufferedIn. */
-				return new CVCAFile(bufferedIn);
+				return new CVCAFile(fid, bufferedIn);
 			} catch (Exception e) {
 				bufferedIn.reset();
-				throw new NumberFormatException("Unknown tag " + Integer.toHexString(tag));   
+				throw new NumberFormatException("Unknown file " + Integer.toHexString(fid));   
 			}
 		}
 	}

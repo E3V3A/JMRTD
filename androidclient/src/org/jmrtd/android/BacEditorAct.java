@@ -28,7 +28,6 @@ package org.jmrtd.android;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Date;
 
 import org.jmrtd.BACKeySpec;
 

@@ -48,7 +48,6 @@ import javax.swing.tree.MutableTreeNode;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
 import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.cbeff.BiometricDataBlock;
@@ -78,6 +77,7 @@ import org.jmrtd.lds.ImageInfo;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
+import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSElement;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
@@ -110,9 +110,9 @@ public class LDSTreePanel extends JPanel {
 	 * 
 	 * @param document the document
 	 */
-	public LDSTreePanel(Passport document) {
+	public LDSTreePanel(LDS lds) {
 		setLayout(new BorderLayout());
-		setDocument(document);
+		setDocument(lds);
 	}
 
 	/**
@@ -129,10 +129,11 @@ public class LDSTreePanel extends JPanel {
 
 	/* ONLY PRIVATE METHODS BELOW */
 
-	private void setDocument(Passport document) {
+	private void setDocument(LDS lds) {
 		try {
+			System.out.println("DEBUG: setDocument(" + lds + ")");
 			if (getComponentCount() > 0) { removeAll(); }
-			treeModel = new LDSTreeModel(document);
+			treeModel = new LDSTreeModel(lds);
 			add(new JScrollPane(new JTree(treeModel)));
 			revalidate();
 			repaint();
@@ -182,7 +183,7 @@ public class LDSTreePanel extends JPanel {
 		case PassportService.EF_DG15:
 		case PassportService.EF_DG16:
 			try {
-				return buildTreeFromDataGroup((DataGroup)LDSFileUtil.getLDSFile(inputStream));
+				return buildTreeFromDataGroup((DataGroup)LDSFileUtil.getLDSFile(fid, inputStream));
 			} catch (Exception e) {
 				e.printStackTrace();
 				return new LDSTreeNode("File " + Integer.toHexString(fid) + " throws " + e.getMessage());
@@ -419,7 +420,7 @@ public class LDSTreePanel extends JPanel {
 		LDSTreeNode node = new LDSTreeNode("DG14", dg14);
 		DefaultMutableTreeNode cvcaFileIdsNode = new DefaultMutableTreeNode("TA");
 		node.add(cvcaFileIdsNode);
-		List<Integer> cvcaFileIds = dg14.getCVCAFileIds();
+		List<Short> cvcaFileIds = dg14.getCVCAFileIds();
 		for (int fileId: cvcaFileIds) {
 			cvcaFileIdsNode.add(new DefaultMutableTreeNode("CVCA File Id: " + fileId + ", as short file Id: " + dg14.getCVCAShortFileId(fileId)));
 		}
@@ -602,21 +603,21 @@ public class LDSTreePanel extends JPanel {
 
 		private static final long serialVersionUID = 3694551659268775436L;
 
-		private Passport passport;
+		private LDS lds;
 
-		public LDSTreeModel(Passport passport) {
-			super(new DefaultMutableTreeNode("MRTD"));
-			this.passport = passport;
+		public LDSTreeModel(LDS lds) {
+			super(new DefaultMutableTreeNode("LDS"));
+			this.lds = lds;
 		}
 
 		@Override
 		public Object getChild(Object parent, int index) {
 			if (getRoot().equals(parent)) {
-				List<Short> files = passport.getFileList();
+				List<Short> files = lds.getFileList();
 				Short fid = files.get(index);
 				if (fid == null) { LOGGER.severe("Unexpected null fid in passport file list at index " + index); return null; }
 				try {
-					InputStream inputStream = passport.getInputStream(fid);
+					InputStream inputStream = lds.getInputStream(fid);
 					return buildTree(fid, inputStream);
 				} catch (Exception cse) {
 					cse.printStackTrace();
@@ -635,7 +636,7 @@ public class LDSTreePanel extends JPanel {
 		@Override
 		public int getChildCount(Object parent) {
 			if (getRoot().equals(parent)) {
-				List<Short> files = passport.getFileList();
+				List<Short> files = lds.getFileList();
 				return files.size();
 			} else {
 				return super.getChildCount(parent);

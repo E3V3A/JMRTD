@@ -105,13 +105,13 @@ public class DG14File extends DataGroup {
 	 * 
 	 * @return the list of file identifier
 	 */
-	public List<Integer> getCVCAFileIds() {
-		List<Integer> cvcaFiles = new ArrayList<Integer>();
+	public List<Short> getCVCAFileIds() {
+		List<Short> cvcaFiles = new ArrayList<Short>();
 		for (SecurityInfo si : securityInfos) {
 			if (si instanceof TerminalAuthenticationInfo) {
 				int i = ((TerminalAuthenticationInfo) si).getFileId();
 				if (i != -1) {
-					cvcaFiles.add(i);
+					cvcaFiles.add((short)i);
 				}
 			}
 		}

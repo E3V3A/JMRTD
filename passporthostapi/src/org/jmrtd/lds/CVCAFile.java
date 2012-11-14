@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.jmrtd.PassportService;
 import org.jmrtd.cert.CVCPrincipal;
 
 /**
@@ -44,19 +45,30 @@ public class CVCAFile extends AbstractLDSFile {
 	public static final byte CAR_TAG = 0x42;
 	public static final int LENGTH = 36;
 
+	private short fid;
+	
 	private String caReference = null;
 
 	private String altCaReference = null;
 
+	public CVCAFile(InputStream inputStream) throws IOException {
+		this(PassportService.EF_CVCA, inputStream);
+	}
+	
 	/**
 	 * Constructs a new CVCA file from the data contained in <code>in</code>.
 	 * 
-	 * @param in stream with the data to be parsed
+	 * @param inputStream stream with the data to be parsed
 	 */
-	public CVCAFile(InputStream in) throws IOException {
-		readObject(in);
+	public CVCAFile(short fid, InputStream inputStream) throws IOException {
+		this.fid = fid;
+		readObject(inputStream);
 	}
 
+	public CVCAFile(String caReference, String altCaReference) {
+		this(PassportService.EF_CVCA, caReference, altCaReference);
+	}
+	
 	/**
 	 * Constructs a new CVCA file with the given certificate references
 	 * 
@@ -65,11 +77,12 @@ public class CVCAFile extends AbstractLDSFile {
 	 * @param altCaReference
 	 *            second (alternative) CA certificate reference
 	 */
-	public CVCAFile(String caReference, String altCaReference) {
+	public CVCAFile(short fid, String caReference, String altCaReference) {
 		if (caReference == null || caReference.length() > 16
 				|| (altCaReference != null && altCaReference.length() > 16)) {
 			throw new IllegalArgumentException();
 		}
+		this.fid = fid;
 		this.caReference = caReference;
 		this.altCaReference = altCaReference;
 	}
@@ -80,10 +93,13 @@ public class CVCAFile extends AbstractLDSFile {
 	 * @param caReference
 	 *            main CA certificate reference
 	 */
-	public CVCAFile(String caReference) {
-		this(caReference, null);
+	public CVCAFile(short fid, String caReference) {
+		this(fid, caReference, null);
 	}
 
+	public short getFID() {
+		return fid;
+	}
 
 	protected void readObject(InputStream in) throws IOException {
 		DataInputStream dataIn = new DataInputStream(in);

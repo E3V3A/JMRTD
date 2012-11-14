@@ -435,8 +435,6 @@ public class PassportTestService extends PassportService {
 		}
 	}
 
-
-
 	/**
 	 * Try Terminal Authentication, with the currently stored EAC-data, returning true if this
 	 * succeeded. 
@@ -445,7 +443,7 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean doTA() {
 		try {
-			super.doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
+			super.doTA(terminalCertificates, terminalKey, null, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
@@ -464,7 +462,7 @@ public class PassportTestService extends PassportService {
 			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
-			super.doTA(caReference, cs, key, null, documentNumber);
+			super.doTA(cs, key, null, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
@@ -484,7 +482,7 @@ public class PassportTestService extends PassportService {
 			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
-			super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);
+			super.doTA(cs, key, taSigAlg, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
@@ -502,7 +500,7 @@ public class PassportTestService extends PassportService {
 	 *             if useSM is true but there is no SM session active
 	 */
 	public int sendGetChallengeAndStore(boolean useSM) throws CardServiceException {
-		CommandAPDU capdu = createGetChallengeAPDU();
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, 0x00, 0x00, 8);
 		if (useSM) {
 			capdu = getWrapper().wrap(capdu);
 		}

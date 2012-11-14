@@ -9,7 +9,7 @@
         android:id="@+id/ppd_progressW"
         style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="match_parent"
-        android:layout_height="4dp" />
+        android:layout_height="8dp" />
 
     <ImageView
         android:id="@+id/pp_display_iv"
@@ -94,6 +94,21 @@
                 android:text="" />
         </TableRow>
 
+                <TableRow>
+            
+            <!-- TextView
+                android:layout_column="1"
+                android:padding="3dip"
+                android:text="Issuer" />
+
+            <TextView
+                android:id="@+id/ppd_docSigningPrincipalNameW"
+                android:gravity="right"
+                android:padding="3dip"
+                android:text="" / -->
+            
+        </TableRow>
+        
         <View
             android:layout_height="4dip"
             android:background="#FF909090" />
@@ -179,7 +194,7 @@
                 android:padding="3dip"
                 android:text="" />
         </TableRow>
-
+        
         <View
             android:layout_height="4dip"
             android:background="#FF909090" />
