@@ -20,7 +20,7 @@
  * $Id:  $
  */
 
-package org.jmrtd;
+package org.jmrtd.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -43,7 +43,13 @@ class InputStreamBuffer {
 	private InputStream inputStream;
 
 	public InputStreamBuffer(byte[] bytes) {
-		this.buffer = bytes; // FIXME deep copy?
+		if (bytes == null) {
+			this.buffer = null;
+			return;
+		}
+		this.buffer = new byte[bytes.length];
+		System.arraycopy(bytes, 0, buffer, 0, bytes.length);
+		inputStream = new ByteArrayInputStream(buffer);
 		this.fileLength = bytes.length;
 		this.bufferCounter = bytes.length;
 	}
@@ -91,11 +97,11 @@ class InputStreamBuffer {
 		public int getPos() {
 			return streamCounter;
 		}
-		
+
 		public int getLength() {
 			return fileLength;
 		}
-		
+
 		public int read() throws IOException {
 			synchronized(syncObject) {
 				assert(streamCounter <= bufferCounter);

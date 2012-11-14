@@ -27,10 +27,14 @@ package org.jmrtd.android;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
@@ -45,8 +49,10 @@ import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.DataGroup;
 import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceInfo;
+import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.MRZInfo;
+import org.jmrtd.lds.SODFile;
 
 import android.app.Activity;
 import android.app.PendingIntent;
@@ -91,6 +97,7 @@ public class PPDisplayAct extends Activity {
 	private TextView nationalityW;
 	private TextView dobW;
 	private TextView doeW;
+//	private TextView docSigningPrincipalNameW;
 	private ProgressBar progressBar;
 
 	@Override
@@ -147,6 +154,7 @@ public class PPDisplayAct extends Activity {
 		nationalityW = (TextView)findViewById(R.id.ppd_nationalityW);
 		dobW = (TextView)findViewById(R.id.ppd_dateOfBirthW);
 		doeW = (TextView)findViewById(R.id.ppd_dateOfExpiryW);
+//		docSigningPrincipalNameW = (TextView)findViewById(R.id.ppd_docSigningPrincipalNameW);
 		progressBar = (ProgressBar)findViewById(R.id.ppd_progressW);
 	}
 
@@ -255,9 +263,11 @@ public class PPDisplayAct extends Activity {
 		//		}
 		//		progressDialog = new ProgressDialog(this);
 
+		final LDS lds = passport.getLDS();
+
 		isDisplaying = true;
-		progressBar.setMax(passport.getTotalLength()); /* DEBUG */
-		progressBar.setProgress(passport.getBytesRead());
+		progressBar.setProgress(lds.getPosition());
+		progressBar.setMax(lds.getLength()); /* DEBUG */
 
 		//		progressDialog.setMax(passport.getTotalLength());
 		//		progressDialog.setProgress(passport.getBytesRead());
@@ -287,7 +297,7 @@ public class PPDisplayAct extends Activity {
 			public void run() {
 				try {
 					while (isDisplaying) {
-						int progress = passport.getBytesRead();
+						int progress = lds.getPosition();
 						Message message = new Message();
 						message.arg1 = progress;
 						progressHandler.sendMessage(message);
@@ -316,39 +326,39 @@ public class PPDisplayAct extends Activity {
 		protected Integer doInBackground(Passport... params) {
 			try {
 				Passport passport = params[0];
+				LDS lds = passport.getLDS();
 
-				List<Short> fileList = passport.getFileList();
+				publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG1_TAG));
+				DG1File dg1File = lds.getDG1File();
+				publishProgress(new PassportProgress(PassportProgress.FINISHED, dg1File));
+				
+				publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_SOD_TAG));
+				SODFile sodFile = lds.getSODFile();
+				publishProgress(new PassportProgress(PassportProgress.FINISHED, sodFile));
+
+				List<Short> fileList = lds.getFileList();
 				Collections.sort(fileList);
-
+				
 				for (short fid: fileList) {
 					switch(fid) {
 					case PassportService.EF_COM:
-						//						COMFile comFile = new COMFile(passport.getInputStream(fid));
-						break;
+					case PassportService.EF_SOD:
 					case PassportService.EF_DG1:
-						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG1_TAG));
-						DG1File dg1File = new DG1File(passport.getInputStream(fid));
-						publishProgress(new PassportProgress(PassportProgress.FINISHED, dg1File));
+						/* Already displayed! */
 						break;
 					case PassportService.EF_DG2:
 						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG2_TAG));
-						DG2File dg2File = new DG2File(passport.getInputStream(fid));
+						DG2File dg2File = lds.getDG2File();
 						publishProgress(new PassportProgress(PassportProgress.FINISHED, dg2File));
 						break;
 					case PassportService.EF_DG15:
 						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG15_TAG));
-						DG15File dg15File = new DG15File(passport.getInputStream(fid));
+						DG15File dg15File = lds.getDG15File();
 						publishProgress(new PassportProgress(PassportProgress.FINISHED, dg15File));
-						break;
-					case PassportService.EF_SOD:
-						//						SODFile sodFile = new SODFile(passport.getInputStream(fid));
 						break;
 					}
 				}
 				return 0;
-			} catch (CardServiceException cse) {
-				cse.printStackTrace();
-				return null;
 			} catch (Exception e) {
 				System.err.println("DEBUG: EXCEPTION: " + e.getMessage());
 				e.printStackTrace();
@@ -369,8 +379,8 @@ public class PPDisplayAct extends Activity {
 				break;
 			case PassportProgress.FINISHED:
 				LDSFile file = e.getFile();
-				if (file != null && file instanceof DataGroup) {
-					handleDataGroupInterpreted((DataGroup)file);
+				if (file != null) {
+					handleFileInterpreted(file);
 				}
 				break;
 			default:
@@ -385,43 +395,65 @@ public class PPDisplayAct extends Activity {
 		}
 	}
 
-	private void handleDataGroupInterpreted(DataGroup dg) {
-		switch (dg.getTag()) {
-		case LDSFile.EF_DG1_TAG:
-			DG1File dg1 = (DG1File)dg;
-			MRZInfo mrzInfo = dg1.getMRZInfo();
-			documentNumberW.setText(mrzInfo.getDocumentNumber());
-			personalNumberW.setText(mrzInfo.getPersonalNumber());
-			issuingStateW.setText(mrzInfo.getIssuingState());
-			primaryIdentifierW.setText(mrzInfo.getPrimaryIdentifier().replace("<", " ").trim());
-			secondaryIdentifiersW.setText(mrzInfo.getSecondaryIdentifier().replace("<", " ").trim());
-			genderW.setText(mrzInfo.getGender().toString());
-			nationalityW.setText(mrzInfo.getNationality());
-			dobW.setText(mrzInfo.getDateOfBirth());
-			doeW.setText(mrzInfo.getDateOfExpiry());
-			break;
-		case LDSFile.EF_DG2_TAG:
-			DG2File dg2 = (DG2File)dg;
-			List<FaceImageInfo> allFaceImageInfos = new ArrayList<FaceImageInfo>();
-			List<FaceInfo> faceInfos = dg2.getFaceInfos();
-			for (FaceInfo faceInfo : faceInfos) {
-				allFaceImageInfos.addAll(faceInfo.getFaceImageInfos());
+	private void handleFileInterpreted(LDSFile file) {
+		if (file instanceof SODFile) {
+			SODFile sodFile = (SODFile)file;
+			X500Principal principal = sodFile.getIssuerX500Principal();
+			if (principal == null) { return; }
+			String name = principal.getName(X500Principal.RFC1779);
+
+			X509Certificate certificate = null;
+			try {
+				certificate = sodFile.getDocSigningCertificate();
+			} catch (CertificateException ce) {
+				ce.printStackTrace();
 			}
-			if (allFaceImageInfos.size() > 0) {
-				//				if (progressDialog != null && progressDialog.isShowing()) {
-				//					progressDialog.dismiss();
-				//				}
-				//				progressDialog = new ProgressDialog(this);
-				//				progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-				//				progressDialog.setMessage("Decoding image...");
-				//				progressDialog.show();
-				new AsyncImageDecode().execute(allFaceImageInfos.get(0));
-			} else {
-				//				progressDialog.dismiss();
+			
+			/* Check these in logcat, for now :( */
+			System.out.println("DEBUG: issuer = " + name);
+			System.out.println("DEBUG: certificate = " + certificate);
+
+//			docSigningPrincipalNameW.setText(name);
+		}
+		if (file instanceof DataGroup) {
+			DataGroup dg = (DataGroup)file;
+			switch (dg.getTag()) {
+			case LDSFile.EF_DG1_TAG:
+				DG1File dg1 = (DG1File)dg;
+				MRZInfo mrzInfo = dg1.getMRZInfo();
+				documentNumberW.setText(mrzInfo.getDocumentNumber());
+				personalNumberW.setText(mrzInfo.getPersonalNumber());
+				issuingStateW.setText(mrzInfo.getIssuingState());
+				primaryIdentifierW.setText(mrzInfo.getPrimaryIdentifier().replace("<", " ").trim());
+				secondaryIdentifiersW.setText(mrzInfo.getSecondaryIdentifier().replace("<", " ").trim());
+				genderW.setText(mrzInfo.getGender().toString());
+				nationalityW.setText(mrzInfo.getNationality());
+				dobW.setText(mrzInfo.getDateOfBirth());
+				doeW.setText(mrzInfo.getDateOfExpiry());
+				break;
+			case LDSFile.EF_DG2_TAG:
+				DG2File dg2 = (DG2File)dg;
+				List<FaceImageInfo> allFaceImageInfos = new ArrayList<FaceImageInfo>();
+				List<FaceInfo> faceInfos = dg2.getFaceInfos();
+				for (FaceInfo faceInfo : faceInfos) {
+					allFaceImageInfos.addAll(faceInfo.getFaceImageInfos());
+				}
+				if (allFaceImageInfos.size() > 0) {
+					//				if (progressDialog != null && progressDialog.isShowing()) {
+					//					progressDialog.dismiss();
+					//				}
+					//				progressDialog = new ProgressDialog(this);
+					//				progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+					//				progressDialog.setMessage("Decoding image...");
+					//				progressDialog.show();
+					new AsyncImageDecode().execute(allFaceImageInfos.get(0));
+				} else {
+					//				progressDialog.dismiss();
+				}
+				break;
+			default:
+				break;
 			}
-			break;
-		default:
-			break;
 		}
 	}
 

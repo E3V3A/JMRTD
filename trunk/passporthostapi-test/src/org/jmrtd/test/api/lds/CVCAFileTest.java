@@ -33,7 +33,7 @@ public class CVCAFileTest extends TestCase {
 
 	public void test1() {
 		String name1 = "CAReference00001";
-		CVCAFile f = new CVCAFile(name1);
+		CVCAFile f = new CVCAFile(name1, null);
 		assertEquals(name1, f.getCAReference().getName());
 		assertEquals(null, f.getAltCAReference());
 	}
@@ -62,7 +62,7 @@ public class CVCAFileTest extends TestCase {
 	public void testReflexive2() {
 		try {
 			String name1 = "CAReference00001";
-			CVCAFile f = new CVCAFile(name1);
+			CVCAFile f = new CVCAFile(name1, null);
 			InputStream in = new ByteArrayInputStream(f.getEncoded());
 			CVCAFile f2 = new CVCAFile(in);
 			assertTrue(Arrays.equals(f.getEncoded(), f2.getEncoded()));

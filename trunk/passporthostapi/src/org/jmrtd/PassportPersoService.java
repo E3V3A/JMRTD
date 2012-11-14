@@ -498,4 +498,8 @@ public class PassportPersoService extends CardService {
 		notifyExchangedAPDU(0, capdu, rapdu);
 		return rapdu;
 	}
+	
+	public byte[] getATR() throws CardServiceException {
+		return service.getATR();
+	}
 }

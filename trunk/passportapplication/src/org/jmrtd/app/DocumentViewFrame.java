@@ -68,7 +68,6 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import net.sourceforge.scuba.smartcards.APDUListener;
-import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.AuthAdapter;
@@ -84,16 +83,12 @@ import org.jmrtd.app.util.ImageUtil;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
-import org.jmrtd.lds.DG11File;
-import org.jmrtd.lds.DG12File;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.DG2File;
 import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.DG4File;
-import org.jmrtd.lds.DG5File;
-import org.jmrtd.lds.DG6File;
 import org.jmrtd.lds.DG7File;
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.FaceImageInfo;
@@ -104,6 +99,7 @@ import org.jmrtd.lds.ImageInfo;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
+import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
@@ -253,23 +249,22 @@ public class DocumentViewFrame extends JMRTDFrame {
 			e.printStackTrace();
 			return;
 		}
-
 		try { /* DEBUG DEBUG */
-
-			for (short fid: passport.getFileList()) {
+			LDS lds = passport.getLDS();
+			List<Short> fileList = lds.getFileList();
+			for (short fid: fileList) {
 				try {
-					InputStream inputStream = passport.getInputStream(fid);
-					if (inputStream == null) { LOGGER.warning("Got null inputstream while trying to display " + Integer.toHexString(fid & 0xFFFF)); }
 					switch (fid) {
 					case PassportService.EF_COM:
-						/* NOTE: Already processed this one. */
-						break;
+					case PassportService.EF_SOD:
+					case PassportService.EF_CVCA:
 					case PassportService.EF_DG1:
-						/* NOTE: Already processed this one. */
+						/* NOTE: Already displayed these, or not relevant here. */
 						break;
 					case PassportService.EF_DG2:
 						try {
-							DG2File dg2 = new DG2File(inputStream);
+							DG2File dg2 = lds.getDG2File();
+							if (dg2 == null) { LOGGER.warning("DEBUG: EF.DG2 is in file list, but cannot get file from LDS"); continue; }
 							List<FaceInfo> faceInfos = dg2.getFaceInfos();
 							for (FaceInfo faceInfo: faceInfos) {
 								List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
@@ -290,7 +285,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 						break;
 					case PassportService.EF_DG3:
 						try {
-							DG3File dg3 = new DG3File(inputStream);
+							DG3File dg3 = lds.getDG3File();
+							if (dg3 == null) { LOGGER.warning("DEBUG: EF.DG3 is in file list, but cannot get file from LDS"); continue; }
 							if (eacEvent == null || !eacEvent.isSuccess()) {
 								LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
 							}
@@ -313,7 +309,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 						}
 						break;
 					case PassportService.EF_DG4:
-						DG4File dg4 = new DG4File(inputStream);
+						DG4File dg4 = lds.getDG4File();
+						if (dg4 == null) { LOGGER.warning("DEBUG: EF.DG4 is in file list, but cannot get file from LDS"); continue; }
 						if (eacEvent == null || !eacEvent.isSuccess()) {
 							LOGGER.warning("Starting to read DG4, but eacEvent = " + eacEvent);
 						}
@@ -328,26 +325,15 @@ public class DocumentViewFrame extends JMRTDFrame {
 							}
 						}
 						break;
-					case PassportService.EF_DG5:
-						DG5File dg5 = new DG5File(inputStream);
-						break;
-					case PassportService.EF_DG6:
-						/* DG6File dg6 = */ new DG6File(inputStream);
-						break;
 					case PassportService.EF_DG7:
-						DG7File dg7 = new DG7File(inputStream);
+						DG7File dg7 = lds.getDG7File();
 						List<DisplayedImageInfo> infos = dg7.getImages();
 						for (DisplayedImageInfo info: infos) { displayPreviewPanel.addDisplayedImage(info); }
 						break;
-					case PassportService.EF_DG11:
-						/* DG11File dg11 = */ new DG11File(inputStream);
-						break;
-					case PassportService.EF_DG12:
-						/* DG12File dg12 = */ new DG12File(inputStream);
-						break;
 					case PassportService.EF_DG14:
 						try {
-							/* DG14File dg14 = */ new DG14File(inputStream);
+							/* DG14File dg14 = */ lds.getDG14File();
+							lds.getCVCAFile();
 							updateViewMenu();
 						} catch (Exception e) {
 							/* START DEBUG */
@@ -360,35 +346,12 @@ public class DocumentViewFrame extends JMRTDFrame {
 							/* END DEBUG */	
 						}
 						break;
+					case PassportService.EF_DG5:
+					case PassportService.EF_DG6:
+					case PassportService.EF_DG11:
+					case PassportService.EF_DG12:
 					case PassportService.EF_DG15:
-						try {
-							/* DG15File dg15 = */ new DG15File(inputStream);
-						} catch (Exception e) {
-							/* START DEBUG */
-							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 15");
-							e.printStackTrace();
-							String errorMessage = "DEBUG: Exception reading DG15 file " + Integer.toHexString(fid) + ": \n"
-									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
-							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
-							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
-						/* END DEBUG */					}
-						break;
-					case PassportService.EF_SOD:
-						/* NOTE: Already processed this one above. */
-						break;
-					case PassportService.EF_CVCA:
-						try {
-							/* CVCAFile cvca = */ new CVCAFile(inputStream);
-						} catch (Exception e) {
-							/* START DEBUG */
-							System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO CVCA");
-							e.printStackTrace();
-							String errorMessage = "DEBUG: Exception reading CVCA file " + Integer.toHexString(fid) + ": \n"
-									+ e.getClass().getSimpleName() + "\n" + e.getMessage() + "\n";
-							JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
-							JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem reading file", JOptionPane.WARNING_MESSAGE);
-							/* END DEBUG */	
-						}
+						lds.getFile(fid);
 						break;
 					default:
 						String message = "Displaying of file " + Integer.toHexString(fid) + " not supported!";
@@ -421,9 +384,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 	private void updateViewMenu() {
 		try {
-			InputStream dg14InputStream = passport.getInputStream(PassportService.EF_DG14);
-			if (dg14InputStream == null) { return; }
-			DG14File dg14 = new DG14File(dg14InputStream);
+			LDS lds = passport.getLDS();
+			DG14File dg14 = lds.getDG14File();
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
 			Map<BigInteger, PublicKey> publicKeyMap = dg14.getChipAuthenticationPublicKeyInfos();
@@ -434,8 +396,6 @@ public class DocumentViewFrame extends JMRTDFrame {
 				cardPublicKeyId = eacEvent.getCardPublicKeyId();
 			}
 			createEACMenus(terminalKey, cvCertificates, publicKeyMap, cardPublicKeyId);
-		} catch (CardServiceException cse) {
-			cse.printStackTrace();
 		} catch (Exception ex) {
 			ex.printStackTrace();
 			LOGGER.severe("Could not decode DG14. " + ex.getMessage());
@@ -444,8 +404,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 	private void displayDG1Info() throws IOException {
 		try {
-			InputStream dg1InputStream = passport.getInputStream(PassportService.EF_DG1);
-			DG1File dg1 = new DG1File(dg1InputStream);
+			LDS lds = passport.getLDS();
+			DG1File dg1 = lds.getDG1File();
 			MRZInfo mrzInfo = dg1.getMRZInfo();
 			BACKeySpec bacEntry = passport.getBACKeySpec();
 			if (bacEntry != null &&
@@ -460,7 +420,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 			centerPanel.add(mrzPanel, BorderLayout.SOUTH);
 			centerPanel.revalidate();
 			centerPanel.repaint();
-		} catch (CardServiceException cse) {
+		} catch (Exception cse) {
 			LOGGER.severe("Could not read DG1 for displaying.");
 			cse.printStackTrace();
 		}
@@ -474,8 +434,8 @@ public class DocumentViewFrame extends JMRTDFrame {
 			public void run() {
 				try {
 					while (isDisplaying) {
-						progressBar.setMaximum(passport.getTotalLength());
-						progressBar.setValue(passport.getBytesRead());
+						progressBar.setMaximum(passport.getLDS().getLength());
+						progressBar.setValue(passport.getLDS().getPosition());
 						Thread.sleep(1000);
 					}
 				} catch (InterruptedException ie) {
@@ -664,10 +624,10 @@ public class DocumentViewFrame extends JMRTDFrame {
 						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
 						FileOutputStream fileOut = new FileOutputStream(file);
 						ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-						for (short fid: passport.getFileList()) {
+						for (short fid: passport.getLDS().getFileList()) {
 							String entryName = Hex.shortToHexString(fid) + ".bin";
 							try {
-								InputStream dg = passport.getInputStream(fid);
+								InputStream dg = passport.getLDS().getInputStream(fid);
 								zipOut.putNextEntry(new ZipEntry(entryName));
 								int bytesRead;
 								byte[] dgBytes = new byte[1024];
@@ -675,7 +635,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 									zipOut.write(dgBytes, 0, bytesRead);
 								}
 								zipOut.closeEntry();
-							} catch (CardServiceException cse) {
+							} catch (Exception cse) {
 								LOGGER.warning("Skipping entry " + entryName);
 							}
 						}
@@ -769,14 +729,12 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					InputStream dg3InputStream = passport.getInputStream(PassportService.EF_DG3);
+					InputStream dg3InputStream = passport.getLDS().getInputStream(PassportService.EF_DG3);
 					DG3File dg3 = new DG3File(dg3InputStream);
 					List<FingerInfo> fingerInfos = dg3.getFingerInfos();
 					FingerPrintFrame fingerPrintFrame = new FingerPrintFrame(fingerInfos);
 					fingerPrintFrame.setVisible(true);
 					fingerPrintFrame.pack();
-				} catch (CardServiceException cse) {
-					cse.printStackTrace();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 					LOGGER.severe("Could not decode DG3. " + ex.getMessage());
@@ -801,15 +759,13 @@ public class DocumentViewFrame extends JMRTDFrame {
 				JTextArea area = new JTextArea(15, 45);
 				try {
 					// FIXME: make a special frame for viewing this? (Includes certificates, etc.)
-					InputStream dg14InputStream =  passport.getInputStream(PassportService.EF_DG14);
-					DG14File dg14 = new DG14File(dg14InputStream);
+					DG14File dg14 = passport.getLDS().getDG14File();
 					Collection<SecurityInfo> securityInfos = dg14.getSecurityInfos();
 					for (SecurityInfo si: securityInfos) {
 						area.append(si.getClass().getSimpleName() + ":\n");
 						area.append("   " + si.toString() + "\n");
 					}
-					InputStream cvcaInputStream = passport.getInputStream(PassportService.EF_CVCA);
-					CVCAFile cvca = new CVCAFile(cvcaInputStream);
+					CVCAFile cvca = passport.getLDS().getCVCAFile();
 					CVCPrincipal caReference = cvca.getCAReference();
 					CVCPrincipal altCAReference = cvca.getAltCAReference();
 					if (caReference != null) { area.append("CA reference:\n   " + caReference.toString() + "\n"); }
@@ -844,7 +800,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 					if (chain != null && chain.size() > 0) {
 						certificateFrame = new CertificateChainFrame("Certificate chain", chain, true);
 					} else {
-						SODFile sod = new SODFile(passport.getInputStream(PassportService.EF_SOD));
+						SODFile sod = passport.getLDS().getSODFile();
 						X509Certificate docSigningCertificate = sod.getDocSigningCertificate();
 						if (docSigningCertificate != null) {
 							certificateFrame = new CertificateChainFrame(docSigningCertificate, false);
@@ -876,14 +832,11 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try {
-					InputStream dg15InputStream = passport.getInputStream(PassportService.EF_DG15);
-					DG15File dg15 = new DG15File(dg15InputStream);
+					DG15File dg15 = passport.getLDS().getDG15File();
 					PublicKey pubKey = dg15.getPublicKey();
 					KeyFrame keyFrame = new KeyFrame("Active Authentication Public Key", pubKey);
 					keyFrame.pack();
 					keyFrame.setVisible(true);
-				} catch (CardServiceException cse) {
-					cse.printStackTrace();
 				} catch (Exception ex) {
 					ex.printStackTrace();
 					LOGGER.severe("Could not decode DG15. " + ex.getMessage());

@@ -23,10 +23,7 @@
 package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
@@ -44,9 +41,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -211,8 +206,6 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private Collection<AuthListener> authListeners;
 
-	private Map<Short, InputStreamBuffer> fetchers;
-
 	/**
 	 * @deprecated visibility will be set to private
 	 */
@@ -243,7 +236,6 @@ public class PassportService extends PassportApduService implements Serializable
 			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
 			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
-			fetchers = new HashMap<Short, InputStreamBuffer>();
 			fs = new MRTDFileSystem(this);
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
@@ -420,10 +412,8 @@ public class PassportService extends PassportApduService implements Serializable
 	 * passport, sign it with terminal private key, and send back to the card
 	 * for verification.
 	 */
-	public synchronized byte[] doTA(CVCPrincipal caReference,
-			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
+	public synchronized byte[] doTA(List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg, byte[] caKeyHash, String documentNumber) throws CardServiceException {
-		// FIXME caReference is not really needed, we get one from the first certificate
 		try {
 			if (caKeyHash == null) {
 				caKeyHash = eacKeyHash;
@@ -431,11 +421,13 @@ public class PassportService extends PassportApduService implements Serializable
 			String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
 			byte[] certRef = null;
 			for (CardVerifiableCertificate cert : terminalCertificates) {
-				try{
+				try {
 					if(certRef == null) {
-						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("UTF-8"));
+						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("ISO-8859-1"));
 					}
-					sendMSEDST(wrapper, certRef);
+					/* Manage Security Environment: Set for verification: Digital Signature Template */
+					sendMSESetDST(wrapper, certRef);
+
 					byte[] body = cert.getCertBodyData();
 					ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
 					TLVOutputStream tlvSigOut = new TLVOutputStream(sigOut);
@@ -459,12 +451,16 @@ public class PassportService extends PassportApduService implements Serializable
 			if(terminalKey == null) {
 				return new byte[0];
 			}
-			// Now send get challenge + mutual authentication
 
-			byte[] rpicc = sendGetChallenge(wrapper);
+			// Now send get challenge + mutual authentication
 			byte[] idpic = new byte[documentNumber.length() + 1];
 			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
 			idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
+
+			/* Manage Security Environment: Set for external authentication: Authentication Template */
+			sendMSESetAT(wrapper, certRef); // shouldn't this be before the sendGetChallenge above? FIXME: it is now, test this.
+
+			byte[] rpicc = sendGetChallenge(wrapper);
 
 			ByteArrayOutputStream dtbs = new ByteArrayOutputStream();
 			dtbs.write(idpic);
@@ -480,19 +476,12 @@ public class PassportService extends PassportApduService implements Serializable
 				signature = getRawECDSASignature(signature, keySize);
 			}
 
-			sendMSEAT(wrapper, certRef); // shouldn't this be before the
-			// sendGetChallene above?
 			sendMutualAuthenticate(wrapper, signature);
 			state = TA_AUTHENTICATED_STATE;
 			return rpicc;
 		} catch (Exception e) {
 			throw new CardServiceException(e.toString());
 		}
-	}
-
-	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
-			PrivateKey terminalKey, byte[] caKeyHash, String documentNumber) throws CardServiceException {
-		return doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 	}
 
 	/**
@@ -521,22 +510,23 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public synchronized void doEAC(BigInteger keyId, PublicKey key,
 			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
-			PrivateKey terminalKey, String documentNumber)
-					throws CardServiceException {
+			PrivateKey terminalKey, String documentNumber) throws CardServiceException {
 		KeyPair keyPair = null;
 		byte[] rpicc = null;
 		try {
 			keyPair = doCA(keyId, key);
-			rpicc = doTA(caReference, terminalCertificates, terminalKey, null, documentNumber);
+			assert(terminalCertificates != null && terminalCertificates.size() == 3);
+			rpicc = doTA(terminalCertificates, terminalKey, null, null, documentNumber);
 			state = EAC_AUTHENTICATED_STATE;
+		} catch (CardServiceException cse) {
+			throw cse;
+		} catch (Exception e) {
+			e.printStackTrace();
 		} finally {
-			EACEvent event = new EACEvent(this, keyId, key, keyPair,
-					caReference, terminalCertificates, terminalKey,
-					documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
+			EACEvent event = new EACEvent(this, keyId, key, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
 			notifyEACPerformed(event);
 		}
 	}
-
 
 	/**
 	 * Adds an authentication event listener.
@@ -556,8 +546,17 @@ public class PassportService extends PassportApduService implements Serializable
 		authListeners.remove(l);
 	}
 
-	// For ECDSA the EAC 1.11 specification requires the signature to be
-	// stripped down from any ASN.1 wrappers, as so:
+	/**
+	 * For ECDSA the EAC 1.11 specification requires the signature to be
+	 * stripped down from any ASN.1 wrappers, as so.
+	 *
+	 * @param signature
+	 * @param keySize
+
+	 * @return signature without wrappers
+	 * 
+	 * @throws IOException on error
+	 */
 	private byte[] getRawECDSASignature(byte[] signature, int keySize) throws IOException {
 		ASN1InputStream asn1In = new ASN1InputStream(signature);
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -699,26 +698,13 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @throws IOException if the file cannot be read
 	 */
-	public synchronized InputStream getInputStream(short fid) throws CardServiceException {
-		return getInputStreamBuffer(fid).getInputStream();
-	}
-
-	/* ONLY PACKAGE VISIBLE METHODS BELOW */
-
-	synchronized InputStreamBuffer getInputStreamBuffer(short fid) throws CardServiceException {
-		InputStreamBuffer fetcher = fetchers.get(fid);
-		if (fetcher != null) {
-			return fetcher;
-		} 
+	public synchronized CardFileInputStream getInputStream(short fid) throws CardServiceException {
 		synchronized(fs) {
 			fs.selectFile(fid);
-			CardFileInputStream cardFileInputStream = new CardFileInputStream(maxBlockSize, fs);
-			fetcher = new InputStreamBuffer(cardFileInputStream, cardFileInputStream.getLength());
-			fetchers.put(fid, fetcher);
-			return fetcher;
+			return new CardFileInputStream(maxBlockSize, fs);
 		}
 	}
-
+	
 	/* ONLY PRIVATE METHODS BELOW */
 
 	/**
@@ -753,22 +739,6 @@ public class PassportService extends PassportApduService implements Serializable
 	private void notifyAAPerformed(AAEvent event) {
 		for (AuthListener l : authListeners) {
 			l.performedAA(event);
-		}
-	}
-
-	public static void main(String[] arg) {
-		try {
-			byte[] bytes = { 0x41, 0x6C, 0x67, 0x65, 0x72, 0x69, 0x61, 0x43, 0x41, 0x4B, 0x65, 0x79, 0x4E, 0x61, 0x6D, 0x65 };
-			FileOutputStream out = new FileOutputStream("c:/bb.bin");
-			DataOutputStream dataOut = new DataOutputStream(out);
-			dataOut.write(bytes);
-			out.flush();
-			dataOut.close();
-			out.close();
-
-			BigInteger b = new BigInteger("1315007845");
-		} catch (Exception e) {
-			e.printStackTrace();
 		}
 	}
 }

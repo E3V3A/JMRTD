@@ -222,6 +222,7 @@ public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 	/**
 	 * Inserts a tag in a proper place if not already present
+	 * 
 	 * @param tag
 	 */
 	public void insertTag(Integer tag) {

@@ -23,7 +23,6 @@
 package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +52,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -63,6 +61,7 @@ import java.util.zip.ZipFile;
 
 import javax.security.auth.x500.X500Principal;
 
+import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
@@ -101,8 +100,6 @@ public class Passport {
 	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-
-	private Map<Short, InputStreamBuffer> fetchers;
 
 	/** FIDs that could not be read (because of EAC, e.g.). */
 	private Collection<Short> couldNotRead;
@@ -148,24 +145,8 @@ public class Passport {
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
 		this.docSigningPrivateKey = docSigningPrivateKey;
-
 		couldNotRead = new ArrayList<Short>();
-
 		this.lds = lds;
-		byte[] comBytes = lds.getCOMFile().getEncoded();
-
-		fetchers = new HashMap<Short, InputStreamBuffer>();
-		fetchers.put(PassportService.EF_COM, new InputStreamBuffer(comBytes));
-
-		for (Map.Entry<Short, DataGroup> entry: lds.getDataGroups().entrySet()) {
-			short fid = entry.getKey();
-			DataGroup dg = entry.getValue();
-			byte[] dgBytes = dg.getEncoded();
-			fetchers.put(fid, new InputStreamBuffer(dgBytes));			
-		}
-
-		byte[] sodBytes = lds.getSODFile().getEncoded();
-		fetchers.put(PassportService.EF_SOD, new InputStreamBuffer(sodBytes));
 	}
 
 	/**
@@ -253,41 +234,34 @@ public class Passport {
 			/* Passport requires BAC, but we failed to authenticate. */
 			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 		}
-		try {			
-			fetchers = new HashMap<Short, InputStreamBuffer>();
+
+		try {
 			couldNotRead = new ArrayList<Short>();
 
-			fetchers.put(PassportService.EF_COM, service.getInputStreamBuffer(PassportService.EF_COM));
-			fetchers.put(PassportService.EF_SOD, service.getInputStreamBuffer(PassportService.EF_SOD));
-			fetchers.put(PassportService.EF_DG1, service.getInputStreamBuffer(PassportService.EF_DG1));
+			COMFile comFile = new COMFile(service.getInputStream(PassportService.EF_COM));
+			SODFile sodFile = new SODFile(service.getInputStream(PassportService.EF_SOD));
+			DG1File dg1File = new DG1File(service.getInputStream(PassportService.EF_DG1));
 
-			COMFile comFile = new COMFile(getInputStream(PassportService.EF_COM));
-			SODFile sodFile = new SODFile(getInputStream(PassportService.EF_SOD));
-			DG1File dg1File = new DG1File(getInputStream(PassportService.EF_DG1));
-			
 			int[] comTagList = comFile.getTagList();
 			String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
+			/* Find out if we need to do EAC. */
 			DG14File dg14File = null;
 			CVCAFile cvcaFile = null;
-
-			/* Find out if we need to do EAC. */
 			boolean isDG14Present = false;
 			for (int tag: comTagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
 			if (isDG14Present) {
 
-				fetchers.put(PassportService.EF_DG14, service.getInputStreamBuffer(PassportService.EF_DG14));
-				dg14File = new DG14File(getInputStream(PassportService.EF_DG14));
+				dg14File = new DG14File(service.getInputStream(PassportService.EF_DG14));
 
 				/* Now try to deal with EF.CVCA */
-				List<Integer> cvcafids = dg14File.getCVCAFileIds();
+				List<Short> cvcafids = dg14File.getCVCAFileIds();
 				if (cvcafids != null && cvcafids.size() != 0) {
 					if (cvcafids.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
 					cvcaFID = cvcafids.get(0).shortValue();
 				}
 
-				fetchers.put(cvcaFID, service.getInputStreamBuffer(cvcaFID));
-				cvcaFile = new CVCAFile(getInputStream(cvcaFID));
+				cvcaFile = new CVCAFile(cvcaFID, service.getInputStream(cvcaFID));
 
 				/* Try to do EAC. */
 				for (KeyStore cvcaStore: trustManager.getCVCAStores()) {
@@ -300,27 +274,26 @@ public class Passport {
 					}
 				}
 			}
-			
+
 			if (isDG14Present) {
 				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File, dg14File }), cvcaFile, sodFile);
 			} else {
 				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File }), sodFile);
 			}
 
-			System.out.println("DEBUG: start reading data groups");
-			
 			/* Start reading each of the files. */
-			for (int tag: comTagList) {
+			for (int tag: comTagList) { // FIXME: use dg list from EF.SOd here
 				try {
 					short fid = LDSFileUtil.lookupFIDByTag(tag);
 					try {
-						if ((fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) {
+						if (fid == PassportService.EF_DG1) {
+							continue;
+						} else if ((fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) {
 							/* Skip DG3 and DG4 if EAC was unsuccessful... */
 							continue;
 						}
-						fetchers.put(fid, service.getInputStreamBuffer(fid));
-						System.out.println("DEBUG: added DG for " + Integer.toHexString(fid));
-						lds.add(fid, getInputStream(fid));
+						CardFileInputStream inputStream = service.getInputStream(fid);
+						lds.add(fid, inputStream, inputStream.getLength());
 					} catch(CardServiceException ex) {
 						/* NOTE: Most likely EAC protected file. */
 						LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
@@ -340,7 +313,7 @@ public class Passport {
 	 * Creates a document by reading it from a ZIP file.
 	 * 
 	 * @param file the ZIP file to read from
-	 * @param trustManager the trust manager (CSCA, CVCA)
+.	 * @param trustManager the trust manager (CSCA, CVCA)
 	 * 
 	 * @throws IOException on error
 	 */
@@ -348,9 +321,8 @@ public class Passport {
 		this();
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
-		fetchers = new HashMap<Short, InputStreamBuffer>();
 		couldNotRead = new ArrayList<Short>();
-
+		Collection<DataGroup> dataGroups = new ArrayList<DataGroup>();
 		COMFile comFile = null;
 		SODFile sodFile = null;
 		ZipFile zipFile = new ZipFile(file);
@@ -361,79 +333,64 @@ public class Passport {
 				if (entry == null) { break; }
 				String fileName = entry.getName();
 				long sizeAsLong = entry.getSize();
-				if (sizeAsLong < 0) {
-					throw new IOException("ZipEntry has negative size.");
-				}
-				int size = (int)(sizeAsLong & 0x00000000FFFFFFFFL);
+				if (sizeAsLong < 0) { throw new IOException("ZipEntry has negative size."); }
+				int size = (int)(sizeAsLong & 0xFFFFFFFFL);
 				try {
-					int fid = -1;
-					int delimIndex = fileName.lastIndexOf('.');
-					String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
-					if (delimIndex >= 0
-							&& !fileName.endsWith(".bin")
-							&& !fileName.endsWith(".BIN")
-							&& !fileName.endsWith(".dat")
-							&& !fileName.endsWith(".DAT")) {
-						LOGGER.warning("Skipping file \"" + fileName + "\" in \"" + file.getName() + "\"");
-						continue;					
-					}
-
-					if (baseName.length() == 4) {
-						try {
-							/* Filename <FID>.bin? */
-							fid = Hex.hexStringToShort(baseName);
-						} catch (NumberFormatException nfe) {
-							/* ...guess not */ 
-						}
-					}
-
 					byte[] bytes = new byte[size];
-					int fileLength = bytes.length;
 					InputStream zipEntryIn = zipFile.getInputStream(entry);
 					DataInputStream dataIn = new DataInputStream(zipEntryIn);
 					dataIn.readFully(bytes);
 					dataIn.close();
-					int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
-					if (fid < 0) {
-						/* FIXME: untested! */
-						fid = tagBasedFID;
-					}
-					if (fid != tagBasedFID) {
-						LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
-					}
-					fetchers.put((short)fid, new InputStreamBuffer(bytes));
+					int fid = guessFID(fileName, bytes);
 					if (fid == PassportService.EF_COM) {
 						comFile = new COMFile(new ByteArrayInputStream(bytes));
 					} else if (fid == PassportService.EF_SOD) {
 						sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
+					} else {
+						LDSFile dg = LDSFileUtil.getLDSFile((short)fid, new ByteArrayInputStream(bytes));
+						if (dg instanceof DataGroup) {
+							dataGroups.add((DataGroup)dg);
+						}
 					}
 				} catch (NumberFormatException nfe) {
 					/* NOTE: ignore this file */
 					LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
 				}
-				this.lds = new LDS(comFile, Collections.<DataGroup>emptySet(), sodFile);
 			}
+			this.lds = new LDS(comFile, dataGroups, sodFile);
 		} finally {
 			zipFile.close();
 		}
 	}
-
-	/**
-	 * Gets an inputstream that is ready for reading.
-	 * 
-	 * @param fid
-	 * @return an inputstream for <code>fid</code>
-	 */
-	public InputStream getInputStream(final short fid) throws CardServiceException {
-		System.out.println("DEBUG: enter Passport.getInputStream " + Integer.toHexString(fid));
-		if (couldNotRead.contains(fid)) {
-			String fileName = LDSFileUtil.lookupFileNameByFID(fid);
-			throw new CardServiceException("Could not read " + fileName);
+	
+	private int guessFID(String fileName, byte[] bytes) {
+		int fid = -1;
+		int delimIndex = fileName.lastIndexOf('.');
+		String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
+		if (delimIndex >= 0
+				&& !fileName.endsWith(".bin")
+				&& !fileName.endsWith(".BIN")
+				&& !fileName.endsWith(".dat")
+				&& !fileName.endsWith(".DAT")) {
+			LOGGER.warning("Not considering file name \"" + fileName + "\" in determining FID (while reading ZIP file)");
+		} else if (baseName.length() == 4) {
+			try {
+				/* Filename <FID>.bin? */
+				fid = Hex.hexStringToShort(baseName);
+			} catch (NumberFormatException nfe) {
+				/* ...guess not */ 
+			}
 		}
-		InputStreamBuffer fetcher = fetchers.get(fid);
-		if (fetcher == null ) { throw new IllegalStateException("No fetcher for " + Integer.toHexString(fid)); }
-		System.out.println("DEBUG: exit Passport.getInputStream " + Integer.toHexString(fid));
-		return fetcher.getInputStream();
+		
+		int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
+		if (fid < 0) {
+			/* FIXME: untested! */
+			fid = tagBasedFID;
+		}
+		if (fid != tagBasedFID) {
+			LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
+		}
+		return fid;
 	}
 
 	/**
@@ -444,16 +401,14 @@ public class Passport {
 	 */
 	public void putFile(short fid, byte[] bytes) {
 		if (bytes == null) { return; }
-		ByteArrayInputStream inputStream = new ByteArrayInputStream(bytes);
-		fetchers.put(fid, new InputStreamBuffer(bytes));
-		// FIXME: is this necessary?
-		if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
-			updateCOMSODFile(null);
-		}
 		try {
-			lds.add(fid, inputStream);
+			lds.add(fid, new ByteArrayInputStream(bytes), bytes.length);
+			// FIXME: is this necessary?
+			if(fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
+				updateCOMSODFile(null);
+			}
 		} catch (IOException ioe) {
-			System.out.println("DEBUG: failed to add to LDS");
+			ioe.printStackTrace();
 		}
 		verificationStatus.setAll(Verdict.UNKNOWN);
 	}
@@ -472,17 +427,20 @@ public class Passport {
 			X509Certificate cert = newCertificate != null ? newCertificate : sodFile.getDocSigningCertificate();
 			byte[] signature = sodFile.getEncryptedDigest();
 			Map<Integer, byte[]> dgHashes = new TreeMap<Integer, byte[]>();
-			List<Short> dgFids = new ArrayList<Short>();
-			dgFids.addAll(fetchers.keySet());
-			Collections.sort(dgFids);
+			List<Short> dgFids = lds.getDataGroupList();
 			MessageDigest digest = null;
 			digest = MessageDigest.getInstance(digestAlg);
 			for (Short fid : dgFids) {
 				if (fid != PassportService.EF_COM && fid != PassportService.EF_SOD && fid != cvcaFID) {
-					byte[] data = getFileBytes(fid);
+					int length = lds.getLength(fid);
+					InputStream inputStream = lds.getInputStream(fid);
+					if (inputStream ==  null) { LOGGER.warning("Could not get input stream for " + Integer.toHexString(fid)); continue; }
+					DataInputStream dataInputStream = new DataInputStream(inputStream);
+					byte[] data = new byte[length];
+					dataInputStream.readFully(data);
 					byte tag = data[0];
 					dgHashes.put(LDSFileUtil.lookupDataGroupNumberByTag(tag), digest.digest(data));
-					comFile.insertTag(Integer.valueOf(tag));
+					comFile.insertTag((int)(tag & 0xFF));
 				}
 			}
 			if(docSigningPrivateKey != null) {
@@ -490,42 +448,10 @@ public class Passport {
 			} else {
 				sodFile = new SODFile(digestAlg, signatureAlg, dgHashes, signature, cert);            
 			}
-			putFile(PassportService.EF_SOD, sodFile.getEncoded());
-			putFile(PassportService.EF_COM, comFile.getEncoded());
-			this.lds = new LDS(comFile, lds.getDataGroups().values(), sodFile);
+			lds.add(comFile);
+			lds.add(sodFile);
 		} catch (Exception e) {
 			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Gets the contents of a file.
-	 * 
-	 * @param fid the FID of the file
-	 * 
-	 * @return a byte array
-	 * 
-	 * @deprecated use {@link #getInputStream(short)} instead
-	 */
-	public byte[] getFileBytes(short fid) {
-		try {
-			InputStream inputStream = getInputStream(fid);
-			if (inputStream == null) { return null; }
-
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			byte[] buf = new byte[256];
-			while (true) {
-				try {
-					int bytesRead = inputStream.read(buf);
-					if (bytesRead < 0) { break; }
-					out.write(buf, 0, bytesRead);
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-				}
-			}
-			return out.toByteArray();
-		} catch (CardServiceException cse) {
-			return null;
 		}
 	}
 
@@ -536,6 +462,10 @@ public class Passport {
 	 */
 	public BACKeySpec getBACKeySpec() {
 		return bacKeySpec;
+	}
+	
+	public LDS getLDS() {
+		return lds;
 	}
 
 	/**
@@ -565,7 +495,7 @@ public class Passport {
 	public void setCVCertificate(CardVerifiableCertificate cert) {
 		this.cvcaCertificate = cert;
 		try {
-			CVCAFile cvcaFile = new CVCAFile(cvcaCertificate.getHolderReference().getName());
+			CVCAFile cvcaFile = new CVCAFile(cvcaFID, cvcaCertificate.getHolderReference().getName());
 			putFile(cvcaFID, cvcaFile.getEncoded());
 		} catch (CertificateException ce) {
 			ce.printStackTrace();
@@ -657,45 +587,6 @@ public class Passport {
 	}
 
 	/**
-	 * Gets the total number of  bytes to read (only relevant when reading from service).
-	 * 
-	 * @return the total number of bytes in the document
-	 */
-	public int getTotalLength() {
-		int length = 0;
-		for (InputStreamBuffer fetcher: fetchers.values()) {
-			length += fetcher.getLength();
-		}
-		return length;
-	}
-
-	/**
-	 * Gets the number of bytes read (only relevant when reading from service).
-	 * 
-	 * @return the number of bytes read
-	 */
-	public int getBytesRead() {
-		int position = 0;
-		for (InputStreamBuffer fetcher: fetchers.values()) {
-			position += fetcher.getPosition();
-		}
-		return position;
-	}
-
-	/**
-	 * Gets a list of FIDs.
-	 * 
-	 * @return a list of FIDs
-	 */
-	public List<Short> getFileList() {
-		List<Short> result = new ArrayList<Short>();
-		result.addAll(fetchers.keySet());
-		result.addAll(couldNotRead);
-		Collections.sort(result);
-		return result;
-	}
-
-	/**
 	 * Verifies the document using the security related mechanisms.
 	 * Adjusts the verificationIndicator to show the user the verification status.
 	 * 
@@ -739,17 +630,7 @@ public class Passport {
 			LOGGER.warning("No certificate stores found.");
 			return null;
 		}
-		SODFile sod = null;
-		try {
-			InputStream sodIn = getInputStream(PassportService.EF_SOD);
-			sod = new SODFile(sodIn);
-		} catch (IOException ioe) {
-			LOGGER.warning("Error opening SOD file");
-			return null;
-		} catch (CardServiceException cse) {
-			LOGGER.warning("Error opening SOD file");
-			return null;
-		}
+		SODFile sod = lds.getSODFile();
 		X500Principal sodIssuer = sod.getIssuerX500Principal();
 		BigInteger sodSerialNumber = sod.getSerialNumber();
 		X509Certificate docSigningCertificate = null;
@@ -805,8 +686,8 @@ public class Passport {
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
 		boolean isKeyFound = false;
 		boolean isSucceeded = false;
-		for (CVCPrincipal caRef: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
-			if (caRef == null) { continue; }
+		for (CVCPrincipal caReference: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
+			if (caReference == null) { continue; }
 			try {
 				List<String> aliases = Collections.list(cvcaStore.aliases());
 				for (String alias: aliases) {
@@ -814,7 +695,7 @@ public class Passport {
 					CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
 					CVCPrincipal authRef = certificate.getAuthorityReference();
 					CVCPrincipal holderRef = certificate.getHolderReference();
-					if (!caRef.equals(authRef)) { continue; }
+					if (!caReference.equals(authRef)) { continue; }
 					/* See if we have a private key for that certificate. */
 					PrivateKey privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
 					Certificate[] certPath = cvcaStore.getCertificateChain(holderRef.getName());
@@ -826,7 +707,7 @@ public class Passport {
 						PublicKey publicKey = entry.getValue();
 						try {
 							isKeyFound = true;
-							service.doEAC(keyId, publicKey, caRef, terminalCerts, privateKey, documentNumber);
+							service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
 							isSucceeded = true;
 							verificationStatus.setEAC(Verdict.SUCCEEDED);
 							break;
@@ -919,16 +800,13 @@ public class Passport {
 	/** Check active authentication. */
 	private void verifyAA(PassportService service) {
 		try {
-			InputStream sodIn = getInputStream(PassportService.EF_SOD);
-			SODFile	sod = new SODFile(sodIn);
+			SODFile	sod = lds.getSODFile();
 			if (sod.getDataGroupHashes().get(15) == null) {
 				verificationStatus.setAA(Verdict.NOT_PRESENT);
 				return;
 			}
-			InputStream dg15In = getInputStream(PassportService.EF_DG15);
-			if (dg15In == null) { LOGGER.severe("dg15In == null in Passport.verifyAA"); }
-			if (dg15In != null && service != null) {
-				DG15File dg15 = new DG15File(dg15In);
+			DG15File dg15 = lds.getDG15File();
+			if (dg15 != null && service != null) {
 				PublicKey pubKey = dg15.getPublicKey();
 				if (service.doAA(pubKey)) {
 					verificationStatus.setAA(Verdict.SUCCEEDED);
@@ -938,9 +816,6 @@ public class Passport {
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			verificationStatus.setAA(Verdict.FAILED);
 		} catch (Exception e) {
 			System.out.println("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
@@ -957,8 +832,7 @@ public class Passport {
 	 */
 	private void verifyDS() {
 		try {
-			InputStream comIn = getInputStream(PassportService.EF_COM);
-			COMFile com = new COMFile(comIn);
+			COMFile com = lds.getCOMFile();
 			List<Integer> comDGList = new ArrayList<Integer>();
 			for(Integer tag : com.getTagList()) {
 				try {
@@ -970,8 +844,7 @@ public class Passport {
 			}
 			Collections.sort(comDGList);
 
-			InputStream sodIn = getInputStream(PassportService.EF_SOD);
-			SODFile sod = new SODFile(sodIn);
+			SODFile sod = lds.getSODFile();
 			Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
 
 			verificationStatus.setDS(Verdict.UNKNOWN);
@@ -1003,7 +876,7 @@ public class Passport {
 				InputStream dgIn = null;
 				Exception ex = null;
 				try {
-					dgIn = getInputStream(fid);
+					dgIn = lds.getInputStream(fid);
 				} catch(Exception e) {
 					dgIn = null;
 					ex = e;

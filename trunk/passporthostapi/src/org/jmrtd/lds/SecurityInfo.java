@@ -27,8 +27,6 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 
-import net.sourceforge.scuba.util.Hex;
-
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -102,11 +100,7 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	static SecurityInfo getInstance(ASN1Primitive obj) {
 		try {
 			ASN1Sequence sequence = (ASN1Sequence)obj;
-
 			String oid = ((ASN1ObjectIdentifier)sequence.getObjectAt(0)).getId();
-
-			System.out.println("DEBUG: oid = " + oid);
-			
 			ASN1Primitive requiredData = sequence.getObjectAt(1).toASN1Primitive();
 			ASN1Primitive optionalData = null;
 			if (sequence.size() == 3) {
@@ -114,35 +108,24 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 			}
 
 			if (ChipAuthenticationPublicKeyInfo.checkRequiredIdentifier(oid)) {
-				System.out.println("DEBUG: " + oid + " is ChipAuthenticationPublicKeyInfo");
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)requiredData);
 				if (optionalData == null) {
 					return new ChipAuthenticationPublicKeyInfo(oid, subjectPublicKeyInfo);
 				} else {
 					ASN1Integer optionalDataAsASN1Integer = (ASN1Integer)optionalData;
-					System.out.println("DEBUG: optionalData as bytes: " + Hex.bytesToHexString(optionalDataAsASN1Integer.getEncoded()));
-					System.out.println("DEBUG: optionalData as BigInteger: " + optionalDataAsASN1Integer.getValue());
-					System.out.println("DEBUG: optionalData as BigInteger converted to bytes: " + Hex.bytesToHexString(optionalDataAsASN1Integer.getValue().toByteArray()));					
-					System.out.println("DEBUG: optionalData as int: " + optionalDataAsASN1Integer.getValue().intValue());
 					BigInteger keyId = optionalDataAsASN1Integer.getValue();
 					return new ChipAuthenticationPublicKeyInfo(oid, subjectPublicKeyInfo, keyId);
 				}
 			} else if (ChipAuthenticationInfo.checkRequiredIdentifier(oid)) {
-				System.out.println("DEBUG: " + oid + " is ChipAuthenticationInfo");
 				int version = ((ASN1Integer)requiredData).getValue().intValue();
 				if (optionalData == null) {
 					return new ChipAuthenticationInfo(oid, version);
 				} else {
 					ASN1Integer optionalDataAsASN1Integer = (ASN1Integer)optionalData;
-					System.out.println("DEBUG: optionalData as bytes: " + Hex.bytesToHexString(optionalDataAsASN1Integer.getEncoded()));
-					System.out.println("DEBUG: optionalData as BigInteger: " + optionalDataAsASN1Integer.getValue());
-					System.out.println("DEBUG: optionalData as BigInteger converted to bytes: " + Hex.bytesToHexString(optionalDataAsASN1Integer.getValue().toByteArray()));					
-					System.out.println("DEBUG: optionalData as int: " + optionalDataAsASN1Integer.getValue().intValue());
 					BigInteger keyId = optionalDataAsASN1Integer.getValue();
 					return new ChipAuthenticationInfo(oid, version, keyId);
 				}
 			} else if (TerminalAuthenticationInfo.checkRequiredIdentifier(oid)) {
-				System.out.println("DEBUG: " + oid + " is TerminalAuthenticationInfo");
 				int version = ((ASN1Integer)requiredData).getValue().intValue();
 				if (optionalData == null) {
 					return new TerminalAuthenticationInfo(oid, version);
