@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmrtd.PassportService;
+import org.jmrtd.io.InputStreamBuffer;
 
 public class LDS {
 

@@ -89,12 +89,12 @@ public class IrisBiometricSubtypeInfo extends AbstractListInfo<IrisImageInfo> {
 
 		/* Iris biometric subtype header */
 		this.biometricSubtype = dataIn.readUnsignedByte();			/* 1 */
-		int imageCount = dataIn.readUnsignedShort();				/* + 2 = 3 */
+		int count = dataIn.readUnsignedShort();				/* + 2 = 3 */
 
 		/* Images */
-		for (int imageIndex = 0; imageIndex < imageCount; imageIndex++) {
-			IrisImageInfo irisImageInfo = new IrisImageInfo(inputStream, imageFormat);
-			add(irisImageInfo);
+		for (int imageIndex = 0; imageIndex < count; imageIndex++) {
+			IrisImageInfo imageInfo = new IrisImageInfo(inputStream, imageFormat);
+			add(imageInfo);
 		}
 	}
 

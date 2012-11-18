@@ -277,7 +277,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 		long dataLength = this.recordLength - headerLength;
 
 		captureDeviceId = dataIn.readUnsignedShort();								/* + 2 = 14 */
-		int irisBiometricSubtypeCount = dataIn.readUnsignedByte();							/* + 1 = 15 */
+		int count = dataIn.readUnsignedByte();							/* + 1 = 15 */
 
 		int recordHeaderLength = dataIn.readUnsignedShort(); /* Should be 45. */	/* + 2 = 17 */
 		if (recordHeaderLength != headerLength) { throw new IllegalArgumentException("Expected header length " + headerLength + ", found " + recordHeaderLength); }
@@ -322,10 +322,10 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 		long constructedDataLength = 0L;
 
 		/* A record contains biometric subtype (or: 'feature') blocks (which contain image data blocks)... */
-		for (int i = 0; i < irisBiometricSubtypeCount; i++) {
-			IrisBiometricSubtypeInfo irisBiometricSubtypeInfo = new IrisBiometricSubtypeInfo(inputStream, imageFormat);
-			constructedDataLength += irisBiometricSubtypeInfo.getRecordLength();
-			add(irisBiometricSubtypeInfo);
+		for (int i = 0; i < count; i++) {
+			IrisBiometricSubtypeInfo biometricSubtypeInfo = new IrisBiometricSubtypeInfo(inputStream, imageFormat);
+			constructedDataLength += biometricSubtypeInfo.getRecordLength();
+			add(biometricSubtypeInfo);
 		}
 		if (dataLength != constructedDataLength) {
 			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
@@ -344,9 +344,9 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 		int headerLength = 45;
 
 		int dataLength = 0;
-		List<IrisBiometricSubtypeInfo> irisFeatureInfos = getSubRecords();
-		for (IrisBiometricSubtypeInfo irisFeatureInfo: irisFeatureInfos) {
-			dataLength += irisFeatureInfo.getRecordLength();
+		List<IrisBiometricSubtypeInfo> biometricSubtypeInfos = getSubRecords();
+		for (IrisBiometricSubtypeInfo biometricSubtypeInfo: biometricSubtypeInfos) {
+			dataLength += biometricSubtypeInfo.getRecordLength();
 		}
 
 		int recordLength = headerLength + dataLength;
@@ -362,7 +362,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 
 		dataOut.writeShort(captureDeviceId);										/* +2 = 14 */
 
-		dataOut.writeByte(irisFeatureInfos.size());									/* +1 = 15 */
+		dataOut.writeByte(biometricSubtypeInfos.size());									/* +1 = 15 */
 		dataOut.writeShort(headerLength);											/* +2 = 17 */
 
 		int imagePropertiesBits = 0;
@@ -382,8 +382,8 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 		dataOut.writeByte(imageTransformation);										/* +1 = 29 */
 		dataOut.write(deviceUniqueId); /* array of length 16 */						/* + 16 = 45 */
 
-		for (IrisBiometricSubtypeInfo irisFeatureInfo: irisFeatureInfos) {
-			irisFeatureInfo.writeObject(outputStream);
+		for (IrisBiometricSubtypeInfo biometricSubtypeInfo: biometricSubtypeInfos) {
+			biometricSubtypeInfo.writeObject(outputStream);
 		}
 	}
 
