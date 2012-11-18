@@ -83,7 +83,7 @@ public class PassportFileTest extends TestCase {
 			try {
 				testFile(file);
 			} catch (Exception e) {
-				fail(e.toString());
+				fail("For file " + file + ": " + e.toString());
 			}
 		}
 	}
