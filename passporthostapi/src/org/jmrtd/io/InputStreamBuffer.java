@@ -20,25 +20,24 @@
  * $Id:  $
  */
 
-package org.jmrtd.lds;
+package org.jmrtd.io;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Buffers an inputstream and can supply clients with fresh copies (starting at 0) of that inputstream.
+ * Buffers an inputstream and can supply clients with fresh "copies" (starting at 0) of that inputstream.
  * 
- * TODO: implement read(byte[], ...), skip, mark, reset.
- * TODO: implement getInputStream with offset.
- * TODO: this should probably be moved to some utility package, not JMRTD specific.
+ * TODO: skip based on fragments.
+ * TODO: mark, reset.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
-class InputStreamBuffer {
+public class InputStreamBuffer {
 
-	private int bufferCounter;
-	private int fileLength;
+	/** Keeps track of bytes read into buffer. */
+	private int bufferCounter; /* TODO: instead of (or in addition to?) bufferCounter, have multiple fragments. */
 	private byte[] buffer;
 	private InputStream inputStream;
 
@@ -50,14 +49,12 @@ class InputStreamBuffer {
 		this.buffer = new byte[bytes.length];
 		System.arraycopy(bytes, 0, buffer, 0, bytes.length);
 		inputStream = new ByteArrayInputStream(buffer);
-		this.fileLength = bytes.length;
 		this.bufferCounter = bytes.length;
 	}
 
 	public InputStreamBuffer(InputStream inputStream, int fileLength) {
 		this.inputStream = inputStream;
 		this.bufferCounter = 0;
-		this.fileLength = fileLength;
 		this.buffer = new byte[fileLength];
 	}
 
@@ -68,7 +65,7 @@ class InputStreamBuffer {
 	 */
 	public InputStream getInputStream() {
 		synchronized(inputStream) {
-			if (bufferCounter >= fileLength) {
+			if (bufferCounter >= buffer.length) {
 				return new ByteArrayInputStream(buffer);
 			} else {
 				return new SubInputStream(inputStream);
@@ -81,12 +78,14 @@ class InputStreamBuffer {
 	}
 
 	public int getLength() {
-		return fileLength;
+		return buffer.length;
 	}
 
 	public class SubInputStream extends InputStream {
 
+		/** Keeps track of bytes served via this stream. Should be less than or equal to bufferCounter. */
 		private int streamCounter;
+
 		private Object syncObject;
 
 		public SubInputStream(Object syncObject) {
@@ -99,7 +98,7 @@ class InputStreamBuffer {
 		}
 
 		public int getLength() {
-			return fileLength;
+			return buffer.length;
 		}
 
 		public int read() throws IOException {
@@ -108,6 +107,7 @@ class InputStreamBuffer {
 				if (streamCounter < bufferCounter) {
 					return buffer[streamCounter++] & 0xFF;
 				} else {
+					/* NOTE: streamCounter == bufferCounter */
 					int result = inputStream.read();
 					if (result < 0) {
 						return -1;
@@ -117,6 +117,45 @@ class InputStreamBuffer {
 					return result;
 				}
 			}
+		}
+
+		public int read(byte[] dest) throws IOException {
+			return read(dest, 0, dest.length);
+		}
+
+		public int read(byte[] dest, int offset, int length) throws IOException {
+			assert(streamCounter <= bufferCounter);
+			int leftInBuffer = bufferCounter - streamCounter; // buffered, not yet served via this sub stream
+			if (leftInBuffer <= length) {
+				/* Copy what's left in buffer */
+				System.arraycopy(buffer, streamCounter, dest, offset, leftInBuffer);
+				streamCounter += leftInBuffer;
+				assert(streamCounter == bufferCounter);
+
+				/* And try to read (length - leftInBuffer) more bytes from inputStream */
+				int bytesRead = inputStream.read(buffer, streamCounter, length - leftInBuffer);
+				if (bytesRead <= 0) { return leftInBuffer; }
+				System.arraycopy(buffer, streamCounter, dest, offset + leftInBuffer, bytesRead);
+				streamCounter += bytesRead;
+				bufferCounter += bytesRead;
+				assert(streamCounter == bufferCounter);
+				return bytesRead;
+			} else {
+				assert(length <= leftInBuffer);
+				System.arraycopy(buffer, streamCounter, dest, offset, length);
+				bufferCounter += length;
+				return length;
+			}
+		}
+
+		public long skip(long count) throws IOException {
+			int leftInBuffer = bufferCounter - streamCounter; // buffered, not yet served via this sub stream
+			if (count <= leftInBuffer) {
+				System.out.println("DEBUG: SKIPPING " + count);
+				bufferCounter += (int)count;
+				return count;
+			}
+			return super.skip(count); /* super.skip() will just call read(byte[]), instead use inputstream.skip(), but our buffer bookkeeping is not up to that now. */
 		}
 	}
 }

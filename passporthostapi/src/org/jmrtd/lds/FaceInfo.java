@@ -115,28 +115,28 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 	 * @param inputStream the input stream
 	 */
 	public void readObject(InputStream inputStream) throws IOException {
-		DataInputStream dataIn = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
+		DataInputStream dataInputStream = inputStream instanceof DataInputStream ? (DataInputStream)inputStream : new DataInputStream(inputStream);
 
 		/* Facial Record Header (14) */
 
-		int fac0 = dataIn.readInt(); // header (e.g. "FAC", 0x00)						/* 4 */
+		int fac0 = dataInputStream.readInt(); // header (e.g. "FAC", 0x00)						/* 4 */
 		if (fac0 != FORMAT_IDENTIFIER) { throw new IllegalArgumentException("'FAC' marker expected! Found " + Integer.toHexString(fac0)); }
 
-		int version = dataIn.readInt(); // version in ASCII (e.g. "010" 0x00)			/* + 4 = 8 */
+		int version = dataInputStream.readInt(); // version in ASCII (e.g. "010" 0x00)			/* + 4 = 8 */
 		if (version != VERSION_NUMBER) { throw new IllegalArgumentException("'010' version number expected! Found " + Integer.toHexString(version)); }
 
-		long recordLength = dataIn.readInt() & 0x000000FFFFFFFFL; 						/* + 4 = 12 */
+		long recordLength = dataInputStream.readInt() & 0x000000FFFFFFFFL; 						/* + 4 = 12 */
 		long headerLength = 14; /* 4 + 4 + 4 + 2 */
 		long dataLength = recordLength - headerLength;
 
 		long constructedDataLength = 0L;
 
-		int faceCount = dataIn.readUnsignedShort();										/* + 2 = 14 */
-		
-		for (int i = 0; i < faceCount; i++) {
-			FaceImageInfo faceImageInfo = new FaceImageInfo(inputStream);
-			constructedDataLength += faceImageInfo.getRecordLength();
-			add(faceImageInfo);
+		int count = dataInputStream.readUnsignedShort();										/* + 2 = 14 */
+
+		for (int i = 0; i < count; i++) {
+			FaceImageInfo imageInfo = new FaceImageInfo(inputStream);
+			constructedDataLength += imageInfo.getRecordLength();
+			add(imageInfo);
 		}
 		if (dataLength != constructedDataLength) {
 			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);

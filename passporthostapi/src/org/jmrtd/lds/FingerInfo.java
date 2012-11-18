@@ -294,7 +294,7 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 		long recordLength = readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
 		captureDeviceId = dataIn.readUnsignedShort(); /* all zeros means 'unreported', only lower 12-bits used, see 7.1.4 ISO/IEC 19794-4. */
 		acquisitionLevel = dataIn.readUnsignedShort();
-		int fingerCount = dataIn.readUnsignedByte();
+		int count = dataIn.readUnsignedByte();
 		scaleUnits = dataIn.readUnsignedByte(); /* 1 -> PPI, 2 -> PPCM */
 		scanResolutionHorizontal = dataIn.readUnsignedShort();
 		scanResolutionVertical = dataIn.readUnsignedShort();
@@ -314,10 +314,11 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 		long dataLength = recordLength - headerLength;
 
 		long constructedDataLength = 0L;
-		for (int i = 0; i < fingerCount; i++) {
-			FingerImageInfo fingerImageInfo = new FingerImageInfo(inputStream, compressionAlgorithm);
-			constructedDataLength += fingerImageInfo.getRecordLength();
-			add(fingerImageInfo);
+
+		for (int i = 0; i < count; i++) {
+			FingerImageInfo imageInfo = new FingerImageInfo(inputStream, compressionAlgorithm);
+			constructedDataLength += imageInfo.getRecordLength();
+			add(imageInfo);
 		}
 		if (dataLength != constructedDataLength) {
 			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
