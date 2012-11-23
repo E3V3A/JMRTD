@@ -125,7 +125,7 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 		int version = dataInputStream.readInt(); // version in ASCII (e.g. "010" 0x00)			/* + 4 = 8 */
 		if (version != VERSION_NUMBER) { throw new IllegalArgumentException("'010' version number expected! Found " + Integer.toHexString(version)); }
 
-		long recordLength = dataInputStream.readInt() & 0x000000FFFFFFFFL; 						/* + 4 = 12 */
+		long recordLength = dataInputStream.readInt() & 0xFFFFFFFFL;	 						/* + 4 = 12 */
 		long headerLength = 14; /* 4 + 4 + 4 + 2 */
 		long dataLength = recordLength - headerLength;
 

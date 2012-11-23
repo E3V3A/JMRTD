@@ -291,7 +291,7 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 		int version = dataIn.readInt(); /* version in ASCII (e.g. "010" 0x00) (4) */
 		if (version != VERSION_NUMBER) { throw new IllegalArgumentException("'010' version number expected! Found " + Integer.toHexString(version)); }
 
-		long recordLength = readUnsignedLong(dataIn, 6); /* & 0x0000FFFFFFFFFFFFL */;
+		long recordLength = readUnsignedLong(dataIn, 6); // & 0xFFFFFFFFFFFFL;
 		captureDeviceId = dataIn.readUnsignedShort(); /* all zeros means 'unreported', only lower 12-bits used, see 7.1.4 ISO/IEC 19794-4. */
 		acquisitionLevel = dataIn.readUnsignedShort();
 		int count = dataIn.readUnsignedByte();

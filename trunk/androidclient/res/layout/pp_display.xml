@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical" >
-
+    
     <ProgressBar
         android:id="@+id/ppd_progressW"
         style="@android:style/Widget.ProgressBar.Horizontal"
@@ -27,6 +27,14 @@
         android:layout_height="wrap_content"
         android:stretchColumns="1" >
 
+	<TableRow android:layout_width="match_parent" >
+	    <TextView
+        android:id="@+id/ppd_infoLabelW"
+        android:layout_column="1"
+        android:padding="5dip"
+		/>
+	</TableRow>
+        
         <TableRow android:layout_width="match_parent" >
             <TextView
                 android:layout_column="1"

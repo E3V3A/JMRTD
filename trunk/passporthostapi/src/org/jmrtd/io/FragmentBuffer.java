@@ -1,13 +1,37 @@
+/*
+ * JMRTD - A Java API for accessing machine readable travel documents.
+ *
+ * Copyright (C) 2006 - 2012  The JMRTD team
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
+ *
+ * $Id:  $
+ */
+
 package org.jmrtd.io;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
 public class FragmentBuffer {
 
 	/** Buffer with the actual bytes. */
-	private byte[] buffer;
-
+	private byte[] buffer; // FIXME can we make this buffer grow dynamically?
+	
 	/** Administration of which parts of buffer are filled. */
 	private Collection<Fragment> fragments;
 	
@@ -16,17 +40,35 @@ public class FragmentBuffer {
 		this.fragments = new HashSet<Fragment>();
 	}
 	
+	public synchronized void addFragment(int offset, byte b) {
+		/* FIXME: can this be done more efficiently for common case resulting from InputStreamBuffer read, scan all fragments and extend neighboring one */
+		addFragment(offset, new byte[] { b });
+	}
+	
 	/**
 	 * Adds a fragment of bytes at a specific offset to this file.
 	 * 
-	 * @param offset the offset
-	 * @param bytes the bytes
+	 * @param offset the fragment offset
+	 * @param bytes the bytes from which fragment content will be copied
 	 */
-	public void addFragment(int offset, byte[] bytes) {
-		System.arraycopy(bytes, 0, buffer, offset, bytes.length);
+	public synchronized void addFragment(int offset, byte[] bytes) {
+		addFragment(offset, bytes, 0, bytes.length);
+	}
+
+	/**
+	 * Adds a fragment of bytes at a specific offset to this file.
+	 * 
+	 * @param offset the fragment offset
+	 * @param bytes the bytes from which fragment contents will be copied
+	 * @param srcOffset the offset within bytes where the contents of the fragment start
+	 * @param srcLength the length of the fragment
+	 */
+	public synchronized void addFragment(int offset, byte[] bytes, int srcOffset, int srcLength) {
+		System.arraycopy(bytes, srcOffset, buffer, offset, srcLength);
 		int thisOffset = offset;
-		int thisLength = bytes.length;
-		for (Fragment other: fragments) {
+		int thisLength = srcLength;
+		final Collection<Fragment> otherFragments = new ArrayList<Fragment>(fragments);
+		for (Fragment other: otherFragments) {
 			/* On partial overlap we change this fragment, possibly remove the other overlapping fragments we encounter. */
 			if (other.getOffset() <= thisOffset && thisOffset + thisLength <= other.getOffset() + other.getLength()) {
 				/*
@@ -54,7 +96,7 @@ public class FragmentBuffer {
 				 * The other fragment is contained in this fragment. Remove other.
 				 */
 				fragments.remove(other);
-			} else if (other.getOffset() <= thisOffset && thisOffset <= other.getOffset() + other.getLength()) {
+			} else if (thisOffset <= other.getOffset() && other.getOffset() <= thisOffset + thisLength) {
 				/*
 				 *        [...other fragment...]
 				 * [...this fragment...]
@@ -67,6 +109,53 @@ public class FragmentBuffer {
 		}
 		fragments.add(Fragment.getInstance(thisOffset, thisLength));			
 	}
+	
+	public synchronized int getPosition() {
+		int result = 0;
+		for (int i = 0; i < buffer.length; i++) {
+			if (isCoveredByFragment(i)) {
+				result = i + 1;
+			}
+		}
+		return result;
+	}
+	
+	public synchronized int getBytesBuffered() {
+		int result = 0;
+		for (int i = 0; i < buffer.length; i++) {
+			if (isCoveredByFragment(i)) {
+				result++;
+			}
+		}
+		return result;
+	}
+	
+	public synchronized boolean isCoveredByFragment(int offset) {
+		return isCoveredByFragment(offset, 1);
+	}
+	
+	public synchronized boolean isCoveredByFragment(int offset, int length) {
+		for (Fragment fragment: fragments) {
+			int left = fragment.getOffset();
+			int right = fragment.getOffset() + fragment.getLength();
+			if (left <= offset && offset + length <= right) { return true; }
+		}
+		return false;		
+	}
+	
+	public synchronized int getBufferedLength(int index) {
+		int result = 0;
+		if (index >= buffer.length) { return 0; }
+		for (Fragment fragment: fragments) {
+			int left = fragment.getOffset();
+			int right = fragment.getOffset() + fragment.getLength();
+			if (left <= index && index < right) {
+				int newResult = right - index;
+				if (newResult > result) { result = newResult; }
+			}
+		}
+		return result;
+	}	
 
 	public Collection<Fragment> getFragments() {
 		return fragments;
@@ -89,7 +178,7 @@ public class FragmentBuffer {
 	 * @param length the length
 	 * @return
 	 */
-	public Fragment getSmallestUnbufferedFragment(int offset, int length) {
+	public synchronized Fragment getSmallestUnbufferedFragment(int offset, int length) {
 		int thisOffset = offset, thisLength = length;
 		for (Fragment other: fragments) {
 			/* On partial overlap we change this fragment, removing sections already buffered. */
@@ -132,6 +221,22 @@ public class FragmentBuffer {
 			}
 		}
 		return Fragment.getInstance(thisOffset, thisLength);
+	}
+	
+	public synchronized String toString() {
+		return "FragmentBuffer [" + buffer.length + ", " + fragments + "]";
+	}
+	
+	public synchronized boolean equals(Object otherObject) {
+		if (otherObject == null) { return false; }
+		if (otherObject == this) { return true; }
+		if (!otherObject.getClass().equals(FragmentBuffer.class)) { return false; }
+		FragmentBuffer otherBuffer = (FragmentBuffer)otherObject;
+		if (otherBuffer.buffer == null && this.buffer != null) { return false; }
+		if (otherBuffer.buffer != null && this.buffer == null) { return false; }
+		if (otherBuffer.fragments == null && this.fragments != null) { return false; }
+		if (otherBuffer.fragments != null && this.fragments == null) { return false; }
+		return Arrays.equals(otherBuffer.buffer, this.buffer) && otherBuffer.fragments.equals(this.fragments);
 	}
 	
 	public static class Fragment {

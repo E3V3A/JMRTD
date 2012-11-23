@@ -89,13 +89,18 @@ public class IrisBiometricSubtypeInfo extends AbstractListInfo<IrisImageInfo> {
 
 		/* Iris biometric subtype header */
 		this.biometricSubtype = dataIn.readUnsignedByte();			/* 1 */
-		int count = dataIn.readUnsignedShort();				/* + 2 = 3 */
+		int count = dataIn.readUnsignedShort();						/* + 2 = 3 */
 
-		/* Images */
-		for (int imageIndex = 0; imageIndex < count; imageIndex++) {
+		long constructedDataLength = 0L;
+		
+		for (int i = 0; i < count; i++) {
 			IrisImageInfo imageInfo = new IrisImageInfo(inputStream, imageFormat);
+			constructedDataLength += imageInfo.getRecordLength();
 			add(imageInfo);
 		}
+//		if (dataLength != constructedDataLength) {
+//			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+//		}
 	}
 
 	/**
