@@ -51,6 +51,7 @@ import org.jmrtd.lds.FaceImageInfo;
 import org.jmrtd.lds.FaceInfo;
 import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFile;
+import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.SODFile;
 
@@ -88,6 +89,7 @@ public class PPDisplayAct extends Activity {
 	private boolean isDisplaying;
 
 	private ImageView imageView;
+	private TextView infoLabelW;
 	private TextView documentNumberW;
 	private TextView personalNumberW;
 	private TextView issuingStateW;
@@ -118,19 +120,8 @@ public class PPDisplayAct extends Activity {
 	protected void onResume() {
 		super.onResume();
 		Log.v(TAG, "onResume");
-
 		Intent intent = getIntent();
 		resolveIntent(intent);
-
-		//		if (progressDialog != null && progressDialog.isShowing()) {
-		//			progressDialog.dismiss();
-		//		}
-		//		
-		//		progressDialog = new ProgressDialog(this);
-		//		progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		//		progressDialog.setTitle("Provide passport");
-		//		progressDialog.setMessage("Looking for document...");
-		//		progressDialog.show();
 		enableForegroundDispatch(); // Why not call from onCreate? -- MO
 	}
 
@@ -144,6 +135,7 @@ public class PPDisplayAct extends Activity {
 	}
 
 	private void prepareWidgets() {
+		infoLabelW = (TextView)findViewById(R.id.ppd_infoLabelW);
 		imageView = (ImageView)findViewById(R.id.pp_display_iv);
 		documentNumberW = (TextView)findViewById(R.id.ppd_documentNumberW);
 		personalNumberW = (TextView)findViewById(R.id.ppd_personalNumberW);
@@ -178,18 +170,6 @@ public class PPDisplayAct extends Activity {
 	}
 
 	private void handleIsoDepFound(IsoDep isoDep) {
-		//		if (progressDialog != null && progressDialog.isShowing()) {
-		//			progressDialog.dismiss();
-		//		}
-
-		//		progressDialog = new ProgressDialog(this);
-		//		progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-		//		progressDialog.setTitle("Please wait");
-		//		progressDialog.setMessage("Reading...");
-		//		if (!progressDialog.isShowing()) {
-		//			progressDialog.show();
-		//		}
-
 		Log.v(TAG, "handleIsoDepFound " + isoDep);
 		try {
 			isoDep.setTimeout(10000);
@@ -267,30 +247,16 @@ public class PPDisplayAct extends Activity {
 
 		isDisplaying = true;
 		progressBar.setProgress(lds.getPosition());
-		progressBar.setMax(lds.getLength()); /* DEBUG */
+		progressBar.setMax(lds.getLength());
 
-		//		progressDialog.setMax(passport.getTotalLength());
-		//		progressDialog.setProgress(passport.getBytesRead());
-		//		progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-		//		progressDialog.setTitle("Please wait");
-		//		progressDialog.setMessage("Reading...");
-		//		progressDialog.setCancelable(true);
-		//		progressDialog.setOnCancelListener(new OnCancelListener() {
-		//			public void onCancel(DialogInterface dialog) {
-		//				setResult(RESULT_CANCELED);
-		//				finish();
-		//			}
-		//		});
 		progressHandler = new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
 				/* get the value from the Message */
 				int progress = msg.arg1;
-				//				progressDialog.setProgress(progress);
 				progressBar.setProgress(progress);
 			}
 		};
-		//		progressDialog.show();
 
 		new Thread(new Runnable() {
 
@@ -309,14 +275,6 @@ public class PPDisplayAct extends Activity {
 			}			
 		}).start();
 
-		//		passport.addProgressListener(new Passport.ProgressListener() {
-		//			public void changed(int progress, int max) {
-		//				Message message = new Message();
-		//				message.arg1 = progress;
-		//				progressHandler.sendMessage(message);
-		//			}
-		//
-		//		});
 		new AsyncPassportInterpret().execute(passport);
 	}
 
@@ -371,14 +329,17 @@ public class PPDisplayAct extends Activity {
 			PassportProgress e = progress[0];
 			switch (e.getType()) {
 			case PassportProgress.STARTED:
+				int tag = e.getTag();
 				try {
-					//					progressDialog.setTitle("Please wait");
-					//					progressDialog.setMessage("Examining DG" + LDSFileUtil.lookupDataGroupNumberByTag(e.getTag()));
+					int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+					infoLabelW.setText("[Reading DG" + dgNumber + "]");		
 				} catch (NumberFormatException nfe) {
+					infoLabelW.setText("[Reading file 0x" + Integer.toHexString(tag) + "]");
 				}
 				break;
 			case PassportProgress.FINISHED:
 				LDSFile file = e.getFile();
+				infoLabelW.setText("");
 				if (file != null) {
 					handleFileInterpreted(file);
 				}
@@ -439,13 +400,6 @@ public class PPDisplayAct extends Activity {
 					allFaceImageInfos.addAll(faceInfo.getFaceImageInfos());
 				}
 				if (allFaceImageInfos.size() > 0) {
-					//				if (progressDialog != null && progressDialog.isShowing()) {
-					//					progressDialog.dismiss();
-					//				}
-					//				progressDialog = new ProgressDialog(this);
-					//				progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-					//				progressDialog.setMessage("Decoding image...");
-					//				progressDialog.show();
 					new AsyncImageDecode().execute(allFaceImageInfos.get(0));
 				} else {
 					//				progressDialog.dismiss();
@@ -479,7 +433,6 @@ public class PPDisplayAct extends Activity {
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			imageView.setImageBitmap(result);
-			//			progressDialog.dismiss();
 			progressBar.setProgress(progressBar.getMax());
 		}
 	}

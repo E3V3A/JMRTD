@@ -24,6 +24,7 @@ package org.jmrtd.test.api.lds;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
@@ -81,6 +82,11 @@ public class FaceImageInfoTest extends TestCase {
 		}
 	}
 
+	public void testNumExtractImageOnce() {
+		FaceImageInfo imageInfo = createNonEmptyTestObject(50, 50);
+		testExtractImage(imageInfo, 50, 50);
+	}
+	
 	public void testNumExtractImage() {
 		for (int width = 100; width < 1000; width += 200) {
 			for (int height = 100; height < 1000; height += 200) {
@@ -92,7 +98,10 @@ public class FaceImageInfoTest extends TestCase {
 
 	public void testExtractImage(FaceImageInfo imageInfo, int expectedWidth, int expectedHeight) {
 		try {
-			BufferedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
+			InputStream imageInputStream = imageInfo.getImageInputStream();
+			int imageLength = imageInfo.getImageLength();
+			String imageMimeType = imageInfo.getMimeType();
+			BufferedImage image = ImageUtil.read(imageInputStream, imageLength, imageMimeType);
 			assertNotNull(image);
 			assertEquals(image.getWidth(), expectedWidth);
 			assertEquals(image.getHeight(), expectedHeight);

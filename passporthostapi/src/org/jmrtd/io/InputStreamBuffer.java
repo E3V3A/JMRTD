@@ -27,35 +27,33 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Buffers an inputstream and can supply clients with fresh "copies" (starting at 0) of that inputstream.
+ * Buffers an inputstream (whose length is known in advance) and can supply clients with fresh
+ * "copies" of that inputstream served from the buffer.
  * 
- * TODO: skip based on fragments.
- * TODO: mark, reset.
+ * NOTE: the original inputstream should no longer be read from, only read bytes from the
+ * sub-inputstreams.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
 public class InputStreamBuffer {
 
-	/** Keeps track of bytes read into buffer. */
-	private int bufferCounter; /* TODO: instead of (or in addition to?) bufferCounter, have multiple fragments. */
-	private byte[] buffer;
-	private InputStream inputStream;
+	private PositionInputStream carrier;
+	private FragmentBuffer buffer;
 
 	public InputStreamBuffer(byte[] bytes) {
 		if (bytes == null) {
-			this.buffer = null;
-			return;
+			throw new IllegalArgumentException("Null buffer");
 		}
-		this.buffer = new byte[bytes.length];
-		System.arraycopy(bytes, 0, buffer, 0, bytes.length);
-		inputStream = new ByteArrayInputStream(buffer);
-		this.bufferCounter = bytes.length;
+		carrier = new PositionInputStream(new ByteArrayInputStream(bytes));
+		carrier.mark(bytes.length);
+		this.buffer = new FragmentBuffer(bytes.length);
+		this.buffer.addFragment(0, bytes);
 	}
 
-	public InputStreamBuffer(InputStream inputStream, int fileLength) {
-		this.inputStream = inputStream;
-		this.bufferCounter = 0;
-		this.buffer = new byte[fileLength];
+	public InputStreamBuffer(InputStream inputStream, int length) {
+		this.carrier = new PositionInputStream(inputStream);
+		this.carrier.mark(length);
+		this.buffer = new FragmentBuffer(length);
 	}
 
 	/**
@@ -64,98 +62,158 @@ public class InputStreamBuffer {
 	 * @return
 	 */
 	public InputStream getInputStream() {
-		synchronized(inputStream) {
-			if (bufferCounter >= buffer.length) {
-				return new ByteArrayInputStream(buffer);
-			} else {
-				return new SubInputStream(inputStream);
-			}
+		synchronized(carrier) {
+			return new SubInputStream(carrier);
 		}
 	}
 
 	public synchronized int getPosition() {
-		return bufferCounter;
+		return buffer.getPosition();
+	}
+
+	public synchronized int getBytesBuffered() {
+		return buffer.getBytesBuffered();
 	}
 
 	public int getLength() {
-		return buffer.length;
+		return buffer.getLength();
 	}
 
-	public class SubInputStream extends InputStream {
+	public String toString() {
+		return "InputStreamBuffer [" + buffer + "]";
+	}
 
-		/** Keeps track of bytes served via this stream. Should be less than or equal to bufferCounter. */
-		private int streamCounter;
+	private class SubInputStream extends InputStream {
+
+		/** The position within this inputstream. */
+		private int position;
+		private int markedPosition;
 
 		private Object syncObject;
 
 		public SubInputStream(Object syncObject) {
-			streamCounter = 0;
+			position = 0;
 			this.syncObject = syncObject;
-		}
-
-		public int getPos() {
-			return streamCounter;
-		}
-
-		public int getLength() {
-			return buffer.length;
 		}
 
 		public int read() throws IOException {
 			synchronized(syncObject) {
-				assert(streamCounter <= bufferCounter);
-				if (streamCounter < bufferCounter) {
-					return buffer[streamCounter++] & 0xFF;
+				if (position >= buffer.getLength()) {
+					return -1;
+				} else if (buffer.isCoveredByFragment(position)) {
+					/* Serve the byte from the buffer */
+					return buffer.getBuffer()[position++] & 0xFF;
 				} else {
-					/* NOTE: streamCounter == bufferCounter */
-					int result = inputStream.read();
-					if (result < 0) {
-						return -1;
-					}
-					buffer[streamCounter++] = (byte)result;
-					bufferCounter++;
+					/* Get it from the carrier */
+					if (carrier.markSupported()) { setCarrierPosition(); }
+					int result = carrier.read();
+					if (result < 0) { return -1; }
+					buffer.addFragment(position++, (byte)result);
 					return result;
 				}
 			}
 		}
 
 		public int read(byte[] dest) throws IOException {
-			return read(dest, 0, dest.length);
-		}
-
-		public int read(byte[] dest, int offset, int length) throws IOException {
-			assert(streamCounter <= bufferCounter);
-			int leftInBuffer = bufferCounter - streamCounter; // buffered, not yet served via this sub stream
-			if (leftInBuffer <= length) {
-				/* Copy what's left in buffer */
-				System.arraycopy(buffer, streamCounter, dest, offset, leftInBuffer);
-				streamCounter += leftInBuffer;
-				assert(streamCounter == bufferCounter);
-
-				/* And try to read (length - leftInBuffer) more bytes from inputStream */
-				int bytesRead = inputStream.read(buffer, streamCounter, length - leftInBuffer);
-				if (bytesRead <= 0) { return leftInBuffer; }
-				System.arraycopy(buffer, streamCounter, dest, offset + leftInBuffer, bytesRead);
-				streamCounter += bytesRead;
-				bufferCounter += bytesRead;
-				assert(streamCounter == bufferCounter);
-				return bytesRead;
-			} else {
-				assert(length <= leftInBuffer);
-				System.arraycopy(buffer, streamCounter, dest, offset, length);
-				bufferCounter += length;
-				return length;
+			synchronized(syncObject) {
+				return read(dest, 0, dest.length);
 			}
 		}
 
-		public long skip(long count) throws IOException {
-			int leftInBuffer = bufferCounter - streamCounter; // buffered, not yet served via this sub stream
-			if (count <= leftInBuffer) {
-				System.out.println("DEBUG: SKIPPING " + count);
-				bufferCounter += (int)count;
-				return count;
+//		public int read(byte[] dest, int offset, int length) throws IOException {
+//			if (dest == null) {
+//				throw new NullPointerException();
+//			} else if (offset < 0 || length < 0 || length > dest.length - offset) {
+//				throw new IndexOutOfBoundsException();
+//			} else if (length == 0) {
+//				return 0;
+//			}
+//			if (position >= buffer.getLength()) { return -1; }
+//			length = Math.min(length, buffer.getLength() - position);
+//			int leftInBuffer = buffer.getBufferedLength(position);
+//			if (length <= leftInBuffer) {
+//				assert(length <= leftInBuffer);
+//				System.arraycopy(buffer.getBuffer(), position, dest, offset, length);
+//				position += length;
+//				return length;
+//			} else {
+//				if (leftInBuffer < 0) { throw new IndexOutOfBoundsException(); }
+//
+//				if (leftInBuffer > 0) {
+//					/* Copy what's left in buffer to dest */
+//					System.arraycopy(buffer.getBuffer(), position, dest, offset, leftInBuffer);
+//					position += leftInBuffer;
+//				}
+//
+//				/* And try to read (length - leftInBuffer) more bytes from inputStream, store result in dest */
+//
+//				if (carrier.markSupported()) { setCarrierPosition(); }
+//
+//				int bytesRead = carrier.read(dest, offset + leftInBuffer, length - leftInBuffer);
+//				if (bytesRead <= 0) { return leftInBuffer; }
+//				assert(leftInBuffer + bytesRead <= length);
+//				/* Copy what's in dest back to the buffer */
+//				try {
+//					buffer.addFragment(position + leftInBuffer, dest, offset + leftInBuffer, bytesRead);
+//				} catch (ArrayIndexOutOfBoundsException aa) {
+//					aa.printStackTrace();
+//				}
+//				position += bytesRead;
+//				return leftInBuffer + bytesRead;
+//			}
+//
+//		}
+
+		public long skip(long n) throws IOException {
+				int leftInBuffer = buffer.getBufferedLength(position);
+				if (n <= leftInBuffer) {
+					/* If we can skip within the buffer, we do */
+					position += n;
+					return n;
+				} else {
+					assert(leftInBuffer < n);
+					/* Otherwise, skip what's left in buffer, then skip within carrier... */
+					position += leftInBuffer;
+					long skippedBytes = 0;
+					if (carrier.markSupported()) {
+						/* First reposition carrier (by reset() and skip()) if not in sync with our position */
+						setCarrierPosition();
+						skippedBytes = carrier.skip(n - leftInBuffer);
+					} else {
+						skippedBytes = super.skip(n - leftInBuffer);
+					}
+					position += (int)skippedBytes;
+					return leftInBuffer + skippedBytes;
+				}
+		}
+
+		public int available() throws IOException {
+				return buffer.getBufferedLength(position);
+		}
+
+		public void close() throws IOException {
+		}
+
+		public synchronized void mark(int readlimit) {
+			markedPosition = position;
+		}
+
+		public synchronized void reset() throws IOException {
+			position = markedPosition;
+		}
+
+		public boolean markSupported() {
+			return true;
+		}
+
+		private void setCarrierPosition() throws IOException {
+			if (position < carrier.getPosition()) {
+				carrier.reset();
+				int bytesSkipped = 0;
+				while (bytesSkipped < position) {
+					bytesSkipped += carrier.skip(position - bytesSkipped);
+				}
 			}
-			return super.skip(count); /* super.skip() will just call read(byte[]), instead use inputstream.skip(), but our buffer bookkeeping is not up to that now. */
 		}
 	}
 }

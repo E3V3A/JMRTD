@@ -434,9 +434,11 @@ public class DocumentViewFrame extends JMRTDFrame {
 			public void run() {
 				try {
 					while (isDisplaying) {
-						progressBar.setMaximum(passport.getLDS().getLength());
-						progressBar.setValue(passport.getLDS().getPosition());
-						Thread.sleep(1000);
+						int pos = passport.getLDS().getPosition();
+						int length = passport.getLDS().getLength();
+						progressBar.setMaximum(length);
+						progressBar.setValue(pos);
+						Thread.sleep(200);
 					}
 				} catch (InterruptedException ie) {
 					/* NOTE: interrupted, end thread. */

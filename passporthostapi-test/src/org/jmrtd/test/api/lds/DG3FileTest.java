@@ -22,7 +22,9 @@
 package org.jmrtd.test.api.lds;
 
 import java.awt.image.RenderedImage;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -242,7 +244,8 @@ public class DG3FileTest extends TestCase {
 	
 	private DG3File getTestObject() {
 		try {
-			FileInputStream in = new FileInputStream(TEST_FILE);
+			File testFile = new File(TEST_FILE);
+			InputStream in = new BufferedInputStream(new FileInputStream(testFile), (int)testFile.length());
 			DG3File dg3 = new DG3File(in);
 			return dg3;
 		} catch (Exception e) {
