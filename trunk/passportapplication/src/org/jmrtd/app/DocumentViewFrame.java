@@ -386,6 +386,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 		try {
 			LDS lds = passport.getLDS();
 			DG14File dg14 = lds.getDG14File();
+			if (dg14 == null) { return; }
 			PrivateKey terminalKey = null;
 			List<CardVerifiableCertificate> cvCertificates = null;
 			Map<BigInteger, PublicKey> publicKeyMap = dg14.getChipAuthenticationPublicKeyInfos();
