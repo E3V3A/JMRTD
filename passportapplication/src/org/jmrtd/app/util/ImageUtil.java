@@ -34,6 +34,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
 import java.awt.image.RenderedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -220,5 +221,19 @@ public class ImageUtil {
 		// Get the image's color model
 		ColorModel cm = pg.getColorModel();
 		return cm.hasAlpha();
+	}
+	
+	public static byte[] createTrivialJPEGBytes(int width, int height) {
+		try {
+			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			ImageIO.write(image, "jpg", out);
+			out.flush();
+			byte[] bytes = out.toByteArray();
+			return bytes;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 }

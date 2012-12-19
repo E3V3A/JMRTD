@@ -20,7 +20,6 @@ import org.jmrtd.cert.CVCAuthorizationTemplate;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
-import org.jmrtd.cert.CVCPublicKey;
 import org.jmrtd.cert.CVCertificateBuilder;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.CVCAFile;
@@ -851,7 +850,7 @@ public class PassportEACTester extends PassportTesterBase {
             case 2: role = Role.IS;
             }
             Permission rights = oldCert.getAuthorizationTemplate().getAccessRight();
-            CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+            PublicKey publicKey = oldCert.getPublicKey();
             String algName = publicKey.getAlgorithm();
 
             KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
@@ -917,7 +916,7 @@ public class PassportEACTester extends PassportTesterBase {
                         }
                     }
                     Permission rights = oldCert.getAuthorizationTemplate().getAccessRight();
-                    CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+                    PublicKey publicKey = oldCert.getPublicKey();
                     String algName = publicKey.getAlgorithm();
 
                     KeyPairGenerator keyGen = KeyPairGenerator.getInstance("ECDSA", "BC");
@@ -984,7 +983,7 @@ public class PassportEACTester extends PassportTesterBase {
                     }
                     Permission rights = oldCert.getAuthorizationTemplate()
                             .getAccessRight();
-                    CVCPublicKey publicKey = (CVCPublicKey)oldCert.getPublicKey();
+                    PublicKey publicKey = oldCert.getPublicKey();
                     String algName = publicKey.getAlgorithm();
 
                     KeyPairGenerator keyGen = KeyPairGenerator.getInstance(
@@ -1027,7 +1026,7 @@ public class PassportEACTester extends PassportTesterBase {
             CardVerifiableCertificate oldISCert) {
         try {
 //        CVCertificateBody body = oldRootCert.getCertificateBody();
-        CVCPublicKey publicKey = (CVCPublicKey)oldRootCert.getPublicKey();
+        PublicKey publicKey = oldRootCert.getPublicKey();
         Country country = oldRootCert.getAuthorityReference().getCountry();
         String mnemonic = oldRootCert.getAuthorityReference().getMnemonic();
         String sequence = oldRootCert.getAuthorityReference().getSeqNumber();
@@ -1064,7 +1063,7 @@ public class PassportEACTester extends PassportTesterBase {
         
         
 //        body = oldDVDCert.getCertificateBody();
-        publicKey = (CVCPublicKey)oldDVDCert.getPublicKey();
+        publicKey = oldDVDCert.getPublicKey();
         caRef = new CVCPrincipal(country, mnemonic, sequence);
         holderRef = oldDVDCert.getHolderReference();
         validFrom = oldDVDCert.getNotBefore();
@@ -1089,7 +1088,7 @@ public class PassportEACTester extends PassportTesterBase {
         
 
 //        body = oldISCert.getCertificateBody();
-        publicKey = (CVCPublicKey)oldISCert.getPublicKey();
+        publicKey = oldISCert.getPublicKey();
         caRef = oldISCert.getAuthorityReference();
         holderRef = oldISCert.getHolderReference();
         validFrom = oldISCert.getNotBefore();

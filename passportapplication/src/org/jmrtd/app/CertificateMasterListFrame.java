@@ -30,6 +30,7 @@ import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.math.BigInteger;
 import java.security.cert.Certificate;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
@@ -151,17 +152,17 @@ public class CertificateMasterListFrame extends JMRTDFrame {
 		tree.addMouseListener(new MouseAdapter() {
 			public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() <= 1) { return; }
-		        TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
-		        if (selPath == null) { return; }
-		        DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
-				
+				TreePath selPath = tree.getPathForLocation(e.getX(), e.getY());
+				if (selPath == null) { return; }
+				DefaultMutableTreeNode node = (DefaultMutableTreeNode)selPath.getLastPathComponent();
+
 				Object userObject = node.getUserObject();
 				if (userObject instanceof Certificate) {
 					JFrame certificateFrame = new CertificateChainFrame((Certificate)userObject);
 					certificateFrame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 					certificateFrame.pack();
 					certificateFrame.setVisible(true);
-//					JOptionPane.showMessageDialog(tree, certificatePanel);
+					//					JOptionPane.showMessageDialog(tree, certificatePanel);
 				}
 			}
 		});
@@ -178,7 +179,7 @@ public class CertificateMasterListFrame extends JMRTDFrame {
 	}
 
 	/* ONLY PRIVATE METHODS BELOW */
-	
+
 	private JMenu createFileMenu() {
 		JMenu fileMenu = new JMenu("File");
 
@@ -225,8 +226,17 @@ public class CertificateMasterListFrame extends JMRTDFrame {
 		if (startIndex < 0) { throw new IllegalArgumentException("Could not get country from issuer name, " + issuerName); }
 		int endIndex = issuerName.indexOf(",", startIndex);
 		if (endIndex < 0) { endIndex = issuerName.length(); }
-		String countryCode = issuerName.substring(startIndex + 2, endIndex).trim().toUpperCase();
-		return Country.getInstance(countryCode);
+		final String countryCode = issuerName.substring(startIndex + 2, endIndex).trim().toUpperCase();
+		try {			
+			return Country.getInstance(countryCode);
+		} catch (Exception e) {
+			return new Country() {
+				public int valueOf() { return -1; }
+				public String getName() { return "Unknown country (" + countryCode + ")"; }
+				public String toAlpha2Code() { return countryCode; }
+				public String toAlpha3Code() { return "X" + countryCode; }
+			};
+		}
 	}
 
 	private class CountryAndCertRenderer extends DefaultTreeCellRenderer {
@@ -267,7 +277,9 @@ public class CertificateMasterListFrame extends JMRTDFrame {
 					String certName = certificate.toString();
 					if (certificate instanceof X509Certificate) {
 						X509Certificate x509Cert = (X509Certificate)certificate;
-						certName = x509Cert.getIssuerX500Principal().getName() + " (" + x509Cert.getSerialNumber() + ")";
+						String issuerName = x509Cert.getIssuerX500Principal().getName("RFC1779");
+						BigInteger serialNumber = x509Cert.getSerialNumber();
+						certName = issuerName + " (" + serialNumber + ")";
 					}
 					label.setFont(TREE_FONT);
 					label.setText(certName);
