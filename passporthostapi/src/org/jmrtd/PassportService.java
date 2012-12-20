@@ -53,6 +53,7 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -411,6 +412,17 @@ public class PassportService extends PassportApduService implements Serializable
 	 * certificates to the card for verification, get a challenge from the
 	 * passport, sign it with terminal private key, and send back to the card
 	 * for verification.
+	 * 
+	 * From BSI-03110 v1.1, B.2:
+	 * 
+	 * The following sequence of commands SHALL be used to implement Terminal Authentication:
+	 * 	1. MSE:Set DST
+	 * 	2. PSO:Verify Certificate
+	 * 	3. MSE:Set AT
+	 * 	4. Get Challenge
+	 * 	5. External Authenticate
+	 * Steps 1 and 2 are repeated for every CV certificate to be verified
+	 * (CVCA Link Certificates, DV Certificate, IS Certificate).
 	 */
 	public synchronized byte[] doTA(List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg, byte[] caKeyHash, String documentNumber) throws CardServiceException {
@@ -420,15 +432,27 @@ public class PassportService extends PassportApduService implements Serializable
 			}
 			String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
 			byte[] certRef = null;
+			
+			// DEBUG: Root cert first should be the first, if not reverse
+			// Collections.reverse(terminalCertificates);
+			
 			for (CardVerifiableCertificate cert : terminalCertificates) {
 				try {
-					if(certRef == null) {
-						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("ISO-8859-1"));
-					}
+					String ref = cert.getHolderReference().getName();
+					System.out.println("DEBUG: cert = " + ref);
+//					if(certRef == null) {
+//						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("ISO-8859-1"));
+//					}
+
+					/* Step 1: MSE:SetDST */
 					/* Manage Security Environment: Set for verification: Digital Signature Template */
+					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes("ISO-8859-1"));
 					sendMSESetDST(wrapper, certRef);
 
+					/* Cert body is already in DER format. */
 					byte[] body = cert.getCertBodyData();
+					System.out.println("DEBUG: body = \n" + Hex.bytesToPrettyString(body));
+					
 					ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
 					TLVOutputStream tlvSigOut = new TLVOutputStream(sigOut);
 					tlvSigOut.writeTag(TAG_CVCERTIFICATE_SIGNATURE);
@@ -436,13 +460,12 @@ public class PassportService extends PassportApduService implements Serializable
 					tlvSigOut.close();
 					byte[] sig = sigOut.toByteArray();
 
-					// true means do not do chaining, send all in one APDU
-					// the actual passport may require chaining (when the
-					// certificate
-					// is too big to fit into one APDU). FIXME: What boolean are we referring to here? -- MO
+					/* Step 2: PSO:Verify Certificate */
 					sendPSOExtendedLengthMode(wrapper, body, sig);
-					sigAlg = cert.getPublicKey().getAlgorithm();
-					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes());
+					sigAlg = cert.getPublicKey().getAlgorithm();					
+				} catch (CardServiceException cse) {
+					System.out.println("DEBUG: SW = " + Integer.toHexString(cse.getSW()));
+					throw cse;
 				} catch (Exception e) {
 					/* FIXME: Does this mean we failed to authenticate? -- MO */
 					throw new CardServiceException(e.getMessage());
@@ -452,13 +475,15 @@ public class PassportService extends PassportApduService implements Serializable
 				return new byte[0];
 			}
 
-			// Now send get challenge + mutual authentication
+
+			/* Step 3: external authenticate */
+			/* Manage Security Environment: Set for external authentication: Authentication Template */
+			sendMSESetAT(wrapper, certRef); // shouldn't this be before the sendGetChallenge above? FIXME: it is now, test this.
+
+			/* Step 4: send get challenge */
 			byte[] idpic = new byte[documentNumber.length() + 1];
 			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
 			idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
-
-			/* Manage Security Environment: Set for external authentication: Authentication Template */
-			sendMSESetAT(wrapper, certRef); // shouldn't this be before the sendGetChallenge above? FIXME: it is now, test this.
 
 			byte[] rpicc = sendGetChallenge(wrapper);
 
@@ -476,9 +501,12 @@ public class PassportService extends PassportApduService implements Serializable
 				signature = getRawECDSASignature(signature, keySize);
 			}
 
+			/* Step 5: external authenticate */
 			sendMutualAuthenticate(wrapper, signature);
 			state = TA_AUTHENTICATED_STATE;
 			return rpicc;
+		} catch (CardServiceException cse) {
+			throw cse;
 		} catch (Exception e) {
 			throw new CardServiceException(e.toString());
 		}

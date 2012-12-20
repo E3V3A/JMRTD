@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -362,7 +363,7 @@ public class Passport {
 			zipFile.close();
 		}
 	}
-	
+
 	private int guessFID(String fileName, byte[] bytes) {
 		int fid = -1;
 		int delimIndex = fileName.lastIndexOf('.');
@@ -381,7 +382,7 @@ public class Passport {
 				/* ...guess not */ 
 			}
 		}
-		
+
 		int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
 		if (fid < 0) {
 			/* FIXME: untested! */
@@ -463,7 +464,7 @@ public class Passport {
 	public BACKeySpec getBACKeySpec() {
 		return bacKeySpec;
 	}
-	
+
 	public LDS getLDS() {
 		return lds;
 	}
@@ -667,20 +668,6 @@ public class Passport {
 
 	/* ONLY PRIVATE METHODS BELOW. */
 
-	/**
-	 * Constructs a document by reading from an actual MRTD chip
-	 * through a service.
-	 * 
-	 * @param service the service to read from
-	 * @param cvcaStore contains EAC relevant credentials
-	 * @param bacKeySpec contains the the document number that is used in EAC
-	 * 
-	 * @throws IOException on error
-	 * @throws CardServiceException on error
-	 */
-	private void readFromService(PassportService service, BACKeySpec bacKeySpec, MRTDTrustStore trustManager) throws IOException, CardServiceException {	
-	}
-
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
@@ -690,18 +677,39 @@ public class Passport {
 			if (caReference == null) { continue; }
 			try {
 				List<String> aliases = Collections.list(cvcaStore.aliases());
+				System.out.println("DEBUG: aliases = " + aliases);
+				PrivateKey privateKey = null;
+				Certificate[] chain = null;
 				for (String alias: aliases) {
-					if (!cvcaStore.isCertificateEntry(alias)) { continue; }
-					CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
-					CVCPrincipal authRef = certificate.getAuthorityReference();
-					CVCPrincipal holderRef = certificate.getHolderReference();
-					if (!caReference.equals(authRef)) { continue; }
-					/* See if we have a private key for that certificate. */
-					PrivateKey privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
-					Certificate[] certPath = cvcaStore.getCertificateChain(holderRef.getName());
-					if (privateKey == null) { continue; }
-					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(certPath.length);
-					for (Certificate c: certPath) { terminalCerts.add((CardVerifiableCertificate)c); }
+					if (cvcaStore.isKeyEntry(alias)) {
+						Security.insertProviderAt(JMRTDSecurityProvider.getBouncyCastleProvider(), 0);
+						Key key = cvcaStore.getKey(alias, "".toCharArray());
+						if (key instanceof PrivateKey) {
+							privateKey = (PrivateKey)key;
+						} else {
+							System.out.println("DEBUG: WARNING: skipping non-private key " + alias);
+							continue;
+						}
+						chain = cvcaStore.getCertificateChain(alias);
+					} else if (cvcaStore.isCertificateEntry(alias)) { 
+						CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
+						CVCPrincipal authRef = certificate.getAuthorityReference();
+						CVCPrincipal holderRef = certificate.getHolderReference();
+						System.out.println("DEBUG: authRef = " + authRef + ", holderRef = " + holderRef);
+						System.out.println("DEBUG: caRef = " + caReference);
+						if (!caReference.equals(authRef)) { continue; }
+						/* See if we have a private key for that certificate. */
+						privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
+						chain = cvcaStore.getCertificateChain(holderRef.getName());
+						if (privateKey == null) { continue; }
+						System.out.println("DEBUG: found a key, privateKey = " + privateKey);
+					}
+					if (privateKey == null || chain == null) {
+						System.out.println("DEBUG: WARNING: chain = " + chain + ", privateKey = " + privateKey + ", for entry " + alias);
+						continue;
+					}
+					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
+					for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
 					for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
 						BigInteger keyId = entry.getKey();
 						PublicKey publicKey = entry.getValue();

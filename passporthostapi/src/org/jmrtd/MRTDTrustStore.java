@@ -69,7 +69,7 @@ import org.jmrtd.cert.PKDMasterListCertStoreParameters;
 public class MRTDTrustStore {
 
 	private static final Provider JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private static final CertSelector SELF_SIGNED_X509_CERT_SELECTOR = new X509CertSelector() {
@@ -296,7 +296,7 @@ public class MRTDTrustStore {
 		 * We have to try both store types, only Bouncy Castle Store (BKS) 
 		 * knows about unnamed EC keys.
 		 */
-		String[] storeTypes = new String[] {"JKS", "BKS" };
+		String[] storeTypes = new String[] { "JKS", "BKS", "PKCS12" };
 		for(String storeType : storeTypes) {
 			try {
 				KeyStore cvcaStore = KeyStore.getInstance(storeType);

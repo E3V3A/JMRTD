@@ -133,7 +133,7 @@ public class CVCAuthorizationTemplate {
 			throw new IllegalArgumentException("Error getting role from AuthZ template");
 		}
 	}
-	
+
 	/**
 	 * Constructs an authorization template.
 	 * 
@@ -162,7 +162,7 @@ public class CVCAuthorizationTemplate {
 	public Permission getAccessRight() {
 		return accessRight;
 	}
-	
+
 	/**
 	 * Gets a textual representation of this authorization template.
 	 * 
@@ -171,7 +171,7 @@ public class CVCAuthorizationTemplate {
 	public String toString() {
 		return role.toString() + accessRight.toString();
 	}
-	
+
 	/**
 	 * Checks equality.
 	 *
@@ -186,7 +186,7 @@ public class CVCAuthorizationTemplate {
 		CVCAuthorizationTemplate otherTemplate = (CVCAuthorizationTemplate)otherObj;
 		return this.role == otherTemplate.role && this.accessRight == otherTemplate.accessRight;
 	}
-	
+
 	/**
 	 * Gets a hash code of this object.
 	 * 
@@ -194,5 +194,31 @@ public class CVCAuthorizationTemplate {
 	 */
 	public int hashCode() {
 		return 2 * role.value + 3 * accessRight.value + 61;
+	}
+
+	static org.ejbca.cvc.AccessRightEnum fromPermission(Permission thisPermission) {
+		try{
+			switch(thisPermission) {
+			case READ_ACCESS_NONE: return org.ejbca.cvc.AccessRightEnum.READ_ACCESS_NONE;
+			case READ_ACCESS_DG3: return org.ejbca.cvc.AccessRightEnum.READ_ACCESS_DG3;
+			case READ_ACCESS_DG4: return org.ejbca.cvc.AccessRightEnum.READ_ACCESS_DG4;
+			case READ_ACCESS_DG3_AND_DG4: return org.ejbca.cvc.AccessRightEnum.READ_ACCESS_DG3_AND_DG4;
+			}
+		} catch (Exception e) {
+		}
+		throw new IllegalArgumentException("Error getting permission from AuthZ template");
+	}
+
+	static org.ejbca.cvc.AuthorizationRoleEnum fromRole(Role thisRole) {
+		try {
+			switch(thisRole) {
+			case CVCA: return org.ejbca.cvc.AuthorizationRoleEnum.CVCA;
+			case DV_D: return org.ejbca.cvc.AuthorizationRoleEnum.DV_D;
+			case DV_F: return org.ejbca.cvc.AuthorizationRoleEnum.DV_F;
+			case IS: return org.ejbca.cvc.AuthorizationRoleEnum.IS;
+			}
+		} catch (Exception e) {
+		}
+		throw new IllegalArgumentException("Error getting role from AuthZ template");
 	}
 }
