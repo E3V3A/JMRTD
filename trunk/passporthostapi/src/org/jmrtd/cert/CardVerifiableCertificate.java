@@ -41,7 +41,13 @@ import java.util.Date;
 
 import net.sourceforge.scuba.data.Country;
 
+import org.ejbca.cvc.AccessRightEnum;
+import org.ejbca.cvc.AuthorizationRoleEnum;
+import org.ejbca.cvc.CAReferenceField;
+import org.ejbca.cvc.CVCertificateBody;
+import org.ejbca.cvc.HolderReferenceField;
 import org.ejbca.cvc.ReferenceField;
+import org.ejbca.cvc.exception.ConstructionException;
 
 /**
  * Card verifiable certificates as specified in TR 03110.
@@ -81,16 +87,44 @@ public class CardVerifiableCertificate extends Certificate {
 		this.cvCertificate = cvCertificate;
 	}
 
-    /**
-     * Returns the encoded form of this certificate. It is
-     * assumed that each certificate type would have only a single
-     * form of encoding; for example, X.509 certificates would
-     * be encoded as ASN.1 DER.
-     *
-     * @return the encoded form of this certificate
-     *
-     * @exception CertificateEncodingException if an encoding error occurs.
-     */
+	/*
+	 * TODO: perhaps move this to factory class (CertificateFactory, CertificateBuilder, whatever).
+	 * NOTE: algorithm should be one of"SHA224withECDSA", "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA",
+	 * or similar with RSA.
+	 * 
+	 */
+	public CardVerifiableCertificate(CVCPrincipal authorityReference, CVCPrincipal holderReference,
+			PublicKey publicKey,
+			String algorithm,
+			Date notBefore,
+			Date notAfter,
+			CVCAuthorizationTemplate.Role role,
+			CVCAuthorizationTemplate.Permission permission,
+			byte[] signatureData) {
+		super("CVC");
+		try {
+			CAReferenceField authorityRef = new CAReferenceField(authorityReference.getCountry().toAlpha2Code(), authorityReference.getMnemonic(), authorityReference.getSeqNumber());
+			HolderReferenceField  holderRef = new HolderReferenceField(holderReference.getCountry().toAlpha2Code(), holderReference.getMnemonic(), holderReference.getSeqNumber());
+			AuthorizationRoleEnum authRole = CVCAuthorizationTemplate.fromRole(role);
+			AccessRightEnum accessRight = CVCAuthorizationTemplate.fromPermission(permission);		
+			CVCertificateBody body = new CVCertificateBody(authorityRef, org.ejbca.cvc.KeyFactory.createInstance(publicKey, algorithm, authRole), holderRef, authRole, accessRight, notBefore, notAfter);
+			this.cvCertificate = new org.ejbca.cvc.CVCertificate(body);
+			this.cvCertificate.setSignature(signatureData);
+		} catch(ConstructionException ce) {
+			throw new IllegalArgumentException(ce.getMessage());
+		}
+	}
+
+	/**
+	 * Returns the encoded form of this certificate. It is
+	 * assumed that each certificate type would have only a single
+	 * form of encoding; for example, X.509 certificates would
+	 * be encoded as ASN.1 DER.
+	 *
+	 * @return the encoded form of this certificate
+	 *
+	 * @exception CertificateEncodingException if an encoding error occurs.
+	 */
 	public byte[] getEncoded() throws CertificateEncodingException {
 		try {
 			return cvCertificate.getDEREncoded();
@@ -99,11 +133,11 @@ public class CardVerifiableCertificate extends Certificate {
 		}
 	}
 
-    /**
-     * Gets the public key from this certificate.
-     *
-     * @return the public key.
-     */
+	/**
+	 * Gets the public key from this certificate.
+	 *
+	 * @return the public key.
+	 */
 	public PublicKey getPublicKey() {
 		try {
 			org.ejbca.cvc.CVCPublicKey publicKey = cvCertificate.getCertificateBody().getPublicKey();
@@ -113,10 +147,12 @@ public class CardVerifiableCertificate extends Certificate {
 					return rsaKeyFactory.generatePublic(new RSAPublicKeySpec(rsaPublicKey.getModulus(), rsaPublicKey.getPublicExponent()));
 				} catch (GeneralSecurityException gse) {
 					gse.printStackTrace();
-					return new CVCPublicKey(publicKey);
+					return publicKey;
 				}
 			}
-			return new CVCPublicKey(publicKey);
+
+			/* It's ECDSA... */
+			return publicKey;
 		} catch (NoSuchFieldException nsfe) {
 			nsfe.printStackTrace();
 			return null;
@@ -181,8 +217,8 @@ public class CardVerifiableCertificate extends Certificate {
 	 * @exception CertificateException on encoding errors.
 	 */
 	public void verify(PublicKey key, String provider)
-	throws CertificateException, NoSuchAlgorithmException,
-	InvalidKeyException, NoSuchProviderException, SignatureException {
+			throws CertificateException, NoSuchAlgorithmException,
+			InvalidKeyException, NoSuchProviderException, SignatureException {
 		cvCertificate.verify(key, provider);
 	}
 

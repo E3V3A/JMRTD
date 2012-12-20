@@ -540,7 +540,7 @@ public class PassportApduService extends CardService {
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Sending MSE DST failed.");
+			throw new CardServiceException("Sending MSE Set DST failed.", sw);
 		}
 	}
 
@@ -572,7 +572,7 @@ public class PassportApduService extends CardService {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_PSO, 0, 0xBE, certData);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		int sw = rapdu.getSW();
-		if ((short) sw != ISO7816.SW_NO_ERROR) { throw new CardServiceException("Sending PSO failed."); }
+		if ((short) sw != ISO7816.SW_NO_ERROR) { throw new CardServiceException("Sending PSO failed.", sw); }
 	}
 
 	public synchronized void sendPSOChainMode(SecureMessagingWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)

@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -34,16 +35,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jmrtd.PassportService;
-import org.jmrtd.io.InputStreamBuffer;
+import org.jmrtd.io.SplittableInputStream;
 
 public class LDS {
 
 	private Map<Short, LDSFile> files;
-	private Map<Short, InputStreamBuffer> fetchers;
+	private Map<Short, SplittableInputStream> fetchers;
 
 	private LDS() {
 		this.files = new HashMap<Short, LDSFile>();
-		this.fetchers = new HashMap<Short, InputStreamBuffer>();
+		this.fetchers = new HashMap<Short, SplittableInputStream>();
 	}
 
 	public LDS(COMFile com, Collection<DataGroup> dataGroups, SODFile sod) {
@@ -97,13 +98,13 @@ public class LDS {
 	}
 
 	public int getPosition(short fid) {
-		InputStreamBuffer fetcher = fetchers.get(fid);
+		SplittableInputStream fetcher = fetchers.get(fid);
 		if (fetcher == null) { return 0; }
 		return fetcher.getPosition();		
 	}
 
 	public int getLength(short fid) {
-		InputStreamBuffer fetcher = fetchers.get(fid);
+		SplittableInputStream fetcher = fetchers.get(fid);
 		if (fetcher == null) { return 0; }
 		return fetcher.getLength();
 	}
@@ -127,7 +128,7 @@ public class LDS {
 	}
 
 	public void add(short fid, InputStream inputStream, int length) throws IOException {
-		fetchers.put(fid, new InputStreamBuffer(inputStream, length));
+		fetchers.put(fid, new SplittableInputStream(inputStream, length));
 	}
 
 	public void addAll(Collection<? extends LDSFile> files) {
@@ -168,11 +169,11 @@ public class LDS {
 			return file;
 		}
 		try {
-			InputStreamBuffer fetcher = fetchers.get(fid);
+			SplittableInputStream fetcher = fetchers.get(fid);
 			if (fetcher == null) {
 				return null;
 			}
-			file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream());
+			file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream(0));
 			files.put(fid, file);
 			return file;
 		} catch (IOException ioe) {
@@ -184,6 +185,7 @@ public class LDS {
 	public CVCAFile getCVCAFile() {
 		/* Check DG14 for available CVCA file ids. */
 		DG14File dg14 = getDG14File();
+		if (dg14 == null) { return null; }
 		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
 		for (short fid: cvcaFIDs) {
 			CVCAFile cvca = (CVCAFile)getFile(fid); // FIXME: should we check for ClassCastException?
@@ -193,9 +195,9 @@ public class LDS {
 	}
 
 	public InputStream getInputStream(short fid) {
-		InputStreamBuffer fetcher = fetchers.get(fid);
+		SplittableInputStream fetcher = fetchers.get(fid);
 		if (fetcher == null) { throw new IllegalStateException("No stream for " + Integer.toHexString(fid)); }
-		return fetcher.getInputStream();
+		return fetcher.getInputStream(0);
 	}
 
 	public COMFile getCOMFile() { return (COMFile)getFile(PassportService.EF_COM); }
@@ -214,6 +216,7 @@ public class LDS {
 
 	private void put(short fid, LDSFile file) {
 		this.files.put(fid, file);
-		this.fetchers.put(fid, new InputStreamBuffer(file.getEncoded()));
+		byte[] bytes = file.getEncoded();
+		this.fetchers.put(fid, new SplittableInputStream(new ByteArrayInputStream(bytes), bytes.length));
 	}
 }

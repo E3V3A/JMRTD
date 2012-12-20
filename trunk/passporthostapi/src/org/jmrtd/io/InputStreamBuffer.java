@@ -22,7 +22,6 @@
 
 package org.jmrtd.io;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -40,16 +39,6 @@ public class InputStreamBuffer {
 	private PositionInputStream carrier;
 	private FragmentBuffer buffer;
 
-	public InputStreamBuffer(byte[] bytes) {
-		if (bytes == null) {
-			throw new IllegalArgumentException("Null buffer");
-		}
-		carrier = new PositionInputStream(new ByteArrayInputStream(bytes));
-		carrier.mark(bytes.length);
-		this.buffer = new FragmentBuffer(bytes.length);
-		this.buffer.addFragment(0, bytes);
-	}
-
 	public InputStreamBuffer(InputStream inputStream, int length) {
 		this.carrier = new PositionInputStream(inputStream);
 		this.carrier.mark(length);
@@ -61,7 +50,7 @@ public class InputStreamBuffer {
 	 *
 	 * @return
 	 */
-	public InputStream getInputStream() {
+	public SubInputStream getInputStream() {
 		synchronized(carrier) {
 			return new SubInputStream(carrier);
 		}
@@ -83,7 +72,7 @@ public class InputStreamBuffer {
 		return "InputStreamBuffer [" + buffer + "]";
 	}
 
-	private class SubInputStream extends InputStream {
+	class SubInputStream extends InputStream {
 
 		/** The position within this inputstream. */
 		private int position;
@@ -113,56 +102,6 @@ public class InputStreamBuffer {
 				}
 			}
 		}
-
-		public int read(byte[] dest) throws IOException {
-			synchronized(syncObject) {
-				return read(dest, 0, dest.length);
-			}
-		}
-
-//		public int read(byte[] dest, int offset, int length) throws IOException {
-//			if (dest == null) {
-//				throw new NullPointerException();
-//			} else if (offset < 0 || length < 0 || length > dest.length - offset) {
-//				throw new IndexOutOfBoundsException();
-//			} else if (length == 0) {
-//				return 0;
-//			}
-//			if (position >= buffer.getLength()) { return -1; }
-//			length = Math.min(length, buffer.getLength() - position);
-//			int leftInBuffer = buffer.getBufferedLength(position);
-//			if (length <= leftInBuffer) {
-//				assert(length <= leftInBuffer);
-//				System.arraycopy(buffer.getBuffer(), position, dest, offset, length);
-//				position += length;
-//				return length;
-//			} else {
-//				if (leftInBuffer < 0) { throw new IndexOutOfBoundsException(); }
-//
-//				if (leftInBuffer > 0) {
-//					/* Copy what's left in buffer to dest */
-//					System.arraycopy(buffer.getBuffer(), position, dest, offset, leftInBuffer);
-//					position += leftInBuffer;
-//				}
-//
-//				/* And try to read (length - leftInBuffer) more bytes from inputStream, store result in dest */
-//
-//				if (carrier.markSupported()) { setCarrierPosition(); }
-//
-//				int bytesRead = carrier.read(dest, offset + leftInBuffer, length - leftInBuffer);
-//				if (bytesRead <= 0) { return leftInBuffer; }
-//				assert(leftInBuffer + bytesRead <= length);
-//				/* Copy what's in dest back to the buffer */
-//				try {
-//					buffer.addFragment(position + leftInBuffer, dest, offset + leftInBuffer, bytesRead);
-//				} catch (ArrayIndexOutOfBoundsException aa) {
-//					aa.printStackTrace();
-//				}
-//				position += bytesRead;
-//				return leftInBuffer + bytesRead;
-//			}
-//
-//		}
 
 		public long skip(long n) throws IOException {
 				int leftInBuffer = buffer.getBufferedLength(position);
@@ -206,6 +145,10 @@ public class InputStreamBuffer {
 			return true;
 		}
 
+		public int getPosition() {
+			return position;
+		}
+		
 		private void setCarrierPosition() throws IOException {
 			if (position < carrier.getPosition()) {
 				carrier.reset();
