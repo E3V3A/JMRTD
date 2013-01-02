@@ -83,7 +83,6 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 */
 	public AbstractImageInfo(int type, int width, int height, InputStream inputStream, long imageLength, String mimeType) throws IOException {
 		this(type, width, height, mimeType);
-
 		readImage(inputStream, imageLength);
 	}
 

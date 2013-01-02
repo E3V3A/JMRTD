@@ -53,12 +53,12 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.MRZInfo;
@@ -335,6 +335,43 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	/**
+	 * Performs the EAC protocol with the passport. For details see TR-03110
+	 * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
+	 * protocol (new secure messaging keys are created then), b. feed the
+	 * sequence of terminal certificates to the card for verification. c. get a
+	 * challenge from the passport, sign it with terminal private key, send back
+	 * to the card for verification.
+	 * 
+	 * @param keyId passport's public key id (stored in DG14), -1 if none
+	 * @param publicKey passport's public key (stored in DG14)
+	 * @param caReference the CA certificate key reference, this can be read from the CVCA file
+	 * @param terminalCertificates the chain of terminal certificates
+	 * @param terminalKey terminal private key
+	 * @param documentNumber the passport number
+	 *
+	 * @throws CardServiceException on error
+	 */
+	public synchronized void doEAC(BigInteger keyId, PublicKey publicKey,
+			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
+			PrivateKey terminalKey, String documentNumber) throws CardServiceException {
+		KeyPair keyPair = null;
+		byte[] rpicc = null;
+		try {
+			keyPair = doCA(keyId, publicKey);
+			assert(terminalCertificates != null && terminalCertificates.size() == 3);
+			rpicc = doTA(caReference, terminalCertificates, terminalKey, null, null, documentNumber);
+			state = EAC_AUTHENTICATED_STATE;
+		} catch (CardServiceException cse) {
+			throw cse;
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+			EACEvent event = new EACEvent(this, keyId, publicKey, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
+			notifyEACPerformed(event);
+		}
+	}
+
+	/**
 	 * Perform CA (Chip Authentication) part of EAC. For details see TR-03110
 	 * ver. 1.11. In short, we authenticate the chip with (EC)DH key agreement
 	 * protocol and create new secure messaging keys.
@@ -350,24 +387,25 @@ public class PassportService extends PassportApduService implements Serializable
 		if (publicKey == null) { throw new IllegalArgumentException("Public key is null"); }
 		try {
 			String algName = (publicKey instanceof ECPublicKey) ? "ECDH" : "DH";
-			KeyPairGenerator genKey = KeyPairGenerator.getInstance(algName);
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(algName);
 			AlgorithmParameterSpec spec = null;
 			if ("DH".equals(algName)) {
 				DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
 				spec = dhPublicKey.getParams();
-			} else {
+			} else if ("ECDH".equals(algName)) {
 				ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
 				spec = ecPublicKey.getParams();
+			} else {
+				throw new IllegalStateException("Unsupported algorithm \"" + algName + "\"");
 			}
-			genKey.initialize(spec);
+			keyPairGenerator.initialize(spec);
 
-			KeyPair keyPair = genKey.generateKeyPair();
+			KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
 			KeyAgreement agreement = KeyAgreement.getInstance(algName);
 			agreement.init(keyPair.getPrivate());
 			agreement.doPhase(publicKey, true);
 
-			MessageDigest md = MessageDigest.getInstance("SHA1");
 			byte[] secret = agreement.generateSecret();
 
 			// TODO: this SHA1ing may have to be removed?
@@ -377,17 +415,20 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] keyData = null;
 			byte[] idData = null;
 			if ("DH".equals(algName)) {
-				DHPublicKey dhPublicKey = (DHPublicKey) keyPair.getPublic();
+				DHPublicKey dhPublicKey = (DHPublicKey)keyPair.getPublic();
 				keyData = dhPublicKey.getY().toByteArray();
 				// TODO: this is probably wrong, what should be hashed?
+				MessageDigest md = MessageDigest.getInstance("SHA1");
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
-			} else {
+			} else if ("ECDH".equals(algName)) {
 				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
 						(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
+			} else {
+				throw new IllegalStateException("Unsupported algorithm \"" + algName + "\", don't know how to select hash function");
 			}
 			keyData = wrapDO((byte) 0x91, keyData);
 			if (keyId.compareTo(BigInteger.ZERO) >= 0) {
@@ -424,84 +465,114 @@ public class PassportService extends PassportApduService implements Serializable
 	 * Steps 1 and 2 are repeated for every CV certificate to be verified
 	 * (CVCA Link Certificates, DV Certificate, IS Certificate).
 	 */
-	public synchronized byte[] doTA(List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
+	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
 			String taAlg, byte[] caKeyHash, String documentNumber) throws CardServiceException {
 		try {
+			if (terminalCertificates == null || terminalCertificates.size() < 1) {
+				throw new IllegalArgumentException("Need at least 1 certificate to perform TA, found: " + terminalCertificates);
+			}
+			
+			/* The key hash that resulted from CA. FIXME: don't rely on global var for this -- MO */
 			if (caKeyHash == null) {
 				caKeyHash = eacKeyHash;
 			}
-			String sigAlg = taAlg == null ? "SHA1withRSA" : taAlg;
-			byte[] certRef = null;
+
+			/* FIXME: check that terminalCertificates holds a (inverted, i.e. issuer before subject) chain. */
+
+			/* Check if first cert is CVCA, and the expected CA, and remove it from chain. */
+			CardVerifiableCertificate firstCert = terminalCertificates.get(0);
+			Role firstCertRole = firstCert.getAuthorizationTemplate().getRole();
+			if (Role.CVCA.equals(firstCertRole)) {
+				CVCPrincipal firstCertHolderReference = firstCert.getHolderReference();
+				if (caReference != null && !caReference.equals(firstCertHolderReference)) {
+					throw new CardServiceException("First certificate holds wrong authority, found " + firstCertHolderReference.getName() + ", expected " + caReference.getName());
+				}
+				if (caReference == null) {
+					caReference = firstCertHolderReference;
+				}
+
+				terminalCertificates.remove(0);
+			}			
+
+			/* Check if the last cert is an IS cert. */
+			CardVerifiableCertificate lastCert = terminalCertificates.get(terminalCertificates.size() - 1);
+			Role lastCertRole = lastCert.getAuthorizationTemplate().getRole();
+			if (!Role.IS.equals(lastCertRole)) {
+				throw new CardServiceException("Last certificate in chain (" + lastCert.getHolderReference().getName() + ") does not have role IS, but has role " + lastCertRole);
+			}
+			CardVerifiableCertificate terminalCert = lastCert;
 			
-			// DEBUG: Root cert first should be the first, if not reverse
-			// Collections.reverse(terminalCertificates);
-			
-			for (CardVerifiableCertificate cert : terminalCertificates) {
+			/* Have the MRTD check our chain. */
+			for (CardVerifiableCertificate cert: terminalCertificates) {
 				try {
-					String ref = cert.getHolderReference().getName();
-					System.out.println("DEBUG: cert = " + ref);
-//					if(certRef == null) {
-//						certRef = wrapDO((byte) 0x83, cert.getAuthorityReference().getName().getBytes("ISO-8859-1"));
-//					}
+					CVCPrincipal authorityReference = cert.getAuthorityReference();
 
 					/* Step 1: MSE:SetDST */
-					/* Manage Security Environment: Set for verification: Digital Signature Template */
-					certRef = wrapDO((byte) 0x83, cert.getHolderReference().getName().getBytes("ISO-8859-1"));
-					sendMSESetDST(wrapper, certRef);
+					/* Manage Security Environment: Set for verification: Digital Signature Template,
+					 * indicate authority of cert to check.
+					 */
+					byte[] authorityRefBytes = wrapDO((byte) 0x83, authorityReference.getName().getBytes("ISO-8859-1"));
+					sendMSESetDST(wrapper, authorityRefBytes);
 
-					/* Cert body is already in DER format. */
+					/* Cert body is already in TLV format. */
 					byte[] body = cert.getCertBodyData();
-					System.out.println("DEBUG: body = \n" + Hex.bytesToPrettyString(body));
-					
+
+					/* Signature not yet in TLV format, prefix it with tag and length. */
+					byte[] signature = cert.getSignature();
 					ByteArrayOutputStream sigOut = new ByteArrayOutputStream();
 					TLVOutputStream tlvSigOut = new TLVOutputStream(sigOut);
 					tlvSigOut.writeTag(TAG_CVCERTIFICATE_SIGNATURE);
-					tlvSigOut.writeValue(cert.getSignature());
+					tlvSigOut.writeValue(signature);
 					tlvSigOut.close();
-					byte[] sig = sigOut.toByteArray();
+					signature = sigOut.toByteArray();
 
 					/* Step 2: PSO:Verify Certificate */
-					sendPSOExtendedLengthMode(wrapper, body, sig);
-					sigAlg = cert.getPublicKey().getAlgorithm();					
+					sendPSOExtendedLengthMode(wrapper, body, signature);					
 				} catch (CardServiceException cse) {
-					System.out.println("DEBUG: SW = " + Integer.toHexString(cse.getSW()));
 					throw cse;
 				} catch (Exception e) {
 					/* FIXME: Does this mean we failed to authenticate? -- MO */
 					throw new CardServiceException(e.getMessage());
 				}
 			}
-			if(terminalKey == null) {
+
+			if (terminalKey == null) {
 				return new byte[0];
 			}
 
-
-			/* Step 3: external authenticate */
+			/* Step 3: MSE Set AT */
+			CVCPrincipal holderRef = terminalCert.getHolderReference();
+			byte[] holderRefBytes = wrapDO((byte) 0x83, holderRef.getName().getBytes("ISO-8859-1"));
 			/* Manage Security Environment: Set for external authentication: Authentication Template */
-			sendMSESetAT(wrapper, certRef); // shouldn't this be before the sendGetChallenge above? FIXME: it is now, test this.
+			sendMSESetAT(wrapper, holderRefBytes);
 
 			/* Step 4: send get challenge */
-			byte[] idpic = new byte[documentNumber.length() + 1];
-			System.arraycopy(documentNumber.getBytes(), 0, idpic, 0, documentNumber.length());
-			idpic[idpic.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
-
 			byte[] rpicc = sendGetChallenge(wrapper);
 
+			/* Step 5: external authenticate */			
+			byte[] idpicc = new byte[documentNumber.length() + 1];
+			System.arraycopy(documentNumber.getBytes("ISO-8859-1"), 0, idpicc, 0, documentNumber.length());
+			idpicc[idpicc.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);			
+
 			ByteArrayOutputStream dtbs = new ByteArrayOutputStream();
-			dtbs.write(idpic);
+			dtbs.write(idpicc);
 			dtbs.write(rpicc);
 			dtbs.write(caKeyHash);
+			dtbs.close();
+			byte[] dtbsBytes = dtbs.toByteArray();
 
+			String sigAlg = terminalCert.getSigAlgName();
+			if (sigAlg == null) {
+				throw new IllegalStateException("ERROR: Could not determine signature algorithm for terminal certificate " + terminalCert.getHolderReference().getName());
+			}
 			Signature sig = Signature.getInstance(sigAlg);
 			sig.initSign(terminalKey);
-			sig.update(dtbs.toByteArray());
+			sig.update(dtbsBytes);
 			byte[] signature = sig.sign();
-			if (sigAlg.endsWith("ECDSA")) {
+			if (sigAlg.toUpperCase().endsWith("ECDSA")) {
 				int keySize = ((org.bouncycastle.jce.interfaces.ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8;
 				signature = getRawECDSASignature(signature, keySize);
 			}
-
-			/* Step 5: external authenticate */
 			sendMutualAuthenticate(wrapper, signature);
 			state = TA_AUTHENTICATED_STATE;
 			return rpicc;
@@ -509,50 +580,6 @@ public class PassportService extends PassportApduService implements Serializable
 			throw cse;
 		} catch (Exception e) {
 			throw new CardServiceException(e.toString());
-		}
-	}
-
-	/**
-	 * Performs the EAC protocol with the passport. For details see TR-03110
-	 * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
-	 * protocol (new secure messaging keys are created then), b. feed the
-	 * sequence of terminal certificates to the card for verification. c. get a
-	 * challenge from the passport, sign it with terminal private key, send back
-	 * to the card for verification.
-	 * 
-	 * @param keyId
-	 *            passport's public key id (stored in DG14), -1 if none.
-	 * @param key
-	 *            passport's public key (stored in DG14).
-	 * @param caReference
-	 *            the CA certificate key reference, this can be read from the
-	 *            CVCA file
-	 * @param terminalCertificates
-	 *            the list/chain of terminal certificates
-	 * @param terminalKey
-	 *            terminal private key
-	 * @param documentNumber
-	 *            the passport number
-	 * @throws CardServiceException
-	 *             on error
-	 */
-	public synchronized void doEAC(BigInteger keyId, PublicKey key,
-			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
-			PrivateKey terminalKey, String documentNumber) throws CardServiceException {
-		KeyPair keyPair = null;
-		byte[] rpicc = null;
-		try {
-			keyPair = doCA(keyId, key);
-			assert(terminalCertificates != null && terminalCertificates.size() == 3);
-			rpicc = doTA(terminalCertificates, terminalKey, null, null, documentNumber);
-			state = EAC_AUTHENTICATED_STATE;
-		} catch (CardServiceException cse) {
-			throw cse;
-		} catch (Exception e) {
-			e.printStackTrace();
-		} finally {
-			EACEvent event = new EACEvent(this, keyId, key, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
-			notifyEACPerformed(event);
 		}
 	}
 
@@ -607,8 +634,8 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private byte[] alignKeyDataToSize(byte[] keyData, int size) {
 		byte[] result = new byte[size];
-		if(keyData.length < size) size = keyData.length;
-		System.arraycopy(keyData, keyData.length - size, result, result.length-size, size);
+		if(keyData.length < size) { size = keyData.length; }
+		System.arraycopy(keyData, keyData.length - size, result, result.length - size, size);
 		return result;
 	}
 
@@ -732,7 +759,7 @@ public class PassportService extends PassportApduService implements Serializable
 			return new CardFileInputStream(maxBlockSize, fs);
 		}
 	}
-	
+
 	/* ONLY PRIVATE METHODS BELOW */
 
 	/**

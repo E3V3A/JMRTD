@@ -27,6 +27,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 
+/**
+ * A buffer that can be partially filled.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ *
+ * @version $Revision: $
+ */
 public class FragmentBuffer {
 
 	/** Buffer with the actual bytes. */
@@ -34,7 +41,19 @@ public class FragmentBuffer {
 	
 	/** Administration of which parts of buffer are filled. */
 	private Collection<Fragment> fragments;
+
+	/**
+	 * Creates a fragment buffer.
+	 */
+	public FragmentBuffer() {
+		this(1024);
+	}
 	
+	/**
+	 * Creates a fragment buffer.
+	 * 
+	 * @param length the length of the buffer
+	 */
 	public FragmentBuffer(int length) {
 		this.buffer = new byte[length];
 		this.fragments = new HashSet<Fragment>();
@@ -64,6 +83,10 @@ public class FragmentBuffer {
 	 * @param srcLength the length of the fragment
 	 */
 	public synchronized void addFragment(int offset, byte[] bytes, int srcOffset, int srcLength) {
+		if (offset + srcLength > buffer.length) {
+			setLength(2 * Math.max(offset + srcLength, buffer.length));
+		}
+
 		System.arraycopy(bytes, srcOffset, buffer, offset, srcLength);
 		int thisOffset = offset;
 		int thisLength = srcLength;
@@ -237,6 +260,13 @@ public class FragmentBuffer {
 		if (otherBuffer.fragments == null && this.fragments != null) { return false; }
 		if (otherBuffer.fragments != null && this.fragments == null) { return false; }
 		return Arrays.equals(otherBuffer.buffer, this.buffer) && otherBuffer.fragments.equals(this.fragments);
+	}
+
+	private synchronized void setLength(int length) {
+		if (length <= buffer.length) { return; }
+		byte[] newBuffer = new byte[length];
+		System.arraycopy(this.buffer, 0, newBuffer, 0, this.buffer.length);
+		this.buffer = newBuffer;
 	}
 	
 	public static class Fragment {

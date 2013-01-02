@@ -10,22 +10,21 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.URI;
-import java.security.InvalidKeyException;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -47,7 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import javax.crypto.Cipher;
+
 import junit.framework.TestCase;
+import net.sourceforge.scuba.util.Hex;
 
 import org.bouncycastle.asn1.x509.X509Name;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -60,13 +62,16 @@ import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
 import org.ejbca.cvc.CVCObject;
-import org.ejbca.cvc.CVCPublicKey;
 import org.ejbca.cvc.CVCertificate;
 import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.CertificateGenerator;
 import org.ejbca.cvc.CertificateParser;
 import org.ejbca.cvc.HolderReferenceField;
 import org.jmrtd.JMRTDSecurityProvider;
+import org.jmrtd.cert.CVCAuthorizationTemplate;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Permission;
+import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
+import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 public class CVCAStoreGenerator extends TestCase {
@@ -100,19 +105,35 @@ public class CVCAStoreGenerator extends TestCase {
 	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider(),
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
 
-	private CertificateFactory cvcFactory;
+	private static CertificateFactory cvCertificateFactory;
+	private static KeyFactory rsaKeyFactory;
+	private static KeyFactory ecKeyFactory;
 
 	static {
 		Security.addProvider(BC_PROVIDER);
 	}
 
-	public CVCAStoreGenerator() throws CertificateException {
+	public CVCAStoreGenerator() throws GeneralSecurityException {
 		getCVCCertificateFactory();
+		getRSAKeyFactory();
 	}
 
-	private CertificateFactory getCVCCertificateFactory() throws CertificateException {
-		cvcFactory = CertificateFactory.getInstance("CVC", JMRTD_PROVIDER);
-		return cvcFactory;
+	private static CertificateFactory getCVCCertificateFactory() throws CertificateException {
+		if (cvCertificateFactory != null) { return cvCertificateFactory; }
+		cvCertificateFactory = CertificateFactory.getInstance("CVC", JMRTD_PROVIDER);
+		return cvCertificateFactory;
+	}
+
+	private static KeyFactory getRSAKeyFactory() throws GeneralSecurityException {
+		if (rsaKeyFactory != null) { return rsaKeyFactory; }
+		rsaKeyFactory = KeyFactory.getInstance("RSA");
+		return rsaKeyFactory;
+	}
+
+	private static KeyFactory getECKeyFactory() throws GeneralSecurityException {
+		if (ecKeyFactory != null) { return ecKeyFactory; }
+		ecKeyFactory = KeyFactory.getInstance("EC", "BC");
+		return ecKeyFactory;
 	}
 
 	private static final String
@@ -219,9 +240,15 @@ public class CVCAStoreGenerator extends TestCase {
 		}
 	}
 
-	private Certificate getCertificate(File file) throws IOException, CertificateException {
-		if (cvcFactory == null) { cvcFactory = getCVCCertificateFactory(); }
-		return cvcFactory.generateCertificate(new FileInputStream(file));
+
+	private CredentialsDir origNLSamples() throws Exception {
+		String dir = "certs/orig";
+		String[] fileNames = {
+				"certCVCA_orig.cvcert",
+				"certDVD_orig.cvcert",
+				"certIS_orig.cvcert",
+		"keyIS_orig.der" };
+		return new CredentialsDir(dir, fileNames);
 	}
 
 	/**
@@ -229,20 +256,7 @@ public class CVCAStoreGenerator extends TestCase {
 	 */
 	public void testCreateOrigNLSamplesKeyStore() {
 		try {
-			String[] fileNames = {
-					"certCVCA_orig.cvcert",
-					"certDVD_orig.cvcert",
-					"certIS_orig.cvcert",
-					"keyIS_orig.der"
-			};
-			File certsDir = new File("certs/orig");
-			Collection<File> files = new ArrayList<File>(fileNames.length);
-			for (String fileName: fileNames) {
-				files.add(new File(certsDir, fileName));
-			}
-			File outFile = new File(certsDir, "cvca.ks");
-			System.out.println("DEBUG: outFile is " + outFile.getAbsolutePath());
-			testCreateKeyStore("PKCS12", files, outFile);
+			testCreateKeyStore("BKS", origNLSamples(), new File("certs/orig/cvca.ks"));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -262,102 +276,56 @@ public class CVCAStoreGenerator extends TestCase {
 		}
 	}
 
-	/**
-	 * Creates a keystore based on the new certs and key that Wojciech created in 2009.
-	 */
-	public void testCreateNewNLSamplesKeyStore() {
+	public void testCreateKeyStore(String storeType, CredentialsDir credentialsDir, File outFile) {
 		try {
-			String[] fileNames = {
-					"certCVCA_new.cvcert",
-					"certDVD_new.cvcert",
-					"certIS_new.cvcert",
-					"keyIS_new.der"
-			};
-			File certsDir = new File("certs/new");
-			Collection<File> files = new ArrayList<File>(fileNames.length);
-			for (String fileName: fileNames) {
-				files.add(new File(certsDir, fileName));
-			}
-			File outFile = new File(certsDir, "cvca.ks");
-			System.out.println("DEBUG: outFile is " + outFile.getAbsolutePath());
-			testCreateKeyStore("PKCS12", files, outFile);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
-
-	/**
-	 * Creates a keystore based on certs and key in the TEST_CV_CERTS_DIR.
-	 */
-	public void testCreateKeyStore() {
-		File certsDir = new File(TEST_CV_CERT_DIR);
-		if (!certsDir.exists()) { certsDir.mkdirs(); }
-		if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
-		String[] fileNames = certsDir.list();
-		Collection<File> files = new ArrayList<File>(fileNames.length);
-		for (String fileName: fileNames) {
-			files.add(new File(certsDir, fileName));
-		}
-		File outFile = new File(certsDir, TEST_CV_KEY_STORE);
-		testCreateKeyStore("PKCS12", files, outFile);
-	}
-
-	/*
-	 * We're assuming those files contain either a cvc-cert or a key,
-	 * and that the cvc-certs form a chain, and that the files are named
-	 * as
-	 * <pre>
-	 *    cert[Alias].cvcert
-	 *    key[Alias].der
-	 * </pre>
-	 */
-	public void testCreateKeyStore(String storeType, Collection<File> files, File outFile) {
-		try {
-			Map<String, Certificate> certificates = new HashMap<String, Certificate>();
-			Map<String, Key> keys = new HashMap<String, Key>();
-
-			/* Add certificates and keys to maps. Base alias on filename. */
-			for (File file: files) {
-				if (!file.isFile()) { continue; /* NOTE: ignore sub-directories */ }
-				String fileName = file.getName().trim();
-				if (fileName.startsWith("cert") && fileName.endsWith(".cvcert")) {
-					String alias = fileName;
-					alias = alias.substring(0, alias.length() - ".cvcert".length());
-					alias = alias.substring("cert".length());
-					System.out.println("DEBUG: cert entry alias = " + alias);
-					Certificate certificate = getCertificate(file);
-					PublicKey publicKey = certificate.getPublicKey();
-					System.out.println("DEBUG: certificate alg " + publicKey.getAlgorithm());
-					if (publicKey instanceof CVCPublicKey) {
-						String oid = ((CVCPublicKey) publicKey).getObjectIdentifier().toString();
-						System.out.println("DEBUG: oid = " + oid);
-					}
-					certificates.put(alias, certificate);
-				} else if (fileName.startsWith("key") && fileName.endsWith(".der")) {
-					String alias = fileName;
-					alias = alias.substring(0, alias.length() - ".der".length());
-					alias = alias.substring("key".length());
-					System.out.println("DEBUG: key entry alias = " + alias);
-
-					/* Try to interpret it as a key */
-					Key key = getKey(file);
-					System.out.println("DEBUG: key alg " + key.getAlgorithm());
-					keys.put(alias, key);
-				}
-			}
-
 			/* Create empty keystore. */
-			KeyStore outStore = KeyStore.getInstance(storeType);
+			KeyStore outStore = null;
+			if ("JDK".equals(storeType)) {
+				outStore = KeyStore.getInstance(storeType);
+			} else {
+				outStore = KeyStore.getInstance(storeType, "BC");
+			}
 			outStore.load(null);
+
+			Map<String, Key> keys = credentialsDir.getKeys();
+			Map<String, Certificate> certificates = credentialsDir.getCertificates();
+
+			/* DEBUG */
+			for (Map.Entry<String, Certificate> certEntry: certificates.entrySet()) {
+				String id = certEntry.getKey();
+				Certificate cert = certEntry.getValue();
+				CardVerifiableCertificate cvcCert = (CardVerifiableCertificate)cert;
+				System.out.println("DEBUG: authref = " + cvcCert.getAuthorityReference());
+				System.out.println("DEBUG: holderref = " + cvcCert.getHolderReference());
+
+				System.out.println("pubkey.alg = " + cvcCert.getPublicKey().getAlgorithm());
+				System.out.println("DEBUG: access in " + id + " = " + cvcCert.getAuthorizationTemplate().getAccessRight());
+				byte[] signature = cvcCert.getSignature();
+				System.out.println("DEBUG: signature (" + signature.length + ") = \n" + Hex.bytesToPrettyString(signature));
+			}
+			/* END DEBUG */
 
 			for (Map.Entry<String, Key> entry: keys.entrySet()) {
 				String keyAlias = entry.getKey();
 				Key key = entry.getValue();
+				if (key instanceof ECPrivateKey) {
+					System.out.println("DEBUG: KEY " + keyAlias + ": " + key.getAlgorithm() + ", " + key.getClass().getCanonicalName());
+					ECParameterSpec params = ((ECPrivateKey)key).getParams();
+					BigInteger s = ((ECPrivateKey) key).getS();
+					KeyFactory keyFactory = getECKeyFactory();
+					// key = keyFactory.generatePrivate(new ECPrivateKeySpec(s, toNamedCurveSpec(params)));
+				}
 				System.out.println("DEBUG: KEY " + keyAlias + ": " + key.getAlgorithm() + ", " + key.getClass().getCanonicalName());
 
-				Certificate[] chain = asChain(keyAlias, key, certificates);
-				outStore.setKeyEntry(keyAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), chain);
+				Collection<Certificate> certValues = certificates.values();
+				System.out.println("DEBUG: certValues = " + certValues);
+
+				List<Certificate> chainList = asChainDebug(certValues);
+				Certificate[] chain = new Certificate[chainList.size()];
+				chainList.toArray(chain);
+				
 				System.out.println("DEBUG: chain for " + keyAlias + " = (" + chain.length + ") " +  Arrays.toString(chain));
+				outStore.setKeyEntry(keyAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), chain);
 			}
 
 			OutputStream outputStream = new FileOutputStream(outFile);
@@ -405,7 +373,8 @@ public class CVCAStoreGenerator extends TestCase {
 		ECParameterSpec publicKeyParams = ecPublicKey.getParams();
 		if (publicKeyParams != null) { return cvcCertificate; }
 		ECPublicKeySpec ecPublicKeySpec = new ECPublicKeySpec(ecPublicKey.getW(), params);
-		publicKey = KeyFactory.getInstance(publicKey.getAlgorithm()).generatePublic(ecPublicKeySpec);
+		publicKey = KeyFactory.getInstance(publicKey.getAlgorithm()).generatePublic(ecPublicKeySpec); // is this always "EC"?
+
 		/* Put pubkey in certificate */
 		return new CardVerifiableCertificate(
 				cvcCertificate.getAuthorityReference(),
@@ -420,43 +389,113 @@ public class CVCAStoreGenerator extends TestCase {
 
 	}
 
-	private Certificate[] asChain(String keyAlias, Key key, Map<String, Certificate> certificates) {
-		Certificate certificate = null;
-
-		/* Find the certificate corresponding to private key */
-		for (Map.Entry<String, Certificate> entry: certificates.entrySet()) {
-			String entryAlias = entry.getKey();
-			Certificate entryCert = entry.getValue();
-			if (entryAlias.equals(keyAlias)) {
-				certificate = entryCert;
-				break;
+	private List<Certificate> asChainDebug(Collection<Certificate> certificates) {
+		try {
+			Certificate[] result = new Certificate[3];
+			for (Certificate cert: certificates) {
+				if (cert instanceof CardVerifiableCertificate) {
+					CardVerifiableCertificate cvcCert = (CardVerifiableCertificate)cert;
+					if ("CVCAA".equals(cvcCert.getHolderReference().getMnemonic())) {
+						result[0] = cvcCert;
+					} else if ("DVAAA".equals(cvcCert.getHolderReference().getMnemonic())) {
+						result[1] = cvcCert;
+					} else if ("IS7202000".equals(cvcCert.getHolderReference().getMnemonic())) {
+						result[2] = cvcCert;
+					} else {
+						throw new IllegalStateException("Unexpected cert: " + cvcCert.getHolderReference().getMnemonic());
+					}
+				}
 			}
+			List<Certificate> resultList = Arrays.asList(result);
+			System.out.println("DEBUG: resultList = " + resultList);
+			return resultList;
+		} catch (CertificateException ce) {
+			ce.printStackTrace();
+			throw new IllegalStateException(ce.getMessage());
+		}
+	}
+
+
+	private List<Certificate> asChain(Collection<Certificate> certificates) {
+		Certificate rootOfChain = null;
+		for (Certificate certificate: certificates) {
+			rootOfChain = certificate;
+			break;
 		}
 
 		/* Not found, return empty chain. */
-		if (certificate == null) { return new Certificate[] { }; }
+		if (rootOfChain == null) { return new ArrayList<Certificate>(); }
 
-		/* Build chain, root last. */
-		Certificate rootOfChain = certificate;
+		/* Build chain, root first. */
 		List<Certificate> chain = new ArrayList<Certificate>();
 		chain.add(rootOfChain);
 		boolean isFinished = false;
 		while (!isFinished) {
 			boolean addedSomethingNew = false;
-			for (Certificate otherCertificate: certificates.values()) {
+			for (Certificate otherCertificate: certificates) {
 				if (rootOfChain.equals(otherCertificate)) { continue; }
 				if (isIssuerOf(otherCertificate, rootOfChain)) {
 					rootOfChain = otherCertificate;
-					chain.add(rootOfChain);
+					chain.add(0, rootOfChain);
 					addedSomethingNew = true;
 					break;
 				}
 			}
 			isFinished = !addedSomethingNew;
 		}
-		Certificate[] chainArray = new Certificate[chain.size()];
-		return chain.toArray(chainArray);
+
+		Collections.reverse(chain);
+
+		return chain;
 	}
+
+	//	public List<? extends Certificate> testCertPath(Collection<Certificate> certificates) {
+	//		try {
+	//			Certificate root = null;
+	//			Certificate leaf = null;
+	//			for (Certificate other: certificates) {
+	//				if (root == null || isIssuerOf(other, root)) { root = other; }
+	//				if (leaf == null || isIssuerOf(leaf, other)) { leaf = other; }
+	//			}
+	//
+	//			final Certificate theRealLeaf = leaf;
+	//			
+	//			Collection<Certificate> intermediateCerts = new HashSet<Certificate>(certificates);
+	//			intermediateCerts.remove(root);
+	//			intermediateCerts.remove(leaf);
+	//
+	//			CertStore intermediates = CertStore.getInstance("Collection", new CollectionCertStoreParameters(intermediateCerts));
+	//
+	//			CertSelector selector = new CertSelector() {
+	//				public boolean match(Certificate cert) {
+	//					return theRealLeaf.equals(cert);
+	//				}
+	//
+	//				public Object clone() {
+	//					return this;
+	//				}
+	//			};
+	//
+	//			KeyStore anchors = KeyStore.getInstance("JKS");
+	//			anchors.load(null, "".toCharArray());
+	//			anchors.setCertificateEntry("cvca", root);
+	//
+	//			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BC_PROVIDER);
+	//			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(anchors, selector);
+	//			buildParams.addCertStore(intermediates);
+	//
+	//			buildParams.setRevocationEnabled(false);
+	//			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+	//			assertNotNull(result);
+	//			CertPath chain = result.getCertPath();
+	//			assertNotNull(chain);
+	//			return chain.getCertificates();
+	//		} catch (Exception e) {
+	//			e.printStackTrace();
+	//			fail(e.getMessage());
+	//			return null;
+	//		}
+	//	}
 
 	private boolean isIssuerOf(Certificate issuer, Certificate subject) {
 		if (issuer instanceof X509Certificate && subject instanceof X509Certificate) {
@@ -486,7 +525,31 @@ public class CVCAStoreGenerator extends TestCase {
 		}
 	}
 
-	private Key getKey(File file) throws IOException {
+	public void testRSA() {
+		try {
+			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+			keyGen.initialize(2048);
+			KeyPair keyPair = keyGen.generateKeyPair();
+			PublicKey publicKey = keyPair.getPublic();
+			PrivateKey privateKey = keyPair.getPrivate();
+			Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+			cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
+			byte[] plainText = new byte[220];
+
+			byte[] cipherText = cipher.doFinal(plainText);
+
+			cipher.init(Cipher.DECRYPT_MODE, privateKey);
+			byte[] decryptedCipherText = cipher.doFinal(cipherText);
+
+			assertTrue(Arrays.equals(plainText, decryptedCipherText));
+
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
+
+	private static Key getKey(File file) throws IOException {
 		System.out.println("DEBUG: looking at key with name " + file.getName());
 		byte[] keyBytes = new byte[(int)file.length()];
 		DataInputStream keyInputStream = new DataInputStream(new FileInputStream(file));
@@ -494,20 +557,20 @@ public class CVCAStoreGenerator extends TestCase {
 		keyInputStream.close();
 		Key key = null;
 		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+			KeyFactory keyFactory = getRSAKeyFactory();
 			key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
 			return key;
 		} catch (Exception e) {		
 		}
 		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("EC");
+			KeyFactory keyFactory = getECKeyFactory();
 			key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
 			ECPrivateKey ecPrivateKey = (ECPrivateKey)key;
 			ECParameterSpec ecParamSpec = ecPrivateKey.getParams();
 			System.out.println("DEBUG: ecParamSpec: " + ecParamSpec.getClass().getCanonicalName());
 			// HIER: convert that to named paramspec.
-			ecParamSpec = toNamedCurveSpec(ecParamSpec);
-			System.out.println("DEBUG: named ecParamSpec = " + ((ECNamedCurveSpec)ecParamSpec).getName());
+			// ecParamSpec = toNamedCurveSpec(ecParamSpec);
+			//			System.out.println("DEBUG: named ecParamSpec = " + ((ECNamedCurveSpec)ecParamSpec).getName());
 			key = keyFactory.generatePrivate(new ECPrivateKeySpec(ecPrivateKey.getS(), ecParamSpec));
 			return key;
 		} catch (Exception e) {		
@@ -558,8 +621,7 @@ public class CVCAStoreGenerator extends TestCase {
 			for (String fileName: certFiles) {
 				File file = new File(certsDir, fileName);
 				System.out.println("DEBUG: reading cert from file " + file.getName() + " size " + file.length());
-				Certificate certificate =
-						CertificateFactory.getInstance("CVC", JMRTD_PROVIDER).generateCertificate(new FileInputStream(file));
+				Certificate certificate = CertificateFactory.getInstance("CVC", JMRTD_PROVIDER).generateCertificate(new FileInputStream(file));
 				System.out.println("DEBUG: cert = " + toString(certificate));
 				outStore.setCertificateEntry(fileName, certificate);
 				keyAlgName = certificate.getPublicKey().getAlgorithm();
@@ -569,8 +631,7 @@ public class CVCAStoreGenerator extends TestCase {
 				System.out.println("DEBUG: reading key from file " + file.getName() + " size " + file.length());
 				byte[] keyBytes = new byte[(int)file.length()];
 				(new DataInputStream(new FileInputStream(file))).readFully(keyBytes);
-				PrivateKey key =
-						KeyFactory.getInstance(keyAlgName).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+				PrivateKey key = KeyFactory.getInstance(keyAlgName).generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
 				System.out.println("DEBUG: key = " + key);
 				Certificate terminalCertificate = outStore.getCertificate("terminalcert1.cvcert");
 				Certificate dvCertificate = outStore.getCertificate("terminalcert0.cvcert");
@@ -601,8 +662,6 @@ public class CVCAStoreGenerator extends TestCase {
 
 	public void testReadFromKeyStore(File keyStoreFile) {
 		try {
-			testCreateKeyStore();
-
 			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
 			Security.insertProviderAt(JMRTD_PROVIDER, 0); // So that KeyStore knows about CVC certs
 
@@ -709,8 +768,8 @@ public class CVCAStoreGenerator extends TestCase {
 			KeyPair keyPair = keyPairGenerator.generateKeyPair();
 			PublicKey publicKey = keyPair.getPublic();
 			PrivateKey privateKey = keyPair.getPrivate();
-			Certificate trustCert =  createX509Certificate("CN=CA", "CN=CA", publicKey, privateKey);
-			Certificate[] outChain = { createX509Certificate("CN=Client", "CN=CA", publicKey, privateKey), trustCert };
+			Certificate trustCert =  createX509Certificate("CN=CA", "CN=CA", publicKey, privateKey, "SHA1withRSA");
+			Certificate[] outChain = { createX509Certificate("CN=Client", "CN=CA", publicKey, privateKey, "SHA1withRSA"), trustCert };
 
 			KeyStore outStore = KeyStore.getInstance(storeType);
 			outStore.load(null, "secret".toCharArray());
@@ -734,18 +793,50 @@ public class CVCAStoreGenerator extends TestCase {
 		}
 	}
 
-	private static X509Certificate createX509Certificate(String dn, String issuer, PublicKey publicKey, PrivateKey privateKey) throws Exception {
-		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
-		certGenerator.setSerialNumber(BigInteger.valueOf(Math.abs(new Random().nextLong())));
-		//        certGenerator.setIssuerDN(new X509Name(dn));
-		certGenerator.setIssuerDN(new X509Name(issuer)); // Set issuer!
-		certGenerator.setSubjectDN(new X509Name(dn));
-		certGenerator.setNotBefore(Calendar.getInstance().getTime());
-		certGenerator.setNotAfter(Calendar.getInstance().getTime());
-		certGenerator.setPublicKey(publicKey);
-		certGenerator.setSignatureAlgorithm("SHA1withRSA");
-		X509Certificate certificate = (X509Certificate)certGenerator.generate(privateKey, "BC");
-		return certificate;
+	public void testCreateCert() {
+		try {
+			ECNamedCurveParameterSpec bcParamSpec = ECNamedCurveTable.getParameterSpec("brainpoolp224r1");
+			ECNamedCurveSpec jceParamSpec = new ECNamedCurveSpec(bcParamSpec.getName(), bcParamSpec.getCurve(), bcParamSpec.getG(), bcParamSpec.getN(), bcParamSpec.getH(), bcParamSpec.getSeed());
+
+			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
+			keyPairGenerator.initialize(jceParamSpec);
+
+			KeyPair keyPair = keyPairGenerator.generateKeyPair();
+			PublicKey publicKey = keyPair.getPublic();
+			PrivateKey privateKey = keyPair.getPrivate();
+			PrivateKey dvdSigningKey = keyPair.getPrivate(); // FIXME
+			String signatureAlgorithm = "SHA224withECDSA";
+			CardVerifiableCertificate cert = createISCertificate("NLIS7202000NL001", "NLDVAAANL001", publicKey, dvdSigningKey, signatureAlgorithm);
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	private static CardVerifiableCertificate createISCertificate(String subject, String issuer, PublicKey publicKey, PrivateKey dvdSigningKey, String algorithm) {
+		try {
+			CVCPrincipal authorityReference = new CVCPrincipal(issuer);
+			CVCPrincipal holderReference = new CVCPrincipal(subject);
+			Date notBefore = CALENDAR.getTime();
+			Date notAfter = CALENDAR.getTime();
+
+			Role role = CVCAuthorizationTemplate.Role.IS;
+			Permission permission = CVCAuthorizationTemplate.Permission.READ_ACCESS_DG3;
+
+			byte[] signatureData = null;
+
+			CardVerifiableCertificate cert = new CardVerifiableCertificate(authorityReference, holderReference, publicKey, algorithm, notBefore, notAfter, role, permission, signatureData);
+			byte[] body = cert.getCertBodyData();
+			Signature signature = Signature.getInstance(algorithm);
+			signature.initSign(dvdSigningKey);
+			signature.update(body);
+			signatureData = signature.sign();
+			cert = new CardVerifiableCertificate(authorityReference, holderReference, publicKey, algorithm, notBefore, notAfter, role, permission, signatureData);
+			return cert;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	private static X509Certificate[] createX509Chain(int depth, String subject, PublicKey caPublicKey, PrivateKey caPrivateKey, int keyLength, String keyAlg, String signatureAlgorithm) throws Exception {
@@ -774,7 +865,7 @@ public class CVCAStoreGenerator extends TestCase {
 			}
 			if (signingKey == null) { signingKey = caPrivateKey; } /* Root is self-signed */
 
-			X509Certificate certificate = createCertificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, signingKey, signatureAlgorithm);
+			X509Certificate certificate = createX509Certificate(issuer, subject, dateOfIssuing, dateOfExpiry, publicKey, signingKey, signatureAlgorithm);
 			result[result.length - i - 1] = certificate;
 
 			/* Next certificate */
@@ -786,8 +877,17 @@ public class CVCAStoreGenerator extends TestCase {
 		return result;
 	}
 
-	private static X509Certificate createCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
-			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws CertificateEncodingException, InvalidKeyException, IllegalStateException, NoSuchProviderException, NoSuchAlgorithmException, SignatureException {
+	//	private static CardVerifiableCertificate createCardVerifiableCertificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
+	//			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws Exception {
+	//		CVCPrincipal authorityReference = new CVCPrincipal(issuer);
+	//		CVCPrincipal holderReference = new CVCPrincipal(subject);
+	//		Role role = Role.IS;
+	//		Permission permission = Permission.READ_ACCESS_DG3_AND_DG4;
+	//		return new CardVerifiableCertificate(authorityReference, holderReference, publicKey, signatureAlgorithm, dateOfIssuing, dateOfExpiry, role, permission, signatureData);
+	//	}
+
+	private static X509Certificate createX509Certificate(String issuer, String subject, Date dateOfIssuing, Date dateOfExpiry,
+			PublicKey publicKey, PrivateKey privateKey, String signatureAlgorithm) throws Exception {
 		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
 		certGenerator.setSerialNumber(new BigInteger("1"));
 		certGenerator.setIssuerDN(new X509Name(issuer));
@@ -802,31 +902,53 @@ public class CVCAStoreGenerator extends TestCase {
 
 	public void testStoreAndReadECPrivateKey() {
 		try {
-			ECNamedCurveParameterSpec spec1 = ECNamedCurveTable.getParameterSpec("brainpoolp224r1");
-			ECNamedCurveSpec spec2 = new ECNamedCurveSpec(spec1.getName(), spec1.getCurve(), spec1.getG(), spec1.getN(), spec1.getH(), spec1.getSeed());
+			String storeType = "JKS", storePass = "secret", storePath = "c:/keystore.ks";
+
+			ECNamedCurveParameterSpec bcParamSpec = ECNamedCurveTable.getParameterSpec("brainpoolp224r1");
+			ECNamedCurveSpec jceParamSpec = new ECNamedCurveSpec(bcParamSpec.getName(), bcParamSpec.getCurve(), bcParamSpec.getG(), bcParamSpec.getN(), bcParamSpec.getH(), bcParamSpec.getSeed());
 
 			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("EC");
-			keyPairGenerator.initialize(spec2);
+			keyPairGenerator.initialize(jceParamSpec);
 			KeyPair keyPair = keyPairGenerator.generateKeyPair();
-			ECPublicKey ecPublicKey = (ECPublicKey)keyPair.getPublic();
-			ECPrivateKey ecPrivateKey = (ECPrivateKey)keyPair.getPrivate();			
+			ECPublicKey publicKey = (ECPublicKey)keyPair.getPublic();
+			ECPrivateKey privateKey = (ECPrivateKey)keyPair.getPrivate();		
 
-			BigInteger s = ecPrivateKey.getS();
-			java.security.spec.ECPoint w = ecPublicKey.getW();
+			Certificate trustCert =  createX509Certificate("CN=CA", "CN=CA", publicKey, privateKey, "SHA224withECDSA");
+			Certificate[] chain = { createX509Certificate("CN=Client", "CN=CA", publicKey, privateKey, "SHA224withECDSA"), trustCert };
 
-			KeyFactory keyFactory = KeyFactory.getInstance("EC", "BC");
-			PrivateKey privateKey = keyFactory.generatePrivate(new ECPrivateKeySpec(s, spec2));
-			ECPrivateKey newECPrivateKey = (ECPrivateKey)privateKey;
-			ECPublicKey newECPublicKey = (ECPublicKey)keyFactory.generatePublic(new ECPublicKeySpec(w, spec2));
+			KeyStore keyStore = KeyStore.getInstance(storeType);
+			keyStore.load(null, storePass.toCharArray());
+			keyStore.setKeyEntry("eckey", privateKey, storePass.toCharArray(), chain);
 
-			KeyStore keyStore = KeyStore.getInstance("BKS");
-			keyStore.load(null, "".toCharArray());
-			Certificate[] chain = { };
-			keyStore.setKeyEntry("eckey", privateKey, "".toCharArray(), chain);
+			FileOutputStream outputStream = new FileOutputStream(storePath);
+			keyStore.store(outputStream, storePass.toCharArray());
+			outputStream.close();
+
+			/* Now read it back */			
+			FileInputStream inputStream = new FileInputStream(storePath);
+			KeyStore keyStore2 = KeyStore.getInstance(storeType);
+			keyStore2.load(inputStream, storePass.toCharArray());
+
+			Key privateKey2 = keyStore2.getKey("eckey", storePass.toCharArray());
+			assertEquals(privateKey, privateKey2);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
 		}
+	}
+
+	private static X509Certificate createX509Certificate(String dn, String issuer, PublicKey publicKey, PrivateKey privateKey, String sigAlg) throws Exception {
+		X509V3CertificateGenerator certGenerator = new X509V3CertificateGenerator();
+		certGenerator.setSerialNumber(BigInteger.valueOf(Math.abs(new Random().nextLong())));
+		//        certGenerator.setIssuerDN(new X509Name(dn));
+		certGenerator.setIssuerDN(new X509Name(issuer)); // Set issuer!
+		certGenerator.setSubjectDN(new X509Name(dn));
+		certGenerator.setNotBefore(Calendar.getInstance().getTime());
+		certGenerator.setNotAfter(Calendar.getInstance().getTime());
+		certGenerator.setPublicKey(publicKey);
+		certGenerator.setSignatureAlgorithm(sigAlg);
+		X509Certificate certificate = (X509Certificate)certGenerator.generate(privateKey, "BC");
+		return certificate;
 	}
 
 	public void testNamedCurve() {
@@ -875,5 +997,59 @@ public class CVCAStoreGenerator extends TestCase {
 			System.out.println("DEBUG: found " + namedSpecs);
 			return namedSpecs.get(0);
 		}
+	}
+
+	private static Certificate getCertificate(File file) throws IOException, CertificateException {
+		if (cvCertificateFactory == null) { cvCertificateFactory = getCVCCertificateFactory(); }
+		return cvCertificateFactory.generateCertificate(new FileInputStream(file));
+	}
+
+	/*
+	 * We're assuming those files contain either a cvc-cert or a key,
+	 * and that the cvc-certs form a chain, and that the files are named
+	 * as
+	 * <pre>
+	 *    cert[Alias].cvcert
+	 *    key[Alias].der
+	 * </pre>
+	 */
+	static class CredentialsDir {
+		private Map<String, Certificate> certificates;
+		private Map<String, Key> keys;
+
+		public CredentialsDir(String dir, String[] fileNames) throws Exception {
+			certificates = new HashMap<String, Certificate>();
+			keys = new HashMap<String, Key>();
+
+			for (String fileName: fileNames) {
+				fileName = fileName.trim();
+				File file = new File(dir, fileName);
+				if (!file.isFile()) { continue; /* NOTE: ignore sub-directories */ }
+				if (fileName.startsWith("cert") && fileName.endsWith(".cvcert")) {
+					String alias = fileName;
+					alias = alias.substring(0, alias.length() - ".cvcert".length());
+					alias = alias.substring("cert".length());
+					System.out.println("DEBUG: cert entry alias = " + alias);
+					Certificate certificate = getCertificate(file);
+					certificates.put(alias, certificate);
+				} else if (fileName.startsWith("key") && fileName.endsWith(".der")) {
+					String alias = fileName;
+					alias = alias.substring(0, alias.length() - ".der".length());
+					alias = alias.substring("key".length());
+					System.out.println("DEBUG: key entry alias = " + alias);
+
+					/* Try to interpret it as a key */
+					Key key = getKey(file);
+					System.out.println("DEBUG: key alg " + key.getAlgorithm());
+					keys.put(alias, key);
+				}
+			}
+		}
+
+		public Map<String, Certificate> getCertificates() { return certificates; }
+
+		public Map<String, Key> getKeys() { return keys; }
+
+
 	}
 }

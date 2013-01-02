@@ -492,7 +492,7 @@ public class PassportApduService extends CardService {
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		int sw = rapdu.getSW();
 		if ((short) sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Sending External Authenticate failed.");
+			throw new CardServiceException("Sending External Authenticate failed.", sw);
 		}
 	}
 	

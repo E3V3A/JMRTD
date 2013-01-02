@@ -443,7 +443,7 @@ public class PassportTestService extends PassportService {
 	 */
 	public boolean doTA() {
 		try {
-			super.doTA(terminalCertificates, terminalKey, null, null, documentNumber);
+			super.doTA(caReference, terminalCertificates, terminalKey, null, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
@@ -456,13 +456,13 @@ public class PassportTestService extends PassportService {
 	 * 
 	 * @return whether this succeeded
 	 */
-	public boolean doTA(CardVerifiableCertificate[] certs, PrivateKey key) {
+	public boolean doTA(CVCPrincipal caReference, CardVerifiableCertificate[] certs, PrivateKey key) {
 		try {
 			List<CardVerifiableCertificate> cs = new ArrayList<CardVerifiableCertificate>();
 			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
-			super.doTA(cs, key, null, null, documentNumber);
+			super.doTA(caReference, cs, key, null, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
@@ -476,13 +476,13 @@ public class PassportTestService extends PassportService {
 	 * 
 	 * @return whether this succeeded
 	 */
-	public boolean doTA(CardVerifiableCertificate[] certs, PrivateKey key, String taSigAlg) {
+	public boolean doTA(CVCPrincipal caReference, CardVerifiableCertificate[] certs, PrivateKey key, String taSigAlg) {
 		try {
 			List<CardVerifiableCertificate> cs = new ArrayList<CardVerifiableCertificate>();
 			for(CardVerifiableCertificate c : certs) {
 				cs.add(c);
 			}
-			super.doTA(cs, key, taSigAlg, null, documentNumber);
+			super.doTA(caReference, cs, key, taSigAlg, null, documentNumber);
 			return true;            
 		}catch(CardServiceException e) {
 			return false;
