@@ -677,7 +677,6 @@ public class Passport {
 			if (caReference == null) { continue; }
 			try {
 				List<String> aliases = Collections.list(cvcaStore.aliases());
-				System.out.println("DEBUG: aliases = " + aliases);
 				PrivateKey privateKey = null;
 				Certificate[] chain = null;
 				for (String alias: aliases) {
@@ -687,7 +686,7 @@ public class Passport {
 						if (key instanceof PrivateKey) {
 							privateKey = (PrivateKey)key;
 						} else {
-							System.out.println("DEBUG: WARNING: skipping non-private key " + alias);
+							LOGGER.warning("skipping non-private key " + alias);
 							continue;
 						}
 						chain = cvcaStore.getCertificateChain(alias);
@@ -695,17 +694,15 @@ public class Passport {
 						CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
 						CVCPrincipal authRef = certificate.getAuthorityReference();
 						CVCPrincipal holderRef = certificate.getHolderReference();
-						System.out.println("DEBUG: authRef = " + authRef + ", holderRef = " + holderRef);
-						System.out.println("DEBUG: caRef = " + caReference);
 						if (!caReference.equals(authRef)) { continue; }
 						/* See if we have a private key for that certificate. */
 						privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
 						chain = cvcaStore.getCertificateChain(holderRef.getName());
 						if (privateKey == null) { continue; }
-						System.out.println("DEBUG: found a key, privateKey = " + privateKey);
+						LOGGER.fine("found a key, privateKey = " + privateKey);
 					}
 					if (privateKey == null || chain == null) {
-						System.out.println("DEBUG: WARNING: chain = " + chain + ", privateKey = " + privateKey + ", for entry " + alias);
+						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + chain + ", privateKey = " + privateKey);
 						continue;
 					}
 					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);

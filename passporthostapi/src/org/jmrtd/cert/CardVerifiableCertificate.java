@@ -42,10 +42,12 @@ import java.util.Date;
 import net.sourceforge.scuba.data.Country;
 
 import org.ejbca.cvc.AccessRightEnum;
+import org.ejbca.cvc.AlgorithmUtil;
 import org.ejbca.cvc.AuthorizationRoleEnum;
 import org.ejbca.cvc.CAReferenceField;
 import org.ejbca.cvc.CVCertificateBody;
 import org.ejbca.cvc.HolderReferenceField;
+import org.ejbca.cvc.OIDField;
 import org.ejbca.cvc.ReferenceField;
 import org.ejbca.cvc.exception.ConstructionException;
 
@@ -106,12 +108,32 @@ public class CardVerifiableCertificate extends Certificate {
 			CAReferenceField authorityRef = new CAReferenceField(authorityReference.getCountry().toAlpha2Code(), authorityReference.getMnemonic(), authorityReference.getSeqNumber());
 			HolderReferenceField  holderRef = new HolderReferenceField(holderReference.getCountry().toAlpha2Code(), holderReference.getMnemonic(), holderReference.getSeqNumber());
 			AuthorizationRoleEnum authRole = CVCAuthorizationTemplate.fromRole(role);
-			AccessRightEnum accessRight = CVCAuthorizationTemplate.fromPermission(permission);		
+			AccessRightEnum accessRight = CVCAuthorizationTemplate.fromPermission(permission);
 			CVCertificateBody body = new CVCertificateBody(authorityRef, org.ejbca.cvc.KeyFactory.createInstance(publicKey, algorithm, authRole), holderRef, authRole, accessRight, notBefore, notAfter);
 			this.cvCertificate = new org.ejbca.cvc.CVCertificate(body);
 			this.cvCertificate.setSignature(signatureData);
+			cvCertificate.getTBS();
 		} catch(ConstructionException ce) {
 			throw new IllegalArgumentException(ce.getMessage());
+		}
+	}
+
+	public String getSigAlgName() {
+		try {
+			OIDField oid = cvCertificate.getCertificateBody().getPublicKey().getObjectIdentifier();			
+			String algorithm = AlgorithmUtil.getAlgorithmName(oid);
+			return algorithm;
+		} catch (NoSuchFieldException nsfe) {
+			return null;
+		}
+	}
+
+	public String getSigAlgOID() {
+		try {
+			OIDField oid = cvCertificate.getCertificateBody().getPublicKey().getObjectIdentifier();
+			return oid.getAsText();
+		} catch (NoSuchFieldException nsfe) {
+			return null;
 		}
 	}
 

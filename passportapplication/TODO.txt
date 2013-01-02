@@ -225,6 +225,8 @@ General
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
 - Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - doCA with explicit keyId seems to use wrong encoding.
++ Clean up doTA, make sig algorithm detection according to spec.
+- Improve unit tests for EAC.
 
 Code quality
 - Check unit tests
