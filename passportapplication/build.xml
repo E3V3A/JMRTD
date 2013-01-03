@@ -36,7 +36,7 @@
 	<target name="compile" depends="" description="Compiles the source ">
 		<mkdir dir="${build}" />
 		<!-- Compile the java code from ${src} into ${build} -->
-		<javac target="1.6" srcdir="src" classpath="${bcpkix_lib}:${bcprov_lib}:${certcvc_lib}:${scuba_lib}:${jmrtd_lib}" destdir="${build}" />		
+		<javac encoding="ISO-8859-1" target="1.6" srcdir="src" classpath="${bcpkix_lib}:${bcprov_lib}:${certcvc_lib}:${scuba_lib}:${jmrtd_lib}" destdir="${build}" />		
 	</target>
 
 	<target name="dist" depends="compile" description="Generates the distribution .jar file">
