@@ -25,10 +25,14 @@ package org.jmrtd.lds;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+
+import org.jmrtd.io.InputStreamBuffer;
+import org.jmrtd.io.SplittableInputStream;
 
 /**
  * Base class for image infos.
@@ -44,7 +48,11 @@ abstract class AbstractImageInfo implements ImageInfo {
 	private int type;
 	private String mimeType;
 	private byte[] imageBytes;
-	private InputStream imageInputStream;
+	
+	private SplittableInputStream splittableInputStream;
+	int imagePositionInInputStream;
+	int imageLength;
+	
 	private int width, height;
 
 	/* PACKAGE ONLY VISIBLE CONSTRUCTORS BELOW */
@@ -67,7 +75,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		this.height = height;
 	}
 
-	/* PUBLIC CONSRTUCTORS BELOW */
+	/* PUBLIC CONSRTUCTOR BELOW */
 
 	/**
 	 * Constructs an abstract image info.
@@ -85,6 +93,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 		this(type, width, height, mimeType);
 		readImage(inputStream, imageLength);
 	}
+
+	/* PUBLIC METHODS BELOW */
 
 	/**
 	 * Content type, one of
@@ -132,7 +142,12 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * @return the length of the encoded image
 	 */
 	public int getImageLength() {
-		if (imageBytes != null) {
+		/* DEBUG: START */
+		if (splittableInputStream != null) {
+			return imageLength;
+			/* DEBUG: END */
+
+		} else if (imageBytes != null) {
 			return imageBytes.length;
 		} else {
 			throw new IllegalStateException("DEBUG");
@@ -207,7 +222,12 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * @return an input stream containing the encoded image
 	 */
 	public InputStream getImageInputStream() {
-		if (imageBytes != null) {
+		/* DEBUG: START */
+		if (splittableInputStream != null) {
+			System.out.println("DEBUG: getInputStream, from " + splittableInputStream.getPosition() + "/" + splittableInputStream.getLength() + ", from position " + imagePositionInInputStream);
+			return splittableInputStream.getInputStream(imagePositionInInputStream);
+			/* DEBUG: END */
+		} else if (imageBytes != null) {
 			return new ByteArrayInputStream(imageBytes);
 		} else {
 			throw new IllegalStateException("DEBUG");
@@ -223,11 +243,22 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * @throws IOException
 	 */
 	protected void readImage(InputStream inputStream, long imageLength) throws IOException {
-		this.imageBytes = new byte[(int)imageLength];
-		DataInputStream dataIn = new DataInputStream(inputStream);
-		dataIn.readFully(this.imageBytes);
+		/* DEBUG: START */
+		if (inputStream instanceof SplittableInputStream) {
+			this.imageBytes = null;
+			this.splittableInputStream = (SplittableInputStream)inputStream;
+			this.imagePositionInInputStream = splittableInputStream.getPosition();
+			this.imageLength = (int)imageLength;
+			splittableInputStream.skip(imageLength);
+		} else {
+			/* DEBUG: END */
+			this.splittableInputStream = null;
+			this.imageBytes = new byte[(int)imageLength];
+			DataInputStream dataIn = new DataInputStream(inputStream);
+			dataIn.readFully(this.imageBytes);
+		}
 	}
-	
+
 	protected void writeImage(OutputStream outputStream) throws IOException {
 		outputStream.write(getImageBytes());
 	}
@@ -263,8 +294,11 @@ abstract class AbstractImageInfo implements ImageInfo {
 	/* ONLY PRIVATE METHODS BELOW */
 
 	private byte[] getImageBytes() throws IOException {
-		byte[] imageBytes = new byte[getImageLength()];
-		DataInputStream imageInputStream = new DataInputStream(getImageInputStream());
+		InputStream inputStream = null;
+		int length = getImageLength();
+		byte[] imageBytes = new byte[length];
+		inputStream = getImageInputStream();
+		DataInputStream imageInputStream = new DataInputStream(inputStream);
 		imageInputStream.readFully(imageBytes);		
 		return imageBytes;
 	}

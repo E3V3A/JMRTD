@@ -36,6 +36,7 @@ import org.jmrtd.cbeff.ISO781611Decoder;
 import org.jmrtd.cbeff.ISO781611Encoder;
 import org.jmrtd.cbeff.SimpleCBEFFInfo;
 import org.jmrtd.cbeff.StandardBiometricHeader;
+import org.jmrtd.io.SplittableInputStream;
 
 /**
  * File structure for the EF_DG2 file.
@@ -82,6 +83,7 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {
+//		inputStream = new SplittableInputStream(inputStream, getLength());
 		ComplexCBEFFInfo complexCBEFFInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = complexCBEFFInfo.getSubRecords();
 		for (CBEFFInfo cbeffInfo: records) {

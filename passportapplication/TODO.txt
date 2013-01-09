@@ -226,7 +226,7 @@ General
 - Clean up ImageInfo inputstream to allow progressive rendering in principle.
 - doCA with explicit keyId seems to use wrong encoding.
 + Clean up doTA, make sig algorithm detection according to spec.
-- Improve unit tests for EAC.
+- Improve unit tests for EAC and CVC.
 
 Code quality
 - Check unit tests

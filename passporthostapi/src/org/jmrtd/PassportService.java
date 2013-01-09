@@ -471,15 +471,18 @@ public class PassportService extends PassportApduService implements Serializable
 			if (terminalCertificates == null || terminalCertificates.size() < 1) {
 				throw new IllegalArgumentException("Need at least 1 certificate to perform TA, found: " + terminalCertificates);
 			}
-			
+
 			/* The key hash that resulted from CA. FIXME: don't rely on global var for this -- MO */
 			if (caKeyHash == null) {
 				caKeyHash = eacKeyHash;
 			}
+			if (caKeyHash == null) {
+				throw new IllegalArgumentException("CA key hash is null");
+			}
 
 			/* FIXME: check that terminalCertificates holds a (inverted, i.e. issuer before subject) chain. */
 
-			/* Check if first cert is CVCA, and the expected CA, and remove it from chain. */
+			/* Check if first cert is/has the expected CVCA, and remove it from chain if it is the CVCA. */
 			CardVerifiableCertificate firstCert = terminalCertificates.get(0);
 			Role firstCertRole = firstCert.getAuthorizationTemplate().getRole();
 			if (Role.CVCA.equals(firstCertRole)) {
@@ -490,9 +493,15 @@ public class PassportService extends PassportApduService implements Serializable
 				if (caReference == null) {
 					caReference = firstCertHolderReference;
 				}
-
 				terminalCertificates.remove(0);
-			}			
+			}
+			CVCPrincipal firstCertAuthorityReference = firstCert.getAuthorityReference();
+			if (caReference != null && !caReference.equals(firstCertAuthorityReference)) {
+				throw new CardServiceException("First certificate not signed by expected CA, found " + firstCertAuthorityReference.getName() + ",  expected " + caReference.getName());
+			}
+			if (caReference == null) {
+				caReference = firstCertAuthorityReference;
+			}
 
 			/* Check if the last cert is an IS cert. */
 			CardVerifiableCertificate lastCert = terminalCertificates.get(terminalCertificates.size() - 1);
@@ -501,7 +510,7 @@ public class PassportService extends PassportApduService implements Serializable
 				throw new CardServiceException("Last certificate in chain (" + lastCert.getHolderReference().getName() + ") does not have role IS, but has role " + lastCertRole);
 			}
 			CardVerifiableCertificate terminalCert = lastCert;
-			
+
 			/* Have the MRTD check our chain. */
 			for (CardVerifiableCertificate cert: terminalCertificates) {
 				try {
