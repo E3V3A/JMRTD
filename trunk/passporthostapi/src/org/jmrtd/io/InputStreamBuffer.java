@@ -72,7 +72,7 @@ public class InputStreamBuffer {
 		return "InputStreamBuffer [" + buffer + "]";
 	}
 
-	class SubInputStream extends InputStream {
+	public class SubInputStream extends InputStream { // FIXME set class visibility to package
 
 		/** The position within this inputstream. */
 		private int position;
@@ -104,30 +104,32 @@ public class InputStreamBuffer {
 		}
 
 		public long skip(long n) throws IOException {
-				int leftInBuffer = buffer.getBufferedLength(position);
-				if (n <= leftInBuffer) {
-					/* If we can skip within the buffer, we do */
-					position += n;
-					return n;
+			System.out.println("DEBUG: InputStreamBuffer " + this);
+			System.out.println("DEBUG: InputStreamBuffer.skip(" + n + ") while at position " + position + " while length = " + getLength());
+			int leftInBuffer = buffer.getBufferedLength(position);
+			if (n <= leftInBuffer) {
+				/* If we can skip within the buffer, we do */
+				position += n;
+				return n;
+			} else {
+				assert(leftInBuffer < n);
+				/* Otherwise, skip what's left in buffer, then skip within carrier... */
+				position += leftInBuffer;
+				long skippedBytes = 0;
+				if (carrier.markSupported()) {
+					/* First reposition carrier (by reset() and skip()) if not in sync with our position */
+					setCarrierPosition();
+					skippedBytes = carrier.skip(n - leftInBuffer);
 				} else {
-					assert(leftInBuffer < n);
-					/* Otherwise, skip what's left in buffer, then skip within carrier... */
-					position += leftInBuffer;
-					long skippedBytes = 0;
-					if (carrier.markSupported()) {
-						/* First reposition carrier (by reset() and skip()) if not in sync with our position */
-						setCarrierPosition();
-						skippedBytes = carrier.skip(n - leftInBuffer);
-					} else {
-						skippedBytes = super.skip(n - leftInBuffer);
-					}
-					position += (int)skippedBytes;
-					return leftInBuffer + skippedBytes;
+					skippedBytes = super.skip(n - leftInBuffer);
 				}
+				position += (int)skippedBytes;
+				return leftInBuffer + skippedBytes;
+			}
 		}
 
 		public int available() throws IOException {
-				return buffer.getBufferedLength(position);
+			return buffer.getBufferedLength(position);
 		}
 
 		public void close() throws IOException {
@@ -148,7 +150,7 @@ public class InputStreamBuffer {
 		public int getPosition() {
 			return position;
 		}
-		
+
 		private void setCarrierPosition() throws IOException {
 			if (position < carrier.getPosition()) {
 				carrier.reset();

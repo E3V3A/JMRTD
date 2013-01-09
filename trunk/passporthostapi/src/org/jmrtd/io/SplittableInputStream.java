@@ -206,4 +206,8 @@ public class SplittableInputStream extends InputStream {
 	public int getLength() {
 		return inputStreamBuffer.getLength();
 	}
+	
+	public int getBytesBuffered() {
+		return inputStreamBuffer.getBytesBuffered();
+	}
 }

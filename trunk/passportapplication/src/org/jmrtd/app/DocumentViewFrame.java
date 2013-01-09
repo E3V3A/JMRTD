@@ -437,6 +437,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 					while (isDisplaying) {
 						int pos = passport.getLDS().getPosition();
 						int length = passport.getLDS().getLength();
+//						System.out.println("DEBUG: pos = " + pos + "/" + length);
 						progressBar.setMaximum(length);
 						progressBar.setValue(pos);
 						Thread.sleep(200);

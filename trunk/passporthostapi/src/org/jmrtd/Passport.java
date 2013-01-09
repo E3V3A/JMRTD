@@ -281,7 +281,7 @@ public class Passport {
 			} else {
 				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File }), sodFile);
 			}
-
+			
 			/* Start reading each of the files. */
 			for (int tag: comTagList) { // FIXME: use dg list from EF.SOd here
 				try {

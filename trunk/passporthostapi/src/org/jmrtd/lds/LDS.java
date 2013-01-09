@@ -97,10 +97,10 @@ public class LDS {
 		return resultList;		
 	}
 
-	public int getPosition(short fid) {
+	public int getBytesBuffered(short fid) {
 		SplittableInputStream fetcher = fetchers.get(fid);
 		if (fetcher == null) { return 0; }
-		return fetcher.getPosition();		
+		return fetcher.getBytesBuffered();		
 	}
 
 	public int getLength(short fid) {
@@ -113,7 +113,7 @@ public class LDS {
 		int result = 0;
 		List<Short> fileList = getFileList();
 		for (short fid: fileList) {
-			result += getPosition(fid);
+			result += getBytesBuffered(fid);
 		}
 		return result;
 	}
