@@ -259,6 +259,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * Constructs a Security Object data structure.
 	 *
 	 * @param inputStream some inputstream
+	 * 
 	 * @throws IOException if something goes wrong
 	 */
 	public SODFile(InputStream inputStream) throws IOException {

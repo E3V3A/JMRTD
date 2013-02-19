@@ -82,6 +82,7 @@ public class InputStreamBuffer {
 
 		public SubInputStream(Object syncObject) {
 			position = 0;
+			markedPosition = -1;
 			this.syncObject = syncObject;
 		}
 
@@ -94,7 +95,9 @@ public class InputStreamBuffer {
 					return buffer.getBuffer()[position++] & 0xFF;
 				} else {
 					/* Get it from the carrier */
-					if (carrier.markSupported()) { setCarrierPosition(); }
+					if (carrier.markSupported()) {
+						syncCarrierPosition();
+					}
 					int result = carrier.read();
 					if (result < 0) { return -1; }
 					buffer.addFragment(position++, (byte)result);
@@ -104,27 +107,28 @@ public class InputStreamBuffer {
 		}
 
 		public long skip(long n) throws IOException {
-			System.out.println("DEBUG: InputStreamBuffer " + this);
-			System.out.println("DEBUG: InputStreamBuffer.skip(" + n + ") while at position " + position + " while length = " + getLength());
-			int leftInBuffer = buffer.getBufferedLength(position);
-			if (n <= leftInBuffer) {
-				/* If we can skip within the buffer, we do */
-				position += n;
-				return n;
-			} else {
-				assert(leftInBuffer < n);
-				/* Otherwise, skip what's left in buffer, then skip within carrier... */
-				position += leftInBuffer;
-				long skippedBytes = 0;
-				if (carrier.markSupported()) {
-					/* First reposition carrier (by reset() and skip()) if not in sync with our position */
-					setCarrierPosition();
-					skippedBytes = carrier.skip(n - leftInBuffer);
+			synchronized(syncObject) {
+				int leftInBuffer = buffer.getBufferedLength(position);
+
+				if (n <= leftInBuffer) {
+					/* If we can skip within the buffer, we do */
+					position += n;
+					return n;
 				} else {
-					skippedBytes = super.skip(n - leftInBuffer);
+					assert(leftInBuffer < n);
+					/* Otherwise, skip what's left in buffer, then skip within carrier... */
+					position += leftInBuffer;
+					long skippedBytes = 0;
+					if (carrier.markSupported()) {
+						syncCarrierPosition();
+						skippedBytes = carrier.skip(n - leftInBuffer);
+						position += (int)skippedBytes;
+					} else {
+						skippedBytes = super.skip(n - leftInBuffer);
+						/* As super.skip will call read, position will be adjusted automatically. */
+					}
+					return leftInBuffer + skippedBytes;
 				}
-				position += (int)skippedBytes;
-				return leftInBuffer + skippedBytes;
 			}
 		}
 
@@ -135,11 +139,12 @@ public class InputStreamBuffer {
 		public void close() throws IOException {
 		}
 
-		public synchronized void mark(int readlimit) {
+		public synchronized void mark(int readLimit) {
 			markedPosition = position;
 		}
 
 		public synchronized void reset() throws IOException {
+			if (markedPosition < 0) { throw new IOException("Invalid reset, was mark() called?"); }
 			position = markedPosition;
 		}
 
@@ -151,13 +156,20 @@ public class InputStreamBuffer {
 			return position;
 		}
 
-		private void setCarrierPosition() throws IOException {
-			if (position < carrier.getPosition()) {
-				carrier.reset();
-				int bytesSkipped = 0;
-				while (bytesSkipped < position) {
-					bytesSkipped += carrier.skip(position - bytesSkipped);
-				}
+		/**
+		 * If necessary, resets the carrier (which must support mark) and
+		 * skips to the current position in the buffer.
+		 * 
+		 * @throws IOException on error
+		 */
+		private void syncCarrierPosition() throws IOException {
+			if (position == carrier.getPosition()) {
+				return;
+			}
+			carrier.reset();
+			int bytesSkipped = 0;
+			while (bytesSkipped < position) {
+				bytesSkipped += carrier.skip(position - bytesSkipped);
 			}
 		}
 	}

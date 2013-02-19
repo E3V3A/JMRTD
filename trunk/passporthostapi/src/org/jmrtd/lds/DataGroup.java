@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import org.jmrtd.io.SplittableInputStream;
+
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 
@@ -77,6 +79,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
 		}
 		dataGroupLength = tlvIn.readLength();
+		inputStream = new SplittableInputStream(inputStream, dataGroupLength);
 		readContent(inputStream);
 	}
 
@@ -91,6 +94,8 @@ public abstract class DataGroup extends AbstractLDSFile {
 	 * Reads the contents of the datagroup from an inputstream.
 	 * Client code implementing this method should only read the contents
 	 * from the inputstream, not the tag or length of the datagroup.
+	 * 
+	 * @param inputStream the input stream to read from
 	 */
 	protected abstract void readContent(InputStream inputStream) throws IOException;
 
@@ -98,6 +103,8 @@ public abstract class DataGroup extends AbstractLDSFile {
 	 * Writes the contents of the datagroup to an outputstream.
 	 * Client code implementing this method should only write the contents
 	 * to the outputstream, not the tag or length of the datagroup.
+	 * 
+	 * @param outputStream the output stream to write to 
 	 */
 	protected abstract void writeContent(OutputStream outputStream) throws IOException;
 

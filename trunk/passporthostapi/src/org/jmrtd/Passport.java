@@ -102,9 +102,6 @@ public class Passport {
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	/** FIDs that could not be read (because of EAC, e.g.). */
-	private Collection<Short> couldNotRead;
-
 	private VerificationStatus verificationStatus;
 
 	private short cvcaFID = PassportService.EF_CVCA;
@@ -146,7 +143,6 @@ public class Passport {
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
 		this.docSigningPrivateKey = docSigningPrivateKey;
-		couldNotRead = new ArrayList<Short>();
 		this.lds = lds;
 	}
 
@@ -164,7 +160,7 @@ public class Passport {
 	}
 
 	/**
-	 * Creates a document by reading it from a service.
+	 * Creates a document by reading it from a card service.
 	 * 
 	 * @param service the service to read from
 	 * @param trustManager the trust manager (CSCA, CVCA)
@@ -237,8 +233,6 @@ public class Passport {
 		}
 
 		try {
-			couldNotRead = new ArrayList<Short>();
-
 			COMFile comFile = new COMFile(service.getInputStream(PassportService.EF_COM));
 			SODFile sodFile = new SODFile(service.getInputStream(PassportService.EF_SOD));
 			DG1File dg1File = new DG1File(service.getInputStream(PassportService.EF_DG1));
@@ -264,8 +258,10 @@ public class Passport {
 
 				cvcaFile = new CVCAFile(cvcaFID, service.getInputStream(cvcaFID));
 
+				List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
+				
 				/* Try to do EAC. */
-				for (KeyStore cvcaStore: trustManager.getCVCAStores()) {
+				for (KeyStore cvcaStore: cvcaKeyStores) {
 					try {
 						doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
 						break;
@@ -281,7 +277,7 @@ public class Passport {
 			} else {
 				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File }), sodFile);
 			}
-			
+
 			/* Start reading each of the files. */
 			for (int tag: comTagList) { // FIXME: use dg list from EF.SOd here
 				try {
@@ -289,14 +285,25 @@ public class Passport {
 					try {
 						if (fid == PassportService.EF_DG1) {
 							continue;
+						} else if (fid == cvcaFID) {
+							continue;
+						} else if (fid == PassportService.EF_DG14){
+							continue;
 						} else if ((fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) {
 							/* Skip DG3 and DG4 if EAC was unsuccessful... */
 							continue;
 						}
 						CardFileInputStream inputStream = service.getInputStream(fid);
+
+						/* DEBUG */
 						lds.add(fid, inputStream, inputStream.getLength());
+//						 lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
+					} catch (IOException ioe) {
+						LOGGER.warning("Error reading file with FID " + Integer.toHexString(fid)
+								+ ": " + ioe.getMessage());
+						break; /* out of for loop */
 					} catch(CardServiceException ex) {
-						/* NOTE: Most likely EAC protected file. */
+						/* NOTE: Most likely EAC protected file. So log, ignore, continue with next file. */
 						LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
 								+ ": " + ex.getMessage());
 					}
@@ -322,7 +329,6 @@ public class Passport {
 		this();
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
-		couldNotRead = new ArrayList<Short>();
 		Collection<DataGroup> dataGroups = new ArrayList<DataGroup>();
 		COMFile comFile = null;
 		SODFile sodFile = null;

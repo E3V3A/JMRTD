@@ -21,7 +21,10 @@
 
 package org.jmrtd.test.api.lds;
 
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -151,6 +154,46 @@ public class DG2FileTest extends TestCase {
 		}
 	}
 
+	public void testImageBytes() {
+		try {
+			DG2File dg2 = getTestObject();
+			FaceImageInfo i1 = dg2.getFaceInfos().get(0).getFaceImageInfos().get(0);
+			int l1 = i1.getImageLength();
+			byte[] b1 = new byte[l1];
+			(new DataInputStream(i1.getImageInputStream())).readFully(b1);
+
+			/* If this succeeds without an exception, it's probably really a JPEG2000 image. */
+			RenderedImage image = ImageUtil.read(new ByteArrayInputStream(b1), l1, i1.getMimeType());
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}		
+	}
+
+	public void testImageBytes0() {
+		try {
+			File testFile = new File(TEST_FILE);
+			byte[] bytes = new byte[(int)testFile.length()];
+			DataInputStream dataInputStream = new DataInputStream(new FileInputStream(testFile));
+			dataInputStream.readFully(bytes);
+			dataInputStream.close();
+			InputStream inputStream = new ByteArrayInputStream(bytes);
+			
+			DG2File dg2 = new DG2File(inputStream);
+			FaceImageInfo i1 = dg2.getFaceInfos().get(0).getFaceImageInfos().get(0);
+			int l1 = i1.getImageLength();
+			byte[] b1 = new byte[l1];
+			(new DataInputStream(i1.getImageInputStream())).readFully(b1);
+						
+			RenderedImage image = ImageUtil.read(new ByteArrayInputStream(b1), l1, i1.getMimeType());
+
+			System.out.println("DEBUG: " + Hex.bytesToHexString(b1, 0, 64));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+	
 	public void testCreate() {
 		try {
 			DG2File dg2 = createTestObject();

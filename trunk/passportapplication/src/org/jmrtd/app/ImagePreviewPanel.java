@@ -28,6 +28,10 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -55,7 +59,7 @@ public class ImagePreviewPanel extends JPanel {
 	private static final long serialVersionUID = 9113961215076977525L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
-	
+
 	private static final Icon IMAGE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("picture"));
 	private static final Icon FACE_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("user"));
 	private static final Icon FINGER_ICON = new ImageIcon(IconUtil.getFamFamFamSilkIcon("thumb_up"));
@@ -121,25 +125,32 @@ public class ImagePreviewPanel extends JPanel {
 			//					}
 			//				});
 			//			}
-			boolean isImageDecodable = false;
-			try {
-				image = ImageUtil.read(info.getImageInputStream(), info.getImageLength(), info.getMimeType());
-				image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-				isImageDecodable = true;
-			} catch (UnsatisfiedLinkError e) {
-				/* FIXME: Our image decoders should be better behaved... */
-				LOGGER.warning("Got UnsatisfiedLinkError while decoding \"" + info.getMimeType() + "\" image");
-				isImageDecodable = false;
-			} catch (Exception e) {
-				e.printStackTrace();
-				isImageDecodable = false;				
+
+			synchronized(info) {
+				boolean isImageDecodable = false;
+				try {
+					int imageLength = info.getImageLength();
+					InputStream imageInputStream = info.getImageInputStream();
+					String imageMimeType = info.getMimeType();					
+					image = ImageUtil.read(imageInputStream, imageLength, imageMimeType);
+					image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+					isImageDecodable = true;
+				} catch (UnsatisfiedLinkError e) {
+					/* FIXME: Our image decoders should be better behaved... */
+					LOGGER.warning("Got UnsatisfiedLinkError while decoding \"" + info.getMimeType() + "\" image");
+					isImageDecodable = false;
+				} catch (Exception e) {
+					e.printStackTrace();
+					isImageDecodable = false;				
+				}
+
+				if (isImageDecodable) {
+					label.setIcon(new ImageIcon(image));
+				} else {
+					label.setIcon(null);
+				}
+				revalidate(); repaint();
 			}
-			if (isImageDecodable) {
-				label.setIcon(new ImageIcon(image));
-			} else {
-				label.setIcon(null);
-			}
-			revalidate(); repaint();
 		} catch (Exception e) {
 			/* We'll just skip this image then. */
 		}	

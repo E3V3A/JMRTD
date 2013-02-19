@@ -31,6 +31,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
+import net.sourceforge.scuba.util.Hex;
+
 import org.jmrtd.io.InputStreamBuffer;
 import org.jmrtd.io.SplittableInputStream;
 
@@ -48,11 +50,11 @@ abstract class AbstractImageInfo implements ImageInfo {
 	private int type;
 	private String mimeType;
 	private byte[] imageBytes;
-	
+
 	private SplittableInputStream splittableInputStream;
 	int imagePositionInInputStream;
 	int imageLength;
-	
+
 	private int width, height;
 
 	/* PACKAGE ONLY VISIBLE CONSTRUCTORS BELOW */
@@ -224,8 +226,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 	public InputStream getImageInputStream() {
 		/* DEBUG: START */
 		if (splittableInputStream != null) {
-			System.out.println("DEBUG: getInputStream, from " + splittableInputStream.getPosition() + "/" + splittableInputStream.getLength() + ", from position " + imagePositionInInputStream);
-			return splittableInputStream.getInputStream(imagePositionInInputStream);
+			InputStream imageInputStream = splittableInputStream.getInputStream(imagePositionInInputStream);
+			return imageInputStream;
 			/* DEBUG: END */
 		} else if (imageBytes != null) {
 			return new ByteArrayInputStream(imageBytes);
@@ -248,8 +250,12 @@ abstract class AbstractImageInfo implements ImageInfo {
 			this.imageBytes = null;
 			this.splittableInputStream = (SplittableInputStream)inputStream;
 			this.imagePositionInInputStream = splittableInputStream.getPosition();
+
 			this.imageLength = (int)imageLength;
-			splittableInputStream.skip(imageLength);
+			long skippedBytes = 0;
+			while (skippedBytes < imageLength) {
+				skippedBytes += splittableInputStream.skip(imageLength - skippedBytes);
+			}
 		} else {
 			/* DEBUG: END */
 			this.splittableInputStream = null;
@@ -299,7 +305,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		byte[] imageBytes = new byte[length];
 		inputStream = getImageInputStream();
 		DataInputStream imageInputStream = new DataInputStream(inputStream);
-		imageInputStream.readFully(imageBytes);		
+		imageInputStream.readFully(imageBytes);
 		return imageBytes;
 	}
 

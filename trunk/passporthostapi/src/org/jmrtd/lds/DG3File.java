@@ -80,8 +80,6 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {
-//		inputStream = new SplittableInputStream(inputStream, getLength());
-
 		ComplexCBEFFInfo cbeffInfo = DECODER.decode(inputStream);
 
 		List<CBEFFInfo> records = cbeffInfo.getSubRecords();

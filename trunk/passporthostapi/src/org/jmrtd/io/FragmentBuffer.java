@@ -166,6 +166,13 @@ public class FragmentBuffer {
 		return false;		
 	}
 	
+	/**
+	 * Calculates the number of bytes left in the buffer starting from index <code>index</code>.
+	 * 
+	 * @param index the index
+	 *
+	 * @return the number of bytes left in the buffer
+	 */
 	public synchronized int getBufferedLength(int index) {
 		int result = 0;
 		if (index >= buffer.length) { return 0; }
