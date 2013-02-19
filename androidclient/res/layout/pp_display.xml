@@ -11,12 +11,26 @@
         android:layout_width="match_parent"
         android:layout_height="8dp" />
 
-    <ImageView
-        android:id="@+id/pp_display_iv"
-        android:layout_width="180dp"
-        android:layout_height="240dp"
-        android:contentDescription="@string/faceImage"
-        />
+    <FrameLayout
+        android:id="@+id/pp_display_frame_layout"
+        android:background="@drawable/default_user"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ProgressBar
+        	android:id="@+id/pp_image_progress_bar"
+        	android:layout_width="match_parent"
+        	android:layout_height="match_parent"
+        	android:layout_gravity="center"
+         />
+        
+        <ImageView
+            android:id="@+id/pp_display_iv"
+            android:layout_width="180dp"
+            android:layout_height="240dp"
+            android:contentDescription="@string/faceImage" />
+
+    </FrameLayout>
 
     <ScrollView
         android:layout_width="wrap_content"

@@ -22,25 +22,26 @@
 
 package org.jmrtd.io;
 
-import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-public class PositionInputStream extends FilterInputStream {
+public class PositionInputStream extends InputStream {
 
 	private static final long MARK_NOT_SET = -1L;
+	
+	private InputStream carrier;
 	
 	private long position;
 	private long markedPosition;
 
 	public PositionInputStream(InputStream carrier) {
-		super(carrier);
+		this.carrier = carrier;
 		position = 0L;
 		markedPosition = MARK_NOT_SET;
 	}
 
 	public int read() throws IOException {
-		int b = super.read();
+		int b = carrier.read();
 		if (b >= 0) { position++; }
 		return b;
 	}
@@ -50,29 +51,33 @@ public class PositionInputStream extends FilterInputStream {
 	}
 	
 	public int read(byte[] dest, int offset, int length) throws IOException {
-		int bytesRead = super.read(dest, offset, length);
+		int bytesRead = carrier.read(dest, offset, length);
 		position += bytesRead;
 		return bytesRead;
 	}
 	
 	public long skip(long n) throws IOException {
-		long skippedBytes = super.skip(n);
+		long skippedBytes = carrier.skip(n);
+		if (skippedBytes <= 0) {
+			System.out.println("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + " only skipped " + skippedBytes + ", position = " + position);
+		}
+
 		position += skippedBytes;
 		return skippedBytes;
 	}
 	
 	public void mark(int readLimit) {
-		super.mark(readLimit);
+		carrier.mark(readLimit);
 		markedPosition = position;
 	}
 	
 	public void reset() throws IOException {
-		super.reset();
+		carrier.reset();
 		position = markedPosition;
 	}
 	
 	public boolean markSupported() {
-		return super.markSupported();
+		return carrier.markSupported();
 	}
 	
 	public long getPosition() {

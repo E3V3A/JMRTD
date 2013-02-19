@@ -449,6 +449,7 @@ public class InputStreamBufferTest extends TestCase {
 			InputStream inputStream = new ByteArrayInputStream(bytes);
 			InputStreamBuffer inputStreamBuffer = new InputStreamBuffer(inputStream, length);
 			InputStream a = inputStreamBuffer.getInputStream();
+			a.mark(1000);
 			byte[] aBytes = new byte[99];
 			int aBytesRead = a.read(aBytes); /* First block of 99 bytes */
 			assertEquals(aBytesRead, aBytes.length);

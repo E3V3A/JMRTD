@@ -36,8 +36,11 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
+import net.sourceforge.scuba.smartcards.APDUEvent;
+import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.MRTDTrustStore;
@@ -81,6 +84,9 @@ public class PPDisplayAct extends Activity {
 
 	private static final String TAG = "PPDisplayAct";
 
+	private static final String TAG_APDU_RAW = "APDU.RAW";
+	private static final String TAG_APDU_PLAIN = "APDU.PLAIN";
+
 	private BACSpecDOStore bacStore;
 
 	//	private ProgressDialog progressDialog;
@@ -100,7 +106,8 @@ public class PPDisplayAct extends Activity {
 	private TextView dobW;
 	private TextView doeW;
 //	private TextView docSigningPrincipalNameW;
-	private ProgressBar progressBar;
+	private ProgressBar imageProgressBar;
+	private ProgressBar overallProgressBar;
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -136,7 +143,9 @@ public class PPDisplayAct extends Activity {
 
 	private void prepareWidgets() {
 		infoLabelW = (TextView)findViewById(R.id.ppd_infoLabelW);
+		imageProgressBar = (ProgressBar)findViewById(R.id.pp_image_progress_bar);
 		imageView = (ImageView)findViewById(R.id.pp_display_iv);
+		imageView.setVisibility(ImageView.INVISIBLE);
 		documentNumberW = (TextView)findViewById(R.id.ppd_documentNumberW);
 		personalNumberW = (TextView)findViewById(R.id.ppd_personalNumberW);
 		issuingStateW = (TextView)findViewById(R.id.ppd_issuingStateW);
@@ -147,7 +156,7 @@ public class PPDisplayAct extends Activity {
 		dobW = (TextView)findViewById(R.id.ppd_dateOfBirthW);
 		doeW = (TextView)findViewById(R.id.ppd_dateOfExpiryW);
 //		docSigningPrincipalNameW = (TextView)findViewById(R.id.ppd_docSigningPrincipalNameW);
-		progressBar = (ProgressBar)findViewById(R.id.ppd_progressW);
+		overallProgressBar = (ProgressBar)findViewById(R.id.ppd_progressW);
 	}
 
 	@Override
@@ -172,7 +181,12 @@ public class PPDisplayAct extends Activity {
 	private void handleIsoDepFound(IsoDep isoDep) {
 		Log.v(TAG, "handleIsoDepFound " + isoDep);
 		try {
-			isoDep.setTimeout(10000);
+			/* DEBUG */
+			Log.d(TAG, "Initial ISODep timeout = " + isoDep.getTimeout());
+			Log.d(TAG, "Initial ISODep max trancieve length = " + isoDep.getMaxTransceiveLength());
+			/* END DEBUG */
+			
+			isoDep.setTimeout(1000);
 			new AsyncPassportCreate().execute(isoDep);
 		} catch (Exception ex) {
 			Log.e(TAG, "error " + ex.toString(), ex);
@@ -191,13 +205,22 @@ public class PPDisplayAct extends Activity {
 				service.open();
 				PassportService passportService = new PassportService(service);
 
-				/* Try all BACs */
-				//				BACStore abacStore = new MemoryBACStore();
-				//				for (BACSpecDO bacSpec : bacStore) {
-				//					if (bacSpec == null) { continue; }
-				//					abacStore.addEntry(toBACKeySpec(bacSpec));
-				//				}
-
+				/* DEBUG DEBUG */
+				passportService.addAPDUListener(new APDUListener() {
+					public void exchangedAPDU(APDUEvent apduEvent) {
+						Log.d(TAG_APDU_RAW, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
+						Log.d(TAG_APDU_RAW, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
+					}
+				});
+				
+				passportService.addPlainTextAPDUListener(new APDUListener() {
+					public void exchangedAPDU(APDUEvent apduEvent) {
+						Log.d(TAG_APDU_PLAIN, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
+						Log.d(TAG_APDU_PLAIN, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
+					}
+				});
+				/* END DEBUG DEBUG */
+				
 				try {
 					Passport passport = new Passport(passportService, new MRTDTrustStore(), bacStore, 1);
 					Log.v(TAG, "passport = " + passport);
@@ -207,11 +230,11 @@ public class PPDisplayAct extends Activity {
 				} 
 				return null;
 			} catch (CardServiceException cse) {
-				Log.w(TAG, "DEBUG: EXCEPTION: " + cse.getMessage());				
+				Log.w(TAG, "DEBUG: CardServiceException: " + cse.getMessage());				
 				cse.printStackTrace();
 				return null;
 			} catch (Exception e) {
-				Log.w(TAG, "DEBUG: EXCEPTION: " + e.getMessage());
+				Log.w(TAG, "DEBUG: " + e.getClass().getCanonicalName() + ": " + e.getMessage());
 				return null;
 			} finally {
 				bacStore.close(); // DEBUG
@@ -238,23 +261,18 @@ public class PPDisplayAct extends Activity {
 	private void handlePassportCreated(final Passport passport) {
 		if (passport == null) { throw new IllegalArgumentException("Failed to get a passport"); }
 
-		//		if (progressDialog != null && progressDialog.isShowing()) {
-		//			progressDialog.dismiss();
-		//		}
-		//		progressDialog = new ProgressDialog(this);
-
 		final LDS lds = passport.getLDS();
 
 		isDisplaying = true;
-		progressBar.setProgress(lds.getPosition());
-		progressBar.setMax(lds.getLength());
+		overallProgressBar.setProgress(lds.getPosition());
+		overallProgressBar.setMax(lds.getLength());
 
 		progressHandler = new Handler() {
 			@Override
 			public void handleMessage(Message msg) {
 				/* get the value from the Message */
 				int progress = msg.arg1;
-				progressBar.setProgress(progress);
+				overallProgressBar.setProgress(progress);
 			}
 		};
 
@@ -285,24 +303,20 @@ public class PPDisplayAct extends Activity {
 			try {
 				Passport passport = params[0];
 				LDS lds = passport.getLDS();
-
-				publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG1_TAG));
-				DG1File dg1File = lds.getDG1File();
-				publishProgress(new PassportProgress(PassportProgress.FINISHED, dg1File));
 				
-				publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_SOD_TAG));
-				SODFile sodFile = lds.getSODFile();
-				publishProgress(new PassportProgress(PassportProgress.FINISHED, sodFile));
-
 				List<Short> fileList = lds.getFileList();
 				Collections.sort(fileList);
 				
 				for (short fid: fileList) {
 					switch(fid) {
 					case PassportService.EF_COM:
+						break;
 					case PassportService.EF_SOD:
+						break;
 					case PassportService.EF_DG1:
-						/* Already displayed! */
+						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG1_TAG));
+						DG1File dg1File = lds.getDG1File();
+						publishProgress(new PassportProgress(PassportProgress.FINISHED, dg1File));
 						break;
 					case PassportService.EF_DG2:
 						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG2_TAG));
@@ -313,6 +327,9 @@ public class PPDisplayAct extends Activity {
 						publishProgress(new PassportProgress(PassportProgress.STARTED, LDSFile.EF_DG15_TAG));
 						DG15File dg15File = lds.getDG15File();
 						publishProgress(new PassportProgress(PassportProgress.FINISHED, dg15File));
+						break;
+					default:
+						/* All other files are ignored. */
 						break;
 					}
 				}
@@ -351,8 +368,8 @@ public class PPDisplayAct extends Activity {
 
 		@Override
 		protected void onPostExecute(Integer i) {
-			//			progressDialog.dismiss();
 			isDisplaying = false;
+			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
 		}
 	}
 
@@ -371,10 +388,8 @@ public class PPDisplayAct extends Activity {
 			}
 			
 			/* Check these in logcat, for now :( */
-			System.out.println("DEBUG: issuer = " + name);
-			System.out.println("DEBUG: certificate = " + certificate);
-
-//			docSigningPrincipalNameW.setText(name);
+//			System.out.println("DEBUG: issuer = " + name);
+//			System.out.println("DEBUG: certificate = " + certificate);
 		}
 		if (file instanceof DataGroup) {
 			DataGroup dg = (DataGroup)file;
@@ -402,7 +417,6 @@ public class PPDisplayAct extends Activity {
 				if (allFaceImageInfos.size() > 0) {
 					new AsyncImageDecode().execute(allFaceImageInfos.get(0));
 				} else {
-					//				progressDialog.dismiss();
 				}
 				break;
 			default:
@@ -433,7 +447,9 @@ public class PPDisplayAct extends Activity {
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			imageView.setImageBitmap(result);
-			progressBar.setProgress(progressBar.getMax());
+			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
+			imageView.setVisibility(ImageView.VISIBLE);
+			overallProgressBar.setProgress(overallProgressBar.getMax());
 		}
 	}
 

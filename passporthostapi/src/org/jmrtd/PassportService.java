@@ -202,8 +202,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private int state;
 
-	private byte[] eacKeyHash = new byte[0]; // So that doing doTA without
-	// doCA does not give NPE
+	private byte[] eacKeyHash = new byte[0]; // FIXME, this global field appears to be here so that doing doTA without doCA does not give NPE -- MO
 
 	private Collection<AuthListener> authListeners;
 

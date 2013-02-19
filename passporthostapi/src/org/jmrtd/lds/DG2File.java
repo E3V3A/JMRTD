@@ -83,7 +83,6 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {
-//		inputStream = new SplittableInputStream(inputStream, getLength());
 		ComplexCBEFFInfo complexCBEFFInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = complexCBEFFInfo.getSubRecords();
 		for (CBEFFInfo cbeffInfo: records) {

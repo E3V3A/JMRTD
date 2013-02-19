@@ -29,7 +29,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import net.sourceforge.scuba.util.Hex;
+
 import org.jmrtd.cbeff.CBEFFInfo;
+import org.jmrtd.io.SplittableInputStream;
 
 /**
  * Data structure for storing view of a single finger
@@ -250,7 +253,7 @@ public class FingerImageInfo extends AbstractImageInfo {
 		imageOut.flush();
 		byte[] imageBytes = imageOut.toByteArray();
 		imageOut.close();
-
+		
 		long fingerDataBlockLength = imageBytes.length + 14;
 
 		DataOutputStream dataOut = out instanceof DataOutputStream ? (DataOutputStream)out : new DataOutputStream(out);
@@ -280,7 +283,6 @@ public class FingerImageInfo extends AbstractImageInfo {
 		return recordLength;
 	}
 	
-
 	/**
 	 * Gets the format type.
 	 * 
@@ -428,5 +430,4 @@ public class FingerImageInfo extends AbstractImageInfo {
 		default: return CBEFFInfo.BIOMETRIC_SUBTYPE_NONE;
 		}
 	}
-
 }

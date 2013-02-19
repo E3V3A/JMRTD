@@ -32,13 +32,20 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 	/** Number of bytes to read at start of file to determine file length. */
 	private static final int READ_AHEAD_LENGTH = 8;
 
+	/** Indicates the file that is (or should be) selected. */
 	private short selectedFID;
+
+	/** Indicates whether we actually already sent the SELECT command to select <code>selectedFID</code>. */
+	private boolean isSelected;
+
 	private PassportService service;
-	private Map<Short, MRTDFileInfo> files;
+	private Map<Short, MRTDFileInfo> fileInfos;
 
 	public MRTDFileSystem(PassportService service) {
 		this.service = service;
-		this.files = new HashMap<Short, MRTDFileInfo>();
+		this.fileInfos = new HashMap<Short, MRTDFileInfo>();
+		this.selectedFID = 0;
+		this.isSelected = false;
 	}
 
 	public synchronized FileInfo[] getSelectedPath() {
@@ -53,11 +60,8 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 
 	public synchronized void selectFile(short fid) throws CardServiceException {
 		if (selectedFID == fid) { return; }
-		service.sendSelectFile(fid);
 		selectedFID = fid;
-
-		/* This will determine file length if the file was not read before. */
-		getFileInfo();
+		isSelected = false;
 	}
 
 	public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
@@ -65,6 +69,11 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 		try {
 			if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
 			boolean readLong = (offset > 0x7FFF);
+			if (!isSelected) {
+				service.sendSelectFile(selectedFID);
+				isSelected = true;
+			}
+
 			fileInfo = getFileInfo();
 			assert(fileInfo != null);
 			Fragment fragment = fileInfo.getSmallestUnbufferedFragment(offset, length);
@@ -79,9 +88,9 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			System.arraycopy(buffer, offset, result, 0, length);
 			return result;
 		} catch (CardServiceException cse) {
-			throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo) + ": " + cse.getMessage(), cse.getSW());
+			throw new CardServiceException("Read binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo) + ": " + cse.getMessage(), cse.getSW());
 		} catch (Exception e) {
-			throw new CardServiceException("Send binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo));
+			throw new CardServiceException("Read binary failed on file " + (fileInfo == null ? Integer.toHexString(selectedFID) : fileInfo));
 		}
 	}
 
@@ -97,12 +106,19 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 	private synchronized MRTDFileInfo getFileInfo() throws CardServiceException {
 		if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
 
-		MRTDFileInfo fileInfo = files.get(selectedFID);
+		MRTDFileInfo fileInfo = fileInfos.get(selectedFID);
 		if (fileInfo != null) { return fileInfo; }
 
 		try {
-			/* Each passport file consists of a TLV structure. */
-			/* Woj: no, not each, CVCA does not and has a fixed length */
+			if (!isSelected) {
+				service.sendSelectFile(selectedFID);
+				isSelected = true;
+			}
+
+			/*
+			 * Each passport file consists of a TLV structure, read ahead to determine length.
+			 * EF.CVCA is the exception and has a fixed length of CVCAFile.LENGTH.
+			 */
 			byte[] prefix = service.sendReadBinary(0, READ_AHEAD_LENGTH, false);
 			ByteArrayInputStream baInputStream = new ByteArrayInputStream(prefix);
 			TLVInputStream tlvInputStream = new TLVInputStream(baInputStream);
@@ -117,13 +133,12 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			}
 			fileInfo = new MRTDFileInfo(selectedFID, fileLength);
 			fileInfo.addFragment(0, prefix);
-			files.put(selectedFID, fileInfo);
+			fileInfos.put(selectedFID, fileInfo);
 			return fileInfo;
 		} catch (IOException ioe) {
 			throw new CardServiceException(ioe.toString());
 		}
 	}
-	
 
 	private static class MRTDFileInfo extends FileInfo implements Serializable {
 
@@ -153,7 +168,6 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			return buffer.getSmallestUnbufferedFragment(offset, length);
 		}
 
-		
 		/**
 		 * Adds a fragment of bytes at a specific offset to this file.
 		 * 
