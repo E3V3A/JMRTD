@@ -4,6 +4,8 @@ package org.jmrtd.jj2000;
 
 import icc.ICCProfiler;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,7 +50,7 @@ public class JJ2000Decoder {
 		{ "res", "", "", null },
 		{ "i", "", "", null },
 		{ "o", "", "", null },
-		{ "rate", "", "", "3" },
+		{ "rate", "", "", "3.0" },
 		{ "nbytes", "", "", "-1" },
 		{ "parsing", null, "", "on" },
 		{ "ncb_quit", "", "", "-1" },
@@ -61,14 +63,36 @@ public class JJ2000Decoder {
 		{ "cdstr_info", null, "", "off" },
 		{ "nocolorspace", null, "", "off" },
 		{ "colorspace_debug", null, "", "off" } };
-	
+
 	/**
 	 * Prevent unwanted instantiation.
 	 */
 	private JJ2000Decoder() {
 	}
 
+	public static void decode(InputStream inputStream, int imageLength, ProgressListener progressListener) throws IOException {
+		DataInputStream dataInputStream = new DataInputStream(inputStream);
+		byte[] bytesIn = new byte[imageLength];
+		int count = 0;
+		for (int percentage = 30; percentage <= 100; percentage += 10) {
+			int newCount = (int)(percentage * imageLength / 100);
+			dataInputStream.readFully(bytesIn, count, newCount - count); 
+			count = newCount;
+			inputStream = new ByteArrayInputStream(bytesIn, 0, count);
+			try {
+				Bitmap bitmap = JJ2000Decoder.decode(inputStream, 3.0);
+				progressListener.previewBitmapAvailable(count, imageLength, bitmap);
+			} catch (Throwable e) {
+				System.out.println("DEBUG: ignoring exception");
+			}
+		}
+	}
+
 	public static Bitmap decode(InputStream in) throws IOException {
+		return decode(in, -1);
+	}
+	
+	public static Bitmap decode(InputStream in, double bitRate) throws IOException {
 		String[][] pinfo = getAllDecoderParameters();
 		ParameterList defpl = new ParameterList();
 		for (int i = pinfo.length - 1; i >= 0; i--) {
@@ -76,6 +100,9 @@ public class JJ2000Decoder {
 				defpl.put(pinfo[i][0], pinfo[i][3]);
 		}
 		ParameterList pl = new ParameterList(defpl);
+		if (bitRate >= 0.0) {
+			pl.put("rate", Float.toString((float)bitRate));
+		}
 
 		return decode(new ISRandomAccessIO(in), pl);
 	}
@@ -83,6 +110,7 @@ public class JJ2000Decoder {
 	/* ONLY PRIVATE METHODS BELOW. */
 
 	private static Bitmap decode(RandomAccessIO in, ParameterList pl) throws IOException {
+		double bitRate = pl.getFloatParameter("rate");
 
 		// The codestream should be wrapped in the jp2 fileformat, Read the
 		// file format wrapper
@@ -184,7 +212,7 @@ public class JJ2000Decoder {
 
 		CSEnum colorSpaceType = colorSpace.getColorSpace();
 		if (colorSpaceType.equals(ColorSpace.sRGB)) {
-			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths);
+			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
 			/*
 			 * For Android use:
 			 *   return Bitmap.createBitmap(colors, 0, imgWidth, imgWidth, imgHeight, Bitmap.Config.ARGB_8888);
@@ -217,7 +245,7 @@ public class JJ2000Decoder {
 	 * @param depths
 	 * @return
 	 */
-	private static Bitmap decodeSignedRGB(DataBlkInt[] blk, int width, int height, int[] depths) {
+	private static Bitmap decodeSignedRGB(DataBlkInt[] blk, int width, int height, int[] depths, double bitRate) {
 		if (blk == null || blk.length != 3) {
 			throw new IllegalArgumentException("Was expecting 3 bands");
 		}
@@ -255,8 +283,9 @@ public class JJ2000Decoder {
 			//			if (g < minG) { minG = g; } if (g > maxG) { maxG = g; }
 			//			if (b < minB) { minB = b; } if (b > maxB) { maxB = b; }
 
-			pixels[j] = JJ2000Util.signedComponentsToUnsignedARGB(r, g, b, depth);		}
-		Bitmap bitmap = new Bitmap(pixels, width, height, 24, -1, true, 3);
+			pixels[j] = JJ2000Util.signedComponentsToUnsignedARGB(r, g, b, depth);
+		}
+		Bitmap bitmap = new Bitmap(pixels, width, height, 24, -1, true, bitRate);
 		return bitmap;
 	}
 
@@ -342,5 +371,9 @@ public class JJ2000Decoder {
 		}
 
 		return str;
+	}
+	
+	public interface ProgressListener {
+		void previewBitmapAvailable(int bytesProcessedCount, int totalBytesCount, Bitmap bitmap);
 	}
 }

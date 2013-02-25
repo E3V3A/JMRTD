@@ -22,13 +22,18 @@
 package org.jmrtd.test.api.lds;
 
 import java.awt.image.BufferedImage;
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.AccessControlException;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -114,6 +119,52 @@ public class DG4FileTest extends TestCase {
 			assertNotNull(copyBytes);
 
 			assertFalse(Arrays.equals(dg4Bytes, copyBytes));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+	}
+
+	public void testFileFromLDS() {
+		try {
+			File zipFile = new File("t:/paspoort/test/bsi.zip");
+			FileInputStream inputStream = new FileInputStream(zipFile);
+		} catch (Exception e) {
+			fail(e.getMessage());
+		}
+	}
+
+	public void testFile() {
+		try {
+			DG4File dg4 = getTestObject();
+			List<IrisInfo> recordInfos = dg4.getIrisInfos();
+			int recordCount = recordInfos.size();
+			int recordNumber = 1;
+			System.out.println("DEBUG: Number of iris records = " + recordCount);
+			for (IrisInfo record: recordInfos) {
+				List<IrisBiometricSubtypeInfo> subtypeInfos = record.getIrisBiometricSubtypeInfos();
+				int subtypeInfoCount = subtypeInfos.size();
+				System.out.println("DEBUG: Number of subtypes in iris record " + recordNumber + " is " + subtypeInfoCount);
+				int imageInfoNumber = 1;
+				for (IrisBiometricSubtypeInfo subtypeInfo: subtypeInfos) {
+					List<IrisImageInfo> imageInfos = subtypeInfo.getIrisImageInfos();
+					int imageInfoCount = imageInfos.size();
+					System.out.println("DEBUG: Number of image infos in iris subtype record " + imageInfoNumber + " is " + imageInfoCount);
+					for (IrisImageInfo imageInfo: imageInfos) {
+						int length = imageInfo.getImageLength();
+						byte[] bytes = new byte[length];
+						DataInputStream dataIn = new DataInputStream(imageInfo.getImageInputStream());
+						dataIn.readFully(bytes);
+
+						RenderedImage image = ImageUtil.read(new ByteArrayInputStream(bytes), imageInfo.getImageLength(), imageInfo.getMimeType());
+						System.out.println("DEBUG: iris " + imageInfoNumber + "/" + imageInfoCount + " in record " + recordNumber + "/" + recordCount + " has " + image.getWidth() + " x " + image.getHeight());
+					}
+					subtypeInfoCount ++;
+				}
+				recordNumber ++;
+			}
+		} catch (AccessControlException ace) {
+			System.out.println("DEBUG: *************** could not get access to DG3 *********");
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

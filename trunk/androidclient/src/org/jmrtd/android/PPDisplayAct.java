@@ -368,8 +368,8 @@ public class PPDisplayAct extends Activity {
 
 		@Override
 		protected void onPostExecute(Integer i) {
-			isDisplaying = false;
-			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
+//			isDisplaying = false;
+//			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
 		}
 	}
 
@@ -447,6 +447,8 @@ public class PPDisplayAct extends Activity {
 		@Override
 		protected void onPostExecute(Bitmap result) {
 			imageView.setImageBitmap(result);
+			
+			isDisplaying = false;
 			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
 			imageView.setVisibility(ImageView.VISIBLE);
 			overallProgressBar.setProgress(overallProgressBar.getMax());
