@@ -3,10 +3,8 @@ package org.jmrtd.io.test;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.InputStream;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
-
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.io.SplittableInputStream;

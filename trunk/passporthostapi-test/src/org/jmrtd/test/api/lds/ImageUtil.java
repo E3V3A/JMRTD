@@ -34,6 +34,8 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
 import java.awt.image.RenderedImage;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -70,7 +72,7 @@ import javax.swing.ImageIcon;
 	/**
 	 * Reads an image.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 * @param imageLength the length of the encoded image
 	 * @param mimeType the mime-type of the encoded image
 	 *
@@ -78,13 +80,23 @@ import javax.swing.ImageIcon;
 	 * 
 	 * @throws IOException if the image cannot be read
 	 */
-	public static BufferedImage read(InputStream in, long imageLength, String mimeType) throws IOException {
+	public static BufferedImage read(InputStream inputStream, long imageLength, String mimeType) throws IOException {
+
+		/* DEBUG */
+		synchronized(inputStream) {
+			DataInputStream dataIn = new DataInputStream(inputStream);
+			byte[] bytes = new byte[(int)imageLength];
+			dataIn.readFully(bytes);
+			inputStream = new ByteArrayInputStream(bytes);
+		}
+		/* END DEBUG */
+
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-		ImageInputStream iis = ImageIO.createImageInputStream(in);
+		ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = readers.next();
-//				LOGGER.info("Using image reader " + reader + " for type " + mimeType);
+				//				LOGGER.info("Using image reader " + reader + " for type " + mimeType);
 				BufferedImage image = read(iis, imageLength, reader);
 				if (image != null) { return image; }
 			} catch (Exception e) {
@@ -135,7 +147,7 @@ import javax.swing.ImageIcon;
 		BufferedImage image = reader.read(0);
 		long posAfterImage = iis.getStreamPosition();
 		if ((posAfterImage - posBeforeImage) != imageLength) {
-			throw new IOException("Image may not have been correctly read");
+			throw new IOException("Image may not have been correctly read, stream position before was " + posBeforeImage + ", stream position after is " + posAfterImage + ", was expecting imageLength = " + imageLength + ", but difference is " + (posAfterImage - posBeforeImage));
 		}
 		return image;
 	}

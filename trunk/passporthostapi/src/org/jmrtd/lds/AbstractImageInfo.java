@@ -25,15 +25,11 @@ package org.jmrtd.lds;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-import net.sourceforge.scuba.util.Hex;
-
-import org.jmrtd.io.InputStreamBuffer;
 import org.jmrtd.io.SplittableInputStream;
 
 /**

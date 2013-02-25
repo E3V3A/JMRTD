@@ -34,7 +34,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.awt.image.PixelGrabber;
 import java.awt.image.RenderedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -69,7 +71,7 @@ public class ImageUtil {
 	/**
 	 * Reads an image.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 * @param imageLength the length of the encoded image
 	 * @param mimeType the mime-type of the encoded image
 	 *
@@ -77,9 +79,18 @@ public class ImageUtil {
 	 * 
 	 * @throws IOException if the image cannot be read
 	 */
-	public static BufferedImage read(InputStream in, long imageLength, String mimeType) throws IOException {
+	public static BufferedImage read(InputStream inputStream, long imageLength, String mimeType) throws IOException {
+		/* DEBUG */
+		synchronized(inputStream) {
+			DataInputStream dataIn = new DataInputStream(inputStream);
+			byte[] bytes = new byte[(int)imageLength];
+			dataIn.readFully(bytes);
+			inputStream = new ByteArrayInputStream(bytes);
+		}
+		/* END DEBUG */
+		
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
-		ImageInputStream iis = ImageIO.createImageInputStream(in);
+		ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = readers.next();

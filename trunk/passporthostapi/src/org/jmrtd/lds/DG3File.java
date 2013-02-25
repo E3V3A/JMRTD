@@ -81,7 +81,6 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 
 	protected void readContent(InputStream inputStream) throws IOException {
 		ComplexCBEFFInfo cbeffInfo = DECODER.decode(inputStream);
-
 		List<CBEFFInfo> records = cbeffInfo.getSubRecords();
 		for (CBEFFInfo record: records) {
 			if (!(record instanceof SimpleCBEFFInfo<?>)) {

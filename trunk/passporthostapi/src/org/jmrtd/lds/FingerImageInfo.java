@@ -29,10 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import net.sourceforge.scuba.util.Hex;
-
 import org.jmrtd.cbeff.CBEFFInfo;
-import org.jmrtd.io.SplittableInputStream;
 
 /**
  * Data structure for storing view of a single finger

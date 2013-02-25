@@ -35,12 +35,21 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+
 import junit.framework.TestCase;
 
+import org.jmrtd.MRTDTrustStore;
+import org.jmrtd.Passport;
+import org.jmrtd.lds.DG2File;
+import org.jmrtd.lds.DG3File;
 import org.jmrtd.lds.DG4File;
 import org.jmrtd.lds.IrisBiometricSubtypeInfo;
 import org.jmrtd.lds.IrisImageInfo;
 import org.jmrtd.lds.IrisInfo;
+import org.jmrtd.lds.LDS;
 
 public class DG4FileTest extends TestCase {
 
@@ -128,7 +137,58 @@ public class DG4FileTest extends TestCase {
 	public void testFileFromLDS() {
 		try {
 			File zipFile = new File("t:/paspoort/test/bsi.zip");
-			FileInputStream inputStream = new FileInputStream(zipFile);
+			MRTDTrustStore trustStore = new MRTDTrustStore();
+			Passport passport = new Passport(zipFile, trustStore);
+			LDS lds = passport.getLDS();
+			
+			DG2File dg2 = lds.getDG2File();
+			byte[] dummy1 = dg2.getEncoded();
+			
+			DG3File dg3 = lds.getDG3File();
+			byte[] dummy2 = dg3.getEncoded();
+			
+			DG4File dg4 = lds.getDG4File();
+
+			List<IrisInfo> recordInfos = dg4.getIrisInfos();
+			int recordCount = recordInfos.size();
+			int recordNumber = 1;
+			System.out.println("DEBUG: Number of iris records = " + recordCount);
+			for (IrisInfo record: recordInfos) {
+				List<IrisBiometricSubtypeInfo> subtypeInfos = record.getIrisBiometricSubtypeInfos();
+				int subtypeInfoCount = subtypeInfos.size();
+				System.out.println("DEBUG: Number of subtypes in iris record " + recordNumber + " is " + subtypeInfoCount);
+				int imageInfoNumber = 1;
+				for (IrisBiometricSubtypeInfo subtypeInfo: subtypeInfos) {
+					List<IrisImageInfo> imageInfos = subtypeInfo.getIrisImageInfos();
+					int imageInfoCount = imageInfos.size();
+					System.out.println("DEBUG: Number of image infos in iris subtype record " + imageInfoNumber + " is " + imageInfoCount);
+					for (IrisImageInfo imageInfo: imageInfos) {
+						int length = imageInfo.getImageLength();
+						byte[] bytes = new byte[length];
+						InputStream inputStream = imageInfo.getImageInputStream();
+
+//						DataInputStream dataIn = new DataInputStream(inputStream);
+//						dataIn.readFully(bytes);
+//						inputStream = new ByteArrayInputStream(bytes);
+
+						BufferedImage image = ImageUtil.read(inputStream, length, imageInfo.getMimeType());
+
+						System.out.println("DEBUG: iris " + imageInfoNumber + "/" + imageInfoCount + " in record " + recordNumber + "/" + recordCount + " has " + image.getWidth() + " x " + image.getHeight());
+
+						JFrame frame = new JFrame();
+						frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+						frame.pack();
+						frame.setVisible(true);
+					}
+					subtypeInfoCount ++;
+				}
+				recordNumber ++;
+			}
+
+			long time = System.currentTimeMillis();
+			while (System.currentTimeMillis() - time < 5000) {
+				/* Busy wait to show decoded images. */
+			}
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}

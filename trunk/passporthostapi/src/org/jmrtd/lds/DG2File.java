@@ -36,7 +36,6 @@ import org.jmrtd.cbeff.ISO781611Decoder;
 import org.jmrtd.cbeff.ISO781611Encoder;
 import org.jmrtd.cbeff.SimpleCBEFFInfo;
 import org.jmrtd.cbeff.StandardBiometricHeader;
-import org.jmrtd.io.SplittableInputStream;
 
 /**
  * File structure for the EF_DG2 file.
