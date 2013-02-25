@@ -80,7 +80,6 @@ public class DG3FileTest extends TestCase {
 
 					RenderedImage image = ImageUtil.read(new ByteArrayInputStream(bytes), imageInfo.getImageLength(), imageInfo.getMimeType());
 
-
 					//					RenderedImage image = ImageUtil.read(imageInfo.getImageInputStream(), imageInfo.getImageLength(), imageInfo.getMimeType());
 					//					System.out.println("DEBUG: fingerprint " + imageInfoNumber + "/" + imageInfoCount + " in record " + recordNumber + "/" + recordCount + " has " + image.getWidth() + " x " + image.getHeight());
 				}

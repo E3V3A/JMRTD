@@ -259,7 +259,7 @@ public class Passport {
 				cvcaFile = new CVCAFile(cvcaFID, service.getInputStream(cvcaFID));
 
 				List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
-				
+
 				/* Try to do EAC. */
 				for (KeyStore cvcaStore: cvcaKeyStores) {
 					try {
@@ -297,7 +297,7 @@ public class Passport {
 
 						/* DEBUG */
 						lds.add(fid, inputStream, inputStream.getLength());
-//						 lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
+//						lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
 					} catch (IOException ioe) {
 						LOGGER.warning("Error reading file with FID " + Integer.toHexString(fid)
 								+ ": " + ioe.getMessage());
