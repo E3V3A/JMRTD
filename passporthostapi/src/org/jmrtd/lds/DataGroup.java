@@ -26,10 +26,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import org.jmrtd.io.SplittableInputStream;
-
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+
+import org.jmrtd.io.SplittableInputStream;
 
 /**
  * Abstract base class for data group files.
@@ -79,7 +79,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 			throw new IllegalArgumentException("Was expecting tag " + Integer.toHexString(dataGroupTag) + ", found " + Integer.toHexString(tag));
 		}
 		dataGroupLength = tlvIn.readLength();
-//		inputStream = new SplittableInputStream(inputStream, dataGroupLength);
+		inputStream = new SplittableInputStream(inputStream, dataGroupLength);
 		readContent(inputStream);
 	}
 

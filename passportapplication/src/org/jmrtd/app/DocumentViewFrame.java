@@ -141,7 +141,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 	private Passport passport;
 
 	private EACEvent eacEvent;
-	
+
 	private boolean isDisplaying;
 
 	private VerificationIndicator verificationIndicator;
@@ -213,7 +213,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
-			
+
 			/* START DEBUG */
 			System.out.println("DEBUG: this exception was previously (< 0.4.8) uncaught -- MO 21");
 			e.printStackTrace();
@@ -222,7 +222,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 			JTextArea messageArea = new JTextArea(errorMessage, 5, 15);
 			JOptionPane.showMessageDialog(getContentPane(), new JScrollPane(messageArea), "Problem displaying / verifying", JOptionPane.WARNING_MESSAGE);
 			/* END DEBUG */	
-			
+
 			dispose();
 			return;
 		} finally {
@@ -437,7 +437,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 					while (isDisplaying) {
 						int pos = passport.getLDS().getPosition();
 						int length = passport.getLDS().getLength();
-//						System.out.println("DEBUG: pos = " + pos + "/" + length);
+						//						System.out.println("DEBUG: pos = " + pos + "/" + length);
 						progressBar.setMaximum(length);
 						progressBar.setValue(pos);
 						Thread.sleep(200);

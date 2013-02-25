@@ -35,7 +35,6 @@ import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.CBEFFInfo;
 import org.jmrtd.cbeff.ISO781611;
 import org.jmrtd.cbeff.StandardBiometricHeader;
-import org.jmrtd.io.SplittableInputStream;
 
 /**
  * Fingerprint general record header and finger image data blocks

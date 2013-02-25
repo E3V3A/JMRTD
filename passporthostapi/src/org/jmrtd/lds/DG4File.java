@@ -80,8 +80,6 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	}
 	
 	protected void readContent(InputStream inputStream) throws IOException {
-//		inputStream = new SplittableInputStream(inputStream, getLength());
-
 		ComplexCBEFFInfo cbeffInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = cbeffInfo.getSubRecords();
 		for (CBEFFInfo record: records) {
