@@ -14,7 +14,7 @@ import java.io.InputStream;
  */
 public class SplittableInputStream extends InputStream {
 
-	private InputStreamBuffer inputStreamBuffer;
+	public InputStreamBuffer inputStreamBuffer; // FIXME should be private
 	private InputStreamBuffer.SubInputStream carrier;
 
 	/**

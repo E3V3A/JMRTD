@@ -92,7 +92,7 @@ public class ISO781611Decoder implements ISO781611 {
 				+ ", found " + Integer.toHexString(tag));
 		}
 	}
-	
+
 	private ComplexCBEFFInfo readBITGroup(int tag, int length, InputStream inputStream) throws IOException {
 		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		ComplexCBEFFInfo result = new ComplexCBEFFInfo();
@@ -131,13 +131,13 @@ public class ISO781611Decoder implements ISO781611 {
 		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tag = tlvIn.readTag();
 		int length = tlvIn.readLength();
-		return readBIT(tag, length, inputStream, index);	
+		return readBIT(tag, length, inputStream, index);
 	}
 	
 	private CBEFFInfo readBIT(int tag, int length, InputStream inputStream, int index) throws IOException {
 		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		if (tag != BIOMETRIC_INFORMATION_TEMPLATE_TAG /* 7F60 */) { 
-			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(tag));
+			throw new IllegalArgumentException("Expected tag BIOMETRIC_INFORMATION_TEMPLATE_TAG (" + Integer.toHexString(BIOMETRIC_INFORMATION_TEMPLATE_TAG) + "), found " + Integer.toHexString(tag) + ", index is " + index);
 		}
 
 		int bhtTag = tlvIn.readTag();

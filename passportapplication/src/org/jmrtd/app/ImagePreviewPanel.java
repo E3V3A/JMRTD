@@ -41,6 +41,7 @@ import javax.swing.JTabbedPane;
 
 import org.jmrtd.app.util.IconUtil;
 import org.jmrtd.app.util.ImageUtil;
+import org.jmrtd.app.util.ImageUtil.ProgressListener;
 import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.ImageInfo;
 
@@ -112,30 +113,33 @@ public class ImagePreviewPanel extends JPanel {
 			infos.add(info);
 			tabbedPane.addTab(Integer.toString(index + 1), icon, panel);
 			revalidate(); repaint();
-			//			if (info instanceof FaceImageInfo) {
-			//				((FaceImageInfo)info).addImageReadUpdateListener(new ImageReadUpdateListener() {
-			//					public void passComplete(BufferedImage image, double percentage) {
-			//						if (image == null) { return; }
-			//						BufferedImage scaledImage = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
-			//						label.setIcon(new ImageIcon(scaledImage));
-			//						revalidate(); repaint();
-			//					}
-			//				});
-			//			}
 
 			synchronized(info) {
 				boolean isImageDecodable = false;
 				try {
-					int imageLength = info.getImageLength();
+					final int imageLength = info.getImageLength();
 					InputStream imageInputStream = info.getImageInputStream();
-					String imageMimeType = info.getMimeType();					
+					String imageMimeType = info.getMimeType();
+
+					if ("image/jp2".equals(imageMimeType)) {
+						/* Update UI while reading. */
+						ImageUtil.read(imageInputStream, imageLength, imageMimeType, new ProgressListener() {
+							@Override
+							public void previewImageAvailable(int bytesProcessedCount, BufferedImage image) {
+								image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+								label.setIcon(new ImageIcon(image));
+							}
+						});
+						image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+						isImageDecodable = true;
+					} else {
+						image = ImageUtil.read(imageInputStream, imageLength, imageMimeType);
+						image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
+					}
+					imageInputStream = info.getImageInputStream();
 					image = ImageUtil.read(imageInputStream, imageLength, imageMimeType);
 					image = scaleImage(image, calculateScale(width - 10, height - 10, image.getWidth(), image.getHeight()));
 					isImageDecodable = true;
-				} catch (UnsatisfiedLinkError e) {
-					/* FIXME: Our image decoders should be better behaved... */
-					LOGGER.warning("Got UnsatisfiedLinkError while decoding \"" + info.getMimeType() + "\" image");
-					isImageDecodable = false;
 				} catch (Exception e) {
 					e.printStackTrace();
 					isImageDecodable = false;				
