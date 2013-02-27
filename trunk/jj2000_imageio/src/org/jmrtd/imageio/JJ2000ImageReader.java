@@ -8,6 +8,7 @@ import java.awt.image.WritableRaster;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -42,21 +43,37 @@ public class JJ2000ImageReader extends ImageReader {
 	}
 
 	public void setInput(Object input, boolean seekForwardOnly, boolean ignoreMetaData) {
-		super.setInput(input, seekForwardOnly, ignoreMetaData);
-		if (input == null) {
-			this.image = null;
-			return;
-		}
+		super.setInput(input, seekForwardOnly, ignoreMetaData);		
+		if (input == null) { throw new IllegalArgumentException("bad input"); }
+		if (!(input instanceof ImageInputStream)) { throw new IllegalArgumentException("bad input"); }
+
 		try {
 			/* We're reading the complete image already, just to get the width and height. */
-			byte[] inputBytes = readBytes(input);
-			Bitmap bitmap = JJ2000Decoder.decode(new ByteArrayInputStream(inputBytes));
+			//			byte[] inputBytes = readBytes(input);
+
+			stream = (ImageInputStream)input;
+
+			InputStream inputStream = new ImageInputStreamAdapter(this.stream);
+
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			int blockSize = 4096;
+			byte[] buffer = new byte[blockSize];
+			int offset = 0;
+			while (true) {
+				int bytesRead = inputStream.read(buffer);
+				if (bytesRead < 0) { break; }
+				outputStream.write(buffer, 0, bytesRead);
+				offset += bytesRead;
+			}
+			ByteArrayInputStream partialInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+
+			Bitmap bitmap = JJ2000Decoder.decode(partialInputStream);
 			this.width = bitmap.getWidth();
 			this.height = bitmap.getHeight();
 			int[] pixels = bitmap.getPixels();
-            this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-            WritableRaster raster = image.getRaster();
-            raster.setDataElements(0, 0, width, height, pixels);
+			this.image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+			WritableRaster raster = image.getRaster();
+			raster.setDataElements(0, 0, width, height, pixels);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			this.image = null;
@@ -72,7 +89,7 @@ public class JJ2000ImageReader extends ImageReader {
 		try {
 			Point destinationOffset = new Point(0, 0);
 			if (param != null) { destinationOffset = param.getDestinationOffset(); }
-			BufferedImage dst = getDestination(param, getImageTypes(0), width, height);
+			BufferedImage dst = getDestination(param, getImageTypes(imageIndex), width, height);
 			dst.getRaster().setRect((int)destinationOffset.getX(), (int)destinationOffset.getY(), image.getRaster());
 			return dst;
 		} catch (IOException ioe) {
@@ -99,31 +116,12 @@ public class JJ2000ImageReader extends ImageReader {
 	public Iterator<ImageTypeSpecifier> getImageTypes(int imageIndex) throws IOException {
 		if (imageIndex != 0) { throw new IllegalArgumentException("bad input"); }
 		List<ImageTypeSpecifier> list = new ArrayList<ImageTypeSpecifier>();
-		list.add(ImageTypeSpecifier.createFromRenderedImage(image));
+		ImageTypeSpecifier imageTypeSpecifier = ImageTypeSpecifier.createFromRenderedImage(image);
+		list.add(imageTypeSpecifier);
 		return list.iterator();
 	}
 
 	public IIOMetadata getStreamMetadata() throws IOException {
 		return null;
-	}
-
-	/* ONLY PRIVATE METHODS BELOW */
-
-	private byte[] readBytes(Object input) throws IOException {
-		if (input == null) { return null; }
-		if (input instanceof ImageInputStream) {
-			this.stream = (ImageInputStream)input;
-			ByteArrayOutputStream out = new ByteArrayOutputStream();
-			while (true) {
-				int b = stream.read();
-				if (b < 0) { break; }
-				out.write(b);
-			}
-			out.flush();
-			byte[] bytes = out.toByteArray();
-			return bytes;
-		} else {
-			throw new IllegalArgumentException("bad input");
-		}
 	}
 }

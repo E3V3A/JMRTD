@@ -37,6 +37,7 @@ import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -68,6 +69,24 @@ public class ImageUtil {
 
 	private static final Logger LOGGER = Logger.getLogger("net.sourceforge.scuba.util");
 
+	public static void read(InputStream inputStream, long imageLength, String mimeType, ProgressListener listener) {
+		DataInputStream dataInputStream = new DataInputStream(inputStream);
+		byte[] bytesIn = new byte[(int)imageLength];
+		int count = 0;
+		for (int percentage = 30; percentage <= 100; percentage += 10) {
+			int newCount = (int)(percentage * imageLength / 100);
+			try {
+				dataInputStream.readFully(bytesIn, count, newCount - count); 
+				count = newCount;
+				inputStream = new ByteArrayInputStream(bytesIn, 0, count);
+				BufferedImage image = read(inputStream, count, mimeType);
+				listener.previewImageAvailable(count, image);
+			} catch (Throwable e) {
+				System.out.println("DEBUG: ignoring exception");
+			}
+		}
+	}
+
 	/**
 	 * Reads an image.
 	 * 
@@ -88,13 +107,15 @@ public class ImageUtil {
 			inputStream = new ByteArrayInputStream(bytes);
 		}
 		/* END DEBUG */
-		
+
+		inputStream = new BoundedInputStream(inputStream, imageLength);
+
 		Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(mimeType);
 		ImageInputStream iis = ImageIO.createImageInputStream(inputStream);
 		while (readers.hasNext()) {
 			try {
 				ImageReader reader = readers.next();
-//				LOGGER.info("Using image reader " + reader + " for type " + mimeType);
+				//	LOGGER.info("Using image reader " + reader + " for type " + mimeType);
 				BufferedImage image = read(iis, imageLength, reader);
 				if (image != null) { return image; }
 			} catch (Exception e) {
@@ -233,7 +254,7 @@ public class ImageUtil {
 		ColorModel cm = pg.getColorModel();
 		return cm.hasAlpha();
 	}
-	
+
 	public static byte[] createTrivialJPEGBytes(int width, int height) {
 		try {
 			BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
@@ -246,5 +267,30 @@ public class ImageUtil {
 			e.printStackTrace();
 			return null;
 		}
+	}
+
+	static class BoundedInputStream extends FilterInputStream {
+
+		private long bound;
+		private long position;
+
+		protected BoundedInputStream(InputStream inputStream, long bound) {
+			super(inputStream);
+			this.position = 0;
+			this.bound = bound;
+		}
+
+		public int read() throws IOException {
+			if (position >= bound) { return -1; }
+			try {
+				return super.read();
+			} finally {
+				position++;
+			}
+		}
+	}
+
+	public interface ProgressListener {
+		void previewImageAvailable(int bytesProcessedCount, BufferedImage image);
 	}
 }

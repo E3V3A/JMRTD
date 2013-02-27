@@ -61,18 +61,18 @@ public class JJ2000ImageReaderSpi extends ImageReaderSpi
 		if (!(input instanceof ImageInputStream)) {
 			return false;
 		}
-		ImageInputStream inStream = (ImageInputStream)input;
-		inStream.mark();
+		ImageInputStream imageInputStream = (ImageInputStream)input;
+		imageInputStream.mark();
 		try {
 			int bytesRead = 0;
 			byte[] headerBytes = new byte[MAGIC_BYTES.length];
 			while (bytesRead < MAGIC_BYTES.length) {
-				int actualBytesRead = inStream.read(headerBytes, bytesRead, MAGIC_BYTES.length - bytesRead);
+				int actualBytesRead = imageInputStream.read(headerBytes, bytesRead, MAGIC_BYTES.length - bytesRead);
 				if (actualBytesRead < 0) { return false; }
 			}
 			return Arrays.equals(MAGIC_BYTES, headerBytes);
 		} finally {
-			inStream.reset();
+			imageInputStream.reset();
 		}
 	}
 

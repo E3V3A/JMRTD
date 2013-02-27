@@ -5,7 +5,7 @@ package org.jmrtd.jj2000;
 import icc.ICCProfiler;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -70,18 +70,27 @@ public class JJ2000Decoder {
 	private JJ2000Decoder() {
 	}
 
-	public static void decode(InputStream inputStream, int imageLength, ProgressListener progressListener) throws IOException {
-		DataInputStream dataInputStream = new DataInputStream(inputStream);
-		byte[] bytesIn = new byte[imageLength];
-		int count = 0;
-		for (int percentage = 30; percentage <= 100; percentage += 10) {
-			int newCount = (int)(percentage * imageLength / 100);
-			dataInputStream.readFully(bytesIn, count, newCount - count); 
-			count = newCount;
-			inputStream = new ByteArrayInputStream(bytesIn, 0, count);
+	public static void decode(InputStream inputStream, int blockSize, ProgressListener progressListener) throws IOException {
+		decode(inputStream, blockSize, false, progressListener);
+	}
+
+	public static void decode(InputStream inputStream, int blockSize, boolean stopAfterFirstPass, ProgressListener progressListener) throws IOException {
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+		byte[] buffer = new byte[blockSize];
+		while (true) {
 			try {
-				Bitmap bitmap = JJ2000Decoder.decode(inputStream, 3.0);
-				progressListener.previewBitmapAvailable(count, imageLength, bitmap);
+				int bytesRead = inputStream.read(buffer);
+				if (bytesRead < 0) { break; }
+				if (bytesRead == 0) { System.out.println("DEBUG: WARNING: JJ2000Decoder read 0 bytes"); continue; }
+				outputStream.write(buffer, 0, bytesRead);
+				InputStream partialInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+				Bitmap bitmap = JJ2000Decoder.decode(partialInputStream, 3.0);
+				if (bitmap != null && bitmap.getWidth() > 0 && bitmap.getHeight() > 0) {
+					progressListener.previewBitmapAvailable(outputStream.size(), bitmap);
+					if (stopAfterFirstPass) { break; }
+				}
+			} catch (EOFException eof) {
+				break;
 			} catch (Throwable e) {
 				System.out.println("DEBUG: ignoring exception");
 			}
@@ -91,7 +100,7 @@ public class JJ2000Decoder {
 	public static Bitmap decode(InputStream in) throws IOException {
 		return decode(in, -1);
 	}
-	
+
 	public static Bitmap decode(InputStream in, double bitRate) throws IOException {
 		String[][] pinfo = getAllDecoderParameters();
 		ParameterList defpl = new ParameterList();
@@ -194,7 +203,11 @@ public class JJ2000Decoder {
 		for (int y = 0; y < nT.y; y++) {
 			// Loop on horizontal tiles
 			for (int x = 0; x < nT.x; x++) {
-				decodedImage.setTile(x, y);
+				try {
+					decodedImage.setTile(x, y);
+				} catch (Exception eofe) {
+					System.out.println("DEBUG: ignore in JJ2000Decoder setTile");
+				}
 
 				int width = decodedImage.getImgWidth();
 				int height = decodedImage.getImgHeight();
@@ -372,8 +385,8 @@ public class JJ2000Decoder {
 
 		return str;
 	}
-	
+
 	public interface ProgressListener {
-		void previewBitmapAvailable(int bytesProcessedCount, int totalBytesCount, Bitmap bitmap);
+		void previewBitmapAvailable(int bytesProcessedCount, Bitmap bitmap);
 	}
 }

@@ -24,16 +24,14 @@ public class ImageTest {
 	 */
 	public ImageTest() {
 		try {
-			File fileIn = new File(J2K_FILE_IN);
+			final File fileIn = new File(J2K_FILE_IN);
 			InputStream inputStream = new FileInputStream(fileIn);
 
-			JJ2000Decoder.decode(inputStream, (int)fileIn.length(), new JJ2000Decoder.ProgressListener() {
-
+			JJ2000Decoder.decode(inputStream, 1234, new JJ2000Decoder.ProgressListener() {
 				@Override
-				public void previewBitmapAvailable(int bytesProcessedCount, int totalBytesCount, Bitmap bitmap) {
-					show("" + bytesProcessedCount + "/" + totalBytesCount, bitmap);
+				public void previewBitmapAvailable(int bytesProcessedCount, Bitmap bitmap) {
+					show("" + bytesProcessedCount + "/" + (int)fileIn.length(), bitmap);
 				}
-
 			});
 
 
@@ -47,7 +45,6 @@ public class ImageTest {
 		JFrame frame = new JFrame(title);
 		frame.setLayout(new BorderLayout());
 		frame.getContentPane().add(new JLabel(new ImageIcon(image)));
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
 	}

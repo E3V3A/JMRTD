@@ -58,6 +58,10 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 		}
 	}
 
+	/*
+	 * NOTE: This doesn't actually send a select file command. ReadBinary will do so
+	 * if needed.
+	 */
 	public synchronized void selectFile(short fid) throws CardServiceException {
 		if (selectedFID == fid) { return; }
 		selectedFID = fid;
@@ -67,8 +71,8 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 	public synchronized byte[] readBinary(int offset, int length) throws CardServiceException {
 		MRTDFileInfo fileInfo = null;
 		try {
-			if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
-			boolean readLong = (offset > 0x7FFF);
+			if (selectedFID <= 0) { throw new CardServiceException("No file selected"); }
+			boolean isExtendedLength = (offset > 0x7FFF);
 			if (!isSelected) {
 				service.sendSelectFile(selectedFID);
 				isSelected = true;
@@ -78,7 +82,7 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			assert(fileInfo != null);
 			Fragment fragment = fileInfo.getSmallestUnbufferedFragment(offset, length);
 			if (fragment.getLength() > 0) {
-				byte[] bytes = service.sendReadBinary(fragment.getOffset(), fragment.getLength(), readLong);
+				byte[] bytes = service.sendReadBinary(fragment.getOffset(), fragment.getLength(), isExtendedLength);
 				if (fileInfo != null) {
 					fileInfo.addFragment(fragment.getOffset(), bytes);
 				}
@@ -104,11 +108,14 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 	 * @throws CardServiceException on error
 	 */
 	private synchronized MRTDFileInfo getFileInfo() throws CardServiceException {
-		if (selectedFID == 0) { throw new CardServiceException("No file selected"); }
+		if (selectedFID <= 0) { throw new CardServiceException("No file selected"); }
 
 		MRTDFileInfo fileInfo = fileInfos.get(selectedFID);
+		
+		/* If known file, use file info from cache. */
 		if (fileInfo != null) { return fileInfo; }
 
+		/* Not cached, actually read some bytes to determine file info. */
 		try {
 			if (!isSelected) {
 				service.sendSelectFile(selectedFID);

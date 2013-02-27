@@ -35,10 +35,6 @@ import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.JLabel;
-
 import junit.framework.TestCase;
 
 import org.jmrtd.MRTDTrustStore;
@@ -140,15 +136,17 @@ public class DG4FileTest extends TestCase {
 			MRTDTrustStore trustStore = new MRTDTrustStore();
 			Passport passport = new Passport(zipFile, trustStore);
 			LDS lds = passport.getLDS();
-			
+
 			DG2File dg2 = lds.getDG2File();
 			byte[] dummy1 = dg2.getEncoded();
-			
+
 			DG3File dg3 = lds.getDG3File();
 			byte[] dummy2 = dg3.getEncoded();
-			
+
 			DG4File dg4 = lds.getDG4File();
 
+			boolean showFrame = false;
+			
 			List<IrisInfo> recordInfos = dg4.getIrisInfos();
 			int recordCount = recordInfos.size();
 			int recordNumber = 1;
@@ -167,27 +165,29 @@ public class DG4FileTest extends TestCase {
 						byte[] bytes = new byte[length];
 						InputStream inputStream = imageInfo.getImageInputStream();
 
-//						DataInputStream dataIn = new DataInputStream(inputStream);
-//						dataIn.readFully(bytes);
-//						inputStream = new ByteArrayInputStream(bytes);
+						//						DataInputStream dataIn = new DataInputStream(inputStream);
+						//						dataIn.readFully(bytes);
+						//						inputStream = new ByteArrayInputStream(bytes);
 
 						BufferedImage image = ImageUtil.read(inputStream, length, imageInfo.getMimeType());
 
 						System.out.println("DEBUG: iris " + imageInfoNumber + "/" + imageInfoCount + " in record " + recordNumber + "/" + recordCount + " has " + image.getWidth() + " x " + image.getHeight());
 
-						JFrame frame = new JFrame();
-						frame.getContentPane().add(new JLabel(new ImageIcon(image)));
-						frame.pack();
-						frame.setVisible(true);
+						//						JFrame frame = new JFrame(); showFrame = true;
+						//						frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+						//						frame.pack();
+						//						frame.setVisible(true);
 					}
 					subtypeInfoCount ++;
 				}
 				recordNumber ++;
 			}
 
-			long time = System.currentTimeMillis();
-			while (System.currentTimeMillis() - time < 5000) {
-				/* Busy wait to show decoded images. */
+			if (showFrame) {
+				long time = System.currentTimeMillis();
+				while (System.currentTimeMillis() - time < 5000) {
+					/* Busy wait to show decoded images. */
+				}
 			}
 		} catch (Exception e) {
 			fail(e.getMessage());
@@ -224,7 +224,7 @@ public class DG4FileTest extends TestCase {
 				recordNumber ++;
 			}
 		} catch (AccessControlException ace) {
-			System.out.println("DEBUG: *************** could not get access to DG3 *********");
+			System.out.println("DEBUG: *************** could not get access to DG4 *********");
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());

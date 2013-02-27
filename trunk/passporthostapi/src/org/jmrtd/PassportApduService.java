@@ -290,13 +290,13 @@ public class PassportApduService extends CardService {
 	 *            offset into the file
 	 * @param le
 	 *            the expected length of the file to read
-	 * @param longRead
+	 * @param isExtendedLength
 	 *            whether it should be a long (INS=B1) read
 	 * 
 	 * @return a byte array of length at most <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
 	 */
-	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean longRead) throws CardServiceException {
+	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean isExtendedLength) throws CardServiceException {
 		boolean repeatOnEOF = false;
 		ResponseAPDU rapdu = null;
 		do {
@@ -307,7 +307,7 @@ public class PassportApduService extends CardService {
 			}
 			// In the case of long read 2/3 less bytes of the actual data will be returned,
 			// because a tag and length will be sent along, here we need to account for this
-			if(longRead) {
+			if (isExtendedLength) {
 				if (le < 128) {
 					le += 2;
 				} else if (le < 256) {
@@ -318,7 +318,7 @@ public class PassportApduService extends CardService {
 			CommandAPDU capdu = null;
 			byte offsetHi = (byte)((offset & 0xFF00) >> 8);
 			byte offsetLo = (byte)(offset & 0xFF);
-			if (longRead) {
+			if (isExtendedLength) {
 				byte[] data = new byte[] { 0x54, 0x02, offsetHi, offsetLo };
 				capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY2, 0, 0, data, le);
 			} else {
@@ -337,7 +337,7 @@ public class PassportApduService extends CardService {
 			}
 		} while (repeatOnEOF);
 		byte[] r = rapdu.getData();
-		if(longRead && (short)rapdu.getSW() == ISO7816.SW_NO_ERROR) {
+		if (isExtendedLength && (short)rapdu.getSW() == ISO7816.SW_NO_ERROR) {
 			// Strip the response off the tag 0x53 and the length field
 			byte[] data = r;
 			int index = 0;
