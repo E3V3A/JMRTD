@@ -27,14 +27,8 @@ public class ImageTest {
 			final File fileIn = new File(J2K_FILE_IN);
 			InputStream inputStream = new FileInputStream(fileIn);
 
-			JJ2000Decoder.decode(inputStream, 1234, new JJ2000Decoder.ProgressListener() {
-				@Override
-				public void previewBitmapAvailable(int bytesProcessedCount, Bitmap bitmap) {
-					show("" + bytesProcessedCount + "/" + (int)fileIn.length(), bitmap);
-				}
-			});
-
-
+			Bitmap bitmap = JJ2000Decoder.decode(inputStream);
+			show("Bitmap", bitmap);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
