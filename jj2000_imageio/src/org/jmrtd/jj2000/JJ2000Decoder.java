@@ -70,32 +70,32 @@ public class JJ2000Decoder {
 	private JJ2000Decoder() {
 	}
 
-	public static void decode(InputStream inputStream, int blockSize, ProgressListener progressListener) throws IOException {
-		decode(inputStream, blockSize, false, progressListener);
-	}
-
-	public static void decode(InputStream inputStream, int blockSize, boolean stopAfterFirstPass, ProgressListener progressListener) throws IOException {
-		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-		byte[] buffer = new byte[blockSize];
-		while (true) {
-			try {
-				int bytesRead = inputStream.read(buffer);
-				if (bytesRead < 0) { break; }
-				if (bytesRead == 0) { System.out.println("DEBUG: WARNING: JJ2000Decoder read 0 bytes"); continue; }
-				outputStream.write(buffer, 0, bytesRead);
-				InputStream partialInputStream = new ByteArrayInputStream(outputStream.toByteArray());
-				Bitmap bitmap = JJ2000Decoder.decode(partialInputStream, 3.0);
-				if (bitmap != null && bitmap.getWidth() > 0 && bitmap.getHeight() > 0) {
-					progressListener.previewBitmapAvailable(outputStream.size(), bitmap);
-					if (stopAfterFirstPass) { break; }
-				}
-			} catch (EOFException eof) {
-				break;
-			} catch (Throwable e) {
-				System.out.println("DEBUG: ignoring exception");
-			}
-		}
-	}
+//	public static void decode(InputStream inputStream, int blockSize, ProgressListener progressListener) throws IOException {
+//		decode(inputStream, blockSize, false, progressListener);
+//	}
+//
+//	public static void decode(InputStream inputStream, int blockSize, boolean stopAfterFirstPass, ProgressListener progressListener) throws IOException {
+//		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+//		byte[] buffer = new byte[blockSize];
+//		while (true) {
+//			try {
+//				int bytesRead = inputStream.read(buffer);
+//				if (bytesRead < 0) { break; }
+//				if (bytesRead == 0) { System.out.println("DEBUG: WARNING: JJ2000Decoder read 0 bytes"); continue; }
+//				outputStream.write(buffer, 0, bytesRead);
+//				InputStream partialInputStream = new ByteArrayInputStream(outputStream.toByteArray());
+//				Bitmap bitmap = JJ2000Decoder.decode(partialInputStream, 3.0);
+//				if (bitmap != null && bitmap.getWidth() > 0 && bitmap.getHeight() > 0) {
+//					progressListener.previewBitmapAvailable(outputStream.size(), bitmap);
+//					if (stopAfterFirstPass) { break; }
+//				}
+//			} catch (EOFException eof) {
+//				break;
+//			} catch (Throwable e) {
+//				System.out.println("DEBUG: ignoring exception");
+//			}
+//		}
+//	}
 
 	public static Bitmap decode(InputStream in) throws IOException {
 		return decode(in, -1);
