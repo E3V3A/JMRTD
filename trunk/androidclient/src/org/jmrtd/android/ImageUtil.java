@@ -22,6 +22,9 @@
 
 package org.jmrtd.android;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -38,8 +41,17 @@ public class ImageUtil {
 
 	private ImageUtil() {
 	}
-
-	public static Bitmap read(InputStream inputStream, String mimeType) throws IOException {
+	
+	public static Bitmap read(InputStream inputStream, int imageLength, String mimeType) throws IOException {
+		/* DEBUG */
+		synchronized(inputStream) {
+			DataInputStream dataIn = new DataInputStream(inputStream);
+			byte[] bytes = new byte[(int)imageLength];
+			dataIn.readFully(bytes);
+			inputStream = new ByteArrayInputStream(bytes);
+		}
+		/* END DEBUG */
+		
 		if (JPEG2000_MIME_TYPE.equalsIgnoreCase(mimeType) || JPEG2000_ALT_MIME_TYPE.equalsIgnoreCase(mimeType)) {
 			org.jmrtd.jj2000.Bitmap bitmap = org.jmrtd.jj2000.JJ2000Decoder.decode(inputStream);
 			return toAndroidBitmap(bitmap);
@@ -65,5 +77,30 @@ public class ImageUtil {
 			intData[j] = 0xFF000000 | ((byteData[j] & 0xFF) << 16) | ((byteData[j] & 0xFF) << 8) | (byteData[j] & 0xFF);
 		}
 		return Bitmap.createBitmap(intData, 0, bitmap.getWidth(), bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+	}
+
+	static class BoundedInputStream extends FilterInputStream {
+
+		private long bound;
+		private long position;
+
+		protected BoundedInputStream(InputStream inputStream, long bound) {
+			super(inputStream);
+			this.position = 0;
+			this.bound = bound;
+		}
+
+		public int read() throws IOException {
+			if (position >= bound) { return -1; }
+			try {
+				return super.read();
+			} finally {
+				position++;
+			}
+		}
+	}
+
+	public interface ProgressListener {
+		void previewImageAvailable(int bytesProcessedCount, Bitmap image);
 	}
 }
