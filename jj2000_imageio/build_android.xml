@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!-- This builds JJ2000 image util for Android -->
+<project name="jj2000_imageutil" default="dist" basedir=".">
+
+	<description>
+		Image util back end for JPEG 2000 format based on JJ2000, usable on Android
+	</description>
+
+	<!-- Global properties for this build -->
+	<property name="software" value="c:/Software" />
+	<property name="src" location="src" />
+	<property name="build" location="bin" />
+
+	<property environment="env" />
+	<property name="default_jj2000_lib" value="c:/Software/jj2000-read-only/target/jj2000-5.2-SNAPSHOT.jar" />
+	<condition property="jj2000_lib" value="${env.JJ2000_LIB}" else="${default_jj2000_lib}">
+    	<isset property="env.JJ2000_LIB" />
+	</condition>
+
+	<target name="compile" depends="" description="Compiles the source ">
+		<mkdir dir="${build}"  />
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac srcdir="${src}" classpath="${jj2000_lib}" destdir="${build}" target="1.6" />
+	</target>
+	
+	<target name="dist" depends="compile" description="Generates the distribution .jar file">
+		
+		<!-- Create the distribution jar file -->
+		<jar destfile="jj2000_imageutil.jar">
+			<manifest>
+				<attribute name="Implementation-Title" value="JMRTD JPEG2000 support" />
+				<attribute name="Implementation-Version" value="0.0.1" />
+				<attribute name="Implementation-Vendor" value="The JMRTD team" />
+				<attribute name="License" value="LGPL" />
+			</manifest>
+			<fileset dir="bin" includes="**/*.class" excludes="org/jmrtd/imageio/**/*.class,org/jmrtd/jj2000/test/**.*.class" />
+
+			<!-- DEBUG: Use our own patched version of JJ2000, alternatively use zipgroupfileset below for stock JJ2000 -->
+			<fileset dir="../jj2000/bin" />
+			<!-- END DEBUG -->
+
+			<!--  zipgroupfileset dir="${software}/jj2000-read-only/target" includes="jj2000-*.jar" / -->
+		</jar>
+		
+	</target>
+
+</project>

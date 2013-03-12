@@ -25,6 +25,8 @@
 
 package org.jmrtd.android;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CertificateException;
@@ -63,6 +65,7 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.IsoDep;
@@ -71,6 +74,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
@@ -105,9 +109,10 @@ public class PPDisplayAct extends Activity {
 	private TextView nationalityW;
 	private TextView dobW;
 	private TextView doeW;
-//	private TextView docSigningPrincipalNameW;
+	//	private TextView docSigningPrincipalNameW;
 	private ProgressBar imageProgressBar;
 	private ProgressBar overallProgressBar;
+	private FrameLayout imageFrameLayout;
 
 	@Override
 	public void onConfigurationChanged(Configuration newConfig) {
@@ -143,6 +148,7 @@ public class PPDisplayAct extends Activity {
 
 	private void prepareWidgets() {
 		infoLabelW = (TextView)findViewById(R.id.ppd_infoLabelW);
+		imageFrameLayout = (FrameLayout)findViewById(R.id.pp_display_frame_layout);
 		imageProgressBar = (ProgressBar)findViewById(R.id.pp_image_progress_bar);
 		imageView = (ImageView)findViewById(R.id.pp_display_iv);
 		imageView.setVisibility(ImageView.INVISIBLE);
@@ -155,7 +161,7 @@ public class PPDisplayAct extends Activity {
 		nationalityW = (TextView)findViewById(R.id.ppd_nationalityW);
 		dobW = (TextView)findViewById(R.id.ppd_dateOfBirthW);
 		doeW = (TextView)findViewById(R.id.ppd_dateOfExpiryW);
-//		docSigningPrincipalNameW = (TextView)findViewById(R.id.ppd_docSigningPrincipalNameW);
+		//		docSigningPrincipalNameW = (TextView)findViewById(R.id.ppd_docSigningPrincipalNameW);
 		overallProgressBar = (ProgressBar)findViewById(R.id.ppd_progressW);
 	}
 
@@ -185,7 +191,7 @@ public class PPDisplayAct extends Activity {
 			Log.d(TAG, "Initial ISODep timeout = " + isoDep.getTimeout());
 			Log.d(TAG, "Initial ISODep max trancieve length = " + isoDep.getMaxTransceiveLength());
 			/* END DEBUG */
-			
+
 			isoDep.setTimeout(1000);
 			new AsyncPassportCreate().execute(isoDep);
 		} catch (Exception ex) {
@@ -206,21 +212,21 @@ public class PPDisplayAct extends Activity {
 				PassportService passportService = new PassportService(service);
 
 				/* DEBUG DEBUG */
-				passportService.addAPDUListener(new APDUListener() {
-					public void exchangedAPDU(APDUEvent apduEvent) {
-						Log.d(TAG_APDU_RAW, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
-						Log.d(TAG_APDU_RAW, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
-					}
-				});
-				
-				passportService.addPlainTextAPDUListener(new APDUListener() {
-					public void exchangedAPDU(APDUEvent apduEvent) {
-						Log.d(TAG_APDU_PLAIN, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
-						Log.d(TAG_APDU_PLAIN, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
-					}
-				});
+				//				passportService.addAPDUListener(new APDUListener() {
+				//					public void exchangedAPDU(APDUEvent apduEvent) {
+				//						Log.d(TAG_APDU_RAW, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
+				//						Log.d(TAG_APDU_RAW, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
+				//					}
+				//				});
+				//				
+				//				passportService.addPlainTextAPDUListener(new APDUListener() {
+				//					public void exchangedAPDU(APDUEvent apduEvent) {
+				//						Log.d(TAG_APDU_PLAIN, "C = " + Hex.bytesToPrettyString(apduEvent.getCommandAPDU().getBytes()));
+				//						Log.d(TAG_APDU_PLAIN, "R = " + Hex.bytesToPrettyString(apduEvent.getResponseAPDU().getBytes()));
+				//					}
+				//				});
 				/* END DEBUG DEBUG */
-				
+
 				try {
 					Passport passport = new Passport(passportService, new MRTDTrustStore(), bacStore, 1);
 					Log.v(TAG, "passport = " + passport);
@@ -303,10 +309,10 @@ public class PPDisplayAct extends Activity {
 			try {
 				Passport passport = params[0];
 				LDS lds = passport.getLDS();
-				
+
 				List<Short> fileList = lds.getFileList();
 				Collections.sort(fileList);
-				
+
 				for (short fid: fileList) {
 					switch(fid) {
 					case PassportService.EF_COM:
@@ -368,8 +374,8 @@ public class PPDisplayAct extends Activity {
 
 		@Override
 		protected void onPostExecute(Integer i) {
-//			isDisplaying = false;
-//			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
+			//			isDisplaying = false;
+			//			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
 		}
 	}
 
@@ -386,10 +392,10 @@ public class PPDisplayAct extends Activity {
 			} catch (CertificateException ce) {
 				ce.printStackTrace();
 			}
-			
+
 			/* Check these in logcat, for now :( */
-//			System.out.println("DEBUG: issuer = " + name);
-//			System.out.println("DEBUG: certificate = " + certificate);
+			//			System.out.println("DEBUG: issuer = " + name);
+			//			System.out.println("DEBUG: certificate = " + certificate);
 		}
 		if (file instanceof DataGroup) {
 			DataGroup dg = (DataGroup)file;
@@ -425,18 +431,35 @@ public class PPDisplayAct extends Activity {
 		}
 	}
 
-	class AsyncImageDecode extends AsyncTask<FaceImageInfo, String, Bitmap> {
+	class AsyncImageDecode extends AsyncTask<FaceImageInfo, ImageProgress, FaceImageInfo> {
 
 		@Override
-		protected Bitmap doInBackground(FaceImageInfo... params) {
+		protected FaceImageInfo doInBackground(FaceImageInfo... params) {
 			try {
 				FaceImageInfo faceImageInfo = params[0];
-				InputStream faceImageInputStream = faceImageInfo.getImageInputStream();
+				final int imageLength = faceImageInfo.getImageLength();
 				String mimeType = faceImageInfo.getMimeType();
-				return ImageUtil.read(faceImageInputStream, mimeType);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-				return null;
+				InputStream faceImageInputStream = faceImageInfo.getImageInputStream();
+				DataInputStream dataInputStream = new DataInputStream(faceImageInputStream);
+				byte[] bytesIn = new byte[(int)imageLength];
+				int count = 0;
+				ImageProgress progress = new ImageProgress(0, imageLength, null);
+				for (int percentage = 10; percentage <= 100; percentage += 7) {
+					int newCount = (int)(percentage * imageLength / 100);
+					try {
+						dataInputStream.readFully(bytesIn, count, newCount - count); 
+						count = newCount;
+						InputStream inputStream = new ByteArrayInputStream(bytesIn, 0, count);
+						Bitmap bitmap = ImageUtil.read(inputStream, count, mimeType);
+						progress.setOffset(count);
+						progress.setBitmap(bitmap);
+						publishProgress(progress);
+					} catch (Throwable e) {
+						System.out.println("DEBUG: ignoring exception");
+					}
+				}
+
+				return faceImageInfo;
 			} catch (Exception e) {
 				System.err.println("DEBUG: EXCEPTION: " + e.getMessage());
 				e.printStackTrace();
@@ -445,14 +468,71 @@ public class PPDisplayAct extends Activity {
 		}
 
 		@Override
-		protected void onPostExecute(Bitmap result) {
-			imageView.setImageBitmap(result);
-			
-			isDisplaying = false;
-			imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
-			imageView.setVisibility(ImageView.VISIBLE);
-			overallProgressBar.setProgress(overallProgressBar.getMax());
+		protected void onProgressUpdate(ImageProgress... progress) {
+			int offset = progress[0].getOffset();
+			int length = progress[0].getLength();
+			Bitmap bitmap = progress[0].getBitmap();
+			if (bitmap != null && length != 0) {
+				float scale = 0.2f + 0.8f * ((float)offset / (float)length);
+				imageFrameLayout.setAlpha(scale);
+				bitmap = Bitmap.createScaledBitmap(bitmap, (int)(scale * (float)bitmap.getWidth()), (int)(scale * (float)bitmap.getHeight()), true);
+				imageFrameLayout.setBackgroundDrawable(new BitmapDrawable(bitmap));
+			}
 		}
+
+		@Override
+		protected void onPostExecute(FaceImageInfo faceImageInfo) {
+			try {
+				int imageLength = faceImageInfo.getImageLength();
+				String mimeType = faceImageInfo.getMimeType();
+				InputStream faceImageInputStream = faceImageInfo.getImageInputStream(); /* These are buffered by now */
+				Bitmap bitmap = ImageUtil.read(faceImageInputStream, imageLength, mimeType);	
+				imageView.setImageBitmap(bitmap);
+				isDisplaying = false;
+				imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
+				imageView.setVisibility(ImageView.VISIBLE);
+				overallProgressBar.setProgress(overallProgressBar.getMax());
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	class ImageProgress {
+		
+		private int offset;
+		private int length;
+		private Bitmap bitmap;
+		
+		public ImageProgress(int offset, int length, Bitmap bitmap) {
+			this.offset = offset;
+			this.length = length;
+			this.bitmap = bitmap;
+		}
+		
+		public int getOffset() {
+			return offset;
+		}
+
+		public void setOffset(int offset) {
+			this.offset = offset;
+		}
+
+		public int getLength() {
+			return length;
+		}
+
+		public void setLength(int length) {
+			this.length = length;
+		}
+
+		public Bitmap getBitmap() {
+			return bitmap;
+		}
+
+		public void setBitmap(Bitmap bitmap) {
+			this.bitmap = bitmap;
+		}		
 	}
 
 	class PassportProgress {
