@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -292,26 +292,7 @@ public class MRTDTrustStore {
 	 * @param uri a URI with a key store
 	 */
 	private void addAsCVCAKeyStore(URI uri) {
-		/*
-		 * We have to try both store types, only Bouncy Castle Store (BKS) 
-		 * knows about unnamed EC keys.
-		 */
-		String[] storeTypes = new String[] { "JKS", "BKS", "PKCS12" };
-		for(String storeType : storeTypes) {
-			try {
-				KeyStore cvcaStore = KeyStore.getInstance(storeType);
-				URLConnection urlConnection = uri.toURL().openConnection();
-				InputStream inputStream = urlConnection.getInputStream();
-				cvcaStore.load(inputStream, "".toCharArray());
-				addCVCAStore(cvcaStore);
-				inputStream.close();
-				return;
-			} catch (Exception e) {
-				LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
-				// e.printStackTrace();
-			}
-		}
-		throw new IllegalArgumentException("Not a supported keystore");
+		addCVCAStore(getKeyStore(uri));
 	}
 
 	private void addAsPKDStoreCSCACertStore(URI uri) throws NoSuchAlgorithmException, InvalidAlgorithmParameterException, CertStoreException {
@@ -329,13 +310,37 @@ public class MRTDTrustStore {
 	}
 
 	private void addAsKeyStoreCSCACertStore(URI uri) throws KeyStoreException, InvalidAlgorithmParameterException, NoSuchAlgorithmException, CertStoreException {
-		CertStoreParameters params = new KeyStoreCertStoreParameters(uri, "JKS");
-		CertStore certStore = CertStore.getInstance("JKS", params);
+		KeyStore keyStore = getKeyStore(uri);
+		CertStoreParameters params = new KeyStoreCertStoreParameters(keyStore);
+		CertStore certStore = CertStore.getInstance(keyStore.getType(), params);
 		addCSCAStore(certStore);
 		Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
 		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
 
+	private KeyStore getKeyStore(URI uri) {
+		/*
+		 * We have to try all store types, only Bouncy Castle Store (BKS) 
+		 * knows about unnamed EC keys.
+		 */
+		String[] storeTypes = new String[] { "JKS", "BKS", "PKCS12" };
+		for(String storeType : storeTypes) {
+			try {
+				KeyStore keyStore = KeyStore.getInstance(storeType);
+				URLConnection urlConnection = uri.toURL().openConnection();
+				InputStream inputStream = urlConnection.getInputStream();
+				keyStore.load(inputStream, "".toCharArray());
+				inputStream.close();
+				return keyStore;
+			} catch (Exception e) {
+				// LOGGER.warning("Could not initialize CVCA key store with type " + storeType + ": " + e.getMessage());
+				// e.printStackTrace();
+				continue;
+			}
+		}
+		throw new IllegalArgumentException("Not a supported keystore");
+	}
+	
 	/**
 	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
 	 * 

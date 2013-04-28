@@ -23,6 +23,7 @@ package org.jnbis;
 
 import java.io.DataInput;
 import java.io.DataInputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -50,7 +51,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		else
 			return decode((DataInput)new DataInputStream(is));
 	}
-	
+
 	public static BitmapWithMetadata decode(DataInput dataInput) throws IOException {
 		Token token = new Token();
 
@@ -83,7 +84,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		/* Convert floating point pixels to unsigned char pixels. */
 		byte[] cdata = convertImageToByte(fdata, width, height, frmHeaderWSQ.mShift, frmHeaderWSQ.rScale);
 
-		
+
 		Map<String,String> nistcom = new LinkedHashMap<String,String>();
 		List<String> comments = new ArrayList<String>();
 		for (String comment : token.comments) {
@@ -449,7 +450,8 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 		int hufftableId = 0; /* huffman table number */
 		int ip = 0;
 
-		while (marker.value != EOI_WSQ) {
+		boolean isPrematureEOF = false;
+		while (!isPrematureEOF && (marker.value != EOI_WSQ)) {
 
 			if (marker.value != 0) {
 				while (marker.value != SOB_WSQ) {
@@ -474,40 +476,45 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 				marker.value = 0;
 			}
 
-			/* get next huffman category code from compressed input buffer stream */
-			int nodeptr = decodeDataMem(DataInput, mincode, maxcode, valptr, token.tableDHT[hufftableId].huffvalues, bitCount, marker, nextByte);
-			/* nodeptr  pointers for decoding */
+			try {
+				/* get next huffman category code from compressed input buffer stream */
+				int nodeptr = decodeDataMem(DataInput, mincode, maxcode, valptr, token.tableDHT[hufftableId].huffvalues, bitCount, marker, nextByte);
+				/* nodeptr  pointers for decoding */
 
-			if (nodeptr == -1) {
-				continue;
-			}
+				if (nodeptr == -1) {
+					continue;
+				}
 
-			if (nodeptr > 0 && nodeptr <= 100) {
-				for (int n = 0; n < nodeptr; n++) {
-					qdata[ip++] = 0; /* z run */
+				if (nodeptr > 0 && nodeptr <= 100) {
+					for (int n = 0; n < nodeptr; n++) {
+						qdata[ip++] = 0; /* z run */
+					}
+				} else if (nodeptr > 106 && nodeptr < 0xff) {
+					qdata[ip++] = nodeptr - 180;
+				} else if (nodeptr == 101) {
+					qdata[ip++] = getCNextbitsWSQ(DataInput,  marker, bitCount, 8, nextByte);
+				} else if (nodeptr == 102) {
+					qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
+				} else if (nodeptr == 103) {
+					qdata[ip++] = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
+				} else if (nodeptr == 104) {
+					qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
+				} else if (nodeptr == 105) {
+					int n = getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
+					while (n-- > 0) {
+						qdata[ip++] = 0;
+					}
+				} else if (nodeptr == 106) {
+					int n = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
+					while (n-- > 0) {
+						qdata[ip++] = 0;
+					}
+				} else {
+					throw new RuntimeException("ERROR: huffman_decode_data_mem : Invalid code (" + nodeptr + ")");
 				}
-			} else if (nodeptr > 106 && nodeptr < 0xff) {
-				qdata[ip++] = nodeptr - 180;
-			} else if (nodeptr == 101) {
-				qdata[ip++] = getCNextbitsWSQ(DataInput,  marker, bitCount, 8, nextByte);
-			} else if (nodeptr == 102) {
-				qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
-			} else if (nodeptr == 103) {
-				qdata[ip++] = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
-			} else if (nodeptr == 104) {
-				qdata[ip++] = -getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
-			} else if (nodeptr == 105) {
-				int n = getCNextbitsWSQ(DataInput, marker, bitCount, 8, nextByte);
-				while (n-- > 0) {
-					qdata[ip++] = 0;
-				}
-			} else if (nodeptr == 106) {
-				int n = getCNextbitsWSQ(DataInput, marker, bitCount, 16, nextByte);
-				while (n-- > 0) {
-					qdata[ip++] = 0;
-				}
-			} else {
-				throw new RuntimeException("ERROR: huffman_decode_data_mem : Invalid code (" + nodeptr + ")");
+			} catch (EOFException eof) {
+				System.out.println("DEBUG: MO - ignoring EOF in WSQDecoder");
+				isPrematureEOF = true;
 			}
 		}
 

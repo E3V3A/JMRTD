@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: SODFile.java 1491 2013-02-19 22:03:36Z martijno $
  */
 
 package org.jmrtd.lds;
@@ -71,7 +71,6 @@ import org.bouncycastle.asn1.icao.LDSVersionInfo;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.jmrtd.JMRTDSecurityProvider;
@@ -86,7 +85,7 @@ import org.jmrtd.JMRTDSecurityProvider;
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision$
+ * @version $Revision: 1491 $
  */
 public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 
@@ -409,8 +408,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		}
 		X509CertificateObject certObject = null;
 		for (int i = 0; i < certs.size(); i++) {
-			/* FIXME: X509CertificateStructure is deprecated in favor oforg.bouncycastle.asn1.x509.Certificate */
-			X509CertificateStructure ee = new X509CertificateStructure((ASN1Sequence)certs.getObjectAt(i));
+			org.bouncycastle.asn1.x509.Certificate ee = org.bouncycastle.asn1.x509.Certificate.getInstance((ASN1Sequence)certs.getObjectAt(i));
 			certObject = new X509CertificateObject(ee);
 			certSpec = certObject.getEncoded();
 		}

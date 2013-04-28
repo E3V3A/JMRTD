@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,21 +54,21 @@ public class ISO781611Encoder<B extends BiometricDataBlock> implements ISO781611
 	 * Writes a BIT group to an output stream.
 	 * 
 	 * @param cbeffInfo a CBEFF info containing the BIT group
-	 * @param out the output stream to write to
+	 * @param outputStream the output stream to write to
 	 * 
 	 * @throws IOException if something goes wrong
 	 */
-	public void encode(CBEFFInfo cbeffInfo, OutputStream out) throws IOException {
+	public void encode(CBEFFInfo cbeffInfo, OutputStream outputStream) throws IOException {
 		if (cbeffInfo instanceof SimpleCBEFFInfo) {
-			writeBITGroup(Arrays.asList(new CBEFFInfo[] { cbeffInfo }), out);
+			writeBITGroup(Arrays.asList(new CBEFFInfo[] { cbeffInfo }), outputStream);
 		} else if (cbeffInfo instanceof ComplexCBEFFInfo) {
 			ComplexCBEFFInfo complexCBEFFInfo = (ComplexCBEFFInfo)cbeffInfo;
-			writeBITGroup(complexCBEFFInfo.getSubRecords(), out);
+			writeBITGroup(complexCBEFFInfo.getSubRecords(), outputStream);
 		}
 	}
 	
-	private void writeBITGroup(List<CBEFFInfo> records, OutputStream out) throws IOException {
-		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
+	private void writeBITGroup(List<CBEFFInfo> records, OutputStream outputStream) throws IOException {
+		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
 		tlvOut.writeTag(BIOMETRIC_INFORMATION_GROUP_TEMPLATE_TAG); /* 7F61 */
 		tlvOut.writeTag(BIOMETRIC_INFO_COUNT_TAG); /* 0x02 */
 		int count = records.size();

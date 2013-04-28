@@ -80,7 +80,9 @@ public class ImageUtil {
 				count = newCount;
 				inputStream = new ByteArrayInputStream(bytesIn, 0, count);
 				BufferedImage image = read(inputStream, count, mimeType);
-				listener.previewImageAvailable(count, image);
+				if (image != null) {
+					listener.previewImageAvailable(count, image);
+				}
 			} catch (Throwable e) {
 				System.out.println("DEBUG: ignoring exception");
 			}

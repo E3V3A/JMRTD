@@ -1268,7 +1268,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	 * routine to sort the huffman code sizes
 	 */
 	private static int[] sort_code_sizes(int[] codesize, int max_huffcounts) {     
-		/*defines order of huffman codelengths in relation to the code sizes*/
+		/* defines order of huffman codelengths in relation to the code sizes */
 		int[] values = new int[max_huffcounts + 1];
 		int i2 = 0;
 		for(int i = 1; i <= (MAX_HUFFBITS<<1); i++) {
@@ -1286,9 +1286,10 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	 * This routine defines the huffman code sizes for each difference category
 	 */
 	private static WSQHelper.HuffCode[] build_huffsizes(Ref<Integer> temp_size, int[] huffbits, int max_huffcounts) {
-		int number_of_codes = 1;     /*the number codes for a given code size*/
-
-		/* table of huffman codes and sizes */
+		/** the number codes for a given code size */
+		int number_of_codes = 1;
+		
+		/** table of huffman codes and sizes */
 		WSQHelper.HuffCode[] huffcode_table = new WSQHelper.HuffCode[max_huffcounts + 1];
 		for (int i = 0; i < huffcode_table.length; i++) { huffcode_table[i] = new WSQHelper.HuffCode(); }
 
@@ -1313,13 +1314,14 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	 * @param max_huffcounts TODO
 	 */
 	private static int[] find_huff_sizes(int[] freq, int max_huffcounts) {
-		int value1;          /* smallest and next smallest frequency*/
-		int value2;          /* of difference occurrence in the largest difference category*/
+		int value1;
+		/* smallest and next smallest frequency */
+		int value2;          /* of difference occurrence in the largest difference category */
 
-		/*codesizes for each category*/
+		/* codesizes for each category */
 		int [] codesize = new int[max_huffcounts+1];
 
-		/*pointer used to generate codesizes*/
+		/* pointer used to generate codesizes */
 		int[] others = new int[max_huffcounts+1];
 
 		for (int i = 0; i <= max_huffcounts; i++) {
@@ -1412,9 +1414,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 	}
 
 
-	/****************************************************************/
-	/*routine to insure that no huffman code size is greater than 16*/
-	/****************************************************************/
+	/******************************************************************/
+	/* routine to insure that no huffman code size is greater than 16 */
+	/******************************************************************/
 	private static void sort_huffbits(int[] bits) {
 		int i, j;
 		int l1, l2, l3;
@@ -1460,9 +1462,9 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 	}
 
-	/****************************************************************************/
-	/*This routine defines the huffman codes needed for each difference category*/
-	/****************************************************************************/
+	/******************************************************************************/
+	/* This routine defines the huffman codes needed for each difference category */
+	/******************************************************************************/
 	private static void build_huffcodes(WSQHelper.HuffCode[] huffcode_table) {
 		int pointer = 0;                     /*pointer to code word information*/
 		int temp_code = 0;        /*used to construct code word*/
@@ -1504,7 +1506,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 	}
 
-	/*routine to sort huffman codes and sizes*/
+	/* routine to sort huffman codes and sizes */
 	private static WSQHelper.HuffCode[] build_huffcode_table(WSQHelper.HuffCode[] in_huffcode_table,
 			int last_size, int[] values, int max_huffcounts) {
 		WSQHelper.HuffCode[] new_huffcode_table = new WSQHelper.HuffCode[max_huffcounts + 1];
@@ -1674,7 +1676,7 @@ public class WSQEncoder implements WSQConstants, NISTConstants {
 		}
 	}
 
-	/*Routine to write "compressed" bits to output buffer. */
+	/* Routine to write "compressed" bits to output buffer. */
 	private static void write_bits(
 			DataOutput outbuf,
 			int size,          /* numbers bits of code to write into buffer   */

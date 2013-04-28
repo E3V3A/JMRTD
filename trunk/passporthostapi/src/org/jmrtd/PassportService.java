@@ -450,7 +450,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * Perform TA (Terminal Authentication) part of EAC. For details see
 	 * TR-03110 ver. 1.11. In short, we feed the sequence of terminal
 	 * certificates to the card for verification, get a challenge from the
-	 * passport, sign it with terminal private key, and send back to the card
+	 * card, sign it with terminal private key, and send back to the card
 	 * for verification.
 	 * 
 	 * From BSI-03110 v1.1, B.2:

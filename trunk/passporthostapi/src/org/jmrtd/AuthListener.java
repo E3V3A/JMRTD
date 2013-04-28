@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: AuthListener.java 1382 2012-03-17 22:04:23Z martijno $
  */
 
 package org.jmrtd;
@@ -27,7 +27,7 @@ package org.jmrtd;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision$
+ * @version $Revision: 1382 $
  */
 public interface AuthListener {
 

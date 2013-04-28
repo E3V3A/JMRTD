@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,14 +60,14 @@ public class ISO781611Decoder implements ISO781611 {
 	/**
 	 * Reads a BIT group from an input stream.
 	 * 
-	 * @param in the input stream to read from
+	 * @param inputStream the input stream to read from
 	 * 
 	 * @return a complex CBEFF info representing the BIT group
 	 * 
 	 * @throws IOException if reading fails
 	 */
-	public ComplexCBEFFInfo decode(InputStream in) throws IOException {
-		return readBITGroup(in);
+	public ComplexCBEFFInfo decode(InputStream inputStream) throws IOException {
+		return readBITGroup(inputStream);
 	}
 
 	/**

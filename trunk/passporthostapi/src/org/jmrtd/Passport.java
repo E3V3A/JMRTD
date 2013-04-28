@@ -632,11 +632,7 @@ public class Passport {
 	 * @throws GeneralSecurityException if could not be checked
 	 */
 	public List<Certificate> getCertificateChain() throws GeneralSecurityException {
-		List<CertStore> cscaStores = trustManager.getCSCAStores();
-		if (cscaStores == null) {
-			LOGGER.warning("No certificate stores found.");
-			return null;
-		}
+		/* Get doc signing certificate. */
 		SODFile sod = lds.getSODFile();
 		X500Principal sodIssuer = sod.getIssuerX500Principal();
 		BigInteger sodSerialNumber = sod.getSerialNumber();
@@ -647,6 +643,19 @@ public class Passport {
 			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
 			// FIXME: search for it in cert stores?
 		}
+
+		if (docSigningCertificate == null) {
+			LOGGER.warning("Error getting document signing certificate from EF.SOd");
+			return Collections.emptyList();
+		}
+
+		/* Get trust anchors. */
+		List<CertStore> cscaStores = trustManager.getCSCAStores();
+		if (cscaStores == null) {
+			LOGGER.warning("No certificate stores found.");
+			return Collections.singletonList((Certificate)docSigningCertificate);
+		}
+
 		if (docSigningCertificate != null) {
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
 			if (!sodIssuer.equals(docIssuer)) {
@@ -658,6 +667,8 @@ public class Passport {
 				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
 			}
 		}
+
+		/* Use PKIX to construct chain. */
 		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
 	}
 

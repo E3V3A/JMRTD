@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -86,6 +86,7 @@ public class JMRTDSecurityProvider extends Provider {
 		put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
 		put("CertStore.PKD", "org.jmrtd.cert.PKDCertStoreSpi");
 		put("CertStore.JKS", "org.jmrtd.cert.KeyStoreCertStoreSpi");
+		put("CertStore.BKS", "org.jmrtd.cert.KeyStoreCertStoreSpi");
 		put("CertStore.PKCS12", "org.jmrtd.cert.KeyStoreCertStoreSpi");
 
 		if (BC_PROVIDER != null) {
