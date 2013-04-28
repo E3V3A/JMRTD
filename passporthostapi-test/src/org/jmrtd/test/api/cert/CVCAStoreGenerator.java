@@ -16,6 +16,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
@@ -44,6 +45,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Random;
 
 import javax.crypto.Cipher;
@@ -281,8 +283,10 @@ public class CVCAStoreGenerator extends TestCase {
 			/* Create empty keystore. */
 			KeyStore outStore = null;
 			if ("JDK".equals(storeType)) {
+				/* Check all providers for JDK */
 				outStore = KeyStore.getInstance(storeType);
 			} else {
+				/* If not JDK use BC (supports BKS and PKCS12) */
 				outStore = KeyStore.getInstance(storeType, "BC");
 			}
 			outStore.load(null);
@@ -308,13 +312,13 @@ public class CVCAStoreGenerator extends TestCase {
 			for (Map.Entry<String, Key> entry: keys.entrySet()) {
 				String keyAlias = entry.getKey();
 				Key key = entry.getValue();
-				if (key instanceof ECPrivateKey) {
-					System.out.println("DEBUG: KEY " + keyAlias + ": " + key.getAlgorithm() + ", " + key.getClass().getCanonicalName());
-					ECParameterSpec params = ((ECPrivateKey)key).getParams();
-					BigInteger s = ((ECPrivateKey) key).getS();
-					KeyFactory keyFactory = getECKeyFactory();
-					// key = keyFactory.generatePrivate(new ECPrivateKeySpec(s, toNamedCurveSpec(params)));
-				}
+				//				if (key instanceof ECPrivateKey) {
+				//					System.out.println("DEBUG: KEY " + keyAlias + ": " + key.getAlgorithm() + ", " + key.getClass().getCanonicalName());
+				//					ECParameterSpec params = ((ECPrivateKey)key).getParams();
+				//					BigInteger s = ((ECPrivateKey) key).getS();
+				//					KeyFactory keyFactory = getECKeyFactory();
+				//					//					 key = keyFactory.generatePrivate(new ECPrivateKeySpec(s, toNamedCurveSpec(params)));
+				//				}
 				System.out.println("DEBUG: KEY " + keyAlias + ": " + key.getAlgorithm() + ", " + key.getClass().getCanonicalName());
 
 				Collection<Certificate> certValues = certificates.values();
@@ -323,7 +327,7 @@ public class CVCAStoreGenerator extends TestCase {
 				List<Certificate> chainList = asChainDebug(certValues);
 				Certificate[] chain = new Certificate[chainList.size()];
 				chainList.toArray(chain);
-				
+
 				System.out.println("DEBUG: chain for " + keyAlias + " = (" + chain.length + ") " +  Arrays.toString(chain));
 				outStore.setKeyEntry(keyAlias, key, KEY_ENTRY_PASSWORD.toCharArray(), chain);
 			}
@@ -335,6 +339,39 @@ public class CVCAStoreGenerator extends TestCase {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+	}
+
+	private static KeyStore toBKSKeyStore(Key key, Certificate[] chain) throws IOException, GeneralSecurityException {
+		KeyStore keyStore = null;
+		keyStore = KeyStore.getInstance("BKS", "BC");
+		keyStore.load(null);
+		keyStore.setKeyEntry("key", key.getEncoded(), chain);
+		return keyStore;
+	}
+
+	private static KeyStore toBKSKeyStore(File directory) throws IOException, GeneralSecurityException {
+		try {
+			CredentialsDir credentialsDir = new CredentialsDir(directory);
+			Map<String, Key> keys = credentialsDir.getKeys();
+			String keyAlias = null;
+			try {
+				keyAlias = keys.keySet().iterator().next();
+			} catch (NoSuchElementException nse) {
+				nse.printStackTrace();
+			}
+			Key key = keyAlias == null ? null : keys.get(keyAlias);
+			if (keys.size() > 1) {
+				System.out.println("DEBUG: more than one key found, using key " + keyAlias);
+			}
+			Map<String, Certificate> certificates = credentialsDir.getCertificates();
+			List<Certificate> chainList = new ArrayList<Certificate>(certificates.values());			
+			Certificate[] chain = new Certificate[chainList.size()];
+			chainList.toArray(chain);
+			return toBKSKeyStore(key, chain);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	//		ECParameterSpec params = null;
@@ -386,7 +423,6 @@ public class CVCAStoreGenerator extends TestCase {
 				cvcCertificate.getAuthorizationTemplate().getRole(),
 				cvcCertificate.getAuthorizationTemplate().getAccessRight(),
 				cvcCertificate.getSignature());
-
 	}
 
 	private List<Certificate> asChainDebug(Collection<Certificate> certificates) {
@@ -414,7 +450,6 @@ public class CVCAStoreGenerator extends TestCase {
 			throw new IllegalStateException(ce.getMessage());
 		}
 	}
-
 
 	private List<Certificate> asChain(Collection<Certificate> certificates) {
 		Certificate rootOfChain = null;
@@ -547,49 +582,6 @@ public class CVCAStoreGenerator extends TestCase {
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
-	}
-
-	private static Key getKey(File file) throws IOException {
-		System.out.println("DEBUG: looking at key with name " + file.getName());
-		byte[] keyBytes = new byte[(int)file.length()];
-		DataInputStream keyInputStream = new DataInputStream(new FileInputStream(file));
-		keyInputStream.readFully(keyBytes);
-		keyInputStream.close();
-		Key key = null;
-		try {
-			KeyFactory keyFactory = getRSAKeyFactory();
-			key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
-			return key;
-		} catch (Exception e) {		
-		}
-		try {
-			KeyFactory keyFactory = getECKeyFactory();
-			key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
-			ECPrivateKey ecPrivateKey = (ECPrivateKey)key;
-			ECParameterSpec ecParamSpec = ecPrivateKey.getParams();
-			System.out.println("DEBUG: ecParamSpec: " + ecParamSpec.getClass().getCanonicalName());
-			// HIER: convert that to named paramspec.
-			// ecParamSpec = toNamedCurveSpec(ecParamSpec);
-			//			System.out.println("DEBUG: named ecParamSpec = " + ((ECNamedCurveSpec)ecParamSpec).getName());
-			key = keyFactory.generatePrivate(new ECPrivateKeySpec(ecPrivateKey.getS(), ecParamSpec));
-			return key;
-		} catch (Exception e) {		
-			e.printStackTrace();
-		}
-		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("EC");
-			key = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
-			return key;
-		} catch (Exception e) {		
-		}
-		try {
-			KeyFactory keyFactory = KeyFactory.getInstance("ECDH");
-			key = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
-			return key;
-		} catch (Exception e) {	
-		}
-
-		return key;
 	}
 
 	public void testCreateKeyStore2() {
@@ -999,28 +991,68 @@ public class CVCAStoreGenerator extends TestCase {
 		}
 	}
 
-	private static Certificate getCertificate(File file) throws IOException, CertificateException {
-		if (cvCertificateFactory == null) { cvCertificateFactory = getCVCCertificateFactory(); }
-		return cvCertificateFactory.generateCertificate(new FileInputStream(file));
-	}
-
-	/*
-	 * We're assuming those files contain either a cvc-cert or a key,
-	 * and that the cvc-certs form a chain, and that the files are named
-	 * as
-	 * <pre>
-	 *    cert[Alias].cvcert
-	 *    key[Alias].der
-	 * </pre>
+	/**
+	 * This represents a directory holding some certificates and keys.
 	 */
 	static class CredentialsDir {
 		private Map<String, Certificate> certificates;
 		private Map<String, Key> keys;
 
-		public CredentialsDir(String dir, String[] fileNames) throws Exception {
+		private CredentialsDir() {
 			certificates = new HashMap<String, Certificate>();
 			keys = new HashMap<String, Key>();
+		}
 
+		/**
+		 * Tests all files by trial and error,
+		 * adds files to certificates or keys map if appropriate,
+		 * ignores other files.
+		 * 
+		 * @param files
+		 * @throws Exception
+		 */
+		public CredentialsDir(File directory) throws Exception {
+			this();
+			if (!directory.isDirectory()) { throw new IllegalArgumentException("Not a directory"); }
+			File[] files = directory.listFiles();
+			for (File file: files) {
+				/* Try to interpret file as a key */
+				try {
+					Key key = getKey(file);
+					keys.put("key_" + file.getName(), key);
+					/* It's a key, next file */
+					continue;
+				} catch (Exception e) {
+					/* Failed as key, no problem, maybe it's a certificate */
+					System.out.println("DEBUG: could not interpret \"" + file.getName() + "\" as a key");
+				}
+
+				try {
+					/* Try to interpret file as a certificate */
+					Certificate certificate = getCertificate(file);
+					certificates.put("cert_" + file.getName(), certificate);
+					/* It's a certificate, next file */
+					continue;
+				} catch (Exception e) {
+					/* Also failed as certificate */
+					System.out.println("DEBUG: could not interpret \"" + file.getName() + "\" as a certificate");
+				}
+
+				System.out.println("DEBUG: warning ignoring file " + file.getName() + ", could not interpret it as a key or a certificate");
+			}
+		}
+
+		/**
+		 * We're assuming those files contain either a cvc-cert or a key,
+		 * and that the cvc-certs form a chain, and that the files are named
+		 * as
+		 * <pre>
+		 *    cert[Alias].cvcert
+		 *    key[Alias].der
+		 * </pre>
+		 */
+		public CredentialsDir(String dir, String[] fileNames) throws Exception {
+			this();
 			for (String fileName: fileNames) {
 				fileName = fileName.trim();
 				File file = new File(dir, fileName);
@@ -1046,10 +1078,93 @@ public class CVCAStoreGenerator extends TestCase {
 			}
 		}
 
-		public Map<String, Certificate> getCertificates() { return certificates; }
+		public Map<String, Certificate> getCertificates() {
+			return certificates;
+		}
 
-		public Map<String, Key> getKeys() { return keys; }
+		public Map<String, Key> getKeys() {
+			return keys;
+		}
 
+		private static Key getKey(File file) throws IOException {
+			System.out.println("DEBUG: attempting to interpret \"" + file.getName() + "\" as key");
+			byte[] keyBytes = new byte[(int)file.length()];
+			DataInputStream keyInputStream = new DataInputStream(new FileInputStream(file));
+			keyInputStream.readFully(keyBytes);
+			keyInputStream.close();
+			try {
+				Key key = getKeyFromPKCS12File(file, "");
+				return key;
+			} catch (Exception e) {
+				/* Ignored */
+			}
+			try {
+				Key key = getKeyFromPKCS8File(file);
+				return key;
+			} catch (Exception e) {
+				/* Ignored */
+			}
+			try {
+				KeyFactory keyFactory = KeyFactory.getInstance("EC");
+				Key key = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
+				return key;
+			} catch (Exception e) {
+			}
+			try {
+				KeyFactory keyFactory = KeyFactory.getInstance("ECDH");
+				Key key = keyFactory.generatePublic(new X509EncodedKeySpec(keyBytes));
+				return key;
+			} catch (Exception e) {	
+			}
 
+			return null;
+		}
+
+		private static Certificate getCertificate(File file) throws IOException, CertificateException {
+			if (cvCertificateFactory == null) { cvCertificateFactory = getCVCCertificateFactory(); }
+			return cvCertificateFactory.generateCertificate(new FileInputStream(file));
+		}
+
+		private static Key getKeyFromPKCS8File(File file) throws IOException, GeneralSecurityException {
+			DataInputStream dataIn = new DataInputStream(new FileInputStream(file));
+			byte[] keyBytes = new byte[(int)file.length()];
+			try {
+				KeyFactory keyFactory = getRSAKeyFactory();
+				Key key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+				return key;
+			} catch (Exception e) {
+				/* NOTE: It's not RSA, maybe EC */
+			}
+
+			try {
+				KeyFactory keyFactory = getECKeyFactory();
+				Key key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(keyBytes));
+				ECPrivateKey ecPrivateKey = (ECPrivateKey)key;
+				ECParameterSpec ecParamSpec = ecPrivateKey.getParams();
+				System.out.println("DEBUG: ecParamSpec: " + ecParamSpec.getClass().getCanonicalName());
+				// HIER: convert that to named paramspec.
+				// ecParamSpec = toNamedCurveSpec(ecParamSpec);
+				//			System.out.println("DEBUG: named ecParamSpec = " + ((ECNamedCurveSpec)ecParamSpec).getName());
+				key = keyFactory.generatePrivate(new ECPrivateKeySpec(ecPrivateKey.getS(), ecParamSpec));
+				return key;			
+			} catch (Exception e) {
+				/* NOTE: It's not EC */			
+			}
+			throw new IOException("Not a PKCS8 encoded key"); // FIXME: other type of exception here, or rethrow e.
+		}
+
+		private static Key getKeyFromPKCS12File(File file, String password) throws IOException, KeyStoreException, GeneralSecurityException {
+			KeyStore keyStore = KeyStore.getInstance("PKCS12");
+			InputStream in = new FileInputStream(file);
+			keyStore.load(in, password.toCharArray());
+			List<String> aliases = Collections.list(keyStore.aliases());
+			Key key = null;
+			for (String alias: aliases) {
+				if (!keyStore.isKeyEntry(alias)) { continue; }
+				if (key != null) { System.out.println("DEBUG: found multiple key entries in PKCS12 file, latest is " + alias); }
+				key = keyStore.getKey(alias, password.toCharArray());
+			}
+			return key;
+		}
 	}
 }

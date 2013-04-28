@@ -184,7 +184,7 @@ Code quality
 
 
 VERSION 0.4.8 (2012-11-05)
-----------------------
+--------------------------
 
 General
 + Issuer name in getIssuerName() is different from what's inside certificate when constructing SODFile ("from scratch"). Now using non-deprecated certbuilder from bcpkix.jar.
@@ -223,7 +223,11 @@ General
 + Remove threading from JMRTD host API.
 + DG11 and DG12 encoding of dates (see R7-p1_v2_sIII_0058).
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
-+ Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes)
++ Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes).
+- Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
+- Refactor protocol status out of VerificationStatus.
+- Offer support for reporting invalid certificate (expired, revoked) in VerificationStatus.
+- Make VerificationStatus, Verdict etc. finer grained so that datagroup hashes can be displayed.
 
 EAC
 - ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
@@ -231,13 +235,20 @@ EAC
 + CVCA keystore usage. Check that we use privkey + chain. PKCS12 is only candidate.
 - Improve unit tests for EAC and CVCA.
 
+Android
+- New app, improved UI in Google Play.
+- Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (their applet throws security status SWs on "progressive" reading).
+
 SCUBA
-+ Cater for extended length APDU checking
++ Cater for extended length APDU checking (either getATR, or isExtendedLengthSupported method)
 
 Code quality
-- Check unit tests
+- Check unit tests.
 - Check JavaDoc
 - Check Findbugs
+
+GUI
+- MRZ doc number, we add '<', consequences for GUI?
 
 
 0.5.x (FUTURE)

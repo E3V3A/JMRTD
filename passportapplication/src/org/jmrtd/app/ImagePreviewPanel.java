@@ -121,7 +121,7 @@ public class ImagePreviewPanel extends JPanel {
 					InputStream imageInputStream = info.getImageInputStream();
 					String imageMimeType = info.getMimeType();
 
-					if ("image/jp2".equals(imageMimeType)) {
+					if ("image/jp2".equals(imageMimeType) || "image/x-wsq".equalsIgnoreCase(imageMimeType)) {
 						/* Update UI while reading. */
 						ImageUtil.read(imageInputStream, imageLength, imageMimeType, new ProgressListener() {
 							@Override

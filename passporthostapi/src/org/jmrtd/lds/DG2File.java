@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2013  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: DG2File.java 1493 2013-02-25 20:49:16Z martijno $
  */
 
 package org.jmrtd.lds;
@@ -45,7 +45,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision$
+ * @version $Revision: 1493 $
  */
 public class DG2File extends CBEFFDataGroup<FaceInfo> {
 
