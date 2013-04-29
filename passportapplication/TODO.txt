@@ -129,15 +129,15 @@ General
 + Patches and feedback by various people (thanks!)
 
 Dependencies
-+ Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken)
-+ Latest Bouncy Castle 1.46
-+ Latest cert-cvc 1.2.12 (with patch to OIDField)
++ Latest JAI ImageIO 1.2 (binary releases download from their web site seems to be broken).
++ Latest Bouncy Castle 1.46.
++ Latest cert-cvc 1.2.12 (with patch to OIDField).
 
 Code quality
-+ Exception handling (e.g. re-throwing more general exception types, quelling, ... see open discussion on sf https://sourceforge.net/projects/jmrtd/forums/forum/580232/topic/3999263)
-+ Check unit tests
-+ Check JavaDoc
-+ Findbugs
++ Exception handling (e.g. re-throwing more general exception types, quelling, ... see open discussion on sf https://sourceforge.net/projects/jmrtd/forums/forum/580232/topic/3999263).
++ Check unit tests.
++ Check JavaDoc.
++ Findbugs.
 
 
 VERSION 0.4.7 (2012-03-27)
@@ -178,9 +178,9 @@ ImageIO
 + WSQ native libs for i386/x86_64 MacOS X, Windows, Linux.
 
 Code quality
-+ Check unit tests
-+ Check JavaDoc
-+ Check Findbugs
++ Check unit tests.
++ Check JavaDoc.
++ Check Findbugs.
 
 
 VERSION 0.4.8 (2012-11-05)
@@ -212,8 +212,8 @@ SCUBA
 + Separate jmrtd_application.jar (j2se only), contains main class.
 
 Code quality
-+ Check unit tests
-+ Check JavaDoc
++ Check unit tests.
++ Check JavaDoc.
 
 
 0.4.9 (FUTURE)
@@ -232,23 +232,28 @@ General
 EAC
 - ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
 + Clean up terminal authentication, make sig algorithm detection according to spec.
-+ CVCA keystore usage. Check that we use privkey + chain. PKCS12 is only candidate.
-- Improve unit tests for EAC and CVCA.
+- CVCA keystore usage. BKS is only candidate given requirements (EC crypto + CVcerts)
+- Check that we use privkey corresponding to EF.CVCA / EF.DG14.
+- CVCA re-order the list of cvcerts so that it is a chain.
+
+GUI
+- MRZ doc number, we add '<', consequences for GUI?
 
 Android
-- New app, improved UI in Google Play.
-- Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (their applet throws security status SWs on "progressive" reading).
+- New app, improved UI, in Google Play.
+- Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
 
 SCUBA
 + Cater for extended length APDU checking (either getATR, or isExtendedLengthSupported method)
 
+Dependencies
++ Latest Bouncy Castle 1.48 for J2SE.
+- Latest Spongy Castle (1.48?) for Android.
+
 Code quality
 - Check unit tests.
-- Check JavaDoc
-- Check Findbugs
-
-GUI
-- MRZ doc number, we add '<', consequences for GUI?
+- Check JavaDoc.
+- Check Findbugs.
 
 
 0.5.x (FUTURE)
@@ -290,11 +295,14 @@ GUI
 - Show IrisInfo in edit mode?!?
 
 Android
-- Full GUI, all DGs
+- Full GUI, all DGs, security validation.
 - Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 - Demo app showing verification based on CSCA.
 - Robustness, consistency.
+
+EAC
+- Improve unit tests for EAC and CVCA.
 
 Java Card
 - Modularize applet so that it is easier to create BAC only MRTD (for cards that don't support the crypto).
@@ -302,14 +310,6 @@ Java Card
 Bugs/temporary fixes
 - Fix padding error during AA on Omnikey 5121 on newer versions of NL NIK. Restore gracefully from session?
 - Omnikey 5121 buggy (fails BAC) when read for second time after polling start
-
-Code quality
-- Exception handling (e.g. re-throwing more general exception types, quelling, ...
-- Need EAC samples to test with...
-- Check unit tests
-- Check JavaDoc
-- Check Findbugs
-- Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
 ASN.1 parsing
 - Remove dependencies on BC for ASN.1 / TLV, at least from public interface.
@@ -321,6 +321,14 @@ SCUBA
 - Use Roel's libnfc with JNI wrapper for support of other readers (Arygon, etc.).
 - JCOP tools supported terminals such as Pegoda (see also http://alud.sourceforge.net/, can we JNI wrap this?).
 - Fix "Card has been disconnected" error in acrprovider? Restore gracefully.
+
+Code quality
+- Exception handling (e.g. re-throwing more general exception types, quelling, ...
+- Need EAC samples to test with...
+- Check unit tests
+- Check JavaDoc
+- Check Findbugs
+- Profiler (http://www.eclipse.org/tptp/home/documents/tutorials/profilingtool/profilingexample_32.html)
 
 Website and documentation
 - A FAQ would be nice
