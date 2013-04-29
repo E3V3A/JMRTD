@@ -27,7 +27,6 @@ package org.jmrtd.android;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -38,11 +37,8 @@ import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.smartcards.APDUEvent;
-import net.sourceforge.scuba.smartcards.APDUListener;
 import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.BACDeniedException;
 import org.jmrtd.MRTDTrustStore;

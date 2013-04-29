@@ -4,8 +4,6 @@ package org.jmrtd.jj2000;
 
 import icc.ICCProfiler;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
