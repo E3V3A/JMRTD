@@ -308,6 +308,14 @@ public class PPDisplayAct extends Activity {
 
 				List<Short> fileList = lds.getFileList();
 				Collections.sort(fileList);
+				
+				/* DEBUG: place DG2 as last... */
+				Short dg2FID = new Short(PassportService.EF_DG2);
+				if (fileList.contains(dg2FID)) {
+					fileList.remove(dg2FID);
+					fileList.add(dg2FID);
+				}
+				/* END DEBUG */
 
 				for (short fid: fileList) {
 					switch(fid) {
@@ -446,9 +454,11 @@ public class PPDisplayAct extends Activity {
 						dataInputStream.readFully(bytesIn, count, newCount - count); 
 						count = newCount;
 						InputStream inputStream = new ByteArrayInputStream(bytesIn, 0, count);
+						Log.v("DEBUG", "calling ImageUtil.read(inputStream, " + count + ", \"" + mimeType + "\"");
 						Bitmap bitmap = ImageUtil.read(inputStream, count, mimeType);
 						progress.setOffset(count);
 						progress.setBitmap(bitmap);
+						Log.v("DEBUG", "decode image " + progress);
 						publishProgress(progress);
 					} catch (Throwable e) {
 						System.out.println("DEBUG: ignoring exception");
@@ -469,9 +479,9 @@ public class PPDisplayAct extends Activity {
 			int length = progress[0].getLength();
 			Bitmap bitmap = progress[0].getBitmap();
 			if (bitmap != null && length != 0) {
-				float scale = 0.2f + 0.8f * ((float)offset / (float)length);
-				imageFrameLayout.setAlpha(scale);
-				bitmap = Bitmap.createScaledBitmap(bitmap, (int)(scale * (float)bitmap.getWidth()), (int)(scale * (float)bitmap.getHeight()), true);
+//				float scale = 0.2f + 0.8f * ((float)offset / (float)length);
+//				imageFrameLayout.setAlpha(scale);
+//				bitmap = Bitmap.createScaledBitmap(bitmap, (int)(scale * (float)bitmap.getWidth()), (int)(scale * (float)bitmap.getHeight()), true);
 				imageFrameLayout.setBackgroundDrawable(new BitmapDrawable(bitmap));
 			}
 		}
@@ -481,8 +491,12 @@ public class PPDisplayAct extends Activity {
 			try {
 				int imageLength = faceImageInfo.getImageLength();
 				String mimeType = faceImageInfo.getMimeType();
-				InputStream faceImageInputStream = faceImageInfo.getImageInputStream(); /* These are buffered by now */
-				Bitmap bitmap = ImageUtil.read(faceImageInputStream, imageLength, mimeType);	
+				InputStream imageInputStream = faceImageInfo.getImageInputStream(); /* These are buffered by now */
+				DataInputStream dataInputStream = new DataInputStream(imageInputStream);
+				byte[] imageBytes = new byte[imageLength];
+				dataInputStream.readFully(imageBytes);
+				Bitmap bitmap = ImageUtil.read(new ByteArrayInputStream(imageBytes), imageLength, mimeType);	
+				imageFrameLayout.setBackgroundDrawable(null);
 				imageView.setImageBitmap(bitmap);
 				isDisplaying = false;
 				imageProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -528,7 +542,15 @@ public class PPDisplayAct extends Activity {
 
 		public void setBitmap(Bitmap bitmap) {
 			this.bitmap = bitmap;
-		}		
+		}
+		
+		public String toString() {
+			return "[ImageProgress: "
+					+ "offset: " + offset
+					+ ", length: " + length
+					+ ", bitmap: " + (bitmap == null ? "null" : bitmap.getWidth() + "x" + bitmap.getHeight())
+					+ "]";
+		}
 	}
 
 	class PassportProgress {

@@ -39,24 +39,22 @@ public class VerificationStatus {
 	 * @version $Revision: 1382 $
 	 */
 	public enum Verdict {
-		UNKNOWN,	/* Not present or not checked */
-		SUCCEEDED,	/* Present, checked, and ok */
-		FAILED,		/* Present, checked, and not ok */
-		NOT_PRESENT	/* Not present */
+		UNKNOWN,		/* Unknown */
+		NOT_PRESENT,	/* Not present */
+		NOT_CHECKED,	/* Present, not checked */
+		FAILED,			/* Present, checked, and not ok */
+		SUCCEEDED;		/* Present, checked, and ok */
 	};
 
-	private Verdict aa, bac, cs, ds, eac;
+	private Verdict aa, bac, cs, hashes, ds, eac;
+	private String aaReason, bacReason, csReason, hashesReason, dsReason, eacReason;
 
 	/**
 	 * Constructs a new status with all verdicts
 	 * set to <code>UNKNOWN</code>.
 	 */
 	public VerificationStatus() {
-		setAA(Verdict.UNKNOWN);
-		setBAC(Verdict.UNKNOWN);
-		setCS(Verdict.UNKNOWN);
-		setDS(Verdict.UNKNOWN);
-		setEAC(Verdict.UNKNOWN);
+		setAll(Verdict.UNKNOWN, null);
 	}
 	
 	/**
@@ -67,14 +65,19 @@ public class VerificationStatus {
 	public Verdict getAA() {
 		return aa;
 	}
+	
+	public String getAAReason() {
+		return aaReason;
+	}
 
 	/**
 	 * Sets the AA verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setAA(Verdict v) {
+	public void setAA(Verdict v, String reason) {
 		this.aa = v;
+		aaReason = reason;
 	}
 
 	/**
@@ -85,14 +88,19 @@ public class VerificationStatus {
 	public Verdict getBAC() {
 		return bac;
 	}
+	
+	public String getBACReason() {
+		return bacReason;
+	}
 
 	/**
 	 * Sets the BAC verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setBAC(Verdict v) {
+	public void setBAC(Verdict v, String reason) {
 		this.bac = v;
+		bacReason = reason;
 	}
 
 	/**
@@ -103,14 +111,19 @@ public class VerificationStatus {
 	public Verdict getCS() {
 		return cs;
 	}
+	
+	public String getCSReason() {
+		return csReason;
+	}
 
 	/**
 	 * Gets the CS verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setCS(Verdict v) {
+	public void setCS(Verdict v, String reason) {
 		this.cs = v;
+		csReason = reason;
 	}
 
 	/**
@@ -121,14 +134,33 @@ public class VerificationStatus {
 	public Verdict getDS() {
 		return ds;
 	}
-
+	
+	public String getDSReason() {
+		return dsReason;
+	}
+	
+	
 	/**
 	 * Sets the DS verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setDS(Verdict v) {
+	public void setDS(Verdict v, String reason) {
 		this.ds = v;
+		dsReason = reason;
+	}
+	
+	public Verdict getHT() {
+		return hashes;
+	}
+	
+	public String getHTReason() {
+		return hashesReason;
+	}
+
+	public void setHashes(Verdict v, String reason) {
+		this.hashes = v;
+		hashesReason = reason;
 	}
 
 	/**
@@ -140,25 +172,30 @@ public class VerificationStatus {
 		return eac;
 	}
 
+	public String getEACReason() {
+		return eacReason;
+	}
+	
 	/**
 	 * Sets the EAC verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setEAC(Verdict v) {
+	public void setEAC(Verdict v, String reason) {
 		this.eac = v;
 	}
 	
 	/**
 	 * Sets all vedicts to <code>v</code>.
 	 * 
-	 * @param v the status to set
+	 * @param verdict the status to set
 	 */
-	public void setAll(Verdict v) {
-		setAA(v);
-		setBAC(v);
-		setCS(v);
-		setDS(v);
-		setEAC(v);
+	public void setAll(Verdict verdict, String reason) {
+		setAA(verdict, reason);
+		setBAC(verdict, reason);
+		setCS(verdict, reason);
+		setDS(verdict, reason);
+		setHashes(verdict, reason);
+		setEAC(verdict, reason);
 	}
 }

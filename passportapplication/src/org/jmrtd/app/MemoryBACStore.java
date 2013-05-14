@@ -17,13 +17,15 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.app;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.jmrtd.BACKeySpec;
 
 /**
  * Memory based database for BAC entries.
@@ -32,9 +34,9 @@ import java.util.List;
  *
  * @author The JMRTD team (info@jmrtd.org)
  *
- * @version $Revision: $
+ * @version $Revision$
  */
-public class MemoryBACStore implements BACStore {
+public class MemoryBACStore implements MutableBACStore {
 
     private List<BACKeySpec> entries;
 

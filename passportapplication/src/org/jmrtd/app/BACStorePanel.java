@@ -48,7 +48,6 @@ import javax.swing.table.TableCellEditor;
 
 import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.BACStore;
 import org.jmrtd.app.util.IconUtil;
 
 /**
@@ -81,7 +80,7 @@ public class BACStorePanel extends JPanel {
 
 	private ActionMap actionMap;
 
-	private final BACStore store;
+	private final MutableBACStore store;
 	private BACStoreTable table;
 	private BACEntryField entryField;
 
@@ -92,7 +91,7 @@ public class BACStorePanel extends JPanel {
 	 *
 	 * @param arg command line arguments, are ignored for now.
 	 */
-	public BACStorePanel(BACStore store)  {
+	public BACStorePanel(MutableBACStore store)  {
 		super(new BorderLayout());
 		this.store = store;
 		actionMap = new ActionMap();
@@ -293,7 +292,7 @@ public class BACStorePanel extends JPanel {
 				try {
 					int entryRowIndex = table.getSelectedRow();
 					if (entryRowIndex <= 0) { return; }
-					BACKeySpec entry = store.getEntry(entryRowIndex);
+					BACKeySpec entry = store.getEntries().get(entryRowIndex);
 					store.removeEntry(entryRowIndex);
 					store.addEntry(entryRowIndex - 1, entry);
 					table.removeRowSelectionInterval(entryRowIndex - 1, entryRowIndex);
@@ -322,7 +321,7 @@ public class BACStorePanel extends JPanel {
 				try {
 					int entryRowIndex = table.getSelectedRow();
 					if (entryRowIndex >= table.getRowCount()) { return; }
-					BACKeySpec entry = store.getEntry(entryRowIndex);
+					BACKeySpec entry = store.getEntries().get(entryRowIndex);
 					store.removeEntry(entryRowIndex);
 					store.addEntry(entryRowIndex + 1, entry);
 					table.removeRowSelectionInterval(entryRowIndex, entryRowIndex + 1);

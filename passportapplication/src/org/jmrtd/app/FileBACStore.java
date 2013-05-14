@@ -38,7 +38,6 @@ import java.util.logging.Logger;
 
 import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.BACStore;
 import org.jmrtd.app.util.FileUtil;
 
 /**
@@ -48,7 +47,7 @@ import org.jmrtd.app.util.FileUtil;
  *
  * @version $Revision: $
  */
-public class FileBACStore implements BACStore {
+public class FileBACStore implements MutableBACStore {
 
 	private static final File
 		JMRTD_USER_DIR = FileUtil.getApplicationDataDir("jmrtd"),

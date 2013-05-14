@@ -66,6 +66,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.x509.X509CertificateStructure;
 import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.jmrtd.JMRTDSecurityProvider;
 
@@ -331,8 +332,9 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		if (certificates == null) { certificates = new ArrayList<Certificate>(); }
 
 		try {
-			org.bouncycastle.asn1.x509.Certificate cert = org.bouncycastle.asn1.x509.Certificate.getInstance(o);
-			certificates.add(new X509CertificateObject(cert));
+			org.bouncycastle.asn1.x509.Certificate certAsASN1Object = org.bouncycastle.asn1.x509.Certificate.getInstance(o);
+//			certificates.add(new X509CertificateObject(certAsASN1Object)); // NOTE: BC 1.48
+			certificates.add(new X509CertificateObject(X509CertificateStructure.getInstance(certAsASN1Object))); // NOTE: BC 1.47
 			return certificates;
 		} catch (Exception e) {
 		}

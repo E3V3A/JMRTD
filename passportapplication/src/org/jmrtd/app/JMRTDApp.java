@@ -68,7 +68,6 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CardTerminalListener;
 
 import org.jmrtd.BACDeniedException;
-import org.jmrtd.BACStore;
 import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.MRTDTrustStore;
 import org.jmrtd.Passport;
@@ -135,7 +134,7 @@ public class JMRTDApp {
 
 	private JFrame mainFrame;
 	private CardManager cardManager;
-	private BACStore bacStore;
+	private MutableBACStore bacStore;
 	private MRTDTrustStore trustManager;
 
 	private AboutDialog aboutDialog;
@@ -334,7 +333,7 @@ public class JMRTDApp {
 	 */
 	private void readPassport(PassportService service) throws CardServiceException {
 		try {
-			Passport passport = new Passport(service, trustManager, bacStore, 1);
+			Passport passport = new Passport(service, trustManager, bacStore.getEntries(), 1);
 			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
 			passportFrame.setVisible(true);
