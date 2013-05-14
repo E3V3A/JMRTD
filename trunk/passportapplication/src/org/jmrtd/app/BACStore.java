@@ -20,54 +20,26 @@
  * $Id$
  */
 
-package org.jmrtd;
+package org.jmrtd.app;
 
 import java.util.List;
+
+import org.jmrtd.BACKeySpec;
 
 /**
  * Interface for persistent storage of BAC keys.
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision: $
+ * @version $Revision$
  */
 public interface BACStore {
 
 	/**
-	 * Gets the entries in this BAC store.
+	 * Gets (a copy of) the entries in this BAC store. Inserting elements in this list
+	 * does not necessarily change the backing BACStore.
 	 * 
 	 * @return a list of BAC key entries
 	 */
     List<BACKeySpec> getEntries();
-
-    /**
-     * Adds an entry to this BAC store.
-     * 
-     * @param entry the BAC key entry to add
-     */
-    void addEntry(BACKeySpec entry);
-
-    /**
-     * Inserts an entry to this BAC store at a specific index.
-     * 
-     * @param index the index
-     * @param entry the BAC key entry to add
-     */
-    void addEntry(int index, BACKeySpec entry);
-
-    /**
-     * Removes an entry from this BAC store.
-     * 
-     * @param index the index of the BAC key entry to remove
-     */
-    void removeEntry(int index);
-
-    /**
-     * Gets a BAC key entry from this BAC store.
-     * 
-     * @param index the index of the BAC key entry to get
-     * 
-     * @return a BAC key entry
-     */
-    BACKeySpec getEntry(int index);
 }

@@ -155,7 +155,7 @@ public class Passport {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore) throws CardServiceException {
 		this(service, trustManager, bacStore, DEFAULT_MAX_TRIES_PER_BAC_ENTRY);
 	}
 
@@ -169,7 +169,7 @@ public class Passport {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, BACStore bacStore, int maxTriesPerBACEntry) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		int lastKnownSW = -1;
@@ -204,7 +204,7 @@ public class Passport {
 		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
 		if (isBACPassport) {
 			int tries = maxTriesPerBACEntry;
-			List<BACKeySpec> bacEntries = bacStore.getEntries();
+			List<BACKeySpec> bacEntries = bacStore; // FIXME
 
 			/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
 			while (bacKeySpec == null && tries-- > 0) {
@@ -240,11 +240,13 @@ public class Passport {
 			int[] comTagList = comFile.getTagList();
 			String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
+			int[] tagList = comTagList;
+
 			/* Find out if we need to do EAC. */
 			DG14File dg14File = null;
 			CVCAFile cvcaFile = null;
 			boolean isDG14Present = false;
-			for (int tag: comTagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
+			for (int tag: tagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
 			if (isDG14Present) {
 
 				dg14File = new DG14File(service.getInputStream(PassportService.EF_DG14));
@@ -271,7 +273,7 @@ public class Passport {
 					}
 				}
 			}
-
+			
 			if (isDG14Present) {
 				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File, dg14File }), cvcaFile, sodFile);
 			} else {
@@ -279,7 +281,7 @@ public class Passport {
 			}
 
 			/* Start reading each of the files. */
-			for (int tag: comTagList) { // FIXME: use dg list from EF.SOd here
+			for (int tag: tagList) { // FIXME: use dg list from EF.SOd here
 				try {
 					short fid = LDSFileUtil.lookupFIDByTag(tag);
 					try {
@@ -297,7 +299,7 @@ public class Passport {
 
 						/* DEBUG */
 						lds.add(fid, inputStream, inputStream.getLength());
-//						lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
+						//						lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
 					} catch (IOException ioe) {
 						LOGGER.warning("Error reading file with FID " + Integer.toHexString(fid)
 								+ ": " + ioe.getMessage());
@@ -417,7 +419,7 @@ public class Passport {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
-		verificationStatus.setAll(Verdict.UNKNOWN);
+		verificationStatus.setAll(Verdict.UNKNOWN, "Unknown");
 	}
 
 	/**
@@ -599,12 +601,21 @@ public class Passport {
 	 * 
 	 * Assumes passport object is non-null and read from the service.
 	 */
-	public void verifySecurity() {
+	public VerificationStatus verifySecurity() {
 		verifyBAC();
 		verifyEAC();
+
+		/* COM DG list versus SOd DG list. */
+		if (!verifyCOMSOd(lds, verificationStatus)) { return verificationStatus; }
+
+		/* Verify hashes. */
+		verifyHashes(lds, verificationStatus);
+		//		if (!verifyHashes(lds)) { return verificationStatus; }
+
 		verifyDS();
 		verifyCS();
 		verifyAA(service);
+
 		/*
 		 * FIXME: The verifyAA call used to be right after verifyEAC
 		 * but that seems to generate a security status not satisfied
@@ -612,14 +623,7 @@ public class Passport {
 		 * PROGRESSIVE_MODE though. Some kind of synchronization error?
 		 * -- MO
 		 */
-	}
 
-	/**
-	 * Gets the verification status of this document (and/or the service it was read from).
-	 * 
-	 * @return a {@link VerificationStatus}
-	 */
-	public VerificationStatus getVerificationStatus() {
 		return verificationStatus;
 	}
 
@@ -731,7 +735,7 @@ public class Passport {
 							isKeyFound = true;
 							service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
 							isSucceeded = true;
-							verificationStatus.setEAC(Verdict.SUCCEEDED);
+							verificationStatus.setEAC(Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference);
 							break;
 						} catch(CardServiceException cse) {
 							cse.printStackTrace();
@@ -805,16 +809,16 @@ public class Passport {
 	/** Checks whether BAC was used. */
 	private void verifyBAC() {
 		if (bacKeySpec != null) {
-			verificationStatus.setBAC(Verdict.SUCCEEDED);
+			verificationStatus.setBAC(Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec);
 		} else {
-			verificationStatus.setBAC(Verdict.NOT_PRESENT);
+			verificationStatus.setBAC(Verdict.NOT_PRESENT, "BAC was not used.");
 		}
 	}
 
 	/** Checks whether EAC was used. */
 	private void verifyEAC() {
 		if (!hasEACSupport) {
-			verificationStatus.setEAC(Verdict.NOT_PRESENT);
+			verificationStatus.setEAC(Verdict.NOT_PRESENT, "EAC not present.");
 		}
 		/* NOTE: If EAC was performed, verification status already updated! */
 	}
@@ -824,110 +828,61 @@ public class Passport {
 		try {
 			SODFile	sod = lds.getSODFile();
 			if (sod.getDataGroupHashes().get(15) == null) {
-				verificationStatus.setAA(Verdict.NOT_PRESENT);
+				verificationStatus.setAA(Verdict.NOT_PRESENT, "AA not present (no EF.DG15 hash in EF.SOd).");
 				return;
 			}
 			DG15File dg15 = lds.getDG15File();
 			if (dg15 != null && service != null) {
 				PublicKey pubKey = dg15.getPublicKey();
 				if (service.doAA(pubKey)) {
-					verificationStatus.setAA(Verdict.SUCCEEDED);
+					verificationStatus.setAA(Verdict.SUCCEEDED, "AA succeeded.");
 				} else {
-					verificationStatus.setAA(Verdict.FAILED);
+					verificationStatus.setAA(Verdict.FAILED, "AA failed due to signature failure.");
 				}
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED);
+			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception.");
 		} catch (Exception e) {
 			System.out.println("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED);
+			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception.");
 		}
 	}
 
+
 	/**
-	 * Checks hashes in the SOd correspond to hashes we compute, 
-	 * checks the security object's signature.
+	 *  Jeroen van Beek sanity check.
+	 */
+	private boolean verifyCOMSOd(LDS lds, VerificationStatus verificationStatus) {
+		COMFile com = lds.getCOMFile();
+		SODFile sod = lds.getSODFile();
+
+		List<Integer> comDGList = getCOMDGList(com);
+		List<Integer> sodDGList = getSODDGList(sod);
+		if (!sodDGList.equals(comDGList)) {
+			LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
+					+ "datagroups reported in SOd = " + sodDGList + "\n"
+					+ "datagroups reported in COM = " + comDGList);
+			verificationStatus.setHashes(Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd.");
+			return false; /* NOTE: Serious enough to not perform other checks, leave method. */
+		}
+
+		return true;
+	}
+
+	/**
+	 * Checks the security object's signature.
 	 * 
 	 * TODO: Check the cert stores (notably PKD) to fetch document signer certificate (if not embedded in SOd) and check its validity before checking the signature.
 	 */
 	private void verifyDS() {
 		try {
-			COMFile com = lds.getCOMFile();
-			List<Integer> comDGList = new ArrayList<Integer>();
-			for(Integer tag : com.getTagList()) {
-				try {
-					int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
-					comDGList.add(dgNumber);
-				} catch (NumberFormatException nfe) {
-					LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
-				}
-			}
-			Collections.sort(comDGList);
+			verificationStatus.setDS(Verdict.UNKNOWN, "Unknown");
 
 			SODFile sod = lds.getSODFile();
-			Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
 
-			verificationStatus.setDS(Verdict.UNKNOWN);
-
-			/* Jeroen van Beek sanity check */
-			List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
-			Collections.sort(sodDGList);
-			if (!sodDGList.equals(comDGList)) {
-				LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
-						+ "datagroups reported in SOd = " + sodDGList + "\n"
-						+ "datagroups reported in COM = " + comDGList);
-				verificationStatus.setDS(Verdict.FAILED);
-				return; /* NOTE: Serious enough to not perform other checks, leave method. */
-			}
-
-			String digestAlgorithm = sod.getDigestAlgorithm();
-			MessageDigest digest = null;
-			if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
-				digest = MessageDigest.getInstance(digestAlgorithm);
-			} else {
-				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
-			}
-			for (int dgNumber: hashes.keySet()) {
-				short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
-				byte[] storedHash = hashes.get(dgNumber);
-
-				digest.reset();
-
-				InputStream dgIn = null;
-				Exception ex = null;
-				try {
-					dgIn = lds.getInputStream(fid);
-				} catch(Exception e) {
-					dgIn = null;
-					ex = e;
-				}
-				if (dgIn == null) {
-					LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
-					continue;
-				}
-				if (hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-					LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
-					continue;
-				} else if (ex != null) {
-					throw ex;
-				}
-
-				byte[] buf = new byte[4096];
-				while (true) {
-					int bytesRead = dgIn.read(buf);
-					if (bytesRead < 0) { break; }
-					digest.update(buf, 0, bytesRead);
-				}
-				byte[] computedHash = digest.digest();
-				if (!Arrays.equals(storedHash, computedHash)) {
-					LOGGER.warning("Authentication of DG" + dgNumber + " failed");
-					verificationStatus.setDS(Verdict.FAILED);
-					return; /* NOTE: Serious enough to not perform other checks, leave method. */
-				}
-			}
-
+			/* Check document signing signature. */
 			X509Certificate docSigningCert = sod.getDocSigningCertificate();
 			if (docSigningCert == null) {
 				LOGGER.warning("Could not get document signer certificate from EF.SOd.");
@@ -936,17 +891,16 @@ public class Passport {
 				// BigInteger serialNumber = sod.getSerialNumber();
 			}
 			if (sod.checkDocSignature(docSigningCert)) {
-				verificationStatus.setDS(Verdict.SUCCEEDED);
+				verificationStatus.setDS(Verdict.SUCCEEDED, "DS signature checked out.");
 			} else {
-				LOGGER.warning("DS Signature incorrect");
-				verificationStatus.setDS(Verdict.FAILED);
+				verificationStatus.setDS(Verdict.FAILED, "DS Signature incorrect.");
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setDS(Verdict.FAILED);
+			verificationStatus.setDS(Verdict.FAILED, "Unsupported algorithm during DS Signature check.");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		} catch (Exception e) {
 			e.printStackTrace();
-			verificationStatus.setDS(Verdict.FAILED);
+			verificationStatus.setDS(Verdict.FAILED, "Unexpected exception during DS Signature check.");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 	}
@@ -960,33 +914,141 @@ public class Passport {
 		try {
 			List<Certificate> chainCertificates = getCertificateChain();
 			if (chainCertificates == null) {
-				verificationStatus.setCS(Verdict.FAILED);
+				verificationStatus.setCS(Verdict.FAILED, "Unable to build certificate chain.");
 				return;
 			}
 
 			int chainDepth = chainCertificates.size();
 			if (chainDepth < 1) {
-				LOGGER.warning("Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth + ".");
-				verificationStatus.setCS(Verdict.FAILED);
-				return;				
+				verificationStatus.setCS(Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth + ".");
+				return;
 			}
 
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
 				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				LOGGER.info("Document signer certificate found in store. Chain depth = " + chainDepth + ".");
-				verificationStatus.setCS(Verdict.SUCCEEDED);
+				verificationStatus.setCS(Verdict.SUCCEEDED, "Document signer certificate found in store. Chain depth = " + chainDepth + ".");
 			} else if (chainDepth == 2) {
 				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
 				X509Certificate countrySigningCertificate = (X509Certificate)chainCertificates.get(1);
-				LOGGER.info("Country signer certificate found in store. Chain depth = " + chainDepth + ". Checking signature.");
 				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
-				verificationStatus.setCS(Verdict.SUCCEEDED); /* NOTE: No exception... verification succeeded! */
+				verificationStatus.setCS(Verdict.SUCCEEDED, "Country signer certificate found in store. Chain depth = " + chainDepth + ". Checking signature."); /* NOTE: No exception... verification succeeded! */
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
-			verificationStatus.setCS(Verdict.FAILED);
+			verificationStatus.setCS(Verdict.FAILED, "CSCA certificate check failed!");
 		}
+	}
+
+	/**
+	 * Checks hashes in the SOd correspond to hashes we compute.
+	 * 
+	 * TODO: return more status: which DGs have mismatches, which DGs could not be read, etc. Currently reason is abused for this (and checking stops after first mismatch).
+	 * 
+	 * @param lds
+	 * @param verificationStatus
+	 * 
+	 * @return whether an error was found (could be reason to abort the verification as a whole)
+	 */
+	private boolean verifyHashes(LDS lds, VerificationStatus verificationStatus) {
+		SODFile sod = lds.getSODFile();
+
+		/* Initialize hash. */
+		MessageDigest digest = null;
+		String digestAlgorithm = sod.getDigestAlgorithm();
+		try {
+			if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
+				digest = MessageDigest.getInstance(digestAlgorithm);
+			} else {
+				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
+			}
+		} catch (NoSuchAlgorithmException nsae) {
+			verificationStatus.setHashes(Verdict.FAILED, "Unsupported algorithm: " + digestAlgorithm);
+		}
+
+		/* Compare stored hashes to computed hashes. */
+		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
+		for (int dgNumber: hashes.keySet()) {
+			short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
+			byte[] storedHash = hashes.get(dgNumber);
+
+			digest.reset();
+
+			InputStream dgIn = null;
+			Exception ex = null;
+			try {
+				dgIn = lds.getInputStream(fid);
+			} catch(Exception e) {
+				dgIn = null;
+				ex = e;
+			}
+
+			if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
+				continue;
+			}
+			if (dgIn == null) {
+				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
+				continue;
+			}
+			if (ex != null) {
+				verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				return false;
+			}
+
+			try {
+				byte[] buf = new byte[4096];
+				while (true) {
+					int bytesRead = dgIn.read(buf);
+					if (bytesRead < 0) { break; }
+					digest.update(buf, 0, bytesRead);
+				}
+				byte[] computedHash = digest.digest();
+				if (!Arrays.equals(storedHash, computedHash)) {
+					verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to hash mismatch.");
+					LOGGER.warning("DG" + dgNumber + " hash mismatch."
+							+ "\n     Stored hash: " + Hex.bytesToHexString(storedHash)
+							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
+					return false; /* NOTE: Serious enough to not perform other checks, leave method. */
+				}
+			} catch (IOException ioe) {
+				verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private List<Integer> getCOMDGList(COMFile com) {
+		List<Integer> comDGList = new ArrayList<Integer>();
+		for(Integer tag : com.getTagList()) {
+			try {
+				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+				comDGList.add(dgNumber);
+			} catch (NumberFormatException nfe) {
+				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
+			}
+		}
+		Collections.sort(comDGList);
+		return comDGList;
+	}
+
+	private List<Integer> getSODDGList(SODFile sod) {
+		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
+		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
+		Collections.sort(sodDGList);
+		return sodDGList;
+	}
+
+	private int[] getSODTagList(SODFile sod) {
+		List<Integer> sodDGList = getSODDGList(sod);
+		int[] tagList = new int[sodDGList.size()];
+		for (int i = 0; i < tagList.length; i++) {
+			int dgNumber = sodDGList.get(i);
+			tagList[i] = LDSFileUtil.lookupTagByDataGroupNumber(dgNumber);
+		}
+		return tagList;
 	}
 }

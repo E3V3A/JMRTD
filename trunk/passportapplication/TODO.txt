@@ -224,7 +224,9 @@ General
 + DG11 and DG12 encoding of dates (see R7-p1_v2_sIII_0058).
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
 + Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes).
++ Move BACStore back to passportapplication (from passporthostapi).
 - Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
++ Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 - Refactor protocol status out of VerificationStatus.
 - Offer support for reporting invalid certificate (expired, revoked) in VerificationStatus.
 - Make VerificationStatus, Verdict etc. finer grained so that datagroup hashes can be displayed.
@@ -261,14 +263,13 @@ Code quality
 
 General
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
-- Implement PACE. Check status of OpenPACE project on SF.
+- Implement SAC/PACE. Check status of OpenPACE project on SF.
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Implement BAC as KeyStore?
 - Find some way to bring the progressive reading of JPEG, JPEG2000 back.
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
 - Version for Embedded Java on Raspberry Pi and similar.

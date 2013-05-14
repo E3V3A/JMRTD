@@ -47,7 +47,7 @@ public class VerificationIndicator extends Box {
 	private static final long serialVersionUID = -1458554034529575752L;
 
 	private static final Font KEY_FONT = new Font("Sans-serif", Font.PLAIN, 8);
-	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, EAC_INDICATOR = 2, DS_INDICATOR = 3, CS_INDICATOR = 4;
+	private static final int BAC_INDICATOR = 0, AA_INDICATOR = 1, EAC_INDICATOR = 2, HT_INDICATOR = 3, DS_INDICATOR = 4, CS_INDICATOR = 5;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
@@ -55,22 +55,25 @@ public class VerificationIndicator extends Box {
 	SUCCEEDED_ICON = IconUtil.getFamFamFamSilkIcon("tick"),
 	FAILED_ICON = IconUtil.getFamFamFamSilkIcon("cross"),
 	UNKNOWN_ICON = IconUtil.getFamFamFamSilkIcon("error"),
+	NOT_CHECKED_ICON = IconUtil.getFamFamFamSilkIcon("error_add"),
 	NOT_PRESENT_ICON = IconUtil.getFamFamFamSilkIcon("error_add");
 	private static final int SPACING = 25;
 
-	private JLabel bacLabel, dsLabel, csLabel, aaLabel, eacLabel;
-	private ImageIcon bacIcon, dsIcon, csIcon, aaIcon, eacIcon;
+	private JLabel bacLabel, htLabel, dsLabel, csLabel, aaLabel, eacLabel;
+	private ImageIcon bacIcon, htIcon, dsIcon, csIcon, aaIcon, eacIcon;
 
 	public VerificationIndicator() {
 		super(BoxLayout.X_AXIS);
 		bacIcon = new ImageIcon(UNKNOWN_ICON);
 		aaIcon = new ImageIcon(UNKNOWN_ICON);
+		htIcon = new ImageIcon(UNKNOWN_ICON);
 		dsIcon = new ImageIcon(UNKNOWN_ICON);
 		csIcon = new ImageIcon(UNKNOWN_ICON);
         eacIcon = new ImageIcon(UNKNOWN_ICON);
 
 		bacLabel = new JLabel(bacIcon);
 		aaLabel = new JLabel(aaIcon);
+		htLabel = new JLabel(htIcon);
 		dsLabel = new JLabel(dsIcon);
 		csLabel = new JLabel(csIcon);
         eacLabel = new JLabel(eacIcon);
@@ -96,6 +99,13 @@ public class VerificationIndicator extends Box {
 
         add(Box.createHorizontalStrut(SPACING));
 
+        JLabel hashesKeyLabel = new JLabel("HT: "); // NOTE: HT = Hash Table
+		hashesKeyLabel.setFont(KEY_FONT);
+		add(hashesKeyLabel);
+		add(htLabel);
+
+        add(Box.createHorizontalStrut(SPACING));
+
         JLabel dsKeyLabel = new JLabel("DS: ");
 		dsKeyLabel.setFont(KEY_FONT);
 		add(dsKeyLabel);
@@ -110,20 +120,22 @@ public class VerificationIndicator extends Box {
 	}
 
 	public void setStatus(VerificationStatus status) {
-		setState(BAC_INDICATOR, status.getBAC(), null);
-		setState(AA_INDICATOR, status.getAA(), null);
-		setState(EAC_INDICATOR, status.getEAC(), null);
-		setState(DS_INDICATOR, status.getDS(), null);
-		setState(CS_INDICATOR, status.getCS(), null);
+		setState(BAC_INDICATOR, status.getBAC(), status.getBACReason());
+		setState(AA_INDICATOR, status.getAA(), status.getAAReason());
+		setState(EAC_INDICATOR, status.getEAC(), status.getEACReason());
+		setState(HT_INDICATOR, status.getHT(), status.getHTReason());
+		setState(DS_INDICATOR, status.getDS(), status.getDSReason());
+		setState(CS_INDICATOR, status.getCS(), status.getCSReason());
 	}
 	
-	private void setState(int indicator, Verdict result, String reason) {
+	private void setState(int indicator, Verdict verdict, String reason) {
 		ImageIcon icon = null;
 		JLabel label = null;
 		switch (indicator) {
 		case BAC_INDICATOR: label= bacLabel; icon = bacIcon; break;
 		case AA_INDICATOR: label = aaLabel; icon = aaIcon; break;
         case EAC_INDICATOR: label = eacLabel; icon = eacIcon; break;
+        case HT_INDICATOR: label = htLabel; icon = htIcon; break;
 		case DS_INDICATOR: label = dsLabel; icon = dsIcon; break;
 		case CS_INDICATOR: label = csLabel; icon = csIcon; break;
 		}
@@ -134,7 +146,7 @@ public class VerificationIndicator extends Box {
 			LOGGER.severe("Unclear which indicator component was selected");
 			return;
 		}
-		switch (result) {
+		switch (verdict) {
 		case SUCCEEDED:
 			icon.setImage(SUCCEEDED_ICON);
 			label.setToolTipText(reason == null ? "Succeeded" : reason);
@@ -146,6 +158,10 @@ public class VerificationIndicator extends Box {
 		case NOT_PRESENT:
 			icon.setImage(NOT_PRESENT_ICON);
 			label.setToolTipText(reason == null ? "Not present" : reason);
+			break;
+		case NOT_CHECKED:
+			icon.setImage(NOT_CHECKED_ICON);
+			label.setToolTipText(reason == null ? "Not checked" : reason);
 			break;
 		default:
 			icon.setImage(UNKNOWN_ICON);

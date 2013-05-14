@@ -32,7 +32,7 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
 import org.jmrtd.io.SplittableInputStream;
 
 /**
- * Abstract base class for data group files.
+ * Base class for data group files.
  *
  * @author The JMRTD team (info@jmrtd.org)
  * 

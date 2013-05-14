@@ -75,6 +75,7 @@ import org.jmrtd.BACKeySpec;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
+import org.jmrtd.VerificationStatus;
 import org.jmrtd.app.PreferencesDialog.ReadingMode;
 import org.jmrtd.app.swing.ImagePanel;
 import org.jmrtd.app.util.FileUtil;
@@ -200,16 +201,16 @@ public class DocumentViewFrame extends JMRTDFrame {
 			displayProgressBar();
 			switch (readingMode) {
 			case SAFE_MODE:
-				passport.verifySecurity(); // blocks
-				verificationIndicator.setStatus(passport.getVerificationStatus());
+				VerificationStatus verificationStatus = passport.verifySecurity(); /* NOTE: blocks */
+				verificationIndicator.setStatus(verificationStatus);
 				displayInputStreams();
 				break;
 			case PROGRESSIVE_MODE:
 				displayInputStreams();
 				break;
 			}
-			passport.verifySecurity();
-			verificationIndicator.setStatus(passport.getVerificationStatus());
+			VerificationStatus verificationStatus = passport.verifySecurity();
+			verificationIndicator.setStatus(verificationStatus);
 			LOGGER.info("time: " + Integer.toString((int)(System.currentTimeMillis() - t)/1000));
 		} catch (Exception e) {
 			e.printStackTrace();
