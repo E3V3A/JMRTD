@@ -50,7 +50,6 @@ import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
@@ -75,9 +74,7 @@ import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
-import org.jmrtd.lds.DataGroup;
 import org.jmrtd.lds.LDS;
-import org.jmrtd.lds.LDSFile;
 import org.jmrtd.lds.LDSFileUtil;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
@@ -232,90 +229,92 @@ public class Passport {
 			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 		}
 
+		this.lds = new LDS();
+
+		/* Pre-read these files that are always present. */
+		COMFile comFile = null;
+		DG1File dg1File = null;
+		SODFile sodFile = null;
+
 		try {
-			COMFile comFile = new COMFile(service.getInputStream(PassportService.EF_COM));
-			SODFile sodFile = new SODFile(service.getInputStream(PassportService.EF_SOD));
-			DG1File dg1File = new DG1File(service.getInputStream(PassportService.EF_DG1));
+			CardFileInputStream comIn = service.getInputStream(PassportService.EF_COM);
+			lds.add(PassportService.EF_COM, comIn, comIn.getLength());
+			comFile = lds.getCOMFile();
 
-			int[] comTagList = comFile.getTagList();
-			String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
+			CardFileInputStream sodIn = service.getInputStream(PassportService.EF_SOD);
+			lds.add(PassportService.EF_SOD, sodIn, sodIn.getLength());
+			sodFile = lds.getSODFile();
 
-			int[] tagList = comTagList;
+			CardFileInputStream dg1In = service.getInputStream(PassportService.EF_DG1);
+			lds.add(PassportService.EF_DG1, dg1In, dg1In.getLength());
+			dg1File = lds.getDG1File();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.warning("Could not read file");
+		}
 
-			/* Find out if we need to do EAC. */
-			DG14File dg14File = null;
-			CVCAFile cvcaFile = null;
-			boolean isDG14Present = false;
-			for (int tag: tagList) { if (LDSFile.EF_DG14_TAG == tag) { isDG14Present = true; break; } }
-			if (isDG14Present) {
+		List<Integer> dgNumbers = new ArrayList<Integer>(sodFile.getDataGroupHashes().keySet());
+		Collections.sort(dgNumbers);
 
-				dg14File = new DG14File(service.getInputStream(PassportService.EF_DG14));
+		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
+
+		/* Pre-read DG14 in case we have to do EAC. */
+		boolean isDG14Present = dgNumbers.contains(14);
+		DG14File dg14File = null;
+		CVCAFile cvcaFile = null;
+		if (isDG14Present) {
+			try {
+				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
+				lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
+				dg14File = lds.getDG14File();
 
 				/* Now try to deal with EF.CVCA */
-				List<Short> cvcafids = dg14File.getCVCAFileIds();
-				if (cvcafids != null && cvcafids.size() != 0) {
-					if (cvcafids.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
-					cvcaFID = cvcafids.get(0).shortValue();
+				cvcaFID = PassportService.EF_CVCA;
+				List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
+				if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
+					if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
+					cvcaFID = cvcaFIDs.get(0).shortValue();
 				}
 
-				cvcaFile = new CVCAFile(cvcaFID, service.getInputStream(cvcaFID));
-
-				List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
-
-				/* Try to do EAC. */
-				for (KeyStore cvcaStore: cvcaKeyStores) {
-					try {
-						doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
-						break;
-					} catch (Exception e) {
-						LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
-						e.printStackTrace();
-					}
-				}
+				CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
+				lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
+				cvcaFile = lds.getCVCAFile();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				LOGGER.warning("Could not read EF.DG14 or EF.CVCA");
 			}
-			
-			if (isDG14Present) {
-				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File, dg14File }), cvcaFile, sodFile);
-			} else {
-				this.lds = new LDS(comFile, Arrays.asList(new DataGroup[] { dg1File }), sodFile);
-			}
+			List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
 
-			/* Start reading each of the files. */
-			for (int tag: tagList) { // FIXME: use dg list from EF.SOd here
+			/* Try to do EAC. */
+			for (KeyStore cvcaStore: cvcaKeyStores) {
 				try {
-					short fid = LDSFileUtil.lookupFIDByTag(tag);
-					try {
-						if (fid == PassportService.EF_DG1) {
-							continue;
-						} else if (fid == cvcaFID) {
-							continue;
-						} else if (fid == PassportService.EF_DG14){
-							continue;
-						} else if ((fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) {
-							/* Skip DG3 and DG4 if EAC was unsuccessful... */
-							continue;
-						}
-						CardFileInputStream inputStream = service.getInputStream(fid);
-
-						/* DEBUG */
-						lds.add(fid, inputStream, inputStream.getLength());
-						//						lds.add(LDSFileUtil.getLDSFile(fid, inputStream));
-					} catch (IOException ioe) {
-						LOGGER.warning("Error reading file with FID " + Integer.toHexString(fid)
-								+ ": " + ioe.getMessage());
-						break; /* out of for loop */
-					} catch(CardServiceException ex) {
-						/* NOTE: Most likely EAC protected file. So log, ignore, continue with next file. */
-						LOGGER.info("Could not read file with FID " + Integer.toHexString(fid)
-								+ ": " + ex.getMessage());
-					}
-				} catch (NumberFormatException nfe) {
-					LOGGER.warning("DEBUG: ----------> NFE, tag = " + Integer.toHexString(tag));
+					doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
+					break;
+				} catch (Exception e) {
+					LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
+					e.printStackTrace();
 				}
 			}
-		} catch (IOException ioe) {
-			//			ioe.printStackTrace();
-			throw new CardServiceException(ioe.getMessage());
+		}
+
+		/* Add remaining data groups to LDS. */
+		for (int dgNumber: dgNumbers) {
+			if (dgNumber == 1 || dgNumber == 14) { continue; }
+			if ((dgNumber == 3 || dgNumber == 4) && verificationStatus.getEAC() != Verdict.SUCCEEDED) { continue; }
+			try {
+				short fid = LDSFileUtil.lookupFIDByDataGroupNumber(dgNumber);
+				CardFileInputStream cardFileInputStream = service.getInputStream(fid);
+				lds.add(fid, cardFileInputStream, cardFileInputStream.getLength());
+			} catch (IOException ioe) {
+				LOGGER.warning("Error reading DG" + dgNumber + ": " + ioe.getMessage());
+				break; /* out of for loop */
+			} catch(CardServiceException ex) {
+				/* NOTE: Most likely EAC protected file. So log, ignore, continue with next file. */
+				LOGGER.info("Could not read DG" + dgNumber + ": " + ex.getMessage());
+			} catch (NumberFormatException nfe) {
+				LOGGER.warning("NumberFormatException trying to get FID for DG" + dgNumber);
+				nfe.printStackTrace();
+			}
 		}
 	}
 
@@ -323,7 +322,7 @@ public class Passport {
 	 * Creates a document by reading it from a ZIP file.
 	 * 
 	 * @param file the ZIP file to read from
-.	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * @param trustManager the trust manager (CSCA, CVCA)
 	 * 
 	 * @throws IOException on error
 	 */
@@ -331,10 +330,8 @@ public class Passport {
 		this();
 		this.trustManager = trustManager;
 		this.verificationStatus = new VerificationStatus();
-		Collection<DataGroup> dataGroups = new ArrayList<DataGroup>();
-		COMFile comFile = null;
-		SODFile sodFile = null;
 		ZipFile zipFile = new ZipFile(file);
+		this.lds = new LDS();
 		try {
 			Enumeration<? extends ZipEntry> entries = zipFile.entries();
 			while (entries.hasMoreElements()) {
@@ -351,22 +348,14 @@ public class Passport {
 					dataIn.readFully(bytes);
 					dataIn.close();
 					int fid = guessFID(fileName, bytes);
-					if (fid == PassportService.EF_COM) {
-						comFile = new COMFile(new ByteArrayInputStream(bytes));
-					} else if (fid == PassportService.EF_SOD) {
-						sodFile = new SODFile(new ByteArrayInputStream(bytes));                  
-					} else {
-						LDSFile dg = LDSFileUtil.getLDSFile((short)fid, new ByteArrayInputStream(bytes));
-						if (dg instanceof DataGroup) {
-							dataGroups.add((DataGroup)dg);
-						}
+					if (fid > 0) {
+						this.lds.add((short)fid, new ByteArrayInputStream(bytes), bytes.length);
 					}
 				} catch (NumberFormatException nfe) {
 					/* NOTE: ignore this file */
 					LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
 				}
 			}
-			this.lds = new LDS(comFile, dataGroups, sodFile);
 		} finally {
 			zipFile.close();
 		}
@@ -957,6 +946,7 @@ public class Passport {
 		/* Initialize hash. */
 		MessageDigest digest = null;
 		String digestAlgorithm = sod.getDigestAlgorithm();
+		LOGGER.info("Using hash algorithm " + digestAlgorithm);
 		try {
 			if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
 				digest = MessageDigest.getInstance(digestAlgorithm);
@@ -975,10 +965,14 @@ public class Passport {
 
 			digest.reset();
 
+			byte[] dgBytes = null;
 			InputStream dgIn = null;
 			Exception ex = null;
 			try {
+				dgBytes = new byte[lds.getLength(fid)];
 				dgIn = lds.getInputStream(fid);
+				DataInputStream dgDataIn = new DataInputStream(dgIn);
+				dgDataIn.readFully(dgBytes);
 			} catch(Exception e) {
 				dgIn = null;
 				ex = e;
@@ -998,21 +992,30 @@ public class Passport {
 			}
 
 			try {
-				byte[] buf = new byte[4096];
-				while (true) {
-					int bytesRead = dgIn.read(buf);
-					if (bytesRead < 0) { break; }
-					digest.update(buf, 0, bytesRead);
-				}
-				byte[] computedHash = digest.digest();
+				//				byte[] buf = new byte[4096];
+				//				while (true) {
+				//					int bytesRead = dgIn.read(buf);
+				//					if (bytesRead < 0) { break; }
+				//					digest.update(buf, 0, bytesRead);
+				//				}
+				//				byte[] computedHash = digest.digest();
+
+				byte[] computedHash = digest.digest(dgBytes);
+
 				if (!Arrays.equals(storedHash, computedHash)) {
 					verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to hash mismatch.");
 					LOGGER.warning("DG" + dgNumber + " hash mismatch."
-							+ "\n     Stored hash: " + Hex.bytesToHexString(storedHash)
+							+ "\n     Stored hash:   " + Hex.bytesToHexString(storedHash)
 							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
-					return false; /* NOTE: Serious enough to not perform other checks, leave method. */
+					System.out.println("DG with mismatch has length " + dgBytes.length + " and content:\n" + Hex.bytesToPrettyString(dgBytes));
+
+					// return false; /* NOTE: Serious enough to not perform other checks, leave method. */
+				} else {
+					LOGGER.info("DG" + dgNumber + " hash match."
+							+ "\n     Stored hash:   " + Hex.bytesToHexString(storedHash)
+							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
 				}
-			} catch (IOException ioe) {
+			} catch (Exception ioe) {
 				verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
 				return false;
 			}

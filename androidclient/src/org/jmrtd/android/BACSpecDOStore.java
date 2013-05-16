@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Vector;
 
 import org.jmrtd.BACKeySpec;
-import org.jmrtd.BACStore;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -43,7 +42,7 @@ import android.database.sqlite.SQLiteOpenHelper;
  * 
  * @author Max Guenther
  */
-public class BACSpecDOStore implements BACStore {
+public class BACSpecDOStore {
 
 	private static final String DB_NAME = "mrtd.db";
 	private static final int DATABASE_VERSION = 1;

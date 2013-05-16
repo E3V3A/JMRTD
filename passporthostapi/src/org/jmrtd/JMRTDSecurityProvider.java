@@ -24,6 +24,7 @@ package org.jmrtd;
 
 import java.security.Provider;
 import java.security.Security;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -219,37 +220,17 @@ public class JMRTDSecurityProvider extends Provider {
 	private static List<Provider> getProviders(String serviceName, String algorithmName) {
 		if (Security.getAlgorithms(serviceName).contains(algorithmName)) {
 			Provider[] providers = Security.getProviders(serviceName + "." + algorithmName);
-			return Arrays.asList(providers);
+			return new ArrayList<Provider>(Arrays.asList(providers));
 		}
 		if (BC_PROVIDER != null && BC_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(BC_PROVIDER);
+			return new ArrayList<Provider>(Collections.singletonList(BC_PROVIDER));
 		}
 		if (SC_PROVIDER != null && SC_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(SC_PROVIDER);
+			return new ArrayList<Provider>(Collections.singletonList(SC_PROVIDER));
 		}
 		if (JMRTD_PROVIDER != null && JMRTD_PROVIDER.getService(serviceName, algorithmName) != null) {
-			return Collections.singletonList(JMRTD_PROVIDER);
+			return new ArrayList<Provider>(Collections.singletonList(JMRTD_PROVIDER));
 		}
 		return null;
 	}
-	
-//	private static Provider getProviderOrNull(String className) {
-//		try {
-//			Class<?> providerClass = Class.forName(className);
-//			Provider[] providers = Security.getProviders();
-//			for (Provider provider: providers) {
-//				if (provider.getClass().equals(providerClass)) {
-//					return provider;
-//				}
-//			}
-//			return (Provider)providerClass.newInstance();
-//		} catch (IllegalAccessException iae) {
-//			// iae.printStackTrace();
-//		} catch (InstantiationException ie) {
-//			// ie.printStackTrace();
-//		} catch (ClassNotFoundException cnfe) {
-//			// cnfe.printStackTrace();
-//		}
-//		return null;
-//	}
 }

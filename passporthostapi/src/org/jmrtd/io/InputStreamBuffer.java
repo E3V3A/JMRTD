@@ -85,7 +85,11 @@ public class InputStreamBuffer {
 			markedPosition = -1;
 			this.syncObject = syncObject;
 		}
-
+		
+		public FragmentBuffer getBuffer() {
+			return buffer;
+		}
+		
 		public int read() throws IOException {
 			synchronized(syncObject) {
 				if (position >= buffer.getLength()) {
