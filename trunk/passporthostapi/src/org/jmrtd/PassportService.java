@@ -43,6 +43,7 @@ import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
@@ -89,6 +90,8 @@ import org.jmrtd.lds.MRZInfo;
 public class PassportService extends PassportApduService implements Serializable {
 
 	private static final long serialVersionUID = 1751933705552226972L;
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Data group 1 contains the MRZ. */
 	public static final short EF_DG1 = 0x0101;
@@ -435,9 +438,11 @@ public class PassportService extends PassportApduService implements Serializable
 				idData = wrapDO((byte) 0x84, keyIdBytes);
 			}
 			sendMSEKAT(wrapper, keyData, idData);
+
 			SecretKey ksEnc = Util.deriveKey(secret, Util.ENC_MODE);
 			SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
 			long ssc = 0;
+
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
 			return keyPair;

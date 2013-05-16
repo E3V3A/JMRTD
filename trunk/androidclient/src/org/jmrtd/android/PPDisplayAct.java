@@ -224,7 +224,7 @@ public class PPDisplayAct extends Activity {
 				/* END DEBUG DEBUG */
 
 				try {
-					Passport passport = new Passport(passportService, new MRTDTrustStore(), bacStore, 1);
+					Passport passport = new Passport(passportService, new MRTDTrustStore(), bacStore.getEntries(), 1);
 					Log.v(TAG, "passport = " + passport);
 					return passport;
 				} catch (BACDeniedException cse) {

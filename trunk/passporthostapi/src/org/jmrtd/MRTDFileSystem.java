@@ -133,7 +133,7 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 		if (selectedFID <= 0) { throw new CardServiceException("No file selected"); }
 
 		MRTDFileInfo fileInfo = fileInfos.get(selectedFID);
-		
+
 		/* If known file, use file info from cache. */
 		if (fileInfo != null) { return fileInfo; }
 

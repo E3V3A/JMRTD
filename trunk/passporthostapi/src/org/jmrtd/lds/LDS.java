@@ -33,32 +33,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.io.SplittableInputStream;
 
 public class LDS {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+
 	private Map<Short, LDSFile> files;
 	private Map<Short, SplittableInputStream> fetchers;
 
-	private LDS() {
+	public LDS() {
 		this.files = new HashMap<Short, LDSFile>();
 		this.fetchers = new HashMap<Short, SplittableInputStream>();
-	}
-
-	public LDS(COMFile com, Collection<DataGroup> dataGroups, SODFile sod) {
-		this(com, dataGroups, null, sod);
-	}
-
-	public LDS(COMFile com, Collection<DataGroup> dataGroups, CVCAFile cvca, SODFile sod) {
-		this();
-		add(com);
-		addAll(dataGroups);
-		if (cvca != null) {
-			put(cvca.getFID(), cvca);
-		}
-		add(sod);
 	}
 
 	public List<Short> getFileList() {
@@ -131,13 +120,18 @@ public class LDS {
 		fetchers.put(fid, new SplittableInputStream(inputStream, length));
 	}
 
+	public void add(short fid, byte[] bytes) throws IOException {
+		add(fid,  new ByteArrayInputStream(bytes), bytes.length);
+	}
+
 	public void addAll(Collection<? extends LDSFile> files) {
 		for (LDSFile file: files) { add(file); }
 	}
 
 	/**
 	 * Adds a new file. If the LDS already contained a file
-	 * with the same tag, the old copy is replaced.
+	 * with the same tag, the old copy is replaced. Use this for
+	 * constructed files.
 	 * 
 	 * Note that EF.COM and EF.SOd will not be updated as a result of adding
 	 * data groups.
@@ -184,14 +178,16 @@ public class LDS {
 
 	public CVCAFile getCVCAFile() {
 		/* Check DG14 for available CVCA file ids. */
+		short cvcaFID = PassportService.EF_CVCA;
 		DG14File dg14 = getDG14File();
 		if (dg14 == null) { return null; }
 		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
-		for (short fid: cvcaFIDs) {
-			CVCAFile cvca = (CVCAFile)getFile(fid); // FIXME: should we check for ClassCastException?
-			return cvca;
+		if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
+			if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
+			cvcaFID = cvcaFIDs.get(0).shortValue();
 		}
-		return null;
+		CVCAFile cvca = (CVCAFile)getFile(cvcaFID); // FIXME: should we check for ClassCastException?
+		return cvca;
 	}
 
 	public InputStream getInputStream(short fid) {
