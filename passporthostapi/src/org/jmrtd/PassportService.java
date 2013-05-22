@@ -291,30 +291,46 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-			byte[] rndICC = sendGetChallenge();
-			byte[] rndIFD = new byte[8];
-			random.nextBytes(rndIFD);
-			byte[] kIFD = new byte[16];
-			random.nextBytes(kIFD);
-			byte[] response = sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
-			byte[] kICC = new byte[16];
-			System.arraycopy(response, 16, kICC, 0, 16);
-			keySeed = new byte[16];
-			for (int i = 0; i < 16; i++) {
-				keySeed[i] = (byte) ((kIFD[i] & 0xFF) ^ (kICC[i] & 0xFF));
-			}
-			SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-			SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-			long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-			BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
-			notifyBACPerformed(event);
-			state = BAC_AUTHENTICATED_STATE;
+			
+			doBAC(kEnc, kMac);
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		} catch (UnsupportedEncodingException uee) {
 			throw new CardServiceException(uee.toString());
 		}
+	}
+
+	/**
+	 * Performs the <i>Basic Access Control</i> protocol.
+	 * It does BAC using kEnc and kMac keys, usually calculated
+	 * from the document number, the card holder's birth date and
+	 * 
+	 * @param kEnc 3DES key required for BAC
+	 * @param kMac 3DES key required for BAC
+	 * 
+	 * @throws CardServiceException if authentication failed
+	 */
+	public synchronized void doBAC(SecretKey kEnc, SecretKey kMac) throws CardServiceException,
+			GeneralSecurityException {
+		byte[] rndICC = sendGetChallenge();
+		byte[] rndIFD = new byte[8];
+		random.nextBytes(rndIFD);
+		byte[] kIFD = new byte[16];
+		random.nextBytes(kIFD);
+		byte[] response = sendMutualAuth(rndIFD, rndICC, kIFD, kEnc, kMac);
+		byte[] kICC = new byte[16];
+		System.arraycopy(response, 16, kICC, 0, 16);
+		byte[] keySeed = new byte[16];
+		for (int i = 0; i < 16; i++) {
+			keySeed[i] = (byte) ((kIFD[i] & 0xFF) ^ (kICC[i] & 0xFF));
+		}
+		SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
+		SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
+		long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
+		wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+		BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
+		notifyBACPerformed(event);
+		state = BAC_AUTHENTICATED_STATE;
 	}
 
 	public synchronized void sendSelectFile(short fid) throws CardServiceException {

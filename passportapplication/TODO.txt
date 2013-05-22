@@ -225,11 +225,10 @@ General
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
 + Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes).
 + Move BACStore back to passportapplication (from passporthostapi).
-- Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
++ Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 - Refactor protocol status out of VerificationStatus.
 - Offer support for reporting invalid certificate (expired, revoked) in VerificationStatus.
-- Make VerificationStatus, Verdict etc. finer grained so that datagroup hashes can be displayed.
 
 EAC
 - ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.

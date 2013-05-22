@@ -68,71 +68,50 @@ public class JJ2000Decoder {
 	private JJ2000Decoder() {
 	}
 
-//	public static void decode(InputStream inputStream, int blockSize, ProgressListener progressListener) throws IOException {
-//		decode(inputStream, blockSize, false, progressListener);
-//	}
-//
-//	public static void decode(InputStream inputStream, int blockSize, boolean stopAfterFirstPass, ProgressListener progressListener) throws IOException {
-//		ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-//		byte[] buffer = new byte[blockSize];
-//		while (true) {
-//			try {
-//				int bytesRead = inputStream.read(buffer);
-//				if (bytesRead < 0) { break; }
-//				if (bytesRead == 0) { System.out.println("DEBUG: WARNING: JJ2000Decoder read 0 bytes"); continue; }
-//				outputStream.write(buffer, 0, bytesRead);
-//				InputStream partialInputStream = new ByteArrayInputStream(outputStream.toByteArray());
-//				Bitmap bitmap = JJ2000Decoder.decode(partialInputStream, 3.0);
-//				if (bitmap != null && bitmap.getWidth() > 0 && bitmap.getHeight() > 0) {
-//					progressListener.previewBitmapAvailable(outputStream.size(), bitmap);
-//					if (stopAfterFirstPass) { break; }
-//				}
-//			} catch (EOFException eof) {
-//				break;
-//			} catch (Throwable e) {
-//				System.out.println("DEBUG: ignoring exception");
-//			}
-//		}
-//	}
-
 	public static Bitmap decode(InputStream in) throws IOException {
 		return decode(in, -1);
 	}
 
-	public static Bitmap decode(InputStream in, double bitRate) throws IOException {
-		String[][] pinfo = getAllDecoderParameters();
-		ParameterList defpl = new ParameterList();
-		for (int i = pinfo.length - 1; i >= 0; i--) {
-			if (pinfo[i][3] != null)
-				defpl.put(pinfo[i][0], pinfo[i][3]);
-		}
-		ParameterList pl = new ParameterList(defpl);
-		if (bitRate >= 0.0) {
-			pl.put("rate", Float.toString((float)bitRate));
-		}
+	public static Bitmap decode(InputStream inputStream, double bitRate) throws IOException {
+		synchronized(inputStream) {
+			String[][] pinfo = getAllDecoderParameters();
+			ParameterList defpl = new ParameterList();
+			for (int i = pinfo.length - 1; i >= 0; i--) {
+				if (pinfo[i][3] != null)
+					defpl.put(pinfo[i][0], pinfo[i][3]);
+			}
+			ParameterList pl = new ParameterList(defpl);
+			if (bitRate >= 0.0) {
+				pl.put("rate", Float.toString((float)bitRate));
+			}
 
-		return decode(new ISRandomAccessIO(in), pl);
+			return decode(new ISRandomAccessIO(inputStream), pl);
+		}
 	}
 
 	/* ONLY PRIVATE METHODS BELOW. */
 
-	private static Bitmap decode(RandomAccessIO in, ParameterList pl) throws IOException {
+	private static Bitmap decode(RandomAccessIO randomAccessIO, ParameterList pl) throws IOException {
 		double bitRate = pl.getFloatParameter("rate");
 
 		// The codestream should be wrapped in the jp2 fileformat, Read the
 		// file format wrapper
-		FileFormatReader fileFormatReader = new FileFormatReader(in);
-		fileFormatReader.readFileFormat();
-		if (!fileFormatReader.JP2FFUsed) {
-			throw new IOException("Was expecting JP2 file format");
-		}
-		in.seek(fileFormatReader.getFirstCodeStreamPos());
+//		try {
+			FileFormatReader fileFormatReader = new FileFormatReader(randomAccessIO);
+			fileFormatReader.readFileFormat();
+			if (!fileFormatReader.JP2FFUsed) {
+				throw new IOException("Was expecting JP2 file format");
+			}
+			randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
+//		} catch (Error error) {
+//			throw new IOException("Error interpreting stream as JP2");
+//		}
 
 		// Instantiate header decoder and read main header
 		HeaderInfo headerInfo = new HeaderInfo();
 		HeaderDecoder headerDecoder = null;
 		try {
-			headerDecoder = new HeaderDecoder(in, pl, headerInfo);
+			headerDecoder = new HeaderDecoder(randomAccessIO, pl, headerInfo);
 		} catch (EOFException e) {
 			throw new IOException("Codestream too short or bad header, unable to decode");
 		}
@@ -147,7 +126,7 @@ public class JJ2000Decoder {
 			originalBitDepths[i] = headerDecoder.getOriginalBitDepth(i);
 		}
 
-		BitstreamReaderAgent bitStreamReader = BitstreamReaderAgent.createInstance(in, headerDecoder, pl, decoderSpecs, pl.getBooleanParameter("cdstr_info"), headerInfo);
+		BitstreamReaderAgent bitStreamReader = BitstreamReaderAgent.createInstance(randomAccessIO, headerDecoder, pl, decoderSpecs, pl.getBooleanParameter("cdstr_info"), headerInfo);
 		EntropyDecoder entropyDecoder = headerDecoder.createEntropyDecoder(bitStreamReader, pl);
 
 		ROIDeScaler roiDeScaler = headerDecoder.createROIDeScaler(entropyDecoder, pl, decoderSpecs);
@@ -169,7 +148,7 @@ public class JJ2000Decoder {
 		ColorSpace colorSpace = null;
 		BlkImgDataSrc color = null;
 		try {
-			colorSpace = new ColorSpace(in, headerDecoder, pl);
+			colorSpace = new ColorSpace(randomAccessIO, headerDecoder, pl);
 			BlkImgDataSrc channels = headerDecoder.createChannelDefinitionMapper(invCompTransf, colorSpace);
 			BlkImgDataSrc resampled = headerDecoder.createResampler(channels, colorSpace);
 			BlkImgDataSrc palettized = headerDecoder.createPalettizedColorSpaceMapper(resampled, colorSpace);
