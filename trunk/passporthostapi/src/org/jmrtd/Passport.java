@@ -853,7 +853,7 @@ public class Passport {
 			LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
 					+ "datagroups reported in SOd = " + sodDGList + "\n"
 					+ "datagroups reported in COM = " + comDGList);
-			verificationStatus.setHashes(Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd.");
+			verificationStatus.setHT(Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd.");
 			return false; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 
@@ -954,7 +954,7 @@ public class Passport {
 				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHashes(Verdict.FAILED, "Unsupported algorithm: " + digestAlgorithm);
+			verificationStatus.setHT(Verdict.FAILED, "Unsupported algorithm: " + digestAlgorithm);
 		}
 
 		/* Compare stored hashes to computed hashes. */
@@ -987,7 +987,7 @@ public class Passport {
 				continue;
 			}
 			if (ex != null) {
-				verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
 				return false;
 			}
 
@@ -1003,7 +1003,7 @@ public class Passport {
 				byte[] computedHash = digest.digest(dgBytes);
 
 				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to hash mismatch.");
+					verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to hash mismatch.");
 					LOGGER.warning("DG" + dgNumber + " hash mismatch."
 							+ "\n     Stored hash:   " + Hex.bytesToHexString(storedHash)
 							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
@@ -1016,11 +1016,14 @@ public class Passport {
 							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
 				}
 			} catch (Exception ioe) {
-				verificationStatus.setHashes(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
 				return false;
 			}
 		}
 
+		if (verificationStatus.getHT().equals(Verdict.UNKNOWN)) {
+			verificationStatus.setHT(Verdict.SUCCEEDED, "Hashes checked out");
+		}
 		return true;
 	}
 

@@ -158,7 +158,7 @@ public class VerificationStatus {
 		return hashesReason;
 	}
 
-	public void setHashes(Verdict v, String reason) {
+	public void setHT(Verdict v, String reason) {
 		this.hashes = v;
 		hashesReason = reason;
 	}
@@ -195,7 +195,7 @@ public class VerificationStatus {
 		setBAC(verdict, reason);
 		setCS(verdict, reason);
 		setDS(verdict, reason);
-		setHashes(verdict, reason);
+		setHT(verdict, reason);
 		setEAC(verdict, reason);
 	}
 }
