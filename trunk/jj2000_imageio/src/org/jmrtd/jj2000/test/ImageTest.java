@@ -17,7 +17,9 @@ import org.jmrtd.jj2000.JJ2000Decoder;
 public class ImageTest {
 
 //	private static final String J2K_FILE_IN = "./tmp/1.jp2";
-	private static final String J2K_FILE_IN = "t:/paspoort/test/mo_0102_face.jp2";
+//	private static final String J2K_FILE_IN = "t:/paspoort/test/mo_0102_face.jp2";
+	private static final String J2K_FILE_IN = "t:/Pictures/jpeg2k/potholes2.jp2";
+
 
 	/**
 	 * For experimenting with bit rates.

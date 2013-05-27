@@ -27,6 +27,13 @@ class JJ2000Util {
 		return unsignedCompValue;
 	}
 
+	public static int signedGrayScaleIntToUnsignedARGB(int p) {
+		if (p < -127) { return 0xFF000000; }
+		if (p > 127) { return 0xFFFFFFFF; }
+		p = (p + 127) & 0xFF;
+		return 0xFF000000 | (p << 16) | (p << 8) | p;
+	}
+	
 	public static int signedComponentsToUnsignedARGB(int r, int g, int b, int nomRangeBits) {
 		if (r < -(1 << (nomRangeBits - 1))) { r = 0x00; } else if (r > ((1 << (nomRangeBits - 1)) - 1)) { r = (1 << nomRangeBits) - 1; } else { r += (1 << (nomRangeBits -1)); }
 		if (g < -(1 << (nomRangeBits - 1))) { g = 0x00; } else if (g > ((1 << (nomRangeBits - 1)) - 1)) { g = (1 << nomRangeBits) - 1; } else { g += (1 << (nomRangeBits -1)); }
