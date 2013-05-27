@@ -43,7 +43,6 @@ public class Bitmap implements Serializable {
         this.isLossy = isLossy;
     }
 
-
     public int getWidth() {
         return width;
     }

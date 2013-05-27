@@ -296,7 +296,7 @@ public class JJ2000Decoder {
 		int[] data = blk[0].getDataInt();
 		int[] pixels = new int[data.length];
 		for (int j = 0; j < data.length; j++) {
-			pixels[j] = 0xFF000000 | ((data[j] & 0xFF) << 16) | ((data[j] & 0xFF) << 8) | (data[j] & 0xFF);
+			pixels[j] = JJ2000Util.signedGrayScaleIntToUnsignedARGB(data[j]);
 		}
 		Bitmap bitmap = new Bitmap(pixels, width, height, 24, -1, true, 3);
 		return bitmap;

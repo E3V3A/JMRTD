@@ -7,7 +7,7 @@ import jj2000.j2k.image.DataBlkInt;
 import jj2000.j2k.image.input.ImgReader;
 
 /**
- * ImgReadr that wraps our Bitmap data type.
+ * ImgReader that wraps our Bitmap data type.
  * 
  * @author The JMRTD open source project
  * 
