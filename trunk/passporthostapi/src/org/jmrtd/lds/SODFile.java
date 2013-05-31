@@ -39,8 +39,8 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
@@ -304,7 +304,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 */
 	public Map<Integer, byte[]> getDataGroupHashes() {
 		DataGroupHash[] hashObjects = getLDSSecurityObject(signedData).getDatagroupHash();
-		Map<Integer, byte[]> hashMap = new HashMap<Integer, byte[]>(); /* HashMap... get it? :D */
+		Map<Integer, byte[]> hashMap = new TreeMap<Integer, byte[]>(); /* HashMap... get it? :D */
 		for (int i = 0; i < hashObjects.length; i++) {
 			DataGroupHash hashObject = hashObjects[i];
 			int number = hashObject.getDataGroupNumber();
