@@ -45,8 +45,8 @@ public class VerificationStatus {
 		FAILED,			/* Present, checked, and not ok */
 		SUCCEEDED;		/* Present, checked, and ok */
 	};
-
-	private Verdict aa, bac, cs, hashes, ds, eac;
+	
+	private Verdict aa, bac, cs, ht, ds, eac;
 	private String aaReason, bacReason, csReason, hashesReason, dsReason, eacReason;
 
 	/**
@@ -151,7 +151,7 @@ public class VerificationStatus {
 	}
 	
 	public Verdict getHT() {
-		return hashes;
+		return ht;
 	}
 	
 	public String getHTReason() {
@@ -159,7 +159,7 @@ public class VerificationStatus {
 	}
 
 	public void setHT(Verdict v, String reason) {
-		this.hashes = v;
+		this.ht = v;
 		hashesReason = reason;
 	}
 
