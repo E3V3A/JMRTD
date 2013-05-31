@@ -800,14 +800,14 @@ public class Passport {
 		if (bacKeySpec != null) {
 			verificationStatus.setBAC(Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec);
 		} else {
-			verificationStatus.setBAC(Verdict.NOT_PRESENT, "BAC was not used.");
+			verificationStatus.setBAC(Verdict.NOT_PRESENT, "BAC was not used");
 		}
 	}
 
 	/** Checks whether EAC was used. */
 	private void verifyEAC() {
 		if (!hasEACSupport) {
-			verificationStatus.setEAC(Verdict.NOT_PRESENT, "EAC not present.");
+			verificationStatus.setEAC(Verdict.NOT_PRESENT, "EAC not present");
 		}
 		/* NOTE: If EAC was performed, verification status already updated! */
 	}
@@ -817,25 +817,25 @@ public class Passport {
 		try {
 			SODFile	sod = lds.getSODFile();
 			if (sod.getDataGroupHashes().get(15) == null) {
-				verificationStatus.setAA(Verdict.NOT_PRESENT, "AA not present (no EF.DG15 hash in EF.SOd).");
+				verificationStatus.setAA(Verdict.NOT_PRESENT, "AA not present");
 				return;
 			}
 			DG15File dg15 = lds.getDG15File();
 			if (dg15 != null && service != null) {
 				PublicKey pubKey = dg15.getPublicKey();
 				if (service.doAA(pubKey)) {
-					verificationStatus.setAA(Verdict.SUCCEEDED, "AA succeeded.");
+					verificationStatus.setAA(Verdict.SUCCEEDED, "AA succeeded");
 				} else {
-					verificationStatus.setAA(Verdict.FAILED, "AA failed due to signature failure.");
+					verificationStatus.setAA(Verdict.FAILED, "AA failed due to signature failure");
 				}
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception.");
+			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception");
 		} catch (Exception e) {
 			System.out.println("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
-			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception.");
+			verificationStatus.setAA(Verdict.FAILED, "AA failed due to exception");
 		}
 	}
 
@@ -853,7 +853,7 @@ public class Passport {
 			LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
 					+ "datagroups reported in SOd = " + sodDGList + "\n"
 					+ "datagroups reported in COM = " + comDGList);
-			verificationStatus.setHT(Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd.");
+			verificationStatus.setHT(Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd");
 			return false; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 
@@ -874,22 +874,22 @@ public class Passport {
 			/* Check document signing signature. */
 			X509Certificate docSigningCert = sod.getDocSigningCertificate();
 			if (docSigningCert == null) {
-				LOGGER.warning("Could not get document signer certificate from EF.SOd.");
+				LOGGER.warning("Could not get document signer certificate from EF.SOd");
 				// FIXME: We search for it in cert stores. See note at verifyCS.
 				// X500Principal issuer = sod.getIssuerX500Principal();
 				// BigInteger serialNumber = sod.getSerialNumber();
 			}
 			if (sod.checkDocSignature(docSigningCert)) {
-				verificationStatus.setDS(Verdict.SUCCEEDED, "DS signature checked out.");
+				verificationStatus.setDS(Verdict.SUCCEEDED, "Signature checked");
 			} else {
-				verificationStatus.setDS(Verdict.FAILED, "DS Signature incorrect.");
+				verificationStatus.setDS(Verdict.FAILED, "Signature incorrect");
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setDS(Verdict.FAILED, "Unsupported algorithm during DS Signature check.");
+			verificationStatus.setDS(Verdict.FAILED, "Unsupported signature algorithm");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		} catch (Exception e) {
 			e.printStackTrace();
-			verificationStatus.setDS(Verdict.FAILED, "Unexpected exception during DS Signature check.");
+			verificationStatus.setDS(Verdict.FAILED, "Unexpected exception");
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 	}
@@ -903,30 +903,30 @@ public class Passport {
 		try {
 			List<Certificate> chainCertificates = getCertificateChain();
 			if (chainCertificates == null) {
-				verificationStatus.setCS(Verdict.FAILED, "Unable to build certificate chain.");
+				verificationStatus.setCS(Verdict.FAILED, "Unable to build certificate chain");
 				return;
 			}
 
 			int chainDepth = chainCertificates.size();
 			if (chainDepth < 1) {
-				verificationStatus.setCS(Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth + ".");
+				verificationStatus.setCS(Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth);
 				return;
 			}
 
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
 				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				verificationStatus.setCS(Verdict.SUCCEEDED, "Document signer certificate found in store. Chain depth = " + chainDepth + ".");
+				verificationStatus.setCS(Verdict.SUCCEEDED, "Document signer from store");
 			} else if (chainDepth == 2) {
 				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
 				X509Certificate countrySigningCertificate = (X509Certificate)chainCertificates.get(1);
 				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
-				verificationStatus.setCS(Verdict.SUCCEEDED, "Country signer certificate found in store. Chain depth = " + chainDepth + ". Checking signature."); /* NOTE: No exception... verification succeeded! */
+				verificationStatus.setCS(Verdict.SUCCEEDED, "Signature checked"); /* NOTE: No exception... verification succeeded! */
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
-			verificationStatus.setCS(Verdict.FAILED, "CSCA certificate check failed!");
+			verificationStatus.setCS(Verdict.FAILED, "Signature failed");
 		}
 	}
 
@@ -954,7 +954,7 @@ public class Passport {
 				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHT(Verdict.FAILED, "Unsupported algorithm: " + digestAlgorithm);
+			verificationStatus.setHT(Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"");
 		}
 
 		/* Compare stored hashes to computed hashes. */
@@ -987,27 +987,18 @@ public class Passport {
 				continue;
 			}
 			if (ex != null) {
-				verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				verificationStatus.setHT(Verdict.FAILED, "DG" + dgNumber + " failed due to exception");
 				return false;
 			}
 
 			try {
-				//				byte[] buf = new byte[4096];
-				//				while (true) {
-				//					int bytesRead = dgIn.read(buf);
-				//					if (bytesRead < 0) { break; }
-				//					digest.update(buf, 0, bytesRead);
-				//				}
-				//				byte[] computedHash = digest.digest();
-
 				byte[] computedHash = digest.digest(dgBytes);
 
 				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to hash mismatch.");
+					verificationStatus.setHT(Verdict.FAILED, "DG" + dgNumber + " hash mismatch");
 					LOGGER.warning("DG" + dgNumber + " hash mismatch."
 							+ "\n     Stored hash:   " + Hex.bytesToHexString(storedHash)
 							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
-					System.out.println("DG with mismatch has length " + dgBytes.length + " and content:\n" + Hex.bytesToPrettyString(dgBytes));
 
 					// return false; /* NOTE: Serious enough to not perform other checks, leave method. */
 				} else {
@@ -1016,13 +1007,13 @@ public class Passport {
 							+ "\n     Computed hash: " + Hex.bytesToHexString(computedHash));
 				}
 			} catch (Exception ioe) {
-				verificationStatus.setHT(Verdict.FAILED, "Authentication of DG" + dgNumber + " failed due to exception.");
+				verificationStatus.setHT(Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception");
 				return false;
 			}
 		}
 
 		if (verificationStatus.getHT().equals(Verdict.UNKNOWN)) {
-			verificationStatus.setHT(Verdict.SUCCEEDED, "Hashes checked out");
+			verificationStatus.setHT(Verdict.SUCCEEDED, "Hashes are identical");
 		}
 		return true;
 	}
