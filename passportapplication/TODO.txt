@@ -228,7 +228,8 @@ General
 + Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
 + Pre-calculated BAC keys (Mikheil Kapananza has use case for this; Bug 19 on SF bug tracker)
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
-- Refactor protocol status out of VerificationStatus.
++ Refactor FeatureStatus out of VerificationStatus.
+- Enumerate the reason (for failure) in VerificationStatus so that it can be localized.
 - More information in verification status (computed hashes, derived certificate chain) to make relying UI as easy as possible.
 - Offer support for reporting invalid certificate (expired, revoked) in VerificationStatus.
 
@@ -243,10 +244,10 @@ GUI
 - MRZ doc number, we add '<', consequences for GUI?
 
 ImageIO
-+ Grayscale JPEG2000 signed/unsigned decoding issue. Reported by Aine Ni Fhloinn of inhousetraining.ie.
+- Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn of inhousetraining.ie and Glenn Strong of TCD.
 
 Android
-- New app, improved UI, in Google Play (Novay with support of EIT ICT Labs).
+- New app, improved UI, in Google Play (Novay in a project for EIT ICT Labs).
 - Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
 
 SCUBA
