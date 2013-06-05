@@ -22,6 +22,7 @@
 
 package org.jmrtd.io;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -34,7 +35,9 @@ import java.util.HashSet;
  *
  * @version $Revision: $
  */
-public class FragmentBuffer {
+public class FragmentBuffer implements Serializable {
+
+	private static final long serialVersionUID = -3510872461790499721L;
 
 	/** Buffer with the actual bytes. */
 	private byte[] buffer; // FIXME can we make this buffer grow dynamically?
@@ -268,6 +271,10 @@ public class FragmentBuffer {
 		if (otherBuffer.fragments != null && this.fragments == null) { return false; }
 		return Arrays.equals(otherBuffer.buffer, this.buffer) && otherBuffer.fragments.equals(this.fragments);
 	}
+	
+	public int hashCode() {
+		return 3 * Arrays.hashCode(buffer) + 2 * fragments.hashCode() + 7;
+	}
 
 	private synchronized void setLength(int length) {
 		if (length <= buffer.length) { return; }
@@ -276,7 +283,9 @@ public class FragmentBuffer {
 		this.buffer = newBuffer;
 	}
 	
-	public static class Fragment {
+	public static class Fragment implements Serializable {
+
+		private static final long serialVersionUID = -3795931618553980328L;
 
 		private int offset, length;
 

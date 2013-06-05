@@ -153,7 +153,7 @@ public class ImagePreviewPanel extends JPanel {
 				revalidate(); repaint();
 			}
 		} catch (Exception e) {
-			/* We'll just skip this image then. */
+			/* NOTE: We'll just skip this image then. */
 		}	
 	}
 

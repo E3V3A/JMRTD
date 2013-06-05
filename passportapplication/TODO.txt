@@ -198,7 +198,7 @@ Android
 + Easier build of jmrtd.jar for developers, no more manual rewriting to work around Bouncy Castle thanks to jarjar.
 
 ImageIO
-+ Fixed problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed.
++ Fixed problem with JJ2000 decoding (artifacts). Was related to conversion unsigned to signed 32-bit RGB.
 + Use pure Java WSQ based on JNBIS. (credits to Mohammad Shamsi)
 + Metadata for WSQ imageio and WSQ v3.1 support. (credits to Paulo Costa)
 + Also have an image writer based on JJ2000, custom interface and imageio interface.
@@ -216,8 +216,8 @@ Code quality
 + Check JavaDoc.
 
 
-0.4.9 (FUTURE)
---------------
+0.4.9 (ETA: 2013-06-15)
+-----------------------
 
 General
 + Remove threading from JMRTD host API.
@@ -229,56 +229,48 @@ General
 + Pre-calculated BAC keys (Mikheil Kapananza has use case for this; Bug 19 on SF bug tracker)
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 + Refactor FeatureStatus out of VerificationStatus.
-- Enumerate the reason (for failure) in VerificationStatus so that it can be localized.
-- More information in verification status (computed hashes, derived certificate chain) to make relying UI as easy as possible.
-- Offer support for reporting invalid certificate (expired, revoked) in VerificationStatus.
++ More derived information in VerificationStatus (tried BAC entries, computed hashes, derived certificate chain, ...) so that UI can show this in status.
 
 EAC
-- ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
++ ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
 + Clean up terminal authentication, make sig algorithm detection according to spec.
-- CVCA keystore usage. BKS is only candidate given requirements (EC crypto + CVcerts)
-- Check that we use privkey corresponding to EF.CVCA / EF.DG14.
-- CVCA re-order the list of cvcerts so that it is a chain.
-
-GUI
-- MRZ doc number, we add '<', consequences for GUI?
 
 ImageIO
-- Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn of inhousetraining.ie and Glenn Strong of TCD.
++ Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn of inhousetraining.ie and Glenn Strong of TCD.
 
 Android
-- New app, improved UI, in Google Play (Novay in a project for EIT ICT Labs).
-- Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
+- New app, improved UI, and security validation, in Google Play (Novay in a project for EIT ICT Labs).
 
 SCUBA
-+ Cater for extended length APDU checking (either getATR, or isExtendedLengthSupported method)
++ Support interface for extended length APDU checking, needed for EAC (in API, not yet implemented)
 
 Dependencies
-+ Latest Bouncy Castle 1.48 for J2SE. (We're back to 1.47 for now, because of Spongy.)
-- Latest Spongy Castle (1.48?) for Android.
++ Check latest Bouncy Castle. (Is actually 1.48, but we're back to 1.47 for now, because of Spongy on Android.)
 
 Code quality
-- Check unit tests.
-- Check JavaDoc.
-- Check Findbugs.
++ Check unit tests.
++ Check JavaDoc.
++ Check Findbugs.
 
 
 0.5.x (FUTURE)
 --------------
 
 General
+- Implement SAC/PACE. Check status of OpenPACE and other nPA projects on SF.
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
-- Implement SAC/PACE. Check status of OpenPACE project on SF.
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
 - CRL validity checking via PKD cert store (seems buggy now, at least with BC PKIX algorithm implementation)
 - Check and compare date (current system time) and warn if certificate has expired
 - Adoption of Henning's stuff in SCUBA (finger printing Nationality of passports based on error messages) is buggy for now. Need more regression testing.
 - Check dependencies on BC in public interfaces. Especially in Woj's EAC stuff.
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
-- Find some way to bring the progressive reading of JPEG, JPEG2000 back.
+- Progressive reading of JPEG2000 (and plain JPEG), WSQ without artifacts. Based on bit rate?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
 - Version for Embedded Java on Raspberry Pi and similar.
-- Version for Blackberry OS.
+- Version for Blackberry OS 7 (BB 10 will support Android?).
+- If certificate invalid for other reason than signature fail (expired, revoked) support this in VerificationStatus.
+- Enumerate the reason (for failure) in VerificationStatus instead of error strings in English so that it can be localized.
 
 MRZ
 - MRZ truncation. Provide interfaces for custom rules. Implement reasonable default rules.
@@ -299,15 +291,20 @@ GUI
 - Allow creation of documents with EAC from edit mode.
 - Wire shark style viewing of files in content pane in tree view.
 - Show IrisInfo in edit mode?!?
+- MRZ doc number, we add '<', consequences for GUI?
 
 Android
-- Full GUI, all DGs, security validation.
 - Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
-- Demo app showing verification based on CSCA.
-- Robustness, consistency.
+- Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
+- Allow session completion on error (as in Nexus 4 case) and new connection of MRTD. Can this be done safely?
+- Progressive rendering of JPEG2000/WSQ combined with animation? What works well? Scaling? Fading?
+- User experience: users seem to think MRTD has been completely read as soon as DG1 and partial DG2 content is shown. Pop up modal dialog?
 
 EAC
+- CVCA keystore usage. BKS is only candidate given requirements (EC crypto + CVcerts)
+- Check that we use privkey corresponding to EF.CVCA / EF.DG14.
+- CVCA re-order the list of cvcerts so that it is a chain.
 - Improve unit tests for EAC and CVCA.
 
 Java Card
