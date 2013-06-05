@@ -22,6 +22,10 @@
 
 package org.jmrtd;
 
+import java.security.cert.Certificate;
+import java.util.List;
+import java.util.Map;
+
 /**
  * A data type for communicating document verification check information.
  * 
@@ -46,9 +50,17 @@ public class VerificationStatus {
 		SUCCEEDED;		/* Present, checked, and ok */
 	};
 	
+	/* Verdict for this verification feature. */
 	private Verdict aa, bac, cs, ht, ds, eac;
-	private String aaReason, bacReason, csReason, hashesReason, dsReason, eacReason;
 
+	/* Textual reason for the verdict. */
+	private String aaReason, bacReason, csReason, htReason, dsReason, eacReason;
+
+	/* By products of the verification process that may be useful for relying parties to display. */
+	private List<BACKey> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
+	private Map<Integer, byte[]> storedHashes, computedHashes; /* As a result of HT testing, this contains stored and computed hashes. */
+	private List<Certificate> certificateChain; /* As a result of CS testing, this contains certificate chain from DSC to CSCA. */
+	
 	/**
 	 * Constructs a new status with all verdicts
 	 * set to <code>UNKNOWN</code>.
@@ -77,7 +89,7 @@ public class VerificationStatus {
 	 */
 	public void setAA(Verdict v, String reason) {
 		this.aa = v;
-		aaReason = reason;
+		this.aaReason = reason;
 	}
 
 	/**
@@ -93,14 +105,19 @@ public class VerificationStatus {
 		return bacReason;
 	}
 
+	public List<BACKey> getTriedBACEntries() {
+		return triedBACEntries;
+	}
+	
 	/**
 	 * Sets the BAC verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setBAC(Verdict v, String reason) {
+	public void setBAC(Verdict v, String reason, List<BACKey> triedBACEntries) {
 		this.bac = v;
-		bacReason = reason;
+		this.bacReason = reason;
+		this.triedBACEntries = triedBACEntries;
 	}
 
 	/**
@@ -116,14 +133,19 @@ public class VerificationStatus {
 		return csReason;
 	}
 
+	public List<Certificate> getCertificateChain() {
+		return certificateChain;
+	}
+	
 	/**
 	 * Gets the CS verdict.
 	 * 
 	 * @param v the status to set
 	 */
-	public void setCS(Verdict v, String reason) {
+	public void setCS(Verdict v, String reason, List<Certificate> certificateChain) {
 		this.cs = v;
-		csReason = reason;
+		this.csReason = reason;
+		this.certificateChain = certificateChain;
 	}
 
 	/**
@@ -147,7 +169,7 @@ public class VerificationStatus {
 	 */
 	public void setDS(Verdict v, String reason) {
 		this.ds = v;
-		dsReason = reason;
+		this.dsReason = reason;
 	}
 	
 	public Verdict getHT() {
@@ -155,12 +177,22 @@ public class VerificationStatus {
 	}
 	
 	public String getHTReason() {
-		return hashesReason;
+		return htReason;
+	}
+	
+	public Map<Integer, byte[]> getStoredHashes() {
+		return storedHashes;
+	}
+	
+	public Map<Integer, byte[]> getComputedHashes() {
+		return computedHashes;
 	}
 
-	public void setHT(Verdict v, String reason) {
+	public void setHT(Verdict v, String reason, Map<Integer, byte[]> storedHashes, Map<Integer, byte[]> computedHashes) {
 		this.ht = v;
-		hashesReason = reason;
+		this.htReason = reason;
+		this.storedHashes = storedHashes;
+		this.computedHashes = computedHashes;
 	}
 
 	/**
@@ -183,6 +215,7 @@ public class VerificationStatus {
 	 */
 	public void setEAC(Verdict v, String reason) {
 		this.eac = v;
+		this.eacReason = reason;
 	}
 	
 	/**
@@ -192,10 +225,10 @@ public class VerificationStatus {
 	 */
 	public void setAll(Verdict verdict, String reason) {
 		setAA(verdict, reason);
-		setBAC(verdict, reason);
-		setCS(verdict, reason);
+		setBAC(verdict, reason, null);
+		setCS(verdict, reason, null);
 		setDS(verdict, reason);
-		setHT(verdict, reason);
+		setHT(verdict, reason, null, null);
 		setEAC(verdict, reason);
 	}
 }

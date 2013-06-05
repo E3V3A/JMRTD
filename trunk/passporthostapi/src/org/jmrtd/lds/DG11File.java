@@ -29,6 +29,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -126,7 +127,7 @@ public class DG11File extends DataGroup {
 	 * @param custodyInformation data element
 	 */
 	public DG11File(String fullNamePrimaryIdentifier,
-			List<String> fullNamesecondaryIdentifiers,
+			List<String> fullNameSecondaryIdentifiers,
 			List<String> otherNames, String personalNumber,
 			Date fullDateOfBirth, List<String> placeOfBirth, List<String> permanentAddress,
 			String telephone, String profession, String title,
@@ -134,7 +135,7 @@ public class DG11File extends DataGroup {
 			List<String> otherValidTDNumbers, String custodyInformation) {
 		super(EF_DG11_TAG);
 		this.fullNamePrimaryIdentifier = fullNamePrimaryIdentifier;
-		this.fullNameSecondaryIdentifiers = fullNameSecondaryIdentifiers == null ? new ArrayList<String>() : new ArrayList<String>(fullNamesecondaryIdentifiers);
+		this.fullNameSecondaryIdentifiers = fullNameSecondaryIdentifiers == null ? new ArrayList<String>() : new ArrayList<String>(fullNameSecondaryIdentifiers);
 		this.otherNames = otherNames == null ? new ArrayList<String>() : new ArrayList<String>(otherNames);
 		this.personalNumber = personalNumber;
 		this.fullDateOfBirth = fullDateOfBirth;
@@ -187,7 +188,7 @@ public class DG11File extends DataGroup {
 			int countLength = tlvIn.readLength();
 			if (countLength != 1) { throw new IllegalArgumentException("Expected length 1 count length, found " + countLength); }
 			byte[] countValue = tlvIn.readValue();
-			if (countValue == null || countValue.length != 1) { throw new IllegalArgumentException("Number of content specific fields should be encoded in single byte, found " + countValue); }
+			if (countValue == null || countValue.length != 1) { throw new IllegalArgumentException("Number of content specific fields should be encoded in single byte, found " + Arrays.toString(countValue)); }
 			int count = countValue[0] & 0xFF;
 			for (int i = 0; i < count; i++) {
 				tag = tlvIn.readTag();

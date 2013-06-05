@@ -151,6 +151,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 	public DocumentViewFrame(Passport passport, ReadingMode readingMode, APDUListener apduListener) {
 		super(PASSPORT_FRAME_TITLE);
+		this.apduListener = apduListener;
 		actionMap = new ActionMap();
 		this.passport = passport;
 		Container contentPane = getContentPane();
@@ -800,7 +801,7 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try{
-					List<Certificate> chain = passport.getCertificateChain();
+					List<Certificate> chain = passport.verifySecurity().getCertificateChain();
 					JFrame certificateFrame = null;
 					if (chain != null && chain.size() > 0) {
 						certificateFrame = new CertificateChainFrame("Certificate chain", chain, true);

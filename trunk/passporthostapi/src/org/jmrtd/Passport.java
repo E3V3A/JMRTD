@@ -79,7 +79,7 @@ import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
 /**
- * A passport object is basically a collection of input streams for the
+ * This is basically a collection of input streams for the
  * data groups, combined with some status information (progress).
  * 
  * Contains methods for creating instances from scratch, from file, and from
@@ -97,6 +97,9 @@ public class Passport {
 	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	
+	private final static List<BACKey> EMPTY_TRIED_BAC_ENTRY_LIST = Collections.emptyList();
+	private final static List<Certificate> EMPTY_CERTIFICATE_CHAIN = Collections.emptyList();
 
 	private FeatureStatus featureStatus;
 	private VerificationStatus verificationStatus;
@@ -188,25 +191,27 @@ public class Passport {
 			/* Attempt to read EF.COM before BAC. */
 			new COMFile(service.getInputStream(PassportService.EF_COM));
 			featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
+			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
 		} catch (CardServiceException cse) {
+			System.out.println("DEBUG: in BAC detection logic, status word was: " + Integer.toHexString(cse.getSW()));
 			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
+			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
 		} catch (IOException e) {
 			e.printStackTrace();
-			/* NOTE: Now what? */
+			/* NOTE: Now what? Leave status as UNKNOWN. */
 		}
-
+		
 		/* Try entries from BACStore. */
-		boolean hasBAC = featureStatus.hasBAC().equals(FeatureStatus.Verdict.PRESENT);
 		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
+		boolean hasBAC = featureStatus.hasBAC().equals(FeatureStatus.Verdict.PRESENT);
 		if (hasBAC) {
 			int triesLeft = maxTriesPerBACEntry;
-			List<BACKeySpec> bacEntries = bacStore; // FIXME
 
 			/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
 			while (bacKeySpec == null && triesLeft-- > 0) {
 				/* NOTE: inner loop, loops through stored BAC entries. */
 				synchronized (bacStore) {
-					for (BACKeySpec otherBACKeySpec: bacEntries) {
+					for (BACKeySpec otherBACKeySpec: bacStore) {
 						try {
 							if (!triedBACEntries.contains(otherBACKeySpec)) {
 								LOGGER.info("Trying BAC: " + otherBACKeySpec);
@@ -224,17 +229,21 @@ public class Passport {
 			}
 		}
 		if (hasBAC && bacKeySpec == null) {
-			/* Passport requires BAC, but we failed to authenticate. */
-			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed");
+			/* Document requires BAC, but we failed to authenticate. */
+			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
 			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 		}
 
+		if (hasBAC && bacKeySpec != null) {
+			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
+		}
+		
 		this.lds = new LDS();
 
 		/* Pre-read these files that are always present. */
 		COMFile comFile = null;
-		DG1File dg1File = null;
 		SODFile sodFile = null;
+		DG1File dg1File = null;
 
 		try {
 			CardFileInputStream comIn = service.getInputStream(PassportService.EF_COM);
@@ -254,8 +263,11 @@ public class Passport {
 		}
 
 		/* We get the list of DGs from EF.SOd, not from EF.COM. */
-		List<Integer> dgNumbers = new ArrayList<Integer>(sodFile.getDataGroupHashes().keySet());
-		Collections.sort(dgNumbers);
+		List<Integer> dgNumbers = new ArrayList<Integer>();
+		if (sodFile != null) {
+			dgNumbers.addAll(sodFile.getDataGroupHashes().keySet());
+		}
+		Collections.sort(dgNumbers); /* NOTE: need to sort it, since we get keys as a set. */
 
 		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
 
@@ -294,6 +306,7 @@ public class Passport {
 			/* Try to do EAC. */
 			for (KeyStore cvcaStore: cvcaKeyStores) {
 				try {
+					/* FIXME: shouldn't we check if that store holds the correct authority? */
 					doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
 					break;
 				} catch (Exception e) {
@@ -609,7 +622,14 @@ public class Passport {
 		putFile(PassportService.EF_DG15, dg15file.getEncoded());
 	}
 
+	/**
+	 * Gets the supported features (such as: BAC, AA, EAC) as
+	 * discovered during initialization of this document.
+	 * 
+	 * @return the supported features
+	 */
 	public FeatureStatus getFeatures() {
+		/* The feature status has been created in constructor. */
 		return featureStatus;
 	}
 	
@@ -618,10 +638,11 @@ public class Passport {
 	 * Adjusts the verificationIndicator to show the user the verification status.
 	 * 
 	 * Assumes passport object is non-null and read from the service.
+	 * 
+	 * @return the security status
 	 */
 	public VerificationStatus verifySecurity() {
-		verifyBAC();
-		verifyEAC();
+		 /* NOTE: Since 0.4.9 checkAA and checkEAC were removed. AA is always checked as part of the prelude. */
 
 		/* COM DG list versus SOd DG list. */
 		if (!verifyCOMSOd(lds, verificationStatus)) { return verificationStatus; }
@@ -633,26 +654,31 @@ public class Passport {
 		verifyDS();
 		verifyCS();
 
-		/*
-		 * FIXME: The verifyAA call used to be right after verifyEAC
-		 * but that seems to generate a security status not satisfied
-		 * if in SAFE_MODE on my EAC NIK. It seems to work fine in
-		 * PROGRESSIVE_MODE though. Some kind of synchronization error?
-		 * -- MO
-		 */
-
 		return verificationStatus;
 	}
 
 	/**
-	 * Builds certificate chain from SOd to CSCA anchor.
-	 * Uses PKIX algorithm.
+	 * Adds an authentication listener to this document.
+	 * 
+	 * @param l an authentication listener
+	 */
+	public void addAuthenticationListener(AuthListener l) {
+		if (service != null) {
+			service.addAuthenticationListener(l);
+		}
+	}
+
+	/* ONLY PRIVATE METHODS BELOW. */
+
+	/**
+	 * Builds certificate chain from doc signing certificate embedded in
+	 * SOd to CSCA anchor. Uses PKIX algorithm.
 	 * 
 	 * @return a list of certificates
 	 * 
 	 * @throws GeneralSecurityException if could not be checked
 	 */
-	public List<Certificate> getCertificateChain() throws GeneralSecurityException {
+	private List<Certificate> getCertificateChain() throws GeneralSecurityException {
 		/* Get doc signing certificate. */
 		SODFile sod = lds.getSODFile();
 		X500Principal sodIssuer = sod.getIssuerX500Principal();
@@ -667,7 +693,7 @@ public class Passport {
 
 		if (docSigningCertificate == null) {
 			LOGGER.warning("Error getting document signing certificate from EF.SOd");
-			return Collections.emptyList();
+			return EMPTY_CERTIFICATE_CHAIN;
 		}
 
 		/* Get trust anchors. */
@@ -692,20 +718,7 @@ public class Passport {
 		/* Use PKIX to construct chain. */
 		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
 	}
-
-	/**
-	 * Adds an authentication listener to this document.
-	 * 
-	 * @param l an authentication listener
-	 */
-	public void addAuthenticationListener(AuthListener l) {
-		if (service != null) {
-			service.addAuthenticationListener(l);
-		}
-	}
-
-	/* ONLY PRIVATE METHODS BELOW. */
-
+	
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
@@ -740,7 +753,7 @@ public class Passport {
 						LOGGER.fine("found a key, privateKey = " + privateKey);
 					}
 					if (privateKey == null || chain == null) {
-						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + chain + ", privateKey = " + privateKey);
+						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + Arrays.toString(chain) + ", privateKey = " + privateKey);
 						continue;
 					}
 					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
@@ -823,27 +836,11 @@ public class Passport {
 		return null;
 	}
 
-	/** Checks whether BAC was used. */
-	private void verifyBAC() {
-		if (bacKeySpec != null) {
-			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec);
-		} else {
-			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "BAC was not used");
-		}
-	}
-
-	/** Checks whether EAC was used. */
-	private void verifyEAC() {
-		if (!hasEACSupport) {
-			verificationStatus.setEAC(VerificationStatus.Verdict.NOT_PRESENT, "EAC not present");
-		}
-		/* NOTE: If EAC was performed, verification status already updated! */
-	}
-
 	/** Check active authentication. */
 	private void verifyAA(PassportService service, DG15File dg15) {
 		if (dg15 == null || service == null) {
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
+			return;
 		}
 		try {
 			PublicKey pubKey = dg15.getPublicKey();
@@ -875,7 +872,7 @@ public class Passport {
 			LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
 					+ "datagroups reported in SOd = " + sodDGList + "\n"
 					+ "datagroups reported in COM = " + comDGList);
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd");
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd", sod.getDataGroupHashes(), null);
 			return false; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 
@@ -918,44 +915,42 @@ public class Passport {
 
 	/**
 	 * Checks the certificate chain.
-	 * 
-	 * FIXME: Rename this method (it does more than just CS -> DS checking).
 	 */
 	private void verifyCS() {
 		try {
-			List<Certificate> chainCertificates = getCertificateChain();
-			if (chainCertificates == null) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Unable to build certificate chain");
+			List<Certificate> chain = getCertificateChain();
+			if (chain == null) {
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Unable to build certificate chain", chain);
 				return;
 			}
 
-			int chainDepth = chainCertificates.size();
+			int chainDepth = chain.size();
 			if (chainDepth < 1) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth, chain);
 				return;
 			}
 
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
 			if (chainDepth == 1) {
 				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Document signer from store");
+				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Document signer from store", chain);
 			} else if (chainDepth == 2) {
-				X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				X509Certificate countrySigningCertificate = (X509Certificate)chainCertificates.get(1);
+				X509Certificate docSigningCertificate = (X509Certificate)chain.get(0);
+				X509Certificate countrySigningCertificate = (X509Certificate)chain.get(1);
 				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
-				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked"); /* NOTE: No exception... verification succeeded! */
+				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked", chain); /* NOTE: No exception... verification succeeded! */
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
-			verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Signature failed");
+			verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Signature failed", EMPTY_CERTIFICATE_CHAIN);
 		}
 	}
 
 	/**
 	 * Checks hashes in the SOd correspond to hashes we compute.
 	 * 
-	 * TODO: return more status: which DGs have mismatches, which DGs could not be read, etc. Currently reason is abused for this (and checking stops after first mismatch).
+	 * TODO: return more status: which DGs have mismatches, which DGs could not be read, etc. Currently reason is abused for this.
 	 * 
 	 * @param lds
 	 * @param verificationStatus
@@ -976,14 +971,15 @@ public class Passport {
 				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"");
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", sod.getDataGroupHashes(), null);
 		}
 
 		/* Compare stored hashes to computed hashes. */
-		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
-		for (int dgNumber: hashes.keySet()) {
+		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
+		Map<Integer, byte[]> computedHashes = new TreeMap<Integer, byte[]>();
+		for (int dgNumber: storedHashes.keySet()) {
 			short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
-			byte[] storedHash = hashes.get(dgNumber);
+			byte[] storedHash = storedHashes.get(dgNumber);
 
 			digest.reset();
 
@@ -1009,24 +1005,25 @@ public class Passport {
 				continue;
 			}
 			if (ex != null) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception");
-				return false;
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", storedHashes, computedHashes);
 			}
 
 			try {
 				byte[] computedHash = digest.digest(dgBytes);
+				computedHashes.put(dgNumber, computedHash);
 
 				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash mismatch");
+					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash mismatch", storedHashes, computedHashes);
 				}
 			} catch (Exception ioe) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception");
-				return false;
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception", storedHashes, computedHashes);
 			}
 		}
-
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
-			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "Hashes are identical");
+			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "Hashes are identical", storedHashes, computedHashes);
+		} else {
+			/* Update storedHashes and computedHashes. */
+			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), storedHashes, computedHashes);
 		}
 		return true;
 	}
