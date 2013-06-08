@@ -245,7 +245,7 @@ SCUBA
 + Support interface for extended length APDU checking, needed for EAC (in API, not yet implemented)
 
 Dependencies
-+ Check latest Bouncy Castle. (Is actually 1.48, but we're back to 1.47 for now, because of Spongy on Android.)
++ Check latest Bouncy Castle. (Is actually 1.49, but we're back to 1.47 for now, because of Spongy on Android.)
 
 Code quality
 + Check unit tests.
