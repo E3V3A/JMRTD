@@ -23,8 +23,11 @@
 package org.jmrtd;
 
 import java.security.cert.Certificate;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+
+import net.sourceforge.scuba.util.Hex;
 
 /**
  * A data type for communicating document verification check information.
@@ -58,7 +61,7 @@ public class VerificationStatus {
 
 	/* By products of the verification process that may be useful for relying parties to display. */
 	private List<BACKey> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
-	private Map<Integer, byte[]> storedHashes, computedHashes; /* As a result of HT testing, this contains stored and computed hashes. */
+	private Map<Integer, HashMatchResult> hashResults; /* As a result of HT testing, this contains stored and computed hashes. */
 	private List<Certificate> certificateChain; /* As a result of CS testing, this contains certificate chain from DSC to CSCA. */
 	
 	/**
@@ -180,19 +183,14 @@ public class VerificationStatus {
 		return htReason;
 	}
 	
-	public Map<Integer, byte[]> getStoredHashes() {
-		return storedHashes;
+	public Map<Integer, HashMatchResult> getHashResults() {
+		return hashResults;
 	}
 	
-	public Map<Integer, byte[]> getComputedHashes() {
-		return computedHashes;
-	}
-
-	public void setHT(Verdict v, String reason, Map<Integer, byte[]> storedHashes, Map<Integer, byte[]> computedHashes) {
+	public void setHT(Verdict v, String reason, Map<Integer, HashMatchResult> hashResults) {
 		this.ht = v;
 		this.htReason = reason;
-		this.storedHashes = storedHashes;
-		this.computedHashes = computedHashes;
+		this.hashResults = hashResults;
 	}
 
 	/**
@@ -228,7 +226,57 @@ public class VerificationStatus {
 		setBAC(verdict, reason, null);
 		setCS(verdict, reason, null);
 		setDS(verdict, reason);
-		setHT(verdict, reason, null, null);
+		setHT(verdict, reason, null);
 		setEAC(verdict, reason);
+	}
+	
+	/**
+	 * The result of matching the stored and computed hashes of a single datagroup.
+	 * 
+	 * FIXME: perhaps that boolean should be more like verdict, including a reason for mismatch if known (e.g. access denied for EAC datagroup) -- MO
+	 */
+	public class HashMatchResult {
+	
+		private byte[] storedHash, computedHash;
+		
+		/**
+		 * Use <code>null</code> for computed hash if access was denied.
+		 * 
+		 * @param storedHash
+		 * @param computedHash
+		 */
+		public HashMatchResult(byte[] storedHash, byte[] computedHash) {
+			this.storedHash = storedHash;
+			this.computedHash = computedHash;
+		}
+		
+		public byte[] getStoredHash() {
+			return storedHash;
+		}
+		
+		public byte[] getComputedHash() {
+			return computedHash;
+		}
+		
+		public boolean isMatch() {
+			return Arrays.equals(storedHash, computedHash);
+		}
+		
+		public String toString() {
+			return "HashResult [" + isMatch() + ", stored: " + Hex.bytesToHexString(storedHash) + ", computed: " + Hex.bytesToHexString(computedHash);
+		}
+		
+		public int hashCode() {
+			return 11 + 3 * Arrays.hashCode(storedHash) + 5 * Arrays.hashCode(computedHash);
+		}
+		
+		public boolean equals(Object other) {
+			if (other == null) { return false; }
+			if (other == this) { return true; }
+			if (!other.getClass().equals(this.getClass())) { return false; }
+			HashMatchResult otherHashResult = (HashMatchResult)other;
+			return Arrays.equals(otherHashResult.computedHash, computedHash)
+					&& Arrays.equals(otherHashResult.storedHash, storedHash);
+		}
 	}
 }

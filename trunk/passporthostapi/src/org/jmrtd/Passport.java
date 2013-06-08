@@ -642,11 +642,9 @@ public class Passport {
 	 * @return the security status
 	 */
 	public VerificationStatus verifySecurity() {
-		 /* NOTE: Since 0.4.9 checkAA and checkEAC were removed. AA is always checked as part of the prelude. */
-
-		/* COM DG list versus SOd DG list. */
-		if (!verifyCOMSOd(lds, verificationStatus)) { return verificationStatus; }
-
+		/* NOTE: Since 0.4.9 checkAA and checkEAC were removed. AA is always checked as part of the prelude. */
+		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now. */
+		
 		/* Verify hashes. */
 		verifyHashes(lds, verificationStatus);
 		//		if (!verifyHashes(lds)) { return verificationStatus; }
@@ -860,26 +858,6 @@ public class Passport {
 	}
 
 	/**
-	 *  Jeroen van Beek sanity check.
-	 */
-	private boolean verifyCOMSOd(LDS lds, VerificationStatus verificationStatus) {
-		COMFile com = lds.getCOMFile();
-		SODFile sod = lds.getSODFile();
-
-		List<Integer> comDGList = getCOMDGList(com);
-		List<Integer> sodDGList = getSODDGList(sod);
-		if (!sodDGList.equals(comDGList)) {
-			LOGGER.warning("Found mismatch between EF.COM and EF.SOd:\n"
-					+ "datagroups reported in SOd = " + sodDGList + "\n"
-					+ "datagroups reported in COM = " + comDGList);
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Mismatch between DG lists in EF.COM and EF.SOd", sod.getDataGroupHashes(), null);
-			return false; /* NOTE: Serious enough to not perform other checks, leave method. */
-		}
-
-		return true;
-	}
-
-	/**
 	 * Checks the security object's signature.
 	 * 
 	 * TODO: Check the cert stores (notably PKD) to fetch document signer certificate (if not embedded in SOd) and check its validity before checking the signature.
@@ -971,12 +949,13 @@ public class Passport {
 				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
 			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", sod.getDataGroupHashes(), null);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
 		}
 
 		/* Compare stored hashes to computed hashes. */
+		Map<Integer, VerificationStatus.HashMatchResult> hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
+		
 		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
-		Map<Integer, byte[]> computedHashes = new TreeMap<Integer, byte[]>();
 		for (int dgNumber: storedHashes.keySet()) {
 			short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
 			byte[] storedHash = storedHashes.get(dgNumber);
@@ -998,54 +977,57 @@ public class Passport {
 
 			if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
+				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 				continue;
 			}
 			if (dgIn == null) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
+				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 				continue;
 			}
 			if (ex != null) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", storedHashes, computedHashes);
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", hashResults);
 			}
 
 			try {
 				byte[] computedHash = digest.digest(dgBytes);
-				computedHashes.put(dgNumber, computedHash);
+				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, computedHash));
 
 				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash mismatch", storedHashes, computedHashes);
+					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash mismatch", hashResults);
 				}
 			} catch (Exception ioe) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception", storedHashes, computedHashes);
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception", hashResults);
 			}
 		}
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
-			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "Hashes are identical", storedHashes, computedHashes);
+			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "Hashes are identical", hashResults);
 		} else {
 			/* Update storedHashes and computedHashes. */
-			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), storedHashes, computedHashes);
+			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
 		}
+		System.out.println("DEBUG: verificationStatus.hashes = \n" + verificationStatus.getHashResults());
 		return true;
 	}
 
-	private List<Integer> getCOMDGList(COMFile com) {
-		List<Integer> comDGList = new ArrayList<Integer>();
-		for(Integer tag : com.getTagList()) {
-			try {
-				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
-				comDGList.add(dgNumber);
-			} catch (NumberFormatException nfe) {
-				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
-			}
-		}
-		Collections.sort(comDGList);
-		return comDGList;
-	}
-
-	private List<Integer> getSODDGList(SODFile sod) {
-		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
-		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
-		Collections.sort(sodDGList);
-		return sodDGList;
-	}
+//	private List<Integer> getCOMDGList(COMFile com) {
+//		List<Integer> comDGList = new ArrayList<Integer>();
+//		for(Integer tag : com.getTagList()) {
+//			try {
+//				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+//				comDGList.add(dgNumber);
+//			} catch (NumberFormatException nfe) {
+//				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
+//			}
+//		}
+//		Collections.sort(comDGList);
+//		return comDGList;
+//	}
+//
+//	private List<Integer> getSODDGList(SODFile sod) {
+//		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
+//		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
+//		Collections.sort(sodDGList);
+//		return sodDGList;
+//	}
 }
