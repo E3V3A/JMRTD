@@ -39,6 +39,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
 import java.security.cert.Certificate;
@@ -46,15 +47,19 @@ import java.security.cert.CertificateException;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -108,7 +113,7 @@ public class Passport {
 
 	private LDS lds;
 
-	private boolean isPKIXRevocationCheckingEnabled = false;
+	private static final boolean IS_PKIX_REVOCATION_CHECING_ENABLED = false;
 	private boolean hasEACSupport = false;
 
 	private PrivateKey docSigningPrivateKey;
@@ -244,6 +249,7 @@ public class Passport {
 		COMFile comFile = null;
 		SODFile sodFile = null;
 		DG1File dg1File = null;
+		Collection<Integer> dgNumbersAlreadyRead = new TreeSet<Integer>();
 
 		try {
 			CardFileInputStream comIn = service.getInputStream(PassportService.EF_COM);
@@ -257,6 +263,7 @@ public class Passport {
 			CardFileInputStream dg1In = service.getInputStream(PassportService.EF_DG1);
 			lds.add(PassportService.EF_DG1, dg1In, dg1In.getLength());
 			dg1File = lds.getDG1File();
+			dgNumbersAlreadyRead.add(1);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			LOGGER.warning("Could not read file");
@@ -285,6 +292,7 @@ public class Passport {
 				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
 				lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
 				dg14File = lds.getDG14File();
+				dgNumbersAlreadyRead.add(14);
 
 				/* Now try to deal with EF.CVCA */
 				cvcaFID = PassportService.EF_CVCA;
@@ -328,6 +336,7 @@ public class Passport {
 				CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
 				lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
 				DG15File dg15File = lds.getDG15File();
+				dgNumbersAlreadyRead.add(15);
 				verifyAA(service, dg15File);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
@@ -336,9 +345,9 @@ public class Passport {
 			}
 		}
 
-		/* Add remaining data groups to LDS. */
+		/* Add remaining datagroups to LDS. */
 		for (int dgNumber: dgNumbers) {
-			if (dgNumber == 1 || dgNumber == 14) { continue; }
+			if (dgNumbersAlreadyRead.contains(dgNumber)) { continue; }
 			if ((dgNumber == 3 || dgNumber == 4) && !verificationStatus.getEAC().equals(VerificationStatus.Verdict.SUCCEEDED)) { continue; }
 			try {
 				short fid = LDSFileUtil.lookupFIDByDataGroupNumber(dgNumber);
@@ -676,50 +685,12 @@ public class Passport {
 	 * 
 	 * @throws GeneralSecurityException if could not be checked
 	 */
-	private List<Certificate> getCertificateChain() throws GeneralSecurityException {
-		/* Get doc signing certificate. */
-		X509Certificate docSigningCertificate = null;
-		X500Principal sodIssuer = null;
-		BigInteger sodSerialNumber = null;
-		try {
-			SODFile sod = lds.getSODFile();
-			sodIssuer = sod.getIssuerX500Principal();
-			sodSerialNumber = sod.getSerialNumber();
-			docSigningCertificate = sod.getDocSigningCertificate();
-		} catch (IOException ioe) {
-			LOGGER.severe("Could not read EF.SOd");
-		}  catch (Exception e) {
-			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
-			// FIXME: search for it in cert stores?
-		}
-
-		if (docSigningCertificate == null) {
-			LOGGER.warning("Error getting document signing certificate from EF.SOd");
-			return EMPTY_CERTIFICATE_CHAIN;
-		}
-
-		/* Get trust anchors. */
-		List<CertStore> cscaStores = trustManager.getCSCAStores();
-		if (cscaStores == null) {
-			LOGGER.warning("No certificate stores found.");
-			return Collections.singletonList((Certificate)docSigningCertificate);
-		}
-
-		if (docSigningCertificate != null) {
-			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			if (sodIssuer != null && !sodIssuer.equals(docIssuer)) {
-				LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
-				return Collections.singletonList((Certificate)docSigningCertificate);
-			}
-			BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
-			if (sodSerialNumber != null && !sodSerialNumber.equals(docSerialNumber)) {
-				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
-			}
-		}
-
-		/* Use PKIX to construct chain. */
-		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
-	}
+	//	private List<Certificate> getCertificateChain(SODFile sod, List<CertStore> cscaStores, Set<TrustAnchor> cscaTrustAnchors) throws GeneralSecurityException {
+	//
+	//
+	//		/* Use PKIX to construct chain. */
+	//		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber, cscaStores, cscaTrustAnchors);
+	//	}
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
@@ -796,9 +767,13 @@ public class Passport {
 	 * 
 	 * @return the certificate chain
 	 */
-	private List<Certificate> getCertificateChain(X509Certificate docSigningCertificate, final X500Principal sodIssuer, final BigInteger sodSerialNumber) {
+	private static List<Certificate> getCertificateChain(X509Certificate docSigningCertificate,
+			final X500Principal sodIssuer, final BigInteger sodSerialNumber,
+			List<CertStore> cscaStores, Set<TrustAnchor> cscaTrustAnchors) {
+		List<Certificate> chain = new ArrayList<Certificate>();
 		X509CertSelector selector = new X509CertSelector();
 		try {
+
 			if (docSigningCertificate != null) {
 				selector.setCertificate(docSigningCertificate);
 			} else {
@@ -810,32 +785,44 @@ public class Passport {
 			CertStore docStore = CertStore.getInstance("Collection", docStoreParams);
 
 			CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BC_PROVIDER);
-			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(trustManager.getCSCAAnchors(), selector);
+			PKIXBuilderParameters  buildParams = new PKIXBuilderParameters(cscaTrustAnchors, selector);
 			buildParams.addCertStore(docStore);
-			for (CertStore trustStore: trustManager.getCSCAStores()) {
+			for (CertStore trustStore: cscaStores) {
 				buildParams.addCertStore(trustStore);
 			}
-			buildParams.setRevocationEnabled(isPKIXRevocationCheckingEnabled); /* NOTE: set to false for checking disabled. */
+			buildParams.setRevocationEnabled(IS_PKIX_REVOCATION_CHECING_ENABLED); /* NOTE: set to false for checking disabled. */
 			Security.addProvider(BC_PROVIDER); /* DEBUG: needed, or builder will throw a runtime exception. FIXME! */
-			PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(buildParams);
-			if (result == null) { return null; }
-			CertPath chain = result.getCertPath();
-			List<Certificate> chainCertificates = new ArrayList<Certificate>(chain.getCertificates());
-			if (chainCertificates.size() > 0 && docSigningCertificate != null && !chainCertificates.contains(docSigningCertificate)) {
-				/* NOTE: if target certificate not in list, we add it ourselves. */
-				LOGGER.warning("Adding start certificate after PKIXBuilder finished");
-				chainCertificates.add(0, docSigningCertificate);
+			PKIXCertPathBuilderResult result = null;
+
+			try {
+				result = (PKIXCertPathBuilderResult)builder.build(buildParams);
+			} catch (CertPathBuilderException cpbe) {
+				/* NOTE: ignore, result remain null */
 			}
-			Certificate anchorCert = result.getTrustAnchor().getTrustedCert();
-			if (chainCertificates.size() > 0 && anchorCert != null && !chainCertificates.contains(anchorCert)) {
-				chainCertificates.add(anchorCert);
-			}			
-			return chainCertificates;
+			if (result != null) {
+				CertPath pkixCertPath = result.getCertPath();
+				if (pkixCertPath != null) {
+					chain.addAll(pkixCertPath.getCertificates());
+				}
+			}
+			if (docSigningCertificate != null && !chain.contains(docSigningCertificate)) {
+				/* NOTE: if doc signing certificate not in list, we add it ourselves. */
+				LOGGER.warning("Adding doc signing certificate after PKIXBuilder finished");
+				chain.add(0, docSigningCertificate);
+			}
+			if (result != null) {
+				Certificate trustAnchorCertificate = result.getTrustAnchor().getTrustedCert();
+				if (trustAnchorCertificate != null && !chain.contains(trustAnchorCertificate)) {
+					/* NOTE: if trust anchor not in list, we add it ourselves. */
+					LOGGER.warning("Adding trust anchor certificate after PKIXBuilder finished");
+					chain.add(trustAnchorCertificate);
+				}
+			}
 		} catch (Exception e) {
-			// e.printStackTrace();
+			e.printStackTrace();
 			LOGGER.info("Building a chain failed (" + e.getMessage() + ").");
 		}
-		return null;
+		return chain;
 	}
 
 	/** Check active authentication. */
@@ -900,39 +887,104 @@ public class Passport {
 	 */
 	private void verifyCS() {
 		try {
-			List<Certificate> chain = getCertificateChain();
-			if (chain == null) {
+			/* Get EF.SOd. */
+			SODFile sod = null;
+			try {
+				sod = lds.getSODFile();
+			} catch (IOException ioe) {
+				LOGGER.severe("Could not read EF.SOd");
+			}
+			List<Certificate> chain = new ArrayList<Certificate>();
+
+			if (sod == null) {
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Unable to build certificate chain", chain);
 				return;
 			}
 
-			int chainDepth = chain.size();
-			if (chainDepth < 1) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not find certificate in stores to check target certificate. Chain depth = " + chainDepth, chain);
+			/* Get doc signing certificate and issuer info. */
+			X509Certificate docSigningCertificate = null;
+			X500Principal sodIssuer = null;
+			BigInteger sodSerialNumber = null;
+			try {
+				sodIssuer = sod.getIssuerX500Principal();
+				sodSerialNumber = sod.getSerialNumber();
+				docSigningCertificate = sod.getDocSigningCertificate();
+			}  catch (Exception e) {
+				LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
+				// FIXME: search for it in cert stores?
+			}
+
+			if (docSigningCertificate != null) {
+				chain.add(docSigningCertificate);
+			} else {
+				LOGGER.warning("Error getting document signing certificate from EF.SOd");
+			}
+
+			/* Get trust anchors. */
+			List<CertStore> cscaStores = trustManager.getCSCAStores();
+			if (cscaStores == null || cscaStores.size() <= 0) {
+				LOGGER.warning("No CSCA certificate stores found.");
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA certificate stores found", chain);
+			}
+			Set<TrustAnchor> cscaTrustAnchors = trustManager.getCSCAAnchors();
+			if (cscaTrustAnchors == null || cscaTrustAnchors.size() <= 0) {
+				LOGGER.warning("No CSCA trust anchors found.");
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA trust anchors found", chain);
+			}
+
+			/* Optional internal EF.SOd consistency check. */
+			if (docSigningCertificate != null) {
+				X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
+				if (sodIssuer != null && !sodIssuer.equals(docIssuer)) {
+					LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
+				}
+				BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
+				if (sodSerialNumber != null && !sodSerialNumber.equals(docSerialNumber)) {
+					LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
+				}
+			}
+
+			/* Run PKIX algorithm to build chain to any trust anchor. Add certificates to our chain. */
+			List<Certificate> pkixChain = getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber, cscaStores, cscaTrustAnchors);
+			if (pkixChain == null) {
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor (pkixChain == null)", chain);
 				return;
 			}
 
-			/* FIXME: This is no longer necessary after PKIX has done its job? */
-			if (chainDepth == 1) {
-				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Document signer from store", chain);
-			} else if (chainDepth == 2) {
-				X509Certificate docSigningCertificate = (X509Certificate)chain.get(0);
-				X509Certificate countrySigningCertificate = (X509Certificate)chain.get(1);
-				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
-				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked", chain); /* NOTE: No exception... verification succeeded! */
+			for (Certificate certificate: pkixChain) {
+				if (certificate.equals(docSigningCertificate)) { continue; } /* Ignore DS certificate, which is already in chain. */
+				chain.add(certificate);
 			}
+
+			int chainDepth = chain.size();
+			if (chainDepth <= 1) {
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor", chain);
+				return;
+			}
+			if (chainDepth > 1 && verificationStatus.getCS().equals(VerificationStatus.Verdict.UNKNOWN)) {
+				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Found a chain to a trust anchor", chain);
+			}
+
+			/* FIXME: This is no longer necessary after PKIX has done its job? */
+			//			if (chainDepth == 1) {
+			//				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
+			//				// verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Document signer from store", chain);
+			//			} else if (chainDepth == 2) {
+			//				X509Certificate docSigningCertificate = (X509Certificate)chain.get(0);
+			//				X509Certificate countrySigningCertificate = (X509Certificate)chain.get(1);
+			//				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
+			//				
+			//				/* NOTE: No exception... verification succeeded! */
+			//				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked", chain);
+			//			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			LOGGER.warning("CSCA certificate check failed!" + e.getMessage());
 			verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Signature failed", EMPTY_CERTIFICATE_CHAIN);
 		}
 	}
 
 	/**
 	 * Checks hashes in the SOd correspond to hashes we compute.
-	 * 
-	 * TODO: return more status: which DGs have mismatches, which DGs could not be read, etc. Currently reason is abused for this.
 	 * 
 	 * @param lds
 	 * @param verificationStatus
@@ -947,7 +999,7 @@ public class Passport {
 			LOGGER.severe("Could not read EF.SOd");
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Could not read EF.SOd", null);
 		}
-		
+
 		/* Initialize hash. */
 		MessageDigest digest = null;
 		String digestAlgorithm = sod.getDigestAlgorithm();
@@ -976,22 +1028,26 @@ public class Passport {
 			InputStream dgIn = null;
 			Exception ex = null;
 			try {
-				dgBytes = new byte[lds.getLength(fid)];
-				dgIn = lds.getInputStream(fid);
-				DataInputStream dgDataIn = new DataInputStream(dgIn);
-				dgDataIn.readFully(dgBytes);
+				int length = lds.getLength(fid);
+				if (length > 0) {
+					dgBytes = new byte[length];
+					dgIn = lds.getInputStream(fid);
+					DataInputStream dgDataIn = new DataInputStream(dgIn);
+					dgDataIn.readFully(dgBytes);
+				}
 			} catch(Exception e) {
+				e.printStackTrace();
 				dgIn = null;
 				ex = e;
 			}
 
 			if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because EAC failed.");
+				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
 				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 				continue;
 			}
 			if (dgIn == null) {
-				LOGGER.warning("Skipping DG" + dgNumber + " during DS verification because file could not be read.");
+				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because file could not be read.");
 				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 				continue;
 			}
@@ -1004,14 +1060,14 @@ public class Passport {
 				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, computedHash));
 
 				if (!Arrays.equals(storedHash, computedHash)) {
-					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash mismatch", hashResults);
+					verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash mismatch", hashResults);
 				}
 			} catch (Exception ioe) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " hash failed due to exception", hashResults);
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash failed due to exception", hashResults);
 			}
 		}
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
-			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "Hashes are identical", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "All hashes match", hashResults);
 		} else {
 			/* Update storedHashes and computedHashes. */
 			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
