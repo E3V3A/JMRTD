@@ -97,7 +97,7 @@ public class Passport {
 	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-	
+
 	private final static List<BACKey> EMPTY_TRIED_BAC_ENTRY_LIST = Collections.emptyList();
 	private final static List<Certificate> EMPTY_CERTIFICATE_CHAIN = Collections.emptyList();
 
@@ -200,7 +200,7 @@ public class Passport {
 			e.printStackTrace();
 			/* NOTE: Now what? Leave status as UNKNOWN. */
 		}
-		
+
 		/* Try entries from BACStore. */
 		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
 		boolean hasBAC = featureStatus.hasBAC().equals(FeatureStatus.Verdict.PRESENT);
@@ -237,7 +237,7 @@ public class Passport {
 		if (hasBAC && bacKeySpec != null) {
 			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
 		}
-		
+
 		this.lds = new LDS();
 
 		/* Pre-read these files that are always present. */
@@ -632,7 +632,7 @@ public class Passport {
 		/* The feature status has been created in constructor. */
 		return featureStatus;
 	}
-	
+
 	/**
 	 * Verifies the document using the security related mechanisms.
 	 * Adjusts the verificationIndicator to show the user the verification status.
@@ -644,7 +644,7 @@ public class Passport {
 	public VerificationStatus verifySecurity() {
 		/* NOTE: Since 0.4.9 checkAA and checkEAC were removed. AA is always checked as part of the prelude. */
 		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now. */
-		
+
 		/* Verify hashes. */
 		verifyHashes(lds, verificationStatus);
 		//		if (!verifyHashes(lds)) { return verificationStatus; }
@@ -678,13 +678,17 @@ public class Passport {
 	 */
 	private List<Certificate> getCertificateChain() throws GeneralSecurityException {
 		/* Get doc signing certificate. */
-		SODFile sod = lds.getSODFile();
-		X500Principal sodIssuer = sod.getIssuerX500Principal();
-		BigInteger sodSerialNumber = sod.getSerialNumber();
 		X509Certificate docSigningCertificate = null;
+		X500Principal sodIssuer = null;
+		BigInteger sodSerialNumber = null;
 		try {
+			SODFile sod = lds.getSODFile();
+			sodIssuer = sod.getIssuerX500Principal();
+			sodSerialNumber = sod.getSerialNumber();
 			docSigningCertificate = sod.getDocSigningCertificate();
-		} catch (Exception e) {
+		} catch (IOException ioe) {
+			LOGGER.severe("Could not read EF.SOd");
+		}  catch (Exception e) {
 			LOGGER.warning("Error getting document signing certificate: " + e.getMessage());
 			// FIXME: search for it in cert stores?
 		}
@@ -703,12 +707,12 @@ public class Passport {
 
 		if (docSigningCertificate != null) {
 			X500Principal docIssuer = docSigningCertificate.getIssuerX500Principal();
-			if (!sodIssuer.equals(docIssuer)) {
+			if (sodIssuer != null && !sodIssuer.equals(docIssuer)) {
 				LOGGER.severe("Security object issuer principal is different from embedded DS certificate issuer!");
-				return null;
+				return Collections.singletonList((Certificate)docSigningCertificate);
 			}
 			BigInteger docSerialNumber = docSigningCertificate.getSerialNumber();
-			if (!sodSerialNumber.equals(docSerialNumber)) {
+			if (sodSerialNumber != null && !sodSerialNumber.equals(docSerialNumber)) {
 				LOGGER.warning("Security object serial number is different from embedded DS certificate serial number!");
 			}
 		}
@@ -716,7 +720,7 @@ public class Passport {
 		/* Use PKIX to construct chain. */
 		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber);
 	}
-	
+
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
@@ -935,9 +939,15 @@ public class Passport {
 	 * 
 	 * @return whether an error was found (could be reason to abort the verification as a whole)
 	 */
-	private boolean verifyHashes(LDS lds, VerificationStatus verificationStatus) {
-		SODFile sod = lds.getSODFile();
-
+	private void verifyHashes(LDS lds, VerificationStatus verificationStatus) {
+		SODFile sod = null;
+		try {
+			sod = lds.getSODFile();
+		} catch (IOException ioe) {
+			LOGGER.severe("Could not read EF.SOd");
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Could not read EF.SOd", null);
+		}
+		
 		/* Initialize hash. */
 		MessageDigest digest = null;
 		String digestAlgorithm = sod.getDigestAlgorithm();
@@ -954,7 +964,7 @@ public class Passport {
 
 		/* Compare stored hashes to computed hashes. */
 		Map<Integer, VerificationStatus.HashMatchResult> hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
-		
+
 		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
 		for (int dgNumber: storedHashes.keySet()) {
 			short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
@@ -1006,28 +1016,26 @@ public class Passport {
 			/* Update storedHashes and computedHashes. */
 			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
 		}
-		System.out.println("DEBUG: verificationStatus.hashes = \n" + verificationStatus.getHashResults());
-		return true;
 	}
 
-//	private List<Integer> getCOMDGList(COMFile com) {
-//		List<Integer> comDGList = new ArrayList<Integer>();
-//		for(Integer tag : com.getTagList()) {
-//			try {
-//				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
-//				comDGList.add(dgNumber);
-//			} catch (NumberFormatException nfe) {
-//				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
-//			}
-//		}
-//		Collections.sort(comDGList);
-//		return comDGList;
-//	}
-//
-//	private List<Integer> getSODDGList(SODFile sod) {
-//		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
-//		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
-//		Collections.sort(sodDGList);
-//		return sodDGList;
-//	}
+	//	private List<Integer> getCOMDGList(COMFile com) {
+	//		List<Integer> comDGList = new ArrayList<Integer>();
+	//		for(Integer tag : com.getTagList()) {
+	//			try {
+	//				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+	//				comDGList.add(dgNumber);
+	//			} catch (NumberFormatException nfe) {
+	//				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
+	//			}
+	//		}
+	//		Collections.sort(comDGList);
+	//		return comDGList;
+	//	}
+	//
+	//	private List<Integer> getSODDGList(SODFile sod) {
+	//		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
+	//		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
+	//		Collections.sort(sodDGList);
+	//		return sodDGList;
+	//	}
 }
