@@ -208,9 +208,9 @@ public class LDS {
 		return cvca;
 	}
 
-	public InputStream getInputStream(short fid) {
+	public InputStream getInputStream(short fid) throws IOException {
 		SplittableInputStream fetcher = fetchers.get(fid);
-		if (fetcher == null) { throw new IllegalStateException("No stream for " + Integer.toHexString(fid)); }
+		if (fetcher == null) { throw new IOException("No stream for " + Integer.toHexString(fid)); }
 		return fetcher.getInputStream(0);
 	}
 

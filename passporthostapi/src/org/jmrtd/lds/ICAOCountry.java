@@ -35,7 +35,7 @@ import net.sourceforge.scuba.data.Country;
 public class ICAOCountry extends Country {
 	
 	public static final ICAOCountry
-	DE = new ICAOCountry("DE", "D<<", "Germany"),
+	DE = new ICAOCountry("DE", "D<<", "Germany", "German"),
 	GBD = new ICAOCountry("GB","GBD","British Dependent territories citizen"),
 	GBN = new ICAOCountry("GB","GBN","British National (Overseas)"),
 	GBO = new ICAOCountry("GB","GBO","British Overseas citizen"),
@@ -46,10 +46,10 @@ public class ICAOCountry extends Country {
 	UNK = new ICAOCountry("UN","UNK","United Nations Interim Administration Mission in Kosovo"),
 	XOM = new ICAOCountry("XO","XOM","Sovereign Military Order of Malta"),
 	XCC = new ICAOCountry("XC","XCC","Carribean Community"),
-	XXA = new ICAOCountry("XX","XXA","Stateless person"),
-	XXB = new ICAOCountry("XX","XXB","Refugee"),
-	XXC = new ICAOCountry("XX","XXC","Refugee (other)"),
-	XXX = new ICAOCountry("XX","XXX","Unspecified");
+	XXA = new ICAOCountry("XX","XXA","Stateless person", "Stateless"),
+	XXB = new ICAOCountry("XX","XXB","Refugee", "Refugee"),
+	XXC = new ICAOCountry("XX","XXC","Refugee (other)", "Refugee (other)"),
+	XXX = new ICAOCountry("XX","XXX","Unspecified", "Unspecified");
 
 	private static ICAOCountry[] VALUES = {
 		DE,
@@ -59,6 +59,7 @@ public class ICAOCountry extends Country {
 	};
 	
 	private String name;
+	private String nationality;
 	private String alpha2Code;
 	private String alpha3Code;
 	
@@ -88,9 +89,14 @@ public class ICAOCountry extends Country {
 	}
 
 	private ICAOCountry(String alpha2Code, String alpha3Code, String name) {
+		this(alpha2Code, alpha3Code, name, name);
+	}
+	
+	private ICAOCountry(String alpha2Code, String alpha3Code, String name, String nationality) {
 		this.alpha2Code = alpha2Code;
 		this.alpha3Code = alpha3Code;
 		this.name = name;
+		this.nationality = nationality;
 	}
 
 	public int valueOf() {
@@ -104,6 +110,15 @@ public class ICAOCountry extends Country {
 	 */
 	public String getName() {
 		return name;
+	}
+
+	/**
+	 * Gets the adjectival form corresponding to the country.
+	 * 
+	 * @return the nationality
+	 */
+	public String getNationality() {
+		return nationality;
 	}
 
 	/**

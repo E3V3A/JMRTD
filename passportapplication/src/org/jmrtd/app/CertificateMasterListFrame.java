@@ -233,6 +233,7 @@ public class CertificateMasterListFrame extends JMRTDFrame {
 			return new Country() {
 				public int valueOf() { return -1; }
 				public String getName() { return "Unknown country (" + countryCode + ")"; }
+				public String getNationality() { return "Unknown nationality (" + countryCode + ")"; }
 				public String toAlpha2Code() { return countryCode; }
 				public String toAlpha3Code() { return "X" + countryCode; }
 			};

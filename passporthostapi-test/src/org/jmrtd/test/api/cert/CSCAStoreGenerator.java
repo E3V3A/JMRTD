@@ -58,7 +58,7 @@ public class CSCAStoreGenerator extends TestCase
 			if (!certsDir.exists()) { certsDir.mkdirs(); }
 			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
 			String[] files = certsDir.list();
-			KeyStore outStore = KeyStore.getInstance("JKS");
+			KeyStore outStore = KeyStore.getInstance("BKS");
 			outStore.load(null);
 			for (String fileName: files) {
 				File file = new File(certsDir, fileName);
