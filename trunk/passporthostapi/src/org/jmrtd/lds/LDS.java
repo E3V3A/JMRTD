@@ -28,16 +28,26 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 import org.jmrtd.PassportService;
 import org.jmrtd.io.SplittableInputStream;
 
+/**
+ * The logical data structure.
+ * 
+ * @author The JMRTD team
+ * 
+ * @version $Revision: $
+ * 
+ * @since 0.4.8
+ */
 public class LDS {
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
@@ -46,8 +56,8 @@ public class LDS {
 	private Map<Short, SplittableInputStream> fetchers;
 
 	public LDS() {
-		this.files = new HashMap<Short, LDSFile>();
-		this.fetchers = new HashMap<Short, SplittableInputStream>();
+		this.files = new TreeMap<Short, LDSFile>();
+		this.fetchers = new TreeMap<Short, SplittableInputStream>();
 	}
 
 	public List<Short> getFileList() {
@@ -56,10 +66,14 @@ public class LDS {
 		fileSet.addAll(files.keySet());
 		fileSet.addAll(getDataGroupList());
 		if (fileSet.contains(PassportService.EF_DG14)) {
-			DG14File dg14 = getDG14File();
-			if (dg14 != null) {
-				List<Short> cvcaFIDs = dg14.getCVCAFileIds();
-				fileSet.addAll(cvcaFIDs);
+			try {
+				DG14File dg14 = getDG14File();
+				if (dg14 != null) {
+					List<Short> cvcaFIDs = dg14.getCVCAFileIds();
+					fileSet.addAll(cvcaFIDs);
+				}
+			} catch (IOException ioe) {
+				LOGGER.severe("Could not read EF.DG14");
 			}
 		}
 		List<Short> fileList = new ArrayList<Short>(fileSet);
@@ -68,18 +82,26 @@ public class LDS {
 	}
 
 	public List<Short> getDataGroupList() {
-		Set<Short> result = new HashSet<Short>();
-		COMFile com = getCOMFile();
-		int[] comTagList = com.getTagList();
-		for (int tag: comTagList) {
-			short fid = LDSFileUtil.lookupFIDByTag(tag);
-			result.add(fid);
+		Set<Short> result = new TreeSet<Short>();
+		try {
+			COMFile com = getCOMFile();
+			int[] comTagList = com.getTagList();
+			for (int tag: comTagList) {
+				short fid = LDSFileUtil.lookupFIDByTag(tag);
+				result.add(fid);
+			}
+		} catch (IOException ioe) {
+			LOGGER.severe("Could not read EF.COM");
 		}
-		SODFile sod = getSODFile();
-		Set<Integer> dgNumbers = sod.getDataGroupHashes().keySet();
-		for (int dgNumber: dgNumbers) {
-			short fid = LDSFileUtil.lookupFIDByDataGroupNumber(dgNumber);
-			result.add(fid);
+		try {
+			SODFile sod = getSODFile();
+			Set<Integer> dgNumbers = sod.getDataGroupHashes().keySet();
+			for (int dgNumber: dgNumbers) {
+				short fid = LDSFileUtil.lookupFIDByDataGroupNumber(dgNumber);
+				result.add(fid);
+			}
+		} catch (IOException ioe) {
+			LOGGER.severe("Could not read EF.SOd");
 		}
 		List<Short> resultList = new ArrayList<Short>(result);
 		Collections.sort(resultList);
@@ -157,26 +179,22 @@ public class LDS {
 		}
 	}
 
-	public LDSFile getFile(short fid) {
+	public LDSFile getFile(short fid) throws IOException {
 		LDSFile file = files.get(fid);
 		if (file != null) {
 			return file;
 		}
-		try {
-			SplittableInputStream fetcher = fetchers.get(fid);
-			if (fetcher == null) {
-				return null;
-			}
-			file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream(0));
-			files.put(fid, file);
-			return file;
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
+
+		SplittableInputStream fetcher = fetchers.get(fid);
+		if (fetcher == null) {
 			return null;
 		}
+		file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream(0));
+		files.put(fid, file);
+		return file;
 	}
 
-	public CVCAFile getCVCAFile() {
+	public CVCAFile getCVCAFile() throws IOException {
 		/* Check DG14 for available CVCA file ids. */
 		short cvcaFID = PassportService.EF_CVCA;
 		DG14File dg14 = getDG14File();
@@ -196,19 +214,19 @@ public class LDS {
 		return fetcher.getInputStream(0);
 	}
 
-	public COMFile getCOMFile() { return (COMFile)getFile(PassportService.EF_COM); }
-	public SODFile getSODFile() { return (SODFile)getFile(PassportService.EF_SOD); }
-	public DG1File getDG1File() { return (DG1File)getFile(PassportService.EF_DG1); }
-	public DG2File getDG2File() { return (DG2File)getFile(PassportService.EF_DG2); }
-	public DG3File getDG3File() { return (DG3File)getFile(PassportService.EF_DG3); }
-	public DG4File getDG4File() { return (DG4File)getFile(PassportService.EF_DG4); }
-	public DG5File getDG5File() { return (DG5File)getFile(PassportService.EF_DG5); }
-	public DG6File getDG6File() { return (DG6File)getFile(PassportService.EF_DG6); }
-	public DG7File getDG7File() { return (DG7File)getFile(PassportService.EF_DG7); }
-	public DG11File getDG11File() { return (DG11File)getFile(PassportService.EF_DG11); }
-	public DG12File getDG12File() { return (DG12File)getFile(PassportService.EF_DG12); }
-	public DG14File getDG14File() { return (DG14File)getFile(PassportService.EF_DG14); }
-	public DG15File getDG15File() { return (DG15File)getFile(PassportService.EF_DG15); }
+	public COMFile getCOMFile() throws IOException { return (COMFile)getFile(PassportService.EF_COM); }
+	public SODFile getSODFile() throws IOException { return (SODFile)getFile(PassportService.EF_SOD); }
+	public DG1File getDG1File() throws IOException { return (DG1File)getFile(PassportService.EF_DG1); }
+	public DG2File getDG2File() throws IOException { return (DG2File)getFile(PassportService.EF_DG2); }
+	public DG3File getDG3File() throws IOException { return (DG3File)getFile(PassportService.EF_DG3); }
+	public DG4File getDG4File() throws IOException { return (DG4File)getFile(PassportService.EF_DG4); }
+	public DG5File getDG5File() throws IOException { return (DG5File)getFile(PassportService.EF_DG5); }
+	public DG6File getDG6File() throws IOException { return (DG6File)getFile(PassportService.EF_DG6); }
+	public DG7File getDG7File() throws IOException { return (DG7File)getFile(PassportService.EF_DG7); }
+	public DG11File getDG11File() throws IOException { return (DG11File)getFile(PassportService.EF_DG11); }
+	public DG12File getDG12File() throws IOException { return (DG12File)getFile(PassportService.EF_DG12); }
+	public DG14File getDG14File() throws IOException { return (DG14File)getFile(PassportService.EF_DG14); }
+	public DG15File getDG15File() throws IOException { return (DG15File)getFile(PassportService.EF_DG15); }
 
 	private void put(short fid, LDSFile file) {
 		this.files.put(fid, file);
