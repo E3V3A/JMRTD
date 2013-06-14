@@ -187,7 +187,7 @@ public class LDS {
 
 		SplittableInputStream fetcher = fetchers.get(fid);
 		if (fetcher == null) {
-			return null;
+			throw new IOException("File not available in LDS");
 		}
 		file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream(0));
 		files.put(fid, file);
@@ -198,7 +198,7 @@ public class LDS {
 		/* Check DG14 for available CVCA file ids. */
 		short cvcaFID = PassportService.EF_CVCA;
 		DG14File dg14 = getDG14File();
-		if (dg14 == null) { return null; }
+		if (dg14 == null) { throw new IOException("EF.DF14 not available in LDS"); }
 		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
 		if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
 			if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }

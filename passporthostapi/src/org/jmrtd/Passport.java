@@ -343,6 +343,8 @@ public class Passport {
 				LOGGER.warning("Could not read EF.DG15");
 				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Could not read EF.DG15");
 			}
+		} else {
+			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");
 		}
 
 		/* Add remaining datagroups to LDS. */
