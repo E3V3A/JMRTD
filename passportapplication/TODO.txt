@@ -216,8 +216,8 @@ Code quality
 + Check JavaDoc.
 
 
-0.4.9 (ETA: 2013-06-15)
------------------------
+0.4.9 (2013-06-14)
+------------------
 
 General
 + Remove threading from JMRTD host API.
@@ -239,7 +239,7 @@ ImageIO
 + Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn of inhousetraining.ie and Glenn Strong of TCD.
 
 Android
-- New app, improved UI, and security validation, in Google Play (Novay in a project for EIT ICT Labs).
++ New app, improved UI, and security validation, in Google Play (Novay in a project for EIT ICT Labs).
 
 SCUBA
 + Support interface for extended length APDU checking, needed for EAC (in API, not yet implemented)
@@ -257,6 +257,8 @@ Code quality
 --------------
 
 General
+- Investigate card tear behavior. Seems to continue reading without exception (as lengths are known in advance?).
+- Allow session completion on read error (as in Nexus 4 case) and new connection of MRTD. Can this be done safely?
 - Implement SAC/PACE. Check status of OpenPACE and other nPA projects on SF.
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)
@@ -267,7 +269,7 @@ General
 - Move (some of) the PKCS7 signature checking stuff from SODFile to SCUBA (it's not MRTD specific).
 - Progressive reading of JPEG2000 (and plain JPEG), WSQ without artifacts. Based on bit rate?
 - Move BAC (and maybe also AA, EAC) out of VerificationStatus and into CapabilityStatus (or PresenceStatus, or whatever).
-- Version for Embedded Java on Raspberry Pi and similar.
+- Version for Embedded Java on Raspberry Pi and similar. Limitations in embedded Java?
 - Version for Blackberry OS 7 (BB 10 will support Android?).
 - If certificate invalid for other reason than signature fail (expired, revoked) support this in VerificationStatus.
 - Enumerate the reason (for failure) in VerificationStatus instead of error strings in English so that it can be localized.
@@ -297,7 +299,6 @@ Android
 - Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
   distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 - Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
-- Allow session completion on error (as in Nexus 4 case) and new connection of MRTD. Can this be done safely?
 - Progressive rendering of JPEG2000/WSQ combined with animation? What works well? Scaling? Fading?
 - User experience: users seem to think MRTD has been completely read as soon as DG1 and partial DG2 content is shown. Pop up modal dialog?
 
