@@ -29,8 +29,8 @@ import java.io.InputStream;
  * Buffers an inputstream (whose length is known in advance) and can supply clients with fresh
  * "copies" of that inputstream served from the buffer.
  * 
- * NOTE: the original inputstream should no longer be read from, only read bytes from the
- * sub-inputstreams.
+ * NOTE: the original inputstream should no longer be read from, clients should only read bytes
+ * from the sub-inputstreams.
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  */
@@ -85,11 +85,11 @@ public class InputStreamBuffer {
 			markedPosition = -1;
 			this.syncObject = syncObject;
 		}
-		
+
 		public FragmentBuffer getBuffer() {
 			return buffer;
 		}
-		
+
 		public int read() throws IOException {
 			synchronized(syncObject) {
 				if (position >= buffer.getLength()) {

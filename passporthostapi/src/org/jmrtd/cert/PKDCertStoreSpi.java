@@ -220,33 +220,12 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		String pkdMLDN = params.getBaseDN();
 		String filter = "(&(objectclass=CscaMasterList))";
 		Collection<byte[]> binaries = searchAllAttributes(pkdMLDN, CSCA_MASTER_LIST_DATA_ATTRIBUTE_NAME, filter);
+
 		List<Certificate> result = new ArrayList<Certificate>(binaries.size());
 
 		for (byte[] binary: binaries) {
-			try {
-				ASN1Sequence sequence = (ASN1Sequence)ASN1Sequence.getInstance(binary);
-				List<SignedData> signedDataList = getSignedDataFromDERObject(sequence, null);
-				for (SignedData signedData: signedDataList) {
-
-					//			ASN1Set certificatesASN1Set = signedData.getCertificates();
-					//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
-					//			while (certificatesEnum.hasMoreElements()) {
-					//				Object certificateObject = certificatesEnum.nextElement();
-					//				// TODO: interpret certificateObject, and check signature
-					//			}
-
-					ContentInfo contentInfo = signedData.getContentInfo();
-					Object content = contentInfo.getContent();
-					Collection<Certificate> certificates = getCertificatesFromDERObject(content, null);
-					for (Certificate certificate: certificates) {
-						if (selector.match(certificate)) {
-							result.add(certificate);
-						}
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+			CSCAMasterList masterList = new CSCAMasterList(binary, selector);
+			result.addAll(masterList.getCertificates());
 		}
 		certificates = result;
 		heartBeat = System.currentTimeMillis();
@@ -278,112 +257,6 @@ public class PKDCertStoreSpi extends CertStoreSpi
 		heartBeat = System.currentTimeMillis();
 		crls = result;
 		return result;
-	}
-
-	private List<SignedData> getSignedDataFromDERObject(Object o, List<SignedData> result) {
-		if (result == null) { result = new ArrayList<SignedData>(); }
-
-		try {
-			SignedData signedData = SignedData.getInstance(o);
-			if (signedData != null) {
-				result.add(signedData);
-			}
-			return result;
-		} catch (Exception e) {
-		}
-
-		if (o instanceof DERTaggedObject) {
-			ASN1Primitive childObject = ((DERTaggedObject)o).getObject();
-			return getSignedDataFromDERObject(childObject, result);
-		} else if (o instanceof ASN1Sequence) {
-			Enumeration<?> derObjects = ((ASN1Sequence)o).getObjects();
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				result = getSignedDataFromDERObject(nextObject, result);
-			}
-			return result;
-		} else if (o instanceof ASN1Set) {
-			Enumeration<?> derObjects = ((ASN1Set)o).getObjects();
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				result = getSignedDataFromDERObject(nextObject, result);
-			}
-			return result;
-		} else if (o instanceof DEROctetString) {
-			DEROctetString derOctetString = (DEROctetString)o;
-			byte[] octets = derOctetString.getOctets();
-			ASN1InputStream derInputStream = new ASN1InputStream(new ByteArrayInputStream(octets));
-			try {
-				while (true) {
-					ASN1Primitive derObject = derInputStream.readObject();
-					if (derObject == null) { break; }
-					result = getSignedDataFromDERObject(derObject, result);
-				}
-				derInputStream.close();
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-			return result;
-		}
-		return result;
-	}
-
-	private Collection<Certificate> getCertificatesFromDERObject(Object o, Collection<Certificate> certificates) {
-		if (certificates == null) { certificates = new ArrayList<Certificate>(); }
-
-		try {
-			org.bouncycastle.asn1.x509.Certificate certAsASN1Object = org.bouncycastle.asn1.x509.Certificate.getInstance(o);
-//			certificates.add(new X509CertificateObject(certAsASN1Object)); // NOTE: BC 1.48
-			certificates.add(new X509CertificateObject(X509CertificateStructure.getInstance(certAsASN1Object))); // NOTE: BC 1.47
-			return certificates;
-		} catch (Exception e) {
-		}
-
-		if (o instanceof DERTaggedObject) {
-			ASN1Primitive childObject = ((DERTaggedObject)o).getObject();
-			return getCertificatesFromDERObject(childObject, certificates);
-		} else if (o instanceof ASN1Sequence) {
-			Enumeration<?> derObjects = ((ASN1Sequence)o).getObjects();
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				certificates = getCertificatesFromDERObject(nextObject, certificates);
-			}
-			return certificates;
-		} else if (o instanceof ASN1Set) {
-			Enumeration<?> derObjects = ((ASN1Set)o).getObjects();
-			while (derObjects.hasMoreElements()) {
-				Object nextObject = derObjects.nextElement();
-				certificates = getCertificatesFromDERObject(nextObject, certificates);
-			}
-			return certificates;
-		} else if (o instanceof DEROctetString) {
-			DEROctetString derOctetString = (DEROctetString)o;
-			byte[] octets = derOctetString.getOctets();
-			ASN1InputStream derInputStream = new ASN1InputStream(new ByteArrayInputStream(octets));
-			try {
-				while (true) {
-					ASN1Primitive derObject = derInputStream.readObject();
-					if (derObject == null) { break; }
-					certificates = getCertificatesFromDERObject(derObject, certificates);
-				}
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-			return certificates;
-		} else if (o instanceof SignedData) {
-			SignedData signedData = (SignedData)o;
-			//			ASN1Set certificatesASN1Set = signedData.getCertificates();
-			//			Enumeration certificatesEnum = certificatesASN1Set.getObjects();
-			//			while (certificatesEnum.hasMoreElements()) {
-			//				Object certificateObject = certificatesEnum.nextElement();
-			//				// TODO: interpret certificateObject, and check signature
-			//			}
-
-			ContentInfo contentInfo = signedData.getContentInfo();
-			Object content = contentInfo.getContent();
-			return getCertificatesFromDERObject(content, certificates);
-		}
-		return certificates;
 	}
 
 	private Collection<byte[]> searchAllAttributes(String specificDN, String attributeName, String filter) {
