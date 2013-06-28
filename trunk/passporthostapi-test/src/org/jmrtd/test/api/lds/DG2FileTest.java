@@ -21,6 +21,7 @@
 
 package org.jmrtd.test.api.lds;
 
+import java.awt.image.BufferedImage;
 import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -30,6 +31,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.ImageIcon;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
@@ -55,6 +60,31 @@ public class DG2FileTest extends TestCase {
 		}
 	}
 
+	public void testShow() {
+		try {
+			DG2File dg2 = new DG2File(new FileInputStream(TEST_FILE));
+			List<FaceInfo> faceInfos = dg2.getFaceInfos();
+			for (FaceInfo faceInfo: faceInfos) {
+				List<FaceImageInfo> faceImageInfos = faceInfo.getFaceImageInfos();
+				for (FaceImageInfo faceImageInfo: faceImageInfos) {
+					String mimeType = faceImageInfo.getMimeType();
+					int length = faceImageInfo.getImageLength();
+					InputStream inputStream = faceImageInfo.getImageInputStream();
+					BufferedImage image = ImageUtil.read(inputStream, length, mimeType);
+					JFrame frame = new JFrame("Image");
+					frame.getContentPane().add(new JLabel(new ImageIcon(image)));
+					frame.pack();
+//					frame.setVisible(true);
+//					while (true) { }
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+			
+	}
+	
 	public void testReflexive() {
 		try {
 			DG2File dg2File = getTestObject();

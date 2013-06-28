@@ -81,7 +81,7 @@ public class MRTDTrustStore {
 			return (issuer == null && subject == null) || subject.equals(issuer);
 		}
 
-		public Object clone() { return this; }		
+		public Object clone() { return this; }	
 	};
 
 	private Set<TrustAnchor> cscaAnchors;

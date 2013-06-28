@@ -37,10 +37,10 @@
 			<fileset dir="bin" includes="**/*.class" excludes="org/jmrtd/imageio/**/*.class,org/jmrtd/jj2000/test/**.*.class" />
 
 			<!-- DEBUG: Use our own patched version of JJ2000, alternatively use zipgroupfileset below for stock JJ2000 -->
-			<fileset dir="../jj2000/bin" />
+			<!-- fileset dir="../jj2000/bin" / -->
 			<!-- END DEBUG -->
 
-			<!--  zipgroupfileset dir="${software}/jj2000-read-only/target" includes="jj2000-*.jar" / -->
+			<zipgroupfileset dir="${software}/jj2000-read-only/target" includes="jj2000-*.jar" />
 		</jar>
 		
 	</target>
