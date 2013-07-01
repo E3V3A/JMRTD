@@ -258,7 +258,7 @@ public class Passport {
 			CardFileInputStream sodIn = service.getInputStream(PassportService.EF_SOD);
 			lds.add(PassportService.EF_SOD, sodIn, sodIn.getLength());
 			sodFile = lds.getSODFile();
-						
+
 			CardFileInputStream dg1In = service.getInputStream(PassportService.EF_DG1);
 			lds.add(PassportService.EF_DG1, dg1In, dg1In.getLength());
 			dg1File = lds.getDG1File();
@@ -267,7 +267,7 @@ public class Passport {
 			ioe.printStackTrace();
 			LOGGER.warning("Could not read file");
 		}
-		
+
 		/* We get the list of DGs from EF.SOd, not from EF.COM. */
 		List<Integer> dgNumbers = new ArrayList<Integer>();
 		if (sodFile != null) {
@@ -337,7 +337,7 @@ public class Passport {
 				lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
 				DG15File dg15File = lds.getDG15File();
 				dgNumbersAlreadyRead.add(15);
-				verifyAA(service, dg15File);
+				// verifyAA(service, dg15File);
 			} catch (IOException ioe) {
 				ioe.printStackTrace();
 				LOGGER.warning("Could not read EF.DG15");
@@ -656,26 +656,37 @@ public class Passport {
 	public VerificationStatus getVerificationStatus() {
 		return verificationStatus;
 	}
-	
+
 	/**
 	 * Verifies the document using the security related mechanisms.
 	 * 
 	 * @return the security status
 	 */
 	public VerificationStatus verifySecurity() {
-		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA are always checked as part of the prelude. */
+		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA is always checked as part of the prelude.
+		 * (For debugging it's back here again...)
+		 */
 		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
 		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
 
 		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
 		verifyDS();
-		
+
 		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
 		verifyCS();
-		
+
 		/* Verify hashes. */
 		verifyHT();
-		//		if (!verifyHashes(lds)) { return verificationStatus; }
+
+		try {
+			/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
+			if (lds.getDataGroupList().contains(PassportService.EF_DG15)) {
+				verifyAA(service, lds.getDG15File());
+			}
+		} catch (IOException ioe) {
+			/* NOTE: leave AA status at whatever was there. */
+			ioe.printStackTrace();
+		}
 
 		return verificationStatus;
 	}
@@ -1035,8 +1046,7 @@ public class Passport {
 
 		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
 		for (int dgNumber: storedHashes.keySet()) {
-			byte[] storedHash = storedHashes.get(dgNumber);
-			verifyHash(dgNumber, digest, storedHash, hashResults);
+			verifyHash(dgNumber, digest, hashResults);
 		}
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
 			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "All hashes match", hashResults);
@@ -1046,13 +1056,35 @@ public class Passport {
 		}
 	}
 
-	private void verifyHash(int dgNumber, MessageDigest digest, byte[] storedHash, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
+	/**
+	 * Verifies the hash for the given datagroup.
+	 * Note that this will block until all bytes of the datagroup
+	 * are loaded.
+	 * 
+	 * @param dgNumber
+	 * @param digest an existing digest that will be reused (this method will reset it)
+	 * @param storedHash the stored hash for this datagroup
+	 * @param hashResults the hashtable status to update
+	 */
+	private void verifyHash(int dgNumber, MessageDigest digest, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
 		short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
 		digest.reset();
 
-		byte[] dgBytes = null;
-		InputStream dgIn = null;
+		/* Get the stored hash for the DG. */
+		byte[] storedHash = null;
 		try {
+			SODFile sod = lds.getSODFile();
+			Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
+			storedHash = storedHashes.get(dgNumber);
+		} catch(Exception e) {
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed, could not get stored hash", hashResults);
+			return;
+		}
+
+		/* Read the DG. */
+		byte[] dgBytes = null;
+		try {
+			InputStream dgIn = null;
 			int length = lds.getLength(fid);
 			if (length > 0) {
 				dgBytes = new byte[length];
@@ -1060,23 +1092,25 @@ public class Passport {
 				DataInputStream dgDataIn = new DataInputStream(dgIn);
 				dgDataIn.readFully(dgBytes);
 			}
+
+			if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
+				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
+				return;
+			}
+			if (dgIn == null) {
+				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because file could not be read.");
+				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
+				return;
+			}
+
 		} catch(Exception e) {
 			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", hashResults);
 			return;
 		}
 
-		if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
-			LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
-			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
-			return;
-		}
-		if (dgIn == null) {
-			LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because file could not be read.");
-			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
-			return;
-		}
-
+		/* Compute the hash and compare. */
 		try {
 			byte[] computedHash = digest.digest(dgBytes);
 			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, computedHash));
@@ -1089,7 +1123,7 @@ public class Passport {
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash failed due to exception", hashResults);
 		}
 	}
-	
+
 	//	private List<Integer> getCOMDGList(COMFile com) {
 	//		List<Integer> comDGList = new ArrayList<Integer>();
 	//		for(Integer tag : com.getTagList()) {

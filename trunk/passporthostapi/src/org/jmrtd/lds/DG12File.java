@@ -26,6 +26,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,7 +43,7 @@ import net.sourceforge.scuba.util.Hex;
  * File structure for the EF_DG12 file.
  * Datagroup 12 contains additional document detail(s).
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: 1481 $
  */
@@ -54,7 +55,7 @@ public class DG12File extends DataGroup {
 
 	public static final int ISSUING_AUTHORITY_TAG = 0x5F19,
 			DATE_OF_ISSUE_TAG = 0x5F26,  // yyyymmdd
-			NAME_OF_OTHER_PERSON_TAG = 0x5F1A, // formatted per ICAO 9303 rules 
+			NAME_OF_OTHER_PERSON_TAG = 0x5F1A, // formatted per ICAO 9303 rules
 			ENDORSEMENTS_AND_OBSERVATIONS_TAG = 0x5F1B,
 			TAX_OR_EXIT_REQUIREMENTS_TAG = 0x5F1C,
 			IMAGE_OF_FRONT_TAG = 0x5F1D, // Image per ISO/IEC 10918
@@ -176,24 +177,24 @@ public class DG12File extends DataGroup {
 			for (int i = 0; i < count; i++) {
 				tag = tlvIn.readTag();
 				if (tag != NAME_OF_OTHER_PERSON_TAG) { throw new IllegalArgumentException("Expected " + Integer.toHexString(NAME_OF_OTHER_PERSON_TAG) + ", found " + Integer.toHexString(tag)); }
-				/* int otherPersonLength = */ tlvIn.readLength();
+				/* int otherPersonFieldLength = */ tlvIn.readLength();
 				byte[] value = tlvIn.readValue();
-				parseNameOfOtherPerson(new String(value));
+				parseNameOfOtherPerson(value);
 			}
 		} else {
 			if (tag != expectedFieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(expectedFieldTag) + ", but found " + Integer.toHexString(tag)); }
 			/* int length = */ tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
 			switch (tag) {
-			case ISSUING_AUTHORITY_TAG: parseIssuingAuthority(new String(value)); break;
-			case DATE_OF_ISSUE_TAG: parseDateOfIssue(new String(value)); break;
-			case NAME_OF_OTHER_PERSON_TAG: parseNameOfOtherPerson(new String(value)); break;
-			case ENDORSEMENTS_AND_OBSERVATIONS_TAG: parseEndorsementsAndObservations(new String(value)); break;
-			case TAX_OR_EXIT_REQUIREMENTS_TAG: parseTaxOrExitRequirements(new String(value)); break;
+			case ISSUING_AUTHORITY_TAG: parseIssuingAuthority(value); break;
+			case DATE_OF_ISSUE_TAG: parseDateOfIssue(value); break;
+			case NAME_OF_OTHER_PERSON_TAG: parseNameOfOtherPerson(value); break;
+			case ENDORSEMENTS_AND_OBSERVATIONS_TAG: parseEndorsementsAndObservations(value); break;
+			case TAX_OR_EXIT_REQUIREMENTS_TAG: parseTaxOrExitRequirements(value); break;
 			case IMAGE_OF_FRONT_TAG: parseImageOfFront(value); break;
 			case IMAGE_OF_REAR_TAG: parseImageOfRear(value); break;
-			case DATE_AND_TIME_OF_PERSONALIZATION: parseDateAndTimeOfPersonalization(Hex.bytesToHexString(value)); break;
-			case PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG: parsePersonalizationSystemSerialNumber(new String(value)); break;
+			case DATE_AND_TIME_OF_PERSONALIZATION: parseDateAndTimeOfPersonalization(value); break;
+			case PERSONALIZATION_SYSTEM_SERIAL_NUMBER_TAG: parsePersonalizationSystemSerialNumber(value); break;
 			default: throw new IllegalArgumentException("Unknown field tag in DG12: " + Integer.toHexString(tag));
 			}
 		}
@@ -201,13 +202,21 @@ public class DG12File extends DataGroup {
 
 	/* Field parsing below. */
 
-	private void parsePersonalizationSystemSerialNumber(String in) {
-		personalizationSystemSerialNumber = in.trim();
+	private void parsePersonalizationSystemSerialNumber(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			personalizationSystemSerialNumber = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: UTF-8 not supported? Unlikely. In any case use default charset. */
+			usee.printStackTrace();
+			personalizationSystemSerialNumber = new String(value).trim();
+		}
 	}
 
-	private void parseDateAndTimeOfPersonalization(String in) {
+	private void parseDateAndTimeOfPersonalization(byte[] value) {
 		try {
-			dateAndTimeOfPersonalization = SDTF.parse(in.trim());
+			String field = Hex.bytesToHexString(value);
+			dateAndTimeOfPersonalization = SDTF.parse(field.trim());
 		} catch (ParseException pe) {
 			throw new IllegalArgumentException(pe.toString());
 		}
@@ -221,31 +230,84 @@ public class DG12File extends DataGroup {
 		imageOfRear =  value;
 	}
 
-	private void parseTaxOrExitRequirements(String in) {
-		taxOrExitRequirements = in.trim();
-	}
-
-	private void parseEndorsementsAndObservations(String in) {
-		endorseMentsAndObservations = in.trim();
-	}
-
-	private synchronized void parseNameOfOtherPerson(String in) {
-		if (namesOfOtherPersons == null) { namesOfOtherPersons = new ArrayList<String>(); }
-		namesOfOtherPersons.add(in.trim());
-	}
-
-	private void parseDateOfIssue(String in) {
+	private void parseTaxOrExitRequirements(byte[] value) {
 		try {
-			if (in == null || in.length() != 8) { throw new IllegalArgumentException("Wrong date format: " + in); }
-			dateOfIssue = SDF.parse(in.trim());
-		} catch (ParseException e) {
-			throw new IllegalArgumentException(e.toString());
+			String field = new String(value, "UTF-8");
+			taxOrExitRequirements = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: UTF-8 not supported? Unlikely. In any case use default charset. */
+			usee.printStackTrace();
+			taxOrExitRequirements = new String(value).trim();
+		}
+	}
+
+	private void parseEndorsementsAndObservations(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			endorseMentsAndObservations = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: UTF-8 not supported? Unlikely. In any case use default charset. */
+			usee.printStackTrace();
+			endorseMentsAndObservations = new String(value).trim();
+		}
+	}
+
+	private synchronized void parseNameOfOtherPerson(byte[] value) {
+		if (namesOfOtherPersons == null) { namesOfOtherPersons = new ArrayList<String>(); }
+		try {
+			String field = new String(value, "UTF-8");
+			namesOfOtherPersons.add(field.trim());
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: UTF-8 not supported? Unlikely. In any case use default charset. */
+			usee.printStackTrace();
+			namesOfOtherPersons.add(new String(value).trim());
+		}
+	}
+
+	private void parseDateOfIssue(byte[] value) {
+		if (value == null) { throw new IllegalArgumentException("Wrong date format"); }
+
+		/* Try to interpret value as a ccyymmdd formatted date string as per Doc 9303. */
+		if (value.length == 8) {
+			try {
+				String dateString = new String(value, "UTF-8");
+				dateOfIssue = SDF.parse(dateString.trim());
+				return;
+			} catch (UnsupportedEncodingException usee) {
+				/* NOTE: never happens, UTF-8 is supported. */
+				usee.printStackTrace();
+			} catch (ParseException e) {
+				/* NOTE: ok, something went wrong here, it's not the date format that we expect. */
+				e.printStackTrace();
+			}
+		}
+		LOGGER.warning("DG12 date of issue is not in expected ccyymmdd ASCII format");
+
+		/* Some live French MRTDs encode the date as ccyymmdd but in BCD, not in ASCII. */
+		if (value.length == 4) {
+			try {
+				String dateString = Hex.bytesToHexString(value);
+				dateOfIssue = SDF.parse(dateString.trim());
+				return;
+			} catch (ParseException e) {
+				/* NOTE: ok, something went wrong here, it's not the date format that we expect. */
+				e.printStackTrace();
+			}
 		}
 
+		/* Giving up... we can't parse this date. */
+		throw new IllegalArgumentException("Wrong date format");
 	}
 
-	private void parseIssuingAuthority(String in) {
-		issuingAuthority = in.trim();
+	private void parseIssuingAuthority(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			issuingAuthority = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			/* NOTE: Default charset, wtf, UTF-8 not supported? */
+			usee.printStackTrace();
+			issuingAuthority = (new String(value)).trim();
+		}
 	}
 
 	/* Accessors below. */
@@ -367,7 +429,7 @@ public class DG12File extends DataGroup {
 	public int hashCode() {
 		return 13 * toString().hashCode() + 112;
 	}
-	
+
 	protected void writeContent(OutputStream outputStream) throws IOException {
 		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
 		tlvOut.writeTag(TAG_LIST_TAG);
@@ -424,7 +486,8 @@ public class DG12File extends DataGroup {
 				tlvOut.writeTag(tag);
 				tlvOut.writeValue(personalizationSystemSerialNumber.trim().getBytes("UTF-8"));
 				break;
-			default: throw new IllegalArgumentException("Unknown field tag in DG12: " + Integer.toHexString(tag));
+			default:
+				throw new IllegalArgumentException("Unknown field tag in DG12: " + Integer.toHexString(tag));
 			}
 		}
 	}

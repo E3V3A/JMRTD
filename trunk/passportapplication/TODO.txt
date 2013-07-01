@@ -230,6 +230,7 @@ General
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 + Refactor FeatureStatus out of VerificationStatus.
 + More derived information in VerificationStatus (tried BAC entries, computed hashes, derived certificate chain, ...) so that UI can show this in status.
++ Treat CSCAMasterList as first class citizen.
 
 EAC
 + ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
