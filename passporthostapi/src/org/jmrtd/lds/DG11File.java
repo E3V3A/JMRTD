@@ -26,6 +26,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -61,7 +62,7 @@ import net.sourceforge.scuba.util.Hex;
  * <li>Custody Information</li>
  * </ol>
  * 
- * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ * @author The JMRTD team (info@jmrtd.org)
  * 
  * @version $Revision: 1478 $
  */
@@ -195,34 +196,26 @@ public class DG11File extends DataGroup {
 				if (tag != OTHER_NAME_TAG) { throw new IllegalArgumentException("Expected " + Integer.toHexString(OTHER_NAME_TAG) + ", found " + Integer.toHexString(tag)); }
 				/* int otherNameLength = */ tlvIn.readLength();
 				byte[] value = tlvIn.readValue();
-				parseOtherName(new String(value));
+				parseOtherName(value);
 			}
 		} else {
 			if (tag != fieldTag) { throw new IllegalArgumentException("Expected " + Integer.toHexString(fieldTag) + ", but found " + Integer.toHexString(tag)); }
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
 			switch (tag) {
-			case FULL_NAME_TAG: parseFullName(new String(value, "UTF-8")); break;
-			case OTHER_NAME_TAG: parseOtherName(new String(value, "UTF-8")); break;
-			case PERSONAL_NUMBER_TAG: parsePersonalNumber(new String(value, "UTF-8")); break;
-			case FULL_DATE_OF_BIRTH_TAG:
-				if (value.length == 8) {
-					/* NOTE: Belgian encoding */
-					parseFullDateOfBirth(new String(value, "UTF-8")); break;
-				} else {
-					/* NOTE: French encoding */
-					parseFullDateOfBirth(Hex.bytesToHexString(value));
-				}
-				break;
-			case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(new String(value, "UTF-8")); break;
-			case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(new String(value, "UTF-8")); break;
-			case TELEPHONE_TAG: parseTelephone(new String(value, "UTF-8")); break;
-			case PROFESSION_TAG: parseProfession(new String(value, "UTF-8")); break;
-			case TITLE_TAG: parseTitle(new String(value, "UTF-8")); break;
-			case PERSONAL_SUMMARY_TAG: parsePersonalSummary(new String(value, "UTF-8")); break;
+			case FULL_NAME_TAG: parseFullName(value); break;
+			case OTHER_NAME_TAG: parseOtherName(value); break;
+			case PERSONAL_NUMBER_TAG: parsePersonalNumber(value); break;
+			case FULL_DATE_OF_BIRTH_TAG: parseFullDateOfBirth(value); break;
+			case PLACE_OF_BIRTH_TAG: parsePlaceOfBirth(value); break;
+			case PERMANENT_ADDRESS_TAG:  parsePermanentAddress(value); break;
+			case TELEPHONE_TAG: parseTelephone(value); break;
+			case PROFESSION_TAG: parseProfession(value); break;
+			case TITLE_TAG: parseTitle(value); break;
+			case PERSONAL_SUMMARY_TAG: parsePersonalSummary(value); break;
 			case PROOF_OF_CITIZENSHIP_TAG: parseProofOfCitizenShip(value); break;
-			case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(new String(value, "UTF-8")); break;
-			case CUSTODY_INFORMATION_TAG: parseCustodyInformation(new String(value, "UTF-8")); break;
+			case OTHER_VALID_TD_NUMBERS_TAG: parseOtherValidTDNumbers(value); break;
+			case CUSTODY_INFORMATION_TAG: parseCustodyInformation(value); break;
 			default: throw new IllegalArgumentException("Unknown field tag in DG11: " + Integer.toHexString(tag));
 			}
 		}
@@ -230,14 +223,26 @@ public class DG11File extends DataGroup {
 
 	/* Field parsing and interpretation below. */
 
-	private void parseCustodyInformation(String in) {
-		//		custodyInformation = in.replace("<", " ").trim();
-		custodyInformation = in.trim();
+	private void parseCustodyInformation(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			//		custodyInformation = in.replace("<", " ").trim();
+			custodyInformation = field.trim();
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+			custodyInformation = new String(value).trim();
+		}
 	}
 
-	private void parseOtherValidTDNumbers(String in) {
+	private void parseOtherValidTDNumbers(byte[] value) {
+		String field = new String(value).trim();
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
 		otherValidTDNumbers = new ArrayList<String>();
-		StringTokenizer st = new StringTokenizer(in, "<");
+		StringTokenizer st = new StringTokenizer(field, "<");
 		while (st.hasMoreTokens()) {
 			String number = st.nextToken().trim();
 			otherValidTDNumbers.add(number);
@@ -248,28 +253,58 @@ public class DG11File extends DataGroup {
 		proofOfCitizenship = value;
 	}
 
-	private void parsePersonalSummary(String in) {
-		//		personalSummary = in.replace("<", " ").trim();
-		personalSummary = in.trim();
+	private void parsePersonalSummary(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			//		personalSummary = in.replace("<", " ").trim();
+			personalSummary = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			usee.printStackTrace();
+			personalSummary = new String(value).trim();
+		}
 	}
 
-	private void parseTitle(String in) {
-		//		title = in.replace("<", " ").trim();
-		title = in.trim();
+	private void parseTitle(byte[] value) {
+		try {
+			String field = new String(value, "UTF-8");
+			//		title = in.replace("<", " ").trim();
+			title = field.trim();
+		} catch (UnsupportedEncodingException usee) {
+			usee.printStackTrace();
+			title = new String(value).trim();
+		}
 	}
 
-	private void parseProfession(String in) {
+	private void parseProfession(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
 		//		profession = in.replace("<", " ").trim();
-		profession = in.trim();
+		profession = field.trim();
 	}
 
-	private void parseTelephone(String in) {
+	private void parseTelephone(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
 		//		telephone = in.replace("<", " ").trim();
-		telephone = in.replace("<", " ").trim();
+		telephone = field.replace("<", " ").trim();
 	}
 
-	private void parsePermanentAddress(String in) {
-		StringTokenizer st = new StringTokenizer(in, "<");
+	private void parsePermanentAddress(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
+		StringTokenizer st = new StringTokenizer(field, "<");
 		permanentAddress = new ArrayList<String>();
 		while (st.hasMoreTokens()) {
 			String line = st.nextToken().trim();
@@ -277,8 +312,14 @@ public class DG11File extends DataGroup {
 		}
 	}
 
-	private void parsePlaceOfBirth(String in) {
-		StringTokenizer st = new StringTokenizer(in, "<");
+	private void parsePlaceOfBirth(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
+		StringTokenizer st = new StringTokenizer(field, "<");
 		placeOfBirth = new ArrayList<String>();
 		while (st.hasMoreTokens()) {
 			String line = st.nextToken().trim();
@@ -286,35 +327,64 @@ public class DG11File extends DataGroup {
 		}
 	}
 
-	private void parseFullDateOfBirth(String in) {
+	private void parseFullDateOfBirth(byte[] value) {
 		try {
+			String field = null;
+			if (value.length == 4) {
+				/* Either France or Belgium uses this encoding for dates. */
+				field = Hex.bytesToHexString(value);
+			} else {
+				field = new String(value);
+				try {
+					field = new String(value, "UTF-8");
+				} catch (UnsupportedEncodingException usee) {
+					usee.printStackTrace();
+				}
+			}
 			// in = in.replace("<", " ").trim();
-			fullDateOfBirth = SDF.parse(in);
+			fullDateOfBirth = SDF.parse(field);
 		} catch (ParseException pe) {
 			throw new IllegalArgumentException(pe.toString());
 		}
-
 	}
 
-	private synchronized void parseOtherName(String in) {
+	private synchronized void parseOtherName(byte[] value) {
 		if (otherNames == null) { otherNames = new ArrayList<String>(); }
-		otherNames.add(in.trim());
-	}
-
-	private void parsePersonalNumber(String in) {
-		personalNumber = in.trim();
-	}
-
-	private void parseFullName(String in) {
-		String delim = "<<";
-		int delimIndex = in.indexOf(delim);
-		if (delimIndex < 0) {
-			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + in + "\"");
-			delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
-			delimIndex = in.indexOf(delim);
+		try {
+			String field = new String(value, "UTF-8");
+			otherNames.add(field.trim());
+		} catch (UnsupportedEncodingException usee) {
+			usee.printStackTrace();
+			otherNames.add(new String(value).trim());
 		}
-		fullNamePrimaryIdentifier = in.substring(0, delimIndex);
-		StringTokenizer st = new StringTokenizer(in.substring(in.indexOf(delim) + delim.length()), "<");
+	}
+
+	private void parsePersonalNumber(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
+		personalNumber = field.trim();
+	}
+
+	private void parseFullName(byte[] value) {
+		String field = new String(value);
+		try {
+			field = new String(value, "UTF-8");
+		} catch (UnsupportedEncodingException uee) {
+			uee.printStackTrace();
+		}
+		String delim = "<<";
+		int delimIndex = field.indexOf(delim);
+		if (delimIndex < 0) {
+			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
+			delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+			delimIndex = field.indexOf(delim);
+		}
+		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
+		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
 		fullNameSecondaryIdentifiers = new ArrayList<String>();
 		while (st.hasMoreTokens()) {
 			String secondaryIdentifier = st.nextToken().trim();
