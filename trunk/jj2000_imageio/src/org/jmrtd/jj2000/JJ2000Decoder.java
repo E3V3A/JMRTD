@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import jj2000.j2k.codestream.HeaderInfo;
 import jj2000.j2k.codestream.reader.BitstreamReaderAgent;
@@ -39,6 +40,8 @@ import colorspace.ColorSpace.CSEnum;
  * @version $Revision: $
  */
 public class JJ2000Decoder {
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private final static String[][] DECODER_PINFO = {
 		{ "u", "[on|off]", "", "off" },
@@ -94,18 +97,21 @@ public class JJ2000Decoder {
 	private static Bitmap decode(RandomAccessIO randomAccessIO, ParameterList pl) throws IOException {
 		double bitRate = pl.getFloatParameter("rate");
 
-		// The codestream should be wrapped in the jp2 fileformat, Read the
-		// file format wrapper
-//		try {
-			FileFormatReader fileFormatReader = new FileFormatReader(randomAccessIO);
-			fileFormatReader.readFileFormat();
-			if (!fileFormatReader.JP2FFUsed) {
-				throw new IOException("Was expecting JP2 file format");
-			}
-			randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
-//		} catch (Error error) {
-//			throw new IOException("Error interpreting stream as JP2");
-//		}
+		/*
+		 * The codestream should be wrapped in the jp2 fileformat, Read the
+		 * file format wrapper.
+		 * NOTE: This can throw an Error (not an Exception, no an ERROR!).
+		 */
+		//		try {
+		FileFormatReader fileFormatReader = new FileFormatReader(randomAccessIO);
+		fileFormatReader.readFileFormat();
+		if (!fileFormatReader.JP2FFUsed) {
+			throw new IOException("Was expecting JP2 file format");
+		}
+		randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
+		//		} catch (Error error) {
+		//			throw new IOException("Error interpreting stream as JP2");
+		//		}
 
 		// Instantiate header decoder and read main header
 		HeaderInfo headerInfo = new HeaderInfo();
@@ -183,7 +189,7 @@ public class JJ2000Decoder {
 				try {
 					decodedImage.setTile(x, y);
 				} catch (Exception eofe) {
-					System.out.println("DEBUG: ignore in JJ2000Decoder setTile");
+					LOGGER.info("Ignoring exception in JJ2000Decoder setTile(" + x + ", " + y + ")");
 				}
 
 				int width = decodedImage.getImgWidth();
@@ -201,18 +207,7 @@ public class JJ2000Decoder {
 		}
 
 		CSEnum colorSpaceType = colorSpace.getColorSpace();
-		if (colorSpaceType.equals(ColorSpace.sRGB)) {
-			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
-			/*
-			 * For Android use:
-			 *   return Bitmap.createBitmap(colors, 0, imgWidth, imgWidth, imgHeight, Bitmap.Config.ARGB_8888);
-			 * 
-			 * For J2SE use:
-			 *   BufferedImage image = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
-			 *   image.setRGB(0, 0, imgWidth, imgHeight, colors, 0, imgWidth);
-			 *   return image;
-			 */			
-		} else if (colorSpaceType.equals(ColorSpace.GreyScale)) {
+		if (colorSpaceType.equals(ColorSpace.GreyScale)) {
 			/* NOTE: Untested */
 			return decodeGrayScale(blk, imgWidth, imgHeight, imgBitDepths);
 
@@ -224,12 +219,27 @@ public class JJ2000Decoder {
 			 *   image.setRGB(0, 0, imgWidth, imgHeight, colors, 0, imgWidth);
 			 *   return image;
 			 */
+		} else if (colorSpaceType.equals(ColorSpace.sRGB)) {
+			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
+			/*
+			 * For Android use:
+			 *   return Bitmap.createBitmap(colors, 0, imgWidth, imgWidth, imgHeight, Bitmap.Config.ARGB_8888);
+			 * 
+			 * For J2SE use:
+			 *   BufferedImage image = new BufferedImage(imgWidth, imgHeight, BufferedImage.TYPE_INT_ARGB);
+			 *   image.setRGB(0, 0, imgWidth, imgHeight, colors, 0, imgWidth);
+			 *   return image;
+			 */
+		} else {
+			LOGGER.warning("Unsupported color space type: " + colorSpaceType);
+			// throw new IOException("Unsupported color space type.");
+			/* We don't support this color space, but best effort is to interpret it as signed ARGB. */
+			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
 		}
-		throw new IOException("Unsupported color space type.");
 	}
 
 	/**
-	 * Decodes n-bit signed to 8-bit unsigned.
+	 * Decodes n-bit signed to 8-bit unsigned (in our own intermediate Bitmap format).
 	 * 
 	 * @param blk
 	 * @param depths
@@ -280,7 +290,7 @@ public class JJ2000Decoder {
 	}
 
 	/**
-	 * Decodes 8-bit gray scale to 8-bit unsigned RGB.
+	 * Decodes 8-bit gray scale to 8-bit unsigned RGB (in our own intermediate Bitmap format).
 	 * 
 	 * @param blk
 	 * @param depths

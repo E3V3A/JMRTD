@@ -224,7 +224,7 @@ General
 + DG11 and DG12 encoding of dates (see R7-p1_v2_sIII_0058).
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
 + Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes).
-+ Move BACStore back to passportapplication (from passporthostapi).
++ Move BACStore back to passportapplication (from passporthostapi) use simple List in interfaces instead.
 + Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
 + Pre-calculated BAC keys (Mikheil Kapananza has use case for this; Bug 19 on SF bug tracker)
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
@@ -237,7 +237,7 @@ EAC
 + Clean up terminal authentication, make sig algorithm detection according to spec.
 
 ImageIO
-+ Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn of inhousetraining.ie and Glenn Strong of TCD.
++ Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn and Glenn Strong for testing.
 
 Android
 + New app, improved UI, and security validation, in Google Play (Novay in a project for EIT ICT Labs).
@@ -258,7 +258,6 @@ Code quality
 --------------
 
 General
-- Investigate card tear behavior. Seems to continue reading without exception (as lengths are known in advance?).
 - Allow session completion on read error (as in Nexus 4 case) and new connection of MRTD. Can this be done safely?
 - Implement SAC/PACE. Check status of OpenPACE and other nPA projects on SF.
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
