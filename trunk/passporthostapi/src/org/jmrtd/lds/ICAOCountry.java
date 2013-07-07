@@ -46,6 +46,7 @@ public class ICAOCountry extends Country {
 	UNK = new ICAOCountry("UN","UNK","United Nations Interim Administration Mission in Kosovo"),
 	XOM = new ICAOCountry("XO","XOM","Sovereign Military Order of Malta"),
 	XCC = new ICAOCountry("XC","XCC","Carribean Community"),
+	XPO = new ICAOCountry("XP", "XPO", "Interpol"),
 	XXA = new ICAOCountry("XX","XXA","Stateless person", "Stateless"),
 	XXB = new ICAOCountry("XX","XXB","Refugee", "Refugee"),
 	XXC = new ICAOCountry("XX","XXC","Refugee (other)", "Refugee (other)"),

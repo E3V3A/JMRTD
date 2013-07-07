@@ -49,20 +49,26 @@ public class CSCAMasterList {
 		public Object clone() { return this; }
 	};
 	
-	List<Certificate> cscaCertificates;
+	private List<Certificate> certificates;
 
+	/** Private constructor, only used locally. */
 	private CSCAMasterList() {
-		this.cscaCertificates = new ArrayList<Certificate>();	
+		this.certificates = new ArrayList<Certificate>(256);	
 	}
 	
-	public CSCAMasterList(Collection<Certificate> cscaCertificates) {
+	/**
+	 * Constructs a master lsit from a collection of certificates.
+	 * 
+	 * @param certificates a collection of certificates
+	 */
+	public CSCAMasterList(Collection<Certificate> certificates) {
 		this();
-		this.cscaCertificates.addAll(cscaCertificates);
+		this.certificates.addAll(certificates);
 	}
 	
 	public CSCAMasterList(byte[] binary, CertSelector selector) {
 		this();
-		this.cscaCertificates.addAll(searchCertificates(binary, selector));
+		this.certificates.addAll(searchCertificates(binary, selector));
 	}
 	
 	public CSCAMasterList(byte[] binary) {
@@ -70,8 +76,10 @@ public class CSCAMasterList {
 	}
 	
 	public List<Certificate> getCertificates() {
-		return cscaCertificates;
+		return certificates;
 	}
+	
+	/* PRIVATE METHODS BELOW */
 	
 	private static List<Certificate> searchCertificates(byte[] binary, CertSelector selector) {
 		List<Certificate> result = new ArrayList<Certificate>();

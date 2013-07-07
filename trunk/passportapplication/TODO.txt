@@ -216,7 +216,7 @@ Code quality
 + Check JavaDoc.
 
 
-0.4.9 (2013-06-14)
+0.4.9 (2013-07-05)
 ------------------
 
 General
@@ -225,7 +225,7 @@ General
 + DG11 and DG12 encoding of A0 complex structures (for 5F0F resp. 5F1A).
 + Clean up ImageInfo inputstream to allow progressive rendering in principle (via org.jmtrd.io classes).
 + Move BACStore back to passportapplication (from passporthostapi) use simple List in interfaces instead.
-+ Passport file list is based on EF.COM, should be EF.SOd hash list (see Passport around line 282).
++ Passport file list is now based on EF.SOd instead of EF.COM hash list.
 + Pre-calculated BAC keys (Mikheil Kapananza has use case for this; Bug 19 on SF bug tracker)
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 + Refactor FeatureStatus out of VerificationStatus.

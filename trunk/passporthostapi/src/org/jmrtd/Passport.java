@@ -286,7 +286,6 @@ public class Passport {
 		boolean hasEAC = featureStatus.hasEAC().equals(FeatureStatus.Verdict.PRESENT);
 		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;
-		/* DEBUG */ hasEAC = false;
 		if (hasEAC) {
 			try {
 				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
@@ -312,6 +311,7 @@ public class Passport {
 			List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
 
 			/* Try to do EAC. */
+			/* DEBUG: commented out for testing. */
 			for (KeyStore cvcaStore: cvcaKeyStores) {
 				try {
 					/* FIXME: shouldn't we check if that store holds the correct authority? */

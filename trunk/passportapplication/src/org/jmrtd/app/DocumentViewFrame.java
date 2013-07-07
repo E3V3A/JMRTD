@@ -68,6 +68,8 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import net.sourceforge.scuba.smartcards.APDUListener;
+import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.AuthAdapter;
@@ -287,7 +289,12 @@ public class DocumentViewFrame extends JMRTDFrame {
 						break;
 					case PassportService.EF_DG3:
 						try {
-							DG3File dg3 = lds.getDG3File();
+							DG3File dg3 = null;
+							try {
+								dg3 = lds.getDG3File();
+							} catch (IOException cse) {
+								LOGGER.warning("DEBUG: EF.DG3 is in file list, but cannot get file from LDS"); continue;
+							}
 							if (dg3 == null) { LOGGER.warning("DEBUG: EF.DG3 is in file list, but cannot get file from LDS"); continue; }
 							if (eacEvent == null || !eacEvent.isSuccess()) {
 								LOGGER.warning("Starting to read DG3, but eacEvent = " + eacEvent);
