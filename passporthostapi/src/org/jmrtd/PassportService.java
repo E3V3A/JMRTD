@@ -283,8 +283,12 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
 			String documentNumber = bacKey.getDocumentNumber();
-			if (documentNumber == null || documentNumber.length() < 9) {
-				throw new IllegalArgumentException("Document number must have length at least 9");
+			if (documentNumber == null) {
+				throw new IllegalArgumentException("Document number null");
+			}
+			documentNumber = documentNumber.trim();
+			while (documentNumber.length() < 9) {
+				documentNumber += "<";
 			}
 			String dateOfBirth = bacKey.getDateOfBirth();
 			String dateOfExpiry = bacKey.getDateOfExpiry();
