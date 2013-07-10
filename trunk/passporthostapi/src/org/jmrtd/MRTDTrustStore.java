@@ -22,6 +22,7 @@
 
 package org.jmrtd;
 
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -54,6 +55,7 @@ import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
+import org.jmrtd.cert.CSCAMasterList;
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
 import org.jmrtd.cert.PKDCertStoreParameters;
 import org.jmrtd.cert.PKDMasterListCertStoreParameters;
@@ -171,16 +173,27 @@ public class MRTDTrustStore {
 			if (scheme.equalsIgnoreCase("ldap")) {
 				addAsPKDStoreCSCACertStore(uri);
 			} else {
-				/* The scheme is probably "file" or "http"? Going to just open a connection. */
+				/* The scheme is probably "file" or "http"? Going to just open a connection and read the contents. */
 				try {
+					/* Is it a key store file? */
+					LOGGER.info("Trying to open " + uri.toASCIIString() + " as keystore file");
 					addAsKeyStoreCSCACertStore(uri);
-				} catch (Exception kse) {
+				} catch (Exception e1) {
 					try {
-						addAsSingletonCSCACertStore(uri);
-					} catch (Exception e) {
-						LOGGER.warning("Failed to open " + uri.toASCIIString() + " both as a keystore and as a DER certificate file");
-						kse.printStackTrace();
-						e.printStackTrace();
+						/* Is it a CSCA master list? */
+						LOGGER.info("Trying to open " + uri.toASCIIString() + " as CSCA as master list");
+						addAsCSCAMasterList(uri);
+					} catch (Exception e2) {
+						try {
+							/* Is it a single certificate file? */
+							LOGGER.info("Trying to open " + uri.toASCIIString() + " as certificate file");
+							addAsSingletonCSCACertStore(uri);
+						} catch (Exception e3) {
+							LOGGER.warning("Failed to open " + uri.toASCIIString() + " as a keystore, as a DER certificate file, and as a CSCA masterlist file");
+//							e1.printStackTrace();
+//							e2.printStackTrace();
+//							e3.printStackTrace();
+						}
 					}
 				}
 			}
@@ -188,7 +201,6 @@ public class MRTDTrustStore {
 			gse.printStackTrace();
 		}
 	}
-
 
 	/**
 	 * Adds multiple certificate stores for document validation based on URIs.
@@ -318,6 +330,21 @@ public class MRTDTrustStore {
 		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
 
+	/* FIXME: skip KeyStore, and add directly as CertStore. */
+	private void addAsCSCAMasterList(URI uri) throws IOException, GeneralSecurityException {
+		URLConnection urlConnecton = uri.toURL().openConnection();
+		DataInputStream dataInputStream = new DataInputStream(urlConnecton.getInputStream());
+		byte[] bytes = new byte[(int)urlConnecton.getContentLengthLong()];
+		dataInputStream.readFully(bytes);
+		CSCAMasterList cscaMasterList = new CSCAMasterList(bytes);
+		List<Certificate> certificates = cscaMasterList.getCertificates();		
+		CertStoreParameters params = new CollectionCertStoreParameters(certificates);
+		CertStore certStore = CertStore.getInstance("Collection", params);
+		addCSCAStore(certStore);
+		Collection<? extends Certificate> rootCerts = certStore.getCertificates(SELF_SIGNED_X509_CERT_SELECTOR);
+		addCSCAAnchors(getAsAnchors(rootCerts));
+	}
+
 	private KeyStore getKeyStore(URI uri) {
 		/*
 		 * We have to try all store types, only Bouncy Castle Store (BKS) 
@@ -340,7 +367,7 @@ public class MRTDTrustStore {
 		}
 		throw new IllegalArgumentException("Not a supported keystore");
 	}
-	
+
 	/**
 	 * Returns a set of trust anchors based on the X509 certificates in <code>certificates</code>.
 	 * 

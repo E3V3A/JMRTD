@@ -23,6 +23,7 @@
 package org.jmrtd;
 
 import java.security.GeneralSecurityException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.logging.Logger;
@@ -256,13 +257,7 @@ public class PassportApduService extends CardService {
 			return;
 		}
 
-		short sw = (short)rapdu.getSW();
-		if (sw == ISO7816.SW_FILE_NOT_FOUND) {
-			throw new CardServiceException("File not found, trying to select " + Integer.toHexString(fid), sw);
-		}
-		if (sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Error occured, command was " + Hex.bytesToHexString(capdu.getBytes()), sw);
-		}
+		checkStatusWordAfterFileOperation(capdu, rapdu);
 	}
 
 	/**
@@ -275,6 +270,8 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @return a byte array of length <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
+	 *         
+	 * @throws CardServiceException if the command was not successful
 	 */
 	public synchronized byte[] sendReadBinary(short offset, int le, boolean longRead) throws CardServiceException {
 		return sendReadBinary(null, offset, le, longRead);
@@ -295,9 +292,12 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @return a byte array of length at most <code>le</code> with (the specified part
 	 *         of) the contents of the currently selected file
+	 * 
+	 * @throws CardServiceException if the command was not successful
 	 */
 	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean isExtendedLength) throws CardServiceException {
 		boolean retrySending = false;
+		CommandAPDU capdu = null;
 		ResponseAPDU rapdu = null;
 		do {
 			retrySending = false;
@@ -315,7 +315,6 @@ public class PassportApduService extends CardService {
 				}
 				if (le > 256) { le = 256; }
 			}
-			CommandAPDU capdu = null;
 			byte offsetHi = (byte)((offset & 0xFF00) >> 8);
 			byte offsetLo = (byte)(offset & 0xFF);
 			if (isExtendedLength) {
@@ -353,6 +352,7 @@ public class PassportApduService extends CardService {
 				}
 			}
 		} while (retrySending);
+
 		byte[] rapduBytes = rapdu.getData();
 		short sw = (short)rapdu.getSW();
 		if (isExtendedLength && sw == ISO7816.SW_NO_ERROR) {
@@ -369,6 +369,14 @@ public class PassportApduService extends CardService {
 			rapduBytes = new byte[data.length - index];
 			System.arraycopy(data, index, rapduBytes, 0, rapduBytes.length);
 		}
+
+		if (rapduBytes == null | rapduBytes.length == 0) {
+			LOGGER.warning("DEBUG: rapduBytes = " + Arrays.toString(rapduBytes) + ", le = " + le + ", sw = " + Integer.toHexString(sw));
+			
+		}
+		
+		checkStatusWordAfterFileOperation(capdu, rapdu);
+		
 		/* FIXME: should we inspect sw here and throw an exception? */
 		return rapduBytes;
 	}
@@ -471,10 +479,10 @@ public class PassportApduService extends CardService {
 			ResponseAPDU rapdu = transmit(capdu);
 
 			byte[] rapduBytes = rapdu.getBytes();
-			if (rapduBytes == null) {
-				throw new CardServiceException("Mutual authentication failed");
-			}
 			short sw = (short)rapdu.getSW();
+			if (rapduBytes == null) {
+				throw new CardServiceException("Mutual authentication failed", sw);
+			}
 
 			/* Some MRTDs apparently don't support 40 here, try again with 0. See R2-p1_v2_sIII_0035 (and other issues). */
 			if (sw != ISO7816.SW_NO_ERROR) {
@@ -659,5 +667,21 @@ public class PassportApduService extends CardService {
 		for (APDUListener listener: plainTextAPDUListeners) {
 			listener.exchangedAPDU(new APDUEvent(this, "PLAINTEXT", count, capdu, rapdu));
 		}
+	}
+	
+	private static void checkStatusWordAfterFileOperation( CommandAPDU capdu, ResponseAPDU rapdu) throws CardServiceException {
+		short sw = (short)rapdu.getSW();
+		String commandResponseMessage = "CAPDU = " + Hex.bytesToHexString(capdu.getBytes()) + ", RAPDU = " + Hex.bytesToHexString(rapdu.getBytes());
+		switch(sw) {
+		case ISO7816.SW_NO_ERROR:
+			return;
+		case ISO7816.SW_FILE_NOT_FOUND:
+			throw new CardServiceException("File not found, " + commandResponseMessage, sw);
+		case ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED:
+		case ISO7816.SW_CONDITIONS_NOT_SATISFIED:
+		case ISO7816.SW_COMMAND_NOT_ALLOWED:
+			throw new CardServiceException("Access to file denied, " + commandResponseMessage, sw);
+		}
+		throw new CardServiceException("Error occured, " + commandResponseMessage, sw);
 	}
 }

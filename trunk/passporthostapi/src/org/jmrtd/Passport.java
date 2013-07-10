@@ -91,6 +91,7 @@ import org.jmrtd.lds.SecurityInfo;
  * card service.
  * 
  * Also contains the document verification logic.
+ *
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
@@ -196,13 +197,10 @@ public class Passport {
 			new COMFile(service.getInputStream(PassportService.EF_COM));
 			featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-		} catch (CardServiceException cse) {
-			System.out.println("DEBUG: in BAC detection logic, status word was: " + Integer.toHexString(cse.getSW()));
+		} catch (Exception e) {
+			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
 			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-		} catch (IOException e) {
-			e.printStackTrace();
-			/* NOTE: Now what? Leave status as UNKNOWN. */
 		}
 
 		/* Try entries from BACStore. */
@@ -703,21 +701,6 @@ public class Passport {
 	}
 
 	/* ONLY PRIVATE METHODS BELOW. */
-
-	/**
-	 * Builds certificate chain from doc signing certificate embedded in
-	 * SOd to CSCA anchor. Uses PKIX algorithm.
-	 * 
-	 * @return a list of certificates
-	 * 
-	 * @throws GeneralSecurityException if could not be checked
-	 */
-	//	private List<Certificate> getCertificateChain(SODFile sod, List<CertStore> cscaStores, Set<TrustAnchor> cscaTrustAnchors) throws GeneralSecurityException {
-	//
-	//
-	//		/* Use PKIX to construct chain. */
-	//		return getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber, cscaStores, cscaTrustAnchors);
-	//	}
 
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
 		hasEACSupport = true;

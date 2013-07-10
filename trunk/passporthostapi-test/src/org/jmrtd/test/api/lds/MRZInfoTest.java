@@ -186,7 +186,7 @@ public class MRZInfoTest extends TestCase {
 		MRZInfo mrzInfo = createTestObject();
 		byte[] encoded = mrzInfo.getEncoded();
 		ByteArrayInputStream in = new ByteArrayInputStream(encoded);
-		MRZInfo copy = new MRZInfo(in);
+		MRZInfo copy = new MRZInfo(in, encoded.length);
 
 		assertEquals(mrzInfo.getDocumentCode(), copy.getDocumentCode());
 
@@ -219,7 +219,7 @@ public class MRZInfoTest extends TestCase {
 
 	public void testDecodeEncode(String mrz, String documentCode, String nationality, String lastName, String[] firstNames, String documentNumber, String dateOfBirth, Gender gender, String dateOfExpiry, String issuingState) {
 		try {
-			MRZInfo mrzInfo = new MRZInfo(new ByteArrayInputStream(mrz.replace("\n", "").getBytes("UTF-8")));
+			MRZInfo mrzInfo = new MRZInfo(mrz);
 			assertEquals(mrzInfo.getDocumentCode(), documentCode);
 			assertEquals(mrzInfo.getNationality(), nationality);
 			assertEquals(mrzInfo.getPrimaryIdentifier(), lastName);
@@ -244,7 +244,7 @@ public class MRZInfoTest extends TestCase {
 
 		byte[] encoded = mrzInfo1.getEncoded();
 		assertNotNull(encoded);
-		MRZInfo mrzInfo2 = new MRZInfo(new ByteArrayInputStream(encoded));
+		MRZInfo mrzInfo2 = new MRZInfo(new ByteArrayInputStream(encoded), encoded.length);
 
 		MRZInfo mrzInfo3 = new MRZInfo(mrzInfo1.getDocumentCode(), mrzInfo1.getIssuingState(), mrzInfo1.getPrimaryIdentifier(), mrzInfo1.getSecondaryIdentifier(), mrzInfo1.getDocumentNumber(), mrzInfo1.getNationality(), mrzInfo1.getDateOfBirth(), mrzInfo1.getGender(), mrzInfo1.getDateOfExpiry(), mrzInfo1.getPersonalNumber());
 
@@ -288,7 +288,7 @@ public class MRZInfoTest extends TestCase {
 
 	public void testEquals(String mrz) {
 		try {
-			MRZInfo mrzInfo = new MRZInfo(new ByteArrayInputStream(mrz.replace("\n", "").getBytes("UTF-8")));
+			MRZInfo mrzInfo = new MRZInfo(mrz);
 			MRZInfo copy = null;
 
 			String documentCode = mrzInfo.getDocumentCode();
@@ -337,7 +337,7 @@ public class MRZInfoTest extends TestCase {
 
 	public void testNationality(String mrz, Country expectedCountry) {
 		try {
-			MRZInfo mrzInfo = new MRZInfo(new ByteArrayInputStream(mrz.replace("\n", "").getBytes("UTF-8")));
+			MRZInfo mrzInfo = new MRZInfo(mrz);
 			String code = mrzInfo.getNationality();
 			Country country = ICAOCountry.getInstance(code);
 			assertEquals(country, expectedCountry);

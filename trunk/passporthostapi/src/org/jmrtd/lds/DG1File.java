@@ -71,8 +71,8 @@ public class DG1File extends DataGroup {
 	protected void readContent(InputStream in) throws IOException {
 		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
 		tlvIn.skipToTag(MRZ_INFO_TAG);
-		tlvIn.readLength();
-		this.mrzInfo = new MRZInfo(tlvIn);
+		int length = tlvIn.readLength();
+		this.mrzInfo = new MRZInfo(tlvIn, length);
 	}
 
 	/**

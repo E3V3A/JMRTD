@@ -216,7 +216,7 @@ Code quality
 + Check JavaDoc.
 
 
-0.4.9 (2013-07-05)
+0.4.9 (2013-07-12)
 ------------------
 
 General
@@ -230,7 +230,8 @@ General
 + Finer grained verification status, i.e. move verifyHashes out of verifyDS.
 + Refactor FeatureStatus out of VerificationStatus.
 + More derived information in VerificationStatus (tried BAC entries, computed hashes, derived certificate chain, ...) so that UI can show this in status.
-+ Treat CSCAMasterList as first class citizen.
++ Treat CSCAMasterList as first class citizen, allow to use DER encoded master list file instead of key store file.
++ In MRZInfo base ID1/ID3 type decision on length instead of on first 2 chars of MRZ.
 
 EAC
 + ChipAuthentication (in doCA) with explicit keyId seems to use wrong encoding. Check that it is ok now.
@@ -239,8 +240,11 @@ EAC
 ImageIO
 + Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn and Glenn Strong for testing.
 
+GUI
++ Make Swing UI more responsive by applying SwingUtilities.invokeLater best practices.
+
 Android
-+ New app, improved UI, and security validation, in Google Play (Novay in a project for EIT ICT Labs).
++ New app, improved UI, and security validation, in Google Play (at Novay in a project for EIT ICT Labs).
 
 SCUBA
 + Support interface for extended length APDU checking, needed for EAC (in API, not yet implemented)

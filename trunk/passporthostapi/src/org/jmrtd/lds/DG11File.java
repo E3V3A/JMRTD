@@ -113,7 +113,7 @@ public class DG11File extends DataGroup {
 	 * Use <code>'<'</code> as separator.
 	 *
 	 * @param fullNamePrimaryIdentifier data element
-	 * @param fullNamesecondaryIdentifiers data element
+	 * @param fullNameSecondaryIdentifiers data element
 	 * @param otherNames data element
 	 * @param personalNumber data element
 	 * @param fullDateOfBirth data element

@@ -523,7 +523,6 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				SwingUtilities.invokeLater(new Runnable() {
-					@Override
 					public void run() {
 						/* JFrame editorFrame = */ new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduListener);
 					}
@@ -623,45 +622,49 @@ public class DocumentViewFrame extends JMRTDFrame {
 			private static final long serialVersionUID = 9113082315691234764L;
 
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
-				int choice = fileChooser.showSaveDialog(getContentPane());
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					try {
-						File file = fileChooser.getSelectedFile();
-						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						FileOutputStream fileOut = new FileOutputStream(file);
-						ZipOutputStream zipOut = new ZipOutputStream(fileOut);
-						for (short fid: passport.getLDS().getFileList()) {
-							String entryName = Hex.shortToHexString(fid) + ".bin";
-							try {
-								InputStream dg = passport.getLDS().getInputStream(fid);
-								zipOut.putNextEntry(new ZipEntry(entryName));
-								int bytesRead;
-								byte[] dgBytes = new byte[1024];
-								while((bytesRead = dg.read(dgBytes)) > 0){
-									zipOut.write(dgBytes, 0, bytesRead);
-								}
-								zipOut.closeEntry();
-							} catch (Exception cse) {
-								LOGGER.warning("Skipping entry " + entryName);
-							}
+				new Thread(new Runnable() {
+					public void run() {
+						JFileChooser fileChooser = new JFileChooser();
+						String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
+						if (directory != null) {
+							fileChooser.setCurrentDirectory(new File(directory));
 						}
-						zipOut.finish();
-						zipOut.close();
-						fileOut.flush();
-						fileOut.close();						
-						break;
-					} catch (IOException fnfe) {
-						fnfe.printStackTrace();
+						fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
+						int choice = fileChooser.showSaveDialog(getContentPane());
+						switch (choice) {
+						case JFileChooser.APPROVE_OPTION:
+							try {
+								File file = fileChooser.getSelectedFile();
+								preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
+								FileOutputStream fileOut = new FileOutputStream(file);
+								ZipOutputStream zipOut = new ZipOutputStream(fileOut);
+								for (short fid: passport.getLDS().getFileList()) {
+									String entryName = Hex.shortToHexString(fid) + ".bin";
+									try {
+										InputStream dg = passport.getLDS().getInputStream(fid);
+										zipOut.putNextEntry(new ZipEntry(entryName));
+										int bytesRead;
+										byte[] dgBytes = new byte[1024];
+										while((bytesRead = dg.read(dgBytes)) > 0){
+											zipOut.write(dgBytes, 0, bytesRead);
+										}
+										zipOut.closeEntry();
+									} catch (Exception cse) {
+										LOGGER.warning("Skipping entry " + entryName);
+									}
+								}
+								zipOut.finish();
+								zipOut.close();
+								fileOut.flush();
+								fileOut.close();						
+								break;
+							} catch (IOException fnfe) {
+								fnfe.printStackTrace();
+							}
+						default: break;
+						}						
 					}
-				default: break;
-				}
+				}).start();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, SAVE_AS_ICON);

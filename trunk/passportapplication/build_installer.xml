@@ -80,7 +80,7 @@
 			<!-- fileset dir="${jai_imageio_bin_dir}" includes="${libclib_jiio}" / -->
 			<fileset dir="${wsq_imageio_dir}" includes="${wsq_imageio_jar}" />
 			<fileset dir="${jj2000_imageio_dir}" includes="${jj2000_imageio_jar}" />
-			<fileset dir="${jj2000_dir}" includes="${jj2000_jar}" />
+			<!--  fileset dir="${jj2000_dir}" includes="${jj2000_jar}" / -->
 		</copy>		
 	</target>
 
