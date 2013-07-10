@@ -283,24 +283,39 @@ public class PassportService extends PassportApduService implements Serializable
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
 			String documentNumber = bacKey.getDocumentNumber();
-			if (documentNumber == null) {
-				throw new IllegalArgumentException("Document number null");
-			}
-			documentNumber = documentNumber.trim();
-			while (documentNumber.length() < 9) {
-				documentNumber += "<";
-			}
 			String dateOfBirth = bacKey.getDateOfBirth();
 			String dateOfExpiry = bacKey.getDateOfExpiry();
-			byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
-			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
-			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
-			
-			doBAC(kEnc, kMac);
+
+			if (dateOfBirth == null || dateOfBirth.length() != 6) {
+				throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
+			}
+			if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
+				throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
+			}
+			if (documentNumber == null) {
+				throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
+			}
+
+			/* The document number, excluding trailing '<'. */
+			String minDocumentNumber = documentNumber.replace('<', ' ').trim().replace(' ', '<');
+
+			/* The document number, including trailing '<' until length 9. */
+			String maxDocumentNumber = minDocumentNumber;
+			while (maxDocumentNumber.length() < 9) {
+				maxDocumentNumber += "<";
+			}
+
+			try {
+				byte[] keySeed = Util.computeKeySeed(maxDocumentNumber, dateOfBirth, dateOfExpiry);
+				SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
+				SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
+				doBAC(kEnc, kMac);
+			} catch (CardServiceException cse) {
+				LOGGER.warning("BAC failed with document number \"" + maxDocumentNumber + "\"");
+				throw cse;
+			}
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
-		} catch (UnsupportedEncodingException uee) {
-			throw new CardServiceException(uee.toString());
 		}
 	}
 
@@ -314,8 +329,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @throws CardServiceException if authentication failed
 	 */
-	public synchronized void doBAC(SecretKey kEnc, SecretKey kMac) throws CardServiceException,
-			GeneralSecurityException {
+	public synchronized void doBAC(SecretKey kEnc, SecretKey kMac) throws CardServiceException, GeneralSecurityException {
 		byte[] rndICC = sendGetChallenge();
 		byte[] rndIFD = new byte[8];
 		random.nextBytes(rndIFD);

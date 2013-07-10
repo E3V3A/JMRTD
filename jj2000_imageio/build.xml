@@ -43,7 +43,11 @@
 			</manifest>
 			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
 			<fileset dir="${build}/" includes="org/jmrtd/jj2000/*.class" />
-			<fileset dir="" includes="META-INF/**/*" />					
+			<fileset dir="" includes="META-INF/**/*" />
+
+			<!--  also copy (patched version of) JJ2000 -->
+			<fileset dir="../jj2000/bin" />
+						
 		</jar>	
 	</target>
 

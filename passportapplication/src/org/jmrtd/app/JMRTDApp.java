@@ -120,11 +120,6 @@ public class JMRTDApp {
 		BC_PROVIDER.put("CertificateFactory.CVC", JMRTD_PROVIDER.get("CertificateFactory.CVC"));
 		Security.insertProviderAt(BC_PROVIDER, 1);
 		Security.addProvider(JMRTD_PROVIDER);
-
-		Provider[] providers = Security.getProviders();
-		for (Provider provider: providers) {
-			LOGGER.info("Provider " + provider.getName() + ": " + provider.getClass().getCanonicalName());
-		}
 	}
 
 	/* FIXME: I know, it's ugly. */
@@ -139,7 +134,7 @@ public class JMRTDApp {
 
 	private AboutDialog aboutDialog;
 	private PreferencesDialog preferencesDialog;
-	
+
 	private BACStorePanel bacStorePanel;
 
 	private APDUTraceFrame apduTraceFrame;
@@ -225,21 +220,24 @@ public class JMRTDApp {
 			}
 			cardManager.addCardTerminalListener(new CardTerminalListener() {
 				@Override
-				public void cardInserted(CardEvent ce) {
-					try {
-						PassportService service = new PassportService(ce.getService());
-						if (apduTraceFrame != null) {
-							service.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
+				public void cardInserted(final CardEvent ce) {
+					new Thread(new Runnable() {
+						public void run() {
+							try {
+								final CardService service = ce.getService();
+								final PassportService passportService = new PassportService(service);
+								if (apduTraceFrame != null) {
+									passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener());
+								}
+								passportService.open();
+								readPassport(passportService);
+							} catch (CardServiceException cse) {
+								LOGGER.info("Could not open passport: " + cse.getMessage());
+							} catch (Exception e) {
+								e.printStackTrace();
+							}
 						}
-						try {
-							service.open();
-							readPassport(service);
-						} catch (CardServiceException cse) {
-							LOGGER.info("Could not open passport: " + cse.getMessage());
-						}
-					} catch (Exception e) {
-						e.printStackTrace();
-					}
+					}).start();
 				}
 
 				@Override
@@ -331,12 +329,12 @@ public class JMRTDApp {
 	 * @param service
 	 * @throws CardServiceException
 	 */
-	private void readPassport(PassportService service) throws CardServiceException {
+	private void readPassport(final PassportService service) throws CardServiceException {
 		try {
-			Passport passport = new Passport(service, trustManager, bacStore.getEntries(), 1);
-			DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
+			final Passport passport = new Passport(service, trustManager, bacStore.getEntries(), 1);
+			final DocumentViewFrame passportFrame = new DocumentViewFrame(passport, preferencesDialog.getReadingMode(), apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
 			passportFrame.pack();
-			passportFrame.setVisible(true);
+			passportFrame.setVisible(true);					
 		} catch (BACDeniedException bde) {
 			bacStorePanel.getAddAction().actionPerformed(new ActionEvent(this, 0, "Add BAC"));
 		} catch (CardServiceException cse) {
@@ -413,14 +411,22 @@ public class JMRTDApp {
 			private static final long serialVersionUID = 2866114377708028964L;
 
 			public void actionPerformed(ActionEvent e) {
-				try {
-					Passport passport = DocumentFactory.createEmptyMRTD("P<", trustManager);
-					DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
-					passportFrame.pack();
-					passportFrame.setVisible(true);
-				} catch (Exception ex) {
-					ex.printStackTrace();
-				}
+				new Thread(new Runnable() {
+					public void run() {
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								try {
+									Passport passport = DocumentFactory.createEmptyMRTD("P<", trustManager);
+									DocumentEditFrame passportFrame = new DocumentEditFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
+									passportFrame.pack();
+									passportFrame.setVisible(true);
+								} catch (Exception ex) {
+									ex.printStackTrace();
+								}
+							}
+						});
+					}
+				}).start();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, NEW_ICON);
@@ -439,28 +445,36 @@ public class JMRTDApp {
 			private static final long serialVersionUID = -9209238098024027906L;
 
 			public void actionPerformed(ActionEvent e) {
-				JFileChooser fileChooser = new JFileChooser();
-				String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
-				if (directory != null) {
-					fileChooser.setCurrentDirectory(new File(directory));
-				}
-				fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
-				int choice = fileChooser.showOpenDialog(mainFrame);
-				switch (choice) {
-				case JFileChooser.APPROVE_OPTION:
-					try {
-						File file = fileChooser.getSelectedFile();
-						preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
-						Passport passport = new Passport(file, trustManager);
-						DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
-						passportFrame.pack();
-						passportFrame.setVisible(true);
-					} catch (/* IO */ Exception ioe) {
-						/* NOTE: Do nothing. */
+				new Thread(new Runnable() {
+					public void run() {
+						JFileChooser fileChooser = new JFileChooser();
+						String directory = preferences.get(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, null);
+						if (directory != null) {
+							fileChooser.setCurrentDirectory(new File(directory));
+						}
+						fileChooser.setFileFilter(FileUtil.ZIP_FILE_FILTER);
+						int choice = fileChooser.showOpenDialog(mainFrame);
+						switch (choice) {
+						case JFileChooser.APPROVE_OPTION:
+							final File file = fileChooser.getSelectedFile();
+							SwingUtilities.invokeLater(new Runnable() {
+								public void run() {
+									try {
+										preferences.put(JMRTDApp.PASSPORT_ZIP_FILES_DIR_KEY, file.getParent());
+										Passport passport = new Passport(file, trustManager);
+										DocumentViewFrame passportFrame = new DocumentViewFrame(passport, ReadingMode.SAFE_MODE, apduTraceFrame == null ? null : apduTraceFrame.getRawAPDUListener());
+										passportFrame.pack();
+										passportFrame.setVisible(true);
+									} catch (/* IO */ Exception ioe) {
+										/* NOTE: Do nothing. */
+									}
+								}
+							});
+							break;
+						default: break;
+						}
 					}
-					break;
-				default: break;
-				}
+				}).start();
 			}
 		};
 		action.putValue(Action.SMALL_ICON, OPEN_ICON);
@@ -498,17 +512,25 @@ public class JMRTDApp {
 			private static final long serialVersionUID = 6389151122469369737L;
 
 			public void actionPerformed(ActionEvent e) {
-				JFrame frame = new CertificateMasterListFrame("CSCA Anchors", trustManager.getCSCAAnchors());
-				frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-				frame.pack();
-				frame.setVisible(true);				
-			}			
+				new Thread(new Runnable() {
+					public void run() {
+						SwingUtilities.invokeLater(new Runnable() {
+							public void run() {
+								JFrame frame = new CertificateMasterListFrame("CSCA Anchors", trustManager.getCSCAAnchors());
+								frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+								frame.pack();
+								frame.setVisible(true);								
+							}							
+						});
+					}					
+				}).start();
+			}
 		};
 		action.putValue(Action.SMALL_ICON, CSCA_ANCHORS_ICON);
 		action.putValue(Action.LARGE_ICON_KEY, CSCA_ANCHORS_ICON);
 		action.putValue(Action.SHORT_DESCRIPTION, "Show CSCA anchors");
 		action.putValue(Action.NAME, "CSCA anchors...");
-		actionMap.put("CSCAAnchorss", action);
+		actionMap.put("CSCAAnchors", action);
 		return action;
 	}
 
@@ -522,7 +544,7 @@ public class JMRTDApp {
 			public void actionPerformed(ActionEvent e) {
 				List<CardTerminal> terminals = cardManager.getTerminals();
 				for (final CardTerminal terminal: terminals) {
-					(new Thread(new Runnable() {
+					new Thread(new Runnable() {
 						public void run() {	
 							try {
 								if (/* cardManager.isPolling(terminal) && */ terminal.isCardPresent()) {
@@ -535,7 +557,6 @@ public class JMRTDApp {
 									PassportService passportService = new PassportService(service);
 									if (apduTraceFrame != null) { passportService.addPlainTextAPDUListener(apduTraceFrame.getPlainTextAPDUListener()); }
 									readPassport(passportService);
-
 									if (isPolling) { cardManager.startPolling(terminal); }
 								}
 							} catch (CardException ce) {
@@ -547,7 +568,7 @@ public class JMRTDApp {
 								LOGGER.warning("skipping " + terminal.getName() + ", cannot open because of " + e.toString());
 							}
 						}
-					})).start();
+					}).start();
 				}
 			}
 		};
@@ -620,42 +641,37 @@ public class JMRTDApp {
 	 * @param arg command line arguments.
 	 */
 	public static void main(String[] arg) {
-		SwingUtilities.invokeLater(new Runnable() {
-
-			@Override
-			public void run() {
-				try {
-					String osName = System.getProperty("os.name");
-					String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
-					LOGGER.info("OS name = " + osName);
-					LOGGER.info("System look and feel class name = " + systemLookAndFeelClassName);
-					boolean isMacOSX = false;
-					if (osName.toLowerCase().startsWith("windows")) {
-						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-					} else if (osName.toLowerCase().startsWith("mac os x") || System.getProperty("mrj.version") != null) {
-						/* Better to set these on command line (in jmrtd.sh for MacOS X):
-						 * 
-						 * java -Dcom.apple.macos.useScreenMenuBar=true \
-						 * 		-Dcom.apple.mrj.application.apple.menu.about.name=JMRTD \
-						 * 		-Xdock:name="JMRTD" \
-						 * 		-jar jmrtd.jar
-						 */
-						System.setProperty("apple.laf.useScreenMenuBar", "true");
-						System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
-						UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-						isMacOSX = true;
-					}
-					new JMRTDApp(isMacOSX);
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (InstantiationException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				} catch (UnsupportedLookAndFeelException e) {
-					e.printStackTrace();
-				}
+		try {
+			String osName = System.getProperty("os.name");
+			// String systemLookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
+			// LOGGER.info("OS name = " + osName);
+			// LOGGER.info("System look and feel class name = " + systemLookAndFeelClassName);
+			boolean isMacOSX = false;
+			if (osName.toLowerCase().startsWith("windows")) {
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} else if (osName.toLowerCase().startsWith("mac os x") || System.getProperty("mrj.version") != null) {
+				/* Better to set these on command line (in jmrtd.sh for MacOS X):
+				 * 
+				 * java -Dcom.apple.macos.useScreenMenuBar=true \
+				 * 		-Dcom.apple.mrj.application.apple.menu.about.name=JMRTD \
+				 * 		-Xdock:name="JMRTD" \
+				 * 		-jar jmrtd.jar
+				 */
+				System.setProperty("apple.laf.useScreenMenuBar", "true");
+				System.setProperty("com.apple.mrj.application.apple.menu.about.name", "JMRTD");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+				isMacOSX = true;
 			}
-		});
+			new JMRTDApp(isMacOSX);
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		} catch (InstantiationException e) {
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			e.printStackTrace();
+		} catch (UnsupportedLookAndFeelException e) {
+			e.printStackTrace();
+		}
 	}
 }
+

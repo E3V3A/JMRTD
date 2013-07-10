@@ -66,8 +66,7 @@ public class Util {
 	 * 
 	 * @return the key.
 	 */
-	public static SecretKey deriveKey(byte[] keySeed, int mode)
-	throws GeneralSecurityException {
+	public static SecretKey deriveKey(byte[] keySeed, int mode) throws GeneralSecurityException {
 		MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
 		shaDigest.update(keySeed);
 		byte[] c = { 0x00, 0x00, 0x00, (byte)mode };
@@ -90,13 +89,10 @@ public class Util {
 	 *
 	 * @return a byte array of length 16 containing the key seed.
 	 */
-	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry)
-	throws UnsupportedEncodingException, GeneralSecurityException {
-		if (documentNumber.length() < 9
-				|| dateOfBirth.length() != 6
-				|| dateOfExpiry.length() != 6) {
-			throw new UnsupportedEncodingException("Wrong length MRZ input");
-		}
+	/*
+	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible no.w
+	 */
+	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
 
 		/* Check digits... */
 		byte[] cd1 = { (byte)MRZInfo.checkDigit(documentNumber) };
@@ -104,11 +100,12 @@ public class Util {
 		byte[] cd3 = { (byte)MRZInfo.checkDigit(dateOfExpiry) };
 
 		MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
-		shaDigest.update(documentNumber.getBytes("UTF-8"));
+		
+		shaDigest.update(getBytes(documentNumber));
 		shaDigest.update(cd1);
-		shaDigest.update(dateOfBirth.getBytes("UTF-8"));
+		shaDigest.update(getBytes(dateOfBirth));
 		shaDigest.update(cd2);
-		shaDigest.update(dateOfExpiry.getBytes("UTF-8"));
+		shaDigest.update(getBytes(dateOfExpiry));
 		shaDigest.update(cd3);
 
 		byte[] hash = shaDigest.digest();
@@ -232,6 +229,17 @@ public class Util {
 			System.arraycopy(plaintext, messageOffset, recoveredMessage, 0, messageLength);
 			return recoveredMessage;
 		}
+	}
+	
+	private static byte[] getBytes(String str) {
+		byte[] bytes = str.getBytes();
+		try {
+			bytes = str.getBytes("UTF-8");
+		} catch (UnsupportedEncodingException use) {
+			/* NOTE: unlikely. */
+			use.printStackTrace();
+		}
+		return bytes;
 	}
 }
 

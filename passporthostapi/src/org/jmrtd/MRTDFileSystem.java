@@ -25,8 +25,10 @@ package org.jmrtd;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.FileInfo;
@@ -51,6 +53,8 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 
 	private static final long serialVersionUID = -4357282016708205020L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	/** Number of bytes to read at start of file to determine file length. */
 	private static final int READ_AHEAD_LENGTH = 8;
 
@@ -149,6 +153,9 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			 * EF.CVCA is the exception and has a fixed length of CVCAFile.LENGTH.
 			 */
 			byte[] prefix = service.sendReadBinary(0, READ_AHEAD_LENGTH, false);
+			if (prefix == null || prefix.length != READ_AHEAD_LENGTH) {
+				LOGGER.severe("Something is wrong with prefix, prefix = " + Arrays.toString(prefix));
+			}
 			ByteArrayInputStream baInputStream = new ByteArrayInputStream(prefix);
 			TLVInputStream tlvInputStream = new TLVInputStream(baInputStream);
 			int fileLength = 0;
@@ -165,7 +172,7 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 			fileInfos.put(selectedFID, fileInfo);
 			return fileInfo;
 		} catch (IOException ioe) {
-			throw new CardServiceException(ioe.toString());
+			throw new CardServiceException(ioe.toString() + " getting file info for " + Integer.toHexString(selectedFID));
 		}
 	}
 

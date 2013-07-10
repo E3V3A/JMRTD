@@ -603,9 +603,6 @@ public class PassportTestService extends PassportService {
 			}
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
-		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
-			throw new CardServiceException(uee.toString());
 		}
 	}
 

@@ -178,9 +178,9 @@ public class MRZInfo extends AbstractLDSInfo {
 	 *
 	 * @param inputStream contains the contents of DG1 (without the tag and length)
 	 */
-	public MRZInfo(InputStream inputStream) {
+	public MRZInfo(InputStream inputStream, int length) {
 		try {
-			readObject(inputStream);
+			readObject(inputStream, length);
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			throw new IllegalArgumentException(ioe.getMessage());
@@ -197,7 +197,7 @@ public class MRZInfo extends AbstractLDSInfo {
 		if (str == null) { throw new IllegalArgumentException("Null string"); }
 		str = str.trim().replace("\n", "");
 		try {
-			readObject(new ByteArrayInputStream(str.getBytes("UTF-8")));
+			readObject(new ByteArrayInputStream(str.getBytes("UTF-8")), str.length());
 		} catch (UnsupportedEncodingException uee) {
 			/* NOTE: never happens, UTF-8 is supported. */
 			uee.printStackTrace();
@@ -208,13 +208,18 @@ public class MRZInfo extends AbstractLDSInfo {
 		}
 	}
 
-	private void readObject(InputStream inputStream) throws IOException {
+	private void readObject(InputStream inputStream, int length) throws IOException {
 		DataInputStream dataIn = new DataInputStream(inputStream);
 
 		/* line 1, pos 1 to 2, Document code */
 		this.documentCode = readStringWithFillers(dataIn, 2);
 		this.documentType = getDocumentTypeFromDocumentCode(this.documentCode);
-		if (documentType == DOC_TYPE_ID1) {
+		switch (length) {
+		case 88: this.documentType = DOC_TYPE_ID3; break;
+		case 90: this.documentType = DOC_TYPE_ID1; break;
+		default: this.documentType = getDocumentTypeFromDocumentCode(this.documentCode); break;
+		}
+		if (this.documentType == DOC_TYPE_ID1) {
 			/* line 1, pos 3 to 5 Issuing State or organization */
 			this.issuingState = readCountry(dataIn);
 
