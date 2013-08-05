@@ -16,7 +16,7 @@ import javax.imageio.metadata.IIOMetadataNode;
 import org.w3c.dom.Node;
 
 /**
- * WSQ Metadata is stored as Key-Value pairs, known as NISTCOM. see <code>nistcom.h</code> inside the <code>j2wsq</code> project.  
+ * WSQ Metadata is stored as Key-Value pairs, known as NISTCOM. See <code>nistcom.h</code> inside the <code>j2wsq</code> project.
  * <p>
  * Almost anything can be stored into the key-value pairs, but most importantly, pixel density is stored as Pixels-Per-Inch under the key "PPI" ({@link #KEY_PPI}), and Bit-Rate under the key "WSQ_BITRATE" ({@link #KEY_BITRATE}).
  * <p>
@@ -38,13 +38,16 @@ import org.w3c.dom.Node;
  * @author Paulo Costa <me@paulo.costa.nom.br>
  */
 public class WSQMetadata extends IIOMetadata {
+	
 	/** Name of the property storing pixel density, in pixel-per-inch */
 	public static final String KEY_PPI = "PPI";
+
 	/** Name of the property storing compression rate, in bits-per-inch */
 	public static final String KEY_BITRATE = "WSQ_BITRATE";
 
 	/** NistCom key/value pairs */
 	Map<String, String> nistcom = new LinkedHashMap<String, String>();
+
 	/** General Comments */
 	List<String> comments = new ArrayList<String>();
 
@@ -60,6 +63,7 @@ public class WSQMetadata extends IIOMetadata {
 
 	/** 
 	 * Creates a new WSQ Metadata with the specified pixel density.
+	 *
 	 * @param PPI pixel density, in Pixels-Per-Inch
 	 */
 	public WSQMetadata(double PPI) {
@@ -69,6 +73,7 @@ public class WSQMetadata extends IIOMetadata {
 
 	/** 
 	 * Creates a new WSQ Metadata with the specified pixel-density and bit-rate.
+	 *
 	 * @param PPI pixel density, in Pixels-Per-Inch
 	 * @param BitRate Estimated number of bits per pixel in the compressed image.
 	 */
@@ -118,6 +123,7 @@ public class WSQMetadata extends IIOMetadata {
 
 	/** NISTCOM Keys that will be automatically discarded */
 	private static final Set<String> NISTCOM_DISCARD=new HashSet<String>();
+
 	/** NISTCOM Keys that must be formatted as valid non-negative numbers to be accepted */
 	private static final Set<String> NISTCOM_NUMBER=new HashSet<String>();
 
