@@ -1,3 +1,5 @@
+/* $Id: $ */
+
 package org.jmrtd.imageio;
 
 import java.io.IOException;
@@ -11,7 +13,7 @@ import javax.imageio.stream.ImageOutputStream;
 public class JJ2000ImageWriterSpi extends ImageWriterSpi {
 
 	static final String vendorName = "JMRTD";
-	static final String version = "0.0.2";
+	static final String version = "0.0.3";
 	static final String writerClassName = "org.jmrtd.imageio.JJ2000ImageWriter";
 	static final String[] names = { "JPEG2000", "jpeg2000", "JPEG 2000", "JPEG2K", "JPEG 2K" };
 	static final String[] suffixes = { "jp2" };

@@ -51,7 +51,7 @@ public class JJ2000Decoder {
 		{ "res", "", "", null },
 		{ "i", "", "", null },
 		{ "o", "", "", null },
-		{ "rate", "", "", "3.0" },
+		{ "rate", "", "", "1.0" },
 		{ "nbytes", "", "", "-1" },
 		{ "parsing", null, "", "on" },
 		{ "ncb_quit", "", "", "-1" },
@@ -102,16 +102,12 @@ public class JJ2000Decoder {
 		 * file format wrapper.
 		 * NOTE: This can throw an Error (not an Exception, no an ERROR!).
 		 */
-		//		try {
 		FileFormatReader fileFormatReader = new FileFormatReader(randomAccessIO);
 		fileFormatReader.readFileFormat();
 		if (!fileFormatReader.JP2FFUsed) {
 			throw new IOException("Was expecting JP2 file format");
 		}
 		randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
-		//		} catch (Error error) {
-		//			throw new IOException("Error interpreting stream as JP2");
-		//		}
 
 		// Instantiate header decoder and read main header
 		HeaderInfo headerInfo = new HeaderInfo();
@@ -160,7 +156,8 @@ public class JJ2000Decoder {
 			BlkImgDataSrc palettized = headerDecoder.createPalettizedColorSpaceMapper(resampled, colorSpace);
 			color = headerDecoder.createColorSpaceMapper(palettized, colorSpace);
 		} catch (Exception e) {
-			throw new IOException("Error processing jp2 colorspace information: " + e.getMessage());
+			// throw new IOException("Error processing jp2 colorspace information: " + e.getMessage());
+			LOGGER.warning("DEBUG: Ignoring jp2 colorspace processing error");
 		}
 
 		// This is the last image in the decoding chain and should be
@@ -179,7 +176,7 @@ public class JJ2000Decoder {
 		int imgWidth = decodedImage.getImgWidth();
 		int imgHeight = decodedImage.getImgHeight();
 
-		// Find the list of tile to decode.
+		// Find the list of tiles to decode.
 		Coord nT = decodedImage.getNumTiles(null);
 
 		// Loop on vertical tiles
@@ -189,7 +186,7 @@ public class JJ2000Decoder {
 				try {
 					decodedImage.setTile(x, y);
 				} catch (Exception eofe) {
-					LOGGER.info("Ignoring exception in JJ2000Decoder setTile(" + x + ", " + y + ")");
+					LOGGER.info("DEBUG: Ignoring exception in JJ2000Decoder setTile(" + x + ", " + y + ")");
 				}
 
 				int width = decodedImage.getImgWidth();

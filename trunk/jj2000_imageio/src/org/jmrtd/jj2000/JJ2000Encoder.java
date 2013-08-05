@@ -10,6 +10,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
+
 import jj2000.j2k.codestream.writer.FileCodestreamWriter;
 import jj2000.j2k.codestream.writer.HeaderEncoder;
 import jj2000.j2k.codestream.writer.PktEncoder;
@@ -47,7 +49,7 @@ public class JJ2000Encoder {
 		{ "tiles", "<nominal tile width> <nominal tile height>", "", "0 0" },
 		{ "ref", "<x> <y>", "", "0 0" },
 		{ "tref", "<x> <y>",  "", "0 0" },
-		{ "rate", "<output bitrate in bpp>", "", "1.5" },
+		{ "rate", "<output bitrate in bpp>", "", "1.0" },
 		{ "lossless", "[on|off]", "", "off" },
 		{ "i", "<image file> [,<image file> [,<image file> ... ]]",  "", null },
 		{ "o", "<file name>",  "", null },
