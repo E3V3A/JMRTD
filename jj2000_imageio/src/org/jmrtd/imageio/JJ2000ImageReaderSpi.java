@@ -21,7 +21,7 @@ public class JJ2000ImageReaderSpi extends ImageReaderSpi
 	static final String vendorName = "JMRTD";
 	static final String version = "0.0.1";
 	static final String readerClassName = "org.jmrtd.imageio.JJ2000ImageReader";
-	static final String[] names = { "jpeg 2000", "JPEG 2000", "jpeg2000", "JPEG2000" };
+	static final String[] names = { "jpeg 2000", "JPEG 2000", "jpeg2000", "JPEG2000", "jp2", "JP2", "j2k", "J2K" };
 	static final String[] suffixes = { "jp2" };
 	static final String[] MIMETypes = { "image/jp2", "image/jpeg2000" };
 	static final String[] writerSpiNames = { };

@@ -1,3 +1,5 @@
+/* $Id: $ */
+
 package org.jmrtd.jj2000;
 
 import java.io.IOException;
