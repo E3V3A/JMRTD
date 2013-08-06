@@ -133,7 +133,7 @@ import org.jmrtd.lds.SODFile;
 /**
  * Frame for editing a passport.
  * 
- * FIXME: Under construction.
+ * FIXME: Under construction. Lots of copying from DocumentViewFrame.
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *

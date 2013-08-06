@@ -33,7 +33,7 @@ public class CSCAStoreGenerator extends TestCase
 	static {
 		Security.addProvider(BC_PROVIDER);
 	}
-	
+
 	private static final String
 	STORE_PASSWORD = "",
 	KEY_ENTRY_PASSWORD = "";
@@ -50,22 +50,26 @@ public class CSCAStoreGenerator extends TestCase
 	};
 
 	public void testImportX509Certificates() {
+		testImportX509Certificates(TEST_CERT_DIR, TEST_DEST_KEY_STORE);
+	}
+
+	public void testImportX509Certificates(String certsDirPath, String testDestKeyStore) {
 		try {
 			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
-			
-			URI certsDirURI = new URI(TEST_CERT_DIR);
-			File certsDir = new File(certsDirURI.getPath());
-			if (!certsDir.exists()) { certsDir.mkdirs(); }
-			if (!certsDir.isDirectory()) { fail("Certs dir needs to be a directory!"); }
-			String[] files = certsDir.list();
+
+			certsDirPath = getPath(certsDirPath);
+			File certsDirFile = new File(certsDirPath);
+			if (!certsDirFile.exists()) { certsDirFile.mkdirs(); }
+			if (!certsDirFile.isDirectory()) { fail("Certs dir needs to be a directory!"); }
+			String[] files = certsDirFile.list();
 			KeyStore outStore = KeyStore.getInstance("BKS");
 			outStore.load(null);
 			for (String fileName: files) {
-				File file = new File(certsDir, fileName);
+				File file = new File(certsDirFile, fileName);
 				if (file.isFile() && fileName.endsWith(".cer")) {
 					System.out.println("DEBUG: file " + file.getName() + " size " + file.length());
 					X509Certificate certificate =
-						(X509Certificate)CertificateFactory.getInstance("X509", BC_PROVIDER).generateCertificate(new FileInputStream(file));
+							(X509Certificate)CertificateFactory.getInstance("X509", BC_PROVIDER).generateCertificate(new FileInputStream(file));
 					System.out.println("DEBUG: file " + fileName + ", cert = " + toString(certificate));
 
 					PublicKey publicKey = certificate.getPublicKey();
@@ -74,12 +78,17 @@ public class CSCAStoreGenerator extends TestCase
 				}
 			}
 			System.out.println("DEBUG: certs in outStore: " + outStore.size());
-			File outFile = new File(new URI(TEST_DEST_KEY_STORE).getPath());
+			
+			testDestKeyStore = getPath(testDestKeyStore);
+			
+			System.out.println("DEBUG: using testDestKeyStore " + testDestKeyStore);
+			
+			File outFile = new File(testDestKeyStore);
 			FileOutputStream out = new FileOutputStream(outFile);
 			outStore.store(out, STORE_PASSWORD.toCharArray());
 			out.flush();
 			out.close();
-			
+
 			JMRTDSecurityProvider.endPreferBouncyCastleProvider(jmrtdProvIndex);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -128,5 +137,19 @@ public class CSCAStoreGenerator extends TestCase
 		} else {
 			return "Non-X509" + certificate.toString();
 		}
+	}
+	
+	private String getPath(String path) {
+		if (path.startsWith("file:")) {
+			try {
+				URI uriToPath = new URI(path);
+
+				/* It's a URI, get the path, we only support file as scheme. */
+				path = uriToPath.getPath();
+			} catch (Exception e) {
+				/* It's not a URI, try to interpret it as a file path. */
+			}
+		}
+		return path;
 	}
 }

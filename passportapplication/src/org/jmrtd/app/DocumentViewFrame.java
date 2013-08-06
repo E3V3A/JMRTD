@@ -811,10 +811,13 @@ public class DocumentViewFrame extends JMRTDFrame {
 
 			public void actionPerformed(ActionEvent e) {
 				try{
+					VerificationStatus verificationStatus = passport.getVerificationStatus();
+					boolean isValidChain = (verificationStatus.getCS() == VerificationStatus.Verdict.SUCCEEDED);
+					
 					List<Certificate> chain = passport.verifySecurity().getCertificateChain();
 					JFrame certificateFrame = null;
 					if (chain != null && chain.size() > 0) {
-						certificateFrame = new CertificateChainFrame("Certificate chain", chain, true);
+						certificateFrame = new CertificateChainFrame("Certificate chain", chain, isValidChain);
 					} else {
 						SODFile sod = passport.getLDS().getSODFile();
 						X509Certificate docSigningCertificate = sod.getDocSigningCertificate();

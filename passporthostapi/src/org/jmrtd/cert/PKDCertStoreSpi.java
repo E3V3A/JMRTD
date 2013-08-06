@@ -23,7 +23,6 @@
 package org.jmrtd.cert;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Provider;
@@ -38,7 +37,6 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
@@ -58,16 +56,6 @@ import javax.naming.directory.SearchResult;
 
 import net.sourceforge.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERTaggedObject;
-import org.bouncycastle.asn1.pkcs.ContentInfo;
-import org.bouncycastle.asn1.pkcs.SignedData;
-import org.bouncycastle.asn1.x509.X509CertificateStructure;
-import org.bouncycastle.jce.provider.X509CertificateObject;
 import org.jmrtd.JMRTDSecurityProvider;
 
 /**
