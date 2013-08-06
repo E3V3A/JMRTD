@@ -239,12 +239,13 @@ EAC
 
 ImageIO
 + Grayscale JPEG2000 signed/unsigned decoding issue, surfaces in Irish ePassports. Thanks to Aine Ni Fhloinn and Glenn Strong for testing.
++ JJ2000 support bit rate in writer metadata and write params.
 
 GUI
 + Make Swing UI more responsive by applying SwingUtilities.invokeLater best practices.
 
 Android
-+ New app, improved UI, and security validation, in Google Play (at Novay in a project for EIT ICT Labs).
++ Support for new app with improved UI, OCR, and security validation, in Google Play (closed source, at Novay in a project for EIT ICT Labs).
 
 SCUBA
 + Support interface for extended length APDU checking, needed for EAC (in API, not yet implemented)
@@ -300,8 +301,6 @@ GUI
 - MRZ doc number, we add '<', consequences for GUI?
 
 Android
-- Camera based OCR of MRZ. How difficult could this be, really? It's always OCR-B font, one could assume fixed
-  distance so that auto-focus isn't even necessary. See also https://sourceforge.net/projects/javaocr/.
 - Investigate problem with EAC enabled Dutch MRTDs and Nexus 4 (NL applet throws security status SWs on "progressive" reading, but lineair reading without switching DGs is ok).
 - Progressive rendering of JPEG2000/WSQ combined with animation? What works well? Scaling? Fading?
 - User experience: users seem to think MRTD has been completely read as soon as DG1 and partial DG2 content is shown. Pop up modal dialog?

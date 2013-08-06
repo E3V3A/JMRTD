@@ -22,12 +22,35 @@ import org.jmrtd.cert.CSCAMasterList;
 
 public class CSCAMasterListTest extends TestCase {
 
-	private static final String GERMAN_ML_FILE = "t:/ca/icao/csca/german_csca_masterlist/20130614GermanMasterlist.ml";
-	private static final String OUTPUT_DIR = "t:/ca/icao/csca/german_csca_masterlist/out";
+	private static final String TEST_CERT_DIR = "t:/ca/icao/csca";
+	
+	private static final String DE_ML_FILE =
+			TEST_CERT_DIR
+			// + "/german_csca_masterlist/20130614GermanMasterlist.ml";
+			+ "/german_csca_masterlist/20130717GermanMasterlist.ml";
+
+	private static final String DE_PREFIX = "from_de_ml_";
+	
+	private static final String CH_PREFIX = "from_ch_ml_";
+	
+	private static final String CH_ML_FILE =
+			TEST_CERT_DIR + "/swiss_csca_masterlist/chMasterlist.ml";
+	
+	private static final String DE_CERTS_OUTPUT_DIR = TEST_CERT_DIR + "/german_csca_masterlist";
+	
+	private static final String CH_CERTS_OUTPUT_DIR = TEST_CERT_DIR + "/swiss_csca_masterlist";
 	
 	public void testGermanCSCAMasterList() {
+		testCSCAMasterList(DE_ML_FILE, DE_PREFIX, DE_CERTS_OUTPUT_DIR);
+	}
+	
+	public void testSwissMasterList() {
+		testCSCAMasterList(CH_ML_FILE, CH_PREFIX, CH_CERTS_OUTPUT_DIR);
+	}
+	
+	public void testCSCAMasterList(String fileName, String prefix, String outputDir) {
 		try {
-			File germanMLFile = new File(GERMAN_ML_FILE);
+			File germanMLFile = new File(fileName);
 			int length = (int)germanMLFile.length();
 			byte[] bytes = new byte[length];
 			DataInputStream dataIn = new DataInputStream(new FileInputStream(germanMLFile));
@@ -49,14 +72,16 @@ public class CSCAMasterListTest extends TestCase {
 				
 				boolean isSelfSigned = (issuer == null && subject == null) || subject.equals(issuer);
 
-				String outName = country.toAlpha2Code().toLowerCase() + "_" + (isSelfSigned ? "root_" : "link_") + "from_german_ml_" + (++i) + ".cer";
-				File outFile = new File(OUTPUT_DIR, outName);
+				String outName = country.toAlpha2Code().toLowerCase() + "_" + (isSelfSigned ? "root_" : "link_") + prefix + (++i) + ".cer";
+				File outFile = new File(outputDir, outName);
 				DataOutputStream dataOut = new DataOutputStream(new FileOutputStream(outFile));
 				dataOut.write(x509Certificate.getEncoded());
 				System.out.println(outName);
 				dataOut.close();
 			}
 			System.out.println("DEBUG: cscaCertificates.size() = " + cscaCertificates.size());
+			
+			(new CSCAStoreGenerator()).testImportX509Certificates(outputDir, outputDir + "/csca.ks");
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}
