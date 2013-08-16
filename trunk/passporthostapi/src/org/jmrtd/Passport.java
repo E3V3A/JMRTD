@@ -114,7 +114,6 @@ public class Passport {
 	private LDS lds;
 
 	private static final boolean IS_PKIX_REVOCATION_CHECING_ENABLED = false;
-	private boolean hasEACSupport = false;
 
 	private PrivateKey docSigningPrivateKey;
 
@@ -126,7 +125,6 @@ public class Passport {
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
-	private BACKeySpec bacKeySpec;
 	private MRTDTrustStore trustManager;
 
 	private PassportService service;
@@ -178,18 +176,18 @@ public class Passport {
 	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
-		int lastKnownSW = -1;
 		this.service = service;
 		this.trustManager = trustManager;
 		try {
 			service.open();
+			/* FIXME: check SAC/PACE here. */
+			service.sendSelectApplet();
 		} catch (CardServiceException cse) {
 			throw cse;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
-		this.bacKeySpec = null;
 
 		/* Find out whether this MRTD supports BAC. */
 		try {
@@ -203,41 +201,12 @@ public class Passport {
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
 		}
 
-		/* Try entries from BACStore. */
-		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
+		/* Try to do BAC. */
 		boolean hasBAC = featureStatus.hasBAC().equals(FeatureStatus.Verdict.PRESENT);
+		String documentNumber = null;
 		if (hasBAC) {
-			int triesLeft = maxTriesPerBACEntry;
-
-			/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
-			while (bacKeySpec == null && triesLeft-- > 0) {
-				/* NOTE: inner loop, loops through stored BAC entries. */
-				synchronized (bacStore) {
-					for (BACKeySpec otherBACKeySpec: bacStore) {
-						try {
-							if (!triedBACEntries.contains(otherBACKeySpec)) {
-								LOGGER.info("Trying BAC: " + otherBACKeySpec);
-								service.doBAC(otherBACKeySpec);
-								/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-								bacKeySpec = otherBACKeySpec;
-								break; /* out of inner for loop */
-							}
-						} catch (CardServiceException cse) {
-							lastKnownSW = cse.getSW();
-							/* NOTE: BAC failed? Try next BACEntry */
-						}
-					}
-				}
-			}
-		}
-		if (hasBAC && bacKeySpec == null) {
-			/* Document requires BAC, but we failed to authenticate. */
-			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
-			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
-		}
-
-		if (hasBAC && bacKeySpec != null) {
-			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
+			BACKeySpec bacKeySpec = tryToDoBAC(service, maxTriesPerBACEntry, bacStore);
+			documentNumber = bacKeySpec.getDocumentNumber();
 		}
 
 		this.lds = new LDS();
@@ -261,68 +230,33 @@ public class Passport {
 			lds.add(PassportService.EF_DG1, dg1In, dg1In.getLength());
 			dg1File = lds.getDG1File();
 			dgNumbersAlreadyRead.add(1);
+			if (documentNumber == null) { documentNumber = dg1File.getMRZInfo().getDocumentNumber(); }
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 			LOGGER.warning("Could not read file");
 		}
 
-		/* We get the list of DGs from EF.SOd, not from EF.COM. */
+		/* Get the list of DGs from EF.SOd, not from EF.COM. */
 		List<Integer> dgNumbers = new ArrayList<Integer>();
 		if (sodFile != null) {
 			dgNumbers.addAll(sodFile.getDataGroupHashes().keySet());
 		}
 		Collections.sort(dgNumbers); /* NOTE: need to sort it, since we get keys as a set. */
 
-		String documentNumber = bacKeySpec != null ? bacKeySpec.getDocumentNumber() : dg1File.getMRZInfo().getDocumentNumber();
-
-		/* Pre-read DG14 in case we have to do EAC. */
+		/* Check EAC support by DG14 presence. */
 		if (dgNumbers.contains(14)) {
 			featureStatus.setEAC(FeatureStatus.Verdict.PRESENT);
 		} else {
 			featureStatus.setEAC(FeatureStatus.Verdict.NOT_PRESENT);
-		}
+		}		
 		boolean hasEAC = featureStatus.hasEAC().equals(FeatureStatus.Verdict.PRESENT);
-		DG14File dg14File = null;
-		CVCAFile cvcaFile = null;
-		if (hasEAC) {
-			try {
-				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
-				lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
-				dg14File = lds.getDG14File();
-				dgNumbersAlreadyRead.add(14);
-
-				/* Now try to deal with EF.CVCA */
-				cvcaFID = PassportService.EF_CVCA;
-				List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
-				if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
-					if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
-					cvcaFID = cvcaFIDs.get(0).shortValue();
-				}
-
-				CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
-				lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
-				cvcaFile = lds.getCVCAFile();
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-				LOGGER.warning("Could not read EF.DG14 or EF.CVCA");
-			}
-			List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
-
-			/* Try to do EAC. */
-			/* DEBUG: commented out for testing. */
-			for (KeyStore cvcaStore: cvcaKeyStores) {
-				try {
-					/* FIXME: shouldn't we check if that store holds the correct authority? */
-					doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
-					break;
-				} catch (Exception e) {
-					LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
-					e.printStackTrace();
-				}
-			}
+		List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
+		if (hasEAC && cvcaKeyStores != null && cvcaKeyStores.size() > 0) {
+			tryToDoEAC(service, lds, documentNumber, cvcaKeyStores);
+			dgNumbersAlreadyRead.add(14);
 		}
 
-		/* Check to see if we can do AA. */
+		/* Check AA support by DG15 presence. */
 		if (dgNumbers.contains(15)) {
 			featureStatus.setAA(FeatureStatus.Verdict.PRESENT);
 		} else {
@@ -330,17 +264,8 @@ public class Passport {
 		}
 		boolean hasAA = featureStatus.hasAA().equals(FeatureStatus.Verdict.PRESENT);
 		if (hasAA) {
-			try {
-				CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
-				lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
-				DG15File dg15File = lds.getDG15File();
-				dgNumbersAlreadyRead.add(15);
-				// verifyAA(service, dg15File);
-			} catch (IOException ioe) {
-				ioe.printStackTrace();
-				LOGGER.warning("Could not read EF.DG15");
-				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Could not read EF.DG15");
-			}
+			tryToDoAA(service, lds);
+			dgNumbersAlreadyRead.add(15);
 		} else {
 			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");
 		}
@@ -498,15 +423,6 @@ public class Passport {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-	}
-
-	/**
-	 * Gets the BAC entry that was used (only relevant when reading from service).
-	 * 
-	 * @return a BAC entry
-	 */
-	public BACKeySpec getBACKeySpec() {
-		return bacKeySpec;
 	}
 
 	public LDS getLDS() {
@@ -702,8 +618,98 @@ public class Passport {
 
 	/* ONLY PRIVATE METHODS BELOW. */
 
+	private BACKeySpec tryToDoBAC(PassportService service, int maxTriesPerBACEntry, List<BACKeySpec> bacStore) throws BACDeniedException {
+		int triesLeft = maxTriesPerBACEntry;
+		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
+		int lastKnownSW = -1;
+		BACKeySpec bacKeySpec = null;
+
+		/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
+		while (bacKeySpec == null && triesLeft-- > 0) {
+			/* NOTE: inner loop, loops through stored BAC entries. */
+			synchronized (bacStore) {
+				for (BACKeySpec otherBACKeySpec: bacStore) {
+					try {
+						if (!triedBACEntries.contains(otherBACKeySpec)) {
+							LOGGER.info("Trying BAC: " + otherBACKeySpec);
+							service.doBAC(otherBACKeySpec);
+							/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
+							bacKeySpec = otherBACKeySpec;
+							break; /* out of inner for loop */
+						}
+					} catch (CardServiceException cse) {
+						LOGGER.info("Ignoring the following exception: " + cse.getClass().getCanonicalName());
+						cse.printStackTrace(); // DEBUG: this line was commented in production
+						lastKnownSW = cse.getSW();
+						/* NOTE: BAC failed? Try next BACEntry */
+					} catch (Exception e) {
+						LOGGER.warning("DEBUG: Unexpected exception " + e.getClass().getCanonicalName() + " during BAC with " + otherBACKeySpec);
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+		if (bacKeySpec == null) {
+			/* Document requires BAC, but we failed to authenticate. */
+			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
+			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
+		} else {
+			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
+		}
+		return bacKeySpec;
+	}
+
+	private void tryToDoAA(PassportService service, LDS lds) throws CardServiceException {
+		try {
+			CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
+			lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
+			DG15File dg15File = lds.getDG15File();
+			// verifyAA(service, dg15File);
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.warning("Could not read EF.DG15");
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Could not read EF.DG15");
+		}
+	}
+
+	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
+		DG14File dg14File = null;
+		CVCAFile cvcaFile = null;
+		try {
+			CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
+			lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
+			dg14File = lds.getDG14File();
+
+			/* Now try to deal with EF.CVCA */
+			cvcaFID = PassportService.EF_CVCA; /* Default CVCA file Id */
+			List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
+			if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
+				if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14"); }
+				cvcaFID = cvcaFIDs.get(0).shortValue(); /* Possibly different from default. */
+			}
+
+			CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
+			lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
+			cvcaFile = lds.getCVCAFile();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			LOGGER.warning("Could not read EF.DG14 or EF.CVCA");
+		}
+
+		/* Try to do EAC. */
+		for (KeyStore cvcaStore: cvcaKeyStores) {
+			try {
+				/* FIXME: shouldn't we check if that store holds the correct authority? */
+				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
+				break;
+			} catch (Exception e) {
+				LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
+				e.printStackTrace();
+			}
+		}
+	}
+
 	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
-		hasEACSupport = true;
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
 		boolean isKeyFound = false;
 		boolean isSucceeded = false;
@@ -739,6 +745,7 @@ public class Passport {
 						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + Arrays.toString(chain) + ", privateKey = " + privateKey);
 						continue;
 					}
+					
 					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
 					for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
 					for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
@@ -1076,7 +1083,7 @@ public class Passport {
 				dgDataIn.readFully(dgBytes);
 			}
 
-			if (dgIn == null && hasEACSupport && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
+			if (dgIn == null && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
 				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
 				return;

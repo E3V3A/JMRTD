@@ -397,13 +397,6 @@ public class DocumentEditFrame extends JMRTDFrame {
 			LDS lds = passport.getLDS();
 			DG1File dg1 = lds.getDG1File();
 			MRZInfo mrzInfo = dg1.getMRZInfo();
-			BACKeySpec bacEntry = passport.getBACKeySpec();
-			if (bacEntry != null &&
-					!(MRZInfo.equalsModuloFillerChars(mrzInfo.getDocumentNumber(), bacEntry.getDocumentNumber()) &&
-							mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
-							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
-				JOptionPane.showMessageDialog(getContentPane(), "MRZ used in BAC differs from\nMRZ in DG1!", "Warning", JOptionPane.WARNING_MESSAGE);
-			}
 			dg1EditPanel = new DG1EditPanel(mrzInfo);
 			mrzPanel = new MRZPanel(mrzInfo);
 			setMRZ(mrzInfo);
@@ -1300,16 +1293,13 @@ public class DocumentEditFrame extends JMRTDFrame {
 			public void actionPerformed(ActionEvent e) {
 				CardManager cm = CardManager.getInstance();
 				LDS lds = passport.getLDS();
-				BACKeySpec bacEntry = passport.getBACKeySpec();
-				if (bacEntry == null) {
-					try {
-						DG1File dg1 = lds.getDG1File();
-						MRZInfo mrzInfo = dg1.getMRZInfo();
-						bacEntry = new BACKey(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
-					} catch (Exception ex) {
-						ex.printStackTrace();
-						LOGGER.severe("Could not decode DG1. " + ex.getMessage());
-					}
+				BACKeySpec bacEntry = null;
+				try {
+					DG1File dg1 = lds.getDG1File();
+					MRZInfo mrzInfo = dg1.getMRZInfo();
+					bacEntry = new BACKey(mrzInfo.getDocumentNumber(), mrzInfo.getDateOfBirth(), mrzInfo.getDateOfExpiry());
+				} catch (Exception ex) {
+					ex.printStackTrace();
 				}
 				List<Short> fileList = lds.getFileList();
 				PublicKey aaPublicKey = null;

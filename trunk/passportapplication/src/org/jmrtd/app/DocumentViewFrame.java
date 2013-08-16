@@ -68,12 +68,9 @@ import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import net.sourceforge.scuba.smartcards.APDUListener;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.AuthAdapter;
-import org.jmrtd.BACKeySpec;
 import org.jmrtd.EACEvent;
 import org.jmrtd.Passport;
 import org.jmrtd.PassportService;
@@ -417,13 +414,6 @@ public class DocumentViewFrame extends JMRTDFrame {
 			LDS lds = passport.getLDS();
 			DG1File dg1 = lds.getDG1File();
 			MRZInfo mrzInfo = dg1.getMRZInfo();
-			BACKeySpec bacEntry = passport.getBACKeySpec();
-			if (bacEntry != null &&
-					!(MRZInfo.equalsModuloFillerChars(mrzInfo.getDocumentNumber(), bacEntry.getDocumentNumber()) &&
-							mrzInfo.getDateOfBirth().equals(bacEntry.getDateOfBirth())) &&
-							mrzInfo.getDateOfExpiry().equals(bacEntry.getDateOfExpiry())) {
-				JOptionPane.showMessageDialog(getContentPane(), "MRZ used in BAC differs from\nMRZ in DG1!", "Warning", JOptionPane.WARNING_MESSAGE);
-			}
 			final HolderViewPanel holderInfoPanel = new HolderViewPanel(mrzInfo);
 			final MRZPanel mrzPanel = new MRZPanel(mrzInfo);
 			centerPanel.add(holderInfoPanel, BorderLayout.CENTER);

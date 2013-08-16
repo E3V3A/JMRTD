@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -33,6 +34,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 
@@ -47,7 +49,9 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 public abstract class SecurityInfo extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = -7919854443619069808L;
-
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	
 	public static final String
 	ID_PK_DH_OID = EACObjectIdentifiers.id_PK_DH.getId(),
 	ID_PK_ECDH_OID = EACObjectIdentifiers.id_PK_ECDH.getId(),
@@ -58,6 +62,46 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	public static final String
 	ID_EC_PUBLIC_KEY_TYPE = X9ObjectIdentifiers.id_publicKeyType.getId(),
 	ID_EC_PUBLIC_KEY = X9ObjectIdentifiers.id_ecPublicKey.getId();
+	
+	private static final String ID_BSI = "0.4.0.127.0.7";
+
+	private static final String ID_PACE = ID_BSI + ".2.4";
+
+	public static final String
+	ID_PACE_DH_GM = ID_PACE + ".1";
+
+	public static final String
+	ID_PACE_ECDH_GM = ID_PACE + ".2";
+	
+	public static final String
+	ID_PACE_DH_IM = ID_PACE + ".3";
+
+	public static final String
+	ID_PACE_ECDH_IM = ID_PACE + ".4";
+	
+	public static final String
+	ID_PACE_DH_GM_3DES_CBC_CBC = ID_PACE_DH_GM + ".1",
+	ID_PACE_DH_GM_3DES_CBC_CMAC_128 = ID_PACE_DH_GM + ".2",
+	ID_PACE_DH_GM_3DES_CBC_CMAC_192 = ID_PACE_DH_GM + ".3",
+	ID_PACE_DH_GM_3DES_CBC_CMAC_256 = ID_PACE_DH_GM + ".4";
+
+	public static final String
+	ID_PACE_ECDH_GM_3DES_CBC_CBC = ID_PACE_ECDH_GM + ".1",
+	ID_PACE_ECDH_GM_3DES_CBC_CMAC_128 = ID_PACE_ECDH_GM + ".2",
+	ID_PACE_ECDH_GM_3DES_CBC_CMAC_192 = ID_PACE_ECDH_GM + ".3",
+	ID_PACE_ECDH_GM_3DES_CBC_CMAC_256 = ID_PACE_ECDH_GM + ".4";
+
+	public static final String
+	ID_PACE_DH_IM_3DES_CBC_CBC = ID_PACE_DH_IM + ".1",
+	ID_PACE_DH_IM_3DES_CBC_CMAC_128 = ID_PACE_DH_IM + ".2",
+	ID_PACE_DH_IM_3DES_CBC_CMAC_192 = ID_PACE_DH_IM + ".3",
+	ID_PACE_DH_IM_3DES_CBC_CMAC_256 = ID_PACE_DH_IM + ".4";
+
+	public static final String
+	ID_PACE_ECDH_IM_3DES_CBC_CBC = ID_PACE_ECDH_IM + ".1",
+	ID_PACE_ECDH_IM_3DES_CBC_CMAC_128 = ID_PACE_ECDH_IM + ".2",
+	ID_PACE_ECDH_IM_3DES_CBC_CMAC_192 = ID_PACE_ECDH_IM + ".3",
+	ID_PACE_ECDH_IM_3DES_CBC_CMAC_256 = ID_PACE_ECDH_IM + ".4";
 	
 	/**
 	 * Returns a DER object with this SecurityInfo data (DER sequence)
@@ -133,8 +177,24 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 					ASN1Sequence efCVCA = (ASN1Sequence)optionalData;
 					return new TerminalAuthenticationInfo(oid, version, efCVCA);
 				}
+			} else if (PACEInfo.checkRequiredIdentifier(oid)) {
+				int version = ((ASN1Integer)requiredData).getValue().intValue();
+				int parameterId = -1;
+				if (optionalData != null) {
+					parameterId = ((ASN1Integer)optionalData).getValue().intValue();
+				}
+				return new PACEInfo(oid, version, parameterId);
+			} else if (PACEDomainParameterInfo.checkRequiredIdentifier(oid)) {
+				AlgorithmIdentifier domainParameters = AlgorithmIdentifier.getInstance(requiredData);
+				if (optionalData != null) {
+					int parameterId = ((ASN1Integer)optionalData).getValue().intValue();
+					return new PACEDomainParameterInfo(oid, domainParameters, parameterId);
+				}
+				return new PACEDomainParameterInfo(oid, domainParameters);
 			}
-			throw new IllegalArgumentException("Malformed input stream.");
+//			throw new IllegalArgumentException("Malformed input stream.");
+			LOGGER.warning("Unsupported SecurityInfo");
+			return null;
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Malformed input stream.");

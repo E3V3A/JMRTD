@@ -54,7 +54,7 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 	private static final long serialVersionUID = -4357282016708205020L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
-	
+
 	/** Number of bytes to read at start of file to determine file length. */
 	private static final int READ_AHEAD_LENGTH = 8;
 
@@ -74,14 +74,9 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 		this.isSelected = false;
 	}
 
-	public synchronized FileInfo[] getSelectedPath() {
-		try {
-			MRTDFileInfo fileInfo = getFileInfo();
-			return new MRTDFileInfo[]{ fileInfo };
-		} catch (CardServiceException cse) {
-			cse.printStackTrace();
-			return null;
-		}
+	public synchronized FileInfo[] getSelectedPath() throws CardServiceException {
+		MRTDFileInfo fileInfo = getFileInfo();
+		return new MRTDFileInfo[]{ fileInfo };
 	}
 
 	/*

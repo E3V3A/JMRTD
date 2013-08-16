@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.CBEFFInfo;
@@ -47,6 +48,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
 public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = 5808625058034008176L;
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	/** Format identifier 'F', 'I', 'R', 0x00. Specified in ISO/IEC 19794-4 Section 7.1, Table 2.  */
 	private static final int FORMAT_IDENTIFIER = 0x46495200;
@@ -321,7 +324,8 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 			add(imageInfo);
 		}
 		if (dataLength != constructedDataLength) {
-			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+			LOGGER.warning("DEBUG: constructedDataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+//			throw new IllegalStateException("DEBUG: constructed DataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
 		}
 	}
 

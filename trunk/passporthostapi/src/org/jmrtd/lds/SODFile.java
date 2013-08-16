@@ -55,10 +55,13 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTaggedObject;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DLSet;
+import org.bouncycastle.asn1.DLTaggedObject;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
@@ -154,7 +157,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	private SignedData signedData;
 
@@ -306,12 +309,38 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		if (!RFC_3369_SIGNED_DATA_OID.equals(contentTypeOID)) {
 			throw new IOException("Was expecting signed-data content type OID (" + RFC_3369_SIGNED_DATA_OID + "), found " + contentTypeOID);
 		}
-		DERTaggedObject taggedContent = (DERTaggedObject)sequence.getObjectAt(1);
-		int tagNo = taggedContent.getTagNo();
+		ASN1Primitive content = null;
+		int tagNo = -1;
+		ASN1Encodable asn1Encodable = sequence.getObjectAt(1);
+		
+		/*
+		 * Most EU passports have DERTaggedObject,
+		 * New Zealand has BERTaggedObject,
+		 * cast problems between BER and DER since (at least) BC 1.47...
+		 * Thanks to Nick von Dadelszen for helping out with debugging.
+		 */
+		if (asn1Encodable instanceof DERTaggedObject) {
+			DERTaggedObject derTaggedObject = (DERTaggedObject)asn1Encodable;
+			tagNo = derTaggedObject.getTagNo();
+			content = derTaggedObject.getObject();
+		} else if (asn1Encodable instanceof BERTaggedObject) {
+			BERTaggedObject berTaggedObject = (BERTaggedObject)asn1Encodable;
+			tagNo = berTaggedObject.getTagNo();
+			content = berTaggedObject.getObject();
+		} else if (asn1Encodable instanceof ASN1TaggedObject) {
+			DLTaggedObject dlTaggedObject = (DLTaggedObject)asn1Encodable;
+			tagNo = dlTaggedObject.getTagNo();
+			content = dlTaggedObject.getObject();			
+		} else if (asn1Encodable instanceof ASN1TaggedObject) {
+			ASN1TaggedObject asn1TaggedObject = (ASN1TaggedObject)asn1Encodable;
+			tagNo = asn1TaggedObject.getTagNo();
+			content = asn1TaggedObject.getObject();			
+		} else {
+			throw new IOException("Was expecting an ASN1TaggedObject, found " + asn1Encodable.getClass().getCanonicalName());
+		}
 		if (tagNo != 0) {
 			throw new IOException("Was expecting tag 0, found " + Integer.toHexString(tagNo));
 		}		
-		ASN1Primitive content = taggedContent.getObject();
 		if (!(content instanceof ASN1Sequence)) {
 			throw new IOException("Was expecting an ASN.1 sequence as content");
 		}

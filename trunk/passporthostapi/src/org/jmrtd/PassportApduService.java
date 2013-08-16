@@ -22,6 +22,8 @@
 
 package org.jmrtd;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.Collection;
@@ -75,6 +77,9 @@ public class PassportApduService extends CardService {
 	/** Initialization vector used by the cipher below. */
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
 
+	/** The general Authenticate command is used to perform the PACE protocol. See Section 3.2.2 of SAC-TR 1.01. */
+	private static final byte INS_PACE_GENERAL_AUTHENTICATE = (byte)0x86;
+	
 	/** The service we decorate. */
 	private CardService service;
 
@@ -119,8 +124,8 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * Opens a session by connecting to the card and selecting the passport
-	 * applet.
+	 * Opens a session by connecting to the card. Since version 0.4.10 this method no longer automatically
+	 * selects the MRTD applet, caller (for instance {@link PassportService}) is responsible to do this now.
 	 * 
 	 * @throws CardServiceException on failure to open the service
 	 */
@@ -129,7 +134,6 @@ public class PassportApduService extends CardService {
 			service.open();
 		}
 		atr = service.getATR();
-		sendSelectApplet();
 	}
 
 	/**
@@ -174,10 +178,10 @@ public class PassportApduService extends CardService {
 		service.removeAPDUListener(l);
 	}
 
-	private void sendSelectApplet() throws CardServiceException {
+	public void sendSelectApplet() throws CardServiceException {
 		short sw = sendSelectApplet(APPLET_AID);
 		if (sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Could not select passport. SW = " + Integer.toHexString(sw), sw);
+			throw new CardServiceException("Could not select MRTD application. SW = " + Integer.toHexString(sw), sw);
 		}
 	}
 
@@ -198,7 +202,9 @@ public class PassportApduService extends CardService {
 				}
 			} catch (Exception e) {
 				throw new CardServiceException("Exception during transmission of wrapped APDU"
-						+ "\nC=" + Hex.bytesToHexString(plainCapdu.getBytes()), sw);
+						+ "\nC=" + Hex.bytesToHexString(plainCapdu.getBytes())
+						+ "\n" + e.getMessage()
+						, sw);
 			} finally {
 				notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);				
 			}
@@ -343,7 +349,7 @@ public class PassportApduService extends CardService {
 			} else {
 				/* All other cases. */
 				if (sw == ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED) {
-					/* No access, throw a CSE. */
+					/* No access, fail READ BINARY, throw a CSE. */
 					throw new CardServiceException("Security status not satisfied during READ BINARY", sw);
 				} else {
 					/* Unexpected sw, don't throw exception, but log. */
@@ -372,11 +378,11 @@ public class PassportApduService extends CardService {
 
 		if (rapduBytes == null | rapduBytes.length == 0) {
 			LOGGER.warning("DEBUG: rapduBytes = " + Arrays.toString(rapduBytes) + ", le = " + le + ", sw = " + Integer.toHexString(sw));
-			
+
 		}
-		
+
 		checkStatusWordAfterFileOperation(capdu, rapdu);
-		
+
 		/* FIXME: should we inspect sw here and throw an exception? */
 		return rapduBytes;
 	}
@@ -584,22 +590,88 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * The MSE AT APDU, see EAC 1.11 spec, Section B.2
+	 * The MSE AT APDU for TA, see EAC 1.11 spec, Section B.2.
+	 * Note that caller is responsible for prefixing the byte[] params with specified tags.
 	 * 
-	 * @param wrapper
-	 *            secure messaging wrapper
-	 * @param data
-	 *            public key reference data object (tag 0x83)
-	 * @throws CardServiceException
-	 *             on error
+	 * @param wrapper secure messaging wrapper
+	 * @param data public key reference data object (should already be prefixed with tag 0x83)
+	 *
+	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSESetAT(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
+	public synchronized void sendMSESetATExtAuth(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xA4, data);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		short sw = (short)rapdu.getSW();
 		if (sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending MSE AT failed", sw);
 		}
+	}
+
+	/**
+	 * The MSE AT APDU for PACE, see ICAO TR-SAC-1.01, Section 3.2.1.
+	 * Note that caller is responsible for prefixing the byte[] params with specified tags.
+	 * 
+	 * @param wrapper secure messaging wrapper
+	 * @param protocolOID 0x80 prefixed OID of the protocol to select (value only, 0x06 is omitted)
+	 * @param keyReference 0x83 prefixed value specifying whether to use MRZ (0x01) or CAN (0x02)
+	 * @param domainParamId 0x84 prefixed value indicating a private key or reference for computing a session key
+	 *
+	 * @throws CardServiceException on error
+	 */
+	public synchronized void sendMSESetATMutualAuth(SecureMessagingWrapper wrapper, byte[] protocolOID, byte[] keyReference, byte[] domainParamId) throws CardServiceException {
+		if (protocolOID == null) { throw new IllegalArgumentException("protocol OID cannot be null"); }
+		if (keyReference == null) { throw new IllegalArgumentException("key type reference (MRZ or CAN) cannot be null"); }
+		
+		/* Construct data. */
+		ByteArrayOutputStream dataOutputStream = new ByteArrayOutputStream();
+		try {
+			dataOutputStream.write(protocolOID);
+			dataOutputStream.write(keyReference);
+			if (domainParamId != null) {
+				dataOutputStream.write(domainParamId);
+			}
+		} catch (IOException ioe) {
+			/* NOTE: should never happen. */
+			LOGGER.severe("Error while copying data");
+			ioe.printStackTrace();
+			throw new IllegalStateException("Error while copying data");
+		}
+		byte[] data = dataOutputStream.toByteArray();
+		
+		/* Tranceive APDU. */
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0xC1, 0xA4, data);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		
+		/* Handle error status word. */
+		short sw = (short)rapdu.getSW();
+		if (sw != ISO7816.SW_NO_ERROR) {
+			throw new CardServiceException("Sending MSE AT failed", sw);
+		}
+	}
+	
+	/**
+	 * Sends a General Authenticate command.
+	 * 
+	 * FIXME: WORK IN PROGRESS...
+	 * 
+	 * @param wrapper secure messaging wrapper
+	 * @param data 0x7C prefixed dynamic authentication data
+	 * @return 0x7C dynamic authentication data
+	 * 
+	 * @throws CardServiceException on error
+	 */
+	public synchronized byte[] sendGeneralAuthenticate(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
+		/* Tranceive APDU. */
+		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, INS_PACE_GENERAL_AUTHENTICATE, 0x00, 0x00, data);
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+		
+		/* Handle error status word. */
+		short sw = (short)rapdu.getSW();
+		if (sw != ISO7816.SW_NO_ERROR) {
+			throw new CardServiceException("Sending MSE AT failed", sw);
+		}
+		
+		return rapdu.getBytes();
 	}
 
 	public synchronized void sendPSOExtendedLengthMode(SecureMessagingWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
@@ -647,7 +719,6 @@ public class PassportApduService extends CardService {
 		if (sw != ISO7816.SW_NO_ERROR) {
 			throw new CardServiceException("Sending PSO failed", sw);
 		}
-
 	}
 
 	public void addPlainTextAPDUListener(APDUListener l) {
@@ -668,8 +739,8 @@ public class PassportApduService extends CardService {
 			listener.exchangedAPDU(new APDUEvent(this, "PLAINTEXT", count, capdu, rapdu));
 		}
 	}
-	
-	private static void checkStatusWordAfterFileOperation( CommandAPDU capdu, ResponseAPDU rapdu) throws CardServiceException {
+
+	private static void checkStatusWordAfterFileOperation(CommandAPDU capdu, ResponseAPDU rapdu) throws CardServiceException {
 		short sw = (short)rapdu.getSW();
 		String commandResponseMessage = "CAPDU = " + Hex.bytesToHexString(capdu.getBytes()) + ", RAPDU = " + Hex.bytesToHexString(rapdu.getBytes());
 		switch(sw) {

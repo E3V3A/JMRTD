@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +38,7 @@ import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
 
 /**
@@ -80,7 +82,7 @@ public class DG12File extends DataGroup {
 
 	private List<Integer> tagPresenceList;
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	/**
 	 * Constructs a new file.
@@ -123,23 +125,30 @@ public class DG12File extends DataGroup {
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {	
-		TLVInputStream tlvIn = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
-		int tag = tlvIn.readTag();
-		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
-		int length = tlvIn.readLength();
-		int tagCount = length / 2;
-		int[] tagList = new int[tagCount];
-		for (int i = 0; i < tagCount; i++) {
-			int hi = tlvIn.read();
-			int lo = tlvIn.read();
-			tag = ((hi & 0xFF) << 8) | (lo & 0xFF);
-			tagList[i] = tag;
+		TLVInputStream tlvInputStream = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
+		int tagListTag = tlvInputStream.readTag();
+		if (tagListTag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG12"); }
+		
+		int tagListLength = tlvInputStream.readLength();
+		int tagListBytesRead = 0;
+		
+		int expectedTagCount = tagListLength / 2;
+
+		ByteArrayInputStream tagListBytesInputStream = new ByteArrayInputStream(tlvInputStream.readValue());
+		
+		/* Find out which tags are present. */
+		List<Integer> tagList = new ArrayList<Integer>(expectedTagCount + 1);
+		while (tagListBytesRead < tagListLength) {
+			/* We're using another TLV inputstream everytime to read each tag. */
+			TLVInputStream anotherTLVInputStream = new TLVInputStream(tagListBytesInputStream);
+			int tag = anotherTLVInputStream.readTag();
+			tagListBytesRead += TLVUtil.getTagLength(tag);
+			tagList.add(tag);
 		}
+
+		/* Now read the fields in order. */
 		for (int t: tagList) {
-			LOGGER.info("DG12 tagList entry " + Integer.toHexString(t));
-		}
-		for (int i = 0; i < tagCount; i++) {
-			readField(tagList[i], tlvIn);
+			readField(t, tlvInputStream);
 		}
 	}
 

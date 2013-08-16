@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -43,9 +44,10 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DLSet;
 
 /**
- * Data Group 14 stores a set of SecurityInfos for Extended Access Control, see
- * EAC 1.11 spec. To us the interesting bits are: the map of public (EC or DH)
- * keys, the map of protocol identifiers which should match the key's map (not
+ * Data Group 14 stores a set of SecurityInfos for EAC and PACE, see
+ * BSI EAC 1.11 and ICAO TR-SAC-1.01.
+ * To us the interesting bits are: the map of public keys (EC or DH),
+ * the map of protocol identifiers which should match the key's map (not
  * checked here!), and the file identifier of the efCVCA file.
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
@@ -54,6 +56,8 @@ public class DG14File extends DataGroup {
 
 	private static final long serialVersionUID = -3536507558193769953L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	
 	/** The security infos that make up this file */
 	private Set<SecurityInfo> securityInfos;
 
@@ -85,6 +89,10 @@ public class DG14File extends DataGroup {
 		for (int i = 0; i < set.size(); i++) {
 			ASN1Primitive object = set.getObjectAt(i).toASN1Primitive();
 			SecurityInfo securityInfo = SecurityInfo.getInstance(object);
+			if (securityInfo == null) {
+				LOGGER.warning("Skipping this unsupported SecurityInfo");
+				continue;
+			}
 			securityInfos.add(securityInfo);
 		}
 	}
@@ -103,7 +111,7 @@ public class DG14File extends DataGroup {
 	 * Gets the list of file identifier references to efCVCA files, possibly
 	 * empty.
 	 * 
-	 * @return the list of file identifier
+	 * @return the list of file identifier references
 	 */
 	public List<Short> getCVCAFileIds() {
 		List<Short> cvcaFiles = new ArrayList<Short>();
@@ -121,8 +129,8 @@ public class DG14File extends DataGroup {
 	/**
 	 * Gets a corresponding short file ID.
 	 * 
-	 * @param fileId
-	 *            the file ID
+	 * @param fileId the file ID
+	 * 
 	 * @return an SFI for the given file ID, -1 if not present
 	 */
 	public byte getCVCAShortFileId(int fileId) {

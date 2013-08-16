@@ -74,6 +74,7 @@ import org.jmrtd.lds.MRZInfo;
  * 
  * <pre>
  *        open() ==&gt;&lt;br /&gt;
+ *        sendSelectApplet() ==&gt;&lt;br /&gt;
  *        doBAC(...) ==&gt;&lt;br /&gt;
  *        doAA() ==&gt;&lt;br /&gt;
  *        getInputStream(...)&lt;sup&gt;*&lt;/sup&gt; ==&gt;&lt;br /&gt;
@@ -140,6 +141,9 @@ public class PassportService extends PassportApduService implements Serializable
 	/** Data group 16 contains person(s) to notify. */
 	public static final short EF_DG16 = 0x0110;
 
+	/** CardAccess. */
+	public static final short EF_CARD_ACCESS = 0x011C;
+	
 	/** The security document. */
 	public static final short EF_SOD = 0x011D;
 
@@ -200,11 +204,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private static final int TA_AUTHENTICATED_STATE = 5;
 
-	private static final int EAC_AUTHENTICATED_STATE = TA_AUTHENTICATED_STATE;
-
 	private int state;
-
-	private byte[] eacKeyHash = new byte[0]; // FIXME, this global field appears to be here so that doing doTA without doCA does not give NPE -- MO
 
 	private Collection<AuthListener> authListeners;
 
@@ -246,8 +246,8 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	/**
-	 * Opens a session. This is done by connecting to the card, selecting the
-	 * passport application.
+	 * Opens a session to the card. As of 0.4.10 this no longer auto selects the passport application,
+	 * caller (for instance {@link Passport} is responsible to call selectApplet() now.
 	 * 
 	 * @throws CardServiceException on error
 	 */
@@ -257,6 +257,7 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 		synchronized(this) {
 			super.open();
+			/* TODO: check PACE or BAC? */
 			state = SESSION_STARTED_STATE;
 		}
 	}
@@ -349,7 +350,7 @@ public class PassportService extends PassportApduService implements Serializable
 		notifyBACPerformed(event);
 		state = BAC_AUTHENTICATED_STATE;
 	}
-
+	
 	public synchronized void sendSelectFile(short fid) throws CardServiceException {
 		sendSelectFile(wrapper, fid);
 	}
@@ -392,16 +393,17 @@ public class PassportService extends PassportApduService implements Serializable
 		KeyPair keyPair = null;
 		byte[] rpicc = null;
 		try {
-			keyPair = doCA(keyId, publicKey);
+			ChipAuthenticationResult chipAuthenticationResult = doCA(keyId, publicKey);
 			assert(terminalCertificates != null && terminalCertificates.size() == 3);
-			rpicc = doTA(caReference, terminalCertificates, terminalKey, null, null, documentNumber);
-			state = EAC_AUTHENTICATED_STATE;
+			keyPair = chipAuthenticationResult.getKeyPair();
+			byte[] caKeyHash = chipAuthenticationResult.getEACKeyHash();
+			rpicc = doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
 		} catch (CardServiceException cse) {
 			throw cse;
 		} catch (Exception e) {
 			e.printStackTrace();
 		} finally {
-			EACEvent event = new EACEvent(this, keyId, publicKey, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rpicc, state == EAC_AUTHENTICATED_STATE);
+			EACEvent event = new EACEvent(this, keyId, publicKey, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rpicc, state == TA_AUTHENTICATED_STATE);
 			notifyEACPerformed(event);
 		}
 	}
@@ -418,7 +420,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @throws CardServiceException
 	 *             if CA failed or some error occurred
 	 */
-	public synchronized KeyPair doCA(BigInteger keyId, PublicKey publicKey) throws CardServiceException {
+	public synchronized ChipAuthenticationResult doCA(BigInteger keyId, PublicKey publicKey) throws CardServiceException {
 		if (publicKey == null) { throw new IllegalArgumentException("Public key is null"); }
 		try {
 			String algName = (publicKey instanceof ECPublicKey) ? "ECDH" : "DH";
@@ -449,6 +451,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 			byte[] keyData = null;
 			byte[] idData = null;
+			byte[] eacKeyHash = new byte[0];
 			if ("DH".equals(algName)) {
 				DHPublicKey dhPublicKey = (DHPublicKey)keyPair.getPublic();
 				keyData = dhPublicKey.getY().toByteArray();
@@ -478,7 +481,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
-			return keyPair;
+			return new ChipAuthenticationResult(eacKeyHash, keyPair);
 		} catch (GeneralSecurityException e) {
 			throw new CardServiceException(e.toString());
 		}
@@ -509,10 +512,7 @@ public class PassportService extends PassportApduService implements Serializable
 				throw new IllegalArgumentException("Need at least 1 certificate to perform TA, found: " + terminalCertificates);
 			}
 
-			/* The key hash that resulted from CA. FIXME: don't rely on global var for this -- MO */
-			if (caKeyHash == null) {
-				caKeyHash = eacKeyHash;
-			}
+			/* The key hash that resulted from CA. */
 			if (caKeyHash == null) {
 				throw new IllegalArgumentException("CA key hash is null");
 			}
@@ -590,7 +590,7 @@ public class PassportService extends PassportApduService implements Serializable
 			CVCPrincipal holderRef = terminalCert.getHolderReference();
 			byte[] holderRefBytes = wrapDO((byte) 0x83, holderRef.getName().getBytes("ISO-8859-1"));
 			/* Manage Security Environment: Set for external authentication: Authentication Template */
-			sendMSESetAT(wrapper, holderRefBytes);
+			sendMSESetATExtAuth(wrapper, holderRefBytes);
 
 			/* Step 4: send get challenge */
 			byte[] rpicc = sendGetChallenge(wrapper);
@@ -840,6 +840,25 @@ public class PassportService extends PassportApduService implements Serializable
 	private void notifyAAPerformed(AAEvent event) {
 		for (AuthListener l : authListeners) {
 			l.performedAA(event);
+		}
+	}
+	
+	class ChipAuthenticationResult {
+		
+		private byte[] eacKeyHash;
+		private KeyPair keyPair;
+		
+		public ChipAuthenticationResult(byte[] eacKeyHash, KeyPair keyPair) {
+			this.eacKeyHash = eacKeyHash;
+			this.keyPair = keyPair;
+		}
+		
+		public byte[] getEACKeyHash() {
+			return eacKeyHash;
+		}
+		
+		public KeyPair getKeyPair() {
+			return keyPair;
 		}
 	}
 }
