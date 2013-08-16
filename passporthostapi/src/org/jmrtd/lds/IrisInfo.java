@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.CBEFFInfo;
@@ -50,6 +51,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
 public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = -3415309711643815511L;
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	/** Format identifier 'I', 'I', 'R', 0x00. */
 	private static final int FORMAT_IDENTIFIER = 0x49495200;
@@ -328,7 +331,8 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 			add(biometricSubtypeInfo);
 		}
 		if (dataLength != constructedDataLength) {
-			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+			LOGGER.warning("DEBUG: constructedDataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+//			throw new IllegalStateException("DEBUG: constructed DataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
 		}
 	}
 

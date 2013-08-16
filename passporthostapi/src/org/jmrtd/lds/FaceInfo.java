@@ -30,6 +30,7 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.logging.Logger;
 
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.CBEFFInfo;
@@ -45,6 +46,8 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
 public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements BiometricDataBlock {
 
 	private static final long serialVersionUID = -6053206262773400725L;
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	/** Facial Record Header 'F', 'A', 'C', 0x00. Section 5.4, Table 2 of ISO/IEC 19794-5. */
 	private static final int FORMAT_IDENTIFIER = 0x46414300;
@@ -139,7 +142,8 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 			add(imageInfo);
 		}
 		if (dataLength != constructedDataLength) {
-			throw new IllegalStateException("dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+			LOGGER.warning("DEBUG: constructedDataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
+//			throw new IllegalStateException("DEBUG: constructed DataLength and dataLength differ: " + "dataLength = " + dataLength + ", constructedDataLength = " + constructedDataLength);
 		}
 	}
 

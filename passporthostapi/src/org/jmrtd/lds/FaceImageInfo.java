@@ -305,7 +305,7 @@ public class FaceImageInfo extends AbstractImageInfo {
 		 */
 		setMimeType(toMimeType(imageDataType));
 		long imageLength = recordLength - 20 - 8 * featurePointCount - 12;
-
+		
 		readImage(inputStream, imageLength);
 	}
 

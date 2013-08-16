@@ -176,12 +176,17 @@ public class SODFileTest extends TestCase {
 			testReflexive(sodFile);
 			testFields(sodFile);
 		} catch (Exception e) {
+			e.printStackTrace();
 			fail(e.toString());
 		}
 	}
 
 	public void testMustermann() {
 		testFile(createMustermannSampleInputStream());
+	}
+	
+	public void testNZ() {
+		testFile(createNZSampleInputStream());
 	}
 
 	public static SODFile createTestObject() {
@@ -253,6 +258,15 @@ public class SODFileTest extends TestCase {
 	public InputStream createMustermannSampleInputStream() {
 		try {
 			return new FileInputStream("t:/paspoort/test/mustermann_EF_SOD.bin");
+		} catch (FileNotFoundException e) {
+			fail(e.getMessage());
+			return null;
+		}
+	}
+	
+	public InputStream createNZSampleInputStream() {
+		try {
+			return new FileInputStream("t:/paspoort/test/nz/EF_SOD.BIN");
 		} catch (FileNotFoundException e) {
 			fail(e.getMessage());
 			return null;

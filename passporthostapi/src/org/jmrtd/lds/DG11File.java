@@ -22,6 +22,7 @@
 
 package org.jmrtd.lds;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,6 +39,7 @@ import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sourceforge.scuba.tlv.TLVUtil;
 import net.sourceforge.scuba.util.Hex;
 
 /**
@@ -70,7 +72,9 @@ public class DG11File extends DataGroup {
 
 	private static final long serialVersionUID = 8566312538928662937L;
 
-	public static final int TAG_LIST_TAG = 0x5C,
+	public static final int TAG_LIST_TAG = 0x5C;
+	
+	public static final int
 			FULL_NAME_TAG = 0x5F0E,
 			OTHER_NAME_TAG = 0x5F0F,
 			PERSONAL_NUMBER_TAG = 0x5F10,
@@ -83,13 +87,15 @@ public class DG11File extends DataGroup {
 			PERSONAL_SUMMARY_TAG = 0x5F15,
 			PROOF_OF_CITIZENSHIP_TAG = 0x5F16, // Compressed image per ISO/IEC 10918 
 			OTHER_VALID_TD_NUMBERS_TAG = 0x5F17, // Separated by '<'
-			CUSTODY_INFORMATION_TAG = 0x5F18,
+			CUSTODY_INFORMATION_TAG = 0x5F18;
+	
+	public static final int
 			CONTENT_SPECIFIC_CONSTRUCTED_TAG = 0xA0, // 5F0F is always used inside A0 constructed object
 			COUNT_TAG = 0x02; // Used in A0 constructed object to indicate single byte count of simple objects
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	private String fullNamePrimaryIdentifier;
 	private List<String> fullNameSecondaryIdentifiers;
@@ -162,21 +168,31 @@ public class DG11File extends DataGroup {
 		super(EF_DG11_TAG, in);
 	}
 
-	protected void readContent(InputStream in) throws IOException {
-		TLVInputStream tlvIn = in instanceof TLVInputStream ? (TLVInputStream)in : new TLVInputStream(in);
-		int tag = tlvIn.readTag();
-		if (tag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
-		int length = tlvIn.readLength();
-		int tagCount = length / 2;
-		int[] tagList = new int[tagCount];
-		for (int i = 0; i < tagCount; i++) {
-			int hi = tlvIn.read();
-			int lo = tlvIn.read();
-			tag = ((hi & 0xFF) << 8) | (lo & 0xFF);
-			tagList[i] = tag;
+	protected void readContent(InputStream inputStream) throws IOException {
+		TLVInputStream tlvInputStream = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
+		int tagListTag = tlvInputStream.readTag();
+		if (tagListTag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
+		
+		int tagListLength = tlvInputStream.readLength();
+		int tagListBytesRead = 0;
+
+		int expectedTagCount = tagListLength / 2;
+
+		ByteArrayInputStream tagListBytesInputStream = new ByteArrayInputStream(tlvInputStream.readValue());
+		
+		/* Find out which tags are present. */
+		List<Integer> tagList = new ArrayList<Integer>(expectedTagCount + 1);
+		while (tagListBytesRead < tagListLength) {
+			/* We're using another TLV inputstream everytime to read each tag. */
+			TLVInputStream anotherTLVInputStream = new TLVInputStream(tagListBytesInputStream);
+			int tag = anotherTLVInputStream.readTag();
+			tagListBytesRead += TLVUtil.getTagLength(tag);
+			tagList.add(tag);
 		}
-		for (int i = 0; i < tagCount; i++) {
-			readField(tagList[i], tlvIn);
+
+		/* Now read the fields in order. */
+		for (int t: tagList) {
+			readField(t, tlvInputStream);
 		}
 	}
 
