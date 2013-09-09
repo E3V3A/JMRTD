@@ -78,12 +78,12 @@ public class FingerImageInfoTest extends TestCase {
 //			byte[] imageBytes = new byte[imageInfo.getImageLength()];
 //			inputStream.readFully(imageBytes);
 //			
-//			FileOutputStream outputStream = new FileOutputStream("t:/paspoort/test/bsi/fp.wsq");
+//			FileOutputStream outputStream = new FileOutputStream("t:/paspoort/test/bsi/old/fp.wsq");
 //			outputStream.write(imageBytes);
 //			outputStream.flush();
 //			outputStream.close();
 			
-			File inputFile = new File("t:/paspoort/test/bsi/fp.wsq");
+			File inputFile = new File("t:/paspoort/test/bsi/old/fp.wsq");
 			DataInputStream inputStream = new DataInputStream(new FileInputStream(inputFile));
 			byte[] imageBytes = new byte[(int)inputFile.length()];
 			inputStream.readFully(imageBytes);

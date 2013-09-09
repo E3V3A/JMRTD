@@ -49,7 +49,7 @@ import org.jmrtd.lds.LDS;
 
 public class DG4FileTest extends TestCase {
 
-	public static final String TEST_FILE = "t:/paspoort/test/bsi/Datagroup4.bin";
+	public static final String TEST_FILE = "t:/paspoort/test/bsi/old/Datagroup4.bin";
 
 	public DG4FileTest(String name) {
 		super(name);
