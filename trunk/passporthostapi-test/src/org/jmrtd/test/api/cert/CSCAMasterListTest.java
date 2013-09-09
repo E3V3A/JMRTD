@@ -24,7 +24,8 @@ public class CSCAMasterListTest extends TestCase {
 	private static final String DE_ML_FILE =
 			TEST_CERT_DIR
 			// + "/german_csca_masterlist/20130614GermanMasterlist.ml";
-			+ "/german_csca_masterlist/20130717GermanMasterlist.ml";
+			// + "/german_csca_masterlist/20130717GermanMasterlist.ml";
+			+ "/german_csca_masterlist/20130815GermanMasterlist.ml";
 
 	private static final String DE_PREFIX = "from_de_ml_";
 	

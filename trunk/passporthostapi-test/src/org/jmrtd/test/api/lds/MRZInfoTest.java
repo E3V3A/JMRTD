@@ -131,7 +131,7 @@ public class MRZInfoTest extends TestCase {
 			testToString(new MRZInfo(str), str);
 		}
 	}
-
+	
 	public void testToString(MRZInfo mrzInfo, String expectedResult) {
 		assertEquals(mrzInfo.toString().replace("\n", ""), expectedResult.replace("\n", ""));
 	}
@@ -326,10 +326,25 @@ public class MRZInfoTest extends TestCase {
 			fail(e.toString());
 		}
 	}
+	
+	public void testConcreteMRZ() {
+//		String str = /* ... concrete test MRZ here ...*/
+//
+//		System.out.println("DEBUG: str.length() = " + str.length());
+//		MRZInfo mrz = new MRZInfo(str);
+//		testToString(mrz, str);
+//		
+//		System.out.println("DoB = " + mrz.getDateOfBirth());
+//		System.out.println("DoE = " + mrz.getDateOfExpiry());
+//		System.out.println("First names = " + mrz.getSecondaryIdentifier().replace("<", " ").trim());
+//		System.out.println("Last name = " + mrz.getPrimaryIdentifier().replace("<", " ").trim());
+//		System.out.println("Doc num = " + mrz.getDocumentNumber() + " (length = " + mrz.getDocumentNumber().length() + ")");
+//		System.out.println("Personal num = " + mrz.getPersonalNumber());
+	}
 
 	public void testNationality() {
-		testNationality(MRZ_LOES_MEULENDIJK_2LINE_ID3_ZERO_CHECKDIGIT, ISOCountry.NL);
-		testNationality(MRZ_HAPPY_TRAVELER_2LINE_ID3, ISOCountry.US);
+		testNationality(MRZ_LOES_MEULENDIJK_2LINE_ID3_ZERO_CHECKDIGIT, Country.getInstance("NL"));
+		testNationality(MRZ_HAPPY_TRAVELER_2LINE_ID3, Country.getInstance("US"));
 		testNationality(MRZ_CHRISTIAN_MUSTERMAN_2LINE_ID3, ICAOCountry.DE);
 		testNationality(MRZ_ANNA_ERIKSSON_2LINE_ID3, TestCountry.UT);
 		// testNationality(MRZ_SUSANNA_SAMPLE_3LINE_ID1, ISOCountry.GB);
