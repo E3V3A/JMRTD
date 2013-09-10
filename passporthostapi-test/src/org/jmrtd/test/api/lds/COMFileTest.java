@@ -74,8 +74,8 @@ public class COMFileTest extends TestCase {
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		try {
 			COMFile comFile = new COMFile(in);
-			assertEquals(comFile.getLDSVersion(), "01.07");
-			assertEquals(comFile.getUnicodeVersion(), "04.00.00");
+			assertEquals(comFile.getLDSVersion(), "1.7");
+			assertEquals(comFile.getUnicodeVersion(), "4.0.0");
 
 			int[] tagList = comFile.getTagList();
 			assertNotNull(tagList);
@@ -101,8 +101,8 @@ public class COMFileTest extends TestCase {
 		COMFile comFile1 = new COMFile("01", "07", "04", "00", "00", tagList1);
 		COMFile comFile2 = new COMFile("1.7", "4.0.0", tagList2);
 		assertEquals(comFile1, comFile2);
-		assertEquals(comFile2.getLDSVersion(), "01.07");
-		assertEquals(comFile2.getUnicodeVersion(), "04.00.00");
+		assertEquals(comFile2.getLDSVersion(), "1.7");
+		assertEquals(comFile2.getUnicodeVersion(), "4.0.0");
 		
 		assertEquals(new COMFile("01.7", "4.00.0", tagList1), new COMFile("1.07", "04.0.00", tagList2));
 	}

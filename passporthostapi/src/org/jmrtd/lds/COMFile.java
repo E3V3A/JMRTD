@@ -188,10 +188,18 @@ public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * Gets the LDS version as a dot seperated string
 	 * containing version and update level.
 	 * 
-	 * @return a string of the form "aa.bb"
+	 * @return a string of the form "a.b"
 	 */
 	public String getLDSVersion() {
-		return versionLDS + "." + updateLevelLDS;
+		String ldsVersion = versionLDS + "." + updateLevelLDS;
+		try {
+			int major = Integer.parseInt(versionLDS);
+			int minor = Integer.parseInt(updateLevelLDS);
+			ldsVersion = major + "." + minor;
+		} catch (NumberFormatException nfe) {
+			/* NOTE: leave ldsVersion as is. */
+		}
+		return ldsVersion;
 	}
 
 	/**
@@ -201,9 +209,20 @@ public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * @return a string of the form "aa.bb.cc"
 	 */
 	public String getUnicodeVersion() {
-		return majorVersionUnicode
-		+ "." + minorVersionUnicode
-		+ "." + releaseLevelUnicode;
+		String unicodeVersion = majorVersionUnicode
+				+ "." + minorVersionUnicode
+				+ "." + releaseLevelUnicode;
+
+		try {
+			int major = Integer.parseInt(majorVersionUnicode);
+			int minor = Integer.parseInt(minorVersionUnicode);
+			int releaseLevel = Integer.parseInt(releaseLevelUnicode);
+			unicodeVersion = major + "." + minor + "." + releaseLevel;
+		} catch (NumberFormatException nfe) {
+			/* NOTE: leave unicodeVersion as is. */
+		}
+
+		return unicodeVersion;
 	}
 
 	/**
