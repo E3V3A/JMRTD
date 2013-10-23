@@ -1005,8 +1005,6 @@ public class Passport {
 	 * 
 	 * @param lds
 	 * @param verificationStatus
-	 * 
-	 * @return whether an error was found (could be reason to abort the verification as a whole)
 	 */
 	private void verifyHT() {
 		SODFile sod = null;
@@ -1015,6 +1013,7 @@ public class Passport {
 		} catch (IOException ioe) {
 			LOGGER.severe("Could not read EF.SOd");
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Could not read EF.SOd", null);
+			return; // DEBUG -- MO
 		}
 
 		/* Initialize hash. */
@@ -1029,6 +1028,7 @@ public class Passport {
 			}
 		} catch (NoSuchAlgorithmException nsae) {
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
+			return; // DEBUG -- MO
 		}
 
 		/* Compare stored hashes to computed hashes. */

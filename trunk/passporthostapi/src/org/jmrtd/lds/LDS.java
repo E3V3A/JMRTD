@@ -49,7 +49,7 @@ import org.jmrtd.io.SplittableInputStream;
  * @since 0.4.8
  */
 public class LDS {
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	private Map<Short, LDSFile> files;
@@ -58,6 +58,53 @@ public class LDS {
 	public LDS() {
 		this.files = new TreeMap<Short, LDSFile>();
 		this.fetchers = new TreeMap<Short, SplittableInputStream>();
+	}
+
+	public synchronized boolean isSameDocument(LDS other) throws IOException {
+		if (other == null) { return false; }
+		try {
+			DG1File dg1 = getDG1File();
+			DG1File otherDG1 = other.getDG1File();
+			if (dg1 == null || otherDG1 == null) { return false; }
+			MRZInfo mrzInfo = dg1.getMRZInfo();
+			MRZInfo otherMRZInfo = otherDG1.getMRZInfo();
+			if (mrzInfo == null || otherMRZInfo == null) { return false; }
+			return mrzInfo.equals(otherMRZInfo);
+		} catch (Exception e) {
+			return false;
+		}
+	}
+
+	/* FIXME: check consistency within buffers? */
+	public synchronized void updateFrom(LDS other) {
+		if (other == null) { return; }
+//		if (other.files != null) {
+//			for (Map.Entry<Short, LDSFile> entry: other.files.entrySet()) {
+//				short fid = entry.getKey();
+//				LDSFile file = files.get(fid);
+//				LDSFile otherFile = entry.getValue();
+//				if (file == null) {
+//					files.put(fid, otherFile);
+//				} else {
+//					if (file.getLength() != otherFile.getLength()) {
+//						/* DEBUG: now what? */
+//						LOGGER.warning("Inconsistency detected while updating from previous LDS: FID = " + Integer.toHexString(fid) + ", file lengths: " + file.getLength() + ", " + otherFile.getLength());
+//					}
+//				}
+//			}
+//		}
+		if (other.fetchers != null) {
+			for (Map.Entry<Short, SplittableInputStream> entry: other.fetchers.entrySet()) {
+				short fid = entry.getKey();
+				SplittableInputStream inputStream = fetchers.get(fid);
+				SplittableInputStream otherInputStream = entry.getValue();
+				if (inputStream == null) {
+					fetchers.put(fid, otherInputStream);
+				} else {
+					inputStream.updateFrom(otherInputStream);
+				}
+			}
+		}
 	}
 
 	public List<Short> getFileList() {

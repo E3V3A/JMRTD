@@ -50,6 +50,10 @@ public class SplittableInputStream extends InputStream {
 		this.carrier = inputStreamBuffer.getInputStream();
 	}
 
+	public void updateFrom(SplittableInputStream other) {
+		inputStreamBuffer.updateFrom(other.inputStreamBuffer);
+	}
+	
 	/**
 	 * Gets a copy of the inputstream positioned at <code>position</code>.
 	 * 

@@ -47,13 +47,13 @@ public class MRZInfo extends AbstractLDSInfo {
 	/** Unspecified document type (do not use, choose ID1 or ID3). */
 	public static final int DOC_TYPE_UNSPECIFIED = 0;
 
-	/** ID1 document type for credit card sized identity cards. Assume 3-line MRZ. */
+	/** ID1 document type for credit card sized identity cards. Specifies a 3-line MRZ, 30 characters wide. */
 	public static final int DOC_TYPE_ID1 = 1;
 
-	/** ID2 document type. */
+	/** ID2 document type. Specifies a 2-line MRZ, 36 characters wide. */
 	public static final int DOC_TYPE_ID2 = 2;
 
-	/** ID3 document type for passport booklets. Assume 2-line MRZ. */
+	/** ID3 document type for passport booklets. Specifies a 2-line MRZ, 44 characters wide. */
 	public static final int DOC_TYPE_ID3 = 3;
 
 	/** All valid characters in MRZ. */
