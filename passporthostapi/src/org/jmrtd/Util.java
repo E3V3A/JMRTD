@@ -90,7 +90,7 @@ public class Util {
 	 * @return a byte array of length 16 containing the key seed.
 	 */
 	/*
-	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible no.w
+	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible now.
 	 */
 	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
 

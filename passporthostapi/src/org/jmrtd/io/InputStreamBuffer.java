@@ -45,6 +45,10 @@ public class InputStreamBuffer {
 		this.buffer = new FragmentBuffer(length);
 	}
 
+	public void updateFrom(InputStreamBuffer other) {
+		buffer.updateFrom(other.buffer);
+	}
+
 	/**
 	 * Gets a copy of the input stream positioned at 0.
 	 *
@@ -102,10 +106,19 @@ public class InputStreamBuffer {
 					if (carrier.markSupported()) {
 						syncCarrierPosition();
 					}
-					int result = carrier.read();
-					if (result < 0) { return -1; }
-					buffer.addFragment(position++, (byte)result);
-					return result;
+					try {
+						int result = carrier.read();
+						if (result < 0) { return -1; }
+						buffer.addFragment(position++, (byte)result);
+						return result;
+					} catch (IOException ioe) {
+						/*
+						 * Carrier failed to read. Now what?
+						 * - We don't update the buffer or position.
+						 * - Obviously we also fail to read, with the same exception.
+						 */
+						throw ioe;
+					}
 				}
 			}
 		}

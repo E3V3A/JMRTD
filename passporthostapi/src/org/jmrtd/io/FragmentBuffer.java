@@ -61,7 +61,13 @@ public class FragmentBuffer implements Serializable {
 		this.buffer = new byte[length];
 		this.fragments = new HashSet<Fragment>();
 	}
-	
+
+	public synchronized void updateFrom(FragmentBuffer other) {
+		for (Fragment otherFragment: other.fragments) {
+			addFragment(otherFragment.offset, other.buffer, otherFragment.offset, otherFragment.length);
+		}
+	}
+
 	public synchronized void addFragment(int offset, byte b) {
 		/* FIXME: can this be done more efficiently for common case resulting from InputStreamBuffer read, scan all fragments and extend neighboring one */
 		addFragment(offset, new byte[] { b });
