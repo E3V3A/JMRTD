@@ -258,12 +258,26 @@ Code quality
 + Check JavaDoc.
 + Check Findbugs.
 
+0.5.0 (2013)
+------------
 
-0.5.x (FUTURE)
+General
++ Allow session completion on read error (as in Nexus 4 case) and new connection of MRTD.
+- Make Passport itself responsible for calling verification methods verifyDS, verifyCS, verifyHash at appropriate stages (when SODFile has been read), and notify VerificationStatusChangeListeners.
+- MRZOCRLib under open source license.
+
+Dependencies
+- Check latest Bouncy Castle. (Is actually 1.49, but we're back to 1.47 for now, because of Spongy on Android.)
+
+Code quality
+- Check unit tests.
+- Check JavaDoc.
+- Check Findbugs.
+
+0.6.x (FUTURE)
 --------------
 
 General
-- Allow session completion on read error (as in Nexus 4 case) and new connection of MRTD. Can this be done safely?
 - Implement SAC/PACE. Check status of OpenPACE and other nPA projects on SF.
 - Check new version of 9303 (expected second half 2013) and LDS 1.8 (in TR)
 - Support SPOC web service for EAC/CVCA (test with e.g. http://sandbox.safelayer.com/en/epassport-test, http://www.openscdp.org/scripts/icao/eacpki.html)

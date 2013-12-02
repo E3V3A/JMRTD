@@ -106,8 +106,12 @@ public class Passport {
 	private final static List<BACKey> EMPTY_TRIED_BAC_ENTRY_LIST = Collections.emptyList();
 	private final static List<Certificate> EMPTY_CERTIFICATE_CHAIN = Collections.emptyList();
 
+	/** The hash function for DG hashes. */
+	private MessageDigest digest;
+
 	private FeatureStatus featureStatus;
 	private VerificationStatus verificationStatus;
+	private Collection<VerificationStatusChangeListener> verificationStatusChangeListeners;
 
 	private short cvcaFID = PassportService.EF_CVCA;
 
@@ -132,6 +136,7 @@ public class Passport {
 	private Passport() {
 		this.featureStatus = new FeatureStatus();
 		this.verificationStatus = new VerificationStatus();
+		this.verificationStatusChangeListeners = new ArrayList<VerificationStatusChangeListener>();
 	}
 
 	/**
@@ -195,6 +200,7 @@ public class Passport {
 			new COMFile(service.getInputStream(PassportService.EF_COM));
 			featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		} catch (Exception e) {
 			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
 			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
@@ -236,6 +242,11 @@ public class Passport {
 			LOGGER.warning("Could not read file");
 		}
 
+		if (sodFile != null) {
+			verifyDS();
+			verifyCS();
+		}
+
 		/* Get the list of DGs from EF.SOd, not from EF.COM. */
 		List<Integer> dgNumbers = new ArrayList<Integer>();
 		if (sodFile != null) {
@@ -268,6 +279,7 @@ public class Passport {
 			dgNumbersAlreadyRead.add(15);
 		} else {
 			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
 
 		/* Add remaining datagroups to LDS. */
@@ -380,7 +392,8 @@ public class Passport {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
-		verificationStatus.setAll(VerificationStatus.Verdict.UNKNOWN, "Unknown");
+		verificationStatus.setAll(VerificationStatus.Verdict.UNKNOWN, "Unknown"); // FIXME: why all?
+		notifyVerificationStatusChangeListeners(verificationStatus);
 	}
 
 	/**
@@ -616,6 +629,10 @@ public class Passport {
 		}
 	}
 
+	public void addVerificationStatusChangeListener(VerificationStatusChangeListener l) {
+		verificationStatusChangeListeners.add(l);
+	}
+
 	/* ONLY PRIVATE METHODS BELOW. */
 
 	private BACKeySpec tryToDoBAC(PassportService service, int maxTriesPerBACEntry, List<BACKeySpec> bacStore) throws BACDeniedException {
@@ -652,9 +669,11 @@ public class Passport {
 		if (bacKeySpec == null) {
 			/* Document requires BAC, but we failed to authenticate. */
 			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
+			notifyVerificationStatusChangeListeners(verificationStatus);
 			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 		} else {
 			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
 		return bacKeySpec;
 	}
@@ -669,6 +688,7 @@ public class Passport {
 			ioe.printStackTrace();
 			LOGGER.warning("Could not read EF.DG15");
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Could not read EF.DG15");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
 	}
 
@@ -745,7 +765,7 @@ public class Passport {
 						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + Arrays.toString(chain) + ", privateKey = " + privateKey);
 						continue;
 					}
-					
+
 					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
 					for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
 					for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
@@ -756,6 +776,7 @@ public class Passport {
 							service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
 							isSucceeded = true;
 							verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference);
+							notifyVerificationStatusChangeListeners(verificationStatus);
 							break;
 						} catch(CardServiceException cse) {
 							cse.printStackTrace();
@@ -846,22 +867,27 @@ public class Passport {
 	private void verifyAA(PassportService service, DG15File dg15) {
 		if (dg15 == null || service == null) {
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 			return;
 		}
 		try {
 			PublicKey pubKey = dg15.getPublicKey();
 			if (service.doAA(pubKey)) {
 				verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded");
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			} else {
 				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure");
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			}
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		} catch (Exception e) {
 			LOGGER.severe("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
 	}
 
@@ -886,15 +912,19 @@ public class Passport {
 			}
 			if (sod.checkDocSignature(docSigningCert)) {
 				verificationStatus.setDS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked");
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			} else {
 				verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Signature incorrect");
-			}
+				notifyVerificationStatusChangeListeners(verificationStatus);
+			}			
 		} catch (NoSuchAlgorithmException nsae) {
 			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Unsupported signature algorithm");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		} catch (Exception e) {
 			e.printStackTrace();
 			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Unexpected exception");
+			notifyVerificationStatusChangeListeners(verificationStatus);
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 	}
@@ -915,6 +945,7 @@ public class Passport {
 
 			if (sod == null) {
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Unable to build certificate chain", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 				return;
 			}
 
@@ -942,11 +973,13 @@ public class Passport {
 			if (cscaStores == null || cscaStores.size() <= 0) {
 				LOGGER.warning("No CSCA certificate stores found.");
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA certificate stores found", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			}
 			Set<TrustAnchor> cscaTrustAnchors = trustManager.getCSCAAnchors();
 			if (cscaTrustAnchors == null || cscaTrustAnchors.size() <= 0) {
 				LOGGER.warning("No CSCA trust anchors found.");
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA trust anchors found", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			}
 
 			/* Optional internal EF.SOd consistency check. */
@@ -965,6 +998,7 @@ public class Passport {
 			List<Certificate> pkixChain = getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber, cscaStores, cscaTrustAnchors);
 			if (pkixChain == null) {
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor (pkixChain == null)", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 				return;
 			}
 
@@ -976,10 +1010,12 @@ public class Passport {
 			int chainDepth = chain.size();
 			if (chainDepth <= 1) {
 				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 				return;
 			}
 			if (chainDepth > 1 && verificationStatus.getCS().equals(VerificationStatus.Verdict.UNKNOWN)) {
 				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Found a chain to a trust anchor", chain);
+				notifyVerificationStatusChangeListeners(verificationStatus);
 			}
 
 			/* FIXME: This is no longer necessary after PKIX has done its job? */
@@ -1007,36 +1043,20 @@ public class Passport {
 	 * @param verificationStatus
 	 */
 	private void verifyHT() {
-		SODFile sod = null;
-		try {
-			sod = lds.getSODFile();
-		} catch (IOException ioe) {
-			LOGGER.severe("Could not read EF.SOd");
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Could not read EF.SOd", null);
-			return; // DEBUG -- MO
-		}
-
-		/* Initialize hash. */
-		MessageDigest digest = null;
-		String digestAlgorithm = sod.getDigestAlgorithm();
-		LOGGER.info("Using hash algorithm " + digestAlgorithm);
-		try {
-			if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
-				digest = MessageDigest.getInstance(digestAlgorithm);
-			} else {
-				digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
-			}
-		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
-			return; // DEBUG -- MO
-		}
-
 		/* Compare stored hashes to computed hashes. */
 		Map<Integer, VerificationStatus.HashMatchResult> hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
 
+		SODFile sod = null;
+		try {
+			sod = lds.getSODFile();
+		} catch (Exception e) {
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "No SOd", hashResults);
+			notifyVerificationStatusChangeListeners(verificationStatus);
+			return;
+		}
 		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
 		for (int dgNumber: storedHashes.keySet()) {
-			verifyHash(dgNumber, digest, hashResults);
+			verifyHash(dgNumber, hashResults);
 		}
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
 			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "All hashes match", hashResults);
@@ -1044,6 +1064,7 @@ public class Passport {
 			/* Update storedHashes and computedHashes. */
 			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
 		}
+		notifyVerificationStatusChangeListeners(verificationStatus);
 	}
 
 	/**
@@ -1056,21 +1077,33 @@ public class Passport {
 	 * @param storedHash the stored hash for this datagroup
 	 * @param hashResults the hashtable status to update
 	 */
-	private void verifyHash(int dgNumber, MessageDigest digest, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
+	private void verifyHash(int dgNumber, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
 		short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
-		digest.reset();
 
+		SODFile sod = null;
+		
 		/* Get the stored hash for the DG. */
 		byte[] storedHash = null;
 		try {
-			SODFile sod = lds.getSODFile();
+			sod = lds.getSODFile();
 			Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
 			storedHash = storedHashes.get(dgNumber);
 		} catch(Exception e) {
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed, could not get stored hash", hashResults);
+			notifyVerificationStatusChangeListeners(verificationStatus);
 			return;
 		}
 
+		/* Initialize hash. */
+		String digestAlgorithm = sod.getDigestAlgorithm();
+		try {
+			digest = getDigest(digestAlgorithm);
+		} catch (NoSuchAlgorithmException nsae) {
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
+			notifyVerificationStatusChangeListeners(verificationStatus);
+			return; // DEBUG -- MO
+		}
+		
 		/* Read the DG. */
 		byte[] dgBytes = null;
 		try {
@@ -1134,4 +1167,26 @@ public class Passport {
 	//		Collections.sort(sodDGList);
 	//		return sodDGList;
 	//	}
+
+	private MessageDigest getDigest(String digestAlgorithm) throws NoSuchAlgorithmException {
+		if (digest != null) {
+			digest.reset();
+			return digest;
+		}
+		LOGGER.info("Using hash algorithm " + digestAlgorithm);
+		if (Security.getAlgorithms("MessageDigest").contains(digestAlgorithm)) {
+			digest = MessageDigest.getInstance(digestAlgorithm);
+		} else {
+			digest = MessageDigest.getInstance(digestAlgorithm, BC_PROVIDER);
+		}
+		return digest;
+	}
+	
+	private void notifyVerificationStatusChangeListeners(VerificationStatus status) {
+		if (verificationStatusChangeListeners == null) { return; }
+		for (VerificationStatusChangeListener l: verificationStatusChangeListeners) {
+			l.onVerificationStatusChange(status);
+		}
+	}
+
 }
