@@ -232,11 +232,7 @@ public class LDS {
 			return file;
 		}
 
-		SplittableInputStream fetcher = fetchers.get(fid);
-		if (fetcher == null) {
-			throw new IOException("File not available in LDS");
-		}
-		file = LDSFileUtil.getLDSFile(fid, fetcher.getInputStream(0));
+		file = LDSFileUtil.getLDSFile(fid, getInputStream(fid));
 		files.put(fid, file);
 		return file;
 	}

@@ -73,25 +73,25 @@ public class DG11File extends DataGroup {
 	private static final long serialVersionUID = 8566312538928662937L;
 
 	public static final int TAG_LIST_TAG = 0x5C;
-	
+
 	public static final int
-			FULL_NAME_TAG = 0x5F0E,
-			OTHER_NAME_TAG = 0x5F0F,
-			PERSONAL_NUMBER_TAG = 0x5F10,
-			FULL_DATE_OF_BIRTH_TAG = 0x5F2B, // In 'CCYYMMDD' format.
-			PLACE_OF_BIRTH_TAG = 0x5F11, // Fields separated by '<'
-			PERMANENT_ADDRESS_TAG = 0x5F42, // Fields separated by '<'
-			TELEPHONE_TAG = 0x5F12,
-			PROFESSION_TAG = 0x5F13,
-			TITLE_TAG = 0x5F14,
-			PERSONAL_SUMMARY_TAG = 0x5F15,
-			PROOF_OF_CITIZENSHIP_TAG = 0x5F16, // Compressed image per ISO/IEC 10918 
-			OTHER_VALID_TD_NUMBERS_TAG = 0x5F17, // Separated by '<'
-			CUSTODY_INFORMATION_TAG = 0x5F18;
-	
+	FULL_NAME_TAG = 0x5F0E,
+	OTHER_NAME_TAG = 0x5F0F,
+	PERSONAL_NUMBER_TAG = 0x5F10,
+	FULL_DATE_OF_BIRTH_TAG = 0x5F2B, // In 'CCYYMMDD' format.
+	PLACE_OF_BIRTH_TAG = 0x5F11, // Fields separated by '<'
+	PERMANENT_ADDRESS_TAG = 0x5F42, // Fields separated by '<'
+	TELEPHONE_TAG = 0x5F12,
+	PROFESSION_TAG = 0x5F13,
+	TITLE_TAG = 0x5F14,
+	PERSONAL_SUMMARY_TAG = 0x5F15,
+	PROOF_OF_CITIZENSHIP_TAG = 0x5F16, // Compressed image per ISO/IEC 10918 
+	OTHER_VALID_TD_NUMBERS_TAG = 0x5F17, // Separated by '<'
+	CUSTODY_INFORMATION_TAG = 0x5F18;
+
 	public static final int
-			CONTENT_SPECIFIC_CONSTRUCTED_TAG = 0xA0, // 5F0F is always used inside A0 constructed object
-			COUNT_TAG = 0x02; // Used in A0 constructed object to indicate single byte count of simple objects
+	CONTENT_SPECIFIC_CONSTRUCTED_TAG = 0xA0, // 5F0F is always used inside A0 constructed object
+	COUNT_TAG = 0x02; // Used in A0 constructed object to indicate single byte count of simple objects
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
@@ -172,14 +172,14 @@ public class DG11File extends DataGroup {
 		TLVInputStream tlvInputStream = inputStream instanceof TLVInputStream ? (TLVInputStream)inputStream : new TLVInputStream(inputStream);
 		int tagListTag = tlvInputStream.readTag();
 		if (tagListTag != TAG_LIST_TAG) { throw new IllegalArgumentException("Expected tag list in DG11"); }
-		
+
 		int tagListLength = tlvInputStream.readLength();
 		int tagListBytesRead = 0;
 
 		int expectedTagCount = tagListLength / 2;
 
 		ByteArrayInputStream tagListBytesInputStream = new ByteArrayInputStream(tlvInputStream.readValue());
-		
+
 		/* Find out which tags are present. */
 		List<Integer> tagList = new ArrayList<Integer>(expectedTagCount + 1);
 		while (tagListBytesRead < tagListLength) {
@@ -396,8 +396,19 @@ public class DG11File extends DataGroup {
 		int delimIndex = field.indexOf(delim);
 		if (delimIndex < 0) {
 			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
-			delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+			LOGGER.warning("Trying \"<\" (the Austrian way)");
+			delim = "<";
 			delimIndex = field.indexOf(delim);
+			if(delimIndex < 0) {
+				LOGGER.warning("Didn't work either. Trying spaces.");
+				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+				delimIndex = field.indexOf(delim);
+				if(delimIndex < 0) {
+					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
+					fullNamePrimaryIdentifier = field; 
+					return;
+				}
+			}
 		}
 		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
 		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
