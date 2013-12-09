@@ -70,6 +70,7 @@ import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.util.Hex;
 
+import org.jmrtd.VerificationStatus.HashMatchResult;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.COMFile;
@@ -200,7 +201,7 @@ public class Passport {
 			new COMFile(service.getInputStream(PassportService.EF_COM));
 			featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-			notifyVerificationStatusChangeListeners(verificationStatus);
+			//			notifyVerificationStatusChangeListeners(verificationStatus);
 		} catch (Exception e) {
 			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
 			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
@@ -253,6 +254,26 @@ public class Passport {
 			dgNumbers.addAll(sodFile.getDataGroupHashes().keySet());
 		}
 		Collections.sort(dgNumbers); /* NOTE: need to sort it, since we get keys as a set. */
+
+		Map<Integer, VerificationStatus.HashMatchResult> hashResults = verificationStatus.getHashResults();
+		if (hashResults == null) {
+			hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
+		}
+		/* Initial hash results: we know the stored hashes, but not the computed hashes yet. */
+		Map<Integer, byte[]> storedHashes = sodFile.getDataGroupHashes();
+		for (int dgNumber: dgNumbers) {
+			byte[] storedHash = storedHashes.get(dgNumber);
+			VerificationStatus.HashMatchResult hashResult = hashResults.get(dgNumber);
+			if (hashResult != null) { continue; }
+			if (dgNumbersAlreadyRead.contains(dgNumber)) {
+				hashResult = verifyHash(dgNumber);
+			} else {
+				hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+			}
+			hashResults.put(dgNumber, hashResult);
+		}
+		verificationStatus.setHT(VerificationStatus.Verdict.UNKNOWN, verificationStatus.getHTReason(), hashResults);
+		//		notifyVerificationStatusChangeListeners(verificationStatus);
 
 		/* Check EAC support by DG14 presence. */
 		if (dgNumbers.contains(14)) {
@@ -631,6 +652,9 @@ public class Passport {
 
 	public void addVerificationStatusChangeListener(VerificationStatusChangeListener l) {
 		verificationStatusChangeListeners.add(l);
+		if (verificationStatus != null) {
+			l.onVerificationStatusChange(verificationStatus);
+		}
 	}
 
 	/* ONLY PRIVATE METHODS BELOW. */
@@ -1044,7 +1068,10 @@ public class Passport {
 	 */
 	private void verifyHT() {
 		/* Compare stored hashes to computed hashes. */
-		Map<Integer, VerificationStatus.HashMatchResult> hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
+		Map<Integer, VerificationStatus.HashMatchResult> hashResults = verificationStatus.getHashResults();
+		if (hashResults == null) {
+			hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
+		}
 
 		SODFile sod = null;
 		try {
@@ -1064,7 +1091,14 @@ public class Passport {
 			/* Update storedHashes and computedHashes. */
 			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
 		}
-		notifyVerificationStatusChangeListeners(verificationStatus);
+	}
+
+	private HashMatchResult verifyHash(int dgNumber) {
+		Map<Integer, VerificationStatus.HashMatchResult> hashResults = verificationStatus.getHashResults();
+		if (hashResults == null) {
+			hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
+		}
+		return verifyHash(dgNumber, hashResults);
 	}
 
 	/**
@@ -1077,11 +1111,11 @@ public class Passport {
 	 * @param storedHash the stored hash for this datagroup
 	 * @param hashResults the hashtable status to update
 	 */
-	private void verifyHash(int dgNumber, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
+	private VerificationStatus.HashMatchResult verifyHash(int dgNumber, Map<Integer, VerificationStatus.HashMatchResult> hashResults) {
 		short fid = LDSFileUtil.lookupFIDByTag(LDSFileUtil.lookupTagByDataGroupNumber(dgNumber));
 
 		SODFile sod = null;
-		
+
 		/* Get the stored hash for the DG. */
 		byte[] storedHash = null;
 		try {
@@ -1091,7 +1125,7 @@ public class Passport {
 		} catch(Exception e) {
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed, could not get stored hash", hashResults);
 			notifyVerificationStatusChangeListeners(verificationStatus);
-			return;
+			return null;
 		}
 
 		/* Initialize hash. */
@@ -1101,9 +1135,9 @@ public class Passport {
 		} catch (NoSuchAlgorithmException nsae) {
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
 			notifyVerificationStatusChangeListeners(verificationStatus);
-			return; // DEBUG -- MO
+			return null; // DEBUG -- MO
 		}
-		
+
 		/* Read the DG. */
 		byte[] dgBytes = null;
 		try {
@@ -1118,32 +1152,43 @@ public class Passport {
 
 			if (dgIn == null && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
-				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
-				return;
+				VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+				hashResults.put(dgNumber, hashResult);
+				return hashResult;
 			}
 			if (dgIn == null) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because file could not be read.");
-				hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
-				return;
+				VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+				hashResults.put(dgNumber, hashResult);
+				return hashResult;
 			}
 
 		} catch(Exception e) {
-			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
+			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+			hashResults.put(dgNumber, hashResult);
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", hashResults);
-			return;
+			notifyVerificationStatusChangeListeners(verificationStatus);
+			return hashResult;
 		}
 
 		/* Compute the hash and compare. */
 		try {
 			byte[] computedHash = digest.digest(dgBytes);
-			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, computedHash));
+			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, computedHash);
+			hashResults.put(dgNumber, hashResult);
 
 			if (!Arrays.equals(storedHash, computedHash)) {
 				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash mismatch", hashResults);
 			}
+
+			notifyVerificationStatusChangeListeners(verificationStatus);
+			return hashResult;
 		} catch (Exception ioe) {
-			hashResults.put(dgNumber, verificationStatus.new HashMatchResult(storedHash, null));
+			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+			hashResults.put(dgNumber, hashResult);
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash failed due to exception", hashResults);
+			notifyVerificationStatusChangeListeners(verificationStatus);
+			return hashResult;
 		}
 	}
 
@@ -1181,7 +1226,7 @@ public class Passport {
 		}
 		return digest;
 	}
-	
+
 	private void notifyVerificationStatusChangeListeners(VerificationStatus status) {
 		if (verificationStatusChangeListeners == null) { return; }
 		for (VerificationStatusChangeListener l: verificationStatusChangeListeners) {
