@@ -40,7 +40,7 @@ import colorspace.ColorSpace.CSEnum;
  * @version $Revision: $
  */
 public class JJ2000Decoder {
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private final static String[][] DECODER_PINFO = {
@@ -100,14 +100,18 @@ public class JJ2000Decoder {
 		/*
 		 * The codestream should be wrapped in the jp2 fileformat, Read the
 		 * file format wrapper.
+		 * 
+		 * NOTE: 20131208 Incorrect, Chinese ePassports don't have this header! Probably the same for other issuers. -- MO
+		 * 
 		 * NOTE: This can throw an Error (not an Exception, no an ERROR!).
 		 */
 		FileFormatReader fileFormatReader = new FileFormatReader(randomAccessIO);
 		fileFormatReader.readFileFormat();
-		if (!fileFormatReader.JP2FFUsed) {
-			throw new IOException("Was expecting JP2 file format");
+		if (fileFormatReader.JP2FFUsed) {
+			randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
+		} else {
+			LOGGER.warning("Assuming codestream not wrapped in JP2 format");
 		}
-		randomAccessIO.seek(fileFormatReader.getFirstCodeStreamPos());
 
 		// Instantiate header decoder and read main header
 		HeaderInfo headerInfo = new HeaderInfo();
@@ -149,15 +153,19 @@ public class JJ2000Decoder {
 		// **** Color space mapping ****
 		ColorSpace colorSpace = null;
 		BlkImgDataSrc color = null;
-		try {
-			colorSpace = new ColorSpace(randomAccessIO, headerDecoder, pl);
-			BlkImgDataSrc channels = headerDecoder.createChannelDefinitionMapper(invCompTransf, colorSpace);
-			BlkImgDataSrc resampled = headerDecoder.createResampler(channels, colorSpace);
-			BlkImgDataSrc palettized = headerDecoder.createPalettizedColorSpaceMapper(resampled, colorSpace);
-			color = headerDecoder.createColorSpaceMapper(palettized, colorSpace);
-		} catch (Exception e) {
-			// throw new IOException("Error processing jp2 colorspace information: " + e.getMessage());
-			LOGGER.warning("DEBUG: Ignoring jp2 colorspace processing error");
+		if (fileFormatReader.JP2FFUsed) {
+			try {
+				colorSpace = new ColorSpace(randomAccessIO, headerDecoder, pl);
+				BlkImgDataSrc channels = headerDecoder.createChannelDefinitionMapper(invCompTransf, colorSpace);
+				BlkImgDataSrc resampled = headerDecoder.createResampler(channels, colorSpace);
+				BlkImgDataSrc palettized = headerDecoder.createPalettizedColorSpaceMapper(resampled, colorSpace);
+				color = headerDecoder.createColorSpaceMapper(palettized, colorSpace);
+			} catch (Exception e) {
+				// throw new IOException("Error processing jp2 colorspace information: " + e.getMessage());
+				LOGGER.warning("DEBUG: Ignoring jp2 colorspace processing error");
+			}
+		} else {
+			color = invCompTransf;
 		}
 
 		// This is the last image in the decoding chain and should be
@@ -203,8 +211,15 @@ public class JJ2000Decoder {
 			}
 		}
 
+		if (colorSpace == null) {
+			LOGGER.warning("Could not determine color space type, assuming sRGB");
+			// throw new IOException("Unsupported color space type.");
+			/* We don't support this color space, but best effort is to interpret it as signed ARGB. */
+			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
+		}
+
 		CSEnum colorSpaceType = colorSpace.getColorSpace();
-		if (colorSpaceType.equals(ColorSpace.GreyScale)) {
+		if (ColorSpace.GreyScale.equals(colorSpaceType)) {
 			/* NOTE: Untested */
 			return decodeGrayScale(blk, imgWidth, imgHeight, imgBitDepths);
 
@@ -216,7 +231,7 @@ public class JJ2000Decoder {
 			 *   image.setRGB(0, 0, imgWidth, imgHeight, colors, 0, imgWidth);
 			 *   return image;
 			 */
-		} else if (colorSpaceType.equals(ColorSpace.sRGB)) {
+		} else if (ColorSpace.sRGB.equals(colorSpaceType)) {
 			return decodeSignedRGB(blk, imgWidth, imgHeight, imgBitDepths, bitRate);
 			/*
 			 * For Android use:
