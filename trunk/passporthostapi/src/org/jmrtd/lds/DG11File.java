@@ -97,8 +97,7 @@ public class DG11File extends DataGroup {
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
-	private String fullNamePrimaryIdentifier;
-	private List<String> fullNameSecondaryIdentifiers;
+	private String nameOfHolder;
 	private List<String> otherNames;
 	private String personalNumber;
 	private Date fullDateOfBirth;
@@ -118,7 +117,7 @@ public class DG11File extends DataGroup {
 	 * Constructs a new file. Use <code>null</code> if data element is not present.
 	 * Use <code>'<'</code> as separator.
 	 *
-	 * @param fullNamePrimaryIdentifier data element
+	 * @param nameOfHolder data element
 	 * @param fullNameSecondaryIdentifiers data element
 	 * @param otherNames data element
 	 * @param personalNumber data element
@@ -133,16 +132,14 @@ public class DG11File extends DataGroup {
 	 * @param otherValidTDNumbers data element
 	 * @param custodyInformation data element
 	 */
-	public DG11File(String fullNamePrimaryIdentifier,
-			List<String> fullNameSecondaryIdentifiers,
+	public DG11File(String nameOfHolder,
 			List<String> otherNames, String personalNumber,
 			Date fullDateOfBirth, List<String> placeOfBirth, List<String> permanentAddress,
 			String telephone, String profession, String title,
 			String personalSummary, byte[] proofOfCitizenship,
 			List<String> otherValidTDNumbers, String custodyInformation) {
 		super(EF_DG11_TAG);
-		this.fullNamePrimaryIdentifier = fullNamePrimaryIdentifier;
-		this.fullNameSecondaryIdentifiers = fullNameSecondaryIdentifiers == null ? new ArrayList<String>() : new ArrayList<String>(fullNameSecondaryIdentifiers);
+		this.nameOfHolder = nameOfHolder;
 		this.otherNames = otherNames == null ? new ArrayList<String>() : new ArrayList<String>(otherNames);
 		this.personalNumber = personalNumber;
 		this.fullDateOfBirth = fullDateOfBirth;
@@ -219,7 +216,7 @@ public class DG11File extends DataGroup {
 			tlvIn.readLength();
 			byte[] value = tlvIn.readValue();
 			switch (tag) {
-			case FULL_NAME_TAG: parseFullName(value); break;
+			case FULL_NAME_TAG: parseNameOfHolder(value); break;
 			case OTHER_NAME_TAG: parseOtherName(value); break;
 			case PERSONAL_NUMBER_TAG: parsePersonalNumber(value); break;
 			case FULL_DATE_OF_BIRTH_TAG: parseFullDateOfBirth(value); break;
@@ -385,39 +382,49 @@ public class DG11File extends DataGroup {
 		personalNumber = field.trim();
 	}
 
-	private void parseFullName(byte[] value) {
+	private void parseNameOfHolder(byte[] value) {
 		String field = new String(value);
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
 			uee.printStackTrace();
 		}
-		String delim = "<<";
-		int delimIndex = field.indexOf(delim);
-		if (delimIndex < 0) {
-			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
-			LOGGER.warning("Trying \"<\" (the Austrian way)");
-			delim = "<";
-			delimIndex = field.indexOf(delim);
-			if(delimIndex < 0) {
-				LOGGER.warning("Didn't work either. Trying spaces.");
-				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
-				delimIndex = field.indexOf(delim);
-				if(delimIndex < 0) {
-					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
-					fullNamePrimaryIdentifier = field; 
-					return;
-				}
-			}
-		}
-		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
-		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
-		fullNameSecondaryIdentifiers = new ArrayList<String>();
-		while (st.hasMoreTokens()) {
-			String secondaryIdentifier = st.nextToken().trim();
-			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
-		}
+		nameOfHolder = field.trim();
 	}
+	
+//	private void parseFullName(byte[] value) {
+//		String field = new String(value);
+//		try {
+//			field = new String(value, "UTF-8");
+//		} catch (UnsupportedEncodingException uee) {
+//			uee.printStackTrace();
+//		}
+//		String delim = "<<";
+//		int delimIndex = field.indexOf(delim);
+//		if (delimIndex < 0) {
+//			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
+//			LOGGER.warning("Trying \"<\" (the Austrian way)");
+//			delim = "<";
+//			delimIndex = field.indexOf(delim);
+//			if(delimIndex < 0) {
+//				LOGGER.warning("Didn't work either. Trying spaces.");
+//				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+//				delimIndex = field.indexOf(delim);
+//				if(delimIndex < 0) {
+//					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
+//					fullNamePrimaryIdentifier = field; 
+//					return;
+//				}
+//			}
+//		}
+//		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
+//		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
+//		fullNameSecondaryIdentifiers = new ArrayList<String>();
+//		while (st.hasMoreTokens()) {
+//			String secondaryIdentifier = st.nextToken().trim();
+//			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
+//		}
+//	}
 
 	/* Accessors below. */
 
@@ -433,8 +440,7 @@ public class DG11File extends DataGroup {
 	public List<Integer> getTagPresenceList() {
 		if (tagPresenceList != null) { return tagPresenceList; }
 		tagPresenceList = new ArrayList<Integer>(12);
-		if (fullNamePrimaryIdentifier != null
-				|| (fullNameSecondaryIdentifiers != null && fullNameSecondaryIdentifiers.size() > 0)) {
+		if (nameOfHolder != null) {
 			tagPresenceList.add(FULL_NAME_TAG);
 		}
 		if (otherNames != null && otherNames.size() > 0) {
@@ -477,21 +483,12 @@ public class DG11File extends DataGroup {
 	}
 
 	/**
-	 * Gets the full name primary identifier.
+	 * Gets the full name of the holder (primary and secondary identifiers).
 	 * 
-	 * @return the fullNamePrimaryIdentifier
+	 * @return the name of holder
 	 */
-	public String getFullNamePrimaryIdentifier() {
-		return fullNamePrimaryIdentifier;
-	}
-
-	/**
-	 * Gets the full name secondary identifiers.
-	 * 
-	 * @return the fullNamesecondaryIdentifiers
-	 */
-	public List<String> getFullNameSecondaryIdentifiers() {
-		return fullNameSecondaryIdentifiers;
+	public String getNameOfHolder() {
+		return nameOfHolder;
 	}
 
 	/**
@@ -506,7 +503,7 @@ public class DG11File extends DataGroup {
 	/**
 	 * Gets the personal number.
 	 * 
-	 * @return the personalNumber
+	 * @return the personal number
 	 */
 	public String getPersonalNumber() {
 		return personalNumber;
@@ -515,7 +512,7 @@ public class DG11File extends DataGroup {
 	/**
 	 * Gets the full date of birth.
 	 * 
-	 * @return the fullDateOfBirth
+	 * @return the full date of birth
 	 */
 	public Date getFullDateOfBirth() {
 		return fullDateOfBirth;
@@ -524,7 +521,7 @@ public class DG11File extends DataGroup {
 	/**
 	 * Gets the place of birth.
 	 * 
-	 * @return the placeOfBirth
+	 * @return the place of birth
 	 */
 	public List<String> getPlaceOfBirth() {
 		return placeOfBirth;
@@ -610,8 +607,7 @@ public class DG11File extends DataGroup {
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("DG11File [");
-		result.append(fullNamePrimaryIdentifier == null ? "" : fullNamePrimaryIdentifier); result.append(", ");
-		result.append(fullNameSecondaryIdentifiers == null || fullNameSecondaryIdentifiers.size() == 0 ? "[]" : fullNameSecondaryIdentifiers.toString()); result.append(", ");
+		result.append(nameOfHolder == null ? "" : nameOfHolder); result.append(", ");
 		result.append(otherNames == null || otherNames.size() == 0 ? "[]" : otherNames); result.append(", ");
 		result.append(personalNumber == null ? "" : personalNumber); result.append(", ");
 		result.append(fullDateOfBirth == null ? "" : SDF.format(fullDateOfBirth)); result.append(", ");
@@ -654,22 +650,7 @@ public class DG11File extends DataGroup {
 			switch (tag) {
 			case FULL_NAME_TAG:
 				tlvOut.writeTag(tag);
-				if (fullNamePrimaryIdentifier !=  null) {
-					//					out.write(fullNamePrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
-					tlvOut.write(fullNamePrimaryIdentifier.trim().getBytes("UTF-8"));
-				}
-				tlvOut.write("<<".getBytes("UTF-8"));
-				boolean isFirstOne = true;
-				if (fullNameSecondaryIdentifiers != null) {
-					for (String secondaryPrimaryIdentifier: fullNameSecondaryIdentifiers) {
-						if (secondaryPrimaryIdentifier != null) {
-							if (isFirstOne) { isFirstOne = false; } else { tlvOut.write('<'); }
-							// tlvOut.write(secondaryPrimaryIdentifier.trim().replace(' ', '<').getBytes("UTF-8"));
-							tlvOut.write(secondaryPrimaryIdentifier.trim().getBytes("UTF-8"));
-						}
-					}
-				}
-				tlvOut.writeValueEnd(); /* FULL_NAME_TAG */
+				tlvOut.writeValue(nameOfHolder.trim().getBytes("UTF-8"));
 				break;
 			case OTHER_NAME_TAG:
 				if (otherNames == null) { otherNames = new ArrayList<String>(); }
@@ -679,7 +660,7 @@ public class DG11File extends DataGroup {
 				tlvOut.writeValueEnd(); /* COUNT_TAG */
 				for (String otherName: otherNames) {
 					tlvOut.writeTag(OTHER_NAME_TAG);
-					tlvOut.writeValue(otherName.trim().replace(' ', '<').getBytes("UTF-8"));
+					tlvOut.writeValue(otherName.trim().getBytes("UTF-8"));
 				}
 				tlvOut.writeValueEnd(); /* CONTENT_SPECIFIC_CONSTRUCTED_TAG */
 				break; 	
@@ -690,17 +671,15 @@ public class DG11File extends DataGroup {
 			case FULL_DATE_OF_BIRTH_TAG:
 				tlvOut.writeTag(tag);
 				String fullDateOfBirthString = SDF.format(fullDateOfBirth);
-				// byte[] fullDateOfBirthBytes = fullDateOfBirthString.getBytes("UTF-8");
 				byte[] fullDateOfBirthBytes = Hex.hexStringToBytes(fullDateOfBirthString);
 				tlvOut.writeValue(fullDateOfBirthBytes);		
 				break;
 			case PLACE_OF_BIRTH_TAG:
 				tlvOut.writeTag(tag);
-				isFirstOne = true;
+				boolean isFirstOne = true;
 				for (String detail: placeOfBirth) {
 					if (detail != null) {
 						if (isFirstOne) { isFirstOne = false; } else { tlvOut.write('<'); }
-						//	tlvOut.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
 						tlvOut.write(detail.trim().getBytes("UTF-8"));
 					}
 				}
@@ -712,7 +691,6 @@ public class DG11File extends DataGroup {
 				for (String detail: permanentAddress) {
 					if (detail != null) {
 						if (isFirstOne) { isFirstOne = false; } else { tlvOut.write('<'); }
-						//	tlvOut.write(detail.trim().replace(' ', '<').getBytes("UTF-8"));
 						tlvOut.write(detail.trim().getBytes("UTF-8"));
 					}
 				}
