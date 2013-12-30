@@ -40,10 +40,10 @@ public class DG11FileTest extends TestCase {
 	public DG11FileTest(String name) {
 		super(name);
 	}
-
+	
 	public void testToString() {
 		DG11File dg11File = createTestObject();
-		String expectedResult = "DG11File [, [], [], , 19711019, [], [], , , , , , [], ]";
+		String expectedResult = "DG11File [, [], , 19711019, [], [], , , , , , [], ]";
 		assertEquals(dg11File.toString(), expectedResult);
 	}
 
@@ -54,7 +54,7 @@ public class DG11FileTest extends TestCase {
 				0x71, 0x10, 0x19, 0x5F, 0x12, 0x00, 0x5F, 0x13, 0x00, 0x5F, 0x14, 0x00, 0x5F, 0x15, 0x00, 0x5F,
 				0x18, 0x00
 		};
-				
+
 		try {
 			DG11File dg11File = new DG11File(new ByteArrayInputStream(simpleDG11));
 			byte[] encoded = dg11File.getEncoded();
@@ -81,13 +81,13 @@ public class DG11FileTest extends TestCase {
 
 			assertNotNull(copy);
 			assertEquals(dg11File, copy);
-			
+
 			byte[] encodedCopy = copy.getEncoded();
 			assertNotNull(encodedCopy);
 			System.out.println("DEBUG: encoded =\n" + Hex.bytesToPrettyString(encodedCopy));
 
 			assertEquals(Hex.bytesToHexString(encoded), Hex.bytesToHexString(copy.getEncoded()));
-			
+
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());
@@ -112,11 +112,14 @@ public class DG11FileTest extends TestCase {
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		try {
 			DG11File file = new DG11File(in);
-			assertEquals(file.getFullNamePrimaryIdentifier(), "WICHERS<SCHREUR");
-			assertEquals(file.getFullNameSecondaryIdentifiers().size(), 3);
-			assertEquals(file.getFullNameSecondaryIdentifiers().get(0), "RONALDUS");
-			assertEquals(file.getFullNameSecondaryIdentifiers().get(1), "JOHANNES");
-			assertEquals(file.getFullNameSecondaryIdentifiers().get(2), "MARIA");
+			String primary = "WICHERS" + "<" + "SCHREUR";
+			String secondary = "RONALDUS" + "<" + "JOHANNES" + "<" + "MARIA";
+			assertEquals(file.getNameOfHolder(), primary + "<<" + secondary);
+			//				assertEquals(file.getFullNamePrimaryIdentifier(), "WICHERS<SCHREUR");
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().size(), 3);
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().get(0), "RONALDUS");
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().get(1), "JOHANNES");
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().get(2), "MARIA");
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());
@@ -147,10 +150,13 @@ public class DG11FileTest extends TestCase {
 		ByteArrayInputStream in = new ByteArrayInputStream(bytes);
 		try {
 			DG11File file = new DG11File(in);
-			assertEquals(file.getFullNamePrimaryIdentifier(), "SMITH");
-			assertEquals(file.getFullNameSecondaryIdentifiers().size(), 2);
-			assertEquals(file.getFullNameSecondaryIdentifiers().get(0), "JOHN");
-			assertEquals(file.getFullNameSecondaryIdentifiers().get(1), "J");
+			String primary = "SMITH";
+			String secondary = "JOHN" + "<" + "J";
+			assertEquals(file.getNameOfHolder(), primary + "<<" + secondary);
+			//				assertEquals(file.getFullNamePrimaryIdentifier(), "SMITH");
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().size(), 2);
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().get(0), "JOHN");
+			//				assertEquals(file.getFullNameSecondaryIdentifiers().get(1), "J");
 			assertEquals(file.getPlaceOfBirth().size(), 2);
 			assertEquals(file.getPlaceOfBirth().get(0), "ANYTOWN");
 			assertEquals(file.getPlaceOfBirth().get(1), "MN");
@@ -165,16 +171,16 @@ public class DG11FileTest extends TestCase {
 			fail(e.toString());
 		}
 	}
-	
+
 	public void testComplex() {
 		try {
-		DG11File dg11 = createComplexTestObject();
-		byte[] encoded = dg11.getEncoded();
-//		System.out.println("DEBUG: encoded = \n" + Hex.bytesToPrettyString(encoded));
-		DG11File copy = new DG11File(new ByteArrayInputStream(encoded));
-		byte[] copyEncoded = copy.getEncoded();
-//		System.out.println("DEBUG: copy encoded = \n" + Hex.bytesToPrettyString(copy.getEncoded()));
-		assert(Arrays.equals(encoded, copyEncoded));
+			DG11File dg11 = createComplexTestObject();
+			byte[] encoded = dg11.getEncoded();
+			//			System.out.println("DEBUG: encoded = \n" + Hex.bytesToPrettyString(encoded));
+			DG11File copy = new DG11File(new ByteArrayInputStream(encoded));
+			byte[] copyEncoded = copy.getEncoded();
+			//			System.out.println("DEBUG: copy encoded = \n" + Hex.bytesToPrettyString(copy.getEncoded()));
+			assert(Arrays.equals(encoded, copyEncoded));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -183,8 +189,9 @@ public class DG11FileTest extends TestCase {
 
 	public static DG11File createComplexTestObject() {
 		String fullNamePrimaryIdentifier = "TEST";
-		List<String> fullNamesecondaryIdentifiers = Arrays.asList(new String[] { "FIRST", "SECOND" });
+		String fullNameSecondaryIdentifiers = "FIRST" + "<" + "SECOND";
 		List<String> otherNames = Arrays.asList(new String[] { "FIRST OTHER", "SECOND OTHER", "THIRD OTHER" });
+		String nameOfHolder = fullNamePrimaryIdentifier + "<<" + fullNameSecondaryIdentifiers;
 		String personalNumber = "123456789";
 		Calendar cal = Calendar.getInstance();
 		cal.set(1971, 10 - 1, 19);
@@ -198,17 +205,15 @@ public class DG11FileTest extends TestCase {
 		byte[] proofOfCitizenship = null;
 		List<String> otherValidTDNumbers = new ArrayList<String>();
 		String custodyInformation = "";
-		return new DG11File(fullNamePrimaryIdentifier,
-				fullNamesecondaryIdentifiers, otherNames, personalNumber,
+		return new DG11File(nameOfHolder, otherNames, personalNumber,
 				fullDateOfBirth, placeOfBirth,  permanentAddress,
 				telephone, profession, title,
 				personalSummary, proofOfCitizenship,
 				otherValidTDNumbers, custodyInformation);
 	}
-	
+
 	public static DG11File createTestObject() {
-		String fullNamePrimaryIdentifier = "";
-		List<String> fullNamesecondaryIdentifiers = new ArrayList<String>();
+		String nameOfHolder = "";
 		List<String> otherNames = new ArrayList<String>();
 		String personalNumber = "";
 		Calendar cal = Calendar.getInstance();
@@ -223,8 +228,7 @@ public class DG11FileTest extends TestCase {
 		byte[] proofOfCitizenship = null;
 		List<String> otherValidTDNumbers = new ArrayList<String>();
 		String custodyInformation = "";
-		return new DG11File(fullNamePrimaryIdentifier,
-				fullNamesecondaryIdentifiers, otherNames, personalNumber,
+		return new DG11File(nameOfHolder, otherNames, personalNumber,
 				fullDateOfBirth, placeOfBirth,  permanentAddress,
 				telephone, profession, title,
 				personalSummary, proofOfCitizenship,

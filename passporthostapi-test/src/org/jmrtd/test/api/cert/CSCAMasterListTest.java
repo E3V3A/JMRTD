@@ -20,32 +20,33 @@ import org.jmrtd.cert.CSCAMasterList;
 public class CSCAMasterListTest extends TestCase {
 
 	private static final String TEST_CERT_DIR = "t:/ca/icao/csca";
-	
+
 	private static final String DE_ML_FILE =
 			TEST_CERT_DIR
 			// + "/german_csca_masterlist/20130614GermanMasterlist.ml";
 			// + "/german_csca_masterlist/20130717GermanMasterlist.ml";
-			+ "/german_csca_masterlist/20130815GermanMasterlist.ml";
+			// + "/german_csca_masterlist/20130815GermanMasterlist.ml";
+			+ "/german_csca_masterlist/20131217_GermanMasterlist.ml";
 
 	private static final String DE_PREFIX = "from_de_ml_";
-	
+
 	private static final String CH_PREFIX = "from_ch_ml_";
-	
+
 	private static final String CH_ML_FILE =
 			TEST_CERT_DIR + "/swiss_csca_masterlist/chMasterlist.ml";
-	
+
 	private static final String DE_CERTS_OUTPUT_DIR = TEST_CERT_DIR + "/german_csca_masterlist";
-	
+
 	private static final String CH_CERTS_OUTPUT_DIR = TEST_CERT_DIR + "/swiss_csca_masterlist";
-	
+
 	public void testGermanCSCAMasterList() {
 		testCSCAMasterList(DE_ML_FILE, DE_PREFIX, DE_CERTS_OUTPUT_DIR);
 	}
-	
+
 	public void testSwissMasterList() {
 		testCSCAMasterList(CH_ML_FILE, CH_PREFIX, CH_CERTS_OUTPUT_DIR);
 	}
-	
+
 	public void testCSCAMasterList(String fileName, String prefix, String outputDir) {
 		try {
 			File germanMLFile = new File(fileName);
@@ -62,12 +63,12 @@ public class CSCAMasterListTest extends TestCase {
 				X500Principal issuer = x509Certificate.getIssuerX500Principal();
 				X500Principal subject = x509Certificate.getSubjectX500Principal();
 				BigInteger serial = x509Certificate.getSerialNumber();
-//				String outName = subject + " (" + serial.toString(16) + ")";
-//				outName = DatatypeConverter.printBase64Binary(outName.getBytes("UTF-8"));
-//				outName = outName + ".cer";
+				//				String outName = subject + " (" + serial.toString(16) + ")";
+				//				outName = DatatypeConverter.printBase64Binary(outName.getBytes("UTF-8"));
+				//				outName = outName + ".cer";
 
 				Country country = getCountry(issuer);
-				
+
 				boolean isSelfSigned = (issuer == null && subject == null) || subject.equals(issuer);
 
 				String outName = country.toAlpha2Code().toLowerCase() + "_" + (isSelfSigned ? "root_" : "link_") + prefix + (++i) + ".cer";
@@ -78,7 +79,7 @@ public class CSCAMasterListTest extends TestCase {
 				dataOut.close();
 			}
 			System.out.println("DEBUG: cscaCertificates.size() = " + cscaCertificates.size());
-			
+
 			(new CSCAStoreGenerator()).testImportX509Certificates(outputDir, outputDir + "/csca.ks");
 		} catch (Exception e) {
 			fail(e.getMessage());

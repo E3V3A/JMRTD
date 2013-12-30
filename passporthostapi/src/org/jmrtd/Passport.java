@@ -23,6 +23,7 @@
 package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -63,6 +64,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -87,7 +89,6 @@ import org.jmrtd.lds.SecurityInfo;
 /**
  * This is basically a collection of input streams for the
  * data groups, combined with some status information (progress).
- * 
  * Contains methods for creating instances from scratch, from file, and from
  * card service.
  * 
@@ -324,6 +325,46 @@ public class Passport {
 		}
 	}
 
+	public static Passport createPassportFromZip(InputStream inputStream, MRTDTrustStore trustManager) throws IOException {
+		Passport passport = new Passport();
+		passport.trustManager = trustManager;
+		passport.lds = new LDS();
+		ZipInputStream zipInputStream = new ZipInputStream(inputStream);
+		try {
+			ZipEntry entry = null;
+			while ( (entry = zipInputStream.getNextEntry()) != null ) {
+				String fileName = entry.getName();
+				long sizeAsLong = entry.getSize();
+				if (sizeAsLong < 0) { throw new IOException("ZipEntry has negative size."); }
+				int size = (int)(sizeAsLong & 0xFFFFFFFFL);
+
+				try {
+					ByteArrayOutputStream baos = new ByteArrayOutputStream();
+					byte[] buffer = new byte[1024];
+					int count;
+					while ((count = zipInputStream.read(buffer)) != -1) {
+						LOGGER.info("DEBUG: count = " + count);
+						baos.write(buffer, 0, count);
+					}
+					byte[] bytes = baos.toByteArray();
+
+					int fid = guessFID(fileName, bytes);
+					if (fid > 0) {
+						passport.lds.add((short)fid, new ByteArrayInputStream(bytes), bytes.length);
+					} else {
+						LOGGER.warning("Ignoring zip entry " + fileName);
+					}
+				} catch (NumberFormatException nfe) {
+					/* NOTE: ignore this file */
+					LOGGER.warning("Ignoring entry \"" + fileName + "\" in zip inputstream.\"");
+				}
+			}
+			return passport;
+		} finally {
+			zipInputStream.close();
+		}
+	}
+
 	/**
 	 * Creates a document by reading it from a ZIP file.
 	 * 
@@ -366,7 +407,7 @@ public class Passport {
 		}
 	}
 
-	private int guessFID(String fileName, byte[] bytes) {
+	private static int guessFID(String fileName, byte[] bytes) {
 		int fid = -1;
 		int delimIndex = fileName.lastIndexOf('.');
 		String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
