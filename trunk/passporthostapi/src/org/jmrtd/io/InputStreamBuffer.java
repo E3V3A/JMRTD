@@ -25,6 +25,8 @@ package org.jmrtd.io;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.jmrtd.io.FragmentBuffer.Fragment;
+
 /**
  * Buffers an inputstream (whose length is known in advance) and can supply clients with fresh
  * "copies" of that inputstream served from the buffer.
@@ -97,6 +99,7 @@ public class InputStreamBuffer {
 		public int read() throws IOException {
 			synchronized(syncObject) {
 				if (position >= buffer.getLength()) {
+					/* FIXME: Is this correct? Isn't buffer capable of growing dynamically? -- MO */
 					return -1;
 				} else if (buffer.isCoveredByFragment(position)) {
 					/* Serve the byte from the buffer */
@@ -119,6 +122,53 @@ public class InputStreamBuffer {
 						 */
 						throw ioe;
 					}
+				}
+			}
+		}
+
+		public int read(byte[] b) throws IOException {
+			synchronized(syncObject) {
+				return read(b, 0, b.length);
+			}
+		}
+
+		public int read(byte[] b, int off, int len) throws IOException {
+			synchronized(syncObject) {
+				if (b == null) {
+					throw new NullPointerException();
+				} else if (off < 0 || len < 0 || len > b.length - off) {
+					throw new IndexOutOfBoundsException();
+				} else if (len == 0) {
+					return 0;
+				}
+
+				if (carrier.markSupported()) {
+					syncCarrierPosition();
+				}
+
+				if (position >= buffer.getLength()) {
+					/* FIXME: is this correct? See FIXME in read(). */
+					return -1;
+				}
+
+				Fragment fragment = buffer.getSmallestUnbufferedFragment(position, len);
+				if (fragment.getLength() > 0) {
+					/* Copy buffered prefix to b. */
+					int alreadyBufferedPrefixLength = fragment.getOffset() - position;
+					System.arraycopy(buffer.getBuffer(), position, b, off, alreadyBufferedPrefixLength);
+					position += alreadyBufferedPrefixLength;
+
+					/* Read unbuffered fragment from carrier, directly to b. */
+					int bytesReadFromCarrier = carrier.read(b, off + alreadyBufferedPrefixLength, fragment.getLength());
+					buffer.addFragment(fragment.getOffset(), b, off, bytesReadFromCarrier);
+					position += bytesReadFromCarrier;
+
+					return alreadyBufferedPrefixLength + bytesReadFromCarrier;					
+				} else {
+					int length = Math.min(len, buffer.getLength() - position);
+					System.arraycopy(buffer.getBuffer(), position, b, off, length);
+					position += length;
+					return length;
 				}
 			}
 		}

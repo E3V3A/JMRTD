@@ -288,7 +288,10 @@ public class FragmentBuffer implements Serializable {
 		System.arraycopy(this.buffer, 0, newBuffer, 0, this.buffer.length);
 		this.buffer = newBuffer;
 	}
-	
+
+	/**
+	 * Fragments encapsulate pairs of offset and length.
+	 */
 	public static class Fragment implements Serializable {
 
 		private static final long serialVersionUID = -3795931618553980328L;
