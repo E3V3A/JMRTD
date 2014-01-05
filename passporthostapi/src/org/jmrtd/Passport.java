@@ -245,8 +245,8 @@ public class Passport {
 		}
 
 		if (sodFile != null) {
-			verifyDS();
-			verifyCS();
+//			verifyDS(); // DEBUG 2.0.4 too costly to do this on APDU thread?!?!
+//			verifyCS();
 		}
 
 		/* Get the list of DGs from EF.SOd, not from EF.COM. */
@@ -297,7 +297,7 @@ public class Passport {
 		}
 		boolean hasAA = featureStatus.hasAA().equals(FeatureStatus.Verdict.PRESENT);
 		if (hasAA) {
-			tryToDoAA(service, lds);
+			tryToDoAA(service, lds); // DEBUG 2.0.4 -- MO
 			dgNumbersAlreadyRead.add(15);
 		} else {
 			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");

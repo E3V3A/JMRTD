@@ -108,8 +108,10 @@ public class InputStreamBufferTest extends TestCase {
 				}
 
 				/* Read the rest with one block read */
-				b.read(bBytes, normalReadCount, length - normalReadCount);
+				int bytesRead = b.read(bBytes, normalReadCount, length - normalReadCount);
 
+				System.out.println("DEBUG: length - normalReadCount = " + (length - normalReadCount) + ", bytesRead = " + bytesRead);
+				
 				/* At EOS */
 				assertTrue(b.read() < 0);
 				assertTrue(b.read() < 0);
@@ -601,8 +603,9 @@ public class InputStreamBufferTest extends TestCase {
 			
 			InputStream aa = inputStreamBuffer.getInputStream();
 			byte[] someBytes = new byte[20];
-			aa.read(someBytes);
-						
+			int bytesRead = aa.read(someBytes);
+			System.out.println("DEBUG: someBytes.length = " + someBytes.length + ", bytesRead = " + bytesRead);
+
 			InputStream b = inputStreamBuffer.getInputStream();
 			assertEquals(b.available(), someBytes.length + 2);
 

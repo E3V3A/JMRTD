@@ -99,15 +99,17 @@ class MRTDFileSystem implements FileSystemStructured, Serializable {
 				isSelected = true;
 			}
 
+			/* Check buffer to see if we already have some of the bytes. */
 			fileInfo = getFileInfo();
 			assert(fileInfo != null);
 			Fragment fragment = fileInfo.getSmallestUnbufferedFragment(offset, length);
 			if (fragment.getLength() > 0) {
 				byte[] bytes = service.sendReadBinary(fragment.getOffset(), fragment.getLength(), isExtendedLength);
-				if (fileInfo != null) {
-					fileInfo.addFragment(fragment.getOffset(), bytes);
-				}
+				/* Update buffer with newly read bytes. */
+				fileInfo.addFragment(fragment.getOffset(), bytes);
 			}
+			/* Shrink wrap the bytes that are now buffered. */
+			/* FIXME: that arraycopy looks costly, consider using dest array and offset params instead of byte[] result... -- MO */
 			byte[] buffer = fileInfo.getBuffer();
 			byte[] result = new byte[length];
 			System.arraycopy(buffer, offset, result, 0, length);
