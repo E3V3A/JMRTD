@@ -961,7 +961,7 @@ public class Passport {
 	 * 
 	 * TODO: Check the cert stores (notably PKD) to fetch document signer certificate (if not embedded in SOd) and check its validity before checking the signature.
 	 */
-	private void verifyDS() {
+	public void verifyDS() {
 		try {
 			verificationStatus.setDS(VerificationStatus.Verdict.UNKNOWN, "Unknown");
 
@@ -997,7 +997,7 @@ public class Passport {
 	/**
 	 * Checks the certificate chain.
 	 */
-	private void verifyCS() {
+	public void verifyCS() {
 		try {
 			/* Get EF.SOd. */
 			SODFile sod = null;

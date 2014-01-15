@@ -8,7 +8,6 @@
 	<classpathentry kind="var" path="CERT_CVC_LIB"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards"/>
 	<classpathentry kind="var" path="BC_PROV"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util_j2se"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_sc_j2se"/>
 	<classpathentry kind="var" path="JJ2000_IMAGEIO_LIB"/>
 	<classpathentry kind="var" path="WSQ_IMAGEIO_LIB"/>

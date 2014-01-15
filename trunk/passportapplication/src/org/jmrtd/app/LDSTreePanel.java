@@ -358,15 +358,7 @@ public class LDSTreePanel extends JPanel {
 	private LDSTreeNode buildTreeFromDG11(DG11File dg11) {
 		LDSTreeNode node = new LDSTreeNode("DG11", dg11);
 		List<Integer> tagsPresent = dg11.getTagPresenceList();
-		if (tagsPresent.contains(DG11File.FULL_NAME_TAG)) {
-			node.add(new DefaultMutableTreeNode("Full name primary identifier: " + dg11.getFullNamePrimaryIdentifier()));
-			List<String> fullNameSecondaryIdentifiers = dg11.getFullNameSecondaryIdentifiers();
-			DefaultMutableTreeNode fullNameSecondaryIdentifiersNode = new DefaultMutableTreeNode("Full name secondary identifiers");
-			node.add(fullNameSecondaryIdentifiersNode);
-			for (String fullNameSecondaryIdentifier: fullNameSecondaryIdentifiers) {
-				fullNameSecondaryIdentifiersNode.add(new DefaultMutableTreeNode(fullNameSecondaryIdentifier));
-			}
-		}
+		if (tagsPresent.contains(DG11File.FULL_NAME_TAG)) { node.add(new DefaultMutableTreeNode("Name: " + dg11.getNameOfHolder())); }
 		if (tagsPresent.contains(DG11File.FULL_DATE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Full date of birth: " + dg11.getFullDateOfBirth())); }
 		if (tagsPresent.contains(DG11File.PLACE_OF_BIRTH_TAG)) { node.add(new DefaultMutableTreeNode("Place of birth: " + dg11.getPlaceOfBirth())); }
 		if (tagsPresent.contains(DG11File.TITLE_TAG)) { node.add(new DefaultMutableTreeNode("Title: " + dg11.getTitle())); }
