@@ -245,14 +245,19 @@ public class Passport {
 		}
 
 		if (sodFile != null) {
-//			verifyDS(); // DEBUG 2.0.4 too costly to do this on APDU thread?!?!
-//			verifyCS();
+			//			verifyDS(); // DEBUG 2.0.4 too costly to do this on APDU thread?!?!
+			//			verifyCS();
 		}
 
-		/* Get the list of DGs from EF.SOd, not from EF.COM. */
+		/* Get the list of DGs from EF.SOd, we don't trust EF.COM. */
 		List<Integer> dgNumbers = new ArrayList<Integer>();
 		if (sodFile != null) {
 			dgNumbers.addAll(sodFile.getDataGroupHashes().keySet());
+		} else if (comFile != null) {
+			/* Get the list from EF.COM since we failed to parse EF.SOd. */
+			LOGGER.warning("Failed to get DG list from EF.SOd. Getting DG list from EF.COM.");
+			int[] tagList = comFile.getTagList();
+			dgNumbers.addAll(toDataGroupList(tagList));
 		}
 		Collections.sort(dgNumbers); /* NOTE: need to sort it, since we get keys as a set. */
 
@@ -260,18 +265,21 @@ public class Passport {
 		if (hashResults == null) {
 			hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
 		}
-		/* Initial hash results: we know the stored hashes, but not the computed hashes yet. */
-		Map<Integer, byte[]> storedHashes = sodFile.getDataGroupHashes();
-		for (int dgNumber: dgNumbers) {
-			byte[] storedHash = storedHashes.get(dgNumber);
-			VerificationStatus.HashMatchResult hashResult = hashResults.get(dgNumber);
-			if (hashResult != null) { continue; }
-			if (dgNumbersAlreadyRead.contains(dgNumber)) {
-				hashResult = verifyHash(dgNumber);
-			} else {
-				hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+
+		if (sodFile != null) {
+			/* Initial hash results: we know the stored hashes, but not the computed hashes yet. */
+			Map<Integer, byte[]> storedHashes = sodFile.getDataGroupHashes();
+			for (int dgNumber: dgNumbers) {
+				byte[] storedHash = storedHashes.get(dgNumber);
+				VerificationStatus.HashMatchResult hashResult = hashResults.get(dgNumber);
+				if (hashResult != null) { continue; }
+				if (dgNumbersAlreadyRead.contains(dgNumber)) {
+					hashResult = verifyHash(dgNumber);
+				} else {
+					hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+				}
+				hashResults.put(dgNumber, hashResult);
 			}
-			hashResults.put(dgNumber, hashResult);
 		}
 		verificationStatus.setHT(VerificationStatus.Verdict.UNKNOWN, verificationStatus.getHTReason(), hashResults);
 		//		notifyVerificationStatusChangeListeners(verificationStatus);
@@ -1275,4 +1283,18 @@ public class Passport {
 		}
 	}
 
+	private List<Integer> toDataGroupList(int[] tagList) {
+		if (tagList == null) { return null; }
+		List<Integer> dgNumberList = new ArrayList<Integer>(tagList.length);
+		for (int tag: tagList) {
+			try {
+				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
+				dgNumberList.add(dgNumber);
+			} catch (NumberFormatException nfe) {
+				LOGGER.warning("Could not find DG number for tag: " + Integer.toHexString(tag));
+				nfe.printStackTrace();
+			}
+		}
+		return dgNumberList;	
+	}
 }
