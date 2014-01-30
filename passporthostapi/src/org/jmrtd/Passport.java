@@ -142,7 +142,7 @@ public class Passport {
 	}
 
 	/**
-	 * Creates a document from LDS data structures.
+	 * Creates a document from an LDS data structure.
 	 * 
 	 * @param lds the logical data structure
 	 * @param docSigningPrivateKey the document signing private key
@@ -661,7 +661,7 @@ public class Passport {
 	 */
 	public VerificationStatus verifySecurity() {
 		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA is always checked as part of the prelude.
-		 * (For debugging it's back here again...)
+		 * (EDIT: For debugging it's back here again, see below...)
 		 */
 		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
 		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
@@ -677,7 +677,7 @@ public class Passport {
 
 		try {
 			/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
-			if (lds.getDataGroupList().contains(PassportService.EF_DG15)) {
+			if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
 				verifyAA(service, lds.getDG15File());
 			}
 		} catch (IOException ioe) {

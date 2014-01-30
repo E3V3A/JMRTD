@@ -75,7 +75,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	private static final long serialVersionUID = 5687291829854501771L;
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-	
+
 	private String oid;
 	private SubjectPublicKeyInfo subjectPublicKeyInfo;
 	private BigInteger keyId;
@@ -212,9 +212,9 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 				&& subjectPublicKeyInfo.equals(otherInfo.subjectPublicKeyInfo);
 	}
 
-	private static PublicKey getPublicKey(SubjectPublicKeyInfo spki) {
+	private static PublicKey getPublicKey(SubjectPublicKeyInfo subjectPublicKeyInfo) {
 		try {
-			byte[] encodedPublicKeyInfoBytes = spki.getEncoded(ASN1Encoding.DER);
+			byte[] encodedPublicKeyInfoBytes = subjectPublicKeyInfo.getEncoded(ASN1Encoding.DER);
 			KeySpec keySpec = new X509EncodedKeySpec(encodedPublicKeyInfoBytes);
 			try {
 				KeyFactory factory = KeyFactory.getInstance("DH");
