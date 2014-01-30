@@ -100,8 +100,9 @@ public class DG14File extends DataGroup {
 	/* FIXME: rewrite (using writeObject instead of getDERObject) to remove interface dependency on BC. */
 	protected void writeContent(OutputStream outputStream) throws IOException {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
-		for (SecurityInfo si : securityInfos) {
-			vector.add(si.getDERObject());
+		for (SecurityInfo securityInfo : securityInfos) {
+			ASN1Primitive derObject = securityInfo.getDERObject();
+			vector.add(derObject);
 		}
 		ASN1Set derSet = new DLSet(vector);
 		outputStream.write(derSet.getEncoded(ASN1Encoding.DER));

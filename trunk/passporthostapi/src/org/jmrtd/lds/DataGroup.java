@@ -22,9 +22,11 @@
 
 package org.jmrtd.lds;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
@@ -41,6 +43,8 @@ import org.jmrtd.io.SplittableInputStream;
 public abstract class DataGroup extends AbstractLDSFile {
 
 	private static final long serialVersionUID = -4761360877353069639L;
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	private int dataGroupTag;
 	private int dataGroupLength;
@@ -85,9 +89,13 @@ public abstract class DataGroup extends AbstractLDSFile {
 
 	protected void writeObject(OutputStream outputStream) throws IOException {
 		TLVOutputStream tlvOut = outputStream instanceof TLVOutputStream ? (TLVOutputStream)outputStream : new TLVOutputStream(outputStream);
-		tlvOut.writeTag(getTag());
-		writeContent(tlvOut);
-		tlvOut.writeValueEnd(); /* dataGroupTag */
+		int tag = getTag();
+		if (dataGroupTag != tag) { dataGroupTag = tag; }
+		tlvOut.writeTag(tag);
+		byte[] value = getContent();
+		int length = value.length;
+		if (dataGroupLength != length) { dataGroupLength = length; }
+		tlvOut.writeValue(value);
 	}
 
 	/**
@@ -127,11 +135,32 @@ public abstract class DataGroup extends AbstractLDSFile {
 	}
 
 	/**
+	 * Gets the value part of this DG.
+	 * 
+	 * @return the value as byte array
+	 */
+	private byte[] getContent() {
+		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			writeContent(outputStream);
+			outputStream.flush();
+			outputStream.close();
+			return outputStream.toByteArray();
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			return null;
+		}
+	}
+
+	/**
 	 * The length of the value of the data group.
 	 * 
 	 * @return the length of the value of the data group
 	 */
 	public int getLength() {
+		if (dataGroupLength <= 0) {
+			dataGroupLength = getContent().length;
+		}
 		return dataGroupLength;
 	}
 }

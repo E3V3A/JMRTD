@@ -107,6 +107,7 @@ public class DG1File extends DataGroup {
 	protected void writeContent(OutputStream out) throws IOException {
 		TLVOutputStream tlvOut = out instanceof TLVOutputStream ? (TLVOutputStream)out : new TLVOutputStream(out);
 		tlvOut.writeTag(MRZ_INFO_TAG);
-		tlvOut.writeValue(mrzInfo.getEncoded());
+		byte[] value = mrzInfo.getEncoded();
+		tlvOut.writeValue(value);
 	}
 }
