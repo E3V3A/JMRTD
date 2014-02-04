@@ -28,6 +28,14 @@ import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
 import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -52,7 +60,7 @@ import org.jmrtd.JMRTDSecurityProvider;
 
 /**
  * A concrete SecurityInfo structure that stores chip authentication public
- * key info, see EAC 1.11 specification.
+ * key info, see EAC TR 03110 1.11 specification.
  * 
  * This data structure provides a Chip Authentication Public Key of the MRTD chip.
  * <ul>
@@ -108,7 +116,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @param keyId
 	 */
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, BigInteger keyId) {
-		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), keyId);
+		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(reconstructPublicKey(publicKey)), keyId);
 	}
 
 	/**
@@ -117,7 +125,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * @param publicKey Either a DH public key or an EC public key
 	 */
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey) {
-		this(inferProtocolIdentifier(publicKey), getSubjectPublicKeyInfo(publicKey), BigInteger.valueOf(-1));
+		this(publicKey, BigInteger.valueOf(-1));
 	}
 
 	ASN1Primitive getDERObject() {
@@ -232,21 +240,72 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 		}
 	}
 
+	/**
+	 * Reconstructs the public key to use explicit domain params for EC public keys
+	 * 
+	 * @param publicKey the public key
+	 * 
+	 * @return the same public key (if not EC), or a reconstructed one (if EC)
+	 */
+	private static PublicKey reconstructPublicKey(PublicKey publicKey) {
+		if (!(publicKey instanceof ECPublicKey)) { return publicKey; }
+		ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
+		ECPoint w = ecPublicKey.getW();
+		ECParameterSpec params = ecPublicKey.getParams();
+		ECPoint g = params.getGenerator();
+		BigInteger n = params.getOrder(); // Order, order
+		int h = params.getCofactor(); // co-factor
+		EllipticCurve curve = params.getCurve();
+		BigInteger a = curve.getA();
+		BigInteger b = curve.getB();
+		ECField field = curve.getField();
+		if (field instanceof ECFieldFp) {
+			BigInteger p = ((ECFieldFp)field).getP();
+			ECField resultField = new ECFieldFp(p);
+			EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
+			ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
+			ECPublicKeySpec resultPublicKeySpec = new ECPublicKeySpec(w, resultParams);
+			try {
+				return KeyFactory.getInstance("EC", "BC").generatePublic(resultPublicKeySpec);
+			} catch (GeneralSecurityException gse) {
+				gse.printStackTrace();
+				return publicKey;
+			}
+		} else if (field instanceof ECFieldF2m) {
+			int m = ((ECFieldF2m)field).getM();
+			ECField resultField = new ECFieldF2m(m);
+			EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
+			ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
+			ECPublicKeySpec resultPublicKeySpec = new ECPublicKeySpec(w, resultParams);
+			try {
+				return KeyFactory.getInstance("EC", "BC").generatePublic(resultPublicKeySpec);
+			} catch (GeneralSecurityException gse) {
+				gse.printStackTrace();
+				return publicKey;
+			}
+		} else {
+			return publicKey;
+		}
+	}
+
 	/*
-	 * Woj, I moved this here from DG14File, seemed more appropriate here. -- MO
+	 * NOTE: Woj, I moved this here from DG14File, seemed more appropriate here. -- MO
+	 * FIXME: Do we still need this now that we have reconstructPublicKey? -- MO
+	 * 
+	 * Woj says: Here we need to some hocus-pokus, the EAC specification require for
+	 * all the key information to include the domain parameters explicitly. This is
+	 * not what Bouncy Castle does by default. But we first have to check if this is
+	 * the case.
 	 */
 	private static SubjectPublicKeyInfo getSubjectPublicKeyInfo(PublicKey publicKey) {
-		// Here we need to some hocus-pokus, the EAC specification require for
-		// all the key information to include the domain parameters explicitly. This is
-		// not what Bouncy Castle does by default. But we first have to check if this is
-		// the case.
+
 		try {
 			String algorithm = publicKey.getAlgorithm();
 			if ("EC".equals(algorithm) || "ECDH".equals(algorithm)) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)asn1In.readObject());
 				asn1In.close();
-				AlgorithmIdentifier algorithmIdentifier = subjectPublicKeyInfo.getAlgorithmId();
+				AlgorithmIdentifier algorithmIdentifier = subjectPublicKeyInfo.getAlgorithm();
 				String algOID = algorithmIdentifier.getAlgorithm().getId();
 				if (!ID_EC_PUBLIC_KEY.equals(algOID)) {
 					throw new IllegalStateException("Was expecting id-ecPublicKey (" + ID_EC_PUBLIC_KEY_TYPE + "), found " + algOID);
@@ -272,8 +331,9 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
 				if (publicKey instanceof org.bouncycastle.jce.interfaces.ECPublicKey) {
 					org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)publicKey;
-					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithmId().getAlgorithm(), params.toASN1Primitive());
+					AlgorithmIdentifier id = new AlgorithmIdentifier(subjectPublicKeyInfo.getAlgorithm().getAlgorithm(), params.toASN1Primitive());
 					org.bouncycastle.math.ec.ECPoint q = ecPublicKey.getQ();
+					/* FIXME: investigate the compressed versus uncompressed point issue. What is allowed in TR03110? -- MO */
 					// In case we would like to compress the point:
 					// p = p.getCurve().createPoint(p.getX().toBigInteger(), p.getY().toBigInteger(), true);
 					subjectPublicKeyInfo = new SubjectPublicKeyInfo(id, q.getEncoded());
