@@ -51,7 +51,7 @@ public class FaceImageInfo extends AbstractImageInfo {
 	
 	/** Eye color code based on Section 5.5.4 of ISO 19794-5. */   
 	public enum EyeColor {
-		UNSPECIFIED { public int toInt() { return EYE_COLOR_UNSPECIFIED;} }, 
+		UNSPECIFIED { public int toInt() { return EYE_COLOR_UNSPECIFIED; } }, 
 		BLACK { public int toInt() { return EYE_COLOR_BLACK; } }, 
 		BLUE { public int toInt() { return EYE_COLOR_BLUE; } },
 		BROWN{ public int toInt() { return EYE_COLOR_BROWN; } },

@@ -22,6 +22,10 @@
 
 package org.jmrtd;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.List;
@@ -235,8 +239,10 @@ public class VerificationStatus {
 	 * 
 	 * FIXME: perhaps that boolean should be more like verdict, including a reason for mismatch if known (e.g. access denied for EAC datagroup) -- MO
 	 */
-	public class HashMatchResult {
+	public static class HashMatchResult implements Serializable {
 	
+		private static final long serialVersionUID = 263961258911936111L;
+
 		private byte[] storedHash, computedHash;
 		
 		/**
@@ -257,7 +263,7 @@ public class VerificationStatus {
 		public byte[] getComputedHash() {
 			return computedHash;
 		}
-		
+
 		public boolean isMatch() {
 			return Arrays.equals(storedHash, computedHash);
 		}
@@ -277,6 +283,44 @@ public class VerificationStatus {
 			HashMatchResult otherHashResult = (HashMatchResult)other;
 			return Arrays.equals(otherHashResult.computedHash, computedHash)
 					&& Arrays.equals(otherHashResult.storedHash, storedHash);
+		}
+		
+		/* NOTE: Part of our serializable implementation. */
+		private void readObject(ObjectInputStream inputStream) throws IOException, ClassNotFoundException {
+//			inputStream.defaultReadObject();
+			storedHash = readBytes(inputStream);
+			computedHash = readBytes(inputStream);
+		}
+
+		/* NOTE: Part of our serializable implementation. */
+		private void writeObject(ObjectOutputStream outputStream) throws IOException {
+//			outputStream.defaultWriteObject();
+			writeByteArray(storedHash, outputStream);
+			writeByteArray(computedHash, outputStream);
+		}
+
+		private byte[] readBytes(ObjectInputStream inputStream) throws IOException {
+			int length = inputStream.readInt();
+			if (length < 0) {
+				return null;
+			}
+			byte[] bytes = new byte[length];
+			for (int i = 0; i < length; i++) {
+				int b = inputStream.readInt();
+				bytes[i] = (byte)b;
+			}
+			return bytes;
+		}
+		
+		private void writeByteArray(byte[] bytes, ObjectOutputStream outputStream) throws IOException {
+			if (bytes == null) {
+				outputStream.writeInt(-1);
+			} else {
+				outputStream.writeInt(bytes.length);
+				for (byte b: bytes) {
+					outputStream.writeInt(b);
+				}
+			}
 		}
 	}
 }

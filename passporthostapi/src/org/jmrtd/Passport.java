@@ -276,7 +276,7 @@ public class Passport {
 				if (dgNumbersAlreadyRead.contains(dgNumber)) {
 					hashResult = verifyHash(dgNumber);
 				} else {
-					hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+					hashResult = new HashMatchResult(storedHash, null);
 				}
 				hashResults.put(dgNumber, hashResult);
 			}
@@ -666,11 +666,11 @@ public class Passport {
 		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
 		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
 
-		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
-		verifyDS();
-
 		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
 		verifyCS();
+		
+		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
+		verifyDS();
 
 		/* Verify hashes. */
 		verifyHT();
@@ -1201,19 +1201,19 @@ public class Passport {
 
 			if (dgIn == null && (verificationStatus.getEAC() != VerificationStatus.Verdict.SUCCEEDED) && (fid == PassportService.EF_DG3 || fid == PassportService.EF_DG4)) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because EAC failed.");
-				VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+				VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 				hashResults.put(dgNumber, hashResult);
 				return hashResult;
 			}
 			if (dgIn == null) {
 				LOGGER.warning("Skipping DG" + dgNumber + " during HT verification because file could not be read.");
-				VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+				VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 				hashResults.put(dgNumber, hashResult);
 				return hashResult;
 			}
 
 		} catch(Exception e) {
-			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+			VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 			hashResults.put(dgNumber, hashResult);
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", hashResults);
 			notifyVerificationStatusChangeListeners(verificationStatus);
@@ -1223,7 +1223,7 @@ public class Passport {
 		/* Compute the hash and compare. */
 		try {
 			byte[] computedHash = digest.digest(dgBytes);
-			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, computedHash);
+			VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, computedHash);
 			hashResults.put(dgNumber, hashResult);
 
 			if (!Arrays.equals(storedHash, computedHash)) {
@@ -1233,7 +1233,7 @@ public class Passport {
 			notifyVerificationStatusChangeListeners(verificationStatus);
 			return hashResult;
 		} catch (Exception ioe) {
-			VerificationStatus.HashMatchResult hashResult = verificationStatus.new HashMatchResult(storedHash, null);
+			VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 			hashResults.put(dgNumber, hashResult);
 			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash failed due to exception", hashResults);
 			notifyVerificationStatusChangeListeners(verificationStatus);
