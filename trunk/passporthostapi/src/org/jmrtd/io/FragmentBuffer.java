@@ -38,13 +38,13 @@ import java.util.HashSet;
 public class FragmentBuffer implements Serializable {
 
 	private static final long serialVersionUID = -3510872461790499721L;
-
+	
 	/** Buffer with the actual bytes. */
 	private byte[] buffer; // FIXME can we make this buffer grow dynamically?
 	
 	/** Administration of which parts of buffer are filled. */
 	private Collection<Fragment> fragments;
-
+	
 	/**
 	 * Creates a fragment buffer.
 	 */
