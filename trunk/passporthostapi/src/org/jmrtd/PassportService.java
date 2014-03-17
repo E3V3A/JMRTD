@@ -696,8 +696,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Notifies listeners about BAC events.
 	 * 
-	 * @param event
-	 *            BAC event
+	 * @param event BAC event
 	 */
 	protected void notifyBACPerformed(BACEvent event) {
 		for (AuthListener l : authListeners) {
@@ -708,8 +707,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Notifies listeners about EAC event.
 	 * 
-	 * @param event
-	 *            EAC event.
+	 * @param event EAC event.
 	 */
 	protected void notifyEACPerformed(EACEvent event) {
 		for (AuthListener l : authListeners) {
@@ -720,13 +718,11 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
-	 * @param publicKey
-	 *            the public key to use (usually read from the card)
+	 * @param publicKey the public key to use (usually read from the card)
 	 * 
 	 * @return a boolean indicating whether the card was authenticated
 	 * 
-	 * @throws GeneralSecurityException
-	 *             if something goes wrong
+	 * @throws GeneralSecurityException if something goes wrong
 	 */
 	public boolean doAA(PublicKey publicKey) throws CardServiceException {
 		try {
@@ -844,7 +840,6 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 	
 	class ChipAuthenticationResult {
-		
 		private byte[] eacKeyHash;
 		private KeyPair keyPair;
 		

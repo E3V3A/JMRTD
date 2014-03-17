@@ -303,11 +303,19 @@ public class Passport {
 		} else {
 			featureStatus.setAA(FeatureStatus.Verdict.NOT_PRESENT);
 		}
-		boolean hasAA = featureStatus.hasAA().equals(FeatureStatus.Verdict.PRESENT);
+		boolean hasAA = (featureStatus.hasAA() == FeatureStatus.Verdict.PRESENT);
 		if (hasAA) {
-			tryToDoAA(service, lds); // DEBUG 2.0.4 -- MO
-			dgNumbersAlreadyRead.add(15);
+			try {
+				CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
+				lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
+				DG15File dg15File = lds.getDG15File();
+				dgNumbersAlreadyRead.add(15);
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				LOGGER.warning("Could not read file");
+			}
 		} else {
+			/* Feature status says: no AA, so verification status should say: no AA. */
 			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");
 			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
@@ -656,6 +664,7 @@ public class Passport {
 
 	/**
 	 * Verifies the document using the security related mechanisms.
+	 * Convenience method.
 	 * 
 	 * @return the security status
 	 */
@@ -668,21 +677,16 @@ public class Passport {
 
 		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
 		verifyCS();
-		
+
 		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
 		verifyDS();
 
 		/* Verify hashes. */
 		verifyHT();
 
-		try {
-			/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
-			if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
-				verifyAA(service, lds.getDG15File());
-			}
-		} catch (IOException ioe) {
-			/* NOTE: leave AA status at whatever was there. */
-			ioe.printStackTrace();
+		/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
+		if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
+			verifyAA();
 		}
 
 		return verificationStatus;
@@ -749,20 +753,6 @@ public class Passport {
 			notifyVerificationStatusChangeListeners(verificationStatus);
 		}
 		return bacKeySpec;
-	}
-
-	private void tryToDoAA(PassportService service, LDS lds) throws CardServiceException {
-		try {
-			CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
-			lds.add(PassportService.EF_DG15, dg15In, dg15In.getLength());
-			DG15File dg15File = lds.getDG15File();
-			// verifyAA(service, dg15File);
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			LOGGER.warning("Could not read EF.DG15");
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Could not read EF.DG15");
-			notifyVerificationStatusChangeListeners(verificationStatus);
-		}
 	}
 
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
@@ -937,13 +927,20 @@ public class Passport {
 	}
 
 	/** Check active authentication. */
-	private void verifyAA(PassportService service, DG15File dg15) {
-		if (dg15 == null || service == null) {
+	public void verifyAA() {
+		if (lds == null || service == null) {
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
 			notifyVerificationStatusChangeListeners(verificationStatus);
 			return;
 		}
+
 		try {
+			DG15File dg15 = lds.getDG15File();
+			if (dg15 == null) {
+				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
+				notifyVerificationStatusChangeListeners(verificationStatus);
+				return;
+			}
 			PublicKey pubKey = dg15.getPublicKey();
 			if (service.doAA(pubKey)) {
 				verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded");
@@ -1115,7 +1112,7 @@ public class Passport {
 	 * @param lds
 	 * @param verificationStatus
 	 */
-	private void verifyHT() {
+	public void verifyHT() {
 		/* Compare stored hashes to computed hashes. */
 		Map<Integer, VerificationStatus.HashMatchResult> hashResults = verificationStatus.getHashResults();
 		if (hashResults == null) {
