@@ -44,8 +44,8 @@ import org.jmrtd.lds.FingerInfo;
 
 public class DG3FileTest extends TestCase {
 
-	private static final //			String testFile = "/home/martijno/paspoort/woj-dg3-top-secret-0103.bin";
-	String TEST_FILE = "t:/paspoort/test/woj-dg3-top-secret-0103.bin";
+	private static final
+	String TEST_FILE = "samples/bsi2008/Datagroup3.bin";
 
 	public DG3FileTest(String name) {
 		super(name);
@@ -268,14 +268,14 @@ public class DG3FileTest extends TestCase {
 			assertEquals(imageInfos.size(), 1);
 			FingerImageInfo imageInfo = imageInfos.get(0);
 			int imgLength = imageInfo.getImageLength();
-			assertEquals(imgLength, 17583);
+			assertEquals(imgLength, 15931);
 
 			byte[] imgBytes = new byte[imgLength];
 
 
 			DataInputStream imgDataIn = new DataInputStream(imageInfo.getImageInputStream());
 			imgDataIn.readFully(imgBytes);
-			assertEquals("FFA0FFA8007A4E4953545F434F4D20390A5049585F5749445448203330380A5049585F484549474854203532380A5049585F444550544820380A505049203530", Hex.bytesToHexString(imgBytes, 0, 64));
+			assertEquals("FFA0FFA4003A0907000932D3263C000AE0F31A84010A41EFF1BC010B8E27653F000BE179A4DD00092EFF55D3010AF933D1B6010BF2871F37000A2677DA0CFFA5", Hex.bytesToHexString(imgBytes, 0, 64));
 
 			System.out.println("DEBUG:\n" + Hex.bytesToHexString(imgBytes, 0, 64));
 
@@ -299,7 +299,7 @@ public class DG3FileTest extends TestCase {
 			dataIn.close();
 
 			DG3File dg3 = new DG3File(new ByteArrayInputStream(bytes));
-			
+
 			int img1Length = dg3.getFingerInfos().get(0).getFingerImageInfos().get(0).getImageLength();
 			DataInputStream img1In = new DataInputStream(dg3.getFingerInfos().get(0).getFingerImageInfos().get(0).getImageInputStream());
 			byte[] img1Bytes = new byte[img1Length];
@@ -312,8 +312,8 @@ public class DG3FileTest extends TestCase {
 
 			System.out.println("DEBUG: img1 (" + img1Bytes.length + ")\n" + Hex.bytesToHexString(img1Bytes, 0, 256));
 			System.out.println("DEBUG: img2 (" + img2Bytes.length + ")\n" + Hex.bytesToHexString(img2Bytes, 0, 256));
-			
-			assertEquals(Hex.bytesToHexString(img2Bytes, 0, 32), "FFA0FFA8007A4E4953545F434F4D20390A5049585F5749445448203330380A50");
+
+			assertEquals(Hex.bytesToHexString(img2Bytes, 0, 32), "FFA0FFA4003A0907000932D3263C000AE0F31A84010A41EFF1BC010B8E27653F");
 		} catch (Exception e) {
 			fail(e.getMessage());
 		}

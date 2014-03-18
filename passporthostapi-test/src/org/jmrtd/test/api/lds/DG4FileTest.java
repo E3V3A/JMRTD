@@ -49,7 +49,7 @@ import org.jmrtd.lds.LDS;
 
 public class DG4FileTest extends TestCase {
 
-	public static final String TEST_FILE = "t:/paspoort/test/bsi/old/Datagroup4.bin";
+	public static final String TEST_FILE = "samples/bsi2008/Datagroup4.bin";
 
 	public DG4FileTest(String name) {
 		super(name);
@@ -131,8 +131,11 @@ public class DG4FileTest extends TestCase {
 	}
 
 	public void testFileFromLDS() {
+		testFileFromLDS(new File("samples/lds/bsi2008.zip"));
+	}
+
+	public void testFileFromLDS(File zipFile) {
 		try {
-			File zipFile = new File("t:/paspoort/test/bsi.zip");
 			MRTDTrustStore trustStore = new MRTDTrustStore();
 			Passport passport = new Passport(zipFile, trustStore);
 			LDS lds = passport.getLDS();
@@ -146,7 +149,7 @@ public class DG4FileTest extends TestCase {
 			DG4File dg4 = lds.getDG4File();
 
 			boolean showFrame = false;
-			
+
 			List<IrisInfo> recordInfos = dg4.getIrisInfos();
 			int recordCount = recordInfos.size();
 			int recordNumber = 1;

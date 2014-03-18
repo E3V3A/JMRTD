@@ -441,8 +441,7 @@ public class DG14FileTest extends TestCase {
 		List<DG14File> dg14s = new ArrayList<DG14File>();
 		try { dg14s.add(getSampleObject()); } catch (Exception e) { e.printStackTrace(); }
 		try { dg14s.add(getGWSample()); } catch (Exception e) { e.printStackTrace(); }
-		try { dg14s.add(new DG14File(new FileInputStream("t:/paspoort/test/benali_dg14.bin"))); } catch (Exception e) { e.printStackTrace(); }
-		try { dg14s.add(new DG14File(new FileInputStream("t:/paspoort/test/bsi_dg14.bin"))); } catch (Exception e) { e.printStackTrace(); }
+		try { dg14s.add(new DG14File(new FileInputStream("samples/bsi2008/Datagroup14.bin"))); } catch (Exception e) { e.printStackTrace(); }
 		return dg14s;
 	}
 

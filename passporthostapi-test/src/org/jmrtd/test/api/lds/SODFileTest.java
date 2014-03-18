@@ -23,6 +23,7 @@ package org.jmrtd.test.api.lds;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -135,28 +136,28 @@ public class SODFileTest extends TestCase {
 			assertTrue(unicodeVersion == null || unicodeVersion.length() == "aabbcc".length());
 
 			X509Certificate certificate = sodFile.getDocSigningCertificate();
-			
+
 			BigInteger serialNumber = sodFile.getSerialNumber();
 
 			if (serialNumber != null && certificate != null) {
 				assertTrue("serialNumber = " + serialNumber + ", certificate.getSerialNumber() = " + certificate.getSerialNumber(),
-					serialNumber.equals(certificate.getSerialNumber()));
+						serialNumber.equals(certificate.getSerialNumber()));
 			}
 
 			X500Principal issuer = sodFile.getIssuerX500Principal();
-			
+
 			System.out.println("DEBUG: issuer = " + issuer);
-			
+
 			String issuerName = issuer.getName(X500Principal.RFC2253);
 			assertNotNull(issuerName);
-			
+
 			if (issuer != null && certificate != null) {
 				X500Principal certIssuer = certificate.getIssuerX500Principal();
 				System.out.println("DEBUG: certIssuer = " + certIssuer);
 				String certIssuerName = certIssuer.getName(X500Principal.RFC2253);
 				assertNotNull(certIssuerName);
-//				assertTrue("issuerName = \"" + issuerName + "\", certIssuerName = \"" + certIssuerName + "\"",
-//						certIssuerName.equals(issuerName));
+				//				assertTrue("issuerName = \"" + issuerName + "\", certIssuerName = \"" + certIssuerName + "\"",
+				//						certIssuerName.equals(issuerName));
 			}
 
 			String digestAlgorithm = sodFile.getDigestAlgorithm();
@@ -184,9 +185,17 @@ public class SODFileTest extends TestCase {
 	public void testMustermann() {
 		testFile(createMustermannSampleInputStream());
 	}
-	
+
 	public void testNZ() {
-		testFile(createNZSampleInputStream());
+		File[] files = FileUtil.getSamples("samples/ef_sod", ".bin");
+		for (File file: files) {
+			try {
+				testFile(new FileInputStream(file));
+			} catch (FileNotFoundException fnfe) {
+				fnfe.printStackTrace();
+				fail(fnfe.getMessage());
+			}
+		}
 	}
 
 	public static SODFile createTestObject() {
@@ -196,7 +205,7 @@ public class SODFileTest extends TestCase {
 			Date today = Calendar.getInstance().getTime();
 			DG1File dg1File = DG1FileTest.createTestObject();
 			byte[] dg1Bytes = dg1File.getEncoded();
-			DG2File dg2File = DG2FileTest.getTestObject();
+			DG2File dg2File = DG2FileTest.getDefaultTestObject();
 			byte[] dg2Bytes = dg2File.getEncoded();			
 			//			DG15File dg15File = DG15FileTest.createTestObject();
 			//			byte[] dg15Bytes = dg15File.getEncoded();
@@ -228,22 +237,22 @@ public class SODFileTest extends TestCase {
 
 			int[] dgPresenceList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
 			COMFile com = new COMFile("1.7", "4.0.0", dgPresenceList);
-			FileOutputStream comOut = new FileOutputStream("t:/EF_COM.bin");			
+			FileOutputStream comOut = new FileOutputStream("samples/tmp/EF_COM.bin");			
 			comOut.write(com.getEncoded());
 			comOut.flush();
 			comOut.close();
 
-			FileOutputStream dg1Out = new FileOutputStream("t:/DataGroup1.bin");
+			FileOutputStream dg1Out = new FileOutputStream("samples/tmp/DataGroup1.bin");
 			dg1Out.write(dg1File.getEncoded());
 			dg1Out.flush();
 			dg1Out.close();
 
-			FileOutputStream dg2Out = new FileOutputStream("t:/DataGroup2.bin");
+			FileOutputStream dg2Out = new FileOutputStream("samples/tmp/DataGroup2.bin");
 			dg2Out.write(dg2File.getEncoded());
 			dg2Out.flush();
 			dg2Out.close();
 
-			FileOutputStream sodOut = new FileOutputStream("t:/EF_SOD.bin");
+			FileOutputStream sodOut = new FileOutputStream("samples/tmp/EF_SOD.bin");
 			sodOut.write(sod.getEncoded());
 			sodOut.flush();
 			sodOut.close();
@@ -257,16 +266,7 @@ public class SODFileTest extends TestCase {
 
 	public InputStream createMustermannSampleInputStream() {
 		try {
-			return new FileInputStream("t:/paspoort/test/mustermann_EF_SOD.bin");
-		} catch (FileNotFoundException e) {
-			fail(e.getMessage());
-			return null;
-		}
-	}
-	
-	public InputStream createNZSampleInputStream() {
-		try {
-			return new FileInputStream("t:/paspoort/test/nz/EF_SOD.BIN");
+			return new FileInputStream("samples/bsi2008/EF_SOD.bin");
 		} catch (FileNotFoundException e) {
 			fail(e.getMessage());
 			return null;

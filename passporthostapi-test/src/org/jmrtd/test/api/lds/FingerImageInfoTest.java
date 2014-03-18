@@ -72,18 +72,7 @@ public class FingerImageInfoTest extends TestCase {
 
 	public void testBSI() {
 		try {
-//			FingerImageInfo imageInfo = createBSITestObject();
-//			testEncodeDecode(imageInfo);
-//			DataInputStream inputStream = new DataInputStream(imageInfo.getImageInputStream());
-//			byte[] imageBytes = new byte[imageInfo.getImageLength()];
-//			inputStream.readFully(imageBytes);
-//			
-//			FileOutputStream outputStream = new FileOutputStream("t:/paspoort/test/bsi/old/fp.wsq");
-//			outputStream.write(imageBytes);
-//			outputStream.flush();
-//			outputStream.close();
-			
-			File inputFile = new File("t:/paspoort/test/bsi/old/fp.wsq");
+			File inputFile = new File("samples/wsq/fp.wsq");
 			DataInputStream inputStream = new DataInputStream(new FileInputStream(inputFile));
 			byte[] imageBytes = new byte[(int)inputFile.length()];
 			inputStream.readFully(imageBytes);
@@ -204,7 +193,7 @@ public class FingerImageInfoTest extends TestCase {
 	 */
 	private static byte[] getSampleWSQBytes() {
 		try {
-			File file = new File("/t:/paspoort/sample_image.wsq");
+			File file = new File("samples/wsq/sample_image.wsq");
 			byte[] result = new byte[(int)file.length()];
 			FileInputStream fileIn = new FileInputStream(file);
 			int bytesRead = 0;
@@ -268,7 +257,7 @@ public class FingerImageInfoTest extends TestCase {
 
 	public static FingerImageInfo createBSITestObject() {
 		try {
-			DG3File dg3 = new DG3File(new FileInputStream("t:/paspoort/test/bsi/Datagroup3.bin"));
+			DG3File dg3 = new DG3File(new FileInputStream("samples/bsi2008/Datagroup3.bin"));
 			List<FingerInfo> fingerInfos = dg3.getFingerInfos();
 			FingerInfo fingerInfo = fingerInfos.get(1);
 			List<FingerImageInfo> fingerImageInfos = fingerInfo.getFingerImageInfos();

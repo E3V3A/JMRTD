@@ -45,7 +45,8 @@ import org.jmrtd.lds.FaceInfo;
 
 public class DG2FileTest extends TestCase {
 
-	private static final String TEST_FILE = "/t:/paspoort/test/0102.bin";
+	private static final String BSI_TEST_FILE = "samples/bsi2008/Datagroup2.bin";
+	private static final String LOES_TEST_FILE = "samples/loes2006/ef0102.bin";
 
 	public DG2FileTest(String name) {
 		super(name);
@@ -62,14 +63,17 @@ public class DG2FileTest extends TestCase {
 
 	public void testShow() {
 		try {
-		DG2File dg2 = new DG2File(new FileInputStream(TEST_FILE));
-		testShow(dg2);
+			DG2File dg2 = new DG2File(new FileInputStream(BSI_TEST_FILE));
+			testShow(dg2);
+
+			dg2 = new DG2File(new FileInputStream(LOES_TEST_FILE));
+			testShow(dg2);
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());			
 		}
 	}
-	
+
 	public void testShow(DG2File dg2) {
 		try {
 			List<FaceInfo> faceInfos = dg2.getFaceInfos();
@@ -83,8 +87,8 @@ public class DG2FileTest extends TestCase {
 					JFrame frame = new JFrame("Image");
 					frame.getContentPane().add(new JLabel(new ImageIcon(image)));
 					frame.pack();
-//										frame.setVisible(true);
-//										while (true) { }
+					//										frame.setVisible(true);
+					//										while (true) { }
 				}
 			}
 		} catch (Exception e) {
@@ -96,8 +100,8 @@ public class DG2FileTest extends TestCase {
 
 	public void testReflexive() {
 		try {
-			DG2File dg2File = getTestObject();
-			testReflexive(dg2File);
+			testReflexive(getTestObject(BSI_TEST_FILE));
+			testReflexive(getTestObject(LOES_TEST_FILE));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.toString());
@@ -121,8 +125,8 @@ public class DG2FileTest extends TestCase {
 
 	public void testWriteObject() {
 		try {
-			DG2File dg2File = getTestObject();
-			testDecodeEncode(dg2File, 2);
+			testDecodeEncode(getTestObject(BSI_TEST_FILE), 2);
+			testDecodeEncode(getTestObject(LOES_TEST_FILE), 2);
 		} catch (Exception e) {
 			fail(e.toString());
 		}
@@ -173,7 +177,8 @@ public class DG2FileTest extends TestCase {
 
 	public void testElements() {
 		try {
-			testElements(getTestObject());
+			testElements(getTestObject(BSI_TEST_FILE));
+			testElements(getTestObject(LOES_TEST_FILE));
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail(e.getMessage());
@@ -195,7 +200,16 @@ public class DG2FileTest extends TestCase {
 
 	public void testImageBytes() {
 		try {
-			DG2File dg2 = getTestObject();
+			testImageBytes(getTestObject(BSI_TEST_FILE));
+			testImageBytes(getTestObject(LOES_TEST_FILE));
+		} catch (IOException ioe) {
+			ioe.printStackTrace();
+			fail(ioe.getMessage());
+		}
+	}
+
+	public void testImageBytes(DG2File dg2) {
+		try {
 			FaceImageInfo i1 = dg2.getFaceInfos().get(0).getFaceImageInfos().get(0);
 			int l1 = i1.getImageLength();
 			byte[] b1 = new byte[l1];
@@ -210,8 +224,12 @@ public class DG2FileTest extends TestCase {
 	}
 
 	public void testImageBytes0() {
+		testImageBytes0(new File(BSI_TEST_FILE));
+		testImageBytes0(new File(LOES_TEST_FILE));
+	}
+
+	public void testImageBytes0(File testFile) {
 		try {
-			File testFile = new File(TEST_FILE);
 			byte[] bytes = new byte[(int)testFile.length()];
 			DataInputStream dataInputStream = new DataInputStream(new FileInputStream(testFile));
 			dataInputStream.readFully(bytes);
@@ -257,35 +275,12 @@ public class DG2FileTest extends TestCase {
 		}
 	}
 
-	public static DG2File getTestObject() throws IOException {
-		return new DG2File(new FileInputStream(TEST_FILE));
+	public static DG2File getDefaultTestObject() throws IOException {
+		return getTestObject(BSI_TEST_FILE);
 	}
-
-	public void testNZ() {
-		try {
-//			File testFile = new File("t:/paspoort/test/nz/ssss");
-//			byte[] hexBytes = new byte[(int)testFile.length()];
-//			DataInputStream dataInputStream = new DataInputStream(new FileInputStream(testFile));
-//			dataInputStream.readFully(hexBytes);
-//			dataInputStream.close();
-//			String hexString = new String(hexBytes);
-//			hexString.replace(" ", "");
-//			hexString.replace("\n", "");
-//			byte[] binBytes = Hex.hexStringToBytes(hexString);
-//			System.out.println("DEBUG: binBytes.length = " + binBytes.length);
-//			ByteArrayInputStream byteArrayInputStream = new ByteArrayInputStream(binBytes);
-
-			File file = new File("t:/paspoort/test/nz/EF_DG2.BIN");
-			FileInputStream fileInputStream = new FileInputStream(file);
-			DG2File dg2 = new DG2File(fileInputStream);
-			System.out.println("DEBUG: EF_DG2.BIN file length = " + file.length());
-			System.out.println("DEBUG: DG2 length of value = " + dg2.getLength());
-			testShow(dg2);
-			fileInputStream.close();
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.getMessage());
-		}
+	
+	public static DG2File getTestObject(String fileName) throws IOException {
+		return new DG2File(new FileInputStream(fileName));
 	}
 
 	public void testFile(InputStream in) {
