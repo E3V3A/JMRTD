@@ -24,7 +24,6 @@ package org.jmrtd.test.api.lds;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.LinkedList;
@@ -159,34 +158,6 @@ public class DG7FileTest extends TestCase {
 		DisplayedImageInfo imageInfo = new DisplayedImageInfo(ImageInfo.TYPE_SIGNATURE_OR_MARK, image);
 		DG7File dg7File = new DG7File(Arrays.asList(new DisplayedImageInfo[] { imageInfo }));
 		return dg7File;
-	}
-	
-	/**
-	 * Contains Belgian DG7 sample.
-	 */
-	private static final String BELGIAN_DG7_BIN = "/t:/paspoort/test/be_0107.bin";
-	
-	public void testBelgian() {
-		try {
-			FileInputStream in = new FileInputStream(BELGIAN_DG7_BIN);
-			DG7File dg7File = new DG7File(in);
-			
-			testEncodeDecode(dg7File);
-			
-			List<DisplayedImageInfo> imageInfos = dg7File.getImages();
-			assertNotNull(imageInfos);
-			assertEquals(imageInfos.size(), 1);
-			DisplayedImageInfo imageInfo = imageInfos.get(0);
-			assertNotNull(imageInfo);
-			
-			DisplayedImageInfoTest displayedImageInfoTest = new DisplayedImageInfoTest("bla");
-			displayedImageInfoTest.testEncodeDecode(imageInfo);
-			displayedImageInfoTest.testExtractImage(imageInfo, 800, 266);
-			displayedImageInfoTest.testValidType(imageInfo);
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.toString());
-		}
 	}
 
 	public void testFile(InputStream in) {
