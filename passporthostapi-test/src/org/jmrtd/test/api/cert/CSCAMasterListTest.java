@@ -26,7 +26,8 @@ public class CSCAMasterListTest extends TestCase {
 			// + "/german_csca_masterlist/20130614GermanMasterlist.ml";
 			// + "/german_csca_masterlist/20130717GermanMasterlist.ml";
 			// + "/german_csca_masterlist/20130815GermanMasterlist.ml";
-			+ "/german_csca_masterlist/20131217_GermanMasterlist.ml";
+			//			+ "/german_csca_masterlist/20131217_GermanMasterlist.ml";
+			+ "/german_csca_masterlist/20140319_GermanMasterList.ml";
 
 	private static final String DE_PREFIX = "from_de_ml_";
 
