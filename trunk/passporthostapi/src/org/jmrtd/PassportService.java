@@ -143,7 +143,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 	/** CardAccess. */
 	public static final short EF_CARD_ACCESS = 0x011C;
-	
+
 	/** The security document. */
 	public static final short EF_SOD = 0x011D;
 
@@ -350,7 +350,7 @@ public class PassportService extends PassportApduService implements Serializable
 		notifyBACPerformed(event);
 		state = BAC_AUTHENTICATED_STATE;
 	}
-	
+
 	public synchronized void sendSelectFile(short fid) throws CardServiceException {
 		sendSelectFile(wrapper, fid);
 	}
@@ -726,24 +726,32 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public boolean doAA(PublicKey publicKey) throws CardServiceException {
 		try {
-			byte[] m2 = new byte[8];
-			random.nextBytes(m2);
-			byte[] response = sendAA(publicKey, m2);
-			aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
-			aaSignature.initVerify(publicKey);
-			int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
-			assert(digestLength == 20);
-			byte[] plaintext = aaCipher.doFinal(response);
-			byte[] m1 = Util.recoverMessage(digestLength, plaintext);
-			aaSignature.update(m1);
-			aaSignature.update(m2);
-			boolean success = aaSignature.verify(response);
-			AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
-			notifyAAPerformed(event);
-			if (success) {
-				state = AA_AUTHENTICATED_STATE;
+			String algorithm = publicKey.getAlgorithm();
+			if ("RSA".equals(algorithm)) {
+				byte[] m2 = new byte[8];
+				random.nextBytes(m2);
+				byte[] response = sendAA(publicKey, m2);
+				aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
+				aaSignature.initVerify(publicKey);
+				int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
+				assert(digestLength == 20);
+				byte[] plaintext = aaCipher.doFinal(response);
+				byte[] m1 = Util.recoverMessage(digestLength, plaintext);
+				aaSignature.update(m1);
+				aaSignature.update(m2);
+				boolean success = aaSignature.verify(response);
+				AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
+				notifyAAPerformed(event);
+				if (success) {
+					state = AA_AUTHENTICATED_STATE;
+				}
+				return success;
+			} else if ("EC".equals(algorithm)) {
+				LOGGER.warning("DEBUG: Active Authentication using \"" + algorithm + "\" public key not yet implemented");
+				return false;
+			} else {
+				return false;
 			}
-			return success;
 		} catch (IllegalArgumentException iae) {
 			// iae.printStackTrace();
 			throw new CardServiceException(iae.toString());
@@ -838,20 +846,20 @@ public class PassportService extends PassportApduService implements Serializable
 			l.performedAA(event);
 		}
 	}
-	
+
 	class ChipAuthenticationResult {
 		private byte[] eacKeyHash;
 		private KeyPair keyPair;
-		
+
 		public ChipAuthenticationResult(byte[] eacKeyHash, KeyPair keyPair) {
 			this.eacKeyHash = eacKeyHash;
 			this.keyPair = keyPair;
 		}
-		
+
 		public byte[] getEACKeyHash() {
 			return eacKeyHash;
 		}
-		
+
 		public KeyPair getKeyPair() {
 			return keyPair;
 		}

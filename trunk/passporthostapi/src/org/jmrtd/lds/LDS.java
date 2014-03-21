@@ -41,6 +41,8 @@ import org.jmrtd.io.SplittableInputStream;
 
 /**
  * The logical data structure.
+ * This is basically a collection of input streams for the
+ * data groups, combined with some status information (progress).
  * 
  * @author The JMRTD team
  * 
