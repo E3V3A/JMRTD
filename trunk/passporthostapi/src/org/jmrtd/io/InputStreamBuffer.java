@@ -142,10 +142,14 @@ public class InputStreamBuffer {
 					return 0;
 				}
 
+				if (len > buffer.getLength() - position) {
+					len = buffer.getLength() - position;
+				}
+				
 				if (carrier.markSupported()) {
 					syncCarrierPosition();
 				}
-
+				
 				if (position >= buffer.getLength()) {
 					/* FIXME: is this correct? See FIXME in read(). */
 					return -1;
