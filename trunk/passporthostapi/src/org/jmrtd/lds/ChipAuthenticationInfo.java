@@ -131,15 +131,24 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 	}
 
 	/**
-	 * Checks whether the given object identifier identfies a
+	 * Checks whether the given object identifier identifies a
 	 * ChipAuthenticationInfo structure.
+	 * 
+	 * FIXME: for EAC 1.11 only the 3DES OIDs are allowed.
 	 * 
 	 * @param oid
 	 *            object identifier
 	 * @return true if the match is positive
 	 */
 	static boolean checkRequiredIdentifier(String oid) {
-		return ID_CA_DH_3DES_CBC_CBC_OID.equals(oid) || ID_CA_ECDH_3DES_CBC_CBC_OID.equals(oid);
+		return ID_CA_DH_3DES_CBC_CBC_OID.equals(oid)
+				|| ID_CA_ECDH_3DES_CBC_CBC_OID.equals(oid)
+				|| ID_CA_DH_AES_CBC_CMAC_128_OID.equals(oid)
+				|| ID_CA_DH_AES_CBC_CMAC_192_OID.equals(oid)
+				|| ID_CA_DH_AES_CBC_CMAC_256_OID.equals(oid)
+				|| ID_CA_ECDH_AES_CBC_CMAC_128_OID.equals(oid)
+				|| ID_CA_ECDH_AES_CBC_CMAC_192_OID.equals(oid)
+				|| ID_CA_ECDH_AES_CBC_CMAC_256_OID.equals(oid);
 	}
 	
 	public String toString() {
