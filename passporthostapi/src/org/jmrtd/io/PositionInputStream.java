@@ -59,9 +59,9 @@ public class PositionInputStream extends InputStream {
 	public long skip(long n) throws IOException {
 		long skippedBytes = carrier.skip(n);
 		if (skippedBytes <= 0) {
-			throw new IllegalStateException("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
+//			throw new IllegalStateException("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
 
-//			System.out.println("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
+			System.out.println("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
 		}
 
 		position += skippedBytes;

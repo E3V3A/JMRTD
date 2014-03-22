@@ -1,8 +1,10 @@
 package org.jmrtd.io.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.InputStream;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 import net.sourceforge.scuba.util.Hex;
@@ -156,9 +158,9 @@ public class SplittableInputStreamTest extends TestCase {
 			assertEquals(b, src[3]);
 			sIn.skip(15000);
 			sIn.read();
-			
+
 			InputStream sIn2 = sIn.getInputStream(0);
-			
+
 			b = sIn2.read(); // 0
 			System.out.println("DEBUG: b = " + b);
 			b = sIn2.read(); // 1
@@ -183,7 +185,53 @@ public class SplittableInputStreamTest extends TestCase {
 			fail(e.getMessage());
 		}
 	}
-	
+
+	public void testReadBlocks() {
+		byte[] aBytes = new byte[15000];
+		for (int i = 0; i < aBytes.length; i++) {
+			aBytes[i] = (byte)i;
+		}
+		ByteArrayInputStream a = new ByteArrayInputStream(aBytes);
+		
+		int bufLength = 1024;
+		
+		SplittableInputStream splittableInputStream = new SplittableInputStream(a, aBytes.length);
+
+		ByteArrayOutputStream b1 = new ByteArrayOutputStream();
+		ByteArrayOutputStream b2 = new ByteArrayOutputStream();
+		
+		try {
+			InputStream sub1 = splittableInputStream.getInputStream(0);
+			byte[] buf = new byte[bufLength];
+			int bytesRead;
+			while((bytesRead = sub1.read(buf)) > 0) {
+//				System.out.println("DEBUG: buf = " + Arrays.toString(buf) + ", bytesRead = " + bytesRead);
+				b1.write(buf, 0, bytesRead);
+			}
+//			System.out.println("DEBUG: b1 = " + Arrays.toString(b1.toByteArray()));
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+
+		try {
+			InputStream sub2 = splittableInputStream.getInputStream(0);
+			byte[] buf = new byte[bufLength];
+			int bytesRead;
+			while((bytesRead = sub2.read(buf)) > 0) {
+//				System.out.println("DEBUG: buf = " + Arrays.toString(buf) + ", bytesRead = " + bytesRead);
+				b2.write(buf, 0, bytesRead);
+			}
+//			System.out.println("DEBUG: b2 = " + Arrays.toString(b2.toByteArray()));
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			fail(e.getMessage());
+		}
+		
+		assertTrue(Arrays.equals(b1.toByteArray(), b2.toByteArray()));
+	}
+
 	private class NonMarkSupportingByteArrayInputStream extends ByteArrayInputStream {
 
 		public NonMarkSupportingByteArrayInputStream(byte[] buf) {
