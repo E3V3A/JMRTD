@@ -472,7 +472,7 @@ public class DG14FileTest extends TestCase {
 			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(1)));
 			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(2)));
 			securityInfos.add(new TerminalAuthenticationInfo());
-			securityInfos.add(new PACEInfo(PACEInfo.ID_PACE_DH_GM_3DES_CBC_CMAC_192, 2, PACEInfo.PARAM_ID_ECP_BRAINPOOL_P224_R1));
+			securityInfos.add(new PACEInfo(PACEInfo.ID_PACE_DH_GM_AES_CBC_CMAC_192, 2, PACEInfo.PARAM_ID_ECP_BRAINPOOL_P224_R1));
 			DG14File dg14 = new DG14File(securityInfos);
 			return dg14;
 		} catch(Exception e) {
@@ -591,7 +591,7 @@ public class DG14FileTest extends TestCase {
 			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_DH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(1)));
 			securityInfos.add(new ChipAuthenticationInfo(ChipAuthenticationInfo.ID_CA_ECDH_3DES_CBC_CBC_OID, ChipAuthenticationInfo.VERSION_NUM, BigInteger.valueOf(2)));
 			securityInfos.add(new TerminalAuthenticationInfo());
-			securityInfos.add(new PACEInfo(PACEInfo.ID_PACE_DH_GM_3DES_CBC_CMAC_192, 2, PACEInfo.PARAM_ID_ECP_BRAINPOOL_P224_R1));
+			securityInfos.add(new PACEInfo(PACEInfo.ID_PACE_DH_GM_AES_CBC_CMAC_192, 2, PACEInfo.PARAM_ID_ECP_BRAINPOOL_P224_R1));
 			DG14File dg14 = new DG14File(securityInfos);
 			return dg14;
 		} catch(Exception e) {

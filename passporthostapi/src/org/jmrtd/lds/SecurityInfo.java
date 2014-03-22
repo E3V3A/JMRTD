@@ -52,6 +52,12 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 	
+	/**
+	 * Used in ECDSA based Active Authentication.
+	 * <code>{joint-iso-itu-t(2) international-organizations(23) 136 mrtd(1) security(1) aaProtocolObject(5)}</code>.
+	 */
+	public static final String ID_AA_OID = "2.23.136.1.1.5";
+	
 	public static final String
 	ID_PK_DH_OID = EACObjectIdentifiers.id_PK_DH.getId(),
 	ID_PK_ECDH_OID = EACObjectIdentifiers.id_PK_ECDH.getId(),
@@ -60,12 +66,21 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	ID_CA_ECDH_3DES_CBC_CBC_OID = EACObjectIdentifiers.id_CA_ECDH_3DES_CBC_CBC.getId();
 	
 	public static final String
+	ID_CA_DH_AES_CBC_CMAC_128_OID = "0.4.0.127.0.7.2.2.3.1.2",
+	ID_CA_DH_AES_CBC_CMAC_192_OID = "0.4.0.127.0.7.2.2.3.1.3",
+	ID_CA_DH_AES_CBC_CMAC_256_OID = "0.4.0.127.0.7.2.2.3.1.4",
+	ID_CA_ECDH_AES_CBC_CMAC_128_OID = "0.4.0.127.0.7.2.2.3.2.2",
+	ID_CA_ECDH_AES_CBC_CMAC_192_OID = "0.4.0.127.0.7.2.2.3.2.3",
+	ID_CA_ECDH_AES_CBC_CMAC_256_OID = "0.4.0.127.0.7.2.2.3.2.4";
+	
+	public static final String
 	ID_EC_PUBLIC_KEY_TYPE = X9ObjectIdentifiers.id_publicKeyType.getId(),
 	ID_EC_PUBLIC_KEY = X9ObjectIdentifiers.id_ecPublicKey.getId();
 	
 	private static final String ID_BSI = "0.4.0.127.0.7";
 
-	private static final String ID_PACE = ID_BSI + ".2.4";
+	/* protocols (2), smartcard (2), PACE (4) */
+	private static final String ID_PACE = ID_BSI + ".2.2.4";
 
 	public static final String
 	ID_PACE_DH_GM = ID_PACE + ".1";
@@ -80,28 +95,28 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	ID_PACE_ECDH_IM = ID_PACE + ".4";
 	
 	public static final String
-	ID_PACE_DH_GM_3DES_CBC_CBC = ID_PACE_DH_GM + ".1",
-	ID_PACE_DH_GM_3DES_CBC_CMAC_128 = ID_PACE_DH_GM + ".2",
-	ID_PACE_DH_GM_3DES_CBC_CMAC_192 = ID_PACE_DH_GM + ".3",
-	ID_PACE_DH_GM_3DES_CBC_CMAC_256 = ID_PACE_DH_GM + ".4";
+	ID_PACE_DH_GM_3DES_CBC_CBC = ID_PACE_DH_GM + ".1", /* 0.4.0.127.0.7.2.2.4.1.1, id-PACE-DH-GM-3DES-CBC-CBC */
+	ID_PACE_DH_GM_AES_CBC_CMAC_128 = ID_PACE_DH_GM + ".2", /* 0.4.0.127.0.7.2.2.4.1.2, id-PACE-DH-GM-AES-CBC-CMAC-128 */
+	ID_PACE_DH_GM_AES_CBC_CMAC_192 = ID_PACE_DH_GM + ".3", /* 0.4.0.127.0.7.2.2.4.1.3, id-PACE-DH-GM-AES-CBC-CMAC-192 */
+	ID_PACE_DH_GM_AES_CBC_CMAC_256 = ID_PACE_DH_GM + ".4"; /* 0.4.0.127.0.7.2.2.4.1.4, id-PACE-DH-GM-AES-CBC-CMAC-256 */
 
 	public static final String
-	ID_PACE_ECDH_GM_3DES_CBC_CBC = ID_PACE_ECDH_GM + ".1",
-	ID_PACE_ECDH_GM_3DES_CBC_CMAC_128 = ID_PACE_ECDH_GM + ".2",
-	ID_PACE_ECDH_GM_3DES_CBC_CMAC_192 = ID_PACE_ECDH_GM + ".3",
-	ID_PACE_ECDH_GM_3DES_CBC_CMAC_256 = ID_PACE_ECDH_GM + ".4";
+	ID_PACE_ECDH_GM_3DES_CBC_CBC = ID_PACE_ECDH_GM + ".1", /* 0.4.0.127.0.7.2.2.4.2.1, id-PACE-ECDH-GM-3DES-CBC-CBC */
+	ID_PACE_ECDH_GM_AES_CBC_CMAC_128 = ID_PACE_ECDH_GM + ".2", /* 0.4.0.127.0.7.2.2.4.2.2, id-PACE-ECDH-GM-AES-CBC-CMAC-128 */
+	ID_PACE_ECDH_GM_AES_CBC_CMAC_192 = ID_PACE_ECDH_GM + ".3", /* 0.4.0.127.0.7.2.2.4.2.3, id-PACE-ECDH-GM-AES-CBC-CMAC-192 */
+	ID_PACE_ECDH_GM_AES_CBC_CMAC_256 = ID_PACE_ECDH_GM + ".4"; /* 0.4.0.127.0.7.2.2.4.2.4, id-PACE-ECDH-GM-AES-CBC-CMAC-256 */
 
 	public static final String
-	ID_PACE_DH_IM_3DES_CBC_CBC = ID_PACE_DH_IM + ".1",
-	ID_PACE_DH_IM_3DES_CBC_CMAC_128 = ID_PACE_DH_IM + ".2",
-	ID_PACE_DH_IM_3DES_CBC_CMAC_192 = ID_PACE_DH_IM + ".3",
-	ID_PACE_DH_IM_3DES_CBC_CMAC_256 = ID_PACE_DH_IM + ".4";
+	ID_PACE_DH_IM_3DES_CBC_CBC = ID_PACE_DH_IM + ".1", /* 0.4.0.127.0.7.2.2.4.3.1, id-PACE-DH-IM-3DES-CBC-CBC */
+	ID_PACE_DH_IM_AES_CBC_CMAC_128 = ID_PACE_DH_IM + ".2", /* 0.4.0.127.0.7.2.2.4.3.2, id-PACE-DH-IM-AES-CBC-CMAC-128 */
+	ID_PACE_DH_IM_AES_CBC_CMAC_192 = ID_PACE_DH_IM + ".3", /* 0.4.0.127.0.7.2.2.4.3.3, id-PACE-DH-IM-AES-CBC-CMAC-192 */
+	ID_PACE_DH_IM_AES_CBC_CMAC_256 = ID_PACE_DH_IM + ".4"; /* 0.4.0.127.0.7.2.2.4.3.4, id-PACE-DH-IM-AES-CBC-CMAC-256 */
 
 	public static final String
-	ID_PACE_ECDH_IM_3DES_CBC_CBC = ID_PACE_ECDH_IM + ".1",
-	ID_PACE_ECDH_IM_3DES_CBC_CMAC_128 = ID_PACE_ECDH_IM + ".2",
-	ID_PACE_ECDH_IM_3DES_CBC_CMAC_192 = ID_PACE_ECDH_IM + ".3",
-	ID_PACE_ECDH_IM_3DES_CBC_CMAC_256 = ID_PACE_ECDH_IM + ".4";
+	ID_PACE_ECDH_IM_3DES_CBC_CBC = ID_PACE_ECDH_IM + ".1", /* 0.4.0.127.0.7.2.2.4.4.1, id-PACE-ECDH-IM-3DES-CBC-CBC */
+	ID_PACE_ECDH_IM_AES_CBC_CMAC_128 = ID_PACE_ECDH_IM + ".2", /* 0.4.0.127.0.7.2.2.4.4.2, id-PACE-ECDH-IM-AES-CBC-CMAC-128 */
+	ID_PACE_ECDH_IM_AES_CBC_CMAC_192 = ID_PACE_ECDH_IM + ".3", /* 0.4.0.127.0.7.2.2.4.4.3, id-PACE-ECDH-IM-AES-CBC-CMAC-192 */
+	ID_PACE_ECDH_IM_AES_CBC_CMAC_256 = ID_PACE_ECDH_IM + ".4"; /* 0.4.0.127.0.7.2.2.4.4.4, id-PACE-ECDH-IM-AES-CBC-CMAC-256 */
 	
 	/**
 	 * Returns a DER object with this SecurityInfo data (DER sequence)
@@ -151,7 +166,15 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 				optionalData = sequence.getObjectAt(2).toASN1Primitive();
 			}
 
-			if (ChipAuthenticationPublicKeyInfo.checkRequiredIdentifier(oid)) {
+			if (ActiveAuthenticationInfo.checkRequiredIdentifier(oid)) {
+				int version = ((ASN1Integer)requiredData).getValue().intValue();
+				if (optionalData == null) {
+					return new ActiveAuthenticationInfo(oid, version, null);
+				} else {
+					String signatureAlgorithmOID = ((ASN1ObjectIdentifier)optionalData).getId();
+					return new ActiveAuthenticationInfo(oid, version, signatureAlgorithmOID);
+				}
+			} else if (ChipAuthenticationPublicKeyInfo.checkRequiredIdentifier(oid)) {
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)requiredData);
 				if (optionalData == null) {
 					return new ChipAuthenticationPublicKeyInfo(oid, subjectPublicKeyInfo);
@@ -193,7 +216,7 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 				return new PACEDomainParameterInfo(oid, domainParameters);
 			}
 //			throw new IllegalArgumentException("Malformed input stream.");
-			LOGGER.warning("Unsupported SecurityInfo");
+			LOGGER.warning("Unsupported SecurityInfo, oid = " + oid);
 			return null;
 		} catch (Exception e) {
 			e.printStackTrace();

@@ -109,7 +109,7 @@ public class DG3FileTest extends TestCase {
 
 			byte[] encoded = dg3.getEncoded();
 
-			FileOutputStream origOut = new FileOutputStream("t:/dg3orig.bin");			
+			FileOutputStream origOut = new FileOutputStream("samples/tmp/dg3orig.bin");			
 			origOut.write(encoded);
 			origOut.flush();
 			origOut.close();
@@ -120,7 +120,7 @@ public class DG3FileTest extends TestCase {
 
 			byte[] encodedCopy = copy.getEncoded();
 
-			FileOutputStream copyOut = new FileOutputStream("t:/dg3copy.bin");			
+			FileOutputStream copyOut = new FileOutputStream("samples/tmp/dg3copy.bin");			
 			copyOut.write(encodedCopy);
 			copyOut.flush();
 			copyOut.close();

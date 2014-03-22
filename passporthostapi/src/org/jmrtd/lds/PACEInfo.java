@@ -139,20 +139,20 @@ public class PACEInfo extends SecurityInfo {
 
 	public static boolean checkRequiredIdentifier(String oid) {
 		return ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
-				|| ID_PACE_DH_GM_3DES_CBC_CMAC_128.equals(oid)
-				|| ID_PACE_DH_GM_3DES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_DH_GM_3DES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
 				|| ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
-				|| ID_PACE_ECDH_GM_3DES_CBC_CMAC_128.equals(oid)
-				|| ID_PACE_ECDH_GM_3DES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_ECDH_GM_3DES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
 				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
-				|| ID_PACE_DH_IM_3DES_CBC_CMAC_128.equals(oid)
-				|| ID_PACE_DH_IM_3DES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_DH_IM_3DES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)
 				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)
-				|| ID_PACE_ECDH_IM_3DES_CBC_CMAC_128.equals(oid)
-				|| ID_PACE_ECDH_IM_3DES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_ECDH_IM_3DES_CBC_CMAC_256.equals(oid);
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid);
 	}
 }
