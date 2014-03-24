@@ -22,8 +22,8 @@ import org.jmrtd.JMRTDSecurityProvider;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.cert.KeyStoreCertStoreParameters;
 
-public class CSCAStoreGenerator extends TestCase
-{
+public class CSCAStoreGenerator extends TestCase {
+
 	private static final Provider
 	BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider(),
 	JMRTD_PROVIDER = JMRTDSecurityProvider.getInstance();
@@ -53,6 +53,7 @@ public class CSCAStoreGenerator extends TestCase
 		testImportX509Certificates(TEST_CERT_DIR, TEST_DEST_KEY_STORE);
 	}
 
+	/** Converts a directory with .cer files into a keystore. */
 	public void testImportX509Certificates(String certsDirPath, String testDestKeyStore) {
 		try {
 			int jmrtdProvIndex = JMRTDSecurityProvider.beginPreferBouncyCastleProvider();
@@ -138,7 +139,7 @@ public class CSCAStoreGenerator extends TestCase
 			return "Non-X509" + certificate.toString();
 		}
 	}
-	
+
 	private String getPath(String path) {
 		if (path.startsWith("file:")) {
 			try {
