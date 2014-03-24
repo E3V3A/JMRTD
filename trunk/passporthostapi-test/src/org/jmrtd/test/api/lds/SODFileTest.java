@@ -235,24 +235,34 @@ public class SODFileTest extends TestCase {
 
 			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 
+			File outputDir = new File("samples/tmp");
+			if (!outputDir.exists()) {
+				if (!outputDir.mkdirs()) {
+					fail("Could not make output dir \"" + outputDir.getAbsolutePath() + "\"");
+				}
+			}
+			if (!outputDir.isDirectory()) {
+				fail("Could not make output dir \"" + outputDir.getAbsolutePath() + "\"");
+			}
+			
 			int[] dgPresenceList = { LDSFile.EF_DG1_TAG, LDSFile.EF_DG2_TAG };
 			COMFile com = new COMFile("1.7", "4.0.0", dgPresenceList);
-			FileOutputStream comOut = new FileOutputStream("samples/tmp/EF_COM.bin");			
+			FileOutputStream comOut = new FileOutputStream(new File(outputDir, "EF_COM.bin"));
 			comOut.write(com.getEncoded());
 			comOut.flush();
 			comOut.close();
 
-			FileOutputStream dg1Out = new FileOutputStream("samples/tmp/DataGroup1.bin");
+			FileOutputStream dg1Out = new FileOutputStream(new File(outputDir, "DataGroup1.bin"));
 			dg1Out.write(dg1File.getEncoded());
 			dg1Out.flush();
 			dg1Out.close();
 
-			FileOutputStream dg2Out = new FileOutputStream("samples/tmp/DataGroup2.bin");
+			FileOutputStream dg2Out = new FileOutputStream(new File(outputDir, "DataGroup2.bin"));
 			dg2Out.write(dg2File.getEncoded());
 			dg2Out.flush();
 			dg2Out.close();
 
-			FileOutputStream sodOut = new FileOutputStream("samples/tmp/EF_SOD.bin");
+			FileOutputStream sodOut = new FileOutputStream(new File(outputDir, "EF_SOD.bin"));
 			sodOut.write(sod.getEncoded());
 			sodOut.flush();
 			sodOut.close();
