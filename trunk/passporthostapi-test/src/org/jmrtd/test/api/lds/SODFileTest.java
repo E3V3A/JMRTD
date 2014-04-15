@@ -235,7 +235,7 @@ public class SODFileTest extends TestCase {
 
 			SODFile sod = new SODFile(digestAlgorithm, signatureAlgorithm, hashes, privateKey, docSigningCert);
 
-			File outputDir = new File("samples/tmp");
+			File outputDir = new File("tmp");
 			if (!outputDir.exists()) {
 				if (!outputDir.mkdirs()) {
 					fail("Could not make output dir \"" + outputDir.getAbsolutePath() + "\"");
