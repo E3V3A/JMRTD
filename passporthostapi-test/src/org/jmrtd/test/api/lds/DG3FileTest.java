@@ -109,7 +109,7 @@ public class DG3FileTest extends TestCase {
 
 			byte[] encoded = dg3.getEncoded();
 
-			File outputDir = new File("samples/tmp");
+			File outputDir = new File("tmp");
 			if (!outputDir.exists()) {
 				if (!outputDir.mkdirs()) {
 					fail("Could not make output dir \"" + outputDir.getAbsolutePath() + "\"");
@@ -129,7 +129,7 @@ public class DG3FileTest extends TestCase {
 
 			byte[] encodedCopy = copy.getEncoded();
 
-			FileOutputStream copyOut = new FileOutputStream("samples/tmp/dg3copy.bin");			
+			FileOutputStream copyOut = new FileOutputStream(new File(outputDir, "dg3copy.bin"));			
 			copyOut.write(encodedCopy);
 			copyOut.flush();
 			copyOut.close();
@@ -212,12 +212,12 @@ public class DG3FileTest extends TestCase {
 
 			RenderedImage image = ImageUtil.read(new ByteArrayInputStream(b2), l2, i2.getMimeType());
 
-			DataOutputStream out1 = new DataOutputStream(new FileOutputStream("samples/tmp/img1.wsq"));
+			DataOutputStream out1 = new DataOutputStream(new FileOutputStream("tmp/img1.wsq"));
 			out1.write(b1);
 			out1.flush();
 			out1.close();
 
-			DataOutputStream out2 = new DataOutputStream(new FileOutputStream("samples/tmp/img2.wsq"));
+			DataOutputStream out2 = new DataOutputStream(new FileOutputStream("tmp/img2.wsq"));
 			out2.write(b2);
 			out2.flush();
 			out2.close();
