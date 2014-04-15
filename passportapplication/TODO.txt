@@ -263,10 +263,9 @@ Code quality
 
 General
 + Allow session completion on read error (as in Nexus 4 case) and new connection of MRTD.
++ Make DG11 provide access to full name (and make primary / secondary identifiers a problem of the caller).
++ Support Active Authentication with ECDSA.
 - Decide whether to make Passport itself responsible for calling verification methods verifyDS, verifyCS, verifyHash at appropriate stages (when SODFile has been read), and notify VerificationStatusChangeListeners or leave this to client.
-- DG11 only provide access to full name, make primary / secondary identifiers a problem of the caller.
-+ DG15 can use EC public key instead of RSA
-- Investigate how to do AA with EC public key (doAA in PassportService will expect RSA because of message recovery).
 
 Dependencies
 - Check latest Bouncy Castle. (Is actually 1.50, but we're back to 1.47 for now, because of Spongy on Android.)

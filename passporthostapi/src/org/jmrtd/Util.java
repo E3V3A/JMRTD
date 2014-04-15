@@ -24,6 +24,7 @@ package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 
@@ -231,6 +232,58 @@ public class Util {
 		}
 	}
 	
+	
+	/**
+	 * Based on BSI TR 03111 Section 3.1.2.
+	 *
+	 * @param val positive integer
+	 * @param length length
+	 * 
+	 * @return octet string
+	 */
+	public static byte[] i2os(BigInteger val, int length) {
+		BigInteger base = BigInteger.valueOf(256);
+		byte[] result = new byte[length];
+		for (int i = 0; i < length; i++) {	
+			BigInteger remainder = val.mod(base);
+			val = val.divide(base);
+			result[length - 1 - i] = (byte)remainder.intValue();
+		}
+		return result;
+	}
+
+	/**
+	 * Based on BSI TR 03111 Section 3.1.2.
+	 *
+	 * @param bytes octet string
+	 * 
+	 * @return positive integer
+	 */
+	public static BigInteger os2i(byte[] bytes) {
+		if (bytes == null) { throw new IllegalArgumentException(); }
+		return os2i(bytes, 0, bytes.length);
+	}
+
+	/**
+	 * Based on BSI TR 03111 Section 3.1.2.
+	 *
+	 * @param bytes octet string
+	 * @param offset offset of octet string
+	 * @param length length of octet string
+	 * 
+	 * @return positive integer
+	 */
+	public static BigInteger os2i(byte[] bytes, int offset, int length) {
+		if (bytes == null) { throw new IllegalArgumentException(); }
+		BigInteger result = BigInteger.ZERO;
+		BigInteger base = BigInteger.valueOf(256);
+		for (int i = offset; i < offset + length; i++) {
+			result = result.multiply(base);
+			result = result.add(BigInteger.valueOf(bytes[i] & 0xFF));
+		}
+		return result;
+	}
+	
 	private static byte[] getBytes(String str) {
 		byte[] bytes = str.getBytes();
 		try {
@@ -240,6 +293,29 @@ public class Util {
 			use.printStackTrace();
 		}
 		return bytes;
+	}
+
+	/* Best effort. FIXME: test and improve. -- MO */
+	/**
+	 * Infers a digest algorithm mnemonic from a signature algorithm mnemonic.
+	 * 
+	 * @param signatureAlgorithm a signature algorithm
+	 * @return a digest algorithm, or null if inference failed
+	 */
+	public static String inferDigestAlgorithmFromSignatureAlgorithm(String signatureAlgorithm) {
+		if (signatureAlgorithm == null) { throw new IllegalArgumentException(); }
+		String digestAlgorithm = null;
+		String signatureAlgorithmToUppercase = signatureAlgorithm.toUpperCase();
+		if (signatureAlgorithmToUppercase.contains("WITH")) {
+			String[] components = signatureAlgorithmToUppercase.split("WITH");
+			digestAlgorithm = components[0];
+		}
+		if ("SHA1".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-1"; }
+		if ("SHA224".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-224"; }
+		if ("SHA256".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-256"; }
+		if ("SHA384".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-384"; }
+		if ("SHA512".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-512"; }
+		return digestAlgorithm;
 	}
 }
 

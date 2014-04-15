@@ -35,6 +35,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -54,10 +55,12 @@ import net.sourceforge.scuba.smartcards.CardService;
 import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.tlv.TLVOutputStream;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -213,9 +216,14 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	protected SecureMessagingWrapper wrapper;
 
-	private transient Signature aaSignature;
-	private transient MessageDigest aaDigest;
-	private transient Cipher aaCipher;
+	/* We use a cipher to help implement Active Authentication RSA with ISO9796-2 message recovery. */
+	private transient Signature rsaAASignature;
+	private transient MessageDigest rsaAADigest;	
+	private transient Cipher rsaAACipher;
+
+	private transient Signature ecdsaAASignature;
+	private transient MessageDigest ecdsaAADigest;
+
 	protected Random random;
 	private MRTDFileSystem fs;
 
@@ -233,9 +241,14 @@ public class PassportService extends PassportApduService implements Serializable
 	public PassportService(CardService service) throws CardServiceException {
 		super(service);
 		try {
-			aaSignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", JMRTDSecurityProvider.getBouncyCastleProvider());
-			aaDigest = MessageDigest.getInstance("SHA1");
-			aaCipher = Cipher.getInstance("RSA/NONE/NoPadding");
+			rsaAADigest = MessageDigest.getInstance("SHA1"); /* NOTE: for output length measurement only. -- MO */
+			rsaAASignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", JMRTDSecurityProvider.getBouncyCastleProvider());
+			rsaAACipher = Cipher.getInstance("RSA/NONE/NoPadding");
+
+			/* NOTE: These will be updated in doAA after caller has read ActiveAuthenticationSecurityInfo. */
+			ecdsaAASignature = Signature.getInstance("SHA256withECDSA", JMRTDSecurityProvider.getBouncyCastleProvider());
+			ecdsaAADigest = MessageDigest.getInstance("SHA-256"); /* NOTE: for output length measurement only. -- MO */
+
 			random = new SecureRandom();
 			authListeners = new ArrayList<AuthListener>();
 			fs = new MRTDFileSystem(this);
@@ -719,37 +732,96 @@ public class PassportService extends PassportApduService implements Serializable
 	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
 	 * @param publicKey the public key to use (usually read from the card)
+	 * @param digestAlgorithm the digest algorithm to use, or null
 	 * 
 	 * @return a boolean indicating whether the card was authenticated
 	 * 
 	 * @throws GeneralSecurityException if something goes wrong
 	 */
-	public boolean doAA(PublicKey publicKey) throws CardServiceException {
+	public boolean doAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm) throws CardServiceException {
 		try {
-			String algorithm = publicKey.getAlgorithm();
-			if ("RSA".equals(algorithm)) {
-				byte[] m2 = new byte[8];
+			String pubKeyAlgorithm = publicKey.getAlgorithm();
+			if ("RSA".equals(pubKeyAlgorithm)) {
+				/* FIXME: check that digestAlgorithm = "SHA1" in this case, check (and re-initialize) rsaAASignature (and rsaAACipher). */
+				if (!"SHA1".equalsIgnoreCase(digestAlgorithm)
+						|| !"SHA-1".equalsIgnoreCase(digestAlgorithm)
+						|| !"SHA1WithRSA/ISO9796-2".equalsIgnoreCase(signatureAlgorithm)) {
+					LOGGER.warning("Unexpected algorithms for RSA AA: "
+							+ "digest algorithm = " + (digestAlgorithm == null ? "null" : digestAlgorithm)
+							+ ", signature algorithm = " + (signatureAlgorithm == null ? "null" : signatureAlgorithm));
+
+					rsaAADigest = MessageDigest.getInstance(digestAlgorithm); /* NOTE: for output length measurement only. -- MO */
+					rsaAASignature = Signature.getInstance(signatureAlgorithm, JMRTDSecurityProvider.getBouncyCastleProvider());
+				}
+
+				RSAPublicKey rsaPublicKey = (RSAPublicKey)publicKey;
+				rsaAACipher.init(Cipher.DECRYPT_MODE, rsaPublicKey);
+				rsaAASignature.initVerify(rsaPublicKey);
+
+				int challengeLength = 8;
+				byte[] m2 = new byte[challengeLength];
 				random.nextBytes(m2);
-				byte[] response = sendAA(publicKey, m2);
-				aaCipher.init(Cipher.DECRYPT_MODE, publicKey);
-				aaSignature.initVerify(publicKey);
-				int digestLength = aaDigest.getDigestLength(); /* should always be 20 */
+				byte[] response = sendAA(rsaPublicKey, m2);
+				int digestLength = rsaAADigest.getDigestLength(); /* SHA1 should be 20 bytes = 160 bits */
 				assert(digestLength == 20);
-				byte[] plaintext = aaCipher.doFinal(response);
+				byte[] plaintext = rsaAACipher.doFinal(response);
 				byte[] m1 = Util.recoverMessage(digestLength, plaintext);
-				aaSignature.update(m1);
-				aaSignature.update(m2);
-				boolean success = aaSignature.verify(response);
+				rsaAASignature.update(m1);
+				rsaAASignature.update(m2);
+				boolean success = rsaAASignature.verify(response);
 				AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
 				notifyAAPerformed(event);
 				if (success) {
 					state = AA_AUTHENTICATED_STATE;
 				}
 				return success;
-			} else if ("EC".equals(algorithm)) {
-				LOGGER.warning("DEBUG: Active Authentication using \"" + algorithm + "\" public key not yet implemented");
-				return false;
+			} else if ("ECDSA".equals(pubKeyAlgorithm) || "EC".equals(pubKeyAlgorithm)) {
+				ECPublicKey ecdsaPublicKey = (ECPublicKey)publicKey;
+
+				if (ecdsaAASignature == null || signatureAlgorithm != null && !signatureAlgorithm.equals(ecdsaAASignature.getAlgorithm())) {
+					LOGGER.warning("Re-initializing ecdsaAASignature with signature algorithm " + signatureAlgorithm);
+					ecdsaAASignature = Signature.getInstance(signatureAlgorithm);
+				}
+				if (ecdsaAADigest == null || digestAlgorithm != null && !digestAlgorithm.equals(ecdsaAADigest.getAlgorithm())) {
+					LOGGER.warning("Re-initializing ecdsaAADigest with digest algorithm " + digestAlgorithm);
+					ecdsaAADigest = MessageDigest.getInstance(digestAlgorithm);					
+				}
+
+				ecdsaAASignature.initVerify(ecdsaPublicKey);
+
+				int challengeLength = 8;
+				byte[] challenge = new byte[challengeLength];
+				random.nextBytes(challenge);
+				byte[] response = sendAA(publicKey, challenge);
+
+				if (response.length % 2 != 0) {
+					LOGGER.warning("Active Authentication response is not of even length");
+				}
+
+				int l = response.length / 2;
+				byte[] rBytes = new byte[l];
+				byte[] sBytes = new byte[l];				
+				System.arraycopy(response, 0, rBytes, 0, l);
+				System.arraycopy(response, l, sBytes, 0, l);
+
+				BigInteger r = Util.os2i(response, 0, l);
+				BigInteger s = Util.os2i(response, l, l);
+
+				ecdsaAASignature.update(challenge);
+
+				try {
+
+					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
+					boolean success = ecdsaAASignature.verify(asn1Sequence.getEncoded());
+					return success;
+				} catch (IOException ioe) {
+					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
+					ioe.printStackTrace();
+					return false;
+				}
+
 			} else {
+				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
 				return false;
 			}
 		} catch (IllegalArgumentException iae) {
