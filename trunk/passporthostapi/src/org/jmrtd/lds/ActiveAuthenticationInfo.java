@@ -22,6 +22,8 @@
 
 package org.jmrtd.lds;
 
+import java.security.NoSuchAlgorithmException;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -180,5 +182,15 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 			e.printStackTrace();
 			throw new IllegalArgumentException("Malformed ActiveAuthenticationInfo.");
 		}
+	}
+	
+	public static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {		
+		if (ECDSA_PLAIN_SHA1_OID.equals(oid)) { return "SHA1withECDSA"; }
+		if (ECDSA_PLAIN_SHA224_OID.equals(oid)) { return "SHA224withECDSA"; }
+		if (ECDSA_PLAIN_SHA256_OID.equals(oid)) { return "SHA256withECDSA"; }
+		if (ECDSA_PLAIN_SHA384_OID.equals(oid)) { return "SHA384withECDSA"; }
+		if (ECDSA_PLAIN_SHA512_OID.equals(oid)) { return "SHA512withECDSA"; }
+		if (ECDSA_PLAIN_RIPEMD160_OID.equals(oid)) { return "RIPEMD160withECDSA"; }
+		throw new NoSuchAlgorithmException("Unknown OID " + oid);
 	}
 }

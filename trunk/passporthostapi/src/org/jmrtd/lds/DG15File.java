@@ -34,8 +34,6 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.util.Hex;
-
 /**
  * File structure for the EF_DG15 file.
  * Datagroup 15 contains the public key used in AA.
@@ -95,7 +93,7 @@ public class DG15File extends DataGroup {
 				PublicKey publicKey = keyFactory.generatePublic(pubKeySpec);
 				return publicKey;
 			} catch (InvalidKeySpecException ikse) {
-				LOGGER.info("DEBUG: public key is not \"" + algorithm + "\"");
+				/* NOTE: Ignore, try next algorithm. */
 			}
 		}
 		throw new InvalidAlgorithmParameterException();

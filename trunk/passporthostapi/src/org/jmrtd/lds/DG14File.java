@@ -166,6 +166,17 @@ public class DG14File extends DataGroup {
 		return map;
 	}
 
+	public List<ActiveAuthenticationInfo> getActiveAuthenticationInfos() {
+		List<ActiveAuthenticationInfo> resultList = new ArrayList<ActiveAuthenticationInfo>();
+		for (SecurityInfo securityInfo : securityInfos) {
+			if (securityInfo instanceof ActiveAuthenticationInfo) {
+				ActiveAuthenticationInfo activeAuthenticationInfo = (ActiveAuthenticationInfo)securityInfo;
+				resultList.add(activeAuthenticationInfo);
+			}
+		}
+		return resultList;
+	}
+	
 	/**
 	 * Gets the mapping of key identifiers to public keys. The key identifier
 	 * may be -1 if there is only one key.

@@ -75,6 +75,7 @@ import net.sourceforge.scuba.util.Hex;
 import org.jmrtd.VerificationStatus.HashMatchResult;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
+import org.jmrtd.lds.ActiveAuthenticationInfo;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
@@ -928,7 +929,28 @@ public class Passport {
 				return;
 			}
 			PublicKey pubKey = dg15.getPublicKey();
-			if (service.doAA(pubKey)) {
+			String pubKeyAlgorithm = pubKey.getAlgorithm();
+			String digestAlgorithm = "SHA1";
+			String signatureAlgorithm = "SHA1WithRSA/ISO9796-2";
+			if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
+				DG14File dg14File = lds.getDG14File();
+				List<ActiveAuthenticationInfo> activeAuthenticationInfos = dg14File.getActiveAuthenticationInfos();
+				int activeAuthenticationInfoCount = (activeAuthenticationInfos == null ? 0 : activeAuthenticationInfos.size());
+				if (activeAuthenticationInfoCount < 1) {
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Found no active authentication info in EF.DG14");
+					return;
+				} else if (activeAuthenticationInfoCount > 1) {
+					LOGGER.warning("Found " + activeAuthenticationInfoCount + " in EF.DG14, expected 1.");
+				}
+				ActiveAuthenticationInfo activeAuthenticationInfo = activeAuthenticationInfos.get(0);
+
+				String signatureAlgorithmOID = activeAuthenticationInfo.getSignatureAlgorithmOID();
+
+				signatureAlgorithm = ActiveAuthenticationInfo.lookupMnemonicByOID(signatureAlgorithmOID);
+
+				digestAlgorithm = Util.inferDigestAlgorithmFromSignatureAlgorithm(signatureAlgorithm);
+			}
+			if (service.doAA(pubKey, digestAlgorithm, signatureAlgorithm)) {
 				verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded");
 			} else {
 				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure");
@@ -1203,27 +1225,6 @@ public class Passport {
 			return hashResult;
 		}
 	}
-
-	//	private List<Integer> getCOMDGList(COMFile com) {
-	//		List<Integer> comDGList = new ArrayList<Integer>();
-	//		for(Integer tag : com.getTagList()) {
-	//			try {
-	//				int dgNumber = LDSFileUtil.lookupDataGroupNumberByTag(tag);
-	//				comDGList.add(dgNumber);
-	//			} catch (NumberFormatException nfe) {
-	//				LOGGER.warning("Found non-datagroup tag 0x" + Integer.toHexString(tag) + " in COM.");
-	//			}
-	//		}
-	//		Collections.sort(comDGList);
-	//		return comDGList;
-	//	}
-	//
-	//	private List<Integer> getSODDGList(SODFile sod) {
-	//		Map<Integer, byte[]> hashes = sod.getDataGroupHashes();
-	//		List<Integer> sodDGList = new ArrayList<Integer>(hashes.keySet());
-	//		Collections.sort(sodDGList);
-	//		return sodDGList;
-	//	}
 
 	private MessageDigest getDigest(String digestAlgorithm) throws NoSuchAlgorithmException {
 		if (digest != null) {
