@@ -26,7 +26,21 @@ import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
+import java.security.PublicKey;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECField;
+import java.security.spec.ECFieldF2m;
+import java.security.spec.ECFieldFp;
+import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
+import java.security.spec.ECPublicKeySpec;
+import java.security.spec.EllipticCurve;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
@@ -34,6 +48,7 @@ import javax.crypto.spec.DESedeKeySpec;
 
 import net.sourceforge.scuba.util.Hex;
 
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.jmrtd.lds.MRZInfo;
 
 /**
@@ -316,6 +331,145 @@ public class Util {
 		if ("SHA384".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-384"; }
 		if ("SHA512".equalsIgnoreCase(digestAlgorithm)) { digestAlgorithm = "SHA-512"; }
 		return digestAlgorithm;
+	}
+
+	/**
+	 * The public key algorithm (like RSA or) with some extra information (like 1024 bits).
+	 * 
+	 * @param publicKey a public key
+	 * 
+	 * @return the algorithm
+	 */
+	public static String getDetailedPublicKeyAlgorithm(PublicKey publicKey) {
+		String publicKeyAlgorithm = publicKey.getAlgorithm();
+		if (publicKey instanceof RSAPublicKey) {
+			RSAPublicKey rsaPublicKey = (RSAPublicKey)publicKey;
+			int publicKeyBitLength = rsaPublicKey.getModulus().bitLength();
+			publicKeyAlgorithm += " [" + publicKeyBitLength + " bit]";
+		} else if (publicKey instanceof ECPublicKey) {
+			ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
+			ECParameterSpec ecParams = ecPublicKey.getParams();
+			String name = getCurveName(ecParams);
+			if (name != null) {
+				publicKeyAlgorithm += " [" + name + "]";
+			}
+		}
+		return publicKeyAlgorithm;
+	}
+	
+	/**
+	 * Gets the curve name if known (or null).
+	 * 
+	 * @param params an specification of the curve
+	 * 
+	 * @return the name
+	 */
+	public static String getCurveName(ECParameterSpec params) {
+		org.bouncycastle.jce.spec.ECNamedCurveSpec namedECParams = toNamedCurveSpec(params);
+		if (namedECParams == null) { return null; }
+		return namedECParams.getName();
+	}
+
+	/**
+	 * Translates (named) curve spec to JCA compliant explicit param spec.
+	 * 
+	 * @param params
+	 * @return another spec not name based
+	 */
+	public static ECParameterSpec toExplicitECParameterSpec(ECParameterSpec params) {
+		try {
+			ECPoint g = params.getGenerator();
+			BigInteger n = params.getOrder(); // Order, order
+			int h = params.getCofactor(); // co-factor
+			EllipticCurve curve = params.getCurve();
+			BigInteger a = curve.getA();
+			BigInteger b = curve.getB();
+			ECField field = curve.getField();
+			if (field instanceof ECFieldFp) {
+				BigInteger p = ((ECFieldFp)field).getP();
+				ECField resultField = new ECFieldFp(p);
+				EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
+				ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
+				return resultParams;
+			} else if (field instanceof ECFieldF2m) {
+				int m = ((ECFieldF2m)field).getM();
+				ECField resultField = new ECFieldF2m(m);
+				EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
+				ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
+				return resultParams;
+			} else {
+				System.out.println("WARNING: could not make named EC param spec explicit");
+				return params;
+			}
+		} catch (Exception e) {
+			System.out.println("WARNING: could not make named EC param spec explicit");
+			return params;
+		}
+	}
+
+	/**
+	 * Reconstructs the public key to use explicit domain params for EC public keys
+	 * 
+	 * @param publicKey the public key
+	 * 
+	 * @return the same public key (if not EC or error), or a reconstructed one (if EC)
+	 */
+	public static PublicKey reconstructPublicKey(PublicKey publicKey) {
+		if (!(publicKey instanceof ECPublicKey)) { return publicKey; }
+		try {
+			ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
+			ECPoint w = ecPublicKey.getW();
+			ECParameterSpec params = ecPublicKey.getParams();
+			params = toExplicitECParameterSpec(params);
+			if (params == null) { return publicKey; }
+			ECPublicKeySpec explicitPublicKeySpec = new ECPublicKeySpec(w, params);
+			return KeyFactory.getInstance("EC", "BC").generatePublic(explicitPublicKeySpec);
+		} catch (Exception e) {
+			System.out.println("WARNING: could not make public key param spec explicit");
+			return publicKey;
+		}
+	}
+
+	private static org.bouncycastle.jce.spec.ECNamedCurveSpec toNamedCurveSpec(ECParameterSpec ecParamSpec) {
+		if (ecParamSpec == null) { return null; }
+		if (ecParamSpec instanceof org.bouncycastle.jce.spec.ECNamedCurveSpec) { return (org.bouncycastle.jce.spec.ECNamedCurveSpec)ecParamSpec; }
+		List<String> names = (List<String>)Collections.list(ECNamedCurveTable.getNames());
+		List<org.bouncycastle.jce.spec.ECNamedCurveSpec> namedSpecs = new ArrayList<org.bouncycastle.jce.spec.ECNamedCurveSpec>();
+		for (String name: names) {
+			org.bouncycastle.jce.spec.ECNamedCurveSpec namedSpec = toECNamedCurveSpec(ECNamedCurveTable.getParameterSpec(name));
+			if (namedSpec.getCurve().equals(ecParamSpec.getCurve())
+					&& namedSpec.getGenerator().equals(ecParamSpec.getGenerator())
+					&& namedSpec.getOrder().equals(ecParamSpec.getOrder())
+					&& namedSpec.getCofactor() == ecParamSpec.getCofactor()
+					) {
+				namedSpecs.add(namedSpec);
+			}
+		}
+		if (namedSpecs.size() == 0) {
+			//			throw new IllegalArgumentException("No named curve found");
+			return null;
+		} else if (namedSpecs.size() == 1) {
+			return namedSpecs.get(0);
+		} else {
+			return namedSpecs.get(0);
+		}
+	}
+	
+	/**
+	 * Translates internal BC named curve spec to BC provided JCA compliant named curve spec.
+	 * 
+	 * @param namedParamSpec
+	 * 
+	 * @return
+	 */
+	public static org.bouncycastle.jce.spec.ECNamedCurveSpec toECNamedCurveSpec(org.bouncycastle.jce.spec.ECNamedCurveParameterSpec namedParamSpec) {
+		String name = namedParamSpec.getName();
+		org.bouncycastle.math.ec.ECCurve curve = namedParamSpec.getCurve();
+		org.bouncycastle.math.ec.ECPoint generator = namedParamSpec.getG();
+		BigInteger order = namedParamSpec.getN();
+		BigInteger coFactor = namedParamSpec.getH();
+		byte[] seed = namedParamSpec.getSeed();
+		return new org.bouncycastle.jce.spec.ECNamedCurveSpec(name, curve, generator, order, coFactor, seed);
 	}
 }
 
