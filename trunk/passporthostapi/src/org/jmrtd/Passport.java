@@ -78,12 +78,14 @@ import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.ActiveAuthenticationInfo;
 import org.jmrtd.lds.COMFile;
 import org.jmrtd.lds.CVCAFile;
+import org.jmrtd.lds.CardAccessFile;
 import org.jmrtd.lds.ChipAuthenticationPublicKeyInfo;
 import org.jmrtd.lds.DG14File;
 import org.jmrtd.lds.DG15File;
 import org.jmrtd.lds.DG1File;
 import org.jmrtd.lds.LDS;
 import org.jmrtd.lds.LDSFileUtil;
+import org.jmrtd.lds.PACEInfo;
 import org.jmrtd.lds.SODFile;
 import org.jmrtd.lds.SecurityInfo;
 
@@ -186,7 +188,25 @@ public class Passport {
 		this.trustManager = trustManager;
 		try {
 			service.open();
-			/* FIXME: check SAC/PACE here. */
+			
+			
+			/* Find out whether this MRTD supports SAC. */
+			try {
+				CardAccessFile cardAccessFile = new CardAccessFile(service.getInputStream(PassportService.EF_CARD_ACCESS));
+				Collection<SecurityInfo> securityInfos = cardAccessFile.getSecurityInfos();
+				LOGGER.info("DEBUG: found a card access file: securityInfos = " + securityInfos);
+				for (SecurityInfo securityInfo: securityInfos) {
+					if (securityInfo instanceof PACEInfo) {
+						featureStatus.setSAC(FeatureStatus.Verdict.PRESENT);
+						break;
+					}
+				}
+			} catch (Exception e) {
+				LOGGER.info("DEBUG: failed to get card access file: " + e.getMessage());
+				e.printStackTrace();
+			}
+			
+			
 			service.sendSelectApplet();
 		} catch (CardServiceException cse) {
 			throw cse;
@@ -194,7 +214,7 @@ public class Passport {
 			e.printStackTrace();
 			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
-
+		
 		/* Find out whether this MRTD supports BAC. */
 		try {
 			/* Attempt to read EF.COM before BAC. */
@@ -282,7 +302,7 @@ public class Passport {
 		}
 		verificationStatus.setHT(VerificationStatus.Verdict.UNKNOWN, verificationStatus.getHTReason(), hashResults);
 		//		notifyVerificationStatusChangeListeners(verificationStatus);
-
+		
 		/* Check EAC support by DG14 presence. */
 		if (dgNumbers.contains(14)) {
 			featureStatus.setEAC(FeatureStatus.Verdict.PRESENT);
@@ -744,7 +764,7 @@ public class Passport {
 		}
 		return bacKeySpec;
 	}
-
+	
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
 		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;

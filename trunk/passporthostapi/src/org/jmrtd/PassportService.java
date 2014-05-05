@@ -473,8 +473,7 @@ public class PassportService extends PassportApduService implements Serializable
 				md = MessageDigest.getInstance("SHA1");
 				eacKeyHash = md.digest(keyData);
 			} else if ("ECDH".equals(algName)) {
-				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey =
-						(org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
+				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
 				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
@@ -799,10 +798,6 @@ public class PassportService extends PassportApduService implements Serializable
 				}
 
 				int l = response.length / 2;
-				byte[] rBytes = new byte[l];
-				byte[] sBytes = new byte[l];				
-				System.arraycopy(response, 0, rBytes, 0, l);
-				System.arraycopy(response, l, sBytes, 0, l);
 
 				BigInteger r = Util.os2i(response, 0, l);
 				BigInteger s = Util.os2i(response, l, l);
@@ -812,14 +807,12 @@ public class PassportService extends PassportApduService implements Serializable
 				try {
 
 					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
-					boolean success = ecdsaAASignature.verify(asn1Sequence.getEncoded());
-					return success;
+					return ecdsaAASignature.verify(asn1Sequence.getEncoded());
 				} catch (IOException ioe) {
 					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
 					ioe.printStackTrace();
 					return false;
 				}
-
 			} else {
 				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
 				return false;
