@@ -44,13 +44,23 @@ public class FeatureStatus {
 		NOT_PRESENT;	/* Not present */
 	};
 
-	private Verdict hasBAC, hasAA, hasEAC;
+	private Verdict hasSAC, hasBAC, hasAA, hasEAC;
 
 	public FeatureStatus() {
+		this.hasSAC = Verdict.UNKNOWN;
 		this.hasBAC = Verdict.UNKNOWN;
 		this.hasAA = Verdict.UNKNOWN;
 		this.hasEAC = Verdict.UNKNOWN;
 	}
+
+	public void setSAC(Verdict hasSAC) {
+		this.hasSAC = hasSAC;
+	}
+	
+	public Verdict hasSAC() {
+		return hasSAC;
+	}
+
 	
 	public void setBAC(Verdict hasBAC) {
 		this.hasBAC = hasBAC;

@@ -218,6 +218,8 @@ public class LDS {
 		} else if (file instanceof CVCAFile) {
 			CVCAFile cvca = (CVCAFile)file;
 			put(cvca.getFID(), cvca);
+		} else if (file instanceof CardAccessFile) {
+			put(PassportService.EF_CARD_ACCESS, file);
 		} else if (file instanceof DataGroup) {
 			DataGroup dataGroup = (DataGroup)file;
 			int tag = dataGroup.getTag();
@@ -239,6 +241,10 @@ public class LDS {
 		return file;
 	}
 
+	public CardAccessFile getCardAccessFile() throws IOException {
+		return (CardAccessFile)getFile(PassportService.EF_CARD_ACCESS);
+	}
+	
 	public CVCAFile getCVCAFile() throws IOException {
 		/* Check DG14 for available CVCA file ids. */
 		short cvcaFID = PassportService.EF_CVCA;
