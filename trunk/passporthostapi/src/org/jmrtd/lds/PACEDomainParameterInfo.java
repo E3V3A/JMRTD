@@ -1,5 +1,6 @@
 package org.jmrtd.lds;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -14,27 +15,43 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * 
  * @version $Revision$
  * 
- * @since 0.4.10
+ * @since 0.5.1
  */
 public class PACEDomainParameterInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = -5851251908152594728L;
 
-	/** Value for algorithm OID. */
-	public static final String
-	ID_DH_PUBLIC_NUMBER = "1.2.840.10046.2.1",
-	ID_EC_PUBLIC_KEY = "1.2.840.10045.2.1";
+	/**
+	 * Value for parameter algorithm OID (part of parameters AlgorithmIdentifier).
+	 * <code>dhpublicnumber OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) ansi-x942(10046) number-type(2) 1 }</code>.
+	 */
+	private static final String ID_DH_PUBLIC_NUMBER = "1.2.840.10046.2.1";
+
+	/**
+	 * Value for parameter algorithm OID (part of parameters AlgorithmIdentifier).
+	 * <code>ecPublicKey OBJECT IDENTIFIER ::= { iso(1) member-body(2) us(840) ansi-x962(10045) keyType(2) 1 }</code>.
+	 */
+	private static final String ID_EC_PUBLIC_KEY = "1.2.840.10045.2.1";
 
 	private String protocolOID;
 	private AlgorithmIdentifier domainParameter;
 	private int parameterId;
 
-	public PACEDomainParameterInfo(String protocolOID, AlgorithmIdentifier domainParameter) {
-		this(protocolOID, domainParameter, -1);
+	/**
+	 * 
+	 * @param protocolOID Must be {@link SecurityInfo.#ID_PACE_DH_GM}, {@link SecurityInfo.#ID_PACE_ECDH_GM}, {@link SecurityInfo.#ID_PACE_DH_IM}, {@link SecurityInfo.#ID_PACE_ECDH_IM}
+	 * @param parameters Parameters 
+	 */
+	public PACEDomainParameterInfo(String protocolOID, ASN1Encodable parameters) {
+		this(protocolOID, parameters, -1);
 	}
-	
-	public PACEDomainParameterInfo(String protocolOID, AlgorithmIdentifier domainParameter, int parameterId) {
-		if (!checkRequiredIdentifier(protocolOID)) { throw new IllegalArgumentException("Invalid protocol id"); }
+
+	public PACEDomainParameterInfo(String protocolOID, ASN1Encodable parameters, int parameterId) {
+		this(protocolOID, toAlgorithmIdentifier(protocolOID, parameters), parameterId);
+	}
+
+	private PACEDomainParameterInfo(String protocolOID, AlgorithmIdentifier domainParameter, int parameterId) {
+		if (!checkRequiredIdentifier(protocolOID)) { throw new IllegalArgumentException("Invalid protocol id: " + protocolOID); }
 		this.protocolOID = protocolOID;
 		this.domainParameter = domainParameter;
 		this.parameterId = parameterId;
@@ -53,9 +70,9 @@ public class PACEDomainParameterInfo extends SecurityInfo {
 	public int getParameterId() {
 		return parameterId;
 	}
-	
-	public AlgorithmIdentifier getDomainParameter() {
-		return domainParameter;
+
+	public ASN1Encodable getParameters() {
+		return domainParameter.getParameters();
 	}
 
 	@Override
@@ -102,8 +119,19 @@ public class PACEDomainParameterInfo extends SecurityInfo {
 		PACEDomainParameterInfo otherPACEDomainParameterInfo = (PACEDomainParameterInfo)other;
 		return getDERObject().equals(otherPACEDomainParameterInfo.getDERObject());
 	}
-	
+
 	public static boolean checkRequiredIdentifier(String oid) {
 		return ID_PACE_DH_GM.equals(oid) || ID_PACE_ECDH_GM.equals(oid) || ID_PACE_DH_IM.equals(oid) || ID_PACE_ECDH_IM.equals(oid);
+	}
+
+	/* ONLY PRIVATE METHODS BELOW */
+
+	private static AlgorithmIdentifier toAlgorithmIdentifier(String protocolOID, ASN1Encodable parameters) {
+		if (ID_PACE_DH_GM.equals(protocolOID) || ID_PACE_DH_IM.equals(protocolOID)) {
+			return new AlgorithmIdentifier(new ASN1ObjectIdentifier(ID_DH_PUBLIC_NUMBER), parameters);
+		} else if (ID_PACE_ECDH_GM.equals(protocolOID) || ID_PACE_ECDH_IM.equals(protocolOID)) {
+			return new AlgorithmIdentifier(new ASN1ObjectIdentifier(ID_EC_PUBLIC_KEY), parameters);
+		}
+		throw new IllegalArgumentException("Cannot infer algorithm OID from protocol OID: " + protocolOID);
 	}
 }

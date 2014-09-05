@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
@@ -58,8 +59,9 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 	private static final long serialVersionUID = -2859033943345961793L;
 
-	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(
-			new byte[8]);
+	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[8]);
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private SecretKey ksEnc, ksMac;
 	private transient Cipher cipher;
@@ -78,8 +80,8 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * 
 	 * @throws GeneralSecurityException
 	 *             when the available JCE providers cannot provide the necessary
-	 *             cryptographic primitives ("DESede/CBC/Nopadding" Cipher,
-	 *             "ISO9797Alg3Mac" Mac).
+	 *             cryptographic primitives
+	 *             ("DESede/CBC/Nopadding" Cipher, "ISO9797Alg3Mac" Mac).
 	 */
 	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac)
 	throws GeneralSecurityException {
@@ -89,6 +91,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	/**
 	 * Constructs a secure messaging wrapper based on the secure messaging
 	 * session keys and the initial value of the send sequence counter.
+	 * Used in BAC and EAC 1.
 	 * 
 	 * @param ksEnc
 	 *            the session key for encryption
@@ -102,15 +105,22 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 *             cryptographic primitives ("DESede/CBC/Nopadding" Cipher,
 	 *             "ISO9797Alg3Mac" Mac).
 	 */
-	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc)
-	throws GeneralSecurityException {
+	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc) throws GeneralSecurityException {
+		this(ksEnc, ksMac, "DESede/CBC/NoPadding", "ISO9797Alg3Mac", ssc);
+	}
+
+	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg) throws GeneralSecurityException {
+		this(ksEnc, ksMac, cipherAlg, macAlg, 0L);
+	}
+	
+	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg, long ssc) throws GeneralSecurityException {
 		this.ksEnc = ksEnc;
 		this.ksMac = ksMac;
 		this.ssc = ssc;
-		cipher = Cipher.getInstance("DESede/CBC/NoPadding");
-		mac = Mac.getInstance("ISO9797Alg3Mac");
+		cipher = Cipher.getInstance(cipherAlg);
+		mac = Mac.getInstance(macAlg);		
 	}
-
+	
 	/**
 	 * Gets the current value of the send sequence counter.
 	 * 
@@ -181,15 +191,13 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 */
 	/*@ requires apdu != null && 4 <= len && len <= apdu.length;
 	 */
-	private CommandAPDU wrapCommandAPDU(CommandAPDU commandAPDU)
-	throws GeneralSecurityException, IOException {
-
+	private CommandAPDU wrapCommandAPDU(CommandAPDU commandAPDU) throws GeneralSecurityException, IOException {
 		int lc = commandAPDU.getNc();
 		int le = commandAPDU.getNe();
 
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
-		byte[] maskedHeader = new byte[] {(byte)(commandAPDU.getCLA() | (byte)0x0C), (byte)commandAPDU.getINS(), (byte)commandAPDU.getP1(), (byte)commandAPDU.getP2()};
+		byte[] maskedHeader = new byte[] { (byte)(commandAPDU.getCLA() | (byte)0x0C), (byte)commandAPDU.getINS(), (byte)commandAPDU.getP1(), (byte)commandAPDU.getP2() };
 
 		byte[] paddedHeader = Util.pad(maskedHeader);
 
@@ -201,9 +209,9 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 		if (le > 0) {
 			bOut.reset();
-			bOut.write((byte) 0x97);
-			bOut.write((byte) 0x01);
-			bOut.write((byte) le);
+			bOut.write((byte)0x97);
+			bOut.write((byte)0x01);
+			bOut.write((byte)le);
 			do97 = bOut.toByteArray();
 		}
 
@@ -213,7 +221,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			byte[] ciphertext = cipher.doFinal(data);
 
 			bOut.reset();
-			bOut.write(hasDO85 ? (byte) 0x85 : (byte) 0x87);
+			bOut.write(hasDO85 ? (byte)0x85 : (byte)0x87);
 			bOut.write(TLVUtil.getLengthAsBytes(ciphertext.length + (hasDO85 ? 0 : 1)));
 			if(!hasDO85) { bOut.write(0x01); };
 			bOut.write(ciphertext, 0, ciphertext.length);
@@ -237,11 +245,16 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 		/* Compute cryptographic checksum... */
 		mac.init(ksMac);
 		byte[] cc = mac.doFinal(n);
+		int ccLength = cc.length;
+		if (ccLength != 8) {
+			LOGGER.warning("Found mac length of " + ccLength + ", only using first 8 bytes");
+			ccLength = 8;
+		}
 
 		bOut.reset();
 		bOut.write((byte) 0x8E);
-		bOut.write(cc.length);
-		bOut.write(cc, 0, cc.length);
+		bOut.write(ccLength);
+		bOut.write(cc, 0, ccLength);
 		byte[] do8E = bOut.toByteArray();
 
 		/* Construct protected apdu... */
@@ -266,8 +279,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * 
 	 * @return a byte array containing the unwrapped apdu buffer.
 	 */
-	private byte[] unwrapResponseAPDU(byte[] rapdu, int len)
-	throws GeneralSecurityException, IOException {
+	private byte[] unwrapResponseAPDU(byte[] rapdu, int len) throws GeneralSecurityException, IOException {
 		long oldssc = ssc;
 		try {
 			if (rapdu == null || rapdu.length < 2 || len < 2) {
@@ -323,8 +335,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * @param inputStream
 	 *            inputstream to read from.
 	 */
-	private byte[] readDO87(DataInputStream inputStream, boolean do85) throws IOException,
-	GeneralSecurityException {
+	private byte[] readDO87(DataInputStream inputStream, boolean do85) throws IOException, GeneralSecurityException {
 		/* Read length... */
 		int length = 0;
 		int buf = inputStream.readUnsignedByte();
@@ -383,8 +394,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * @param in
 	 *            inputstream to read from.
 	 */
-	private byte[] readDO8E(DataInputStream in) throws IOException,
-	GeneralSecurityException {
+	private byte[] readDO8E(DataInputStream in) throws IOException, GeneralSecurityException {
 		int length = in.readUnsignedByte();
 		if (length != 8) {
 			throw new IllegalStateException("DO'8E wrong length");
@@ -394,8 +404,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 		return cc1;
 	}
 
-	private boolean checkMac(byte[] rapdu, byte[] cc1)
-	throws GeneralSecurityException {
+	private boolean checkMac(byte[] rapdu, byte[] cc1) throws GeneralSecurityException {
 		try {
 			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 			DataOutputStream dataOut = new DataOutputStream(bOut);
@@ -404,9 +413,14 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			byte[] paddedData = Util.pad(rapdu, 0, rapdu.length - 2 - 8 - 2);
 			dataOut.write(paddedData, 0, paddedData.length);
 			dataOut.flush();
+			dataOut.close();
 			mac.init(ksMac);
 			byte[] cc2 = mac.doFinal(bOut.toByteArray());
-			dataOut.close();
+			if (cc2.length > 8 && cc1.length == 8) {
+				byte[] newCC2 = new byte[8];
+				System.arraycopy(cc2, 0, newCC2, 0, newCC2.length);
+				cc2 = newCC2;
+			}
 			return Arrays.equals(cc1, cc2);
 		} catch (IOException ioe) {
 			return false;

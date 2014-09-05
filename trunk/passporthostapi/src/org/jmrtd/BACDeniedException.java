@@ -39,7 +39,7 @@ public class BACDeniedException extends CardServiceException {
 
 	private static final long serialVersionUID = -7094953658210693249L;
 	
-	private List<BACKey> triedBACEntries;
+	private List<BACKeySpec> triedBACEntries;
 	
 	/**
 	 * Creates an exception.
@@ -47,7 +47,7 @@ public class BACDeniedException extends CardServiceException {
 	 * @param msg the message
 	 * @param triedBACEntries the BAC entries that were tried before BAC failed
 	 */
-	public BACDeniedException(String msg, List<BACKey> triedBACEntries, int sw) {
+	public BACDeniedException(String msg, List<BACKeySpec> triedBACEntries, int sw) {
 		super(msg, sw);
 		this.triedBACEntries = triedBACEntries;
 	}
@@ -57,7 +57,7 @@ public class BACDeniedException extends CardServiceException {
 	 * 
 	 * @return a list
 	 */
-	public List<BACKey> getTriedEntries() {
+	public List<BACKeySpec> getTriedEntries() {
 		return triedBACEntries;
 	}
 }

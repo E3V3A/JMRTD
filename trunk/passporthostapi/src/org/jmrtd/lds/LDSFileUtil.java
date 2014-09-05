@@ -66,6 +66,7 @@ public class LDSFileUtil {
 		case PassportService.EF_DG15: return new DG15File(inputStream);
 		case PassportService.EF_DG16: throw new IllegalArgumentException("DG16 files are not yet supported");
 		case PassportService.EF_SOD: return new SODFile(inputStream);
+		case PassportService.EF_CVCA: return new CVCAFile(inputStream);
 		default:
 			BufferedInputStream bufferedIn = new BufferedInputStream(inputStream, 37);
 			try {

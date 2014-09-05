@@ -23,9 +23,7 @@
 package org.jmrtd;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -55,22 +53,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
 
 import javax.security.auth.x500.X500Principal;
 
 import net.sourceforge.scuba.smartcards.CardFileInputStream;
 import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.util.Hex;
 
 import org.jmrtd.VerificationStatus.HashMatchResult;
 import org.jmrtd.cert.CVCPrincipal;
@@ -102,11 +95,9 @@ import org.jmrtd.lds.SecurityInfo;
  */
 public class Passport {
 
-	private static final int DEFAULT_MAX_TRIES_PER_BAC_ENTRY = 5;
-
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	private final static List<BACKey> EMPTY_TRIED_BAC_ENTRY_LIST = Collections.emptyList();
+	private final static List<BACKeySpec> EMPTY_TRIED_BAC_ENTRY_LIST = Collections.emptyList();
 	private final static List<Certificate> EMPTY_CERTIFICATE_CHAIN = Collections.emptyList();
 
 	/** The hash function for DG hashes. */
@@ -143,7 +134,7 @@ public class Passport {
 	}
 
 	/**
-	 * Creates a document from an LDS data structure.
+	 * Creates a document from an LDS data structure and additional information.
 	 * 
 	 * @param lds the logical data structure
 	 * @param docSigningPrivateKey the document signing private key
@@ -163,50 +154,66 @@ public class Passport {
 	 * 
 	 * @param service the service to read from
 	 * @param trustManager the trust manager (CSCA, CVCA)
+	 * @param bacKey the BAC key to use
+	 * 
+	 * @throws CardServiceException on error
+	 */
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACKeySpec bacKey) throws CardServiceException {
+		this(service, trustManager, Collections.singletonList(bacKey));
+	}
+
+	/**
+	 * Creates a document by reading it from a service.
+	 * 
+	 * @param service the service to read from
+	 * @param trustManager the trust manager (CSCA, CVCA)
 	 * @param bacStore the BAC entries
 	 * 
 	 * @throws CardServiceException on error
 	 */
 	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore) throws CardServiceException {
-		this(service, trustManager, bacStore, DEFAULT_MAX_TRIES_PER_BAC_ENTRY);
-	}
-
-	/**
-	 * Creates a document by reading it from a card service.
-	 * 
-	 * @param service the service to read from
-	 * @param trustManager the trust manager (CSCA, CVCA)
-	 * @param bacStore the BAC entries
-	 * @param maxTriesPerBACEntry the number of times each BAC entry will be tried before giving up
-	 * 
-	 * @throws CardServiceException on error
-	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore, int maxTriesPerBACEntry) throws CardServiceException {
 		this();
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		this.service = service;
 		this.trustManager = trustManager;
+
+		boolean hasSAC = false;
+		boolean isSACSucceeded = false;
 		try {
 			service.open();
-			
-			
+
 			/* Find out whether this MRTD supports SAC. */
+			PACEInfo paceInfo = null;
 			try {
+				LOGGER.info("Inspecting card access file");
 				CardAccessFile cardAccessFile = new CardAccessFile(service.getInputStream(PassportService.EF_CARD_ACCESS));
-				Collection<SecurityInfo> securityInfos = cardAccessFile.getSecurityInfos();
-				LOGGER.info("DEBUG: found a card access file: securityInfos = " + securityInfos);
-				for (SecurityInfo securityInfo: securityInfos) {
-					if (securityInfo instanceof PACEInfo) {
-						featureStatus.setSAC(FeatureStatus.Verdict.PRESENT);
-						break;
-					}
+				Collection<PACEInfo> paceInfos = cardAccessFile.getPACEInfos();
+				LOGGER.info("DEBUG: found a card access file: paceInfos (" + (paceInfos == null ? 0 : paceInfos.size()) + ") = " + paceInfos);
+
+				if (paceInfos != null && paceInfos.size() > 0) {
+					/* FIXME: Multiple PACEInfos allowed? */
+					if (paceInfos.size() > 1) { LOGGER.warning("Found multiple PACEInfos " + paceInfos.size()); }
+					paceInfo = paceInfos.iterator().next();
+					featureStatus.setSAC(FeatureStatus.Verdict.PRESENT);
 				}
 			} catch (Exception e) {
+				/* NOTE: No card access file, continue to test for BAC. */
 				LOGGER.info("DEBUG: failed to get card access file: " + e.getMessage());
 				e.printStackTrace();
 			}
-			
-			
+
+			hasSAC = featureStatus.hasSAC() == FeatureStatus.Verdict.PRESENT;
+
+			if (hasSAC) {
+				try {
+					tryToDoPACE(service, paceInfo, bacStore.get(0)); // FIXME: only one bac key, DEBUG
+				} catch (Exception e) {
+					e.printStackTrace();
+					LOGGER.info("PACE failed, falling back to BAC");
+					isSACSucceeded = false;
+				}
+			}
+
 			service.sendSelectApplet();
 		} catch (CardServiceException cse) {
 			throw cse;
@@ -214,25 +221,33 @@ public class Passport {
 			e.printStackTrace();
 			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
-		
+
 		/* Find out whether this MRTD supports BAC. */
 		try {
 			/* Attempt to read EF.COM before BAC. */
 			new COMFile(service.getInputStream(PassportService.EF_COM));
-			featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
-			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-			//			notifyVerificationStatusChangeListeners(verificationStatus);
+
+			if (isSACSucceeded) {
+				verificationStatus.setSAC(VerificationStatus.Verdict.SUCCEEDED, "Succeeded");
+				featureStatus.setBAC(FeatureStatus.Verdict.UNKNOWN);
+				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "Using SAC, BAC not checked", EMPTY_TRIED_BAC_ENTRY_LIST);
+			} else {
+				/* We failed SAC, and we failed BAC. */
+				featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
+				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
+				//			notifyVerificationStatusChangeListeners(verificationStatus);
+			}
 		} catch (Exception e) {
 			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
 			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
 			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
 		}
 
-		/* Try to do BAC. */
-		boolean hasBAC = featureStatus.hasBAC().equals(FeatureStatus.Verdict.PRESENT);
+		/* If we have to do BAC, try to do BAC. */
+		boolean hasBAC = featureStatus.hasBAC() == FeatureStatus.Verdict.PRESENT;
 		String documentNumber = null;
-		if (hasBAC) {
-			BACKeySpec bacKeySpec = tryToDoBAC(service, maxTriesPerBACEntry, bacStore);
+		if (hasBAC && !(hasSAC && isSACSucceeded)) {
+			BACKeySpec bacKeySpec = tryToDoBAC(service, bacStore);
 			documentNumber = bacKeySpec.getDocumentNumber();
 		}
 
@@ -280,6 +295,8 @@ public class Passport {
 		}
 		Collections.sort(dgNumbers); /* NOTE: need to sort it, since we get keys as a set. */
 
+		LOGGER.info("Found DGs: " + dgNumbers);
+
 		Map<Integer, VerificationStatus.HashMatchResult> hashResults = verificationStatus.getHashResults();
 		if (hashResults == null) {
 			hashResults = new TreeMap<Integer, VerificationStatus.HashMatchResult>();
@@ -302,14 +319,14 @@ public class Passport {
 		}
 		verificationStatus.setHT(VerificationStatus.Verdict.UNKNOWN, verificationStatus.getHTReason(), hashResults);
 		//		notifyVerificationStatusChangeListeners(verificationStatus);
-		
+
 		/* Check EAC support by DG14 presence. */
 		if (dgNumbers.contains(14)) {
 			featureStatus.setEAC(FeatureStatus.Verdict.PRESENT);
 		} else {
 			featureStatus.setEAC(FeatureStatus.Verdict.NOT_PRESENT);
 		}		
-		boolean hasEAC = featureStatus.hasEAC().equals(FeatureStatus.Verdict.PRESENT);
+		boolean hasEAC = featureStatus.hasEAC() == FeatureStatus.Verdict.PRESENT;
 		List<KeyStore> cvcaKeyStores = trustManager.getCVCAStores();
 		if (hasEAC && cvcaKeyStores != null && cvcaKeyStores.size() > 0) {
 			tryToDoEAC(service, lds, documentNumber, cvcaKeyStores);
@@ -322,7 +339,7 @@ public class Passport {
 		} else {
 			featureStatus.setAA(FeatureStatus.Verdict.NOT_PRESENT);
 		}
-		boolean hasAA = (featureStatus.hasAA() == FeatureStatus.Verdict.PRESENT);
+		boolean hasAA = featureStatus.hasAA() == FeatureStatus.Verdict.PRESENT;
 		if (hasAA) {
 			try {
 				CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
@@ -360,119 +377,6 @@ public class Passport {
 			}
 		}
 	}
-
-	public static Passport createPassportFromZip(InputStream inputStream, MRTDTrustStore trustManager) throws IOException {
-		Passport passport = new Passport();
-		passport.trustManager = trustManager;
-		passport.lds = new LDS();
-		ZipInputStream zipInputStream = new ZipInputStream(inputStream);
-		try {
-			ZipEntry entry = null;
-			while ( (entry = zipInputStream.getNextEntry()) != null ) {
-				String fileName = entry.getName();
-				long sizeAsLong = entry.getSize();
-				if (sizeAsLong < 0) { throw new IOException("ZipEntry has negative size."); }
-				int size = (int)(sizeAsLong & 0xFFFFFFFFL);
-
-				try {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					byte[] buffer = new byte[1024];
-					int count;
-					while ((count = zipInputStream.read(buffer)) != -1) {
-						LOGGER.info("DEBUG: count = " + count);
-						baos.write(buffer, 0, count);
-					}
-					byte[] bytes = baos.toByteArray();
-
-					int fid = guessFID(fileName, bytes);
-					if (fid > 0) {
-						passport.lds.add((short)fid, new ByteArrayInputStream(bytes), bytes.length);
-					} else {
-						LOGGER.warning("Ignoring zip entry " + fileName);
-					}
-				} catch (NumberFormatException nfe) {
-					/* NOTE: ignore this file */
-					LOGGER.warning("Ignoring entry \"" + fileName + "\" in zip inputstream.\"");
-				}
-			}
-			return passport;
-		} finally {
-			zipInputStream.close();
-		}
-	}
-
-	/**
-	 * Creates a document by reading it from a ZIP file.
-	 * 
-	 * @param file the ZIP file to read from
-	 * @param trustManager the trust manager (CSCA, CVCA)
-	 * 
-	 * @throws IOException on error
-	 */
-	public Passport(File file, MRTDTrustStore trustManager) throws IOException {
-		this();
-		this.trustManager = trustManager;
-		ZipFile zipFile = new ZipFile(file);
-		this.lds = new LDS();
-		try {
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = entries.nextElement();
-				if (entry == null) { break; }
-				String fileName = entry.getName();
-				long sizeAsLong = entry.getSize();
-				if (sizeAsLong < 0) { throw new IOException("ZipEntry has negative size."); }
-				int size = (int)(sizeAsLong & 0xFFFFFFFFL);
-				try {
-					byte[] bytes = new byte[size];
-					InputStream zipEntryIn = zipFile.getInputStream(entry);
-					DataInputStream dataIn = new DataInputStream(zipEntryIn);
-					dataIn.readFully(bytes);
-					dataIn.close();
-					int fid = guessFID(fileName, bytes);
-					if (fid > 0) {
-						this.lds.add((short)fid, new ByteArrayInputStream(bytes), bytes.length);
-					}
-				} catch (NumberFormatException nfe) {
-					/* NOTE: ignore this file */
-					LOGGER.warning("Ignoring entry \"" + fileName + "\" in \"" + file.getName() + "\"");
-				}
-			}
-		} finally {
-			zipFile.close();
-		}
-	}
-
-	private static int guessFID(String fileName, byte[] bytes) {
-		int fid = -1;
-		int delimIndex = fileName.lastIndexOf('.');
-		String baseName = delimIndex < 0 ? fileName : fileName.substring(0, fileName.indexOf('.'));
-		if (delimIndex >= 0
-				&& !fileName.endsWith(".bin")
-				&& !fileName.endsWith(".BIN")
-				&& !fileName.endsWith(".dat")
-				&& !fileName.endsWith(".DAT")) {
-			LOGGER.warning("Not considering file name \"" + fileName + "\" in determining FID (while reading ZIP file)");
-		} else if (baseName.length() == 4) {
-			try {
-				/* Filename <FID>.bin? */
-				fid = Hex.hexStringToShort(baseName);
-			} catch (NumberFormatException nfe) {
-				/* ...guess not */ 
-			}
-		}
-
-		int tagBasedFID = LDSFileUtil.lookupFIDByTag(bytes[0] & 0xFF);
-		if (fid < 0) {
-			/* FIXME: untested! */
-			fid = tagBasedFID;
-		}
-		if (fid != tagBasedFID) {
-			LOGGER.warning("File name based FID = " + Integer.toHexString(fid) + ", while tag based FID = " + tagBasedFID);
-		}
-		return fid;
-	}
-
 	/**
 	 * Inserts a file into this document, and updates EF_COM and EF_SOd accordingly.
 	 * 
@@ -724,148 +628,183 @@ public class Passport {
 
 	/* ONLY PRIVATE METHODS BELOW. */
 
-	private BACKeySpec tryToDoBAC(PassportService service, int maxTriesPerBACEntry, List<BACKeySpec> bacStore) throws BACDeniedException {
-		int triesLeft = maxTriesPerBACEntry;
-		List<BACKey> triedBACEntries = new ArrayList<BACKey>();
+	private BACKeySpec tryToDoBAC(PassportService service, List<BACKeySpec> bacStore) throws BACDeniedException {
+		List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
 		int lastKnownSW = -1;
-		BACKeySpec bacKeySpec = null;
 
-		/* NOTE: outer loop, try N times all entries (user may be entering new entries meanwhile). */
-		while (bacKeySpec == null && triesLeft-- > 0) {
-			/* NOTE: inner loop, loops through stored BAC entries. */
-			synchronized (bacStore) {
-				for (BACKeySpec otherBACKeySpec: bacStore) {
-					try {
-						if (!triedBACEntries.contains(otherBACKeySpec)) {
-							LOGGER.info("Trying BAC: " + otherBACKeySpec);
-							service.doBAC(otherBACKeySpec);
-							/* NOTE: if successful, doBAC terminates normally, otherwise exception. */
-							bacKeySpec = otherBACKeySpec;
-							break; /* out of inner for loop */
-						}
-					} catch (CardServiceException cse) {
-						LOGGER.info("Ignoring the following exception: " + cse.getClass().getCanonicalName());
-						cse.printStackTrace(); // DEBUG: this line was commented in production
-						lastKnownSW = cse.getSW();
-						/* NOTE: BAC failed? Try next BACEntry */
-					} catch (Exception e) {
-						LOGGER.warning("DEBUG: Unexpected exception " + e.getClass().getCanonicalName() + " during BAC with " + otherBACKeySpec);
-						e.printStackTrace();
-					}
+		synchronized (bacStore) {
+			for (BACKeySpec bacKey: bacStore) {
+				try {
+					triedBACEntries.add(bacKey);
+					tryToDoBAC(service, bacKey);
+					verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKey, triedBACEntries);
+					return bacKey;
+				} catch (CardServiceException cse) {
+					LOGGER.info("Ignoring the following exception: " + cse.getClass().getCanonicalName());
+					cse.printStackTrace(); // DEBUG: this line was commented in production
+					lastKnownSW = cse.getSW();
+					/* NOTE: BAC failed? Try next BACEntry */
 				}
 			}
 		}
-		if (bacKeySpec == null) {
-			/* Document requires BAC, but we failed to authenticate. */
-			verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
-			throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
-		} else {
-			verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKeySpec, triedBACEntries);
-		}
-		return bacKeySpec;
+
+		/* Document requires BAC, but we failed to authenticate. */
+		verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
+		throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 	}
-	
+
+	private void tryToDoBAC(PassportService service, BACKeySpec bacKey) throws CardServiceException {
+		try {
+			LOGGER.info("Trying BAC: " + bacKey);
+			service.doBAC(bacKey);
+			/* NOTE: if successful, doBAC te catch (CardServiceException cse) {
+			e.thrrminates normally, otherwise exception. */
+		} catch (Exception e) {
+			if (e instanceof CardServiceException) { throw (CardServiceException)e; }
+			LOGGER.warning("DEBUG: Unexpected exception " + e.getClass().getCanonicalName() + " during BAC with " + bacKey);
+			e.printStackTrace();
+			throw new CardServiceException(e.getMessage());
+		}
+	}
+
+	private void tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
+		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+	}
+
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
 		DG14File dg14File = null;
 		CVCAFile cvcaFile = null;
+
 		try {
-			CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
-			lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
-			dg14File = lds.getDG14File();
-
-			/* Now try to deal with EF.CVCA */
-			cvcaFID = PassportService.EF_CVCA; /* Default CVCA file Id */
-			List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
-			if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
-				if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14"); }
-				cvcaFID = cvcaFIDs.get(0).shortValue(); /* Possibly different from default. */
-			}
-
-			CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
-			lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
-			cvcaFile = lds.getCVCAFile();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-			LOGGER.warning("Could not read EF.DG14 or EF.CVCA");
-		}
-
-		/* Try to do EAC. */
-		for (KeyStore cvcaStore: cvcaKeyStores) {
 			try {
-				/* FIXME: shouldn't we check if that store holds the correct authority? */
-				doEAC(documentNumber, dg14File, cvcaFile, cvcaStore);
-				break;
-			} catch (Exception e) {
-				LOGGER.warning("EAC failed using CVCA store " + cvcaStore + ": " + e.getMessage());
-				e.printStackTrace();
+				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
+				lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
+				dg14File = lds.getDG14File();
+
+				/* Now try to deal with EF.CVCA */
+				cvcaFID = PassportService.EF_CVCA; /* Default CVCA file Id */
+				List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
+				if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
+					if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14"); }
+					cvcaFID = cvcaFIDs.get(0).shortValue(); /* Possibly different from default. */
+				}
+
+				CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
+				lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
+				cvcaFile = lds.getCVCAFile();
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				LOGGER.warning("Could not read EF.DG14 or EF.CVCA, not attempting EAC");
+				return;
 			}
+
+			/* Try to do EAC. */
+			CVCPrincipal[] possibleCVCAReferences = new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() };
+			for (CVCPrincipal caReference: possibleCVCAReferences) {
+				EACCredentials eacCredentials = getEACCredentials(caReference, cvcaKeyStores);
+				if (eacCredentials == null) { continue; }
+				PrivateKey privateKey = eacCredentials.getPrivateKey();
+				Certificate[] chain = eacCredentials.getChain();
+				doEAC(documentNumber, dg14File, caReference, chain, privateKey);
+				break;
+			}
+		} catch (Exception e) {
+			LOGGER.warning("EAC failed with exception " + e.getMessage());
+			e.printStackTrace();
 		}
 	}
 
-	private void doEAC(String documentNumber, DG14File dg14File, CVCAFile cvcaFile, KeyStore cvcaStore) throws CardServiceException {
+	private boolean doEAC(String documentNumber, DG14File dg14File, CVCPrincipal caReference, Certificate[] chain, PrivateKey privateKey) throws CardServiceException {
 		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
-		boolean isKeyFound = false;
-		boolean isSucceeded = false;
-		for (CVCPrincipal caReference: new CVCPrincipal[]{ cvcaFile.getCAReference(), cvcaFile.getAltCAReference() }) {
-			if (caReference == null) { continue; }
-			try {
-				List<String> aliases = Collections.list(cvcaStore.aliases());
-				PrivateKey privateKey = null;
-				Certificate[] chain = null;
-				for (String alias: aliases) {
-					if (cvcaStore.isKeyEntry(alias)) {
-						Security.insertProviderAt(JMRTDSecurityProvider.getBouncyCastleProvider(), 0);
-						Key key = cvcaStore.getKey(alias, "".toCharArray());
-						if (key instanceof PrivateKey) {
-							privateKey = (PrivateKey)key;
-						} else {
-							LOGGER.warning("skipping non-private key " + alias);
-							continue;
-						}
-						chain = cvcaStore.getCertificateChain(alias);
-					} else if (cvcaStore.isCertificateEntry(alias)) { 
-						CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
-						CVCPrincipal authRef = certificate.getAuthorityReference();
-						CVCPrincipal holderRef = certificate.getHolderReference();
-						if (!caReference.equals(authRef)) { continue; }
-						/* See if we have a private key for that certificate. */
-						privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
-						chain = cvcaStore.getCertificateChain(holderRef.getName());
-						if (privateKey == null) { continue; }
-						LOGGER.fine("found a key, privateKey = " + privateKey);
-					}
-					if (privateKey == null || chain == null) {
-						LOGGER.severe("null chain or key for entry " + alias + ": chain = " + Arrays.toString(chain) + ", privateKey = " + privateKey);
-						continue;
-					}
 
-					List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
-					for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
-					for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
-						BigInteger keyId = entry.getKey();
-						PublicKey publicKey = entry.getValue();
-						try {
-							isKeyFound = true;
-							service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
-							isSucceeded = true;
-							verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference);
-							break;
-						} catch(CardServiceException cse) {
-							cse.printStackTrace();
-							/* NOTE: Failed, too bad, try next public key. */
-						}
-					}
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
+		List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
+		for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
+		for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
+			BigInteger keyId = entry.getKey();
+			PublicKey publicKey = entry.getValue();
+			try {
+				service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
+				verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference);
+				return true;
+			} catch(CardServiceException cse) {
+				cse.printStackTrace();
+				/* NOTE: Failed? Too bad, try next public key. */
+				continue;
 			}
 		}
-		if (!isKeyFound) {
-			throw new CardServiceException("EAC not performed. No key found.");
+		return false;
+	}
+
+	class EACCredentials {
+		private PrivateKey privateKey;
+		private Certificate[] chain;
+
+		public EACCredentials(PrivateKey privateKey, Certificate[] chain) {
+			this.privateKey = privateKey;
+			this.chain = chain;
 		}
-		if (!isSucceeded) {
-			throw new CardServiceException("EAC failed");
+
+		public PrivateKey getPrivateKey() {
+			return privateKey;
 		}
+
+		public Certificate[] getChain() {
+			return chain;
+		}		
+	}
+
+	private EACCredentials getEACCredentials(CVCPrincipal caReference, List<KeyStore> cvcaStores) throws GeneralSecurityException {
+		for (KeyStore cvcaStore: cvcaStores) {
+			EACCredentials eacCredentials = getEACCredentials(caReference, cvcaStore);
+			if (eacCredentials != null) { return eacCredentials; }
+		}
+		return null;
+	}
+
+	/**
+	 *
+	 * @param caReference
+	 * @param cvcaStore should contain a single key with certificate chain
+	 * @return
+	 * @throws GeneralSecurityException
+	 */
+	private EACCredentials getEACCredentials(CVCPrincipal caReference, KeyStore cvcaStore) throws GeneralSecurityException {
+		if (caReference == null) { throw new IllegalArgumentException("CA reference cannot be null"); }
+
+		PrivateKey privateKey = null;
+		Certificate[] chain = null;
+
+		List<String> aliases = Collections.list(cvcaStore.aliases());
+		for (String alias: aliases) {
+			if (cvcaStore.isKeyEntry(alias)) {
+				Security.insertProviderAt(BC_PROVIDER, 0);
+				Key key = cvcaStore.getKey(alias, "".toCharArray());
+				if (key instanceof PrivateKey) {
+					privateKey = (PrivateKey)key;
+				} else {
+					LOGGER.warning("skipping non-private key " + alias);
+					continue;
+				}
+				chain = cvcaStore.getCertificateChain(alias);
+				return new EACCredentials(privateKey, chain);
+			} else if (cvcaStore.isCertificateEntry(alias)) { 
+				CardVerifiableCertificate certificate = (CardVerifiableCertificate)cvcaStore.getCertificate(alias);
+				CVCPrincipal authRef = certificate.getAuthorityReference();
+				CVCPrincipal holderRef = certificate.getHolderReference();
+				if (!caReference.equals(authRef)) { continue; }
+				/* See if we have a private key for that certificate. */
+				privateKey = (PrivateKey)cvcaStore.getKey(holderRef.getName(), "".toCharArray());
+				chain = cvcaStore.getCertificateChain(holderRef.getName());
+				if (privateKey == null) { continue; }
+				LOGGER.fine("found a key, privateKey = " + privateKey);
+				return new EACCredentials(privateKey, chain);
+			}
+			if (privateKey == null || chain == null) {
+				LOGGER.severe("null chain or key for entry " + alias + ": chain = " + Arrays.toString(chain) + ", privateKey = " + privateKey);
+				continue;
+			}
+		}
+		return null;
 	}
 
 	/**

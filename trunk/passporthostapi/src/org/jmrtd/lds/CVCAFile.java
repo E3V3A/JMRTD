@@ -104,7 +104,7 @@ public class CVCAFile extends AbstractLDSFile {
 	protected void readObject(InputStream in) throws IOException {
 		DataInputStream dataIn = new DataInputStream(in);
 		int tag = dataIn.read();
-		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag."); }
+		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag, expected " + Integer.toHexString(CAR_TAG) + ", found " + Integer.toHexString(tag)); }
 		int length = dataIn.read();
 		if (length > 16) { throw new IllegalArgumentException("Wrong length."); }
 		byte[] data = new byte[length];

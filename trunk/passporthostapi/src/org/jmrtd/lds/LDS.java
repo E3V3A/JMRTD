@@ -251,6 +251,7 @@ public class LDS {
 		DG14File dg14 = getDG14File();
 		if (dg14 == null) { throw new IOException("EF.DF14 not available in LDS"); }
 		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
+		LOGGER.warning("DEBUG: cvcaFIDs = " + cvcaFIDs);
 		if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
 			if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
 			cvcaFID = cvcaFIDs.get(0).shortValue();
