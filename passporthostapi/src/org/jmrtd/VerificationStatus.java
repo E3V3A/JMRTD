@@ -58,13 +58,13 @@ public class VerificationStatus {
 	};
 	
 	/* Verdict for this verification feature. */
-	private Verdict aa, bac, cs, ht, ds, eac;
+	private Verdict aa, bac, sac, cs, ht, ds, eac;
 
 	/* Textual reason for the verdict. */
-	private String aaReason, bacReason, csReason, htReason, dsReason, eacReason;
+	private String aaReason, bacReason, sacReason, csReason, htReason, dsReason, eacReason;
 
 	/* By products of the verification process that may be useful for relying parties to display. */
-	private List<BACKey> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
+	private List<BACKeySpec> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
 	private Map<Integer, HashMatchResult> hashResults; /* As a result of HT testing, this contains stored and computed hashes. */
 	private List<Certificate> certificateChain; /* As a result of CS testing, this contains certificate chain from DSC to CSCA. */
 	
@@ -112,7 +112,7 @@ public class VerificationStatus {
 		return bacReason;
 	}
 
-	public List<BACKey> getTriedBACEntries() {
+	public List<BACKeySpec> getTriedBACEntries() {
 		return triedBACEntries;
 	}
 	
@@ -121,12 +121,25 @@ public class VerificationStatus {
 	 * 
 	 * @param v the status to set
 	 */
-	public void setBAC(Verdict v, String reason, List<BACKey> triedBACEntries) {
+	public void setBAC(Verdict v, String reason, List<BACKeySpec> triedBACEntries) {
 		this.bac = v;
 		this.bacReason = reason;
 		this.triedBACEntries = triedBACEntries;
 	}
 
+	public Verdict getSAC() {
+		return sac;
+	}
+	
+	public String getSACReason() {
+		return sacReason;
+	}
+
+	public void setSAC(Verdict v, String reason) {
+		this.sac = v;
+		this.sacReason = reason;
+	}
+	
 	/**
 	 * Gets the CS verdict.
 	 * 

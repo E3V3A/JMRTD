@@ -22,11 +22,20 @@
 
 package org.jmrtd.lds;
 
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.ECParameterSpec;
+
+import javax.crypto.spec.DHParameterSpec;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.jce.ECNamedCurveTable;
+import org.jmrtd.Util;
 
 /**
  * PACE Info object as per SAC TR 1.01, November 11, 2010.
@@ -35,11 +44,14 @@ import org.bouncycastle.asn1.DLSequence;
  * 
  * @version $Revision$
  * 
- * @since 0.4.10
+ * @since 0.5.1
  */
 public class PACEInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = 7960925013249578359L;
+
+	/** Generic mapping and Integrated mapping. */
+	public enum MappingType { GM, IM };
 
 	/** Standardized domain parameters. Based on Table 6. */
 	public static final int
@@ -57,8 +69,26 @@ public class PACEInfo extends SecurityInfo {
 	PARAM_ID_ECP_NIST_P384_R1 = 15,
 	PARAM_ID_ECP_BRAINPOOL_P384_R1 = 16,
 	PARAM_ID_ECP_BRAINPOOL_P512_R1 = 17,
-	PARAM_ID_ECP_NIST_P512_R1 = 18;
+	PARAM_ID_ECP_NIST_P521_R1 = 18;
 	/* RFU 19-31 */
+
+	private static final DHParameterSpec
+	PARAMS_GFP_1024_160 = Util.toExplicitDHParameterSpec(DHStandardGroups.rfc5114_1024_160),
+	PARAMS_GFP_2048_224 = Util.toExplicitDHParameterSpec(DHStandardGroups.rfc5114_2048_224),
+	PARAMS_GFP_2048_256 = Util.toExplicitDHParameterSpec(DHStandardGroups.rfc5114_2048_256);
+
+	private static final ECParameterSpec
+	PARAMS_ECP_NIST_P192_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("secp192r1")),
+	PARAMS_ECP_NIST_P224_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("secp224r1")),
+	PARAMS_ECP_NIST_P256_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("secp256r1")),
+	PARAMS_ECP_NIST_P384_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("secp384r1")),
+	PARAMS_ECP_NIST_P521_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("secp521r1")),
+	PARAMS_ECP_BRAINPOOL_P192_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp192r1")),
+	PARAMS_ECP_BRAINPOOL_P224_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp224r1")),
+	PARAMS_ECP_BRAINPOOL_P256_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp256r1")),
+	PARAMS_ECP_BRAINPOOL_P320_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp320r1")),
+	PARAMS_ECP_BRAINPOOL_P384_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp384r1")),
+	PARAMS_ECP_BRAINPOOL_P512_R1 = Util.toExplicitECParameterSpec(ECNamedCurveTable.getParameterSpec("brainpoolp512r1"));
 
 	private String protocolOID;
 	private int version;
@@ -83,11 +113,11 @@ public class PACEInfo extends SecurityInfo {
 	public String getObjectIdentifier() {
 		return protocolOID;
 	}
-	
+
 	public int getVersion() {
 		return version;
 	}
-	
+
 	public int getParameterId() {
 		return parameterId;
 	}
@@ -95,7 +125,7 @@ public class PACEInfo extends SecurityInfo {
 	@Override
 	ASN1Primitive getDERObject() {
 		ASN1EncodableVector vector = new ASN1EncodableVector();
-		
+
 		/* Protocol */
 		vector.add(new ASN1ObjectIdentifier(protocolOID));
 
@@ -108,7 +138,7 @@ public class PACEInfo extends SecurityInfo {
 		}
 		return new DLSequence(vector);
 	}
-	
+
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("PaceInfo");
@@ -138,21 +168,155 @@ public class PACEInfo extends SecurityInfo {
 	}
 
 	public static boolean checkRequiredIdentifier(String oid) {
-		return ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
+		return toMappingType(oid) != null;
+	}
+
+	/*
+	 * FIXME: perhaps we should introduce an enum for PACE identifiers (with a String toOID() method),
+	 * so that we can get rid of static methods below. -- MO
+	 */
+
+	public static MappingType toMappingType(String oid) {
+		if (ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
 				|| ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
 				|| ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
 				|| ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
 				|| ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
 				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
 				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
-				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)) {	
+			return MappingType.GM;
+		} else if (ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
 				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
 				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
 				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)
 				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)
 				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)
 				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)
-				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid);
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return MappingType.IM;
+		}
+		//		return null;
+		throw new NumberFormatException("Unknown OID: \"" + oid + "\"");
+	}
+
+	public static String toKeyAgreementAlgorithm(String oid) {
+		if (ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return "DH";
+		} else if (ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return "ECDH";
+		}
+		//		return null;
+		throw new NumberFormatException("Unknown OID: \"" + oid + "\"");
+	}
+
+	public static String toCipherAlgorithm(String oid) {
+		if (ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)				
+				) {
+			return "DESede";
+		} else if (ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return "AES";
+		}
+		//			return null;
+		throw new NumberFormatException("Unknown OID: \"" + oid + "\"");
+	}
+
+	public static String toDigestAlgorithm(String oid) {
+		if (ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)) {
+			return "SHA-1";
+		} else if (ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return "SHA-256";
+		}
+		//			return null;
+		throw new NumberFormatException("Unknown OID: \"" + oid + "\"");
+	}
+
+	public static int toKeyLength(String oid) {
+		if (ID_PACE_DH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_GM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_ECDH_IM_3DES_CBC_CBC.equals(oid)
+				|| ID_PACE_DH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_128.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_128.equals(oid)
+				) {
+			return 128;
+		} else if (ID_PACE_DH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_192.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_192.equals(oid)) {
+			return 192;
+		} else if (ID_PACE_DH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_DH_IM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_GM_AES_CBC_CMAC_256.equals(oid)
+				|| ID_PACE_ECDH_IM_AES_CBC_CMAC_256.equals(oid)) {
+			return 256;
+		} else {
+			// return -1;
+			throw new NumberFormatException("Unknown OID: \"" + oid + "\"");
+		}
+	}
+	
+	public static AlgorithmParameterSpec toParameterSpec(int stdDomainParam) {
+		switch (stdDomainParam) {
+		case PARAM_ID_GFP_1024_160: return PARAMS_GFP_1024_160;
+		case PARAM_ID_GFP_2048_224: return PARAMS_GFP_2048_224;
+		case PARAM_ID_GFP_2048_256: return PARAMS_GFP_2048_256;
+		case PARAM_ID_ECP_NIST_P192_R1: return PARAMS_ECP_NIST_P192_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P192_R1:return PARAMS_ECP_BRAINPOOL_P192_R1;
+		case PARAM_ID_ECP_NIST_P224_R1: return PARAMS_ECP_NIST_P224_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P224_R1: return PARAMS_ECP_BRAINPOOL_P224_R1;
+		case PARAM_ID_ECP_NST_P256_R1: return PARAMS_ECP_NIST_P256_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P256_R1: return PARAMS_ECP_BRAINPOOL_P256_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P320_R1: return PARAMS_ECP_BRAINPOOL_P320_R1;
+		case PARAM_ID_ECP_NIST_P384_R1: return PARAMS_ECP_NIST_P384_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P384_R1: return PARAMS_ECP_BRAINPOOL_P384_R1;
+		case PARAM_ID_ECP_BRAINPOOL_P512_R1: return PARAMS_ECP_BRAINPOOL_P512_R1;
+		case PARAM_ID_ECP_NIST_P521_R1: return PARAMS_ECP_NIST_P521_R1;
+		default: throw new NumberFormatException("Unknown standardized domain parameters");
+		}
 	}
 }

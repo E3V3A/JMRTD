@@ -25,8 +25,10 @@ package org.jmrtd.lds;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -46,7 +48,7 @@ import org.bouncycastle.asn1.DLSet;
  * 
  * @version $Revision$
  * 
- * @since 0.4.10
+ * @since 0.5.1
  */
 public class CardAccessFile {
 
@@ -108,6 +110,16 @@ public class CardAccessFile {
 		return securityInfos;
 	}
 
+	public Collection<PACEInfo> getPACEInfos() {
+		List<PACEInfo> paceInfos = new ArrayList<PACEInfo>(securityInfos.size());
+		for (SecurityInfo securityInfo: securityInfos) {
+			if (securityInfo instanceof PACEInfo) {
+				paceInfos.add((PACEInfo)securityInfo);
+			}
+		}
+		return paceInfos;
+	}
+	
 	public String toString() {
 		return "CardAccessFile [" + securityInfos.toString() + "]";
 	}

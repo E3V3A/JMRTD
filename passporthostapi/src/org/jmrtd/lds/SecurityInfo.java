@@ -80,7 +80,7 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 	private static final String ID_BSI = "0.4.0.127.0.7";
 
 	/* protocols (2), smartcard (2), PACE (4) */
-	private static final String ID_PACE = ID_BSI + ".2.2.4";
+	public static final String ID_PACE = ID_BSI + ".2.2.4";
 
 	public static final String
 	ID_PACE_DH_GM = ID_PACE + ".1";

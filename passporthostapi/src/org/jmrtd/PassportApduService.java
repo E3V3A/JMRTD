@@ -22,9 +22,11 @@
 
 package org.jmrtd;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.Provider;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -42,7 +44,10 @@ import net.sourceforge.scuba.smartcards.CardServiceException;
 import net.sourceforge.scuba.smartcards.CommandAPDU;
 import net.sourceforge.scuba.smartcards.ISO7816;
 import net.sourceforge.scuba.smartcards.ResponseAPDU;
+import net.sourceforge.scuba.tlv.TLVInputStream;
 import net.sourceforge.scuba.util.Hex;
+
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 
 /**
  * Low level card service for sending APDUs to the passport. This service is not
@@ -67,10 +72,19 @@ import net.sourceforge.scuba.util.Hex;
  */
 public class PassportApduService extends CardService {
 
+	/** Shared secret type for PACE according to BSI TR-03110 v2.03 B.11.1. */
+	public static final byte
+	MRZ_PACE_KEY_REFERENCE = 0x01,
+	CAN_PACE_KEY_REFERENCE = 0x02,
+	PIN_PACE_KEY_REFERENCE = 0x03,
+	PUK_PACE_REFERENCE = 0x04;
+	
 	private static final long serialVersionUID = 2451509825132976178L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
+	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
+	
 	/** The applet we select when we start a session. */
 	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
@@ -115,7 +129,7 @@ public class PassportApduService extends CardService {
 		plainTextAPDUListeners = new HashSet<APDUListener>();
 		plainAPDUCount = 0;
 		try {
-			mac = Mac.getInstance("ISO9797Alg3Mac", JMRTDSecurityProvider.getBouncyCastleProvider());
+			mac = Mac.getInstance("ISO9797Alg3Mac", BC_PROVIDER);
 			cipher = Cipher.getInstance("DESede/CBC/NoPadding");
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
@@ -124,7 +138,7 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * Opens a session by connecting to the card. Since version 0.4.10 this method no longer automatically
+	 * Opens a session by connecting to the card. Since version 0.5.1 this method no longer automatically
 	 * selects the MRTD applet, caller (for instance {@link PassportService}) is responsible to do this now.
 	 * 
 	 * @throws CardServiceException on failure to open the service
@@ -610,27 +624,67 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * The MSE AT APDU for PACE, see ICAO TR-SAC-1.01, Section 3.2.1.
-	 * Note that caller is responsible for prefixing the byte[] params with specified tags.
+	 * The MSE AT APDU for PACE, see ICAO TR-SAC-1.01, Section 3.2.1, BSI TR 03110 v2.03 B11.1.
+	 * Note that (for now) caller is responsible for prefixing the byte[] params with specified tags.
 	 * 
 	 * @param wrapper secure messaging wrapper
-	 * @param protocolOID 0x80 prefixed OID of the protocol to select (value only, 0x06 is omitted)
-	 * @param keyReference 0x83 prefixed value specifying whether to use MRZ (0x01) or CAN (0x02)
-	 * @param domainParamId 0x84 prefixed value indicating a private key or reference for computing a session key
+	 * @param oid OID of the protocol to select (this method will prefix <code>0x80</code>)
+	 * @param refPublicKeyOrSecretKey value specifying whether to use MRZ (<code>0x01</code>) or CAN (<code>0x02</code>) (this method will prefix <code>0x83</code>)
+	 * @param refPrivateKeyOrForComputingSessionKey indicates a private key or reference for computing a session key (this method will prefix <code>0x84</code>)
 	 *
 	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSESetATMutualAuth(SecureMessagingWrapper wrapper, byte[] protocolOID, byte[] keyReference, byte[] domainParamId) throws CardServiceException {
-		if (protocolOID == null) { throw new IllegalArgumentException("protocol OID cannot be null"); }
-		if (keyReference == null) { throw new IllegalArgumentException("key type reference (MRZ or CAN) cannot be null"); }
+	public synchronized void sendMSESetATMutualAuth(SecureMessagingWrapper wrapper, String oid,
+			int refPublicKeyOrSecretKey, byte[] refPrivateKeyOrForComputingSessionKey) throws CardServiceException {
 
+		if (oid == null) { throw new IllegalArgumentException("OID cannot be null"); }
+
+		/*
+		 * 0x80 Cryptographic mechanism reference
+		 * Object Identifier of the protocol to select (value only, tag 0x06 is omitted).
+		 */
+		byte[] oidBytes = null;
+		try {
+			TLVInputStream oidTLVIn = new TLVInputStream(new ByteArrayInputStream(new ASN1ObjectIdentifier(oid).getEncoded()));
+			oidTLVIn.readTag(); /* Should be 0x06 */
+			oidTLVIn.readLength();
+			oidBytes = oidTLVIn.readValue();
+			oidTLVIn.close();
+			oidBytes = Util.wrapDO((byte)0x80, oidBytes); /* FIXME: define constant for 0x80. */
+		} catch (IOException ioe) {
+			throw new IllegalArgumentException("Illegal OID: " + oid + " (" + ioe.getMessage() + ")");
+		}
+
+		/*
+		 * 0x83 Reference of a public key / secret key.
+		 * The password to be used is indicated as follows: 0x01: MRZ, 0x02: CAN.
+		 */
+		if (!(refPublicKeyOrSecretKey == MRZ_PACE_KEY_REFERENCE
+				|| refPublicKeyOrSecretKey == CAN_PACE_KEY_REFERENCE
+				|| refPublicKeyOrSecretKey == PIN_PACE_KEY_REFERENCE
+				|| refPublicKeyOrSecretKey == PUK_PACE_REFERENCE)) { throw new IllegalArgumentException("Unsupported key type reference (MRZ, CAN, etc), found " + refPublicKeyOrSecretKey); }
+
+		byte[] refPublicKeyOrSecretKeyBytes = Util.wrapDO((byte)0x83, new byte[] { (byte)refPublicKeyOrSecretKey }); /* FIXME: define constant for 0x83 */
+		
+		/*
+		 * 0x84 Reference of a private key / Reference for computing a
+		 * session key.
+		 * This data object is REQUIRED to indicate the identifier
+		 * of the domain parameters to be used if the domain
+		 * parameters are ambiguous, i.e. more than one set of
+		 * domain parameters is available for PACE.
+		 */
+		if (refPrivateKeyOrForComputingSessionKey != null) {
+			refPrivateKeyOrForComputingSessionKey = Util.wrapDO((byte)0x84, refPrivateKeyOrForComputingSessionKey);
+		}
+		
 		/* Construct data. */
 		ByteArrayOutputStream dataOutputStream = new ByteArrayOutputStream();
 		try {
-			dataOutputStream.write(protocolOID);
-			dataOutputStream.write(keyReference);
-			if (domainParamId != null) {
-				dataOutputStream.write(domainParamId);
+			dataOutputStream.write(oidBytes);
+			dataOutputStream.write(refPublicKeyOrSecretKeyBytes);
+			if (refPrivateKeyOrForComputingSessionKey != null) {
+				dataOutputStream.write(refPrivateKeyOrForComputingSessionKey);
 			}
 		} catch (IOException ioe) {
 			/* NOTE: should never happen. */
@@ -657,23 +711,25 @@ public class PassportApduService extends CardService {
 	 * FIXME: WORK IN PROGRESS...
 	 * 
 	 * @param wrapper secure messaging wrapper
-	 * @param data 0x7C prefixed dynamic authentication data
-	 * @return 0x7C dynamic authentication data
+	 * @param data data to be sent, without the <code>0x7C</code> prefix (this method will add it)
+	 * @return dynamic authentication data without the <code>0x7C</code> prefix (this method will remove it)
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public synchronized byte[] sendGeneralAuthenticate(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
+	public synchronized byte[] sendGeneralAuthenticate(SecureMessagingWrapper wrapper, byte[] data, boolean isLast) throws CardServiceException {
 		/* Tranceive APDU. */
-		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, INS_PACE_GENERAL_AUTHENTICATE, 0x00, 0x00, data);
+		byte[] commandData = Util.wrapDO((byte)0x7C, data);
+		CommandAPDU capdu = new CommandAPDU(isLast ? ISO7816.CLA_ISO7816 : ISO7816.CLA_COMMAND_CHAINING, INS_PACE_GENERAL_AUTHENTICATE, 0x00, 0x00, commandData, 256);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 
 		/* Handle error status word. */
 		short sw = (short)rapdu.getSW();
 		if (sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Sending MSE AT failed", sw);
+			throw new CardServiceException("Sending general authenticate failed", sw);
 		}
-
-		return rapdu.getBytes();
+		byte[] responseData = rapdu.getData();
+		responseData = Util.unwrapDO((byte)0x7C, responseData);
+		return responseData;
 	}
 
 	public synchronized void sendPSOExtendedLengthMode(SecureMessagingWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
