@@ -1,10 +1,36 @@
-JMRTD
+About JMRTD
 
-   JMRTD is a free implementation of the Machine Readable Travel Document
-   (MRTD) standards as specified by the International Civil Aviation
-   Organization (ICAO). Both a card side application (the "passport applet")
-   and a host side API for accessing ICAO standards compliant MRTDs are
-   developed. The passport applet is written in Java Card. The host side API
-   is written in Java.
+   JMRTD is a free implementation in Java of the Machine
+   Readable Travel Document (MRTD) standards as specified
+   by the International Civil Aviation Organization (ICAO).
 
-See passporthostapi/README for more detailed notes.
+   See the project's web site at http://jmrtd.org/.
+
+Contact
+
+   info@jmrtd.org.
+
+Contributors
+
+   Cees-Bart Breunesse
+   Dirk-Jan van Dijk
+   Peter Ebben
+   Tomas Gustavsson
+   Engelbert Hubbers
+   Adam Laurie
+   Wojciech Mostowski
+   Martijn Oostdijk
+   Erik Poll
+   Henning Richter
+   Julien Schmaltz
+   Jan Tretmans
+   Ronny Wichers Schreur
+   Max Guenther
+   Pim Vullers
+   (and others I forget to mention here, ... sorry)
+
+
+License
+
+   GNU Lesser General Public License
+
