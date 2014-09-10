@@ -668,6 +668,7 @@ public class Passport {
 	}
 
 	private void tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
+		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
 		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
 	}
 

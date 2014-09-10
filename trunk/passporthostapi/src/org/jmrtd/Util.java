@@ -76,6 +76,7 @@ import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.math.ec.ECFieldElement;
 import org.jmrtd.lds.MRZInfo;
 import org.jmrtd.lds.PACEInfo;
 import org.jmrtd.lds.SecurityInfo;
@@ -362,9 +363,11 @@ public class Util {
 
 	public static byte[] i2os(BigInteger val) {
 		/* FIXME: Quick hack. What if val < 0? -- MO */
-		int length = val.toString(16).length();
-		if (length % 2 != 0) { length++; }
-		return i2os(val, length / 2);
+		/* Do something with: int sizeInBytes = val.bitLength() / Byte.SIZE; */
+		
+		int sizeInNibbles = val.toString(16).length();
+		if (sizeInNibbles % 2 != 0) { sizeInNibbles++; }
+		return i2os(val, sizeInNibbles / 2);
 	}
 
 	/**
@@ -413,7 +416,7 @@ public class Util {
 	public static ECPoint os2ECPoint(byte[] encoded, ECParameterSpec params) {
 		BigInteger p = getPrime(params);
 		int length = encoded.length;
-		if (length % 2 != 0) { /* TODO: suspicious, throw exception? */ }
+		if (length % 2 != 0) { LOGGER.warning("DEBUG: length " + length + " not even"); }
 		return new ECPoint(os2i(encoded, 0, length/2).mod(p), Util.os2i(encoded, length/2, length/2).mod(p));
 	}
 
@@ -596,7 +599,7 @@ public class Util {
 	public static SubjectPublicKeyInfo toSubjectPublicKeyInfo(PublicKey publicKey) {
 		try {
 			String algorithm = publicKey.getAlgorithm();
-			if ("EC".equals(algorithm) || "ECDH".equals(algorithm)) {
+			if ("EC".equals(algorithm) || "ECDH".equals(algorithm) || (publicKey instanceof ECPublicKey)) {
 				ASN1InputStream asn1In = new ASN1InputStream(publicKey.getEncoded());
 				SubjectPublicKeyInfo subjectPublicKeyInfo = new SubjectPublicKeyInfo((ASN1Sequence)asn1In.readObject());
 				asn1In.close();
@@ -636,7 +639,7 @@ public class Util {
 				} else {
 					return subjectPublicKeyInfo;
 				}
-			} else if ("DH".equals(algorithm)) {
+			} else if ("DH".equals(algorithm) || (publicKey instanceof DHPublicKey)) {
 				DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
 				DHParameterSpec dhSpec = dhPublicKey.getParams();
 				return new SubjectPublicKeyInfo(
@@ -824,9 +827,9 @@ public class Util {
 				ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 				bOut.write(0x04);
 				bOut.write(Util.ECPoint2os(ecPublicKey.getW()));
-				byte[] pcdMappingEncodedPublicKey = bOut.toByteArray();
+				byte[] encodedPublicKey = bOut.toByteArray();
 				bOut.close();
-				return pcdMappingEncodedPublicKey;
+				return encodedPublicKey;
 			} catch (IOException ioe) {
 				/* NOTE: Should never happen. */
 				throw new IllegalStateException("Internal error writing to memory: " + ioe.getMessage());
@@ -857,8 +860,9 @@ public class Util {
 				BigInteger y = Util.os2i(yCoordBytes);
 				ECPoint w = new ECPoint(x, y);
 
+				ECParameterSpec ecParams = (ECParameterSpec)params;
 				KeyFactory kf = KeyFactory.getInstance("EC");
-				return kf.generatePublic(new ECPublicKeySpec(w, (ECParameterSpec)params));
+				return kf.generatePublic(new ECPublicKeySpec(w, ecParams));
 			} else if (params instanceof DHParameterSpec) {
 				int length = encodedPublicKey.length - 1;
 				byte[] publicValue = new byte[length];
@@ -926,7 +930,10 @@ public class Util {
 		if (params == null) { throw new IllegalArgumentException("Unsupported parameters for mapping nonce"); }
 		if (params instanceof ECParameterSpec) {
 			ECParameterSpec ecParams = (ECParameterSpec)params;
-			return mapNonceGMWithECDH(os2i(nonceS), os2ECPoint(sharedSecretH, ecParams), ecParams);
+			BigInteger affineX = os2i(sharedSecretH);
+			BigInteger affineY = computeAffineY(affineX, ecParams);
+			ECPoint sharedSecretPointH = new ECPoint(affineX, affineY);
+			return mapNonceGMWithECDH(os2i(nonceS), sharedSecretPointH, ecParams);
 		} else if (params instanceof DHParameterSpec) {
 			DHParameterSpec dhParams = (DHParameterSpec)params;
 			return mapNonceGMWithDH(os2i(nonceS), os2i(sharedSecretH), dhParams);
@@ -941,10 +948,22 @@ public class Util {
 	}
 
 	private static ECParameterSpec mapNonceGMWithECDH(BigInteger nonceS, ECPoint sharedSecretPointH, ECParameterSpec params) {
-		// G~ = s.G + H
+		/*
+		 * D~ = (p, a, b, G~, n, h) where G~ = [s]G + H
+		 */
 		ECPoint generator = params.getGenerator();
-		ECPoint ephemeralGenerator = Util.add(Util.multiply(nonceS, generator, params), sharedSecretPointH, params);
-		return new ECParameterSpec(params.getCurve(), ephemeralGenerator, params.getOrder(), params.getCofactor());
+		EllipticCurve curve = params.getCurve();
+		BigInteger a = curve.getA();
+		BigInteger b = curve.getB();
+		ECFieldFp field = (ECFieldFp)curve.getField();
+		BigInteger p = field.getP();
+		BigInteger order = params.getOrder();
+		int cofactor = params.getCofactor();
+		ECPoint ephemeralGenerator = add(multiply(nonceS, generator, params), sharedSecretPointH, params);
+		if (!toBouncyCastleECPoint(ephemeralGenerator, params).isValid()) {
+			LOGGER.info("ephemeralGenerator is not a valid point");
+		}
+		return new ECParameterSpec(new EllipticCurve(new ECFieldFp(p), a, b), ephemeralGenerator, order, cofactor);
 	}
 
 	private static DHParameterSpec mapNonceGMWithDH(BigInteger nonceS, BigInteger sharedSecretH, DHParameterSpec params) {
@@ -962,9 +981,9 @@ public class Util {
 		return fromBouncyCastleECPoint(bcSum);
 	}
 
-	private static ECPoint multiply(BigInteger s, ECPoint x, ECParameterSpec params) {
-		org.bouncycastle.math.ec.ECPoint bcX = toBouncyCastleECPoint(x, params);
-		org.bouncycastle.math.ec.ECPoint bcProd = bcX.multiply(s);
+	public static ECPoint multiply(BigInteger s, ECPoint point, ECParameterSpec params) {
+		org.bouncycastle.math.ec.ECPoint bcPoint = toBouncyCastleECPoint(point, params);
+		org.bouncycastle.math.ec.ECPoint bcProd = bcPoint.multiply(s);
 		return fromBouncyCastleECPoint(bcProd);
 	}
 
@@ -1011,25 +1030,6 @@ public class Util {
 		return result;
 	}
 
-	private static org.bouncycastle.math.ec.ECPoint toBouncyCastleECPoint(ECPoint point, ECParameterSpec params) {
-		EllipticCurve curve = params.getCurve();
-		ECField field = curve.getField();
-		if (!(field instanceof ECFieldFp)) { throw new IllegalArgumentException("Only prime field supported (for now), found " + field.getClass().getCanonicalName()); }
-		int coFactor = params.getCofactor();
-		BigInteger order = params.getOrder();
-		BigInteger a = curve.getA();
-		BigInteger b = curve.getB();
-
-		BigInteger p = getPrime(params);
-		org.bouncycastle.math.ec.ECCurve bcCurve = new ECCurve.Fp(p, a, b, order, BigInteger.valueOf(coFactor));
-		return new org.bouncycastle.math.ec.ECPoint.Fp(bcCurve, bcCurve.fromBigInteger(point.getAffineX()), bcCurve.fromBigInteger(point.getAffineY()));
-	}
-
-	private static ECPoint fromBouncyCastleECPoint(org.bouncycastle.math.ec.ECPoint point) {
-		point = point.normalize();
-		return new ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger());
-	}
-
 	public static String inferKeyAgreementAlgorithm(PublicKey publicKey) {
 		if (publicKey instanceof ECPublicKey) {
 			return "ECDH";
@@ -1038,5 +1038,45 @@ public class Util {
 		} else {
 			throw new IllegalArgumentException("Unsupported public key: " + publicKey);
 		}
+	}
+
+	/**
+	 * This just solves the curve equation for y.
+	 * 
+	 * @param affineX the x coord of a point on the curve
+	 * @param params EC parameters for curve over Fp
+	 * @return the corresponding y coord
+	 */
+	private static BigInteger computeAffineY(BigInteger affineX, ECParameterSpec params) {
+		ECCurve bcCurve = toBouncyCastleECCurve(params);
+		ECFieldElement a = bcCurve.getA();
+		ECFieldElement b = bcCurve.getB();
+		ECFieldElement x = bcCurve.fromBigInteger(affineX);		
+		ECFieldElement y = x.multiply(x).add(a).multiply(x).add(b).sqrt();
+		return y.toBigInteger();
+	}
+
+	private static org.bouncycastle.math.ec.ECPoint toBouncyCastleECPoint(ECPoint point, ECParameterSpec params) {
+		org.bouncycastle.math.ec.ECCurve bcCurve = toBouncyCastleECCurve(params);
+		return bcCurve.createPoint(point.getAffineX(), point.getAffineY(), false);
+		// return new org.bouncycastle.math.ec.ECPoint.Fp(bcCurve, bcCurve.fromBigInteger(point.getAffineX()), bcCurve.fromBigInteger(point.getAffineY()));
+	}
+
+	private static ECPoint fromBouncyCastleECPoint(org.bouncycastle.math.ec.ECPoint point) {
+		point = point.normalize();
+		if (!point.isValid()) { LOGGER.warning("point not valid"); }
+		return new ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger());
+	}
+	
+	private static ECCurve toBouncyCastleECCurve(ECParameterSpec params) {
+		EllipticCurve curve = params.getCurve();
+		ECField field = curve.getField();
+		if (!(field instanceof ECFieldFp)) { throw new IllegalArgumentException("Only prime field supported (for now), found " + field.getClass().getCanonicalName()); }
+		int coFactor = params.getCofactor();
+		BigInteger order = params.getOrder();
+		BigInteger a = curve.getA();
+		BigInteger b = curve.getB();
+		BigInteger p = getPrime(params);
+		return new ECCurve.Fp(p, a, b, order, BigInteger.valueOf(coFactor));
 	}
 }
