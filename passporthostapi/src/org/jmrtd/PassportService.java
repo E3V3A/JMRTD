@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
-import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
@@ -36,6 +35,7 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -65,7 +65,6 @@ import net.sourceforge.scuba.util.Hex;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
@@ -529,7 +528,7 @@ public class PassportService extends PassportApduService implements Serializable
 		switch(mappingType) {
 		case GM:
 			byte[] piccMappingEncodedPublicKey = Util.unwrapDO((byte)0x82, step2Response);
-			Key mappingSharedSecret = null;
+			LOGGER.info("DEBUG: piccMappingEncodedPublicKey = " + Hex.bytesToHexString(piccMappingEncodedPublicKey));
 			try {
 				PublicKey piccMappingPublicKey = Util.decodePublicKeyFromSmartCard(piccMappingEncodedPublicKey, params);
 				mappingAgreement.doPhase(piccMappingPublicKey, true);
@@ -573,8 +572,11 @@ public class PassportService extends PassportApduService implements Serializable
 			KeyPair kp = keyPairGenerator.generateKeyPair();
 			pcdPublicKey = kp.getPublic();
 			pcdPrivateKey = kp.getPrivate();
-			keyAgreement = KeyAgreement.getInstance(agreementAlg);
+			keyAgreement = KeyAgreement.getInstance(agreementAlg, BC_PROVIDER);
 			keyAgreement.init(pcdPrivateKey);
+		} catch (IllegalArgumentException iae) {
+			LOGGER.warning("IllegalArgumentException");
+			throw iae;
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
 		}
@@ -586,7 +588,7 @@ public class PassportService extends PassportApduService implements Serializable
 		PublicKey piccPublicKey = null;
 		byte[] sharedSecretBytes = null;
 		try {
-			piccPublicKey = Util.decodePublicKeyFromSmartCard(piccEncodedPublicKey, params);
+			piccPublicKey = Util.decodePublicKeyFromSmartCard(piccEncodedPublicKey, ephemeralParams);
 			if (pcdPublicKey.equals(piccPublicKey)) { throw new GeneralSecurityException("pcdPublicKey and piccPublicKey are the same!"); }
 			keyAgreement.doPhase(piccPublicKey, true);
 			sharedSecretBytes = keyAgreement.generateSecret();

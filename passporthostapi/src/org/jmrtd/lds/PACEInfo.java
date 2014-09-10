@@ -109,6 +109,28 @@ public class PACEInfo extends SecurityInfo {
 		this.parameterId = parameterId;
 	}
 
+	public static PACEInfo createPACEInfo(byte[] paceInfoBytes) {
+		/*
+		 * FIXME: Should add a constructor to PACEInfo that takes byte[] or InputStream, or
+		 * align this with SecurityInfo.getInstance().
+		 */
+		ASN1Sequence sequence = ASN1Sequence.getInstance(paceInfoBytes);
+		String oid = ((ASN1ObjectIdentifier)sequence.getObjectAt(0)).getId();
+		ASN1Primitive requiredData = sequence.getObjectAt(1).toASN1Primitive();
+		ASN1Primitive optionalData = null;
+		if (sequence.size() == 3) {
+			optionalData = sequence.getObjectAt(2).toASN1Primitive();
+		}
+
+		int version = ((ASN1Integer)requiredData).getValue().intValue();
+		int parameterId = -1;
+		if (optionalData != null) {
+			parameterId = ((ASN1Integer)optionalData).getValue().intValue();
+		}
+
+		return new PACEInfo(oid, version, parameterId);
+	}
+
 	@Override
 	public String getObjectIdentifier() {
 		return protocolOID;

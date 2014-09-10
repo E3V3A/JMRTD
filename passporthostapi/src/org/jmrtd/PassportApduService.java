@@ -78,13 +78,13 @@ public class PassportApduService extends CardService {
 	CAN_PACE_KEY_REFERENCE = 0x02,
 	PIN_PACE_KEY_REFERENCE = 0x03,
 	PUK_PACE_REFERENCE = 0x04;
-	
+
 	private static final long serialVersionUID = 2451509825132976178L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
-	
+
 	/** The applet we select when we start a session. */
 	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
@@ -198,7 +198,7 @@ public class PassportApduService extends CardService {
 			throw new CardServiceException("Could not select MRTD application. SW = " + Integer.toHexString(sw), sw);
 		}
 	}
-	
+
 	private ResponseAPDU transmit(SecureMessagingWrapper wrapper, CommandAPDU capdu) throws CardServiceException {
 		CommandAPDU plainCapdu = capdu;
 		if (wrapper != null) {
@@ -215,28 +215,32 @@ public class PassportApduService extends CardService {
 					rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
 				}
 			} catch (Exception e) {
-				throw new CardServiceException("Exception during transmission of wrapped APDU"
-						+ "\nC=" + Hex.bytesToHexString(plainCapdu.getBytes())
-						+ "\n" + e.getMessage()
-						, sw);
+				if (e instanceof CardServiceException) {
+					throw (CardServiceException)e;
+				} else {
+					throw new CardServiceException("Exception during transmission of wrapped APDU"
+							+ "\nC=" + Hex.bytesToHexString(plainCapdu.getBytes())
+							+ "\n" + e.getMessage()
+							, sw);
+				}
 			} finally {
 				notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);				
 			}
 		}
 
-//		if ((sw & ISO7816.SW_CORRECT_LENGTH_00) == ISO7816.SW_CORRECT_LENGTH_00) {
-//			/* Re-transmit with corrected length if incorrect length. */
-//			int ne = (sw & 0xFF);
-//			plainCapdu = new CommandAPDU(plainCapdu.getCLA(), plainCapdu.getINS(), plainCapdu.getP1(), plainCapdu.getP2(), plainCapdu.getData(), ne);
-//			if (wrapper != null) {
-//				capdu = wrapper.wrap(plainCapdu);
-//			}
-//			rapdu = transmit(capdu);
-//			if (wrapper != null) {
-//				rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
-//				notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);
-//			}
-//		}
+		//		if ((sw & ISO7816.SW_CORRECT_LENGTH_00) == ISO7816.SW_CORRECT_LENGTH_00) {
+		//			/* Re-transmit with corrected length if incorrect length. */
+		//			int ne = (sw & 0xFF);
+		//			plainCapdu = new CommandAPDU(plainCapdu.getCLA(), plainCapdu.getINS(), plainCapdu.getP1(), plainCapdu.getP2(), plainCapdu.getData(), ne);
+		//			if (wrapper != null) {
+		//				capdu = wrapper.wrap(plainCapdu);
+		//			}
+		//			rapdu = transmit(capdu);
+		//			if (wrapper != null) {
+		//				rapdu = wrapper.unwrap(rapdu, rapdu.getBytes().length);
+		//				notifyExchangedPlainTextAPDU(++plainAPDUCount, plainCapdu, rapdu);
+		//			}
+		//		}
 
 		return rapdu;
 	}
@@ -316,70 +320,70 @@ public class PassportApduService extends CardService {
 	 * @throws CardServiceException if the command was not successful
 	 */
 	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean isExtendedLength) throws CardServiceException {
-//		boolean retrySending = false;
+		//		boolean retrySending = false;
 		CommandAPDU capdu = null;
 		ResponseAPDU rapdu = null;
-//		do {
-//			retrySending = false;
-			// In case the data ended right on the block boundary
-			if (le == 0) {
-				return null;
+		//		do {
+		//			retrySending = false;
+		// In case the data ended right on the block boundary
+		if (le == 0) {
+			return null;
+		}
+		// In the case of long read 2/3 less bytes of the actual data will be returned,
+		// because a tag and length will be sent along, here we need to account for this
+		if (isExtendedLength) {
+			if (le < 128) {
+				le += 2;
+			} else if (le < 256) {
+				le += 3;
 			}
-			// In the case of long read 2/3 less bytes of the actual data will be returned,
-			// because a tag and length will be sent along, here we need to account for this
-			if (isExtendedLength) {
-				if (le < 128) {
-					le += 2;
-				} else if (le < 256) {
-					le += 3;
-				}
-				if (le > 256) { le = 256; }
-			}
-			byte offsetHi = (byte)((offset & 0xFF00) >> 8);
-			byte offsetLo = (byte)(offset & 0xFF);
-			if (isExtendedLength) {
-				byte[] data = new byte[] { 0x54, 0x02, offsetHi, offsetLo };
-				capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY2, 0, 0, data, le);
-			} else {
-				capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, offsetHi, offsetLo, le);
-			}
+			if (le > 256) { le = 256; }
+		}
+		byte offsetHi = (byte)((offset & 0xFF00) >> 8);
+		byte offsetLo = (byte)(offset & 0xFF);
+		if (isExtendedLength) {
+			byte[] data = new byte[] { 0x54, 0x02, offsetHi, offsetLo };
+			capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY2, 0, 0, data, le);
+		} else {
+			capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_READ_BINARY, offsetHi, offsetLo, le);
+		}
 
-			short sw = ISO7816.SW_UNKNOWN;
-			try {
-				rapdu = transmit(wrapper, capdu);
-				sw = (short)rapdu.getSW();
-			} catch (CardServiceException cse) {
-				sw = (short)cse.getSW();
-			}
+		short sw = ISO7816.SW_UNKNOWN;
+		try {
+			rapdu = transmit(wrapper, capdu);
+			sw = (short)rapdu.getSW();
+		} catch (CardServiceException cse) {
+			sw = (short)cse.getSW();
+		}
 
-			/* There are 3 cases according to R2-p1_v2_sIII_0039... */
-//			if (sw == ISO7816.SW_NO_ERROR) {
-//				/* sw == 0x9000, no need to try again. */
-//				retrySending = false;
-//			} else if (sw == ISO7816.SW_END_OF_FILE) {
-//				/* sw == 0x6282 means EOF, try again with shorter le. */
-//				le--;
-//				retrySending = true;
-//			} else if ((sw & ISO7816.SW_CORRECT_LENGTH_00) == ISO7816.SW_CORRECT_LENGTH_00) {
-//				/* sw == 0x6Cxx means xx is correct length, try again with that le. */
-//				/* NOTE: the transmit method also does retransmission on 6Cxx. */
-//				le = sw & 0xFF;
-//				retrySending = true;
-//			} else {
-//				/* All other cases. */
-//				if (sw == ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED) {
-//					/* No access, fail READ BINARY, throw a CSE. */
-//					throw new CardServiceException("Security status not satisfied during READ BINARY", sw);
-//				} else {
-//					/* Unexpected sw, don't throw exception, but log. */
-//					LOGGER.warning("Unhandled case for status word in READ BINARY, sw == " + Integer.toHexString(sw));
-//					retrySending = false;
-//				}
-//			}
-//		} while (retrySending);
+		/* There are 3 cases according to R2-p1_v2_sIII_0039... */
+		//			if (sw == ISO7816.SW_NO_ERROR) {
+		//				/* sw == 0x9000, no need to try again. */
+		//				retrySending = false;
+		//			} else if (sw == ISO7816.SW_END_OF_FILE) {
+		//				/* sw == 0x6282 means EOF, try again with shorter le. */
+		//				le--;
+		//				retrySending = true;
+		//			} else if ((sw & ISO7816.SW_CORRECT_LENGTH_00) == ISO7816.SW_CORRECT_LENGTH_00) {
+		//				/* sw == 0x6Cxx means xx is correct length, try again with that le. */
+		//				/* NOTE: the transmit method also does retransmission on 6Cxx. */
+		//				le = sw & 0xFF;
+		//				retrySending = true;
+		//			} else {
+		//				/* All other cases. */
+		//				if (sw == ISO7816.SW_SECURITY_STATUS_NOT_SATISFIED) {
+		//					/* No access, fail READ BINARY, throw a CSE. */
+		//					throw new CardServiceException("Security status not satisfied during READ BINARY", sw);
+		//				} else {
+		//					/* Unexpected sw, don't throw exception, but log. */
+		//					LOGGER.warning("Unhandled case for status word in READ BINARY, sw == " + Integer.toHexString(sw));
+		//					retrySending = false;
+		//				}
+		//			}
+		//		} while (retrySending);
 
 		byte[] rapduBytes = rapdu == null ? null : rapdu.getData();
-//		short sw = (short)rapdu.getSW(); /* NOTE: Update the SW to the last resent APDU. */
+		//		short sw = (short)rapdu.getSW(); /* NOTE: Update the SW to the last resent APDU. */
 		if (isExtendedLength && sw == ISO7816.SW_NO_ERROR) {
 			/* Strip the response off the tag 0x53 and the length field. */
 			byte[] data = rapduBytes;
@@ -665,7 +669,7 @@ public class PassportApduService extends CardService {
 				|| refPublicKeyOrSecretKey == PUK_PACE_REFERENCE)) { throw new IllegalArgumentException("Unsupported key type reference (MRZ, CAN, etc), found " + refPublicKeyOrSecretKey); }
 
 		byte[] refPublicKeyOrSecretKeyBytes = Util.wrapDO((byte)0x83, new byte[] { (byte)refPublicKeyOrSecretKey }); /* FIXME: define constant for 0x83 */
-		
+
 		/*
 		 * 0x84 Reference of a private key / Reference for computing a
 		 * session key.
@@ -677,7 +681,7 @@ public class PassportApduService extends CardService {
 		if (refPrivateKeyOrForComputingSessionKey != null) {
 			refPrivateKeyOrForComputingSessionKey = Util.wrapDO((byte)0x84, refPrivateKeyOrForComputingSessionKey);
 		}
-		
+
 		/* Construct data. */
 		ByteArrayOutputStream dataOutputStream = new ByteArrayOutputStream();
 		try {
