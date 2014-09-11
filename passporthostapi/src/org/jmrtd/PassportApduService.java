@@ -429,6 +429,7 @@ public class PassportApduService extends CardService {
 
 	/**
 	 * Sends an <code>INTERNAL AUTHENTICATE</code> command to the passport.
+	 * This is part of AA.
 	 * 
 	 * @param wrapper
 	 *            secure messaging wrapper
@@ -445,8 +446,9 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport. The
-	 * resulting byte array has length 32 and contains <code>rndICC</code>
+	 * Sends an <code>EXTERNAL AUTHENTICATE</code> command to the passport.
+	 * This is part of BAC.
+	 * The resulting byte array has length 32 and contains <code>rndICC</code>
 	 * (first 8 bytes), <code>rndIFD</code> (next 8 bytes), their key material "
 	 * <code>kICC</code>" (last 16 bytes).
 	 * 
@@ -542,7 +544,8 @@ public class PassportApduService extends CardService {
 	}
 
 	/**
-	 * Sends the EXTERNAL AUTHENTICATE commands for EAC terminal verification
+	 * Sends the EXTERNAL AUTHENTICATE command.
+	 * This is used in EAC-TA.
 	 * 
 	 * @param wrapper
 	 *            secure messaging wrapper
