@@ -414,7 +414,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 *
 	 * @throws CardServiceException
 	 */
-	public synchronized void doPACE(BACKeySpec keySpec, String oid,  AlgorithmParameterSpec params) throws CardServiceException {
+	public synchronized void doPACE(BACKeySpec keySpec, String oid,  AlgorithmParameterSpec params) throws PACEException {
 		PACEInfo.MappingType mappingType = PACEInfo.toMappingType(oid); /* Either GM or IM. */
 		String agreementAlg = PACEInfo.toKeyAgreementAlgorithm(oid); /* Either DH or ECDH. */
 		String cipherAlg  = PACEInfo.toCipherAlgorithm(oid); /* Either DESede or AES. */
@@ -438,16 +438,18 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] keySeed = computeKeySeed(keySpec);
 			staticPACEKey = Util.deriveKey(keySeed, digestAlg, cipherAlg, keyLength, Util.PACE_MODE);
 			staticPACECipher = Cipher.getInstance(cipherAlg+"/CBC/NoPadding");
+
+
+			/* FIXME: multiple domain params feature not implemented here, for now. */
+			byte[] referencePrivateKeyOrForComputingSessionKey = null;
+
+			/* Send to the PICC. */
+			sendMSESetATMutualAuth(wrapper, oid, MRZ_PACE_KEY_REFERENCE, referencePrivateKeyOrForComputingSessionKey);
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-			throw new CardServiceException("Could not derive static PACE key");
+			throw new PACEException("PCD side error in static PACE key derivation step");
+		} catch (CardServiceException cse) {
+			throw new PACEException("PICC side error in static PACE key derivation step", cse.getSW());
 		}
-
-		/* FIXME: multiple domain params feature not implemented here, for now. */
-		byte[] referencePrivateKeyOrForComputingSessionKey = null;
-
-		/* Send to the PICC. */
-		sendMSESetATMutualAuth(wrapper, oid, MRZ_PACE_KEY_REFERENCE, referencePrivateKeyOrForComputingSessionKey);
 
 		/* 
 		 * PCD and PICC exchange a chain of general authenticate commands.
@@ -460,28 +462,28 @@ public class PassportService extends PassportApduService implements Serializable
 		 * 
 		 * Receive encrypted nonce z = E(K_pi, s).
 		 * (This is steps 1-3 in Table 4.4 in BSI 03111 2.0.)
-		 */
-		byte[] step1Data = new byte[] { };
-		/* Command data is empty. this implies an empty dynamic authentication object. */
-		LOGGER.info("DEBUG: sending step1Data = " + Hex.bytesToHexString(step1Data));
-		byte[] step1Response = sendGeneralAuthenticate(wrapper, step1Data, false);
-		LOGGER.info("DEBUG: received step1Response = " + Hex.bytesToHexString(step1Response));
-		byte[] step1EncryptedNonce = Util.unwrapDO((byte)0x80, step1Response);
-		LOGGER.info("DEBUG: received step1EncryptedNonce = " + Hex.bytesToHexString(step1EncryptedNonce) + ", length = " + step1EncryptedNonce.length);
-
-		/*
+		 * 
 		 * Decrypt nonce s = D(K_pi, z).
 		 * (This is step 4 in Table 4.4 in BSI 03111 2.0.)
 		 */
 		byte[] step1Nonce = null;
 		try {
+			byte[] step1Data = new byte[] { };
+			/* Command data is empty. this implies an empty dynamic authentication object. */
+			LOGGER.info("DEBUG: sending step1Data = " + Hex.bytesToHexString(step1Data));
+			byte[] step1Response = sendGeneralAuthenticate(wrapper, step1Data, false);
+			LOGGER.info("DEBUG: received step1Response = " + Hex.bytesToHexString(step1Response));
+			byte[] step1EncryptedNonce = Util.unwrapDO((byte)0x80, step1Response);
+			LOGGER.info("DEBUG: received step1EncryptedNonce = " + Hex.bytesToHexString(step1EncryptedNonce) + ", length = " + step1EncryptedNonce.length);
+
 			/* (Re)initialize the K_pi cipher for decryption. */
 			staticPACECipher.init(Cipher.DECRYPT_MODE, staticPACEKey, new IvParameterSpec(new byte[16])); /* FIXME: iv length 16 is independent of keylength? */
 			step1Nonce = staticPACECipher.doFinal(step1EncryptedNonce);
 			LOGGER.info("DEBUG: step1Nonce = " + Hex.bytesToHexString(step1Nonce) + ", length = " + step1Nonce.length);
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-			throw new CardServiceException(gse.getMessage()); /* FIXME */
+			throw new PACEException("PCD side exception in tranceiving nonce step: " + gse.getMessage());
+		} catch (CardServiceException cse) {
+			throw new PACEException("PICC side exception in tranceiving nonce step: " + cse.getMessage(), cse.getSW());
 		}
 
 		/*
@@ -496,6 +498,7 @@ public class PassportService extends PassportApduService implements Serializable
 		KeyAgreement mappingAgreement = null;
 		PublicKey pcdMappingPublicKey = null;
 		PrivateKey pcdMappingPrivateKey = null;
+		AlgorithmParameterSpec ephemeralParams = null;
 		try {
 			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(agreementAlg, BC_PROVIDER);
 			keyPairGenerator.initialize(params);
@@ -504,54 +507,49 @@ public class PassportService extends PassportApduService implements Serializable
 			pcdMappingPrivateKey = kp.getPrivate();
 			mappingAgreement = KeyAgreement.getInstance(agreementAlg);
 			mappingAgreement.init(pcdMappingPrivateKey);
-		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-		}
 
-		byte[] step2Data = null;
-		switch(mappingType) {
-		case GM:
-			/* Encode our public key. */
-			byte[] pcdMappingEncodedPublicKey = Util.encodePublicKeyForSmartCard(pcdMappingPublicKey);
-			step2Data = pcdMappingEncodedPublicKey;
-			break;
-		case IM:
-			/* TODO: Generate nonce T, send it as step2Data. */
-			throw new IllegalStateException("IM not yet implemented"); // FIXME
-		}
-		step2Data = Util.wrapDO((byte)0x81, step2Data);
-		LOGGER.info("DEBUG: sending step2Data = " + Hex.bytesToHexString(step2Data));
-		byte[] step2Response = sendGeneralAuthenticate(wrapper, step2Data, false);
-		LOGGER.info("DEBUG: received step2Response = " + Hex.bytesToHexString(step2Response));
-
-		byte[] mappingSharedSecretBytes = null;
-		switch(mappingType) {
-		case GM:
-			byte[] piccMappingEncodedPublicKey = Util.unwrapDO((byte)0x82, step2Response);
-			LOGGER.info("DEBUG: piccMappingEncodedPublicKey = " + Hex.bytesToHexString(piccMappingEncodedPublicKey));
-			try {
-				PublicKey piccMappingPublicKey = Util.decodePublicKeyFromSmartCard(piccMappingEncodedPublicKey, params);
-				mappingAgreement.doPhase(piccMappingPublicKey, true);
-				mappingSharedSecretBytes = mappingAgreement.generateSecret();
-			} catch (GeneralSecurityException gse) {
-				gse.printStackTrace();
-				throw new CardServiceException("Error during mapping" + gse.getMessage());
+			byte[] mappingSharedSecretBytes = null;
+			byte[] step2Data = null;
+			switch(mappingType) {
+			case GM:
+				/* Encode our public key. */
+				byte[] pcdMappingEncodedPublicKey = Util.encodePublicKeyForSmartCard(pcdMappingPublicKey);
+				step2Data = pcdMappingEncodedPublicKey;
+				break;
+			case IM:
+				/* TODO: Generate nonce T, send it as step2Data. */
+				throw new IllegalStateException("IM not yet implemented"); // FIXME
 			}
-			break;
-		case IM:
-			/* NOTE: The context specific data object 0x82 SHALL be empty (TR SAC 3.3.2). */
-			throw new IllegalStateException("IM not yet implemented"); // FIXME
-		}
 
-		/* Now use the mappingSharedSecret with nonces s amd t to create ephemeral domain params (i.e., a new generator). */
-		AlgorithmParameterSpec ephemeralParams = null;
-		switch(mappingType) {
-		case GM:
-			LOGGER.info("DEBUG: mapping shared secret = " + Hex.bytesToHexString(mappingSharedSecretBytes));
-			ephemeralParams = Util.mapNonceGM(step1Nonce, mappingSharedSecretBytes, params);
-			break;
-		case IM:
-			throw new IllegalStateException("IM not yet implemented"); // FIXME
+			step2Data = Util.wrapDO((byte)0x81, step2Data);
+			LOGGER.info("DEBUG: sending step2Data = " + Hex.bytesToHexString(step2Data));
+			byte[] step2Response = sendGeneralAuthenticate(wrapper, step2Data, false);
+			LOGGER.info("DEBUG: received step2Response = " + Hex.bytesToHexString(step2Response));
+
+			switch(mappingType) {
+			case GM:
+				byte[] piccMappingEncodedPublicKey = Util.unwrapDO((byte)0x82, step2Response);
+				LOGGER.info("DEBUG: piccMappingEncodedPublicKey = " + Hex.bytesToHexString(piccMappingEncodedPublicKey));
+				try {
+					PublicKey piccMappingPublicKey = Util.decodePublicKeyFromSmartCard(piccMappingEncodedPublicKey, params);
+					mappingAgreement.doPhase(piccMappingPublicKey, true);
+					mappingSharedSecretBytes = mappingAgreement.generateSecret();
+				} catch (GeneralSecurityException gse) {
+					gse.printStackTrace();
+					throw new PACEException("Error during mapping" + gse.getMessage());
+				}
+				
+				LOGGER.info("DEBUG: mapping shared secret = " + Hex.bytesToHexString(mappingSharedSecretBytes));
+				ephemeralParams = Util.mapNonceGM(step1Nonce, mappingSharedSecretBytes, params);
+				break;
+			case IM:
+				/* NOTE: The context specific data object 0x82 SHALL be empty (TR SAC 3.3.2). */
+				throw new IllegalStateException("DEBUG: IM not yet implemented"); // FIXME
+			}
+		} catch (GeneralSecurityException gse) {
+			throw new PACEException("PCD side error in mapping nonce step: " + gse.getMessage());
+		} catch (CardServiceException cse) {
+			throw new PACEException("PICC side exception in mapping nonce step: " + cse.getMessage(), cse.getSW());
 		}
 
 		/*
@@ -566,6 +564,9 @@ public class PassportService extends PassportApduService implements Serializable
 		KeyAgreement keyAgreement = null;
 		PublicKey pcdPublicKey = null;
 		PrivateKey pcdPrivateKey = null;
+		PublicKey piccPublicKey = null;
+		byte[] sharedSecretBytes = null;
+
 		try {
 			KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(agreementAlg, BC_PROVIDER);
 			keyPairGenerator.initialize(ephemeralParams);
@@ -574,28 +575,24 @@ public class PassportService extends PassportApduService implements Serializable
 			pcdPrivateKey = kp.getPrivate();
 			keyAgreement = KeyAgreement.getInstance(agreementAlg, BC_PROVIDER);
 			keyAgreement.init(pcdPrivateKey);
-		} catch (IllegalArgumentException iae) {
-			LOGGER.warning("IllegalArgumentException");
-			throw iae;
-		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-		}
 
-		byte[] pcdEncodedPublicKey = Util.encodePublicKeyForSmartCard(pcdPublicKey);
-		byte[] step3Data = Util.wrapDO((byte)0x83, pcdEncodedPublicKey);
-		byte[] step3Response = sendGeneralAuthenticate(wrapper, step3Data, false);
-		byte[] piccEncodedPublicKey = Util.unwrapDO((byte)0x84, step3Response);
-		PublicKey piccPublicKey = null;
-		byte[] sharedSecretBytes = null;
-		try {
+			byte[] pcdEncodedPublicKey = Util.encodePublicKeyForSmartCard(pcdPublicKey);
+			byte[] step3Data = Util.wrapDO((byte)0x83, pcdEncodedPublicKey);
+			byte[] step3Response = sendGeneralAuthenticate(wrapper, step3Data, false);
+			LOGGER.info("DEBUG: step3Response = " + Hex.bytesToHexString(step3Response));
+			byte[] piccEncodedPublicKey = Util.unwrapDO((byte)0x84, step3Response);
 			piccPublicKey = Util.decodePublicKeyFromSmartCard(piccEncodedPublicKey, ephemeralParams);
-			if (pcdPublicKey.equals(piccPublicKey)) { throw new GeneralSecurityException("pcdPublicKey and piccPublicKey are the same!"); }
+			if (pcdPublicKey.equals(piccPublicKey)) { throw new PACEException("PCD's public key and PICC's public key are the same in key agreement step!"); }
 			keyAgreement.doPhase(piccPublicKey, true);
 			sharedSecretBytes = keyAgreement.generateSecret();
+		} catch (IllegalStateException ise) {
+			throw new PACEException("PCD side exception in key agreement step: " + ise.getMessage());
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
-			throw new CardServiceException("Error during key agreement" + gse.getMessage());
+			throw new PACEException("PCD side exception in key agreement step: " + gse.getMessage());
+		} catch (CardServiceException cse) {
+			throw new PACEException("PICC side exception in key agreement step: " + cse.getMessage(), cse.getSW());
 		}
+
 		/* Derive secure messaging keys. */
 		SecretKey encKey = null;
 		SecretKey macKey = null;
@@ -604,14 +601,7 @@ public class PassportService extends PassportApduService implements Serializable
 			macKey = Util.deriveKey(sharedSecretBytes, digestAlg, cipherAlg, keyLength, Util.MAC_MODE);
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
-			throw new IllegalStateException("Security exception during secure messaging key derivation: " + gse.getMessage());
-		}
-
-		/* Restart secure messaging? FIXME: or should this be moved until after step 4? */
-		try {
-			wrapper = new SecureMessagingWrapper(encKey, macKey, cipherAlg, Util.inferMacAlgorithmFromCipherAlgorithm(cipherAlg));
-		} catch (GeneralSecurityException gse) {
-			throw new IllegalStateException("Security exception in secure messaging establishment: " + gse.getMessage());
+			throw new PACEException("Security exception during secure messaging key derivation: " + gse.getMessage());
 		}
 
 		/*
@@ -624,14 +614,33 @@ public class PassportService extends PassportApduService implements Serializable
 		try {
 			byte[] pcdToken = Util.generateAuthenticationToken(oid, macKey, piccPublicKey);
 			byte[] step4Data = Util.wrapDO((byte)0x85, pcdToken);
+			LOGGER.info("DEBUG: step4Data = " + Hex.bytesToHexString(step4Data));
 			byte[] step4Response = sendGeneralAuthenticate(wrapper, step4Data, true);
+			LOGGER.info("DEBUG: received step4Response = " + Hex.bytesToHexString(step4Response));
 			byte[] piccToken = Util.unwrapDO((byte)0x86, step4Response);
 			byte[] expectedPICCToken = Util.generateAuthenticationToken(oid, macKey, pcdPublicKey);
 			if (!Arrays.equals(expectedPICCToken, piccToken)) {
 				throw new GeneralSecurityException("PICC authentication token mismatch");
 			}
 		} catch (GeneralSecurityException gse) {
-			throw new IllegalStateException("Security exception in authentication token generation: " + gse.getMessage());
+			throw new PACEException("PCD side exception in authentication token generation step: " + gse.getMessage());
+		} catch (CardServiceException cse) {
+			throw new PACEException("PICC side exception in authentication token generation step: " + cse.getMessage(), cse.getSW());
+		}
+
+		/*
+		 * Restart secure messaging? FIXME: should this go before or after step 4?
+		 * 
+		 * 4.6 of TR-SAC: If Secure Messaging is restarted, the SSC is used as follows:
+		 *  - The commands used for key agreement are protected with the old session keys and old SSC.
+		 *    This applies in particular for the response of the last command used for session key agreement.
+		 *  - The Send Sequence Counter is set to its new start value, i.e. within this specification the SSC is set to 0.
+		 *  - The new session keys and the new SSC are used to protect subsequent commands/responses.
+		 */
+		try {
+			wrapper = new SecureMessagingWrapper(encKey, macKey, cipherAlg, Util.inferMacAlgorithmFromCipherAlgorithm(cipherAlg));
+		} catch (GeneralSecurityException gse) {
+			throw new IllegalStateException("Security exception in secure messaging establishment: " + gse.getMessage());
 		}
 	}
 

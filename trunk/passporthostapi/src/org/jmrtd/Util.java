@@ -94,7 +94,7 @@ import org.jmrtd.lds.SecurityInfo;
  * @version $Revision: 1386 $
  */
 public class Util {
-	
+
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Mode for KDF. */
@@ -256,8 +256,7 @@ public class Util {
 	/*@ requires 0 <= offset && offset < length;
 	  @ requires 0 <= length && length <= in.length;
 	 */
-	public static byte[] pad(/*@ non_null */ byte[] in,
-			int offset, int length) {
+	public static byte[] pad(/*@ non_null */ byte[] in, int offset, int length) {
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		out.write(in, offset, length);
 		out.write((byte)0x80);
@@ -343,6 +342,7 @@ public class Util {
 	}
 
 	/**
+	 * Converts an integer to an octet string.
 	 * Based on BSI TR 03111 Section 3.1.2.
 	 *
 	 * @param val positive integer
@@ -361,16 +361,23 @@ public class Util {
 		return result;
 	}
 
+	/**
+	 * Converts an integer to an octet string.
+	 * 
+	 * @param val positive integer
+	 * @return octet string
+	 */
 	public static byte[] i2os(BigInteger val) {
 		/* FIXME: Quick hack. What if val < 0? -- MO */
 		/* Do something with: int sizeInBytes = val.bitLength() / Byte.SIZE; */
-		
+
 		int sizeInNibbles = val.toString(16).length();
 		if (sizeInNibbles % 2 != 0) { sizeInNibbles++; }
 		return i2os(val, sizeInNibbles / 2);
 	}
 
 	/**
+	 * Converts an octet string to an integer.
 	 * Based on BSI TR 03111 Section 3.1.2.
 	 *
 	 * @param bytes octet string
@@ -383,6 +390,7 @@ public class Util {
 	}
 
 	/**
+	 * Converts an octet string to an integer.
 	 * Based on BSI TR 03111 Section 3.1.2.
 	 *
 	 * @param bytes octet string
@@ -403,28 +411,25 @@ public class Util {
 	}
 
 	/**
+	 * Convert an octet string to field element via OS2FE as specified in BSI TR-03111.
 	 *
-	 * Convert nonce to field element via OS2FE.
-	 *
-	 * @param bytes
-	 * @return
+	 * @param bytes octet string
+	 * @return positive integer
 	 */
 	public static BigInteger os2fe(byte[] bytes, BigInteger p) {
 		return Util.os2i(bytes).mod(p);
 	}
 
-	public static ECPoint os2ECPoint(byte[] encoded, ECParameterSpec params) {
-		BigInteger p = getPrime(params);
-		int length = encoded.length;
-		if (length % 2 != 0) { LOGGER.warning("DEBUG: length " + length + " not even"); }
-		return new ECPoint(os2i(encoded, 0, length/2).mod(p), Util.os2i(encoded, length/2, length/2).mod(p));
-	}
-
-	public static byte[] ECPoint2os(ECPoint point) {
+	/**
+	 * @param point
+	 * @return
+	 */
+	public static byte[] publicKeyECPointToOS(ECPoint point) {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 		BigInteger x = point.getAffineX();
 		BigInteger y = point.getAffineY();
 		try {
+			bOut.write(0x04);
 			bOut.write(i2os(x));
 			bOut.write(i2os(y));
 			bOut.close();
@@ -749,7 +754,7 @@ public class Util {
 	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey) {
 		return encodePublicKeyDataObject(oid, publicKey, true);
 	}
-	
+
 	/**
 	 * Based on TR-SAC 1.01 4.5.1 and 4.5.2.
 	 * 
@@ -790,10 +795,10 @@ public class Util {
 					tlvOut.writeTag(0x81); tlvOut.writeValue(i2os(p)); /* Prime modulus */
 					tlvOut.writeTag(0x82); tlvOut.writeValue(i2os(a)); /* First coefficient */
 					tlvOut.writeTag(0x83); tlvOut.writeValue(i2os(b)); /* Second coefficient */
-					tlvOut.writeTag(0x84); tlvOut.write(0x04); tlvOut.write(ECPoint2os(generator)); tlvOut.writeValueEnd(); /* Base point */
+					tlvOut.writeTag(0x84); tlvOut.write(i2os(generator.getAffineX())); tlvOut.write(i2os(generator.getAffineY())); tlvOut.writeValueEnd(); /* Base point */
 					tlvOut.writeTag(0x85); tlvOut.writeValue(i2os(order)); /* Order of the base point */
 				}
-				tlvOut.writeTag(0x86); tlvOut.write(0x04); tlvOut.write(ECPoint2os(publicPoint)); tlvOut.writeValueEnd(); /* Public point */
+				tlvOut.writeTag(0x86); tlvOut.write(publicKeyECPointToOS(publicPoint)); tlvOut.writeValueEnd(); /* Public point */
 				if (!isContextKnown) {
 					tlvOut.writeTag(0x87); tlvOut.writeValue(i2os(BigInteger.valueOf(coFactor))); /* Cofactor */			
 				}
@@ -811,7 +816,6 @@ public class Util {
 	 * Write uncompressed coordinates (for EC) or public value (DH).
 	 * 
 	 * FIXME: how can we be sure coords are uncompressed?
-	 * FIXME: where is tag 0x04 described? ISO 7816? Make a constant.
 	 * 
 	 * @param publicKey
 	 * 
@@ -825,8 +829,7 @@ public class Util {
 			ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
 			try {
 				ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-				bOut.write(0x04);
-				bOut.write(Util.ECPoint2os(ecPublicKey.getW()));
+				bOut.write(Util.publicKeyECPointToOS(ecPublicKey.getW()));
 				byte[] encodedPublicKey = bOut.toByteArray();
 				bOut.close();
 				return encodedPublicKey;
@@ -846,9 +849,9 @@ public class Util {
 		if (params == null) { throw new IllegalArgumentException("Params cannot be null"); }
 		try {
 			DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(encodedPublicKey));
-			int b = dataIn.read();
-			if (b != 0x04) { throw new IllegalArgumentException("Expected encoded public key to start with 0x04"); }
 			if (params instanceof ECParameterSpec) {
+				int b = dataIn.read();
+				if (b != 0x04) { throw new IllegalArgumentException("Expected encoded public key to start with 0x04"); }
 				int length = (encodedPublicKey.length - 1) / 2;
 				byte[] xCoordBytes = new byte[length];
 				byte[] yCoordBytes = new byte[length];
@@ -864,6 +867,8 @@ public class Util {
 				KeyFactory kf = KeyFactory.getInstance("EC");
 				return kf.generatePublic(new ECPublicKeySpec(w, ecParams));
 			} else if (params instanceof DHParameterSpec) {
+				int b = dataIn.read();
+				if (b != 0x04) { throw new IllegalArgumentException("Expected encoded public key to start with 0x04"); }
 				int length = encodedPublicKey.length - 1;
 				byte[] publicValue = new byte[length];
 				dataIn.readFully(publicValue);
@@ -908,7 +913,7 @@ public class Util {
 		byte[] encodedPCDPublicKeyDataObject = encodePublicKeyDataObject(oid, publicKey);
 		mac.init(macKey);
 		byte[] maccedPublicKeyDataObject = mac.doFinal(encodedPCDPublicKeyDataObject);
-		
+
 		/* Output length is 64 bits. */
 		byte[] authenticationToken = new byte[8];
 		System.arraycopy(maccedPublicKeyDataObject, 0, authenticationToken, 0, authenticationToken.length);
@@ -1067,7 +1072,7 @@ public class Util {
 		if (!point.isValid()) { LOGGER.warning("point not valid"); }
 		return new ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger());
 	}
-	
+
 	private static ECCurve toBouncyCastleECCurve(ECParameterSpec params) {
 		EllipticCurve curve = params.getCurve();
 		ECField field = curve.getField();

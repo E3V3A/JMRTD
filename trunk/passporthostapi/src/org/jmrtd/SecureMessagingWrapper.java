@@ -112,15 +112,17 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg) throws GeneralSecurityException {
 		this(ksEnc, ksMac, cipherAlg, macAlg, 0L);
 	}
-	
+
 	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg, long ssc) throws GeneralSecurityException {
 		this.ksEnc = ksEnc;
 		this.ksMac = ksMac;
 		this.ssc = ssc;
+		LOGGER.info("DEBUG: cipherAlg = " + cipherAlg);
+		LOGGER.info("DEBUG: macAlg = " + macAlg);
 		cipher = Cipher.getInstance(cipherAlg);
 		mac = Mac.getInstance(macAlg);		
 	}
-	
+
 	/**
 	 * Gets the current value of the send sequence counter.
 	 * 
@@ -199,6 +201,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 		byte[] maskedHeader = new byte[] { (byte)(commandAPDU.getCLA() | (byte)0x0C), (byte)commandAPDU.getINS(), (byte)commandAPDU.getP1(), (byte)commandAPDU.getP2() };
 
+		/* FIXME: should we pad here only for 3DES or also for AES? */
 		byte[] paddedHeader = Util.pad(maskedHeader);
 
 		boolean hasDO85 = ((byte)commandAPDU.getINS() == ISO7816.INS_READ_BINARY2);
