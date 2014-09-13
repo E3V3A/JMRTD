@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: Util.java 1386 2012-03-22 11:16:16Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -91,7 +91,7 @@ import org.jmrtd.lds.SecurityInfo;
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * @author Ronny Wichers Schreur (ronny@cs.ru.nl)
  * 
- * @version $Revision: 1386 $
+ * @version $Revision$
  */
 public class Util {
 

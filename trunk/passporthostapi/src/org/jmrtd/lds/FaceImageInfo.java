@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: FaceImageInfo.java -1M 2011-06-21 13:34:07Z (local) $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -43,7 +43,7 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  *
- * @version $Revision: $
+ * @version $Revision$
  */
 public class FaceImageInfo extends AbstractImageInfo {
 
@@ -728,7 +728,7 @@ public class FaceImageInfo extends AbstractImageInfo {
 	 * 
 	 * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
 	 * 
-	 * @version $Revision: -1M $
+	 * @version $Revision$
 	 */
 	public static class FeaturePoint
 	{

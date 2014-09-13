@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: MRZInfo.java 1386 2012-03-22 11:16:16Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -38,7 +38,7 @@ import net.sourceforge.scuba.data.Gender;
  *
  * @author The JMRTD team (info@jmrtd.org)
  *
- * @version $Revision: 1386 $
+ * @version $Revision$
  */
 public class MRZInfo extends AbstractLDSInfo {
 

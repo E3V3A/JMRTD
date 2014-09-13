@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: AAEvent.java 1410 2012-04-07 10:15:11Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -31,7 +31,7 @@ import java.util.EventObject;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  *
- * @version $Revision: 1410 $
+ * @version $Revision$
  */
 public class AAEvent extends EventObject {
 

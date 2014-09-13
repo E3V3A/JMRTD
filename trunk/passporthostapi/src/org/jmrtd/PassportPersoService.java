@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportPersoService.java 1482 2012-11-14 08:20:46Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -55,7 +55,7 @@ import org.jmrtd.lds.MRZInfo;
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * 
- * @version $Revision: 1482 $
+ * @version $Revision$
  */
 public class PassportPersoService extends CardService {
 

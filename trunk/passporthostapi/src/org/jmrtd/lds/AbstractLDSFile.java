@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportFile.java 1320 2011-04-25 19:53:43Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -33,7 +33,7 @@ import java.io.OutputStream;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1320 $
+ * @version $Revision$
  */
 abstract class AbstractLDSFile implements LDSFile {
 

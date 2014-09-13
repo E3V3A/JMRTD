@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: DG2File.java 1493 2013-02-25 20:49:16Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -46,7 +46,7 @@ import org.jmrtd.cbeff.StandardBiometricHeader;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1493 $
+ * @version $Revision$
  */
 public class DG2File extends CBEFFDataGroup<FaceInfo> {
 

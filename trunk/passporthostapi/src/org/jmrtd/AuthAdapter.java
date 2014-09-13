@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: AuthListener.java 1208 2010-07-18 14:26:58Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -27,7 +27,7 @@ package org.jmrtd;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision: $
+ * @version $Revision$
  */
 public class AuthAdapter implements AuthListener {
 

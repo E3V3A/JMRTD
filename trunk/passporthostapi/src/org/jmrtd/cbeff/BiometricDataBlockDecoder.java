@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
 package org.jmrtd.cbeff;
@@ -30,7 +30,7 @@ import java.io.InputStream;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision: $
+ * @version $Revision$
  * 
  * @param <B> the type of BDB implementation that is decoded by this decoder
  * 

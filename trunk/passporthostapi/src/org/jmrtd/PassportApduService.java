@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportApduService.java 1494 2013-02-27 16:36:26Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -68,7 +68,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1494 $
+ * @version $Revision$
  */
 public class PassportApduService extends CardService {
 

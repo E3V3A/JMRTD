@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: FaceInfo.java 1493 2013-02-25 20:49:16Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
