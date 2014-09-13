@@ -231,6 +231,12 @@ public class FaceImageInfo extends AbstractImageInfo {
 		this.featurePoints = new FeaturePoint[featurePointCount];
 		this.imageDataType = imageDataType;
 		this.recordLength = 20 + 8 * featurePointCount + 12 + imageLength;
+		
+		this.faceImageType = faceImageType;
+		this.colorSpace = colorSpace;
+		this.sourceType = sourceType;
+		this.deviceType = deviceType;
+		this.quality = quality;
 	}
 
 	/**

@@ -59,13 +59,14 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 	private static final long serialVersionUID = -2859033943345961793L;
 
-	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[8]);
+	public static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[8]);
 	
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private SecretKey ksEnc, ksMac;
 	private transient Cipher cipher;
 	private transient Mac mac;
+	
 	private long ssc;
 
 	/**
@@ -120,7 +121,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 		LOGGER.info("DEBUG: cipherAlg = " + cipherAlg);
 		LOGGER.info("DEBUG: macAlg = " + macAlg);
 		cipher = Cipher.getInstance(cipherAlg);
-		mac = Mac.getInstance(macAlg);		
+		mac = Mac.getInstance(macAlg);
 	}
 
 	/**
@@ -218,9 +219,18 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			do97 = bOut.toByteArray();
 		}
 
+		IvParameterSpec ivParams = ZERO_IV_PARAM_SPEC;
+		if ("DESede".equals(ksEnc.getAlgorithm())) {
+			/* Use ZERO_IV_PARAM_SPEC for ivParams. */
+		} else if ("AES".equals(ksEnc.getAlgorithm())) {
+			/*
+			 * AES uses different IV, should be IV = E K_Enc , SSC), see ICAO SAC TR Section 4.6.3.
+			 */
+		}
+		
 		if (lc > 0) {
 			byte[] data = Util.pad(commandAPDU.getData());
-			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
+			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ivParams);
 			byte[] ciphertext = cipher.doFinal(data);
 
 			bOut.reset();
