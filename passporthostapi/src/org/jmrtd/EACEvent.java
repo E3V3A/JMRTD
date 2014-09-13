@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -39,7 +39,7 @@ import org.jmrtd.cert.CardVerifiableCertificate;
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * 
- * @version $Revision: $
+ * @version $Revision$
  */
 public class EACEvent extends EventObject {
 

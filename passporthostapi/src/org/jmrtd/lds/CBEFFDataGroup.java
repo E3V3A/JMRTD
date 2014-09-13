@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: CBEFFDataGroup.java 1454 2012-10-05 13:32:10Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -45,7 +45,7 @@ import org.jmrtd.cbeff.ISO781611;
  * 
  * @param <R> the type of the elements
  * 
- * @version $Revision: 1454 $
+ * @version $Revision$
  */
 abstract class CBEFFDataGroup<R extends BiometricDataBlock> extends DataGroup {
 

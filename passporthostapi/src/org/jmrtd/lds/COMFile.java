@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: COMFile.java 1482 2012-11-14 08:20:46Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -42,7 +42,7 @@ import net.sourceforge.scuba.tlv.TLVOutputStream;
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1482 $
+ * @version $Revision$
  */
 public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 

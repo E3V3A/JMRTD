@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: SODFile.java 1491 2013-02-19 22:03:36Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -89,7 +89,7 @@ import org.jmrtd.JMRTDSecurityProvider;
  * @author Wojciech Mostowski (woj@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1491 $
+ * @version $Revision$
  */
 public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not a DataGroup, consider changing the name of the DataGroup class. */
 

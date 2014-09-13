@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: DG12File.java 1481 2012-11-09 21:55:31Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -47,7 +47,7 @@ import net.sourceforge.scuba.util.Hex;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision: 1481 $
+ * @version $Revision$
  */
 public class DG12File extends DataGroup {
 

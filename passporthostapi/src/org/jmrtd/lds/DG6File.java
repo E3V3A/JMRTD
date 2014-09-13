@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: DG6File.java 1454 2012-10-05 13:32:10Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.lds;
@@ -30,7 +30,7 @@ import java.io.InputStream;
  * 
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision: 1454 $
+ * @version $Revision$
  */
 public class DG6File extends DisplayedImageDataGroup {
 

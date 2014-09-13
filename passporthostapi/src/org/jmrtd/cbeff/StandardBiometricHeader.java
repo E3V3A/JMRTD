@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: PassportFile.java 1320 2011-04-25 19:53:43Z martijno $
+ * $Id$
  */
 
 package org.jmrtd.cbeff;
@@ -32,7 +32,7 @@ import java.util.TreeMap;
  * 
  * @author The JMRTD team (info@jmrtd.org)
  * 
- * @version $Revision: $
+ * @version $Revision$
  * 
  * @since 0.4.7
  */

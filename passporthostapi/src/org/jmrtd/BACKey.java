@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id: BACEntry.java 764 2009-02-04 13:49:38Z martijno $
+ * $Id$
  */
 
 package org.jmrtd;
@@ -30,7 +30,7 @@ import java.util.Date;
  *
  * @author The JMRTD team (info@jmrtd.org)
  *
- * @version $Revision: 764 $
+ * @version $Revision$
  */
 public class BACKey implements BACKeySpec {
 
