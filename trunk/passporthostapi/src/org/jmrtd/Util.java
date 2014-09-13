@@ -117,19 +117,19 @@ public class Util {
 	 * @return the key.
 	 */
 	public static SecretKey deriveKey(byte[] keySeed, int mode) throws GeneralSecurityException {
-		return deriveKey(keySeed, "SHA1", "DESede", 128, mode);
+		return deriveKey(keySeed, "DESede", 128, mode);
 	}
 
-	public static SecretKey deriveKey(byte[] keySeed, String digestAlgName, String cipherAlgName, int keyLength, int mode) throws GeneralSecurityException {	
-		return deriveKey(keySeed, digestAlgName, cipherAlgName, keyLength, null, mode);
+	public static SecretKey deriveKey(byte[] keySeed, String cipherAlgName, int keyLength, int mode) throws GeneralSecurityException {	
+		return deriveKey(keySeed, cipherAlgName, keyLength, null, mode);
 	}
 
 	/**
 	 * Derives a shared key.
 	 * 
 	 * @param keySeed the shared secret, as octets
-	 * @param digestAlgName in Java mnemonic notation (for example "SHA-1", "SHA-256")
-	 * @param cipherAlgName in Java mnemonic notation (for example "DESede", "AES")
+	 * @param digestAlg in Java mnemonic notation (for example "SHA-1", "SHA-256")
+	 * @param cipherAlg in Java mnemonic notation (for example "DESede", "AES")
 	 * @param keyLength length in bits
 	 * @param nonce optional nonce or <code>null</code>
 	 * @param counter counter or mode
@@ -138,8 +138,10 @@ public class Util {
 	 *
 	 * @throws GeneralSecurityException if something went wrong
 	 */
-	private static SecretKey deriveKey(byte[] keySeed, String digestAlgName, String cipherAlgName, int keyLength, byte[] nonce, int counter) throws GeneralSecurityException {
-		MessageDigest digest = MessageDigest.getInstance(digestAlgName);
+	public static SecretKey deriveKey(byte[] keySeed, String cipherAlg, int keyLength, byte[] nonce, int counter) throws GeneralSecurityException {
+		String digestAlg = inferDigestAlgorithmFromCipherAlgorithm(cipherAlg, keyLength);
+		LOGGER.info("DEBUG: key derivation uses digestAlg = " + digestAlg);
+		MessageDigest digest = MessageDigest.getInstance(digestAlg);
 		digest.reset();
 		digest.update(keySeed);
 		if (nonce != null) {
@@ -149,7 +151,7 @@ public class Util {
 		byte[] hashResult = digest.digest();
 		LOGGER.info("DEBUG: hashResult.length = " + hashResult.length);
 		byte[] keyBytes = null;
-		if ("DESede".equalsIgnoreCase(cipherAlgName) || "3DES".equalsIgnoreCase(cipherAlgName)) {
+		if ("DESede".equalsIgnoreCase(cipherAlg) || "3DES".equalsIgnoreCase(cipherAlg)) {
 			/* TR-SAC 1.01, 4.2.1. */
 			switch(keyLength) {
 			case 112:
@@ -162,33 +164,29 @@ public class Util {
 			default:
 				throw new IllegalArgumentException("KDF can only use DESede with 128-bit key length");
 			}
-		} else if ("AES".equalsIgnoreCase(cipherAlgName) || cipherAlgName.startsWith("AES")) {
+		} else if ("AES".equalsIgnoreCase(cipherAlg) || cipherAlg.startsWith("AES")) {
 			LOGGER.info("DEBUG: key derivation with AES uses key length " + keyLength);
 			/* TR-SAC 1.01, 4.2.2. */
 			switch(keyLength) {
 			case 128:
-				/* FIXME: check that digest uses SHA-1. */
-				if (!("SHA-1".equalsIgnoreCase(digestAlgName) || "SHA1".equalsIgnoreCase(digestAlgName))) { throw new IllegalArgumentException("KDF expects SHA-1 digest for AES 128-bit"); }
 				keyBytes = new byte[16]; /* NOTE: 128 = 16 * 8 */
 				System.arraycopy(hashResult, 0, keyBytes, 0, 16);
 				break;
 			case 192:
-				if (!("SHA-256".equalsIgnoreCase(digestAlgName) || "SHA256".equalsIgnoreCase(digestAlgName))) { throw new IllegalArgumentException("KDF expected SHA-256 digest for AES 192-bit"); }
 				keyBytes = new byte[24]; /* NOTE: 192 = 24 * 8 */
 				System.arraycopy(hashResult, 0, keyBytes, 0, 24);
 				break;
 			case 256:
-				if (!("SHA-256".equalsIgnoreCase(digestAlgName) || "SHA256".equalsIgnoreCase(digestAlgName))) { throw new IllegalArgumentException("KDF expected SHA-256 digest for AES 192-bit"); }
 				keyBytes = new byte[32]; /* NOTE: 256 = 32 * 8 */
 				System.arraycopy(hashResult, 0, keyBytes, 0, 32);
 				break;
 			default:
-				throw new IllegalArgumentException("KDF can only use AES with 128-bit or 192-bit key length, found: " + (keyLength * 8) + "-bit key length");
+				throw new IllegalArgumentException("KDF can only use AES with 128-bit, 192-bit key or 256-bit length, found: " + keyLength + "-bit key length");
 			}
 		}
 		//		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(cipherAlgName);
 		//		return keyFactory.generateSecret(new SecretKeySpec(keyBytes, cipherAlgName));
-		return new SecretKeySpec(keyBytes, cipherAlgName);
+		return new SecretKeySpec(keyBytes, cipherAlg);
 	}
 
 	/**
@@ -462,6 +460,15 @@ public class Util {
 		return digestAlgorithm;
 	}
 
+	public static String inferDigestAlgorithmFromCipherAlgorithm(String cipherAlg, int keyLength) {
+		if (cipherAlg == null) { throw new IllegalArgumentException(); }
+		if ("DESede".equals(cipherAlg) || "AES-128".equals(cipherAlg)) { return "SHA-1"; }
+		if ("AES".equals(cipherAlg) && keyLength == 128) { return "SHA-1"; }
+		if ("AES-256".equals(cipherAlg) || "AES-192".equals(cipherAlg)) { return "SHA-256"; }
+		if ("AES".equals(cipherAlg) && (keyLength == 192 || keyLength == 256)) { return "SHA-256"; }
+		throw new IllegalArgumentException("Unsupported cipher algorithm or key length \"" + cipherAlg + "\", " + keyLength);
+	}
+	
 	public static DHParameterSpec toExplicitDHParameterSpec(DHParameters params) {
 
 		//		return	new DHParameterSpec(params.getP(), params.getQ(), params.getL());

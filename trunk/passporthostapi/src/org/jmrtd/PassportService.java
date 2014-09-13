@@ -436,9 +436,8 @@ public class PassportService extends PassportApduService implements Serializable
 		Cipher staticPACECipher = null;
 		try {
 			byte[] keySeed = computeKeySeed(keySpec);
-			staticPACEKey = Util.deriveKey(keySeed, digestAlg, cipherAlg, keyLength, Util.PACE_MODE);
+			staticPACEKey = Util.deriveKey(keySeed, cipherAlg, keyLength, Util.PACE_MODE);
 			staticPACECipher = Cipher.getInstance(cipherAlg+"/CBC/NoPadding");
-
 
 			/* FIXME: multiple domain params feature not implemented here, for now. */
 			byte[] referencePrivateKeyOrForComputingSessionKey = null;
@@ -466,7 +465,7 @@ public class PassportService extends PassportApduService implements Serializable
 		 * Decrypt nonce s = D(K_pi, z).
 		 * (This is step 4 in Table 4.4 in BSI 03111 2.0.)
 		 */
-		byte[] step1Nonce = null;
+		byte[] piccNonce = null;
 		try {
 			byte[] step1Data = new byte[] { };
 			/* Command data is empty. this implies an empty dynamic authentication object. */
@@ -478,12 +477,12 @@ public class PassportService extends PassportApduService implements Serializable
 
 			/* (Re)initialize the K_pi cipher for decryption. */
 			staticPACECipher.init(Cipher.DECRYPT_MODE, staticPACEKey, new IvParameterSpec(new byte[16])); /* FIXME: iv length 16 is independent of keylength? */
-			step1Nonce = staticPACECipher.doFinal(step1EncryptedNonce);
-			LOGGER.info("DEBUG: step1Nonce = " + Hex.bytesToHexString(step1Nonce) + ", length = " + step1Nonce.length);
+			piccNonce = staticPACECipher.doFinal(step1EncryptedNonce);
+			LOGGER.info("DEBUG: step1Nonce = " + Hex.bytesToHexString(piccNonce) + ", length = " + piccNonce.length);
 		} catch (GeneralSecurityException gse) {
 			throw new PACEException("PCD side exception in tranceiving nonce step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
-			throw new PACEException("PICC side exception in tranceiving nonce step: " + cse.getMessage(), cse.getSW());
+			throw new PACEException("PICC side exception in tranceiving nonce step", cse.getSW());
 		}
 
 		/*
@@ -540,7 +539,7 @@ public class PassportService extends PassportApduService implements Serializable
 				}
 				
 				LOGGER.info("DEBUG: mapping shared secret = " + Hex.bytesToHexString(mappingSharedSecretBytes));
-				ephemeralParams = Util.mapNonceGM(step1Nonce, mappingSharedSecretBytes, params);
+				ephemeralParams = Util.mapNonceGM(piccNonce, mappingSharedSecretBytes, params);
 				break;
 			case IM:
 				/* NOTE: The context specific data object 0x82 SHALL be empty (TR SAC 3.3.2). */
@@ -549,7 +548,7 @@ public class PassportService extends PassportApduService implements Serializable
 		} catch (GeneralSecurityException gse) {
 			throw new PACEException("PCD side error in mapping nonce step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
-			throw new PACEException("PICC side exception in mapping nonce step: " + cse.getMessage(), cse.getSW());
+			throw new PACEException("PICC side exception in mapping nonce step", cse.getSW());
 		}
 
 		/*
@@ -590,20 +589,23 @@ public class PassportService extends PassportApduService implements Serializable
 		} catch (GeneralSecurityException gse) {
 			throw new PACEException("PCD side exception in key agreement step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
-			throw new PACEException("PICC side exception in key agreement step: " + cse.getMessage(), cse.getSW());
+			throw new PACEException("PICC side exception in key agreement step", cse.getSW());
 		}
 
 		/* Derive secure messaging keys. */
 		SecretKey encKey = null;
 		SecretKey macKey = null;
 		try {
-			encKey = Util.deriveKey(sharedSecretBytes, digestAlg, cipherAlg, keyLength, Util.ENC_MODE);
-			macKey = Util.deriveKey(sharedSecretBytes, digestAlg, cipherAlg, keyLength, Util.MAC_MODE);
+			
+
+			LOGGER.info("DEBUG: 123 digestAlg = " + digestAlg);
+			encKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.ENC_MODE);
+			macKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.MAC_MODE);
 		} catch (GeneralSecurityException gse) {
 			gse.printStackTrace();
 			throw new PACEException("Security exception during secure messaging key derivation: " + gse.getMessage());
 		}
-
+		
 		/*
 		 * 4. Mutual Authentication	- 0x85 Authentication Token	- 0x86 Authentication Token
 		 * 
@@ -625,11 +627,11 @@ public class PassportService extends PassportApduService implements Serializable
 		} catch (GeneralSecurityException gse) {
 			throw new PACEException("PCD side exception in authentication token generation step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
-			throw new PACEException("PICC side exception in authentication token generation step: " + cse.getMessage(), cse.getSW());
+			throw new PACEException("PICC side exception in authentication token generation step", cse.getSW());
 		}
 
 		/*
-		 * Restart secure messaging? FIXME: should this go before or after step 4?
+		 * Start secure messaging.
 		 * 
 		 * 4.6 of TR-SAC: If Secure Messaging is restarted, the SSC is used as follows:
 		 *  - The commands used for key agreement are protected with the old session keys and old SSC.
