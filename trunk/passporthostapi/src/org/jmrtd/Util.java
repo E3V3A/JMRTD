@@ -139,7 +139,7 @@ public class Util {
 	 * @throws GeneralSecurityException if something went wrong
 	 */
 	public static SecretKey deriveKey(byte[] keySeed, String cipherAlg, int keyLength, byte[] nonce, int counter) throws GeneralSecurityException {
-		String digestAlg = inferDigestAlgorithmFromCipherAlgorithm(cipherAlg, keyLength);
+		String digestAlg = inferDigestAlgorithmFromCipherAlgorithmForKeyDerivation(cipherAlg, keyLength);
 		LOGGER.info("DEBUG: key derivation uses digestAlg = " + digestAlg);
 		MessageDigest digest = MessageDigest.getInstance(digestAlg);
 		digest.reset();
@@ -419,7 +419,10 @@ public class Util {
 	}
 
 	/**
-	 * @param point
+	 * Encode an EC public key point.
+	 * Prefixes a <code>0x04</code> (without a length).
+	 * 
+	 * @param point public key point
 	 * @return
 	 */
 	public static byte[] publicKeyECPointToOS(ECPoint point) {
@@ -460,7 +463,7 @@ public class Util {
 		return digestAlgorithm;
 	}
 
-	public static String inferDigestAlgorithmFromCipherAlgorithm(String cipherAlg, int keyLength) {
+	public static String inferDigestAlgorithmFromCipherAlgorithmForKeyDerivation(String cipherAlg, int keyLength) {
 		if (cipherAlg == null) { throw new IllegalArgumentException(); }
 		if ("DESede".equals(cipherAlg) || "AES-128".equals(cipherAlg)) { return "SHA-1"; }
 		if ("AES".equals(cipherAlg) && keyLength == 128) { return "SHA-1"; }
@@ -470,8 +473,6 @@ public class Util {
 	}
 	
 	public static DHParameterSpec toExplicitDHParameterSpec(DHParameters params) {
-
-		//		return	new DHParameterSpec(params.getP(), params.getQ(), params.getL());
 		BigInteger p = params.getP();
 		BigInteger generator = params.getG();
 		int order = (int)params.getL();
@@ -766,12 +767,17 @@ public class Util {
 	 * Based on TR-SAC 1.01 4.5.1 and 4.5.2.
 	 * 
 	 * NOTE: For signing authentication token, not for sending to smart card.
+	 * 
+	 * @param oid
+	 * @param publicKey
+	 * @param isContextKnown whether context of public key is known to receiver (we will not include domain parameters in that case).
+	 * 
 	 */
 	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey, boolean isContextKnown) {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 		TLVOutputStream tlvOut = new TLVOutputStream(bOut);
 		try {
-			tlvOut.writeTag(0x7F49);
+			tlvOut.writeTag(0x7F49); // FIXME: constant for 7F49 */
 			if (publicKey instanceof DHPublicKey) {
 				DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
 				DHParameterSpec params = dhPublicKey.getParams();
@@ -802,10 +808,10 @@ public class Util {
 					tlvOut.writeTag(0x81); tlvOut.writeValue(i2os(p)); /* Prime modulus */
 					tlvOut.writeTag(0x82); tlvOut.writeValue(i2os(a)); /* First coefficient */
 					tlvOut.writeTag(0x83); tlvOut.writeValue(i2os(b)); /* Second coefficient */
-					tlvOut.writeTag(0x84); tlvOut.write(i2os(generator.getAffineX())); tlvOut.write(i2os(generator.getAffineY())); tlvOut.writeValueEnd(); /* Base point */
+					tlvOut.writeTag(0x84); tlvOut.write(i2os(generator.getAffineX())); tlvOut.write(i2os(generator.getAffineY())); tlvOut.writeValueEnd(); /* Base point, FIXME: correct encoding? */
 					tlvOut.writeTag(0x85); tlvOut.writeValue(i2os(order)); /* Order of the base point */
 				}
-				tlvOut.writeTag(0x86); tlvOut.write(publicKeyECPointToOS(publicPoint)); tlvOut.writeValueEnd(); /* Public point */
+				tlvOut.writeTag(0x86); tlvOut.writeValue(publicKeyECPointToOS(publicPoint)); /* Public point */				
 				if (!isContextKnown) {
 					tlvOut.writeTag(0x87); tlvOut.writeValue(i2os(BigInteger.valueOf(coFactor))); /* Cofactor */			
 				}
@@ -866,8 +872,9 @@ public class Util {
 				dataIn.readFully(yCoordBytes);
 				dataIn.close();
 
-				BigInteger x = Util.os2i(xCoordBytes);
-				BigInteger y = Util.os2i(yCoordBytes);
+				BigInteger p = getPrime(params);
+				BigInteger x = Util.os2fe(xCoordBytes, p);
+				BigInteger y = Util.os2fe(yCoordBytes, p);
 				ECPoint w = new ECPoint(x, y);
 
 				ECParameterSpec ecParams = (ECParameterSpec)params;
@@ -920,8 +927,9 @@ public class Util {
 		byte[] encodedPCDPublicKeyDataObject = encodePublicKeyDataObject(oid, publicKey);
 		mac.init(macKey);
 		byte[] maccedPublicKeyDataObject = mac.doFinal(encodedPCDPublicKeyDataObject);
-
-		/* Output length is 64 bits. */
+		LOGGER.info("DEBUG: maccedPublicKeyDataObject.length = " + maccedPublicKeyDataObject.length);
+		
+		/* Output length needs to be 64 bits. */
 		byte[] authenticationToken = new byte[8];
 		System.arraycopy(maccedPublicKeyDataObject, 0, authenticationToken, 0, authenticationToken.length);
 		return authenticationToken;

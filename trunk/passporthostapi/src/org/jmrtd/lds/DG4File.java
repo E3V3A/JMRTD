@@ -54,22 +54,35 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 			return new IrisInfo(sbh, in);
 		}
 	});
-	
+
 	private static final ISO781611Encoder<IrisInfo> ENCODER = new ISO781611Encoder<IrisInfo>(new BiometricDataBlockEncoder<IrisInfo>() {
 		public void encode(IrisInfo info, OutputStream out) throws IOException {
 			info.writeObject(out);
 		}
 	});
-	
+
+
+	private boolean shouldAddRandomDataIfEmpty;
+
 	/**
 	 * Creates a new file with the specified records.
 	 * 
 	 * @param irisInfos records
 	 */
 	public DG4File(List<IrisInfo> irisInfos) {
-		super(EF_DG4_TAG, irisInfos);
+		this(irisInfos, true);
 	}
-	
+
+	/**
+	 * Creates a new file with the specified records.
+	 * 
+	 * @param irisInfos records
+	 */
+	public DG4File(List<IrisInfo> irisInfos, boolean shouldAddRandomDataIfEmpty) {
+		super(EF_DG4_TAG, irisInfos);
+		this.shouldAddRandomDataIfEmpty = shouldAddRandomDataIfEmpty;
+	}
+
 	/**
 	 * Constructs a new file based on an input stream.
 	 * 
@@ -78,7 +91,7 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	public DG4File(InputStream inputStream) throws IOException {
 		super(EF_DG4_TAG, inputStream);
 	}
-	
+
 	protected void readContent(InputStream inputStream) throws IOException {
 		ComplexCBEFFInfo cbeffInfo = DECODER.decode(inputStream);
 		List<CBEFFInfo> records = cbeffInfo.getSubRecords();
@@ -93,7 +106,7 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 			IrisInfo irisInfo = (IrisInfo)bdb;
 			add(irisInfo);
 		}
-		
+
 		/* FIXME: by symmetry, shouldn't there be a readOptionalRandomData here? */
 	}
 
@@ -105,11 +118,13 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 			cbeffInfo.add(simpleCBEFFInfo);
 		}
 		ENCODER.encode(cbeffInfo, outputStream);
-		
+
 		/* NOTE: Supplement to ICAO Doc 9303 R7-p1_v2_sIII_0057. */
-		writeOptionalRandomData(outputStream);
+		if (shouldAddRandomDataIfEmpty) {
+			writeOptionalRandomData(outputStream);
+		}
 	}
-	
+
 	/**
 	 * Gets a textual representation of this file.
 	 * 
@@ -118,21 +133,21 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	public String toString() {
 		return "DG4File [" + super.toString() + "]";
 	}
-	
+
 	/**
 	 * Gets the embedded iris infos in this file.
 	 * 
 	 * @return iris infos
 	 */
 	public List<IrisInfo> getIrisInfos() { return getSubRecords(); }
-	
+
 	/**
 	 * Adds an iris info to this file.
 	 * 
 	 * @param irisInfo an iris info
 	 */
 	public void addIrisInfo(IrisInfo irisInfo) { add(irisInfo); }
-	
+
 	/**
 	 * Removes an iris info from this file.
 	 * 

@@ -35,7 +35,7 @@ package org.jmrtd.lds;
  * @since 0.4.7
  */
 public interface MRZFieldTransformer {
-	
+
 	/**
 	 * Truncates the primary and secondary identifiers. The resulting array has length
 	 * 2 and contains the truncated primary and secondary identifiers.
