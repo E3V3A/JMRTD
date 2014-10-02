@@ -35,11 +35,11 @@ import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
-import java.security.interfaces.ECPrivateKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
+import java.security.spec.ECPoint;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -580,7 +580,12 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] step3Response = sendGeneralAuthenticate(wrapper, step3Data, false);
 			LOGGER.info("DEBUG: step3Response = " + Hex.bytesToHexString(step3Response));
 			byte[] piccEncodedPublicKey = Util.unwrapDO((byte)0x84, step3Response);
+			LOGGER.info("DEBUG: piccEncodedPublicKey = " + Hex.bytesToHexString(piccEncodedPublicKey));
 			piccPublicKey = Util.decodePublicKeyFromSmartCard(piccEncodedPublicKey, ephemeralParams);
+			ECPoint piccPublicKeyECPoint = ((ECPublicKey)piccPublicKey).getW();
+			LOGGER.info("DEBUG: piccPublicKey X = " + Hex.bytesToHexString(Util.i2os(piccPublicKeyECPoint.getAffineX())));
+			LOGGER.info("DEBUG: piccPublicKey Y = " + Hex.bytesToHexString(Util.i2os(piccPublicKeyECPoint.getAffineY())));
+			LOGGER.info("DEBUG: p = " + Hex.bytesToHexString(Util.i2os(Util.getPrime(ephemeralParams))));
 			if (pcdPublicKey.equals(piccPublicKey)) { throw new PACEException("PCD's public key and PICC's public key are the same in key agreement step!"); }
 			keyAgreement.doPhase(piccPublicKey, true);
 			sharedSecretBytes = keyAgreement.generateSecret();
@@ -596,9 +601,7 @@ public class PassportService extends PassportApduService implements Serializable
 		SecretKey encKey = null;
 		SecretKey macKey = null;
 		try {
-			
-
-			LOGGER.info("DEBUG: 123 digestAlg = " + digestAlg);
+			LOGGER.info("DEBUG: keyLength = " + keyLength);
 			encKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.ENC_MODE);
 			macKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.MAC_MODE);
 		} catch (GeneralSecurityException gse) {

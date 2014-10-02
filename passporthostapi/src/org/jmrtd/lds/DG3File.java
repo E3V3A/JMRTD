@@ -51,7 +51,7 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 	private static final long serialVersionUID = -1037522331623814528L;
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
-	
+
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FingerInfo>() {
 		public FingerInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
 			return new FingerInfo(sbh, in);
@@ -64,13 +64,26 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 		}
 	});
 
+	private boolean shouldAddRandomDataIfEmpty;
+
 	/**
 	 * Creates a new file with the specified records.
 	 * 
 	 * @param fingerInfos records
 	 */
 	public DG3File(List<FingerInfo> fingerInfos) {
+		this(fingerInfos, true);
+	}
+
+	/**
+	 * Creates a new file with the specified records.
+	 * 
+	 * @param fingerInfos records
+	 * @param shouldAddRandomDataIfEmpty whether to add random data when there are no records to encode
+	 */
+	public DG3File(List<FingerInfo> fingerInfos, boolean shouldAddRandomDataIfEmpty) {
 		super(EF_DG3_TAG, fingerInfos);
+		this.shouldAddRandomDataIfEmpty = shouldAddRandomDataIfEmpty;
 	}
 
 	/**
@@ -96,7 +109,7 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 			FingerInfo fingerInfo = (FingerInfo)bdb;
 			add(fingerInfo);
 		}
-		
+
 		/* FIXME: by symmetry, shouldn't there be a readOptionalRandomData here? */
 	}
 
@@ -110,7 +123,9 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 		ENCODER.encode(cbeffInfo, outputStream);
 
 		/* NOTE: Supplement to ICAO Doc 9303 R7-p1_v2_sIII_0057. */
-		writeOptionalRandomData(outputStream);
+		if (shouldAddRandomDataIfEmpty) {
+			writeOptionalRandomData(outputStream);
+		}
 	}
 
 	/**

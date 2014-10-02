@@ -668,8 +668,10 @@ public class Passport {
 	}
 
 	private void tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
-		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
-		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+		LOGGER.info("DEBUG: PACE has been disabled in this version of JMRTD");
+		
+//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
+//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
 	}
 
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {

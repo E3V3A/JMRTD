@@ -40,7 +40,8 @@ import org.jmrtd.PassportService;
 import org.jmrtd.io.SplittableInputStream;
 
 /**
- * The logical data structure.
+ * The ICAO logical data structure version 1.7.
+ * 
  * This is basically a collection of input streams for the
  * data groups, combined with some status information (progress).
  * 
