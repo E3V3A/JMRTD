@@ -25,7 +25,7 @@
 		<javac srcdir="${src}" classpath="${jj2000_lib}" destdir="${build}" target="1.6" />
 	</target>
 
-	<target name="dist" depends="compile" description="Generates the distribution .jar file">
+	<target name="dist" depends="" description="Generates the distribution .jar file">
 		
 		<mkdir dir="META-INF/services" />
 		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jmrtd.imageio.JJ2000ImageReaderSpi</echo>
