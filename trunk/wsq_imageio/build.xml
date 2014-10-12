@@ -15,7 +15,7 @@
 		<javac target="1.6" srcdir="${src}" destdir="${build}" />
 	</target>
 	
-	<target name="dist" depends="compile" description="Generates the distribution .jar file">
+	<target name="dist" depends="" description="Generates the distribution .jar file">
 		
 		<mkdir dir="META-INF/services" />
 		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jnbis.imageio.WSQImageReaderSpi</echo>
