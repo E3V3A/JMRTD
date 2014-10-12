@@ -22,7 +22,7 @@
 
 package org.jmrtd;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CardServiceException;
 
 public class PACEException extends CardServiceException {
 

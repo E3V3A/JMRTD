@@ -37,11 +37,11 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import net.sourceforge.scuba.smartcards.APDUWrapper;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.tlv.TLVUtil;
+import net.sf.scuba.smartcards.APDUWrapper;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.tlv.TLVUtil;
 
 /*
  * TODO: Can we use TLVInputStream instead of those readDOXX methods? -- MO

@@ -37,15 +37,15 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import net.sourceforge.scuba.smartcards.APDUEvent;
-import net.sourceforge.scuba.smartcards.APDUListener;
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.smartcards.APDUEvent;
+import net.sf.scuba.smartcards.APDUListener;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.tlv.TLVInputStream;
+import net.sf.scuba.util.Hex;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 

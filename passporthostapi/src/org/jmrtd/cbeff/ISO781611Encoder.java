@@ -28,7 +28,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.SortedMap;
 
-import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
 
 /**
  * ISO 7816-11 encoder for BIR.

@@ -30,7 +30,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 
-import net.sourceforge.scuba.data.Gender;
+import net.sf.scuba.data.Gender;
 
 /**
  * Data structure for storing the MRZ information

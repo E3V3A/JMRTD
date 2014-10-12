@@ -37,14 +37,14 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
-import net.sourceforge.scuba.smartcards.CardService;
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.CommandAPDU;
-import net.sourceforge.scuba.smartcards.ISO7816;
-import net.sourceforge.scuba.smartcards.ResponseAPDU;
-import net.sourceforge.scuba.tlv.ASN1Constants;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.smartcards.CardService;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CommandAPDU;
+import net.sf.scuba.smartcards.ISO7816;
+import net.sf.scuba.smartcards.ResponseAPDU;
+import net.sf.scuba.tlv.ASN1Constants;
+import net.sf.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.util.Hex;
 
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.DG1File;

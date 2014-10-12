@@ -28,8 +28,8 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVInputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for displayed image template files.

@@ -39,7 +39,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
 
-import net.sourceforge.scuba.data.Country;
+import net.sf.scuba.data.Country;
 
 import org.ejbca.cvc.AccessRightEnum;
 import org.ejbca.cvc.AlgorithmUtil;

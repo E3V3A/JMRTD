@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
 
 import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.ISO781611;
