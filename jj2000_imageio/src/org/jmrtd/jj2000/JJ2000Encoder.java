@@ -10,8 +10,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import sun.util.LocaleServiceProviderPool.LocalizedObjectGetter;
-
 import jj2000.j2k.codestream.writer.FileCodestreamWriter;
 import jj2000.j2k.codestream.writer.HeaderEncoder;
 import jj2000.j2k.codestream.writer.PktEncoder;
