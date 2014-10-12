@@ -24,7 +24,7 @@ package org.jmrtd;
 
 import java.util.List;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CardServiceException;
 
 /**
  * Exception for signaling failed BAC.

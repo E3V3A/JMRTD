@@ -31,8 +31,8 @@ import java.util.IllegalFormatConversionException;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVInputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
 
 /**
  * File structure for the EF_COM file.

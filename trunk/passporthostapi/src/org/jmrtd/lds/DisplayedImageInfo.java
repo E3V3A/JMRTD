@@ -26,9 +26,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.tlv.TLVUtil;
+import net.sf.scuba.tlv.TLVInputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVUtil;
 
 /**
  * Data structure for storing either a <i>Portrait</i> (as used in DG5) or

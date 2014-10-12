@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-import net.sourceforge.scuba.data.Gender;
+import net.sf.scuba.data.Gender;
 
 /**
  * Data structure for storing facial image data. This represents

@@ -22,10 +22,10 @@
 
 package org.jmrtd.lds;
 
-import net.sourceforge.scuba.data.Country;
+import net.sf.scuba.data.Country;
 
 /**
- * Special ICAO countries not covered in {@link net.sourceforge.scuba.data.ISOCountry}.
+ * Special ICAO countries not covered in {@link net.sf.scuba.data.ISOCountry}.
  * Contributed by Aleksandar Kamburov (wise_guybg).
  * 
  * @author Aleksandar Kamburov (wise_guybg)

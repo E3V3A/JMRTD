@@ -36,10 +36,10 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.tlv.TLVInputStream;
-import net.sourceforge.scuba.tlv.TLVOutputStream;
-import net.sourceforge.scuba.tlv.TLVUtil;
-import net.sourceforge.scuba.util.Hex;
+import net.sf.scuba.tlv.TLVInputStream;
+import net.sf.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.tlv.TLVUtil;
+import net.sf.scuba.util.Hex;
 
 /**
  * File structure for the EF_DG12 file.

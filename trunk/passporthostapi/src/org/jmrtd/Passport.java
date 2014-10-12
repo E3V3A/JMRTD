@@ -62,8 +62,8 @@ import java.util.logging.Logger;
 
 import javax.security.auth.x500.X500Principal;
 
-import net.sourceforge.scuba.smartcards.CardFileInputStream;
-import net.sourceforge.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.CardFileInputStream;
+import net.sf.scuba.smartcards.CardServiceException;
 
 import org.jmrtd.VerificationStatus.HashMatchResult;
 import org.jmrtd.cert.CVCPrincipal;

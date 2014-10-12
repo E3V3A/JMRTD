@@ -25,7 +25,7 @@ package org.jmrtd.cert;
 import java.io.Serializable;
 import java.security.Principal;
 
-import net.sourceforge.scuba.data.Country;
+import net.sf.scuba.data.Country;
 
 /**
  * Card verifiable certificate principal.

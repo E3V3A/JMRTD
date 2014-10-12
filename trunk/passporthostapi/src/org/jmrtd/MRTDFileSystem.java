@@ -30,10 +30,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import net.sourceforge.scuba.smartcards.CardServiceException;
-import net.sourceforge.scuba.smartcards.FileInfo;
-import net.sourceforge.scuba.smartcards.FileSystemStructured;
-import net.sourceforge.scuba.tlv.TLVInputStream;
+import net.sf.scuba.smartcards.CardServiceException;
+import net.sf.scuba.smartcards.FileInfo;
+import net.sf.scuba.smartcards.FileSystemStructured;
+import net.sf.scuba.tlv.TLVInputStream;
 
 import org.jmrtd.io.FragmentBuffer;
 import org.jmrtd.io.FragmentBuffer.Fragment;
