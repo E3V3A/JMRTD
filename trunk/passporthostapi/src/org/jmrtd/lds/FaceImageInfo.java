@@ -228,7 +228,6 @@ public class FaceImageInfo extends AbstractImageInfo {
 		System.arraycopy(poseAngle, 0, this.poseAngle, 0, 3);
 		this.poseAngleUncertainty = new int[3];
 		System.arraycopy(poseAngleUncertainty, 0, this.poseAngleUncertainty, 0, 3);
-		this.featurePoints = new FeaturePoint[featurePointCount];
 		this.imageDataType = imageDataType;
 		this.recordLength = 20 + 8 * featurePointCount + 12 + imageLength;
 		
