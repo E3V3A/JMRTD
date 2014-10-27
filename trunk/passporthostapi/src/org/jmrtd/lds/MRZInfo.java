@@ -986,7 +986,7 @@ public class MRZInfo extends AbstractLDSInfo {
 			composite.append(dateOfExpiryCheckDigit);
 			composite.append(mrzFormat(optionalData1, 15));
 		}
-		this.compositeCheckDigit = checkDigit(composite.toString(), true); /* FIXME: Uses '<' over '0'. Where specified? */
+		this.compositeCheckDigit = checkDigit(composite.toString()); /* FIXME: Uses '0' over '<'. Where specified? */
 	}
 
 	/**
