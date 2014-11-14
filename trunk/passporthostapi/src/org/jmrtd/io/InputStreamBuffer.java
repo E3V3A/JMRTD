@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -29,7 +29,7 @@ import org.jmrtd.io.FragmentBuffer.Fragment;
 
 /**
  * Buffers an inputstream (whose length is known in advance) and can supply clients with fresh
- * "copies" of that inputstream served from the buffer.
+ * &quot;copies&quot; of that inputstream served from the buffer.
  * 
  * NOTE: the original inputstream should no longer be read from, clients should only read bytes
  * from the sub-inputstreams.
@@ -41,20 +41,31 @@ public class InputStreamBuffer {
 	private PositionInputStream carrier;
 	private FragmentBuffer buffer;
 
+	/**
+	 * Creates an input stream buffer.
+	 * 
+	 * @param inputStream the input stream
+	 * @param length the length of the input stream
+	 */
 	public InputStreamBuffer(InputStream inputStream, int length) {
 		this.carrier = new PositionInputStream(inputStream);
 		this.carrier.mark(length);
 		this.buffer = new FragmentBuffer(length);
 	}
 
+	/**
+	 * Updates this buffer based on some other buffer.
+	 * 
+	 * @param other the other buffer
+	 */
 	public void updateFrom(InputStreamBuffer other) {
 		buffer.updateFrom(other.buffer);
 	}
 
 	/**
-	 * Gets a copy of the input stream positioned at 0.
+	 * Gets a copy of the input stream positioned at <code>0</code>.
 	 *
-	 * @return
+	 * @return a copy of the input stream
 	 */
 	public SubInputStream getInputStream() {
 		synchronized(carrier) {

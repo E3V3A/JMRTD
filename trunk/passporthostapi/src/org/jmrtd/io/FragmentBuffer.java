@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -41,17 +41,17 @@ public class FragmentBuffer implements Serializable {
 	
 	/** Buffer with the actual bytes. */
 	private byte[] buffer; // FIXME can we make this buffer grow dynamically?
-	
+
 	/** Administration of which parts of buffer are filled. */
 	private Collection<Fragment> fragments;
-	
+
 	/**
 	 * Creates a fragment buffer.
 	 */
 	public FragmentBuffer() {
 		this(1024);
 	}
-	
+
 	/**
 	 * Creates a fragment buffer.
 	 * 
@@ -209,13 +209,13 @@ public class FragmentBuffer implements Serializable {
 	}
 	
 	/**
-	 * Gets the smallest fragment contained in <code>offset</code> and <code>offset + length</code>
+	 * Gets the smallest fragment that contains <code>offset</code> and <code>offset + length</code>
 	 * that has <strong>not</strong> been buffered in this buffer.
 	 * 
-	 * @param fileInfo a file info
 	 * @param offset the offset
 	 * @param length the length
-	 * @return
+	 *
+	 * @return the fragment that has not yet been buffered
 	 */
 	public synchronized Fragment getSmallestUnbufferedFragment(int offset, int length) {
 		int thisOffset = offset, thisLength = length;

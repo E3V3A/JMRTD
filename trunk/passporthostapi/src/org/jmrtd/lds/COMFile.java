@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -242,7 +242,7 @@ public class COMFile extends DataGroup { /* FIXME: strictly speaking this is not
 	/**
 	 * Inserts a tag in a proper place if not already present
 	 * 
-	 * @param tag
+	 * @param tag tag to insert
 	 */
 	public void insertTag(Integer tag) {
 		if(tagList.contains(tag)) { return; }

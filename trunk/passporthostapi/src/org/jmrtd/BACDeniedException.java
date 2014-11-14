@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,14 +38,15 @@ import net.sf.scuba.smartcards.CardServiceException;
 public class BACDeniedException extends CardServiceException {
 
 	private static final long serialVersionUID = -7094953658210693249L;
-	
+
 	private List<BACKeySpec> triedBACEntries;
-	
+
 	/**
 	 * Creates an exception.
 	 * 
 	 * @param msg the message
 	 * @param triedBACEntries the BAC entries that were tried before BAC failed
+	 * @param sw status word or <code>-1</code>
 	 */
 	public BACDeniedException(String msg, List<BACKeySpec> triedBACEntries, int sw) {
 		super(msg, sw);

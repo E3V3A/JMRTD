@@ -24,20 +24,24 @@ package org.jmrtd;
 
 import net.sf.scuba.smartcards.CardServiceException;
 
+/**
+ * An exception to signal errors during execution of the PACE protocol.
+ * 
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
+ */
 public class PACEException extends CardServiceException {
 
-	private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 8383980807753919040L;
 
 	/**
 	 * Creates a PACEException.
 	 * 
 	 * @param msg a message
-	 * @param sw the status word that caused this CardServiceException
 	 */
 	public PACEException(String msg) {
 		super(msg);
 	}
-	
+
 	/**
 	 * Creates a PACEException with a specific status word.
 	 * 

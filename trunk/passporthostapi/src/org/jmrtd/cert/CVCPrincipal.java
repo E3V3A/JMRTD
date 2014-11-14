@@ -43,6 +43,11 @@ public class CVCPrincipal implements Principal, Serializable {
 	private String mnemonic;
 	private String seqNumber;
 
+	/**
+	 * Constructs a principal.
+	 *
+	 * @param name a name with format Country (2F) | Mnemonic (9V) | SeqNum (5F).
+	 */
 	public CVCPrincipal(String name) {
 		if (name == null || name.length() < 2 + 5 || name.length() > 2 + 9 + 5) {
 			throw new IllegalArgumentException("Name should be <Country (2F)><Mnemonic (9V)><SeqNum (5F)> formatted, found "
@@ -53,6 +58,13 @@ public class CVCPrincipal implements Principal, Serializable {
 		seqNumber = name.substring(name.length() - 5, name.length());
 	}
 
+	/**
+	 * Constructs a principal.
+	 * 
+	 * @param country the country
+	 * @param mnemonic the mnemonic
+	 * @param seqNumber the sequence number
+	 */
 	public CVCPrincipal(Country country, String mnemonic, String seqNumber) {
 		if (mnemonic == null || mnemonic.length() > 9) { throw new IllegalArgumentException("Wrong length mnemonic"); }
 		if (seqNumber == null || seqNumber.length() != 5) { throw new IllegalArgumentException("Wrong length seqNumber"); }
@@ -63,7 +75,7 @@ public class CVCPrincipal implements Principal, Serializable {
 
 	/**
 	 * Consists of the concatenation of
-	 * country code (length 2), mnemonic (length < 9) and
+	 * country code (length 2), mnemonic (length &lt; 9) and
 	 * sequence number (length 5).
 	 * 
 	 * @return the name of the principal
@@ -77,6 +89,8 @@ public class CVCPrincipal implements Principal, Serializable {
 	}
 
 	/**
+	 * Gets the country.
+	 *
 	 * @return the country
 	 */
 	public Country getCountry() {
@@ -84,6 +98,8 @@ public class CVCPrincipal implements Principal, Serializable {
 	}
 
 	/**
+	 * Gets the mnemonic.
+	 *
 	 * @return the mnemonic
 	 */
 	public String getMnemonic() {
@@ -91,6 +107,8 @@ public class CVCPrincipal implements Principal, Serializable {
 	}
 
 	/**
+	 * Gets the sequence number.
+	 *
 	 * @return the seqNumber
 	 */
 	public String getSeqNumber() {

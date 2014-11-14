@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -87,18 +87,18 @@ public class DG12File extends DataGroup {
 	/**
 	 * Constructs a new file.
 	 *
-	 * @param issuingAuthority
-	 * @param dateOfIssue
-	 * @param namesOfOtherPersons
-	 * @param endorseMentsAndObservations
-	 * @param taxOrExitRequirements
-	 * @param imageOfFront
-	 * @param imageOfRear
-	 * @param dateAndTimeOfPersonalization
-	 * @param personalizationSystemSerialNumber
+	 * @param issuingAuthority the issuing authority
+	 * @param dateOfIssue the date of issue
+	 * @param namesOfOtherPersons names of other persons
+	 * @param endorsementsAndObservations endorsements and observations
+	 * @param taxOrExitRequirements tax or exit requirements
+	 * @param imageOfFront image of front
+	 * @param imageOfRear image of rear
+	 * @param dateAndTimeOfPersonalization date and time of personalization
+	 * @param personalizationSystemSerialNumber personalization system serial number
 	 */
 	public DG12File(String issuingAuthority, Date dateOfIssue,
-			List<String> namesOfOtherPersons, String endorseMentsAndObservations,
+			List<String> namesOfOtherPersons, String endorsementsAndObservations,
 			String taxOrExitRequirements, byte[] imageOfFront,
 			byte[] imageOfRear, Date dateAndTimeOfPersonalization,
 			String personalizationSystemSerialNumber) {
@@ -117,8 +117,9 @@ public class DG12File extends DataGroup {
 	/**
 	 * Constructs a new file.
 	 * 
-	 * @param inputStream
-	 * @throws IOException
+	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException on error reading from input stream
 	 */
 	public DG12File(InputStream inputStream) throws IOException {
 		super(EF_DG12_TAG, inputStream);

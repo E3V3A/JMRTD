@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -115,10 +115,9 @@ public class DG11File extends DataGroup {
 
 	/**
 	 * Constructs a new file. Use <code>null</code> if data element is not present.
-	 * Use <code>'<'</code> as separator.
+	 * Use <code>&#39;&lt;&#39;</code> as separator.
 	 *
 	 * @param nameOfHolder data element
-	 * @param fullNameSecondaryIdentifiers data element
 	 * @param otherNames data element
 	 * @param personalNumber data element
 	 * @param fullDateOfBirth data element
@@ -157,12 +156,12 @@ public class DG11File extends DataGroup {
 	/**
 	 * Constructs a file from binary representation.
 	 * 
-	 * @param in an input stream
+	 * @param inputStream an input stream
 	 * 
 	 * @throws IOException if reading fails
 	 */
-	public DG11File(InputStream in) throws IOException {
-		super(EF_DG11_TAG, in);
+	public DG11File(InputStream inputStream) throws IOException {
+		super(EF_DG11_TAG, inputStream);
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {
@@ -391,40 +390,40 @@ public class DG11File extends DataGroup {
 		}
 		nameOfHolder = field.trim();
 	}
-	
-//	private void parseFullName(byte[] value) {
-//		String field = new String(value);
-//		try {
-//			field = new String(value, "UTF-8");
-//		} catch (UnsupportedEncodingException uee) {
-//			uee.printStackTrace();
-//		}
-//		String delim = "<<";
-//		int delimIndex = field.indexOf(delim);
-//		if (delimIndex < 0) {
-//			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
-//			LOGGER.warning("Trying \"<\" (the Austrian way)");
-//			delim = "<";
-//			delimIndex = field.indexOf(delim);
-//			if(delimIndex < 0) {
-//				LOGGER.warning("Didn't work either. Trying spaces.");
-//				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
-//				delimIndex = field.indexOf(delim);
-//				if(delimIndex < 0) {
-//					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
-//					fullNamePrimaryIdentifier = field; 
-//					return;
-//				}
-//			}
-//		}
-//		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
-//		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
-//		fullNameSecondaryIdentifiers = new ArrayList<String>();
-//		while (st.hasMoreTokens()) {
-//			String secondaryIdentifier = st.nextToken().trim();
-//			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
-//		}
-//	}
+
+	//	private void parseFullName(byte[] value) {
+	//		String field = new String(value);
+	//		try {
+	//			field = new String(value, "UTF-8");
+	//		} catch (UnsupportedEncodingException uee) {
+	//			uee.printStackTrace();
+	//		}
+	//		String delim = "<<";
+	//		int delimIndex = field.indexOf(delim);
+	//		if (delimIndex < 0) {
+	//			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
+	//			LOGGER.warning("Trying \"<\" (the Austrian way)");
+	//			delim = "<";
+	//			delimIndex = field.indexOf(delim);
+	//			if(delimIndex < 0) {
+	//				LOGGER.warning("Didn't work either. Trying spaces.");
+	//				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
+	//				delimIndex = field.indexOf(delim);
+	//				if(delimIndex < 0) {
+	//					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
+	//					fullNamePrimaryIdentifier = field; 
+	//					return;
+	//				}
+	//			}
+	//		}
+	//		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
+	//		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
+	//		fullNameSecondaryIdentifiers = new ArrayList<String>();
+	//		while (st.hasMoreTokens()) {
+	//			String secondaryIdentifier = st.nextToken().trim();
+	//			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
+	//		}
+	//	}
 
 	/* Accessors below. */
 

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,6 @@
 package org.jmrtd;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
@@ -36,15 +35,11 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.interfaces.ECPublicKey;
-import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.security.spec.ECPoint;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.Random;
 import java.util.logging.Logger;
@@ -62,12 +57,6 @@ import net.sf.scuba.smartcards.CardServiceException;
 import net.sf.scuba.tlv.TLVOutputStream;
 import net.sf.scuba.util.Hex;
 
-import org.bouncycastle.asn1.ASN1Encodable;
-import org.bouncycastle.asn1.ASN1InputStream;
-import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERSequence;
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -207,11 +196,13 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private static final int SESSION_STARTED_STATE = 1;
 
-	// TODO: this should be bit masks, e.g. AA and EAC should
-	// be settable both at the same time
+	/*
+	 * TODO: this should be bit masks, e.g. AA and EAC should be settable both at the same time
+	 * Better yet, AA, CA should probably not be part of this state machine at all.
+	 */
 	private static final int BAC_AUTHENTICATED_STATE = 2;
 
-	private static final int AA_AUTHENTICATED_STATE = 3;
+	//	private static final int AA_AUTHENTICATED_STATE = 3;
 
 	private static final int CA_AUTHENTICATED_STATE = 4;
 
@@ -219,20 +210,10 @@ public class PassportService extends PassportApduService implements Serializable
 
 	private int state;
 
-	private Collection<AuthListener> authListeners;
-
 	/**
 	 * @deprecated visibility will be set to private
 	 */
 	protected SecureMessagingWrapper wrapper;
-
-	/* We use a cipher to help implement Active Authentication RSA with ISO9796-2 message recovery. */
-	private transient Signature rsaAASignature;
-	private transient MessageDigest rsaAADigest;	
-	private transient Cipher rsaAACipher;
-
-	private transient Signature ecdsaAASignature;
-	private transient MessageDigest ecdsaAADigest;
 
 	protected Random random;
 	private MRTDFileSystem fs;
@@ -240,31 +221,15 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Creates a new passport service for accessing the passport.
 	 * 
-	 * @param service
-	 *            another service which will deal with sending the apdus to the
-	 *            card.
+	 * @param service another service which will deal with sending the apdus to the card
 	 * 
-	 * @throws GeneralSecurityException
-	 *             when the available JCE providers cannot provide the necessary
-	 *             cryptographic primitives.
+	 * @throws CardServiceException on error
 	 */
 	public PassportService(CardService service) throws CardServiceException {
 		super(service);
-		try {
-			rsaAADigest = MessageDigest.getInstance("SHA1"); /* NOTE: for output length measurement only. -- MO */
-			rsaAASignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", BC_PROVIDER);
-			rsaAACipher = Cipher.getInstance("RSA/NONE/NoPadding");
+		random = new SecureRandom(); /* for BAC */
+		fs = new MRTDFileSystem(this);
 
-			/* NOTE: These will be updated in doAA after caller has read ActiveAuthenticationSecurityInfo. */
-			ecdsaAASignature = Signature.getInstance("SHA256withECDSA", BC_PROVIDER);
-			ecdsaAADigest = MessageDigest.getInstance("SHA-256"); /* NOTE: for output length measurement only. -- MO */
-
-			random = new SecureRandom();
-			authListeners = new ArrayList<AuthListener>();
-			fs = new MRTDFileSystem(this);
-		} catch (GeneralSecurityException gse) {
-			throw new CardServiceException(gse.toString());
-		}
 		state = SESSION_STOPPED_STATE;
 	}
 
@@ -363,6 +328,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @param kMac 3DES key required for BAC
 	 * 
 	 * @throws CardServiceException if authentication failed
+	 * @throws GeneralSecurityException on security primitives related problems
 	 */
 	public synchronized void doBAC(SecretKey kEnc, SecretKey kMac) throws CardServiceException, GeneralSecurityException {
 		byte[] rndICC = sendGetChallenge();
@@ -381,8 +347,6 @@ public class PassportService extends PassportApduService implements Serializable
 		SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 		long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
 		wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
-		BACEvent event = new BACEvent(this, rndICC, rndIFD, kICC, kIFD, true);
-		notifyBACPerformed(event);
 		state = BAC_AUTHENTICATED_STATE;
 	}
 
@@ -393,13 +357,13 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * Sends a <code>READ BINARY</code> command to the passport, use wrapper when secure channel set up.
 	 * 
-	 * @param offset
-	 *            offset into the file
-	 * @param le
-	 *            the expected length of the file to read
+	 * @param offset offset into the file
+	 * @param le the expected length of the file to read
+	 * @param longRead whether to use extended length APDUs
 	 * 
-	 * @return a byte array of length <code>le</code> with (the specified part
-	 *         of) the contents of the currently selected file
+	 * @return a byte array of length <code>le</code> with (the specified part of) the contents of the currently selected file
+	 *         
+	 * @throws CardServiceException on tranceive error
 	 */
 	public synchronized byte[] sendReadBinary(int offset, int le, boolean longRead) throws CardServiceException {
 		return sendReadBinary(wrapper, offset, le, longRead);
@@ -412,7 +376,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @param oid as specified in the PACEInfo, indicates GM or IM, DH or ECDH, cipher, digest, length
 	 * @param params explicit static domain parameters the domain params for DH or ECDH
 	 *
-	 * @throws CardServiceException
+	 * @throws PACEException on error
 	 */
 	public synchronized void doPACE(BACKeySpec keySpec, String oid,  AlgorithmParameterSpec params) throws PACEException {
 		PACEInfo.MappingType mappingType = PACEInfo.toMappingType(oid); /* Either GM or IM. */
@@ -537,7 +501,7 @@ public class PassportService extends PassportApduService implements Serializable
 					gse.printStackTrace();
 					throw new PACEException("Error during mapping" + gse.getMessage());
 				}
-				
+
 				LOGGER.info("DEBUG: mapping shared secret = " + Hex.bytesToHexString(mappingSharedSecretBytes));
 				ephemeralParams = Util.mapNonceGM(piccNonce, mappingSharedSecretBytes, params);
 				break;
@@ -608,7 +572,7 @@ public class PassportService extends PassportApduService implements Serializable
 			gse.printStackTrace();
 			throw new PACEException("Security exception during secure messaging key derivation: " + gse.getMessage());
 		}
-		
+
 		/*
 		 * 4. Mutual Authentication	- 0x85 Authentication Token	- 0x86 Authentication Token
 		 * 
@@ -649,6 +613,9 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
+	/*
+	 * FIXME: should be moved to Passport -- MO?
+	 */
 	/**
 	 * Performs the EAC protocol (version 1) with the passport. For details see TR-03110
 	 * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
@@ -664,26 +631,24 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @param terminalKey terminal private key
 	 * @param documentNumber the passport number
 	 *
+	 * @return an EAC result
+	 *
 	 * @throws CardServiceException on error
+	 * 
+	 * @deprecated Clients should call doCA and doTA directly
 	 */
-	public synchronized void doEAC(BigInteger keyId, PublicKey publicKey,
+	public synchronized TerminalAuthenticationResult doEAC(BigInteger keyId, PublicKey publicKey,
 			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
 			PrivateKey terminalKey, String documentNumber) throws CardServiceException {
-		KeyPair keyPair = null;
-		byte[] rPICC = null;
 		try {
 			ChipAuthenticationResult chipAuthenticationResult = doCA(keyId, publicKey);
-			assert(terminalCertificates != null && terminalCertificates.size() == 3);
-			keyPair = chipAuthenticationResult.getKeyPair();
-			byte[] caKeyHash = chipAuthenticationResult.getEACKeyHash();
-			rPICC = doTA(caReference, terminalCertificates, terminalKey, null, caKeyHash, documentNumber);
+//			assert(terminalCertificates != null && terminalCertificates.size() == 3);
+			return doTA(caReference, terminalCertificates, terminalKey, null, chipAuthenticationResult, documentNumber);
 		} catch (CardServiceException cse) {
 			throw cse;
 		} catch (Exception e) {
 			e.printStackTrace();
-		} finally {
-			EACEvent event = new EACEvent(this, keyId, publicKey, keyPair, caReference, terminalCertificates, terminalKey, documentNumber, rPICC, state == TA_AUTHENTICATED_STATE);
-			notifyEACPerformed(event);
+			throw new CardServiceException(e.getMessage());
 		}
 	}
 
@@ -692,12 +657,12 @@ public class PassportService extends PassportApduService implements Serializable
 	 * ver. 1.11. In short, we authenticate the chip with (EC)DH key agreement
 	 * protocol and create new secure messaging keys.
 	 * 
-	 * @param keyId
-	 *            passport's public key id (stored in DG14), -1 if none.
-	 * @param publicKey
-	 *            passport's public key (stored in DG14).
-	 * @throws CardServiceException
-	 *             if CA failed or some error occurred
+	 * @param keyId passport's public key id (stored in DG14), -1 if none
+	 * @param publicKey passport's public key (stored in DG14)
+	 * 
+	 * @return the chip authentication result
+	 * 
+	 * @throws CardServiceException if CA failed or some error occurred
 	 */
 	public synchronized ChipAuthenticationResult doCA(BigInteger keyId, PublicKey publicKey) throws CardServiceException {
 		if (publicKey == null) { throw new IllegalArgumentException("Public key is null"); }
@@ -725,25 +690,25 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] secret = agreement.generateSecret();
 
 			// TODO: this SHA1ing may have to be removed?
-			// TODO: this hashing is needed for our passport applet implementation
+			// TODO: this hashing is needed for our Java Card passport applet implementation
 			// byte[] secret = md.digest(secret);
 
 			byte[] keyData = null;
 			byte[] idData = null;
-			byte[] eacKeyHash = new byte[0];
+			byte[] keyHash = new byte[0];
 			if ("DH".equals(agreementAlg)) {
 				DHPublicKey dhPublicKey = (DHPublicKey)keyPair.getPublic();
 				keyData = dhPublicKey.getY().toByteArray();
 				// TODO: this is probably wrong, what should be hashed?
 				MessageDigest md = MessageDigest.getInstance("SHA1");
 				md = MessageDigest.getInstance("SHA1");
-				eacKeyHash = md.digest(keyData);
+				keyHash = md.digest(keyData);
 			} else if ("ECDH".equals(agreementAlg)) {
 				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
 				/* FIXME: toByteArray looks suspicious, shouldn't we use BSI's I2OS (Util.i2os) here? -- MO */
 				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
-				eacKeyHash = alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
+				keyHash = Util.alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
 			} else {
 				throw new IllegalStateException("Unsupported algorithm \"" + agreementAlg + "\", don't know how to select hash function");
 			}
@@ -760,21 +725,15 @@ public class PassportService extends PassportApduService implements Serializable
 
 			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
-			return new ChipAuthenticationResult(eacKeyHash, keyPair);
+			return new ChipAuthenticationResult(keyId, publicKey, keyHash, keyPair);
 		} catch (GeneralSecurityException e) {
 			throw new CardServiceException(e.toString());
 		}
 	}
 
-	/**
-	 * Perform TA (Terminal Authentication) part of EAC (version 1). For details see
-	 * TR-03110 ver. 1.11. In short, we feed the sequence of terminal
-	 * certificates to the card for verification, get a challenge from the
-	 * card, sign it with terminal private key, and send back to the card
-	 * for verification.
+	/* From BSI-03110 v1.1, B.2:
 	 * 
-	 * From BSI-03110 v1.1, B.2:
-	 * 
+	 * <pre>
 	 * The following sequence of commands SHALL be used to implement Terminal Authentication:
 	 * 	1. MSE:Set DST
 	 * 	2. PSO:Verify Certificate
@@ -783,14 +742,34 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 	5. External Authenticate
 	 * Steps 1 and 2 are repeated for every CV certificate to be verified
 	 * (CVCA Link Certificates, DV Certificate, IS Certificate).
+	 * </pre>
 	 */
-	public synchronized byte[] doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
-			PrivateKey terminalKey, String taAlg, byte[] caKeyHash, String documentNumber) throws CardServiceException {
+	/**
+	 * Perform TA (Terminal Authentication) part of EAC (version 1). For details see
+	 * TR-03110 ver. 1.11. In short, we feed the sequence of terminal
+	 * certificates to the card for verification, get a challenge from the
+	 * card, sign it with terminal private key, and send back to the card
+	 * for verification.
+	 * 
+	 * @param caReference reference issuer
+	 * @param terminalCertificates terminal certificate chain
+	 * @param terminalKey terminal private key
+	 * @param taAlg algorithm
+	 * @param caKeyHash hash of chip authentication key
+	 * @param documentNumber the document number
+	 * 
+	 * @return the challenge from the card
+	 * 
+	 * @throws CardServiceException on error
+	 */
+	public synchronized TerminalAuthenticationResult doTA(CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
+			PrivateKey terminalKey, String taAlg, ChipAuthenticationResult chipAuthenticationResult, String documentNumber) throws CardServiceException {
 		try {
 			if (terminalCertificates == null || terminalCertificates.size() < 1) {
 				throw new IllegalArgumentException("Need at least 1 certificate to perform TA, found: " + terminalCertificates);
 			}
 
+			byte[] caKeyHash = chipAuthenticationResult.getKeyHash();
 			/* The key hash that resulted from CA. */
 			if (caKeyHash == null) {
 				throw new IllegalArgumentException("CA key hash is null");
@@ -862,7 +841,7 @@ public class PassportService extends PassportApduService implements Serializable
 			}
 
 			if (terminalKey == null) {
-				return new byte[0];
+				throw new CardServiceException("No terminal key");
 			}
 
 			/* Step 3: MSE Set AT */
@@ -897,11 +876,11 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] signedData = sig.sign();
 			if (sigAlg.toUpperCase().endsWith("ECDSA")) {
 				int keySize = ((org.bouncycastle.jce.interfaces.ECPrivateKey)terminalKey).getParameters().getCurve().getFieldSize() / 8;
-				signedData = getRawECDSASignature(signedData, keySize);
+				signedData = Util.getRawECDSASignature(signedData, keySize);
 			}
 			sendMutualAuthenticate(wrapper, signedData);
 			state = TA_AUTHENTICATED_STATE;
-			return rPICC;
+			return new TerminalAuthenticationResult(chipAuthenticationResult, caReference, terminalCertificates, terminalKey, documentNumber, rPICC);
 		} catch (CardServiceException cse) {
 			throw cse;
 		} catch (Exception e) {
@@ -910,177 +889,24 @@ public class PassportService extends PassportApduService implements Serializable
 	}
 
 	/**
-	 * Adds an authentication event listener.
-	 * 
-	 * @param l listener
-	 */
-	public void addAuthenticationListener(AuthListener l) {
-		authListeners.add(l);
-	}
-
-	/**
-	 * Removes an authentication event listener.
-	 * 
-	 * @param l listener
-	 */
-	public void removeAuthenticationListener(AuthListener l) {
-		authListeners.remove(l);
-	}
-
-	/**
-	 * For ECDSA the EAC 1.11 specification requires the signature to be
-	 * stripped down from any ASN.1 wrappers, as so.
-	 *
-	 * @param signedData
-	 * @param keySize
-
-	 * @return signature without wrappers
-	 * 
-	 * @throws IOException on error
-	 */
-	private byte[] getRawECDSASignature(byte[] signedData, int keySize) throws IOException {
-		ASN1InputStream asn1In = new ASN1InputStream(signedData);
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		try {
-			ASN1Sequence obj = (ASN1Sequence)asn1In.readObject();
-			Enumeration<ASN1Primitive> e = obj.getObjects();
-			while (e.hasMoreElements()) {
-				ASN1Integer i = (ASN1Integer)e.nextElement();
-				byte[] t = i.getValue().toByteArray();
-				t = alignKeyDataToSize(t, keySize);
-				out.write(t);
-			}
-			out.flush();
-			return out.toByteArray();
-		} finally {
-			asn1In.close();
-			out.close();
-		}
-	}
-
-	private byte[] alignKeyDataToSize(byte[] keyData, int size) {
-		byte[] result = new byte[size];
-		if(keyData.length < size) { size = keyData.length; }
-		System.arraycopy(keyData, keyData.length - size, result, result.length - size, size);
-		return result;
-	}
-
-	/**
-	 * Notifies listeners about BAC events.
-	 * 
-	 * @param event BAC event
-	 */
-	protected void notifyBACPerformed(BACEvent event) {
-		for (AuthListener l : authListeners) {
-			l.performedBAC(event);
-		}
-	}
-
-	/**
-	 * Notifies listeners about EAC event.
-	 * 
-	 * @param event EAC event.
-	 */
-	protected void notifyEACPerformed(EACEvent event) {
-		for (AuthListener l : authListeners) {
-			l.performedEAC(event);
-		}
-	}
-
-	/**
 	 * Performs the <i>Active Authentication</i> protocol.
 	 * 
 	 * @param publicKey the public key to use (usually read from the card)
 	 * @param digestAlgorithm the digest algorithm to use, or null
+	 * @param signatureAlgorithm signature algorithm
+	 * @param challenge challenge
 	 * 
 	 * @return a boolean indicating whether the card was authenticated
 	 * 
-	 * @throws GeneralSecurityException if something goes wrong
+	 * @throws CardServiceException on error
 	 */
-	public boolean doAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm) throws CardServiceException {
+	public byte[] doAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm, byte[] challenge) throws CardServiceException {
 		try {
-			String pubKeyAlgorithm = publicKey.getAlgorithm();
-			if ("RSA".equals(pubKeyAlgorithm)) {
-				/* FIXME: check that digestAlgorithm = "SHA1" in this case, check (and re-initialize) rsaAASignature (and rsaAACipher). */
-				if (!"SHA1".equalsIgnoreCase(digestAlgorithm)
-						|| !"SHA-1".equalsIgnoreCase(digestAlgorithm)
-						|| !"SHA1WithRSA/ISO9796-2".equalsIgnoreCase(signatureAlgorithm)) {
-					LOGGER.warning("Unexpected algorithms for RSA AA: "
-							+ "digest algorithm = " + (digestAlgorithm == null ? "null" : digestAlgorithm)
-							+ ", signature algorithm = " + (signatureAlgorithm == null ? "null" : signatureAlgorithm));
-
-					rsaAADigest = MessageDigest.getInstance(digestAlgorithm); /* NOTE: for output length measurement only. -- MO */
-					rsaAASignature = Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
-				}
-
-				RSAPublicKey rsaPublicKey = (RSAPublicKey)publicKey;
-				rsaAACipher.init(Cipher.DECRYPT_MODE, rsaPublicKey);
-				rsaAASignature.initVerify(rsaPublicKey);
-
-				int challengeLength = 8;
-				byte[] m2 = new byte[challengeLength];
-				random.nextBytes(m2);
-				byte[] response = sendAA(rsaPublicKey, m2);
-				int digestLength = rsaAADigest.getDigestLength(); /* SHA1 should be 20 bytes = 160 bits */
-				assert(digestLength == 20);
-				byte[] plaintext = rsaAACipher.doFinal(response);
-				byte[] m1 = Util.recoverMessage(digestLength, plaintext);
-				rsaAASignature.update(m1);
-				rsaAASignature.update(m2);
-				boolean success = rsaAASignature.verify(response);
-				AAEvent event = new AAEvent(this, publicKey, m1, m2, success);
-				notifyAAPerformed(event);
-				if (success) {
-					state = AA_AUTHENTICATED_STATE;
-				}
-				return success;
-			} else if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
-				ECPublicKey ecdsaPublicKey = (ECPublicKey)publicKey;
-
-				if (ecdsaAASignature == null || signatureAlgorithm != null && !signatureAlgorithm.equals(ecdsaAASignature.getAlgorithm())) {
-					LOGGER.warning("Re-initializing ecdsaAASignature with signature algorithm " + signatureAlgorithm);
-					ecdsaAASignature = Signature.getInstance(signatureAlgorithm);
-				}
-				if (ecdsaAADigest == null || digestAlgorithm != null && !digestAlgorithm.equals(ecdsaAADigest.getAlgorithm())) {
-					LOGGER.warning("Re-initializing ecdsaAADigest with digest algorithm " + digestAlgorithm);
-					ecdsaAADigest = MessageDigest.getInstance(digestAlgorithm);					
-				}
-
-				ecdsaAASignature.initVerify(ecdsaPublicKey);
-
-				int challengeLength = 8;
-				byte[] challenge = new byte[challengeLength];
-				random.nextBytes(challenge);
-				byte[] response = sendAA(publicKey, challenge);
-
-				if (response.length % 2 != 0) {
-					LOGGER.warning("Active Authentication response is not of even length");
-				}
-
-				int l = response.length / 2;
-				BigInteger r = Util.os2i(response, 0, l);
-				BigInteger s = Util.os2i(response, l, l);
-
-				ecdsaAASignature.update(challenge);
-
-				try {
-
-					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
-					return ecdsaAASignature.verify(asn1Sequence.getEncoded());
-				} catch (IOException ioe) {
-					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
-					ioe.printStackTrace();
-					return false;
-				}
-			} else {
-				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
-				return false;
-			}
+			byte[] response = sendAA(challenge);
+			return response;
 		} catch (IllegalArgumentException iae) {
 			// iae.printStackTrace();
 			throw new CardServiceException(iae.toString());
-		} catch (GeneralSecurityException gse) {
-			throw new CardServiceException(gse.toString());
 		}
 	}
 
@@ -1113,8 +939,6 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public void setWrapper(SecureMessagingWrapper wrapper) {
 		this.wrapper = wrapper;
-		BACEvent event = new BACEvent(this, null, null, null, null, true);
-		notifyBACPerformed(event);
 	}
 
 	/**
@@ -1125,7 +949,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @return the file as an input stream
 	 * 
-	 * @throws IOException if the file cannot be read
+	 * @throws CardServiceException if the file cannot be read
 	 */
 	public synchronized CardFileInputStream getInputStream(short fid) throws CardServiceException {
 		synchronized(fs) {
@@ -1147,45 +971,14 @@ public class PassportService extends PassportApduService implements Serializable
 	 *            the random challenge of exactly 8 bytes
 	 * 
 	 * @return response from the card
+	 * 
+	 * @throws CardServiceException on error
 	 */
-	private byte[] sendAA(PublicKey publicKey, byte[] challenge)	throws CardServiceException {
-		if (publicKey == null) {
-			throw new IllegalArgumentException("AA failed: bad key");
-		}
+	private byte[] sendAA(byte[] challenge)	throws CardServiceException {
 		if (challenge == null || challenge.length != 8) {
 			throw new IllegalArgumentException("AA failed: bad challenge");
 		}
 		byte[] response = sendInternalAuthenticate(wrapper, challenge);
 		return response;
-	}
-
-	/**
-	 * Notifies listeners about AA event.
-	 * 
-	 * @param event
-	 *            AA event.
-	 */
-	private void notifyAAPerformed(AAEvent event) {
-		for (AuthListener l : authListeners) {
-			l.performedAA(event);
-		}
-	}
-
-	class ChipAuthenticationResult {
-		private byte[] eacKeyHash;
-		private KeyPair keyPair;
-
-		public ChipAuthenticationResult(byte[] eacKeyHash, KeyPair keyPair) {
-			this.eacKeyHash = eacKeyHash;
-			this.keyPair = keyPair;
-		}
-
-		public byte[] getEACKeyHash() {
-			return eacKeyHash;
-		}
-
-		public KeyPair getKeyPair() {
-			return keyPair;
-		}
 	}
 }

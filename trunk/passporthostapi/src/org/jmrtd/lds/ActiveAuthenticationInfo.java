@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -30,10 +30,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DLSequence;
 
-/**
- * A concrete SecurityInfo structure that stores active authentication
- * info, see TR-LDS-PKI Maintenance V1.0.
- * 
+/*
  * <pre>
  * ActiveAuthenticationInfo ::= SEQUENCE { 
  *    protocol id-icao-mrtd-security-aaProtocolObject, 
@@ -49,6 +46,10 @@ import org.bouncycastle.asn1.DLSequence;
  * id-icao-mrtd-security-aaProtocolObject OBJECT IDENTIFIER ::= 
  *    {id-icao-mrtd-security 5} 
  * </pre>
+ */
+/**
+ * A concrete SecurityInfo structure that stores active authentication
+ * info, see TR-LDS-PKI Maintenance V1.0.
  * 
  * @author JMRTD team (info@jmrtd.org)
  * 
@@ -59,8 +60,6 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 	private static final long serialVersionUID = 6830847342039845308L;
 
 	public static final int VERSION_NUM = 1;
-
-	/** Specified in BSI TR 03111 Section 5.2.1. */
 
 	/** Specified in BSI TR 03111 Section 5.2.1. */
 	public static final String
@@ -93,7 +92,7 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 	/**
 	 * Constructs a new object.
 	 *
-	 * @param the signature algorithm OID
+	 * @param signatureAlgorithmOID the signature algorithm OID
 	 */
 	public ActiveAuthenticationInfo(String signatureAlgorithmOID) {
 		this(ID_AA_OID, VERSION_NUM, signatureAlgorithmOID);
@@ -118,6 +117,11 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 		return oid;
 	}
 
+	/**
+	 * Gets the signature algorithm object identifier.
+	 * 
+	 * @return signature algorithm OID
+	 */
 	public String getSignatureAlgorithmOID() {
 		return signatureAlgorithmOID;
 	}

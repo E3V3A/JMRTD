@@ -176,7 +176,8 @@ public class MRZInfo extends AbstractLDSInfo {
 	/**
 	 * Creates a new MRZ based on an input stream.
 	 *
-	 * @param inputStream contains the contents of DG1 (without the tag and length)
+	 * @param inputStream contains the contents (value) of DG1 (without the tag and length)
+	 * @param length the length of the MRZInfo structure
 	 */
 	public MRZInfo(InputStream inputStream, int length) {
 		try {

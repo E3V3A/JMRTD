@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2012  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -35,7 +35,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.Security;
+import java.security.Signature;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
@@ -49,22 +51,30 @@ import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.ECPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import javax.crypto.Cipher;
 import javax.security.auth.x500.X500Principal;
 
 import net.sf.scuba.smartcards.CardFileInputStream;
 import net.sf.scuba.smartcards.CardServiceException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERSequence;
 import org.jmrtd.VerificationStatus.HashMatchResult;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -105,7 +115,13 @@ public class Passport {
 
 	private FeatureStatus featureStatus;
 	private VerificationStatus verificationStatus;
-	private Collection<VerificationStatusChangeListener> verificationStatusChangeListeners;
+
+	/* We use a cipher to help implement Active Authentication RSA with ISO9796-2 message recovery. */
+	private transient Signature rsaAASignature;
+	private transient MessageDigest rsaAADigest;	
+	private transient Cipher rsaAACipher;
+	private transient Signature ecdsaAASignature;
+	private transient MessageDigest ecdsaAADigest;
 
 	private short cvcaFID = PassportService.EF_CVCA;
 
@@ -123,14 +139,30 @@ public class Passport {
 
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
+	/*
+	 * FIXME: replace trust store with something simpler.
+	 * - Move the URI interpretation functionality to clients.
+	 * - Limit public interface in Passport etc. to CertStore / KeyStore / ? extends Key / Certificate only.
+	 */
 	private MRTDTrustStore trustManager;
 
 	private PassportService service;
 
-	private Passport() {
+	private Random random;
+
+	private Passport() throws GeneralSecurityException {
 		this.featureStatus = new FeatureStatus();
 		this.verificationStatus = new VerificationStatus();
-		this.verificationStatusChangeListeners = new ArrayList<VerificationStatusChangeListener>();
+
+		this.random = new SecureRandom();
+
+		rsaAADigest = MessageDigest.getInstance("SHA1"); /* NOTE: for output length measurement only. -- MO */
+		rsaAASignature = Signature.getInstance("SHA1WithRSA/ISO9796-2", BC_PROVIDER);
+		rsaAACipher = Cipher.getInstance("RSA/NONE/NoPadding");
+
+		/* NOTE: These will be updated in doAA after caller has read ActiveAuthenticationSecurityInfo. */
+		ecdsaAASignature = Signature.getInstance("SHA256withECDSA", BC_PROVIDER);
+		ecdsaAADigest = MessageDigest.getInstance("SHA-256"); /* NOTE: for output length measurement only. -- MO */
 	}
 
 	/**
@@ -157,8 +189,9 @@ public class Passport {
 	 * @param bacKey the BAC key to use
 	 * 
 	 * @throws CardServiceException on error
+	 * @throws GeneralSecurityException if certain security primitives are not supported
 	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, BACKeySpec bacKey) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACKeySpec bacKey) throws CardServiceException, GeneralSecurityException {
 		this(service, trustManager, Collections.singletonList(bacKey));
 	}
 
@@ -170,8 +203,9 @@ public class Passport {
 	 * @param bacStore the BAC entries
 	 * 
 	 * @throws CardServiceException on error
+	 * @throws GeneralSecurityException if certain security primitives are not supported
 	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore) throws CardServiceException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore) throws CardServiceException, GeneralSecurityException {
 		this();
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		this.service = service;
@@ -235,7 +269,6 @@ public class Passport {
 				/* We failed SAC, and we failed BAC. */
 				featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
 				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-				//			notifyVerificationStatusChangeListeners(verificationStatus);
 			}
 		} catch (Exception e) {
 			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
@@ -318,7 +351,6 @@ public class Passport {
 			}
 		}
 		verificationStatus.setHT(VerificationStatus.Verdict.UNKNOWN, verificationStatus.getHTReason(), hashResults);
-		//		notifyVerificationStatusChangeListeners(verificationStatus);
 
 		/* Check EAC support by DG14 presence. */
 		if (dgNumbers.contains(14)) {
@@ -615,22 +647,11 @@ public class Passport {
 		return verificationStatus;
 	}
 
-	/**
-	 * Adds an authentication listener to this document.
-	 * 
-	 * @param l an authentication listener
-	 */
-	public void addAuthenticationListener(AuthListener l) {
-		if (service != null) {
-			service.addAuthenticationListener(l);
-		}
-	}
-
 	/* ONLY PRIVATE METHODS BELOW. */
 
 	private BACKeySpec tryToDoBAC(PassportService service, List<BACKeySpec> bacStore) throws BACDeniedException {
 		List<BACKeySpec> triedBACEntries = new ArrayList<BACKeySpec>();
-		int lastKnownSW = -1;
+		int lastKnownSW = BACDeniedException.SW_NONE;
 
 		synchronized (bacStore) {
 			for (BACKeySpec bacKey: bacStore) {
@@ -669,9 +690,9 @@ public class Passport {
 
 	private void tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
 		LOGGER.info("DEBUG: PACE has been disabled in this version of JMRTD");
-		
-//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
-//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+
+		//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
+		//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
 	}
 
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
@@ -726,8 +747,8 @@ public class Passport {
 			BigInteger keyId = entry.getKey();
 			PublicKey publicKey = entry.getValue();
 			try {
-				service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
-				verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference);
+				TerminalAuthenticationResult eacResult = service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
+				verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference, eacResult);
 				return true;
 			} catch(CardServiceException cse) {
 				cse.printStackTrace();
@@ -912,7 +933,11 @@ public class Passport {
 
 				digestAlgorithm = Util.inferDigestAlgorithmFromSignatureAlgorithm(signatureAlgorithm);
 			}
-			if (service.doAA(pubKey, digestAlgorithm, signatureAlgorithm)) {
+			int challengeLength = 8;
+			byte[] challenge = new byte[challengeLength];
+			random.nextBytes(challenge);
+			byte[] response = service.doAA(pubKey, digestAlgorithm, signatureAlgorithm, challenge);			
+			if (verifyAA(pubKey, digestAlgorithm, signatureAlgorithm, challenge, response)) {
 				verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded");
 			} else {
 				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure");
@@ -924,6 +949,79 @@ public class Passport {
 			LOGGER.severe("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
 			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception");
+		}
+	}
+
+	private boolean verifyAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm, byte[] challenge, byte[] response) throws CardServiceException {
+		try {
+			String pubKeyAlgorithm = publicKey.getAlgorithm();
+			if ("RSA".equals(pubKeyAlgorithm)) {
+				/* FIXME: check that digestAlgorithm = "SHA1" in this case, check (and re-initialize) rsaAASignature (and rsaAACipher). */
+				if (!"SHA1".equalsIgnoreCase(digestAlgorithm)
+						|| !"SHA-1".equalsIgnoreCase(digestAlgorithm)
+						|| !"SHA1WithRSA/ISO9796-2".equalsIgnoreCase(signatureAlgorithm)) {
+					LOGGER.warning("Unexpected algorithms for RSA AA: "
+							+ "digest algorithm = " + (digestAlgorithm == null ? "null" : digestAlgorithm)
+							+ ", signature algorithm = " + (signatureAlgorithm == null ? "null" : signatureAlgorithm));
+
+					rsaAADigest = MessageDigest.getInstance(digestAlgorithm); /* NOTE: for output length measurement only. -- MO */
+					rsaAASignature = Signature.getInstance(signatureAlgorithm, BC_PROVIDER);
+				}
+
+				RSAPublicKey rsaPublicKey = (RSAPublicKey)publicKey;
+				rsaAACipher.init(Cipher.DECRYPT_MODE, rsaPublicKey);
+				rsaAASignature.initVerify(rsaPublicKey);
+
+				int digestLength = rsaAADigest.getDigestLength(); /* SHA1 should be 20 bytes = 160 bits */
+				assert(digestLength == 20);
+				byte[] plaintext = rsaAACipher.doFinal(response);
+				byte[] m1 = Util.recoverMessage(digestLength, plaintext);
+				rsaAASignature.update(m1);
+				rsaAASignature.update(challenge);
+				boolean success = rsaAASignature.verify(response);
+				return success;
+			} else if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
+				ECPublicKey ecdsaPublicKey = (ECPublicKey)publicKey;
+
+				if (ecdsaAASignature == null || signatureAlgorithm != null && !signatureAlgorithm.equals(ecdsaAASignature.getAlgorithm())) {
+					LOGGER.warning("Re-initializing ecdsaAASignature with signature algorithm " + signatureAlgorithm);
+					ecdsaAASignature = Signature.getInstance(signatureAlgorithm);
+				}
+				if (ecdsaAADigest == null || digestAlgorithm != null && !digestAlgorithm.equals(ecdsaAADigest.getAlgorithm())) {
+					LOGGER.warning("Re-initializing ecdsaAADigest with digest algorithm " + digestAlgorithm);
+					ecdsaAADigest = MessageDigest.getInstance(digestAlgorithm);					
+				}
+
+				ecdsaAASignature.initVerify(ecdsaPublicKey);
+
+				if (response.length % 2 != 0) {
+					LOGGER.warning("Active Authentication response is not of even length");
+				}
+
+				int l = response.length / 2;
+				BigInteger r = Util.os2i(response, 0, l);
+				BigInteger s = Util.os2i(response, l, l);
+
+				ecdsaAASignature.update(challenge);
+
+				try {
+
+					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
+					return ecdsaAASignature.verify(asn1Sequence.getEncoded());
+				} catch (IOException ioe) {
+					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
+					ioe.printStackTrace();
+					return false;
+				}
+			} else {
+				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
+				return false;
+			}
+		} catch (IllegalArgumentException iae) {
+			// iae.printStackTrace();
+			throw new CardServiceException(iae.toString());
+		} catch (GeneralSecurityException gse) {
+			throw new CardServiceException(gse.toString());
 		}
 	}
 
@@ -1064,9 +1162,6 @@ public class Passport {
 
 	/**
 	 * Checks hashes in the SOd correspond to hashes we compute.
-	 * 
-	 * @param lds
-	 * @param verificationStatus
 	 */
 	public void verifyHT() {
 		/* Compare stored hashes to computed hashes. */

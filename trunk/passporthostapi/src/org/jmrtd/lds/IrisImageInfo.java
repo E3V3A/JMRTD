@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,7 +77,10 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * @param width with
 	 * @param height height
 	 * @param imageBytes the encoded image
+	 * @param imageLength the length of the encoded image
 	 * @param imageFormat the image format used for encoding
+	 * 
+	 * @throws IOException on error reading the image input stream
 	 */
 	public IrisImageInfo(int imageNumber, int quality, int rotationAngle, int rotationAngleUncertainty,
 			int width, int height, InputStream imageBytes, int imageLength, int imageFormat) throws IOException {
@@ -96,7 +99,10 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * @param width width
 	 * @param height height
 	 * @param imageBytes the encoded image
+	 * @param imageLength the length of the encoded image
 	 * @param imageFormat the image format used for encoding
+	 * 
+	 * @throws IOException on error reading the image stream
 	 */
 	public IrisImageInfo(int imageNumber, int width, int height, InputStream imageBytes, int imageLength, int imageFormat) throws IOException {
 		this(imageNumber, IMAGE_QUAL_UNDEF, ROT_ANGLE_UNDEF, ROT_UNCERTAIN_UNDEF,
@@ -107,6 +113,7 @@ public class IrisImageInfo extends AbstractImageInfo {
 	 * Constructs a new iris image record.
 	 * 
 	 * @param inputStream input stream
+	 * @param imageFormat the image format used for encoding
 	 * 
 	 * @throws IOException if input cannot be read
 	 */

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -47,6 +47,7 @@ import java.security.spec.KeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -115,6 +116,8 @@ public class Util {
 	 * @param mode either <code>ENC_MODE</code> or <code>MAC_MODE</code>.
 	 * 
 	 * @return the key.
+	 * 
+	 * @throws GeneralSecurityException on security error
 	 */
 	public static SecretKey deriveKey(byte[] keySeed, int mode) throws GeneralSecurityException {
 		return deriveKey(keySeed, "DESede", 128, mode);
@@ -128,7 +131,6 @@ public class Util {
 	 * Derives a shared key.
 	 * 
 	 * @param keySeed the shared secret, as octets
-	 * @param digestAlg in Java mnemonic notation (for example "SHA-1", "SHA-256")
 	 * @param cipherAlg in Java mnemonic notation (for example "DESede", "AES")
 	 * @param keyLength length in bits
 	 * @param nonce optional nonce or <code>null</code>
@@ -189,6 +191,9 @@ public class Util {
 		return new SecretKeySpec(keyBytes, cipherAlg);
 	}
 
+	/*
+	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible now.
+	 */
 	/**
 	 * Computes the static key seed, based on information from the MRZ.
 	 *
@@ -197,9 +202,8 @@ public class Util {
 	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD).
 	 *
 	 * @return a byte array of length 16 containing the key seed.
-	 */
-	/*
-	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible now.
+	 * 
+	 * @throws GeneralSecurityException on security error
 	 */
 	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
 
@@ -340,6 +344,43 @@ public class Util {
 	}
 
 	/**
+	 * For ECDSA the EAC 1.11 specification requires the signature to be stripped down from any ASN.1 wrappers, as so.
+	 *
+	 * @param signedData signed data
+	 * @param keySize key size
+	 *
+	 * @return signature without wrappers
+	 *
+	 * @throws IOException on error
+	 */
+	public static byte[] getRawECDSASignature(byte[] signedData, int keySize) throws IOException {
+		ASN1InputStream asn1In = new ASN1InputStream(signedData);
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try {
+			ASN1Sequence obj = (ASN1Sequence)asn1In.readObject();
+			Enumeration<ASN1Primitive> e = obj.getObjects();
+			while (e.hasMoreElements()) {
+				ASN1Integer i = (ASN1Integer)e.nextElement();
+				byte[] t = i.getValue().toByteArray();
+				t = alignKeyDataToSize(t, keySize);
+				out.write(t);
+			}
+			out.flush();
+			return out.toByteArray();
+		} finally {
+			asn1In.close();
+			out.close();
+		}
+	}
+
+	public static byte[] alignKeyDataToSize(byte[] keyData, int size) {
+		byte[] result = new byte[size];
+		if(keyData.length < size) { size = keyData.length; }
+		System.arraycopy(keyData, keyData.length - size, result, result.length - size, size);
+		return result;
+	}
+	
+	/**
 	 * Converts an integer to an octet string.
 	 * Based on BSI TR 03111 Section 3.1.2.
 	 *
@@ -412,6 +453,8 @@ public class Util {
 	 * Convert an octet string to field element via OS2FE as specified in BSI TR-03111.
 	 *
 	 * @param bytes octet string
+	 * @param p modulus
+	 * 
 	 * @return positive integer
 	 */
 	public static BigInteger os2fe(byte[] bytes, BigInteger p) {
@@ -423,7 +466,8 @@ public class Util {
 	 * Prefixes a <code>0x04</code> (without a length).
 	 * 
 	 * @param point public key point
-	 * @return
+	 *
+	 * @return an octet string
 	 */
 	public static byte[] publicKeyECPointToOS(ECPoint point) {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -523,7 +567,8 @@ public class Util {
 	/**
 	 * Translates (named) curve spec to JCA compliant explicit param spec.
 	 * 
-	 * @param params
+	 * @param params an EC parameter spec, possibly named
+	 *
 	 * @return another spec not name based
 	 */
 	public static ECParameterSpec toExplicitECParameterSpec(ECParameterSpec params) {
@@ -586,9 +631,9 @@ public class Util {
 	/**
 	 * Translates internal BC named curve spec to BC provided JCA compliant named curve spec.
 	 * 
-	 * @param namedParamSpec
+	 * @param namedParamSpec a named EC parameter spec
 	 * 
-	 * @return
+	 * @return a JCA compliant named EC parameter spec
 	 */
 	public static org.bouncycastle.jce.spec.ECNamedCurveSpec toECNamedCurveSpec(org.bouncycastle.jce.spec.ECNamedCurveParameterSpec namedParamSpec) {
 		String name = namedParamSpec.getName();
@@ -768,10 +813,11 @@ public class Util {
 	 * 
 	 * NOTE: For signing authentication token, not for sending to smart card.
 	 * 
-	 * @param oid
-	 * @param publicKey
+	 * @param oid object identifier
+	 * @param publicKey public key
 	 * @param isContextKnown whether context of public key is known to receiver (we will not include domain parameters in that case).
 	 * 
+	 * @return encoded public key data object for signing as authentication token
 	 */
 	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey, boolean isContextKnown) {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -825,12 +871,13 @@ public class Util {
 		return bOut.toByteArray();
 	}
 
+	/*
+	 * FIXME: how can we be sure coords are uncompressed?
+	 */
 	/**
 	 * Write uncompressed coordinates (for EC) or public value (DH).
-	 * 
-	 * FIXME: how can we be sure coords are uncompressed?
-	 * 
-	 * @param publicKey
+	 *
+	 * @param publicKey public key
 	 * 
 	 * @return encoding for smart card
 	 */

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -185,16 +185,24 @@ public class FaceImageInfo extends AbstractImageInfo {
 	 * 
 	 * @param gender gender
 	 * @param eyeColor eye color
-	 * @param hairColor hair color
 	 * @param featureMask feature mask (least significant 3 bytes)
+	 * @param hairColor hair color
 	 * @param expression expression
 	 * @param poseAngle (encoded) pose angle
 	 * @param poseAngleUncertainty pose angle uncertainty
+	 * @param faceImageType face image type
+	 * @param colorSpace color space
 	 * @param sourceType source type
 	 * @param deviceType capture device type (unspecified is <code>0x00</code>)
+	 * @param quality quality
+	 * @param featurePoints feature points
+	 * @param width width
+	 * @param height height
 	 * @param imageInputStream encoded image bytes
 	 * @param imageLength length of encoded image
 	 * @param imageDataType either IMAGE_DATA_TYPE_JPEG or IMAGE_DATA_TYPE_JPEG2000
+	 * 
+	 * @throws IOException on error reading input
 	 */
 	public FaceImageInfo(Gender gender, EyeColor eyeColor,
 			int featureMask,

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -93,7 +93,19 @@ public class CardVerifiableCertificate extends Certificate {
 	 * TODO: perhaps move this to factory class (CertificateFactory, CertificateBuilder, whatever).
 	 * NOTE: algorithm should be one of"SHA224withECDSA", "SHA256withECDSA", "SHA384withECDSA", "SHA512withECDSA",
 	 * or similar with RSA.
+	 */
+	/**
+	 * Construcst a certificate.
 	 * 
+	 * @param authorityReference authority reference
+	 * @param holderReference holder reference
+	 * @param publicKey public key
+	 * @param algorithm algorithm
+	 * @param notBefore valid from date
+	 * @param notAfter valid to date
+	 * @param role role
+	 * @param permission permission
+	 * @param signatureData signed date
 	 */
 	public CardVerifiableCertificate(CVCPrincipal authorityReference, CVCPrincipal holderReference,
 			PublicKey publicKey,
@@ -118,6 +130,11 @@ public class CardVerifiableCertificate extends Certificate {
 		}
 	}
 
+	/**
+	 * Gets the signature algorithm.
+	 * 
+	 * @return an algorithm name
+	 */
 	public String getSigAlgName() {
 		try {
 			OIDField oid = cvCertificate.getCertificateBody().getPublicKey().getObjectIdentifier();			
@@ -128,6 +145,11 @@ public class CardVerifiableCertificate extends Certificate {
 		}
 	}
 
+	/**
+	 * Gets the signature algorithm OID
+	 *
+	 * @return an OID
+	 */
 	public String getSigAlgOID() {
 		try {
 			OIDField oid = cvCertificate.getCertificateBody().getPublicKey().getObjectIdentifier();
@@ -232,11 +254,11 @@ public class CardVerifiableCertificate extends Certificate {
 	 * @param key the PublicKey used to carry out the verification.
 	 * @param provider the name of the signature provider.
 	 *
-	 * @exception NoSuchAlgorithmException on unsupported signature algorithms.
-	 * @exception InvalidKeyException on incorrect key.
-	 * @exception NoSuchProviderException on incorrect provider.
-	 * @exception SignatureException on signature errors.
-	 * @exception CertificateException on encoding errors.
+	 * @throws NoSuchAlgorithmException on unsupported signature algorithms.
+	 * @throws InvalidKeyException on incorrect key.
+	 * @throws NoSuchProviderException on incorrect provider.
+	 * @throws SignatureException on signature errors.
+	 * @throws CertificateException on encoding errors.
 	 */
 	public void verify(PublicKey key, String provider)
 			throws CertificateException, NoSuchAlgorithmException,
@@ -264,6 +286,8 @@ public class CardVerifiableCertificate extends Certificate {
 	 * Returns 'Effective Date'.
 	 * 
 	 * @return the effective date
+	 * 
+	 * @throws CertificateException on error
 	 */
 	public Date getNotBefore() throws CertificateException {
 		try {
@@ -277,6 +301,8 @@ public class CardVerifiableCertificate extends Certificate {
 	 * Returns 'Expiration Date'.
 	 * 
 	 * @return the expiration date
+	 * 
+	 * @throws CertificateException on error
 	 */
 	public Date getNotAfter() throws CertificateException {
 		try {
@@ -322,9 +348,10 @@ public class CardVerifiableCertificate extends Certificate {
 
 	/**
 	 * Gets the holder authorization template.
-	 * 
+	 *
 	 * @return the holder authorization template
-	 * @throws CertificateException
+	 *
+	 * @throws CertificateException on error constructing the template
 	 */
 	public CVCAuthorizationTemplate getAuthorizationTemplate() throws CertificateException {
 		try {
