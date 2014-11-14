@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -232,6 +232,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * @param privateKey private key to sign the data
 	 * @param docSigningCertificate the document signing certificate
 	 * @param provider specific signature provider that should be used to create the signature
+	 * @param ldsVersion LDS version
+	 * @param unicodeVersion Unicode version
 	 *
 	 * @throws NoSuchAlgorithmException if either of the algorithm parameters is not recognized
 	 * @throws CertificateException if the document signing certificate cannot be used
@@ -457,6 +459,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * using the country signing certificate.
 	 *
 	 * @return the document signing certificate
+	 * 
+	 * @throws CertificateException when certificate not be constructed from this SOd
 	 */
 	public X509Certificate getDocSigningCertificate() throws CertificateException {
 		byte[] certSpec = null;

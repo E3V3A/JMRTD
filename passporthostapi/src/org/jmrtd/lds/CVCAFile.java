@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -32,9 +32,9 @@ import org.jmrtd.cert.CVCPrincipal;
 
 /**
  * File structure for CVCA file (on EAC protected documents).
- * 
+ *
  * @author The JMRTD team (info@jmrtd.org)
- * 
+ *
  * @version $Revision$
  */
 /* TODO: Use CVCPrincipal instead of String for references? */
@@ -56,29 +56,38 @@ public class CVCAFile extends AbstractLDSFile {
 	}
 	
 	/**
-	 * Constructs a new CVCA file from the data contained in <code>in</code>.
-	 * 
+	 * Constructs a new CVCA file from the data contained in an input stream.
+	 *
+	 * @param fid file identifier
 	 * @param inputStream stream with the data to be parsed
+	 *
+	 * @throws IOException on error reading from input stream
 	 */
 	public CVCAFile(short fid, InputStream inputStream) throws IOException {
 		this.fid = fid;
 		readObject(inputStream);
 	}
 
+	/**
+	 * Constructs a new CVCA file with default file identifier.
+	 *
+	 * @param caReference CA reference
+	 * @param altCaReference alternative CA reference
+	 */
 	public CVCAFile(String caReference, String altCaReference) {
 		this(PassportService.EF_CVCA, caReference, altCaReference);
 	}
 	
 	/**
-	 * Constructs a new CVCA file with the given certificate references
-	 * 
-	 * @param caReference
-	 *            main CA certificate reference
-	 * @param altCaReference
-	 *            second (alternative) CA certificate reference
+	 * Constructs a new CVCA file with the given certificate references.
+	 *
+	 * @param fid file identifier
+	 * @param caReference main CA certificate reference
+	 * @param altCaReference second (alternative) CA certificate reference
 	 */
 	public CVCAFile(short fid, String caReference, String altCaReference) {
-		if (caReference == null || caReference.length() > 16
+		if (caReference == null
+				|| caReference.length() > 16
 				|| (altCaReference != null && altCaReference.length() > 16)) {
 			throw new IllegalArgumentException();
 		}
@@ -88,21 +97,26 @@ public class CVCAFile extends AbstractLDSFile {
 	}
 
 	/**
-	 * Constructs a new CVCA file with the given certificate reference
-	 * 
-	 * @param caReference
-	 *            main CA certificate reference
+	 * Constructs a new CVCA file with the given certificate reference.
+	 *
+	 * @param fid file identifier
+	 * @param caReference main CA certificate reference
 	 */
 	public CVCAFile(short fid, String caReference) {
 		this(fid, caReference, null);
 	}
 
+	/**
+	 * Gets the file identifier of this CVCA file.
+	 *
+	 * @return the file identifier
+	 */
 	public short getFID() {
 		return fid;
 	}
 
-	protected void readObject(InputStream in) throws IOException {
-		DataInputStream dataIn = new DataInputStream(in);
+	protected void readObject(InputStream inputStream) throws IOException {
+		DataInputStream dataIn = new DataInputStream(inputStream);
 		int tag = dataIn.read();
 		if (tag != CAR_TAG) { throw new IllegalArgumentException("Wrong tag, expected " + Integer.toHexString(CAR_TAG) + ", found " + Integer.toHexString(tag)); }
 		int length = dataIn.read();
@@ -126,7 +140,7 @@ public class CVCAFile extends AbstractLDSFile {
 		}
 	}
 
-	protected void writeObject(OutputStream out) throws IOException {
+	protected void writeObject(OutputStream outputStream) throws IOException {
 		byte[] result = new byte[LENGTH];
 		result[0] = CAR_TAG;
 		result[1] = (byte)caReference.length();
@@ -138,12 +152,12 @@ public class CVCAFile extends AbstractLDSFile {
 			System.arraycopy(altCaReference.getBytes(), 0, result, index + 2,
 					result[index + 1]);
 		}
-		out.write(result);
+		outputStream.write(result);
 	}
 
 	/**
 	 * Returns the CA Certificate identifier
-	 * 
+	 *
 	 * @return the CA Certificate identifier
 	 */
 	public CVCPrincipal getCAReference() {
@@ -153,7 +167,7 @@ public class CVCAFile extends AbstractLDSFile {
 	/**
 	 * Returns the second (alternative) CA Certificate identifier, null if none
 	 * exists.
-	 * 
+	 *
 	 * @return the second (alternative) CA Certificate identifier
 	 */
 	public CVCPrincipal getAltCAReference() {
@@ -162,7 +176,7 @@ public class CVCAFile extends AbstractLDSFile {
 
 	/**
 	 * Gets a textual representation of this CVCAFile.
-	 * 
+	 *
 	 * @return a textual representation of this CVCAFile
 	 */
 	public String toString() {
@@ -172,9 +186,9 @@ public class CVCAFile extends AbstractLDSFile {
 
 	/**
 	 * Tests whether this CVCAFile is equal to the provided object.
-	 * 
+	 *
 	 * @param other some other object
-	 * 
+	 *
 	 * @return whether this CVCAFile equals the other object
 	 */
 	public boolean equals(Object other) {

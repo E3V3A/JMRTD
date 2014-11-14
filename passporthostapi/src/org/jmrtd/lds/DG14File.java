@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -73,13 +73,14 @@ public class DG14File extends DataGroup {
 	}
 
 	/**
-	 * Constructs a new DG14 file from the data in <code>in</code>.
+	 * Constructs a new DG14 file from the data in an input stream.
 	 * 
-	 * @param in
-	 *            the input stream to parse the data from
+	 * @param inputStream the input stream to parse the data from
+	 * 
+	 * @throws IOException on error reading from input stream
 	 */
-	public DG14File(InputStream in) throws IOException {
-		super(EF_DG14_TAG, in);
+	public DG14File(InputStream inputStream) throws IOException {
+		super(EF_DG14_TAG, inputStream);
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {

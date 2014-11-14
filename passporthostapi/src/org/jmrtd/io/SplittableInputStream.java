@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -59,8 +59,6 @@ public class SplittableInputStream extends InputStream {
 	 * 
 	 * @param position a position between <code>0</code> and {@link #getPosition()}
 	 * @return a fresh input stream
-	 * 
-	 * @throws IOException on error
 	 */
 	public InputStream getInputStream(int position) {
 		try {
@@ -110,10 +108,9 @@ public class SplittableInputStream extends InputStream {
 	 * The actual number of bytes skipped is returned.  If <code>n</code> is
 	 * negative, no bytes are skipped.
 	 *
-	 * @param      n   the number of bytes to be skipped.
-	 * @return     the actual number of bytes skipped.
-	 * @exception  IOException  if the stream does not support seek,
-	 *                          or if some other I/O error occurs.
+	 * @param n the number of bytes to be skipped.
+	 * @return the actual number of bytes skipped.
+	 * @throws IOException if the stream does not support seek, or if some other I/O error occurs.
 	 */
 	public long skip(long n) throws IOException {
 		return carrier.skip(n);
@@ -126,10 +123,10 @@ public class SplittableInputStream extends InputStream {
 	 * might be the same thread or another thread.  A single read or skip of this
 	 * many bytes will not block, but may read or skip fewer bytes.
 	 *
-	 * @return     an estimate of the number of bytes that can be read (or skipped
-	 *             over) from this input stream without blocking or {@code 0} when
-	 *             it reaches the end of the input stream.
-	 * @exception  IOException if an I/O error occurs.
+	 * @return an estimate of the number of bytes that can be read (or skipped
+	 *         over) from this input stream without blocking or {@code 0} when
+	 *         it reaches the end of the input stream.
+	 * @throws IOException on error
 	 */
 	public int available() throws IOException {
 		return carrier.available();
@@ -139,7 +136,7 @@ public class SplittableInputStream extends InputStream {
 	 * Closes this input stream and releases any system resources associated
 	 * with the stream.
 	 *
-	 * @exception  IOException  if an I/O error occurs.
+	 * @throws IOException on error
 	 */
 	public void close() throws IOException {
 		carrier.close();
@@ -150,20 +147,20 @@ public class SplittableInputStream extends InputStream {
 	 * the <code>reset</code> method repositions this stream at the last marked
 	 * position so that subsequent reads re-read the same bytes.
 	 *
-	 * <p> The <code>readlimit</code> arguments tells this input stream to
+	 * <p>The <code>readlimit</code> arguments tells this input stream to
 	 * allow that many bytes to be read before the mark position gets
-	 * invalidated.
+	 * invalidated.</p>
 	 *
-	 * <p> The general contract of <code>mark</code> is that, if the method
+	 * <p>The general contract of <code>mark</code> is that, if the method
 	 * <code>markSupported</code> returns <code>true</code>, the stream somehow
 	 * remembers all the bytes read after the call to <code>mark</code> and
 	 * stands ready to supply those same bytes again if and whenever the method
 	 * <code>reset</code> is called.  However, the stream is not required to
 	 * remember any data at all if more than <code>readlimit</code> bytes are
-	 * read from the stream before <code>reset</code> is called.
+	 * read from the stream before <code>reset</code> is called.</p>
 	 *
-	 * @param   readlimit   the maximum limit of bytes that can be read before
-	 *                      the mark position becomes invalid.
+	 * @param   readlimit   the maximum limit of bytes that can be read before the mark position becomes invalid.
+	 *
 	 * @see     java.io.InputStream#reset()
 	 */
 	public synchronized void mark(int readlimit) {
@@ -174,9 +171,9 @@ public class SplittableInputStream extends InputStream {
 	 * Repositions this stream to the position at the time the
 	 * <code>mark</code> method was last called on this input stream.
 	 *
-	 * <p> The general contract of <code>reset</code> is:
+	 * The general contract of <code>reset</code> is:
 	 *
-	 * <p><ul>
+	 * <ul>
 	 *
 	 * <li> If the method <code>markSupported</code> returns
 	 * <code>true</code>, then:
@@ -207,10 +204,12 @@ public class SplittableInputStream extends InputStream {
 	 *     to subsequent callers of the <code>read</code> method depend on the
 	 *     particular type of the input stream. </ul></ul>
 	 *
-	 * @exception  IOException  if this stream has not been marked or if the
-	 *               mark has been invalidated.
-	 * @see     java.io.InputStream#mark(int)
-	 * @see     java.io.IOException
+	 * @exception  IOException  if this stream has not been marked or if the mark has been invalidated.
+	 *
+	 * @see java.io.InputStream#mark(int)
+	 * @see java.io.IOException
+	 * 
+	 * @throws IOException on error
 	 */
 	public synchronized void reset() throws IOException {
 		carrier.reset();

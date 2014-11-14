@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -120,6 +120,8 @@ public class FingerImageInfo extends AbstractImageInfo {
 	 * @param imageBytes encoded image bytes
 	 * @param imageLength length of encoded image
 	 * @param compressionAlgorithm image encoding type according to ISO 19794-4
+	 * 
+	 * @throws IOException if input cannot be read
 	 */
 	public FingerImageInfo(int position,
 			int viewCount, int viewNumber, int quality, int impressionType,

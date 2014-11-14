@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -39,11 +39,12 @@ public class LDSFileUtil {
 
 	/**
 	 * Factory method for creating LDS files for a given input stream.
-	 * 
+	 *
+	 * @param fid file identifier
 	 * @param inputStream a given input stream
-	 * 
+	 *
 	 * @return a specific file
-	 * 
+	 *
 	 * @throws IOException on reading error from the input stream
 	 */
 	public static AbstractLDSFile getLDSFile(short fid, InputStream inputStream) throws IOException {

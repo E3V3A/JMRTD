@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -50,19 +50,24 @@ public abstract class DataGroup extends AbstractLDSFile {
 	private int dataGroupLength;
 
 	/**
-	 * Constructs a datagroup. This constructor
+	 * Constructs a data group. This constructor
 	 * is only visible to the other classes in this package.
+	 * 
+	 * @param dataGroupTag data group tag
 	 */
 	DataGroup(int dataGroupTag) {
 		this.dataGroupTag = dataGroupTag;
 	}
 
 	/**
-	 * Constructs a datagroup from the DER encoded data in the
+	 * Constructs a data group from the DER encoded data in the
 	 * given input stream. Tag and length are read, so the input stream
 	 * is positioned just before the value.
 	 * 
+	 * @param dataGroupTag data group tag
 	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException on error reading input stream
 	 */
 	protected DataGroup(int dataGroupTag, InputStream inputStream) throws IOException {
 		this.dataGroupTag = dataGroupTag;
@@ -70,7 +75,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 	}
 
 	/**
-	 * Reads the contents of this datagroup, including tag and length from an inputstream.
+	 * Reads the contents of this data group, including tag and length from an input stream.
 	 * 
 	 * @param inputStream the stream to read from
 	 * 
@@ -99,20 +104,24 @@ public abstract class DataGroup extends AbstractLDSFile {
 	}
 
 	/**
-	 * Reads the contents of the datagroup from an inputstream.
+	 * Reads the contents of the data group from an input stream.
 	 * Client code implementing this method should only read the contents
-	 * from the inputstream, not the tag or length of the datagroup.
+	 * from the input stream, not the tag or length of the data group.
 	 * 
 	 * @param inputStream the input stream to read from
+	 * 
+	 * @throws IOException on error reading from input stream
 	 */
 	protected abstract void readContent(InputStream inputStream) throws IOException;
 
 	/**
-	 * Writes the contents of the datagroup to an outputstream.
+	 * Writes the contents of the data group to an output stream.
 	 * Client code implementing this method should only write the contents
-	 * to the outputstream, not the tag or length of the datagroup.
+	 * to the output stream, not the tag or length of the data group.
 	 * 
-	 * @param outputStream the output stream to write to 
+	 * @param outputStream the output stream to write to
+	 * 
+	 * @throws IOException on error writing to output stream
 	 */
 	protected abstract void writeContent(OutputStream outputStream) throws IOException;
 

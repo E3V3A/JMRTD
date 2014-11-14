@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -90,6 +90,8 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 	 * Creates a new file based on an input stream.
 	 *
 	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException on error reading from input stream
 	 */
 	public DG3File(InputStream inputStream) throws IOException {
 		super(EF_DG3_TAG, inputStream);

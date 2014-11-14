@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -77,6 +77,7 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	 * Creates a new file with the specified records.
 	 * 
 	 * @param irisInfos records
+	 * @param shouldAddRandomDataIfEmpty indicates whether the encoder should add random data when no templates are present
 	 */
 	public DG4File(List<IrisInfo> irisInfos, boolean shouldAddRandomDataIfEmpty) {
 		super(EF_DG4_TAG, irisInfos);
@@ -87,6 +88,8 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	 * Constructs a new file based on an input stream.
 	 * 
 	 * @param inputStream an input stream
+	 * 
+	 * @throws IOException on error reading from input stream
 	 */
 	public DG4File(InputStream inputStream) throws IOException {
 		super(EF_DG4_TAG, inputStream);

@@ -236,9 +236,10 @@ abstract class AbstractImageInfo implements ImageInfo {
 	 * Clients should call this method after positioning the input stream to the
 	 * image bytes.
 	 * 
-	 * @param inputStream
-	 * @param imageLength
-	 * @throws IOException
+	 * @param inputStream input stream
+	 * @param imageLength image length
+	 *
+	 * @throws IOException on error reading the input stream
 	 */
 	protected void readImage(InputStream inputStream, long imageLength) throws IOException {
 		/* DEBUG: START */

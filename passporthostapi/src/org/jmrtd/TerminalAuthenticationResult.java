@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,60 +22,46 @@
 
 package org.jmrtd;
 
-import java.math.BigInteger;
-import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.EventObject;
 import java.util.List;
 
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 
 /**
- * Event to indicate EAC protocol was executed.
+ * Result of EAC protocols.
  * 
  * @author Wojciech Mostowski (woj@cs.ru.nl)
+ * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
  * @version $Revision$
  */
-public class EACEvent extends EventObject {
+public class TerminalAuthenticationResult  {
 
-	private static final long serialVersionUID = 6992383777555486463L;
-
-	private PassportService service;
-	private BigInteger keyId;
-	private PublicKey cardKey;
-	private KeyPair keyPair;
+	private ChipAuthenticationResult chipAuthenticationResult;
 	private CVCPrincipal caReference;
 	private List<CardVerifiableCertificate> terminalCertificates = new ArrayList<CardVerifiableCertificate>();
 	private PrivateKey terminalKey;
-	private boolean success;
 	private String documentNumber;
 	private byte[] cardChallenge;
 
 	/**
 	 * Constructs a new event.
 	 * 
-	 * @param service
-	 *            event source
-	 * @param keyPair
-	 *            the ECDH key pair used for authenticating the chip
-	 * @param success
-	 *            status of protocol
+	 * @param chipAuthenticationResult the chip authentication result
+	 * @param caReference the CA
+	 * @param terminalCertificates terminal certificates
+	 * @param terminalKey the terminal's private key
+	 * @param documentNumber the documentNumber
+	 * @param cardChallenge the challenge
+	 * @param success status of protocol
 	 */
-	public EACEvent(PassportService service, BigInteger keyId, PublicKey cardKey,
-			KeyPair keyPair, CVCPrincipal caReference,
+	public TerminalAuthenticationResult(ChipAuthenticationResult chipAuthenticationResult, CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
-			String documentNumber, byte[] cardChallenge, boolean success) {
-		super(service);
-		this.service = service;
-		this.keyId = keyId;
-		this.cardKey = cardKey;
-		this.keyPair = keyPair;
-		this.success = success;
+			String documentNumber, byte[] cardChallenge) {
+		this.chipAuthenticationResult = chipAuthenticationResult;
 		this.caReference = caReference;
 		for (CardVerifiableCertificate c : terminalCertificates) {
 			this.terminalCertificates.add(c);
@@ -86,30 +72,12 @@ public class EACEvent extends EventObject {
 	}
 
 	/**
-	 * Gets the resulting wrapper.
+	 * Gets the chip authentication result;
 	 * 
-	 * @return the resulting wrapper
+	 * @return the chip authenticaiton result
 	 */
-	public SecureMessagingWrapper getWrapper() {
-		return service.getWrapper();
-	}
-
-	/**
-	 * Gets the status of the executed EAC protocol run.
-	 * 
-	 * @return status of the EAC protocol run.
-	 */
-	public boolean isSuccess() {
-		return success;
-	}
-
-	/**
-	 * Gets the host key pair used for EAC chip authentication.
-	 * 
-	 * @return the host key pair used for EAC chip authentication
-	 */
-	public KeyPair getKeyPair() {
-		return keyPair;
+	public ChipAuthenticationResult getChipAuthenticationResult() {
+		return chipAuthenticationResult;
 	}
 
 	/**
@@ -159,36 +127,9 @@ public class EACEvent extends EventObject {
 		return cardChallenge;
 	}
 
-	/**
-	 * Gets the card's public key used during EAC.
-	 * 
-	 * @return the card's public key
-	 */
-	public PublicKey getCardPublicKey() {
-		return cardKey;
-	}
-
-	/**
-	 * Gets the card's public key ID used during EAC.
-	 * 
-	 * @return the card's public key ID
-	 */
-	public BigInteger getCardPublicKeyId() {
-		return keyId;
-	}
-
-	/**
-	 * Gets the service.
-	 * 
-	 * @return a service
-	 */
-	public PassportService getService() {
-		return service;
-	}
-
 	public String toString() {
 		StringBuffer result = new StringBuffer();
-		result.append("EACEvent [keyID = " + keyId + ", ");
+		result.append("EACEvent [chipAuthenticationResult = " + chipAuthenticationResult + ", ");
 		//    	result.append("cardKey = " + cardKey + ", ");
 		//    	result.append("keyPair = " + keyPair + ", ");
 		result.append("caReference = " + caReference + ", ");
@@ -208,7 +149,7 @@ public class EACEvent extends EventObject {
 		//        result.append("terminalKey = " + terminalKey + ", ");
 		//        result.append("documentNumber = " + documentNumber + ", ");
 		//        result.append("cardChallenge = " + cardChallenge + ", ");
-		result.append("success = " + success + "]");
+		result.append("]");
 		return result.toString();
 	}
 }

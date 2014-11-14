@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,7 +56,7 @@ public class VerificationStatus {
 		FAILED,			/* Present, checked, and not ok */
 		SUCCEEDED;		/* Present, checked, and ok */
 	};
-	
+
 	/* Verdict for this verification feature. */
 	private Verdict aa, bac, sac, cs, ht, ds, eac;
 
@@ -67,6 +67,7 @@ public class VerificationStatus {
 	private List<BACKeySpec> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
 	private Map<Integer, HashMatchResult> hashResults; /* As a result of HT testing, this contains stored and computed hashes. */
 	private List<Certificate> certificateChain; /* As a result of CS testing, this contains certificate chain from DSC to CSCA. */
+	private TerminalAuthenticationResult eacResult;
 	
 	/**
 	 * Constructs a new status with all verdicts
@@ -75,7 +76,7 @@ public class VerificationStatus {
 	public VerificationStatus() {
 		setAll(Verdict.UNKNOWN, null);
 	}
-	
+
 	/**
 	 * Gets the AA verdict.
 	 * 
@@ -85,6 +86,11 @@ public class VerificationStatus {
 		return aa;
 	}
 	
+	/**
+	 * Gets the AA reason string.
+	 * 
+	 * @return a reason string
+	 */
 	public String getAAReason() {
 		return aaReason;
 	}
@@ -93,6 +99,7 @@ public class VerificationStatus {
 	 * Sets the AA verdict.
 	 * 
 	 * @param v the status to set
+	 * @param reason a reason string
 	 */
 	public void setAA(Verdict v, String reason) {
 		this.aa = v;
@@ -108,10 +115,20 @@ public class VerificationStatus {
 		return bac;
 	}
 	
+	/**
+	 * Gets the BAC verdict string.
+	 * 
+	 * @return a verdict string
+	 */
 	public String getBACReason() {
 		return bacReason;
 	}
 
+	/**
+	 * Gets the tried BAC entries.
+	 * 
+	 * @return a list of BAC keys
+	 */
 	public List<BACKeySpec> getTriedBACEntries() {
 		return triedBACEntries;
 	}
@@ -120,6 +137,8 @@ public class VerificationStatus {
 	 * Sets the BAC verdict.
 	 * 
 	 * @param v the status to set
+	 * @param reason a reason string
+	 * @param triedBACEntries the list of BAC entries that were tried
 	 */
 	public void setBAC(Verdict v, String reason, List<BACKeySpec> triedBACEntries) {
 		this.bac = v;
@@ -127,14 +146,30 @@ public class VerificationStatus {
 		this.triedBACEntries = triedBACEntries;
 	}
 
+	/**
+	 * Gets the SAC verdict.
+	 * 
+	 * @return the SAC verdict
+	 */
 	public Verdict getSAC() {
 		return sac;
 	}
-	
+
+	/**
+	 * Gets the SAC reason.
+	 * 
+	 * @return a reason string
+	 */
 	public String getSACReason() {
 		return sacReason;
 	}
 
+	/**
+	 * Sets the SAC verdict and reason string.
+	 * 
+	 * @param v a verdict
+	 * @param reason a reason string
+	 */
 	public void setSAC(Verdict v, String reason) {
 		this.sac = v;
 		this.sacReason = reason;
@@ -149,10 +184,20 @@ public class VerificationStatus {
 		return cs;
 	}
 	
+	/**
+	 * Gets the country signature reason string.
+	 * 
+	 * @return a reason string
+	 */
 	public String getCSReason() {
 		return csReason;
 	}
 
+	/**
+	 * Gets the certificate chain between DS and CSCA.
+	 * 
+	 * @return a certificate chain
+	 */
 	public List<Certificate> getCertificateChain() {
 		return certificateChain;
 	}
@@ -161,6 +206,8 @@ public class VerificationStatus {
 	 * Gets the CS verdict.
 	 * 
 	 * @param v the status to set
+	 * @param reason the reason string
+	 * @param certificateChain the certificate chain between DS and CSCA
 	 */
 	public void setCS(Verdict v, String reason, List<Certificate> certificateChain) {
 		this.cs = v;
@@ -177,6 +224,11 @@ public class VerificationStatus {
 		return ds;
 	}
 	
+	/**
+	 * Gets the document signature verdict reason string.
+	 *
+	 * @return a reason string
+	 */
 	public String getDSReason() {
 		return dsReason;
 	}
@@ -186,24 +238,47 @@ public class VerificationStatus {
 	 * Sets the DS verdict.
 	 * 
 	 * @param v the status to set
+	 * @param reason reason string
 	 */
 	public void setDS(Verdict v, String reason) {
 		this.ds = v;
 		this.dsReason = reason;
 	}
 	
+	/**
+	 * Gets the hash table verdict.
+	 * 
+	 * @return a verdict
+	 */
 	public Verdict getHT() {
 		return ht;
 	}
-	
+
+	/**
+	 * Gets the hash table reason string.
+	 * 
+	 * @return a reason string
+	 */
 	public String getHTReason() {
 		return htReason;
 	}
-	
+
+	/**
+	 * Gets the hash match results.
+	 * 
+	 * @return a list of hash match results
+	 */
 	public Map<Integer, HashMatchResult> getHashResults() {
 		return hashResults;
 	}
 	
+	/**
+	 * Sets the hash table status.
+	 * 
+	 * @param v a verdict
+	 * @param reason the reason string
+	 * @param hashResults the hash match results
+	 */
 	public void setHT(Verdict v, String reason, Map<Integer, HashMatchResult> hashResults) {
 		this.ht = v;
 		this.htReason = reason;
@@ -219,24 +294,42 @@ public class VerificationStatus {
 		return eac;
 	}
 
+	/**
+	 * Gets the EAC reason string.
+	 * 
+	 * @return a reasons string
+	 */
 	public String getEACReason() {
 		return eacReason;
+	}
+	
+	/**
+	 * Gets the EAC result.
+	 * 
+	 * @return the EAC result
+	 */
+	public TerminalAuthenticationResult getEACResult() {
+		return eacResult;
 	}
 	
 	/**
 	 * Sets the EAC verdict.
 	 * 
 	 * @param v the status to set
+	 * @param eacResult the EAC result
+	 * @param reason reason string
 	 */
-	public void setEAC(Verdict v, String reason) {
+	public void setEAC(Verdict v, String reason, TerminalAuthenticationResult eacResult) {
 		this.eac = v;
 		this.eacReason = reason;
+		this.eacResult = eacResult;
 	}
-	
+
 	/**
 	 * Sets all vedicts to <code>v</code>.
 	 * 
 	 * @param verdict the status to set
+	 * @param reason reason string
 	 */
 	public void setAll(Verdict verdict, String reason) {
 		setAA(verdict, reason);
@@ -244,7 +337,7 @@ public class VerificationStatus {
 		setCS(verdict, reason, null);
 		setDS(verdict, reason);
 		setHT(verdict, reason, null);
-		setEAC(verdict, reason);
+		setEAC(verdict, reason, null);
 	}
 	
 	/**
@@ -261,22 +354,37 @@ public class VerificationStatus {
 		/**
 		 * Use <code>null</code> for computed hash if access was denied.
 		 * 
-		 * @param storedHash
-		 * @param computedHash
+		 * @param storedHash the hash stored in SOd
+		 * @param computedHash the computed hash
 		 */
 		public HashMatchResult(byte[] storedHash, byte[] computedHash) {
 			this.storedHash = storedHash;
 			this.computedHash = computedHash;
 		}
 		
+		/**
+		 * Gets the stored hash.
+		 * 
+		 * @return a hash
+		 */
 		public byte[] getStoredHash() {
 			return storedHash;
 		}
 		
+		/**
+		 * Gets the computed hash.
+		 * 
+		 * @return a hash
+		 */
 		public byte[] getComputedHash() {
 			return computedHash;
 		}
 
+		/**
+		 * Whether the hashes match.
+		 * 
+		 * @return a boolean
+		 */
 		public boolean isMatch() {
 			return Arrays.equals(storedHash, computedHash);
 		}

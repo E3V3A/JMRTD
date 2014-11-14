@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -70,13 +70,14 @@ public class CardAccessFile {
 	}
 
 	/**
-	 * Constructs a new file from the data in <code>in</code>.
+	 * Constructs a new file from the data in an input stream.
 	 * 
-	 * @param in
-	 *            the input stream to parse the data from
+	 * @param inputStream the input stream to parse the data from
+	 * 
+	 * @throws IOException on error reading input stream
 	 */
-	public CardAccessFile(InputStream in) throws IOException {
-		readContent(in);
+	public CardAccessFile(InputStream inputStream) throws IOException {
+		readContent(inputStream);
 	}
 
 	protected void readContent(InputStream inputStream) throws IOException {

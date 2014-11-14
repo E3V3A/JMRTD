@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2013  The JMRTD team
+ * Copyright (C) 2006 - 2014  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -92,7 +92,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 	 * Creates a public key info structure.
 	 * 
 	 * @param publicKey Either a DH public key or an EC public key
-	 * @param keyId
+	 * @param keyId key identifier
 	 */
 	public ChipAuthenticationPublicKeyInfo(PublicKey publicKey, BigInteger keyId) {
 		this(Util.inferProtocolIdentifier(publicKey), Util.toSubjectPublicKeyInfo(Util.reconstructPublicKey(publicKey)), keyId);
