@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
 
-
 <project name="JMRTD" default="dist" basedir="." xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
   <description>Java Machine Readable Travel Documents.</description>
@@ -14,7 +13,7 @@
 
   <property name="default_bcprov_lib" value="${software}/bc/bcprov-jdk15on-151.jar" />
   <property name="default_certcvc_lib" value="${software}/cert-cvc-1.3.0/cert-cvc.jar" />
-  <property name="default_scuba_lib" value="../scuba_smartcards/dist/lib/scuba-smartcards-0.0.4-SNAPSHOT.jar" />
+  <property name="default_scuba_lib" value="../scuba_smartcards/dist/lib/scuba-smartcards-0.0.4-RELEASE.jar" />
   
   <property environment="env" />
   
@@ -39,8 +38,8 @@
 
   <!-- define Maven coordinates -->
   <property name="groupId" value="org.jmrtd" />
-  <property name="artifactId" value="JMRTD" />
-  <property name="version" value="0.5.0-SNAPSHOT" />
+  <property name="artifactId" value="jmrtd" />
+  <property name="version" value="0.5.1-SNAPSHOT" />
 
   <!-- define artifacts' name, which follows the convention of Maven -->
   <property name="jar" value="${dist}/lib/${artifactId}-${version}.jar" />
@@ -60,8 +59,8 @@
       <manifest>
         <attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
         <attribute name="Built-Date" value="${TODAY}" />
-        <attribute name="Implementation-Vendor" value="JMRTD"/>
-        <attribute name="Implementation-Title" value="jmrtd"/>
+        <attribute name="Implementation-Vendor" value="${groupId}"/>
+        <attribute name="Implementation-Title" value="${artifactId}"/>
         <attribute name="Implementation-Version" value="${version}"/>
       </manifest>
       <fileset dir="${build}" includes="**/*.class" />
@@ -73,14 +72,7 @@
   <target name="dist" depends="jar">
      <!-- build the javadoc jar -->
      <javadoc classpath="${bcprov_lib}:${certcvc_lib}:${scuba_lib}" destdir="${dist}/javadoc">
-       <link href="http://download.oracle.com/javase/8/docs/api/" />
-       <link href="http://download.oracle.com/javase/8/docs/jre/api/security/smartcardio/spec/" />
-       <link href="${bcprov_api_url}" />
        <sourcepath path="${src}" />
-       <package name="org.jmrtd" />
-       <package name="org.jmrtd.lds" />
-       <package name="org.jmrtd.cbeff" />
-       <package name="org.jmrtd.cert" />
      </javadoc>
      <jar jarfile="${javadoc-jar}">
        <fileset dir="${dist}/javadoc" />
