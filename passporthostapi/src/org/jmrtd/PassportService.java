@@ -755,7 +755,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * @param terminalCertificates terminal certificate chain
 	 * @param terminalKey terminal private key
 	 * @param taAlg algorithm
-	 * @param caKeyHash hash of chip authentication key
+	 * @param chipAuthenticationResult the chip authentication result
 	 * @param documentNumber the document number
 	 * 
 	 * @return the challenge from the card

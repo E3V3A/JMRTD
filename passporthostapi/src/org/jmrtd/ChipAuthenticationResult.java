@@ -74,9 +74,9 @@ public class ChipAuthenticationResult {
 	}
 
 	/**
-	 * The hash 
+	 * Gets the hash of the key.
 	 * 
-	 * @return
+	 * @return the hash of the key
 	 */
 	public byte[] getKeyHash() {
 		return keyHash;

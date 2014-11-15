@@ -56,7 +56,6 @@ public class TerminalAuthenticationResult  {
 	 * @param terminalKey the terminal's private key
 	 * @param documentNumber the documentNumber
 	 * @param cardChallenge the challenge
-	 * @param success status of protocol
 	 */
 	public TerminalAuthenticationResult(ChipAuthenticationResult chipAuthenticationResult, CVCPrincipal caReference,
 			List<CardVerifiableCertificate> terminalCertificates, PrivateKey terminalKey,
