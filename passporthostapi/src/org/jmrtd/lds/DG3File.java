@@ -53,14 +53,14 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
 
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FingerInfo>() {
-		public FingerInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
-			return new FingerInfo(sbh, in);
+		public FingerInfo decode(InputStream inputStream, StandardBiometricHeader sbh, int index, int length) throws IOException {
+			return new FingerInfo(sbh, inputStream);
 		}
 	});
 
 	private static final ISO781611Encoder<FingerInfo> ENCODER = new ISO781611Encoder<FingerInfo>(new BiometricDataBlockEncoder<FingerInfo>() {
-		public void encode(FingerInfo info, OutputStream out) throws IOException {
-			info.writeObject(out);
+		public void encode(FingerInfo info, OutputStream outputStream) throws IOException {
+			info.writeObject(outputStream);
 		}
 	});
 

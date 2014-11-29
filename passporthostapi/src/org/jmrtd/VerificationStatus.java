@@ -68,6 +68,7 @@ public class VerificationStatus {
 	private Map<Integer, HashMatchResult> hashResults; /* As a result of HT testing, this contains stored and computed hashes. */
 	private List<Certificate> certificateChain; /* As a result of CS testing, this contains certificate chain from DSC to CSCA. */
 	private TerminalAuthenticationResult eacResult;
+	private ActiveAuthenticationResult aaResult;
 	
 	/**
 	 * Constructs a new status with all verdicts
@@ -94,16 +95,27 @@ public class VerificationStatus {
 	public String getAAReason() {
 		return aaReason;
 	}
+	
+	/**
+	 * Gets the AA result.
+	 * 
+	 * @return the AA result
+	 */
+	public ActiveAuthenticationResult getAAResult() {
+		return aaResult;
+	}
 
 	/**
 	 * Sets the AA verdict.
 	 * 
 	 * @param v the status to set
 	 * @param reason a reason string
+	 * @param aaResult the result
 	 */
-	public void setAA(Verdict v, String reason) {
+	public void setAA(Verdict v, String reason, ActiveAuthenticationResult aaResult) {
 		this.aa = v;
 		this.aaReason = reason;
+		this.aaResult = aaResult;
 	}
 
 	/**
@@ -332,7 +344,7 @@ public class VerificationStatus {
 	 * @param reason reason string
 	 */
 	public void setAll(Verdict verdict, String reason) {
-		setAA(verdict, reason);
+		setAA(verdict, reason, null);
 		setBAC(verdict, reason, null);
 		setCS(verdict, reason, null);
 		setDS(verdict, reason);

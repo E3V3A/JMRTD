@@ -209,6 +209,9 @@ public class Passport {
 		this();
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		this.service = service;
+		if (trustManager == null) {
+			trustManager = new MRTDTrustStore();
+		}
 		this.trustManager = trustManager;
 
 		boolean hasSAC = false;
@@ -382,11 +385,11 @@ public class Passport {
 				ioe.printStackTrace();
 				LOGGER.warning("Could not read file");
 			} catch (Exception e) {
-				verificationStatus.setAA(VerificationStatus.Verdict.NOT_CHECKED, "Failed to read DG15");
+				verificationStatus.setAA(VerificationStatus.Verdict.NOT_CHECKED, "Failed to read DG15", null);
 			}
 		} else {
 			/* Feature status says: no AA, so verification status should say: no AA. */
-			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported");
+			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported", null);
 		}
 
 		/* Add remaining datagroups to LDS. */
@@ -898,18 +901,33 @@ public class Passport {
 		return chain;
 	}
 
-	/** Check active authentication. */
+	/**
+	 * Check active authentication.
+	 */
 	public void verifyAA() {
+		int challengeLength = 8;
+		byte[] challenge = new byte[challengeLength];
+		random.nextBytes(challenge);
+		ActiveAuthenticationResult aaResult = executeAA(challenge);
+		verifyAA(aaResult);
+	}
+
+	/**
+	 * Execute active authentication using the given challenge.
+	 *
+	 * @param challenge an byte array of length 8
+	 */
+	public ActiveAuthenticationResult executeAA(byte[] challenge) {
 		if (lds == null || service == null) {
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
-			return;
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed", null);
+			return null;
 		}
 
 		try {
 			DG15File dg15 = lds.getDG15File();
 			if (dg15 == null) {
-				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed");
-				return;
+				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed", null);
+				return null;
 			}
 			PublicKey pubKey = dg15.getPublicKey();
 			String pubKeyAlgorithm = pubKey.getAlgorithm();
@@ -920,40 +938,44 @@ public class Passport {
 				List<ActiveAuthenticationInfo> activeAuthenticationInfos = dg14File.getActiveAuthenticationInfos();
 				int activeAuthenticationInfoCount = (activeAuthenticationInfos == null ? 0 : activeAuthenticationInfos.size());
 				if (activeAuthenticationInfoCount < 1) {
-					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Found no active authentication info in EF.DG14");
-					return;
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Found no active authentication info in EF.DG14", null);
+					return null;
 				} else if (activeAuthenticationInfoCount > 1) {
 					LOGGER.warning("Found " + activeAuthenticationInfoCount + " in EF.DG14, expected 1.");
 				}
 				ActiveAuthenticationInfo activeAuthenticationInfo = activeAuthenticationInfos.get(0);
-
 				String signatureAlgorithmOID = activeAuthenticationInfo.getSignatureAlgorithmOID();
-
 				signatureAlgorithm = ActiveAuthenticationInfo.lookupMnemonicByOID(signatureAlgorithmOID);
-
 				digestAlgorithm = Util.inferDigestAlgorithmFromSignatureAlgorithm(signatureAlgorithm);
 			}
-			int challengeLength = 8;
-			byte[] challenge = new byte[challengeLength];
-			random.nextBytes(challenge);
-			byte[] response = service.doAA(pubKey, digestAlgorithm, signatureAlgorithm, challenge);			
-			if (verifyAA(pubKey, digestAlgorithm, signatureAlgorithm, challenge, response)) {
-				verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded");
-			} else {
-				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure");
-			}
+			byte[] response = service.doAA(pubKey, digestAlgorithm, signatureAlgorithm, challenge);
+			return new ActiveAuthenticationResult(pubKey, digestAlgorithm, signatureAlgorithm, challenge, response);
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception");
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception", null);
+			return null;
 		} catch (Exception e) {
 			LOGGER.severe("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception");
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception", null);
+			return null;
 		}
 	}
 
-	private boolean verifyAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm, byte[] challenge, byte[] response) throws CardServiceException {
+	/**
+	 * Check the active authentication result.
+	 * 
+	 * @param aaResult
+	 * @return
+	 */
+	public boolean verifyAA(ActiveAuthenticationResult aaResult) {
 		try {
+			PublicKey publicKey = aaResult.getPublicKey();
+			String digestAlgorithm = aaResult.getDigestAlgorithm();
+			String signatureAlgorithm = aaResult.getSignatureAlgorithm();
+			byte[] challenge = aaResult.getChallenge();
+			byte[] response = aaResult.getResponse();
+
 			String pubKeyAlgorithm = publicKey.getAlgorithm();
 			if ("RSA".equals(pubKeyAlgorithm)) {
 				/* FIXME: check that digestAlgorithm = "SHA1" in this case, check (and re-initialize) rsaAASignature (and rsaAACipher). */
@@ -979,6 +1001,12 @@ public class Passport {
 				rsaAASignature.update(m1);
 				rsaAASignature.update(challenge);
 				boolean success = rsaAASignature.verify(response);
+
+				if (success) {
+					verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded", aaResult);
+				} else {
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure", aaResult);
+				}
 				return success;
 			} else if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
 				ECPublicKey ecdsaPublicKey = (ECPublicKey)publicKey;
@@ -1007,21 +1035,27 @@ public class Passport {
 				try {
 
 					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
-					return ecdsaAASignature.verify(asn1Sequence.getEncoded());
+					boolean success = ecdsaAASignature.verify(asn1Sequence.getEncoded());
+					if (success) {
+						verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded", aaResult);
+					} else {
+						verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure", aaResult);
+					}
+					return success;
 				} catch (IOException ioe) {
 					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
 					ioe.printStackTrace();
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unexpected exception", aaResult);
 					return false;
-				}
+				}				
 			} else {
 				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
+				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unsupported key type", aaResult);
 				return false;
 			}
-		} catch (IllegalArgumentException iae) {
-			// iae.printStackTrace();
-			throw new CardServiceException(iae.toString());
-		} catch (GeneralSecurityException gse) {
-			throw new CardServiceException(gse.toString());
+		} catch (Exception e) {
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unexpected exception", aaResult);
+			return false;
 		}
 	}
 
