@@ -50,17 +50,16 @@ public class DG4File extends CBEFFDataGroup<IrisInfo> {
 	private static final long serialVersionUID = -1290365855823447586L;
 
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<IrisInfo>() {
-		public IrisInfo decode(InputStream in, StandardBiometricHeader sbh, int index, int length) throws IOException {
-			return new IrisInfo(sbh, in);
+		public IrisInfo decode(InputStream inputStream, StandardBiometricHeader sbh, int index, int length) throws IOException {
+			return new IrisInfo(sbh, inputStream);
 		}
 	});
 
 	private static final ISO781611Encoder<IrisInfo> ENCODER = new ISO781611Encoder<IrisInfo>(new BiometricDataBlockEncoder<IrisInfo>() {
-		public void encode(IrisInfo info, OutputStream out) throws IOException {
-			info.writeObject(out);
+		public void encode(IrisInfo info, OutputStream outputStream) throws IOException {
+			info.writeObject(outputStream);
 		}
 	});
-
 
 	private boolean shouldAddRandomDataIfEmpty;
 

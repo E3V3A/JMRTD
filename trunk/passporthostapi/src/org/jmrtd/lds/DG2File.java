@@ -61,8 +61,8 @@ public class DG2File extends CBEFFDataGroup<FaceInfo> {
 	});
 
 	private static final ISO781611Encoder<FaceInfo> ENCODER = new ISO781611Encoder<FaceInfo>(new BiometricDataBlockEncoder<FaceInfo>() {
-		public void encode(FaceInfo info, OutputStream out) throws IOException {
-			info.writeObject(out);
+		public void encode(FaceInfo info, OutputStream outputStream) throws IOException {
+			info.writeObject(outputStream);
 		}
 	});
 	
