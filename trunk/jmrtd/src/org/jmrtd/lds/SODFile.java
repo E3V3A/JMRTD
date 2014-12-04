@@ -834,8 +834,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			ASN1Set signerInfos = createSingletonSet(createSignerInfo(
 					digestAlgorithm, digestEncryptionAlgorithm, content,
 					encryptedDigest, docSigningCertificate).toASN1Object());
-			return new SignedData(digestAlgorithmsSet, contentInfo, certificates,
-					crls, signerInfos);
+			return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
 		}
 
 		private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
