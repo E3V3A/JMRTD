@@ -214,12 +214,12 @@ public class Passport {
 		}
 		this.trustManager = trustManager;
 
-		boolean hasSAC = false;
-		boolean isSACSucceeded = false;
+		boolean hasPACE = false;
+		boolean isPACESucceeded = false;
 		try {
 			service.open();
 
-			/* Find out whether this MRTD supports SAC. */
+			/* Find out whether this MRTD supports PACE. */
 			PACEInfo paceInfo = null;
 			try {
 				LOGGER.info("Inspecting card access file");
@@ -239,19 +239,20 @@ public class Passport {
 				e.printStackTrace();
 			}
 
-			hasSAC = featureStatus.hasSAC() == FeatureStatus.Verdict.PRESENT;
+			hasPACE = featureStatus.hasSAC() == FeatureStatus.Verdict.PRESENT;
 
-			if (hasSAC) {
+			if (hasPACE) {
 				try {
-					tryToDoPACE(service, paceInfo, bacStore.get(0)); // FIXME: only one bac key, DEBUG
+					isPACESucceeded = tryToDoPACE(service, paceInfo, bacStore.get(0)); // FIXME: only one bac key, DEBUG
 				} catch (Exception e) {
 					e.printStackTrace();
 					LOGGER.info("PACE failed, falling back to BAC");
-					isSACSucceeded = false;
+					isPACESucceeded = false;
 				}
 			}
 
-			service.sendSelectApplet();
+			LOGGER.info("DEBUG: calling select applet with isPACESucceeded = " + isPACESucceeded);
+			service.sendSelectApplet(isPACESucceeded);
 		} catch (CardServiceException cse) {
 			throw cse;
 		} catch (Exception e) {
@@ -259,17 +260,18 @@ public class Passport {
 			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
 
-		/* Find out whether this MRTD supports BAC. */
+		/* Find out whether this MRTD supports BAC if PACE did not succeed. */
 		try {
 			/* Attempt to read EF.COM before BAC. */
-			new COMFile(service.getInputStream(PassportService.EF_COM));
+			LOGGER.info("DEBUG: reading first byte of EF.COM");
+			service.getInputStream(PassportService.EF_COM).read();
 
-			if (isSACSucceeded) {
+			if (isPACESucceeded) {
 				verificationStatus.setSAC(VerificationStatus.Verdict.SUCCEEDED, "Succeeded");
 				featureStatus.setBAC(FeatureStatus.Verdict.UNKNOWN);
 				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "Using SAC, BAC not checked", EMPTY_TRIED_BAC_ENTRY_LIST);
 			} else {
-				/* We failed SAC, and we failed BAC. */
+				/* We failed PACE, and we don't need BAC. */
 				featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
 				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
 			}
@@ -282,7 +284,7 @@ public class Passport {
 		/* If we have to do BAC, try to do BAC. */
 		boolean hasBAC = featureStatus.hasBAC() == FeatureStatus.Verdict.PRESENT;
 		String documentNumber = null;
-		if (hasBAC && !(hasSAC && isSACSucceeded)) {
+		if (hasBAC && !(hasPACE && isPACESucceeded)) {
 			BACKeySpec bacKeySpec = tryToDoBAC(service, bacStore);
 			documentNumber = bacKeySpec.getDocumentNumber();
 		}
@@ -412,6 +414,7 @@ public class Passport {
 			}
 		}
 	}
+
 	/**
 	 * Inserts a file into this document, and updates EF_COM and EF_SOd accordingly.
 	 * 
@@ -620,35 +623,35 @@ public class Passport {
 		return verificationStatus;
 	}
 
-	/**
-	 * Verifies the document using the security related mechanisms.
-	 * Convenience method.
-	 * 
-	 * @return the security status
-	 */
-	public VerificationStatus verifySecurity() {
-		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA is always checked as part of the prelude.
-		 * (EDIT: For debugging it's back here again, see below...)
-		 */
-		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
-		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
-
-		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
-		verifyCS();
-
-		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
-		verifyDS();
-
-		/* Verify hashes. */
-		verifyHT();
-
-		/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
-		if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
-			verifyAA();
-		}
-
-		return verificationStatus;
-	}
+	//	/**
+	//	 * Verifies the document using the security related mechanisms.
+	//	 * Convenience method.
+	//	 * 
+	//	 * @return the security status
+	//	 */
+	//	public VerificationStatus verifySecurity() {
+	//		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA is always checked as part of the prelude.
+	//		 * (EDIT: For debugging it's back here again, see below...)
+	//		 */
+	//		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
+	//		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
+	//
+	//		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
+	//		verifyCS();
+	//
+	//		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
+	//		verifyDS();
+	//
+	//		/* Verify hashes. */
+	//		verifyHT();
+	//
+	//		/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
+	//		if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
+	//			verifyAA();
+	//		}
+	//
+	//		return verificationStatus;
+	//	}
 
 	/* ONLY PRIVATE METHODS BELOW. */
 
@@ -691,11 +694,13 @@ public class Passport {
 		}
 	}
 
-	private void tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
+	private boolean tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
 		LOGGER.info("DEBUG: PACE has been disabled in this version of JMRTD");
+		return false;
 
-		//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
-		//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
+//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+//		return true;
 	}
 
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
@@ -704,18 +709,18 @@ public class Passport {
 
 		try {
 			try {
+				/* Make sure DG14 is read. */
 				CardFileInputStream dg14In = service.getInputStream(PassportService.EF_DG14);
 				lds.add(PassportService.EF_DG14, dg14In, dg14In.getLength());
 				dg14File = lds.getDG14File();
 
-				/* Now try to deal with EF.CVCA */
+				/* Now try to deal with EF.CVCA. */
 				cvcaFID = PassportService.EF_CVCA; /* Default CVCA file Id */
 				List<Short> cvcaFIDs = dg14File.getCVCAFileIds();
 				if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
 					if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14"); }
 					cvcaFID = cvcaFIDs.get(0).shortValue(); /* Possibly different from default. */
 				}
-
 				CardFileInputStream cvcaIn = service.getInputStream(cvcaFID);
 				lds.add(cvcaFID, cvcaIn, cvcaIn.getLength());
 				cvcaFile = lds.getCVCAFile();
@@ -730,9 +735,27 @@ public class Passport {
 			for (CVCPrincipal caReference: possibleCVCAReferences) {
 				EACCredentials eacCredentials = getEACCredentials(caReference, cvcaKeyStores);
 				if (eacCredentials == null) { continue; }
+
 				PrivateKey privateKey = eacCredentials.getPrivateKey();
 				Certificate[] chain = eacCredentials.getChain();
-				doEAC(documentNumber, dg14File, caReference, chain, privateKey);
+				List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
+				for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
+
+				Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
+				for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
+					BigInteger keyId = entry.getKey();
+					PublicKey publicKey = entry.getValue();
+					try {
+						ChipAuthenticationResult chipAuthenticationResult = service.doCA(keyId, publicKey);
+						TerminalAuthenticationResult eacResult = service.doTA(caReference, terminalCerts, privateKey, null, chipAuthenticationResult, documentNumber);
+						verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference, eacResult);
+					} catch(CardServiceException cse) {
+						cse.printStackTrace();
+						/* NOTE: Failed? Too bad, try next public key. */
+						continue;
+					}
+				}
+
 				break;
 			}
 		} catch (Exception e) {
@@ -741,31 +764,19 @@ public class Passport {
 		}
 	}
 
-	private boolean doEAC(String documentNumber, DG14File dg14File, CVCPrincipal caReference, Certificate[] chain, PrivateKey privateKey) throws CardServiceException {
-		Map<BigInteger, PublicKey> cardKeys = dg14File.getChipAuthenticationPublicKeyInfos();
-
-		List<CardVerifiableCertificate> terminalCerts = new ArrayList<CardVerifiableCertificate>(chain.length);
-		for (Certificate c: chain) { terminalCerts.add((CardVerifiableCertificate)c); }
-		for (Map.Entry<BigInteger, PublicKey> entry: cardKeys.entrySet()) {
-			BigInteger keyId = entry.getKey();
-			PublicKey publicKey = entry.getValue();
-			try {
-				TerminalAuthenticationResult eacResult = service.doEAC(keyId, publicKey, caReference, terminalCerts, privateKey, documentNumber);
-				verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference, eacResult);
-				return true;
-			} catch(CardServiceException cse) {
-				cse.printStackTrace();
-				/* NOTE: Failed? Too bad, try next public key. */
-				continue;
-			}
-		}
-		return false;
-	}
-
+	/**
+	 * Encapsulates the terminal key and associated certificte chain for terminal authentication.
+	 */
 	class EACCredentials {
 		private PrivateKey privateKey;
 		private Certificate[] chain;
 
+		/**
+		 * Creates EAC credentials.
+		 * 
+		 * @param privateKey
+		 * @param chain
+		 */
 		public EACCredentials(PrivateKey privateKey, Certificate[] chain) {
 			this.privateKey = privateKey;
 			this.chain = chain;
@@ -789,6 +800,7 @@ public class Passport {
 	}
 
 	/**
+	 * Searches the key store for a relevant terminal key and associated certificate chain.
 	 *
 	 * @param caReference
 	 * @param cvcaStore should contain a single key with certificate chain

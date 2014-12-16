@@ -17,7 +17,7 @@
  * License along with this library; if not, write to the Free Software
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  *
- * $Id$
+ * $Id: SecureMessagingWrapper.java 1559 2014-11-14 12:46:26Z martijno $
  */
 
 package org.jmrtd;
@@ -29,11 +29,13 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.security.GeneralSecurityException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
 import javax.crypto.Cipher;
 import javax.crypto.Mac;
+import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
@@ -48,25 +50,26 @@ import net.sf.scuba.tlv.TLVUtil;
  */
 
 /**
- * Secure messaging wrapper for apdus. Based on Section E.3 of ICAO-TR-PKI.
+ * Secure messaging wrapper for APDUs.
+ * Initially based on Section E.3 of ICAO-TR-PKI.
  *
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
  * 
- * @version $Revision$
+ * @version $Revision: 1559 $
  */
-public class SecureMessagingWrapper implements APDUWrapper, Serializable {
+public class DESedeSecureMessagingWrapper implements APDUWrapper, Serializable {
 
 	private static final long serialVersionUID = -2859033943345961793L;
 
-	public static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[8]);
-	
 	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+
+	public static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 });
 
 	private SecretKey ksEnc, ksMac;
 	private transient Cipher cipher;
 	private transient Mac mac;
-	
+
 	private long ssc;
 
 	/**
@@ -84,8 +87,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 *             cryptographic primitives
 	 *             ("DESede/CBC/Nopadding" Cipher, "ISO9797Alg3Mac" Mac).
 	 */
-	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac)
-	throws GeneralSecurityException {
+	public DESedeSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac) throws GeneralSecurityException {
 		this(ksEnc, ksMac, 0L);
 	}
 
@@ -94,32 +96,22 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * session keys and the initial value of the send sequence counter.
 	 * Used in BAC and EAC 1.
 	 * 
-	 * @param ksEnc
-	 *            the session key for encryption
-	 * @param ksMac
-	 *            the session key for macs
-	 * @param ssc
-	 *            the initial value of the send sequence counter
+	 * @param ksEnc the session key for encryption
+	 * @param ksMac the session key for macs
+	 * @param ssc the initial value of the send sequence counter
 	 * 
-	 * @throws GeneralSecurityException
-	 *             when the available JCE providers cannot provide the necessary
-	 *             cryptographic primitives ("DESede/CBC/Nopadding" Cipher,
-	 *             "ISO9797Alg3Mac" Mac).
+	 * @throws NoSuchPaddingException when the available JCE providers cannot provide the necessary cryptographic primitives
+	 * @throws NoSuchAlgorithmException when the available JCE providers cannot provide the necessary cryptographic primitives
+	 * 
 	 */
-	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc) throws GeneralSecurityException {
+	public DESedeSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc) throws NoSuchAlgorithmException, NoSuchPaddingException {
 		this(ksEnc, ksMac, "DESede/CBC/NoPadding", "ISO9797Alg3Mac", ssc);
 	}
 
-	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg) throws GeneralSecurityException {
-		this(ksEnc, ksMac, cipherAlg, macAlg, 0L);
-	}
-
-	public SecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg, long ssc) throws GeneralSecurityException {
+	private DESedeSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, String cipherAlg, String macAlg, long ssc) throws NoSuchAlgorithmException, NoSuchPaddingException {
 		this.ksEnc = ksEnc;
 		this.ksMac = ksMac;
 		this.ssc = ssc;
-		LOGGER.info("DEBUG: cipherAlg = " + cipherAlg);
-		LOGGER.info("DEBUG: macAlg = " + macAlg);
 		cipher = Cipher.getInstance(cipherAlg);
 		mac = Mac.getInstance(macAlg);
 	}
@@ -129,7 +121,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * 
 	 * @return the current value of the send sequence counter.
 	 */
-	public/* @ pure */long getSendSequenceCounter() {
+	public long getSendSequenceCounter() {
 		return ssc;
 	}
 
@@ -138,9 +130,9 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * As a side effect, this method increments the internal send
 	 * sequence counter maintained by this wrapper.
 	 *
-	 * @param commandAPDU buffer containing the command apdu.
+	 * @param commandAPDU buffer containing the command apdu
 	 *
-	 * @return length of the command apdu after wrapping.
+	 * @return length of the command apdu after wrapping
 	 */
 	public CommandAPDU wrap(CommandAPDU commandAPDU) {
 		try {
@@ -156,13 +148,11 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 
 	/**
 	 * Unwraps the apdu buffer <code>rapdu</code> of a response apdu.
+	 *
+	 * @param responseAPDU buffer containing the response apdu
+	 * @param len length of the actual response apdu
 	 * 
-	 * @param responseAPDU
-	 *            buffer containing the response apdu.
-	 * @param len
-	 *            length of the actual response apdu.
-	 * 
-	 * @return a new byte array containing the unwrapped buffer.
+	 * @return a new byte array containing the unwrapped buffer
 	 */
 	public ResponseAPDU unwrap(ResponseAPDU responseAPDU, int len) {
 		try {
@@ -186,29 +176,23 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * Does the actual encoding of a command apdu.
 	 * Based on Section E.3 of ICAO-TR-PKI, especially the examples.
 	 *
-	 * @param capdu buffer containing the apdu data. It must be large enough
-	 *             to receive the wrapped apdu.
-	 * @param len length of the apdu data.
+	 * @param capdu buffer containing the apdu data. It must be large enough to receive the wrapped apdu
+	 * @param len length of the apdu data
 	 *
-	 * @return a byte array containing the wrapped apdu buffer.
-	 */
-	/*@ requires apdu != null && 4 <= len && len <= apdu.length;
+	 * @return a byte array containing the wrapped apdu buffer
 	 */
 	private CommandAPDU wrapCommandAPDU(CommandAPDU commandAPDU) throws GeneralSecurityException, IOException {
 		int lc = commandAPDU.getNc();
 		int le = commandAPDU.getNe();
 
-		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-
+		ByteArrayOutputStream bOut = new ByteArrayOutputStream();		
+		
 		byte[] maskedHeader = new byte[] { (byte)(commandAPDU.getCLA() | (byte)0x0C), (byte)commandAPDU.getINS(), (byte)commandAPDU.getP1(), (byte)commandAPDU.getP2() };
-
-		/* FIXME: should we pad here only for 3DES or also for AES? */
-		byte[] paddedHeader = Util.pad(maskedHeader);
+		byte[] paddedMaskedHeader = Util.pad(maskedHeader);
 
 		boolean hasDO85 = ((byte)commandAPDU.getINS() == ISO7816.INS_READ_BINARY2);
 
 		byte[] do8587 = new byte[0];
-		/* byte[] do8E = new byte[0]; */ /* FIXME: FindBugs told me this is a dead store -- MO */
 		byte[] do97 = new byte[0];
 
 		if (le > 0) {
@@ -219,18 +203,11 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 			do97 = bOut.toByteArray();
 		}
 
-		IvParameterSpec ivParams = ZERO_IV_PARAM_SPEC;
-		if ("DESede".equals(ksEnc.getAlgorithm())) {
-			/* Use ZERO_IV_PARAM_SPEC for ivParams. */
-		} else if ("AES".equals(ksEnc.getAlgorithm())) {
-			/*
-			 * AES uses different IV, should be IV = E K_Enc , SSC), see ICAO SAC TR Section 4.6.3.
-			 */
-		}
-		
+		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ZERO_IV_PARAM_SPEC);
+
 		if (lc > 0) {
+			/* If we have command data, encrypt it. */
 			byte[] data = Util.pad(commandAPDU.getData());
-			cipher.init(Cipher.ENCRYPT_MODE, ksEnc, ivParams);
 			byte[] ciphertext = cipher.doFinal(data);
 
 			bOut.reset();
@@ -242,7 +219,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 		}
 
 		bOut.reset();
-		bOut.write(paddedHeader, 0, paddedHeader.length);
+		bOut.write(paddedMaskedHeader, 0, paddedMaskedHeader.length);
 		bOut.write(do8587, 0, do8587.length);
 		bOut.write(do97, 0, do97.length);
 		byte[] m = bOut.toByteArray();
@@ -285,12 +262,10 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * Does the actual decoding of a response apdu. Based on Section E.3 of
 	 * TR-PKI, especially the examples.
 	 * 
-	 * @param rapdu
-	 *            buffer containing the apdu data.
-	 * @param len
-	 *            length of the apdu data.
+	 * @param rapdu buffer containing the apdu data
+	 * @param len length of the apdu data
 	 * 
-	 * @return a byte array containing the unwrapped apdu buffer.
+	 * @return a byte array containing the unwrapped apdu buffer
 	 */
 	private byte[] unwrapResponseAPDU(byte[] rapdu, int len) throws GeneralSecurityException, IOException {
 		long oldssc = ssc;
@@ -345,8 +320,7 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	/**
 	 * The <code>0x87</code> tag has already been read.
 	 * 
-	 * @param inputStream
-	 *            inputstream to read from.
+	 * @param inputStream inputstream to read from
 	 */
 	private byte[] readDO87(DataInputStream inputStream, boolean do85) throws IOException, GeneralSecurityException {
 		/* Read length... */
@@ -388,32 +362,30 @@ public class SecureMessagingWrapper implements APDUWrapper, Serializable {
 	/**
 	 * The <code>0x99</code> tag has already been read.
 	 * 
-	 * @param in
-	 *            inputstream to read from.
+	 * @param inputStream inputstream to read from.
 	 */
-	private short readDO99(DataInputStream in) throws IOException {
-		int length = in.readUnsignedByte();
+	private short readDO99(DataInputStream inputStream) throws IOException {
+		int length = inputStream.readUnsignedByte();
 		if (length != 2) {
 			throw new IllegalStateException("DO'99 wrong length");
 		}
-		byte sw1 = in.readByte();
-		byte sw2 = in.readByte();
+		byte sw1 = inputStream.readByte();
+		byte sw2 = inputStream.readByte();
 		return (short) (((sw1 & 0x000000FF) << 8) | (sw2 & 0x000000FF));
 	}
 
 	/**
 	 * The <code>0x8E</code> tag has already been read.
 	 * 
-	 * @param in
-	 *            inputstream to read from.
+	 * @param inputStream inputstream to read from.
 	 */
-	private byte[] readDO8E(DataInputStream in) throws IOException, GeneralSecurityException {
-		int length = in.readUnsignedByte();
+	private byte[] readDO8E(DataInputStream inputStream) throws IOException, GeneralSecurityException {
+		int length = inputStream.readUnsignedByte();
 		if (length != 8) {
 			throw new IllegalStateException("DO'8E wrong length");
 		}
 		byte[] cc1 = new byte[8];
-		in.readFully(cc1);
+		inputStream.readFully(cc1);
 		return cc1;
 	}
 

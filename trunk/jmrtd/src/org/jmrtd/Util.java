@@ -29,6 +29,8 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.Provider;
@@ -142,7 +144,6 @@ public class Util {
 	 */
 	public static SecretKey deriveKey(byte[] keySeed, String cipherAlg, int keyLength, byte[] nonce, int counter) throws GeneralSecurityException {
 		String digestAlg = inferDigestAlgorithmFromCipherAlgorithmForKeyDerivation(cipherAlg, keyLength);
-		LOGGER.info("DEBUG: key derivation uses digestAlg = " + digestAlg);
 		MessageDigest digest = MessageDigest.getInstance(digestAlg);
 		digest.reset();
 		digest.update(keySeed);
@@ -151,7 +152,6 @@ public class Util {
 		}
 		digest.update(new byte[] { 0x00, 0x00, 0x00, (byte)counter });
 		byte[] hashResult = digest.digest();
-		LOGGER.info("DEBUG: hashResult.length = " + hashResult.length);
 		byte[] keyBytes = null;
 		if ("DESede".equalsIgnoreCase(cipherAlg) || "3DES".equalsIgnoreCase(cipherAlg)) {
 			/* TR-SAC 1.01, 4.2.1. */
@@ -167,7 +167,6 @@ public class Util {
 				throw new IllegalArgumentException("KDF can only use DESede with 128-bit key length");
 			}
 		} else if ("AES".equalsIgnoreCase(cipherAlg) || cipherAlg.startsWith("AES")) {
-			LOGGER.info("DEBUG: key derivation with AES uses key length " + keyLength);
 			/* TR-SAC 1.01, 4.2.2. */
 			switch(keyLength) {
 			case 128:
@@ -186,45 +185,81 @@ public class Util {
 				throw new IllegalArgumentException("KDF can only use AES with 128-bit, 192-bit key or 256-bit length, found: " + keyLength + "-bit key length");
 			}
 		}
-		//		SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(cipherAlgName);
-		//		return keyFactory.generateSecret(new SecretKeySpec(keyBytes, cipherAlgName));
 		return new SecretKeySpec(keyBytes, cipherAlg);
 	}
 
+	/**
+	 * Computes the static key seed to be used in BAC KDF, based on information from the MRZ.
+	 *
+	 * @param documentNumber a string containing the document number
+	 * @param dateOfBirth a string containing the date of birth (YYMMDD)
+	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD)
+	 *
+	 * @return a byte array of length 16 containing the key seed
+	 * 
+	 * @throws GeneralSecurityException on security error
+	 */
+	public static byte[] computeKeySeedForBAC(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
+		return computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry, "SHA-1", true);
+	}
+
+	/**
+	 * Computes the static key seed to be used in PACE KDF, based on information from the MRZ.
+	 *
+	 * @param documentNumber a string containing the document number
+	 * @param dateOfBirth a string containing the date of birth (YYMMDD)
+	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD)
+	 *
+	 * @return a byte array of length 16 containing the key seed
+	 * 
+	 * @throws GeneralSecurityException on security error
+	 */
+	public static byte[] computeKeySeedForPACE(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
+		return computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry, "SHA-1", false);
+	}
+	
 	/*
 	 * NOTE: since 0.4.9, this method no longer checks input validity. Client is responsible now.
 	 */
 	/**
 	 * Computes the static key seed, based on information from the MRZ.
 	 *
-	 * @param documentNumber a string containing the document number.
-	 * @param dateOfBirth a string containing the date of birth (YYMMDD).
-	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD).
+	 * @param documentNumber a string containing the document number
+	 * @param dateOfBirth a string containing the date of birth (YYMMDD)
+	 * @param dateOfExpiry a string containing the date of expiry (YYMMDD)
+	 * @param digestAlg a Java mnemonic algorithm string to indicate the digest algorithm (typically SHA-1)
+	 * @param doTruncate whether to truncate the resulting output to 16 bytes
 	 *
-	 * @return a byte array of length 16 containing the key seed.
+	 * @return a byte array of length 16 containing the key seed
 	 * 
 	 * @throws GeneralSecurityException on security error
 	 */
-	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry) throws GeneralSecurityException {
+	public static byte[] computeKeySeed(String documentNumber, String dateOfBirth, String dateOfExpiry, String digestAlg, boolean doTruncate) throws GeneralSecurityException {
 
 		/* Check digits... */
-		byte[] cd1 = { (byte)MRZInfo.checkDigit(documentNumber) };
-		byte[] cd2 = { (byte)MRZInfo.checkDigit(dateOfBirth) };
-		byte[] cd3 = { (byte)MRZInfo.checkDigit(dateOfExpiry) };
+		byte[] documentNumberCheckDigit = { (byte)MRZInfo.checkDigit(documentNumber) };
+		byte[] dateOfBirthCheckDigit = { (byte)MRZInfo.checkDigit(dateOfBirth) };
+		byte[] dateOfExpiryCheckDigit = { (byte)MRZInfo.checkDigit(dateOfExpiry) };
 
-		MessageDigest shaDigest = MessageDigest.getInstance("SHA1");
+		MessageDigest shaDigest = MessageDigest.getInstance(digestAlg);
 
 		shaDigest.update(getBytes(documentNumber));
-		shaDigest.update(cd1);
+		shaDigest.update(documentNumberCheckDigit);
 		shaDigest.update(getBytes(dateOfBirth));
-		shaDigest.update(cd2);
+		shaDigest.update(dateOfBirthCheckDigit);
 		shaDigest.update(getBytes(dateOfExpiry));
-		shaDigest.update(cd3);
+		shaDigest.update(dateOfExpiryCheckDigit);
 
 		byte[] hash = shaDigest.digest();
-		byte[] keySeed = new byte[16];
-		System.arraycopy(hash, 0, keySeed, 0, 16);
-		return keySeed;
+
+		if (doTruncate) {
+			/* FIXME: truncate to 16 byte only for BAC with 3DES. Also for PACE and/or AES? -- MO */
+			byte[] keySeed = new byte[16];
+			System.arraycopy(hash, 0, keySeed, 0, 16);
+			return keySeed;
+		} else {
+			return hash;
+		}
 	}
 
 	public static long computeSendSequenceCounter(byte[] rndICC, byte[] rndIFD) {
@@ -375,11 +410,11 @@ public class Util {
 
 	public static byte[] alignKeyDataToSize(byte[] keyData, int size) {
 		byte[] result = new byte[size];
-		if(keyData.length < size) { size = keyData.length; }
+		if (keyData.length < size) { size = keyData.length; }
 		System.arraycopy(keyData, keyData.length - size, result, result.length - size, size);
 		return result;
 	}
-	
+
 	/**
 	 * Converts an integer to an octet string.
 	 * Based on BSI TR 03111 Section 3.1.2.
@@ -412,7 +447,8 @@ public class Util {
 
 		int sizeInNibbles = val.toString(16).length();
 		if (sizeInNibbles % 2 != 0) { sizeInNibbles++; }
-		return i2os(val, sizeInNibbles / 2);
+		int length = sizeInNibbles / 2;
+		return i2os(val, length);
 	}
 
 	/**
@@ -515,7 +551,7 @@ public class Util {
 		if ("AES".equals(cipherAlg) && (keyLength == 192 || keyLength == 256)) { return "SHA-256"; }
 		throw new IllegalArgumentException("Unsupported cipher algorithm or key length \"" + cipherAlg + "\", " + keyLength);
 	}
-	
+
 	public static DHParameterSpec toExplicitDHParameterSpec(DHParameters params) {
 		BigInteger p = params.getP();
 		BigInteger generator = params.getG();
@@ -804,22 +840,38 @@ public class Util {
 	//		}
 	//	}
 
-	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey) {
+
+	/**
+	 * Based on TR-SAC 1.01 4.5.1 and 4.5.2.
+	 * 
+	 * For signing authentication token, not for sending to smart card.
+	 * Assumes context is known.
+	 * 
+	 * @param oid object identifier
+	 * @param publicKey public key
+	 * 
+	 * @return encoded public key data object for signing as authentication token
+	 * 
+	 * @throws InvalidKeyException when public key is not DH or EC
+	 */
+	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey) throws InvalidKeyException {
 		return encodePublicKeyDataObject(oid, publicKey, true);
 	}
 
 	/**
 	 * Based on TR-SAC 1.01 4.5.1 and 4.5.2.
 	 * 
-	 * NOTE: For signing authentication token, not for sending to smart card.
+	 * For signing authentication token, not for sending to smart card.
 	 * 
 	 * @param oid object identifier
 	 * @param publicKey public key
 	 * @param isContextKnown whether context of public key is known to receiver (we will not include domain parameters in that case).
 	 * 
 	 * @return encoded public key data object for signing as authentication token
+	 * 
+	 * @throws InvalidKeyException when public key is not DH or EC
 	 */
-	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey, boolean isContextKnown) {
+	public static byte[] encodePublicKeyDataObject(String oid, PublicKey publicKey, boolean isContextKnown) throws InvalidKeyException {
 		ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 		TLVOutputStream tlvOut = new TLVOutputStream(bOut);
 		try {
@@ -861,8 +913,11 @@ public class Util {
 				if (!isContextKnown) {
 					tlvOut.writeTag(0x87); tlvOut.writeValue(i2os(BigInteger.valueOf(coFactor))); /* Cofactor */			
 				}
+			} else {
+				throw new InvalidKeyException("Unsupported public key: " + publicKey.getClass().getCanonicalName());
 			}
 			tlvOut.writeValueEnd(); /* 7F49 */
+			tlvOut.flush();
 			tlvOut.close();
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -881,7 +936,7 @@ public class Util {
 	 * 
 	 * @return encoding for smart card
 	 */
-	public static byte[] encodePublicKeyForSmartCard(PublicKey publicKey) {
+	public static byte[] encodePublicKeyForSmartCard(PublicKey publicKey) throws InvalidKeyException {
 		if (publicKey == null) {
 			throw new IllegalArgumentException("Cannot encode null public key");
 		}
@@ -894,14 +949,14 @@ public class Util {
 				bOut.close();
 				return encodedPublicKey;
 			} catch (IOException ioe) {
-				/* NOTE: Should never happen. */
+				/* NOTE: Should never happen, we're writing to a ByteArrayOutputStream. */
 				throw new IllegalStateException("Internal error writing to memory: " + ioe.getMessage());
 			}
 		} else if (publicKey instanceof DHPublicKey) {
 			DHPublicKey dhPublicKey = (DHPublicKey)publicKey;
 			return Util.i2os(dhPublicKey.getY());
 		} else {
-			throw new IllegalArgumentException("Unsupported public key: " + publicKey.getClass().getCanonicalName());
+			throw new InvalidKeyException("Unsupported public key: " + publicKey.getClass().getCanonicalName());
 		}
 	}
 
@@ -919,9 +974,12 @@ public class Util {
 				dataIn.readFully(yCoordBytes);
 				dataIn.close();
 
-				BigInteger p = getPrime(params);
-				BigInteger x = Util.os2fe(xCoordBytes, p);
-				BigInteger y = Util.os2fe(yCoordBytes, p);
+				//				BigInteger p = getPrime(params);
+				//				BigInteger x = Util.os2fe(xCoordBytes, p);
+				//				BigInteger y = Util.os2fe(yCoordBytes, p);
+
+				BigInteger x = Util.os2i(xCoordBytes);
+				BigInteger y = Util.os2i(yCoordBytes);
 				ECPoint w = new ECPoint(x, y);
 
 				ECParameterSpec ecParams = (ECParameterSpec)params;
@@ -951,10 +1009,10 @@ public class Util {
 		}
 	}
 
-	public static String inferMacAlgorithmFromCipherAlgorithm(String cipherAlg) {
+	public static String inferMacAlgorithmFromCipherAlgorithm(String cipherAlg) throws InvalidAlgorithmParameterException {
 		if (cipherAlg == null) { throw new IllegalArgumentException("Cannot infer MAC algorithm from cipher algoruthm null"); }
 		/*
-		 * NOTE: AESCMAC will generate 128bit results, not 64bit,
+		 * NOTE: AESCMAC will generate 128 bit (16 byte) results, not 64 bit (8 byte),
 		 * both authentication token generation and secure messaging,
 		 * where the Mac is applied, will copy only the first 8 bytes. -- MO
 		 */
@@ -964,24 +1022,45 @@ public class Util {
 		} else if (cipherAlg.startsWith("AES")) {
 			return "AESCMAC";
 		} else {
-			throw new IllegalArgumentException("Cannot infer MAC algorithm from cipher algorithm \"" + cipherAlg + "\"");
+			throw new InvalidAlgorithmParameterException("Cannot infer MAC algorithm from cipher algorithm \"" + cipherAlg + "\"");
 		}
 	}
 
+	/**
+	 * The authentication token SHALL be computed over a public key data object (cf. Section 4.5)
+	 * containing the object identifier as indicated in MSE:Set AT (cf. Section 3.2.1), and the
+	 * received ephemeral public key (i.e. excluding the domain parameters, cf. Section 4.5.3)
+	 * using an authentication code and the key KS MAC derived from the key agreement. 
+	 * 
+	 * @param oid the object identifier as indicated in MSE Set AT
+	 * @param macKey the KS MAC key derived from the key agreement
+	 * @param publicKey the received public key
+	 * 
+	 * @return the authentication code
+	 * 
+	 * @throws GeneralSecurityException on error while performing the MAC operation
+	 */
 	public static byte[] generateAuthenticationToken(String oid, SecretKey macKey, PublicKey publicKey) throws GeneralSecurityException {
 		String cipherAlg = PACEInfo.toCipherAlgorithm(oid);
-		Mac mac = Mac.getInstance(inferMacAlgorithmFromCipherAlgorithm(cipherAlg), BC_PROVIDER);
-		byte[] encodedPCDPublicKeyDataObject = encodePublicKeyDataObject(oid, publicKey);
+		String macAlg = inferMacAlgorithmFromCipherAlgorithm(cipherAlg);
+		Mac mac = Mac.getInstance(macAlg, BC_PROVIDER);
+		byte[] encodedPublicKeyDataObject = encodePublicKeyDataObject(oid, publicKey);
 		mac.init(macKey);
-		byte[] maccedPublicKeyDataObject = mac.doFinal(encodedPCDPublicKeyDataObject);
-		LOGGER.info("DEBUG: maccedPublicKeyDataObject.length = " + maccedPublicKeyDataObject.length);
-		
-		/* Output length needs to be 64 bits. */
+		byte[] maccedPublicKeyDataObject = mac.doFinal(encodedPublicKeyDataObject);
+
+		/* Output length needs to be 64 bits, copy first 8 bytes. */
 		byte[] authenticationToken = new byte[8];
 		System.arraycopy(maccedPublicKeyDataObject, 0, authenticationToken, 0, authenticationToken.length);
 		return authenticationToken;
 	}
 
+	/**
+	 * Infer an EAC object identifier for an EC or DH public key.
+	 * 
+	 * @param publicKey a public key
+	 * 
+	 * @return either ID_PK_ECDH or ID_PK_DH
+	 */
 	public static String inferProtocolIdentifier(PublicKey publicKey) {
 		String algorithm = publicKey.getAlgorithm();
 		if ("EC".equals(algorithm) || "ECDH".equals(algorithm)) {
@@ -1114,7 +1193,7 @@ public class Util {
 	 * @param params EC parameters for curve over Fp
 	 * @return the corresponding y coord
 	 */
-	private static BigInteger computeAffineY(BigInteger affineX, ECParameterSpec params) {
+	public static BigInteger computeAffineY(BigInteger affineX, ECParameterSpec params) {
 		ECCurve bcCurve = toBouncyCastleECCurve(params);
 		ECFieldElement a = bcCurve.getA();
 		ECFieldElement b = bcCurve.getB();
@@ -1133,6 +1212,17 @@ public class Util {
 		point = point.normalize();
 		if (!point.isValid()) { LOGGER.warning("point not valid"); }
 		return new ECPoint(point.getAffineXCoord().toBigInteger(), point.getAffineYCoord().toBigInteger());
+	}
+
+	public static boolean isValid(ECPoint ecPoint, ECParameterSpec params) {
+		org.bouncycastle.math.ec.ECPoint bcPoint = toBouncyCastleECPoint(ecPoint, params);
+		return bcPoint.isValid();
+	}
+
+	public static ECPoint normalize(ECPoint ecPoint, ECParameterSpec params) {
+		org.bouncycastle.math.ec.ECPoint bcPoint = toBouncyCastleECPoint(ecPoint, params);
+		bcPoint = bcPoint.normalize();
+		return fromBouncyCastleECPoint(bcPoint);
 	}
 
 	private static ECCurve toBouncyCastleECCurve(ECParameterSpec params) {

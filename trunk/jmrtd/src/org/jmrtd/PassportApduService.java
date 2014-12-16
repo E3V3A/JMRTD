@@ -39,6 +39,7 @@ import javax.crypto.spec.IvParameterSpec;
 
 import net.sf.scuba.smartcards.APDUEvent;
 import net.sf.scuba.smartcards.APDUListener;
+import net.sf.scuba.smartcards.APDUWrapper;
 import net.sf.scuba.smartcards.CardService;
 import net.sf.scuba.smartcards.CardServiceException;
 import net.sf.scuba.smartcards.CommandAPDU;
@@ -86,7 +87,7 @@ public class PassportApduService extends CardService {
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	/** The applet we select when we start a session. */
-	private static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
+	protected static final byte[] APPLET_AID = { (byte) 0xA0, 0x00, 0x00, 0x02, 0x47, 0x10, 0x01 };
 
 	/** Initialization vector used by the cipher below. */
 	private static final IvParameterSpec ZERO_IV_PARAM_SPEC = new IvParameterSpec(new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 });
@@ -192,14 +193,7 @@ public class PassportApduService extends CardService {
 		service.removeAPDUListener(l);
 	}
 
-	public void sendSelectApplet() throws CardServiceException {
-		short sw = sendSelectApplet(APPLET_AID);
-		if (sw != ISO7816.SW_NO_ERROR) {
-			throw new CardServiceException("Could not select MRTD application. SW = " + Integer.toHexString(sw), sw);
-		}
-	}
-
-	private ResponseAPDU transmit(SecureMessagingWrapper wrapper, CommandAPDU capdu) throws CardServiceException {
+	private ResponseAPDU transmit(APDUWrapper wrapper, CommandAPDU capdu) throws CardServiceException {
 		CommandAPDU plainCapdu = capdu;
 		if (wrapper != null) {
 			capdu = wrapper.wrap(capdu);
@@ -254,10 +248,11 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException on tranceive error
 	 */
-	public synchronized short sendSelectApplet(byte[] aid) throws CardServiceException {
+	public synchronized void sendSelectApplet(APDUWrapper wrapper, byte[] aid) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816,ISO7816.INS_SELECT_FILE, (byte) 0x04, (byte) 0x0C, aid);
-		ResponseAPDU rapdu = transmit(capdu);
-		return (short)rapdu.getSW(); 
+		ResponseAPDU rapdu = transmit(wrapper, capdu);
+
+		checkStatusWordAfterFileOperation(capdu, rapdu);
 	}
 
 	public synchronized void sendSelectFile(short fid) throws CardServiceException {
@@ -273,7 +268,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException on tranceive error
 	 */
-	public synchronized void sendSelectFile(SecureMessagingWrapper wrapper, short fid) throws CardServiceException {
+	public synchronized void sendSelectFile(APDUWrapper wrapper, short fid) throws CardServiceException {
 		byte[] fiddle = { (byte) ((fid >> 8) & 0xFF), (byte) (fid & 0xFF) };
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_SELECT_FILE, (byte) 0x02, (byte) 0x0c, fiddle, 0);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
@@ -313,7 +308,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException if the command was not successful
 	 */
-	public synchronized byte[] sendReadBinary(SecureMessagingWrapper wrapper, int offset, int le, boolean isExtendedLength) throws CardServiceException {
+	public synchronized byte[] sendReadBinary(APDUWrapper wrapper, int offset, int le, boolean isExtendedLength) throws CardServiceException {
 		//		boolean retrySending = false;
 		CommandAPDU capdu = null;
 		ResponseAPDU rapdu = null;
@@ -421,7 +416,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException on tranceive error
 	 */
-	public synchronized byte[] sendGetChallenge(SecureMessagingWrapper wrapper) throws CardServiceException {
+	public synchronized byte[] sendGetChallenge(APDUWrapper wrapper) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_GET_CHALLENGE, 0x00, 0x00, 8);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		return rapdu.getData();
@@ -438,7 +433,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException on tranceive error
 	 */
-	public synchronized byte[] sendInternalAuthenticate(SecureMessagingWrapper wrapper, byte[] rndIFD) throws CardServiceException {
+	public synchronized byte[] sendInternalAuthenticate(APDUWrapper wrapper, byte[] rndIFD) throws CardServiceException {
 		if (rndIFD == null || rndIFD.length != 8) { throw new IllegalArgumentException("rndIFD wrong length"); }
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_INTERNAL_AUTHENTICATE, 0x00, 0x00, rndIFD, 256);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
@@ -549,7 +544,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException if the resulting status word different from 9000
 	 */
-	public synchronized void sendMutualAuthenticate(SecureMessagingWrapper wrapper, byte[] signature)
+	public synchronized void sendMutualAuthenticate(APDUWrapper wrapper, byte[] signature)
 			throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_EXTERNAL_AUTHENTICATE, 0, 0, signature);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
@@ -568,7 +563,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSEKAT(SecureMessagingWrapper wrapper, byte[] keyData, byte[] idData) throws CardServiceException {
+	public synchronized void sendMSEKAT(APDUWrapper wrapper, byte[] keyData, byte[] idData) throws CardServiceException {
 		byte[] data = new byte[keyData.length
 		                       + ((idData != null) ? idData.length : 0)];
 		System.arraycopy(keyData, 0, data, 0, keyData.length);
@@ -592,7 +587,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSESetDST(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
+	public synchronized void sendMSESetDST(APDUWrapper wrapper, byte[] data) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xB6, data);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		short sw = (short)rapdu.getSW();
@@ -610,7 +605,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSESetATExtAuth(SecureMessagingWrapper wrapper, byte[] data) throws CardServiceException {
+	public synchronized void sendMSESetATExtAuth(APDUWrapper wrapper, byte[] data) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_MSE, 0x81, 0xA4, data);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		short sw = (short)rapdu.getSW();
@@ -630,7 +625,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException on error
 	 */
-	public synchronized void sendMSESetATMutualAuth(SecureMessagingWrapper wrapper, String oid,
+	public synchronized void sendMSESetATMutualAuth(APDUWrapper wrapper, String oid,
 			int refPublicKeyOrSecretKey, byte[] refPrivateKeyOrForComputingSessionKey) throws CardServiceException {
 
 		if (oid == null) { throw new IllegalArgumentException("OID cannot be null"); }
@@ -712,7 +707,7 @@ public class PassportApduService extends CardService {
 	 * 
 	 * @throws CardServiceException on error
 	 */
-	public synchronized byte[] sendGeneralAuthenticate(SecureMessagingWrapper wrapper, byte[] data, boolean isLast) throws CardServiceException {
+	public synchronized byte[] sendGeneralAuthenticate(APDUWrapper wrapper, byte[] data, boolean isLast) throws CardServiceException {
 		/* Tranceive APDU. */
 		byte[] commandData = Util.wrapDO((byte)0x7C, data); // FIXME: constant for 0x7C
 		CommandAPDU capdu = new CommandAPDU(isLast ? ISO7816.CLA_ISO7816 : ISO7816.CLA_COMMAND_CHAINING, INS_PACE_GENERAL_AUTHENTICATE, 0x00, 0x00, commandData, 256);
@@ -728,7 +723,7 @@ public class PassportApduService extends CardService {
 		return responseData;
 	}
 
-	public synchronized void sendPSOExtendedLengthMode(SecureMessagingWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
+	public synchronized void sendPSOExtendedLengthMode(APDUWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
 			throws CardServiceException {
 		byte[] certData = new byte[certBodyData.length + certSignatureData.length];
 		System.arraycopy(certBodyData, 0, certData, 0, certBodyData.length);
@@ -740,7 +735,7 @@ public class PassportApduService extends CardService {
 		if (sw != ISO7816.SW_NO_ERROR) { throw new CardServiceException("Sending PSO failed", sw); }
 	}
 
-	public synchronized void sendPSOChainMode(SecureMessagingWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
+	public synchronized void sendPSOChainMode(APDUWrapper wrapper, byte[] certBodyData, byte[] certSignatureData)
 			throws CardServiceException {
 		byte[] certData = new byte[certBodyData.length + certSignatureData.length];
 		System.arraycopy(certBodyData, 0, certData, 0, certBodyData.length);
