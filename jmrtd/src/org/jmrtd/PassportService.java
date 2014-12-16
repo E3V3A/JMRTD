@@ -51,11 +51,11 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.IvParameterSpec;
 
+import net.sf.scuba.smartcards.APDUWrapper;
 import net.sf.scuba.smartcards.CardFileInputStream;
 import net.sf.scuba.smartcards.CardService;
 import net.sf.scuba.smartcards.CardServiceException;
 import net.sf.scuba.tlv.TLVOutputStream;
-import net.sf.scuba.util.Hex;
 
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
@@ -213,7 +213,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * @deprecated visibility will be set to private
 	 */
-	protected SecureMessagingWrapper wrapper;
+	protected APDUWrapper wrapper;
 
 	protected Random random;
 	private MRTDFileSystem fs;
@@ -249,6 +249,16 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
+	public void sendSelectApplet(boolean hasPACESucceeded) throws CardServiceException {
+		if (hasPACESucceeded) {
+			/* Use SM as set up by doPACE() */
+			sendSelectApplet(wrapper, APPLET_AID);
+		} else {
+			/* Use plain messaging to select the applet, caller will have to do doBAC. */
+			sendSelectApplet(null, APPLET_AID);
+		}
+	}
+	
 	/**
 	 * Whether this service is open.
 	 * 
@@ -269,7 +279,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public synchronized void doBAC(BACKeySpec bacKey) throws CardServiceException {
 		try {
-			byte[] keySeed = computeKeySeed(bacKey);
+			byte[] keySeed = computeKeySeedForBAC(bacKey);
 			SecretKey kEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 			SecretKey kMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 
@@ -284,7 +294,7 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
-	private static byte[] computeKeySeed(BACKeySpec bacKey) throws GeneralSecurityException {
+	private static byte[] computeKeySeedForBAC(BACKeySpec bacKey) throws GeneralSecurityException {
 		String documentNumber = bacKey.getDocumentNumber();
 		String dateOfBirth = bacKey.getDateOfBirth();
 		String dateOfExpiry = bacKey.getDateOfExpiry();
@@ -301,7 +311,29 @@ public class PassportService extends PassportApduService implements Serializable
 
 		documentNumber = fixDocumentNumber(documentNumber);
 
-		byte[] keySeed = Util.computeKeySeed(documentNumber, dateOfBirth, dateOfExpiry);
+		byte[] keySeed = Util.computeKeySeedForBAC(documentNumber, dateOfBirth, dateOfExpiry);
+
+		return keySeed;
+	}
+	
+	private static byte[] computeKeySeedForPACE(BACKeySpec bacKey) throws GeneralSecurityException {
+		String documentNumber = bacKey.getDocumentNumber();
+		String dateOfBirth = bacKey.getDateOfBirth();
+		String dateOfExpiry = bacKey.getDateOfExpiry();
+
+		if (dateOfBirth == null || dateOfBirth.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
+		}
+		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
+		}
+		if (documentNumber == null) {
+			throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
+		}
+
+		documentNumber = fixDocumentNumber(documentNumber);
+
+		byte[] keySeed = Util.computeKeySeedForPACE(documentNumber, dateOfBirth, dateOfExpiry);
 
 		return keySeed;
 	}
@@ -346,7 +378,7 @@ public class PassportService extends PassportApduService implements Serializable
 		SecretKey ksEnc = Util.deriveKey(keySeed, Util.ENC_MODE);
 		SecretKey ksMac = Util.deriveKey(keySeed, Util.MAC_MODE);
 		long ssc = Util.computeSendSequenceCounter(rndICC, rndIFD);
-		wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+		wrapper = new DESedeSecureMessagingWrapper(ksEnc, ksMac, ssc);
 		state = BAC_AUTHENTICATED_STATE;
 	}
 
@@ -395,21 +427,23 @@ public class PassportService extends PassportApduService implements Serializable
 			if (!(params instanceof DHParameterSpec)) { throw new IllegalArgumentException("Expected DHParameterSpec for agreement algorithm " + agreementAlg); }
 		}
 
-		/* Derive the static key K_pi. */
+		/* Derive the static key K_pi. This will be used later on, but if derivation fails we want to know in advance. */
 		SecretKey staticPACEKey = null;
 		Cipher staticPACECipher = null;
 		try {
-			byte[] keySeed = computeKeySeed(keySpec);
+			byte[] keySeed = computeKeySeedForPACE(keySpec);
 			staticPACEKey = Util.deriveKey(keySeed, cipherAlg, keyLength, Util.PACE_MODE);
-			staticPACECipher = Cipher.getInstance(cipherAlg+"/CBC/NoPadding");
+			staticPACECipher = Cipher.getInstance(cipherAlg + "/CBC/NoPadding");
+		} catch (GeneralSecurityException gse) {
+			throw new PACEException("PCD side error in static PACE key derivation step");
+		}
 
+		try {
 			/* FIXME: multiple domain params feature not implemented here, for now. */
 			byte[] referencePrivateKeyOrForComputingSessionKey = null;
 
 			/* Send to the PICC. */
 			sendMSESetATMutualAuth(wrapper, oid, MRZ_PACE_KEY_REFERENCE, referencePrivateKeyOrForComputingSessionKey);
-		} catch (GeneralSecurityException gse) {
-			throw new PACEException("PCD side error in static PACE key derivation step");
 		} catch (CardServiceException cse) {
 			throw new PACEException("PICC side error in static PACE key derivation step", cse.getSW());
 		}
@@ -433,16 +467,12 @@ public class PassportService extends PassportApduService implements Serializable
 		try {
 			byte[] step1Data = new byte[] { };
 			/* Command data is empty. this implies an empty dynamic authentication object. */
-			LOGGER.info("DEBUG: sending step1Data = " + Hex.bytesToHexString(step1Data));
 			byte[] step1Response = sendGeneralAuthenticate(wrapper, step1Data, false);
-			LOGGER.info("DEBUG: received step1Response = " + Hex.bytesToHexString(step1Response));
 			byte[] step1EncryptedNonce = Util.unwrapDO((byte)0x80, step1Response);
-			LOGGER.info("DEBUG: received step1EncryptedNonce = " + Hex.bytesToHexString(step1EncryptedNonce) + ", length = " + step1EncryptedNonce.length);
 
 			/* (Re)initialize the K_pi cipher for decryption. */
 			staticPACECipher.init(Cipher.DECRYPT_MODE, staticPACEKey, new IvParameterSpec(new byte[16])); /* FIXME: iv length 16 is independent of keylength? */
 			piccNonce = staticPACECipher.doFinal(step1EncryptedNonce);
-			LOGGER.info("DEBUG: step1Nonce = " + Hex.bytesToHexString(piccNonce) + ", length = " + piccNonce.length);
 		} catch (GeneralSecurityException gse) {
 			throw new PACEException("PCD side exception in tranceiving nonce step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
@@ -485,14 +515,11 @@ public class PassportService extends PassportApduService implements Serializable
 			}
 
 			step2Data = Util.wrapDO((byte)0x81, step2Data);
-			LOGGER.info("DEBUG: sending step2Data = " + Hex.bytesToHexString(step2Data));
 			byte[] step2Response = sendGeneralAuthenticate(wrapper, step2Data, false);
-			LOGGER.info("DEBUG: received step2Response = " + Hex.bytesToHexString(step2Response));
 
 			switch(mappingType) {
 			case GM:
 				byte[] piccMappingEncodedPublicKey = Util.unwrapDO((byte)0x82, step2Response);
-				LOGGER.info("DEBUG: piccMappingEncodedPublicKey = " + Hex.bytesToHexString(piccMappingEncodedPublicKey));
 				try {
 					PublicKey piccMappingPublicKey = Util.decodePublicKeyFromSmartCard(piccMappingEncodedPublicKey, params);
 					mappingAgreement.doPhase(piccMappingPublicKey, true);
@@ -502,7 +529,6 @@ public class PassportService extends PassportApduService implements Serializable
 					throw new PACEException("Error during mapping" + gse.getMessage());
 				}
 
-				LOGGER.info("DEBUG: mapping shared secret = " + Hex.bytesToHexString(mappingSharedSecretBytes));
 				ephemeralParams = Util.mapNonceGM(piccNonce, mappingSharedSecretBytes, params);
 				break;
 			case IM:
@@ -542,14 +568,10 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] pcdEncodedPublicKey = Util.encodePublicKeyForSmartCard(pcdPublicKey);
 			byte[] step3Data = Util.wrapDO((byte)0x83, pcdEncodedPublicKey);
 			byte[] step3Response = sendGeneralAuthenticate(wrapper, step3Data, false);
-			LOGGER.info("DEBUG: step3Response = " + Hex.bytesToHexString(step3Response));
 			byte[] piccEncodedPublicKey = Util.unwrapDO((byte)0x84, step3Response);
-			LOGGER.info("DEBUG: piccEncodedPublicKey = " + Hex.bytesToHexString(piccEncodedPublicKey));
 			piccPublicKey = Util.decodePublicKeyFromSmartCard(piccEncodedPublicKey, ephemeralParams);
 			ECPoint piccPublicKeyECPoint = ((ECPublicKey)piccPublicKey).getW();
-			LOGGER.info("DEBUG: piccPublicKey X = " + Hex.bytesToHexString(Util.i2os(piccPublicKeyECPoint.getAffineX())));
-			LOGGER.info("DEBUG: piccPublicKey Y = " + Hex.bytesToHexString(Util.i2os(piccPublicKeyECPoint.getAffineY())));
-			LOGGER.info("DEBUG: p = " + Hex.bytesToHexString(Util.i2os(Util.getPrime(ephemeralParams))));
+			BigInteger p = Util.getPrime(ephemeralParams);
 			if (pcdPublicKey.equals(piccPublicKey)) { throw new PACEException("PCD's public key and PICC's public key are the same in key agreement step!"); }
 			keyAgreement.doPhase(piccPublicKey, true);
 			sharedSecretBytes = keyAgreement.generateSecret();
@@ -565,7 +587,6 @@ public class PassportService extends PassportApduService implements Serializable
 		SecretKey encKey = null;
 		SecretKey macKey = null;
 		try {
-			LOGGER.info("DEBUG: keyLength = " + keyLength);
 			encKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.ENC_MODE);
 			macKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.MAC_MODE);
 		} catch (GeneralSecurityException gse) {
@@ -583,9 +604,7 @@ public class PassportService extends PassportApduService implements Serializable
 		try {
 			byte[] pcdToken = Util.generateAuthenticationToken(oid, macKey, piccPublicKey);
 			byte[] step4Data = Util.wrapDO((byte)0x85, pcdToken);
-			LOGGER.info("DEBUG: step4Data = " + Hex.bytesToHexString(step4Data));
 			byte[] step4Response = sendGeneralAuthenticate(wrapper, step4Data, true);
-			LOGGER.info("DEBUG: received step4Response = " + Hex.bytesToHexString(step4Response));
 			byte[] piccToken = Util.unwrapDO((byte)0x86, step4Response);
 			byte[] expectedPICCToken = Util.generateAuthenticationToken(oid, macKey, pcdPublicKey);
 			if (!Arrays.equals(expectedPICCToken, piccToken)) {
@@ -607,48 +626,14 @@ public class PassportService extends PassportApduService implements Serializable
 		 *  - The new session keys and the new SSC are used to protect subsequent commands/responses.
 		 */
 		try {
-			wrapper = new SecureMessagingWrapper(encKey, macKey, cipherAlg, Util.inferMacAlgorithmFromCipherAlgorithm(cipherAlg));
+			if (cipherAlg.startsWith("DESede")) {
+				wrapper = new DESedeSecureMessagingWrapper(encKey, macKey);
+			} else if (cipherAlg.startsWith("AES")) {
+				wrapper = null; // new SecureMessagingWrapper(encKey, macKey, cipherAlg + "/CBC/NoPadding", Util.inferMacAlgorithmFromCipherAlgorithm(cipherAlg));
+			}
+			LOGGER.info("DEBUG: Starting secure messaging based on PACE");
 		} catch (GeneralSecurityException gse) {
 			throw new IllegalStateException("Security exception in secure messaging establishment: " + gse.getMessage());
-		}
-	}
-
-	/*
-	 * FIXME: should be moved to Passport -- MO?
-	 */
-	/**
-	 * Performs the EAC protocol (version 1) with the passport. For details see TR-03110
-	 * ver. 1.11. In short: a. authenticate the chip with (EC)DH key agreement
-	 * protocol (new secure messaging keys are created then), b. feed the
-	 * sequence of terminal certificates to the card for verification. c. get a
-	 * challenge from the passport, sign it with terminal private key, send back
-	 * to the card for verification.
-	 * 
-	 * @param keyId passport's public key id (stored in DG14), -1 if none
-	 * @param publicKey passport's public key (stored in DG14)
-	 * @param caReference the CA certificate key reference, this can be read from the CVCA file
-	 * @param terminalCertificates the chain of terminal certificates
-	 * @param terminalKey terminal private key
-	 * @param documentNumber the passport number
-	 *
-	 * @return an EAC result
-	 *
-	 * @throws CardServiceException on error
-	 * 
-	 * @deprecated Clients should call doCA and doTA directly
-	 */
-	public synchronized TerminalAuthenticationResult doEAC(BigInteger keyId, PublicKey publicKey,
-			CVCPrincipal caReference, List<CardVerifiableCertificate> terminalCertificates,
-			PrivateKey terminalKey, String documentNumber) throws CardServiceException {
-		try {
-			ChipAuthenticationResult chipAuthenticationResult = doCA(keyId, publicKey);
-//			assert(terminalCertificates != null && terminalCertificates.size() == 3);
-			return doTA(caReference, terminalCertificates, terminalKey, null, chipAuthenticationResult, documentNumber);
-		} catch (CardServiceException cse) {
-			throw cse;
-		} catch (Exception e) {
-			e.printStackTrace();
-			throw new CardServiceException(e.getMessage());
 		}
 	}
 
@@ -706,8 +691,7 @@ public class PassportService extends PassportApduService implements Serializable
 			} else if ("ECDH".equals(agreementAlg)) {
 				org.bouncycastle.jce.interfaces.ECPublicKey ecPublicKey = (org.bouncycastle.jce.interfaces.ECPublicKey)keyPair.getPublic();
 				keyData = ecPublicKey.getQ().getEncoded();
-				/* FIXME: toByteArray looks suspicious, shouldn't we use BSI's I2OS (Util.i2os) here? -- MO */
-				byte[] t = ecPublicKey.getQ().getX().toBigInteger().toByteArray();
+				byte[] t = Util.i2os(ecPublicKey.getQ().getX().toBigInteger());
 				keyHash = Util.alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
 			} else {
 				throw new IllegalStateException("Unsupported algorithm \"" + agreementAlg + "\", don't know how to select hash function");
@@ -723,7 +707,7 @@ public class PassportService extends PassportApduService implements Serializable
 			SecretKey ksMac = Util.deriveKey(secret, Util.MAC_MODE);
 			long ssc = 0;
 
-			wrapper = new SecureMessagingWrapper(ksEnc, ksMac, ssc);
+			wrapper = new DESedeSecureMessagingWrapper(ksEnc, ksMac, ssc);
 			state = CA_AUTHENTICATED_STATE;
 			return new ChipAuthenticationResult(keyId, publicKey, keyHash, keyPair);
 		} catch (GeneralSecurityException e) {
@@ -928,7 +912,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @return the wrapper
 	 */
-	public SecureMessagingWrapper getWrapper() {
+	public APDUWrapper getWrapper() {
 		return wrapper;
 	}
 
@@ -937,7 +921,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @param wrapper wrapper
 	 */
-	public void setWrapper(SecureMessagingWrapper wrapper) {
+	public void setWrapper(APDUWrapper wrapper) {
 		this.wrapper = wrapper;
 	}
 
