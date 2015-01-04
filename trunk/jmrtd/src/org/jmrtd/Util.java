@@ -53,6 +53,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.logging.Logger;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPublicKey;
@@ -115,9 +116,9 @@ public class Util {
 	 * Derives the ENC or MAC key for BAC from the keySeed.
 	 *
 	 * @param keySeed the key seed.
-	 * @param mode either <code>ENC_MODE</code> or <code>MAC_MODE</code>.
+	 * @param mode either <code>ENC_MODE</code> or <code>MAC_MODE</code>
 	 * 
-	 * @return the key.
+	 * @return the key
 	 * 
 	 * @throws GeneralSecurityException on security error
 	 */
@@ -125,6 +126,18 @@ public class Util {
 		return deriveKey(keySeed, "DESede", 128, mode);
 	}
 
+	/**
+	 * Derives the ENC or MAC key for BAC or PACE
+	 *
+	 * @param keySeed the key seed.
+	 * @param cipherAlgName either AES or DESede
+	 * @param keyLength key length in bits
+	 * @param mode either <code>ENC_MODE</code> or <code>MAC_MODE</code>
+	 * 
+	 * @return the key.
+	 * 
+	 * @throws GeneralSecurityException on security error
+	 */	
 	public static SecretKey deriveKey(byte[] keySeed, String cipherAlgName, int keyLength, int mode) throws GeneralSecurityException {	
 		return deriveKey(keySeed, cipherAlgName, keyLength, null, mode);
 	}
@@ -290,26 +303,45 @@ public class Util {
 		return pad(in, 0, in.length);
 	}
 
+	/**
+	 * Pads the input <code>in</code> according to ISO9797-1 padding method 2.
+	 *
+	 * @param in input
+	 *
+	 * @return padded output
+	 */
+	public static byte[] pad(/*@ non_null */ byte[] in, int blockSize) {
+		return pad(in, 0, in.length, blockSize);
+	}
+	
 	/*@ requires 0 <= offset && offset < length;
 	  @ requires 0 <= length && length <= in.length;
 	 */
 	public static byte[] pad(/*@ non_null */ byte[] in, int offset, int length) {
+		return pad(in, offset, length, 64);
+	}
+
+	/*@ requires 0 <= offset && offset < length;
+	  @ requires 0 <= length && length <= in.length;
+	 */
+	public static byte[] pad(/*@ non_null */ byte[] in, int offset, int length, int blockSize) {
+		int blockSizeInBytes = blockSize / 8;
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		out.write(in, offset, length);
 		out.write((byte)0x80);
-		while (out.size() % 8 != 0) {
+		while (out.size() % blockSizeInBytes != 0) {
 			out.write((byte)0x00);
 		}
 		return out.toByteArray();
 	}
 
-	public static byte[] unpad(byte[] in) {
+	public static byte[] unpad(byte[] in) throws BadPaddingException {
 		int i = in.length - 1;
 		while (i >= 0 && in[i] == 0x00) {
 			i--;
 		}
 		if ((in[i] & 0xFF) != 0x80) {
-			throw new IllegalStateException("unpad expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF)) + "\nDEBUG: in = " + Hex.bytesToHexString(in) + ", index = " + i);
+			throw new BadPaddingException("Expected constant 0x80, found 0x" + Integer.toHexString((in[i] & 0x000000FF)) + "\nDEBUG: in = " + Hex.bytesToHexString(in) + ", index = " + i);
 		}
 		byte[] out = new byte[i];
 		System.arraycopy(in, 0, out, 0, i);
@@ -895,7 +927,7 @@ public class Util {
 				ECParameterSpec params = ecPublicKey.getParams();
 				BigInteger p = getPrime(params);
 				EllipticCurve curve = params.getCurve();
-				BigInteger a = curve.getA(); 
+				BigInteger a = curve.getA();
 				BigInteger b = curve.getB();
 				ECPoint generator = params.getGenerator();
 				BigInteger order = params.getOrder();

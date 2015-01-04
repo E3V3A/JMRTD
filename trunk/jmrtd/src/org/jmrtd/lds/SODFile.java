@@ -175,8 +175,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes,
 			byte[] encryptedDigest,
-			X509Certificate docSigningCertificate)
-					throws NoSuchAlgorithmException, CertificateException {
+			X509Certificate docSigningCertificate) throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
 		try {
 			signedData = createSignedData(digestAlgorithm,
@@ -207,8 +206,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	public SODFile(String digestAlgorithm, String digestEncryptionAlgorithm,
 			Map<Integer, byte[]> dataGroupHashes,
 			PrivateKey privateKey,
-			X509Certificate docSigningCertificate, String provider)
-					throws NoSuchAlgorithmException, CertificateException {
+			X509Certificate docSigningCertificate, String provider) throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
 		try {
 			signedData = createSignedData(digestAlgorithm,
@@ -242,8 +240,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			Map<Integer, byte[]> dataGroupHashes,
 			PrivateKey privateKey,
 			X509Certificate docSigningCertificate, String provider,
-			String ldsVersion, String unicodeVersion)
-					throws NoSuchAlgorithmException, CertificateException {
+			String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, CertificateException {
 		super(EF_SOD_TAG);
 		try {
 			signedData = createSignedData(digestAlgorithm,
@@ -507,20 +504,21 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 * 
 	 * @throws GeneralSecurityException if something goes wrong
 	 */
-	public boolean checkDocSignature(Certificate docSigningCert)
-			throws GeneralSecurityException {
-
+	/* FIXME: move this out of lds package. */
+	public boolean checkDocSignature(Certificate docSigningCert) throws GeneralSecurityException {
 		byte[] eContent = getEContent(signedData);
 		byte[] signature = getEncryptedDigest(signedData);
 
-		String encAlgId = getSignerInfo(signedData).getDigestEncryptionAlgorithm().getAlgorithm().getId();
-		String encAlgJavaString = lookupMnemonicByOID(encAlgId);
+		SignerInfo signerInfo = getSignerInfo(signedData);
+		String encAlgOID = signerInfo.getDigestEncryptionAlgorithm().getAlgorithm().getId();
 
-		// For the cases where the signature is simply a digest (haven't seen a passport like this, 
-		// thus this is guessing)
-
-		if (encAlgId == null) {
-			String digestAlg = getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId();
+		/*
+		 * For the cases where the signature is simply a digest (haven't seen a passport like this, 
+		 * thus this is guessing)
+		 */
+		if (encAlgOID == null) {
+			String digestAlgOID = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
+			String digestAlg = lookupMnemonicByOID(digestAlgOID);
 			MessageDigest digest = null;
 			try {
 				digest = MessageDigest.getInstance(digestAlg);
@@ -532,53 +530,36 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			return Arrays.equals(digestBytes, signature);
 		}
 
+		String encAlg = lookupMnemonicByOID(encAlgOID);
+
+		
 		/* For the RSA_SA_PSS
 		 *    1. the default hash is SHA1,
 		 *    2. The hash id is not encoded in OID
 		 * So it has to be specified "manually".
 		 */
-		if (PKCS1_RSASSA_PSS_OID.equals(encAlgId)) {
-			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId());
-			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA/PSS";
+		if (PKCS1_RSASSA_PSS_OID.equals(encAlgOID)) {
+			String digestAlg = lookupMnemonicByOID(signerInfo.getDigestAlgorithm().getAlgorithm().getId());
+			encAlg = digestAlg.replace("-", "") + "withRSA/PSS";
 		}
 
-		if (PKCS1_RSA_OID.equals(encAlgId)) {
+		if (PKCS1_RSA_OID.equals(encAlgOID)) {
 			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId());
-			encAlgJavaString = digestJavaString.replace("-", "") + "withRSA";
+			encAlg = digestJavaString.replace("-", "") + "withRSA";
 		}
 
-		LOGGER.info("OID = " + encAlgId);
-		LOGGER.info("encAlgJavaString = " + encAlgJavaString);
+		LOGGER.info("OID = " + encAlgOID);
+		LOGGER.info("encAlg = " + encAlg);
 
 		Signature sig = null;
 		try {
-			sig = Signature.getInstance(encAlgJavaString);
+			sig = Signature.getInstance(encAlg);
 		} catch (Exception e) {
-			/* FIXME: Warn client that they should perhaps add BC as provider? */
-			sig = Signature.getInstance(encAlgJavaString, BC_PROVIDER);
+			sig = Signature.getInstance(encAlg, BC_PROVIDER);
 		}
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
 		return sig.verify(signature);
-
-		// 2. Do it manually, decrypt the signature and extract the hashing algorithm
-		/*
-		try {
-			Cipher c = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-			c.init(Cipher.DECRYPT_MODE, docSigningCert);
-			c.update(signature);
-			byte[] decryptedBytes = c.doFinal();
-			String id = getHashId(decryptedBytes);
-			byte[] expectedHash = getHashBytes(decryptedBytes);
-			MessageDigest digest = MessageDigest.getInstance(id);
-			digest.update(eContent);
-			byte[] digestBytes = digest.digest();
-			result = Arrays.equals(digestBytes, expectedHash);
-		}catch(Exception e) {
-
-		}
-        String[] sigAlgs = new String[] {"SHA1withRSA", "SHA1withRSA/PSS", "SHA256withRSA", "SHA256withRSA/PSS"};
-		 */
 	}
 
 	/**
@@ -775,13 +756,9 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 		/* METHODS BELOW ARE FOR CONSTRUCTING SOD STRUCTS */
 
-		private static SignedData createSignedData(
-				String digestAlgorithm,
-				String digestEncryptionAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes,
-				byte[] encryptedDigest,
-				X509Certificate docSigningCertificate)
-						throws NoSuchAlgorithmException, CertificateException, IOException {
+		private static SignedData createSignedData(String digestAlgorithm, String digestEncryptionAlgorithm,
+				Map<Integer, byte[]> dataGroupHashes, byte[] encryptedDigest,
+				X509Certificate docSigningCertificate) throws NoSuchAlgorithmException, CertificateException, IOException {
 			ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
 			ContentInfo contentInfo = createContentInfo(digestAlgorithm, dataGroupHashes);
 			byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
@@ -805,13 +782,11 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 				String digestEncryptionAlgorithm,
 				Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
 				X509Certificate docSigningCertificate, String provider,
-				String ldsVersion, String unicodeVersion)
-						throws NoSuchAlgorithmException, CertificateException, IOException {
+				String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, CertificateException, IOException {
 			ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
 			ContentInfo contentInfo = createContentInfo(digestAlgorithm,
 					dataGroupHashes, ldsVersion, unicodeVersion);
-			byte[] content = ((DEROctetString) contentInfo.getContent())
-					.getOctets();
+			byte[] content = ((DEROctetString) contentInfo.getContent()).getOctets();
 
 			byte[] encryptedDigest = null;
 			try {
@@ -850,7 +825,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 				byte[] certSpec = cert.getEncoded();
 				ASN1InputStream asn1In = new ASN1InputStream(certSpec);
 				try {
-					ASN1Sequence certSeq = (ASN1Sequence)(asn1In).readObject();
+					ASN1Sequence certSeq = (ASN1Sequence)asn1In.readObject();
 					return certSeq;
 				} finally {
 					asn1In.close();
@@ -860,12 +835,9 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			}
 		}
 
-		private static ContentInfo createContentInfo(
-				String digestAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes)
-						throws NoSuchAlgorithmException, IOException {
-			return createContentInfo(digestAlgorithm, dataGroupHashes, null,
-					null);
+		private static ContentInfo createContentInfo(String digestAlgorithm,
+				Map<Integer, byte[]> dataGroupHashes) throws NoSuchAlgorithmException, IOException {
+			return createContentInfo(digestAlgorithm, dataGroupHashes, null, null);
 		}
 
 		private static ContentInfo createContentInfo(
@@ -892,13 +864,9 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			return new ContentInfo(new ASN1ObjectIdentifier(ICAO_LDS_SOD_OID), new DEROctetString(securityObject));
 		}
 
-		private static SignerInfo createSignerInfo(
-				String digestAlgorithm,
-				String digestEncryptionAlgorithm,
-				byte[] content,
-				byte[] encryptedDigest,
-				X509Certificate docSigningCertificate)
-						throws NoSuchAlgorithmException {
+		private static SignerInfo createSignerInfo(String digestAlgorithm,
+				String digestEncryptionAlgorithm, byte[] content,
+				byte[] encryptedDigest, X509Certificate docSigningCertificate) throws NoSuchAlgorithmException {
 			/* Get the issuer name (CN, O, OU, C) from the cert and put it in a SignerIdentifier struct. */
 			X500Principal docSignerPrincipal = ((X509Certificate)docSigningCertificate).getIssuerX500Principal();
 			X500Name docSignerName = new X500Name(docSignerPrincipal.getName(X500Principal.RFC2253));
@@ -914,10 +882,9 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			return new SignerInfo(sid, digestAlgorithmObject, authenticatedAttributes, digestEncryptionAlgorithmObject, encryptedDigestObject, unAuthenticatedAttributes);
 		}
 
-		private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes)
-				throws NoSuchAlgorithmException {
+		private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes) throws NoSuchAlgorithmException {
 			/* Check bug found by Paulo Assumpco. */
-			if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; LOGGER.warning("Replaced \"SHA256\" with \"SHA-256\"."); }
+			if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; }
 			MessageDigest dig = MessageDigest.getInstance(digestAlgorithm);
 			byte[] digestedContentBytes = dig.digest(contentBytes);
 			ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
@@ -939,6 +906,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		 * @throws NoSuchAlgorithmException if the provided OID is not yet supported
 		 */
 		private static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {
+			if (oid == null) { return null; }
 			if (oid.equals(X509ObjectIdentifiers.organization.getId())) { return "O"; }
 			if (oid.equals(X509ObjectIdentifiers.organizationalUnitName.getId())) { return "OU"; }
 			if (oid.equals(X509ObjectIdentifiers.commonName.getId())) { return "CN"; }

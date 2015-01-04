@@ -76,6 +76,7 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.jmrtd.VerificationStatus.HashMatchResult;
+import org.jmrtd.VerificationStatus.ReasonCode;
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
 import org.jmrtd.lds.ActiveAuthenticationInfo;
@@ -183,6 +184,7 @@ public class Passport {
 
 	/**
 	 * Creates a document by reading it from a service.
+	 * Access control will be BAC only.
 	 * 
 	 * @param service the service to read from
 	 * @param trustManager the trust manager (CSCA, CVCA)
@@ -192,7 +194,11 @@ public class Passport {
 	 * @throws GeneralSecurityException if certain security primitives are not supported
 	 */
 	public Passport(PassportService service, MRTDTrustStore trustManager, BACKeySpec bacKey) throws CardServiceException, GeneralSecurityException {
-		this(service, trustManager, Collections.singletonList(bacKey));
+		this(service, trustManager, Collections.singletonList(bacKey), false, false);
+	}
+
+	public Passport(PassportService service, MRTDTrustStore trustManager, BACKeySpec bacKey, boolean shouldDoPACE, boolean shouldDoBACByDefault) throws CardServiceException, GeneralSecurityException {
+		this(service, trustManager, Collections.singletonList(bacKey), shouldDoPACE, shouldDoBACByDefault);
 	}
 
 	/**
@@ -201,12 +207,15 @@ public class Passport {
 	 * @param service the service to read from
 	 * @param trustManager the trust manager (CSCA, CVCA)
 	 * @param bacStore the BAC entries
+	 * @param shouldDoPACE whether PACE should be tried before BAC
+	 * @param shouldDoBACByDefault whether BAC should be used by default and we should not expect an unprotected document
 	 * 
 	 * @throws CardServiceException on error
 	 * @throws GeneralSecurityException if certain security primitives are not supported
 	 */
-	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore) throws CardServiceException, GeneralSecurityException {
+	public Passport(PassportService service, MRTDTrustStore trustManager, List<BACKeySpec> bacStore, boolean shouldDoPACE, boolean shouldDoBACByDefault) throws CardServiceException, GeneralSecurityException {
 		this();
+		LOGGER.info("DEBUG: shouldDoBACByDefault = " + shouldDoBACByDefault);
 		if (service == null) { throw new IllegalArgumentException("Service cannot be null"); }
 		this.service = service;
 		if (trustManager == null) {
@@ -241,7 +250,7 @@ public class Passport {
 
 			hasPACE = featureStatus.hasSAC() == FeatureStatus.Verdict.PRESENT;
 
-			if (hasPACE) {
+			if (hasPACE && shouldDoPACE) {
 				try {
 					isPACESucceeded = tryToDoPACE(service, paceInfo, bacStore.get(0)); // FIXME: only one bac key, DEBUG
 				} catch (Exception e) {
@@ -260,35 +269,43 @@ public class Passport {
 			throw new CardServiceException("Cannot open document. " + e.getMessage());
 		}
 
-		/* Find out whether this MRTD supports BAC if PACE did not succeed. */
-		try {
-			/* Attempt to read EF.COM before BAC. */
-			LOGGER.info("DEBUG: reading first byte of EF.COM");
-			service.getInputStream(PassportService.EF_COM).read();
-
-			if (isPACESucceeded) {
-				verificationStatus.setSAC(VerificationStatus.Verdict.SUCCEEDED, "Succeeded");
-				featureStatus.setBAC(FeatureStatus.Verdict.UNKNOWN);
-				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "Using SAC, BAC not checked", EMPTY_TRIED_BAC_ENTRY_LIST);
-			} else {
-				/* We failed PACE, and we don't need BAC. */
-				featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
-				verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, "Non-BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-			}
-		} catch (Exception e) {
-			LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
-			featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
-			verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, "BAC document", EMPTY_TRIED_BAC_ENTRY_LIST);
-		}
-
-		/* If we have to do BAC, try to do BAC. */
-		boolean hasBAC = featureStatus.hasBAC() == FeatureStatus.Verdict.PRESENT;
 		String documentNumber = null;
-		if (hasBAC && !(hasPACE && isPACESucceeded)) {
-			BACKeySpec bacKeySpec = tryToDoBAC(service, bacStore);
-			documentNumber = bacKeySpec.getDocumentNumber();
-		}
+		
+		/* If PACE did not succeed find out whether we need to do BAC. */
+		if (!(hasPACE && isPACESucceeded)) {
+			boolean shouldDoBAC = shouldDoBACByDefault;
+			LOGGER.info("DEBUG: shouldDoBAC = " + shouldDoBAC);
 
+			if (!shouldDoBAC) {
+				try {
+					/* Attempt to read EF.COM before BAC. */
+					LOGGER.info("DEBUG: reading first byte of EF.COM");
+					service.getInputStream(PassportService.EF_COM).read();
+
+					if (isPACESucceeded) {
+						verificationStatus.setSAC(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SUCCEEDED);
+						featureStatus.setBAC(FeatureStatus.Verdict.UNKNOWN);
+						verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, ReasonCode.USING_SAC_SO_BAC_NOT_CHECKED, EMPTY_TRIED_BAC_ENTRY_LIST);
+					} else {
+						/* We failed PACE, and we don't need BAC. */
+						featureStatus.setBAC(FeatureStatus.Verdict.NOT_PRESENT);
+						verificationStatus.setBAC(VerificationStatus.Verdict.NOT_PRESENT, ReasonCode.NOT_SUPPORTED, EMPTY_TRIED_BAC_ENTRY_LIST);
+					}
+				} catch (Exception e) {
+					LOGGER.info("Attempt to read EF.COM before BAC failed with: " + e.getMessage());
+					featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
+					verificationStatus.setBAC(VerificationStatus.Verdict.NOT_CHECKED, ReasonCode.INSUFFICIENT_CREDENTIALS, EMPTY_TRIED_BAC_ENTRY_LIST);
+				}
+
+				/* If we have to do BAC, try to do BAC. */
+				shouldDoBAC = featureStatus.hasBAC() == FeatureStatus.Verdict.PRESENT;
+			}
+
+			if (shouldDoBAC) {
+				BACKeySpec bacKeySpec = tryToDoBAC(service, bacStore);
+				documentNumber = bacKeySpec.getDocumentNumber();
+			}
+		}
 		this.lds = new LDS();
 
 		/* Pre-read these files that are always present. */
@@ -387,11 +404,11 @@ public class Passport {
 				ioe.printStackTrace();
 				LOGGER.warning("Could not read file");
 			} catch (Exception e) {
-				verificationStatus.setAA(VerificationStatus.Verdict.NOT_CHECKED, "Failed to read DG15", null);
+				verificationStatus.setAA(VerificationStatus.Verdict.NOT_CHECKED, ReasonCode.READ_ERROR_DG15_FAILURE, null);
 			}
 		} else {
 			/* Feature status says: no AA, so verification status should say: no AA. */
-			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, "AA is not supported", null);
+			verificationStatus.setAA(VerificationStatus.Verdict.NOT_PRESENT, ReasonCode.NOT_SUPPORTED, null);
 		}
 
 		/* Add remaining datagroups to LDS. */
@@ -432,7 +449,7 @@ public class Passport {
 		} catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
-		verificationStatus.setAll(VerificationStatus.Verdict.UNKNOWN, "Unknown"); // FIXME: why all?
+		verificationStatus.setAll(VerificationStatus.Verdict.UNKNOWN, ReasonCode.UNKNOWN); // FIXME: why all?
 	}
 
 	/**
@@ -623,36 +640,6 @@ public class Passport {
 		return verificationStatus;
 	}
 
-	//	/**
-	//	 * Verifies the document using the security related mechanisms.
-	//	 * Convenience method.
-	//	 * 
-	//	 * @return the security status
-	//	 */
-	//	public VerificationStatus verifySecurity() {
-	//		/* NOTE: Since 0.4.9 verifyAA and verifyEAC were removed. AA is always checked as part of the prelude.
-	//		 * (EDIT: For debugging it's back here again, see below...)
-	//		 */
-	//		/* NOTE: We could also move verifyDS and verifyCS to prelude. */
-	//		/* NOTE: COM SOd consistency check ("Jeroen van Beek sanity check") is implicit now, we work from SOd, ignoring COM. */
-	//
-	//		/* Verify whether the Document Signing Certificate is signed by a Trust Anchor in our CSCA store. */
-	//		verifyCS();
-	//
-	//		/* Verify whether hashes in EF.SOd signed with document signer certificate. */
-	//		verifyDS();
-	//
-	//		/* Verify hashes. */
-	//		verifyHT();
-	//
-	//		/* DEBUG: apparently it matters where we do AA, in prelude or in the end?!?! -- MO */
-	//		if (service != null && lds.getDataGroupList().contains(PassportService.EF_DG15)) {
-	//			verifyAA();
-	//		}
-	//
-	//		return verificationStatus;
-	//	}
-
 	/* ONLY PRIVATE METHODS BELOW. */
 
 	private BACKeySpec tryToDoBAC(PassportService service, List<BACKeySpec> bacStore) throws BACDeniedException {
@@ -664,7 +651,7 @@ public class Passport {
 				try {
 					triedBACEntries.add(bacKey);
 					tryToDoBAC(service, bacKey);
-					verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, "BAC succeeded with key " + bacKey, triedBACEntries);
+					verificationStatus.setBAC(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SUCCEEDED, triedBACEntries);
 					return bacKey;
 				} catch (CardServiceException cse) {
 					LOGGER.info("Ignoring the following exception: " + cse.getClass().getCanonicalName());
@@ -676,7 +663,7 @@ public class Passport {
 		}
 
 		/* Document requires BAC, but we failed to authenticate. */
-		verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, "BAC failed", triedBACEntries);
+		verificationStatus.setBAC(VerificationStatus.Verdict.FAILED, ReasonCode.INSUFFICIENT_CREDENTIALS, triedBACEntries);
 		throw new BACDeniedException("Basic Access denied!", triedBACEntries, lastKnownSW);
 	}
 
@@ -695,12 +682,12 @@ public class Passport {
 	}
 
 	private boolean tryToDoPACE(PassportService service, PACEInfo paceInfo, BACKeySpec bacKey) throws CardServiceException {
-		LOGGER.info("DEBUG: PACE has been disabled in this version of JMRTD");
-		return false;
+		//		LOGGER.info("DEBUG: PACE has been disabled in this version of JMRTD");
+		//		return false;
 
-//		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
-//		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
-//		return true;
+		LOGGER.info("DEBUG: attempting doPACE with PACEInfo " + paceInfo);
+		service.doPACE(bacKey, paceInfo.getObjectIdentifier(), PACEInfo.toParameterSpec(paceInfo.getParameterId()));
+		return true;
 	}
 
 	private void tryToDoEAC(PassportService service, LDS lds, String documentNumber, List<KeyStore> cvcaKeyStores) throws CardServiceException {
@@ -748,7 +735,7 @@ public class Passport {
 					try {
 						ChipAuthenticationResult chipAuthenticationResult = service.doCA(keyId, publicKey);
 						TerminalAuthenticationResult eacResult = service.doTA(caReference, terminalCerts, privateKey, null, chipAuthenticationResult, documentNumber);
-						verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, "EAC succeeded, CA reference is: " + caReference, eacResult);
+						verificationStatus.setEAC(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SUCCEEDED, eacResult);
 					} catch(CardServiceException cse) {
 						cse.printStackTrace();
 						/* NOTE: Failed? Too bad, try next public key. */
@@ -931,26 +918,30 @@ public class Passport {
 	 */
 	public ActiveAuthenticationResult executeAA(byte[] challenge) {
 		if (lds == null || service == null) {
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed", null);
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNKNOWN, null);
 			return null;
 		}
 
 		try {
-			DG15File dg15 = lds.getDG15File();
-			if (dg15 == null) {
-				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed", null);
+			DG15File dg15File = lds.getDG15File();
+			if (dg15File == null) {
+				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.READ_ERROR_DG15_FAILURE, null);
 				return null;
 			}
-			PublicKey pubKey = dg15.getPublicKey();
+			PublicKey pubKey = dg15File.getPublicKey();
 			String pubKeyAlgorithm = pubKey.getAlgorithm();
 			String digestAlgorithm = "SHA1";
 			String signatureAlgorithm = "SHA1WithRSA/ISO9796-2";
 			if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
 				DG14File dg14File = lds.getDG14File();
+				if (dg14File == null) {
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.READ_ERROR_DG14_FAILURE, null);
+					return null;
+				}
 				List<ActiveAuthenticationInfo> activeAuthenticationInfos = dg14File.getActiveAuthenticationInfos();
 				int activeAuthenticationInfoCount = (activeAuthenticationInfos == null ? 0 : activeAuthenticationInfos.size());
 				if (activeAuthenticationInfoCount < 1) {
-					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "Found no active authentication info in EF.DG14", null);
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.READ_ERROR_DG14_FAILURE, null);
 					return null;
 				} else if (activeAuthenticationInfoCount > 1) {
 					LOGGER.warning("Found " + activeAuthenticationInfoCount + " in EF.DG14, expected 1.");
@@ -964,12 +955,12 @@ public class Passport {
 			return new ActiveAuthenticationResult(pubKey, digestAlgorithm, signatureAlgorithm, challenge, response);
 		} catch (CardServiceException cse) {
 			cse.printStackTrace();
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception", null);
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, null);
 			return null;
 		} catch (Exception e) {
 			LOGGER.severe("DEBUG: this exception wasn't caught in verification logic (< 0.4.8) -- MO 3. Type is " + e.getClass().getCanonicalName());
 			e.printStackTrace();
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to exception", null);
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, null);
 			return null;
 		}
 	}
@@ -1015,9 +1006,9 @@ public class Passport {
 				boolean success = rsaAASignature.verify(response);
 
 				if (success) {
-					verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded", aaResult);
+					verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SIGNATURE_CHECKED, aaResult);
 				} else {
-					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure", aaResult);
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.SIGNATURE_FAILURE, aaResult);
 				}
 				return success;
 			} else if ("EC".equals(pubKeyAlgorithm) || "ECDSA".equals(pubKeyAlgorithm)) {
@@ -1049,24 +1040,24 @@ public class Passport {
 					ASN1Sequence asn1Sequence = new DERSequence(new ASN1Encodable[] { new ASN1Integer(r), new ASN1Integer(s) });
 					boolean success = ecdsaAASignature.verify(asn1Sequence.getEncoded());
 					if (success) {
-						verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, "AA succeeded", aaResult);
+						verificationStatus.setAA(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SUCCEEDED, aaResult);
 					} else {
-						verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to signature failure", aaResult);
+						verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.SIGNATURE_FAILURE, aaResult);
 					}
 					return success;
 				} catch (IOException ioe) {
 					LOGGER.severe("Unexpected exception during AA signature verification with ECDSA");
 					ioe.printStackTrace();
-					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unexpected exception", aaResult);
+					verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, aaResult);
 					return false;
 				}				
 			} else {
 				LOGGER.severe("Unsupported AA public key type " + publicKey.getClass().getSimpleName());
-				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unsupported key type", aaResult);
+				verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNSUPPORTED_KEY_TYPE_FAILURE, aaResult);
 				return false;
 			}
 		} catch (Exception e) {
-			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, "AA failed due to unexpected exception", aaResult);
+			verificationStatus.setAA(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, aaResult);
 			return false;
 		}
 	}
@@ -1078,7 +1069,7 @@ public class Passport {
 	 */
 	public void verifyDS() {
 		try {
-			verificationStatus.setDS(VerificationStatus.Verdict.UNKNOWN, "Unknown");
+			verificationStatus.setDS(VerificationStatus.Verdict.UNKNOWN, ReasonCode.UNKNOWN);
 
 			SODFile sod = lds.getSODFile();
 
@@ -1091,16 +1082,16 @@ public class Passport {
 				// BigInteger serialNumber = sod.getSerialNumber();
 			}
 			if (sod.checkDocSignature(docSigningCert)) {
-				verificationStatus.setDS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked");
+				verificationStatus.setDS(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.SIGNATURE_CHECKED);
 			} else {
-				verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Signature incorrect");
-			}			
+				verificationStatus.setDS(VerificationStatus.Verdict.FAILED, ReasonCode.SIGNATURE_FAILURE);
+			}
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Unsupported signature algorithm");
+			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, ReasonCode.UNSUPPORTED_SIGNATURE_ALGORITHM_FAILURE);
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		} catch (Exception e) {
 			e.printStackTrace();
-			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, "Unexpected exception");
+			verificationStatus.setDS(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE);
 			return; /* NOTE: Serious enough to not perform other checks, leave method. */
 		}
 	}
@@ -1120,7 +1111,7 @@ public class Passport {
 			List<Certificate> chain = new ArrayList<Certificate>();
 
 			if (sod == null) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Unable to build certificate chain", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.COULD_NOT_BUILD_CHAIN_FAILURE, chain);
 				return;
 			}
 
@@ -1147,12 +1138,12 @@ public class Passport {
 			List<CertStore> cscaStores = trustManager.getCSCAStores();
 			if (cscaStores == null || cscaStores.size() <= 0) {
 				LOGGER.warning("No CSCA certificate stores found.");
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA certificate stores found", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.NO_CSCA_TRUST_ANCHORS_FOUND_FAILURE, chain);
 			}
 			Set<TrustAnchor> cscaTrustAnchors = trustManager.getCSCAAnchors();
 			if (cscaTrustAnchors == null || cscaTrustAnchors.size() <= 0) {
 				LOGGER.warning("No CSCA trust anchors found.");
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "No CSCA trust anchors found", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.NO_CSCA_TRUST_ANCHORS_FOUND_FAILURE, chain);
 			}
 
 			/* Optional internal EF.SOd consistency check. */
@@ -1170,7 +1161,7 @@ public class Passport {
 			/* Run PKIX algorithm to build chain to any trust anchor. Add certificates to our chain. */
 			List<Certificate> pkixChain = getCertificateChain(docSigningCertificate, sodIssuer, sodSerialNumber, cscaStores, cscaTrustAnchors);
 			if (pkixChain == null) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor (pkixChain == null)", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.SIGNATURE_FAILURE, chain);
 				return;
 			}
 
@@ -1181,28 +1172,15 @@ public class Passport {
 
 			int chainDepth = chain.size();
 			if (chainDepth <= 1) {
-				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Could not build chain to trust anchor", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.COULD_NOT_BUILD_CHAIN_FAILURE, chain);
 				return;
 			}
 			if (chainDepth > 1 && verificationStatus.getCS().equals(VerificationStatus.Verdict.UNKNOWN)) {
-				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Found a chain to a trust anchor", chain);
+				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.FOUND_A_CHAIN_SUCCEEDED, chain);
 			}
-
-			/* FIXME: This is no longer necessary after PKIX has done its job? */
-			//			if (chainDepth == 1) {
-			//				// X509Certificate docSigningCertificate = (X509Certificate)chainCertificates.get(0);
-			//				// verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Document signer from store", chain);
-			//			} else if (chainDepth == 2) {
-			//				X509Certificate docSigningCertificate = (X509Certificate)chain.get(0);
-			//				X509Certificate countrySigningCertificate = (X509Certificate)chain.get(1);
-			//				docSigningCertificate.verify(countrySigningCertificate.getPublicKey());
-			//				
-			//				/* NOTE: No exception... verification succeeded! */
-			//				verificationStatus.setCS(VerificationStatus.Verdict.SUCCEEDED, "Signature checked", chain);
-			//			}
 		} catch (Exception e) {
 			e.printStackTrace();
-			verificationStatus.setCS(VerificationStatus.Verdict.FAILED, "Signature failed", EMPTY_CERTIFICATE_CHAIN);
+			verificationStatus.setCS(VerificationStatus.Verdict.FAILED, ReasonCode.SIGNATURE_FAILURE, EMPTY_CERTIFICATE_CHAIN);
 		}
 	}
 
@@ -1220,7 +1198,7 @@ public class Passport {
 		try {
 			sod = lds.getSODFile();
 		} catch (Exception e) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "No SOd", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.READ_ERROR_SOD_FAILURE, hashResults);
 			return;
 		}
 		Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
@@ -1228,7 +1206,7 @@ public class Passport {
 			verifyHash(dgNumber, hashResults);
 		}
 		if (verificationStatus.getHT().equals(VerificationStatus.Verdict.UNKNOWN)) {
-			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, "All hashes match", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.SUCCEEDED, ReasonCode.ALL_HASHES_MATCH, hashResults);
 		} else {
 			/* Update storedHashes and computedHashes. */
 			verificationStatus.setHT(verificationStatus.getHT(), verificationStatus.getHTReason(), hashResults);
@@ -1265,7 +1243,7 @@ public class Passport {
 			Map<Integer, byte[]> storedHashes = sod.getDataGroupHashes();
 			storedHash = storedHashes.get(dgNumber);
 		} catch(Exception e) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed, could not get stored hash", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.STORED_HASH_NOT_FOUND_FAILURE, hashResults);
 			return null;
 		}
 
@@ -1274,7 +1252,7 @@ public class Passport {
 		try {
 			digest = getDigest(digestAlgorithm);
 		} catch (NoSuchAlgorithmException nsae) {
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Unsupported algorithm \"" + digestAlgorithm + "\"", null);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.UNSUPPORTED_DIGEST_ALGORITHM_FAILURE, null);
 			return null; // DEBUG -- MO
 		}
 
@@ -1306,7 +1284,7 @@ public class Passport {
 		} catch(Exception e) {
 			VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 			hashResults.put(dgNumber, hashResult);
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "DG" + dgNumber + " failed due to exception", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, hashResults);
 			return hashResult;
 		}
 
@@ -1317,14 +1295,14 @@ public class Passport {
 			hashResults.put(dgNumber, hashResult);
 
 			if (!Arrays.equals(storedHash, computedHash)) {
-				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash mismatch", hashResults);
+				verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.HASH_MISMATCH_FAILURE, hashResults);
 			}
 
 			return hashResult;
 		} catch (Exception ioe) {
 			VerificationStatus.HashMatchResult hashResult = new HashMatchResult(storedHash, null);
 			hashResults.put(dgNumber, hashResult);
-			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, "Hash failed due to exception", hashResults);
+			verificationStatus.setHT(VerificationStatus.Verdict.FAILED, ReasonCode.UNEXPECTED_EXCEPTION_FAILURE, hashResults);
 			return hashResult;
 		}
 	}
