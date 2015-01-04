@@ -56,6 +56,7 @@ import net.sf.scuba.smartcards.CardFileInputStream;
 import net.sf.scuba.smartcards.CardService;
 import net.sf.scuba.smartcards.CardServiceException;
 import net.sf.scuba.tlv.TLVOutputStream;
+import net.sf.scuba.util.Hex;
 
 import org.jmrtd.cert.CVCAuthorizationTemplate.Role;
 import org.jmrtd.cert.CVCPrincipal;
@@ -249,9 +250,19 @@ public class PassportService extends PassportApduService implements Serializable
 		}
 	}
 
+	/**
+	 * Selects the MRTD card side applet. If PACE has been executed successfully previously, then the card has authenticated
+	 * us and a secure messaging channel has been established. If not, then the caller should request BAC execution as a next
+	 * step.
+	 * 
+	 * @param hasPACESucceeded indicates whether PACE has been executed successfully (in which case a secure messaging channel has been established)
+	 * 
+	 * @throws CardServiceException on error
+	 */
 	public void sendSelectApplet(boolean hasPACESucceeded) throws CardServiceException {
 		if (hasPACESucceeded) {
 			/* Use SM as set up by doPACE() */
+			LOGGER.info("DEBUG: wrapper = " + wrapper);
 			sendSelectApplet(wrapper, APPLET_AID);
 		} else {
 			/* Use plain messaging to select the applet, caller will have to do doBAC. */
@@ -292,62 +303,6 @@ public class PassportService extends PassportApduService implements Serializable
 		} catch (GeneralSecurityException gse) {
 			throw new CardServiceException(gse.toString());
 		}
-	}
-
-	private static byte[] computeKeySeedForBAC(BACKeySpec bacKey) throws GeneralSecurityException {
-		String documentNumber = bacKey.getDocumentNumber();
-		String dateOfBirth = bacKey.getDateOfBirth();
-		String dateOfExpiry = bacKey.getDateOfExpiry();
-
-		if (dateOfBirth == null || dateOfBirth.length() != 6) {
-			throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
-		}
-		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
-			throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
-		}
-		if (documentNumber == null) {
-			throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
-		}
-
-		documentNumber = fixDocumentNumber(documentNumber);
-
-		byte[] keySeed = Util.computeKeySeedForBAC(documentNumber, dateOfBirth, dateOfExpiry);
-
-		return keySeed;
-	}
-	
-	private static byte[] computeKeySeedForPACE(BACKeySpec bacKey) throws GeneralSecurityException {
-		String documentNumber = bacKey.getDocumentNumber();
-		String dateOfBirth = bacKey.getDateOfBirth();
-		String dateOfExpiry = bacKey.getDateOfExpiry();
-
-		if (dateOfBirth == null || dateOfBirth.length() != 6) {
-			throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
-		}
-		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
-			throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
-		}
-		if (documentNumber == null) {
-			throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
-		}
-
-		documentNumber = fixDocumentNumber(documentNumber);
-
-		byte[] keySeed = Util.computeKeySeedForPACE(documentNumber, dateOfBirth, dateOfExpiry);
-
-		return keySeed;
-	}
-
-	private static String fixDocumentNumber(String documentNumber) {
-		/* The document number, excluding trailing '<'. */
-		String minDocumentNumber = documentNumber.replace('<', ' ').trim().replace(' ', '<');
-
-		/* The document number, including trailing '<' until length 9. */
-		String maxDocumentNumber = minDocumentNumber;
-		while (maxDocumentNumber.length() < 9) {
-			maxDocumentNumber += "<";
-		}
-		return maxDocumentNumber;
 	}
 
 	/**
@@ -574,7 +529,7 @@ public class PassportService extends PassportApduService implements Serializable
 			BigInteger p = Util.getPrime(ephemeralParams);
 			if (pcdPublicKey.equals(piccPublicKey)) { throw new PACEException("PCD's public key and PICC's public key are the same in key agreement step!"); }
 			keyAgreement.doPhase(piccPublicKey, true);
-			sharedSecretBytes = keyAgreement.generateSecret();
+			sharedSecretBytes = keyAgreement.generateSecret();			
 		} catch (IllegalStateException ise) {
 			throw new PACEException("PCD side exception in key agreement step: " + ise.getMessage());
 		} catch (GeneralSecurityException gse) {
@@ -602,6 +557,7 @@ public class PassportService extends PassportApduService implements Serializable
 		 * Check authentication token T_PICC.
 		 */
 		try {
+			LOGGER.info("DEBUG: macKey = (" + macKey.getEncoded().length + ") " + Hex.bytesToHexString(macKey.getEncoded()));
 			byte[] pcdToken = Util.generateAuthenticationToken(oid, macKey, piccPublicKey);
 			byte[] step4Data = Util.wrapDO((byte)0x85, pcdToken);
 			byte[] step4Response = sendGeneralAuthenticate(wrapper, step4Data, true);
@@ -629,10 +585,11 @@ public class PassportService extends PassportApduService implements Serializable
 			if (cipherAlg.startsWith("DESede")) {
 				wrapper = new DESedeSecureMessagingWrapper(encKey, macKey);
 			} else if (cipherAlg.startsWith("AES")) {
-				wrapper = null; // new SecureMessagingWrapper(encKey, macKey, cipherAlg + "/CBC/NoPadding", Util.inferMacAlgorithmFromCipherAlgorithm(cipherAlg));
+				wrapper = new AESSecureMessagingWrapper(encKey, macKey);
 			}
 			LOGGER.info("DEBUG: Starting secure messaging based on PACE");
 		} catch (GeneralSecurityException gse) {
+			gse.printStackTrace();
 			throw new IllegalStateException("Security exception in secure messaging establishment: " + gse.getMessage());
 		}
 	}
@@ -886,7 +843,10 @@ public class PassportService extends PassportApduService implements Serializable
 	 */
 	public byte[] doAA(PublicKey publicKey, String digestAlgorithm, String signatureAlgorithm, byte[] challenge) throws CardServiceException {
 		try {
-			byte[] response = sendAA(challenge);
+			if (challenge == null || challenge.length != 8) {
+				throw new IllegalArgumentException("AA failed: bad challenge");
+			}
+			byte[] response = sendInternalAuthenticate(wrapper, challenge);			
 			return response;
 		} catch (IllegalArgumentException iae) {
 			// iae.printStackTrace();
@@ -941,28 +901,60 @@ public class PassportService extends PassportApduService implements Serializable
 			return new CardFileInputStream(maxBlockSize, fs);
 		}
 	}
+	
+	private static byte[] computeKeySeedForBAC(BACKeySpec bacKey) throws GeneralSecurityException {
+		String documentNumber = bacKey.getDocumentNumber();
+		String dateOfBirth = bacKey.getDateOfBirth();
+		String dateOfExpiry = bacKey.getDateOfExpiry();
 
-	/* ONLY PRIVATE METHODS BELOW */
-
-	/**
-	 * Performs the <i>Active Authentication</i> protocol. This method just
-	 * gives the response from the card without checking. Use
-	 * {@link #doAA(PublicKey)} instead.
-	 * 
-	 * @param publicKey
-	 *            the public key to use (usually read from the card)
-	 * @param challenge
-	 *            the random challenge of exactly 8 bytes
-	 * 
-	 * @return response from the card
-	 * 
-	 * @throws CardServiceException on error
-	 */
-	private byte[] sendAA(byte[] challenge)	throws CardServiceException {
-		if (challenge == null || challenge.length != 8) {
-			throw new IllegalArgumentException("AA failed: bad challenge");
+		if (dateOfBirth == null || dateOfBirth.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
 		}
-		byte[] response = sendInternalAuthenticate(wrapper, challenge);
-		return response;
+		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
+		}
+		if (documentNumber == null) {
+			throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
+		}
+
+		documentNumber = fixDocumentNumber(documentNumber);
+
+		byte[] keySeed = Util.computeKeySeedForBAC(documentNumber, dateOfBirth, dateOfExpiry);
+
+		return keySeed;
+	}
+	
+	private static byte[] computeKeySeedForPACE(BACKeySpec bacKey) throws GeneralSecurityException {
+		String documentNumber = bacKey.getDocumentNumber();
+		String dateOfBirth = bacKey.getDateOfBirth();
+		String dateOfExpiry = bacKey.getDateOfExpiry();
+
+		if (dateOfBirth == null || dateOfBirth.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of birth. Expected yyMMdd, found " + dateOfBirth);
+		}
+		if (dateOfExpiry == null || dateOfExpiry.length() != 6) {
+			throw new IllegalArgumentException("Wrong date format used for date of expiry. Expected yyMMdd, found " + dateOfExpiry);
+		}
+		if (documentNumber == null) {
+			throw new IllegalArgumentException("Wrong document number. Found " + documentNumber);
+		}
+
+		documentNumber = fixDocumentNumber(documentNumber);
+
+		byte[] keySeed = Util.computeKeySeedForPACE(documentNumber, dateOfBirth, dateOfExpiry);
+
+		return keySeed;
+	}
+
+	private static String fixDocumentNumber(String documentNumber) {
+		/* The document number, excluding trailing '<'. */
+		String minDocumentNumber = documentNumber.replace('<', ' ').trim().replace(' ', '<');
+
+		/* The document number, including trailing '<' until length 9. */
+		String maxDocumentNumber = minDocumentNumber;
+		while (maxDocumentNumber.length() < 9) {
+			maxDocumentNumber += "<";
+		}
+		return maxDocumentNumber;
 	}
 }

@@ -544,8 +544,7 @@ public class PassportApduService extends CardService {
 	 *
 	 * @throws CardServiceException if the resulting status word different from 9000
 	 */
-	public synchronized void sendMutualAuthenticate(APDUWrapper wrapper, byte[] signature)
-			throws CardServiceException {
+	public synchronized void sendMutualAuthenticate(APDUWrapper wrapper, byte[] signature) throws CardServiceException {
 		CommandAPDU capdu = new CommandAPDU(ISO7816.CLA_ISO7816, ISO7816.INS_EXTERNAL_AUTHENTICATE, 0, 0, signature);
 		ResponseAPDU rapdu = transmit(wrapper, capdu);
 		short sw = (short)rapdu.getSW();

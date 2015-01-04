@@ -56,12 +56,42 @@ public class VerificationStatus {
 		FAILED,			/* Present, checked, and not ok */
 		SUCCEEDED;		/* Present, checked, and ok */
 	};
+	
+	/**
+	 * Reason for failing.
+	 */
+	public enum ReasonCode {
+		UNKNOWN,
+		SUCCEEDED,
+		NOT_SUPPORTED,
+		UNEXPECTED_EXCEPTION_FAILURE,
+		UNSUPPORTED_KEY_TYPE_FAILURE,
+		SIGNATURE_CHECKED,
+		SIGNATURE_FAILURE,
+		UNSUPPORTED_SIGNATURE_ALGORITHM_FAILURE,
+		READ_ERROR_DG14_FAILURE,
+		READ_ERROR_DG15_FAILURE,
+		READ_ERROR_SOD_FAILURE,
+		FOUND_A_CHAIN_SUCCEEDED,
+		COULD_NOT_BUILD_CHAIN_FAILURE,
+		NO_CSCA_TRUST_ANCHORS_FOUND_FAILURE,
+		USING_SAC_SO_BAC_NOT_CHECKED,
+		INSUFFICIENT_CREDENTIALS,
+		STORED_HASH_NOT_FOUND_FAILURE,
+		UNSUPPORTED_DIGEST_ALGORITHM_FAILURE,
+		ALL_HASHES_MATCH,
+		HASH_MISMATCH_FAILURE;
+	}
+	
+	/* Reason strings. FIXME: move these to resources for localization. */
+//	private static final String
+
 
 	/* Verdict for this verification feature. */
 	private Verdict aa, bac, sac, cs, ht, ds, eac;
 
 	/* Textual reason for the verdict. */
-	private String aaReason, bacReason, sacReason, csReason, htReason, dsReason, eacReason;
+	private ReasonCode aaReason, bacReason, sacReason, csReason, htReason, dsReason, eacReason;
 
 	/* By products of the verification process that may be useful for relying parties to display. */
 	private List<BACKeySpec> triedBACEntries; /* As a result of BAC testing, this contains all tried BAC entries. */
@@ -92,7 +122,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a reason string
 	 */
-	public String getAAReason() {
+	public ReasonCode getAAReason() {
 		return aaReason;
 	}
 	
@@ -112,7 +142,7 @@ public class VerificationStatus {
 	 * @param reason a reason string
 	 * @param aaResult the result
 	 */
-	public void setAA(Verdict v, String reason, ActiveAuthenticationResult aaResult) {
+	public void setAA(Verdict v, ReasonCode reason, ActiveAuthenticationResult aaResult) {
 		this.aa = v;
 		this.aaReason = reason;
 		this.aaResult = aaResult;
@@ -132,7 +162,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a verdict string
 	 */
-	public String getBACReason() {
+	public ReasonCode getBACReason() {
 		return bacReason;
 	}
 
@@ -152,7 +182,7 @@ public class VerificationStatus {
 	 * @param reason a reason string
 	 * @param triedBACEntries the list of BAC entries that were tried
 	 */
-	public void setBAC(Verdict v, String reason, List<BACKeySpec> triedBACEntries) {
+	public void setBAC(Verdict v, ReasonCode reason, List<BACKeySpec> triedBACEntries) {
 		this.bac = v;
 		this.bacReason = reason;
 		this.triedBACEntries = triedBACEntries;
@@ -172,7 +202,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a reason string
 	 */
-	public String getSACReason() {
+	public ReasonCode getSACReason() {
 		return sacReason;
 	}
 
@@ -182,7 +212,7 @@ public class VerificationStatus {
 	 * @param v a verdict
 	 * @param reason a reason string
 	 */
-	public void setSAC(Verdict v, String reason) {
+	public void setSAC(Verdict v, ReasonCode reason) {
 		this.sac = v;
 		this.sacReason = reason;
 	}
@@ -201,7 +231,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a reason string
 	 */
-	public String getCSReason() {
+	public ReasonCode getCSReason() {
 		return csReason;
 	}
 
@@ -221,7 +251,7 @@ public class VerificationStatus {
 	 * @param reason the reason string
 	 * @param certificateChain the certificate chain between DS and CSCA
 	 */
-	public void setCS(Verdict v, String reason, List<Certificate> certificateChain) {
+	public void setCS(Verdict v, ReasonCode reason, List<Certificate> certificateChain) {
 		this.cs = v;
 		this.csReason = reason;
 		this.certificateChain = certificateChain;
@@ -241,7 +271,7 @@ public class VerificationStatus {
 	 *
 	 * @return a reason string
 	 */
-	public String getDSReason() {
+	public ReasonCode getDSReason() {
 		return dsReason;
 	}
 	
@@ -252,7 +282,7 @@ public class VerificationStatus {
 	 * @param v the status to set
 	 * @param reason reason string
 	 */
-	public void setDS(Verdict v, String reason) {
+	public void setDS(Verdict v, ReasonCode reason) {
 		this.ds = v;
 		this.dsReason = reason;
 	}
@@ -271,7 +301,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a reason string
 	 */
-	public String getHTReason() {
+	public ReasonCode getHTReason() {
 		return htReason;
 	}
 
@@ -291,7 +321,7 @@ public class VerificationStatus {
 	 * @param reason the reason string
 	 * @param hashResults the hash match results
 	 */
-	public void setHT(Verdict v, String reason, Map<Integer, HashMatchResult> hashResults) {
+	public void setHT(Verdict v, ReasonCode reason, Map<Integer, HashMatchResult> hashResults) {
 		this.ht = v;
 		this.htReason = reason;
 		this.hashResults = hashResults;
@@ -311,7 +341,7 @@ public class VerificationStatus {
 	 * 
 	 * @return a reasons string
 	 */
-	public String getEACReason() {
+	public ReasonCode getEACReason() {
 		return eacReason;
 	}
 	
@@ -331,7 +361,7 @@ public class VerificationStatus {
 	 * @param eacResult the EAC result
 	 * @param reason reason string
 	 */
-	public void setEAC(Verdict v, String reason, TerminalAuthenticationResult eacResult) {
+	public void setEAC(Verdict v, ReasonCode reason, TerminalAuthenticationResult eacResult) {
 		this.eac = v;
 		this.eacReason = reason;
 		this.eacResult = eacResult;
@@ -343,7 +373,7 @@ public class VerificationStatus {
 	 * @param verdict the status to set
 	 * @param reason reason string
 	 */
-	public void setAll(Verdict verdict, String reason) {
+	public void setAll(Verdict verdict, ReasonCode reason) {
 		setAA(verdict, reason, null);
 		setBAC(verdict, reason, null);
 		setCS(verdict, reason, null);

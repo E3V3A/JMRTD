@@ -330,7 +330,6 @@ public class MRTDTrustStore {
 		addCSCAAnchors(getAsAnchors(rootCerts));
 	}
 
-	/* FIXME: skip KeyStore, and add directly as CertStore. */
 	private void addAsCSCAMasterList(URI uri) throws IOException, GeneralSecurityException {
 		URLConnection urlConnecton = uri.toURL().openConnection();
 		DataInputStream dataInputStream = new DataInputStream(urlConnecton.getInputStream());
