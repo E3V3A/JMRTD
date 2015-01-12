@@ -303,6 +303,10 @@ public class Passport {
 
 			if (shouldDoBAC) {
 				BACKeySpec bacKeySpec = tryToDoBAC(service, bacStore);
+				if (featureStatus.hasBAC() == FeatureStatus.Verdict.UNKNOWN) {
+					/* For some reason our test did not result in setting BAC, still apparently BAC is required. */
+					featureStatus.setBAC(FeatureStatus.Verdict.PRESENT);
+				}
 				documentNumber = bacKeySpec.getDocumentNumber();
 			}
 		}

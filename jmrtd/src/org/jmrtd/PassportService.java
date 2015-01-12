@@ -622,7 +622,6 @@ public class PassportService extends PassportApduService implements Serializable
 				throw new IllegalStateException("Unsupported algorithm \"" + agreementAlg + "\"");
 			}
 			keyPairGenerator.initialize(params);
-
 			KeyPair keyPair = keyPairGenerator.generateKeyPair();
 
 			KeyAgreement agreement = KeyAgreement.getInstance(agreementAlg);
@@ -650,8 +649,6 @@ public class PassportService extends PassportApduService implements Serializable
 				keyData = ecPublicKey.getQ().getEncoded();
 				byte[] t = Util.i2os(ecPublicKey.getQ().getX().toBigInteger());
 				keyHash = Util.alignKeyDataToSize(t, ecPublicKey.getParameters().getCurve().getFieldSize() / 8);
-			} else {
-				throw new IllegalStateException("Unsupported algorithm \"" + agreementAlg + "\", don't know how to select hash function");
 			}
 			keyData = Util.wrapDO((byte)0x91, keyData);
 			if (keyId.compareTo(BigInteger.ZERO) >= 0) {
