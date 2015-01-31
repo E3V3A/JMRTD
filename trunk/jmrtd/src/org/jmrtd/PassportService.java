@@ -795,7 +795,7 @@ public class PassportService extends PassportApduService implements Serializable
 			/* FIXME: idPICC should be public key in case of PACE. See BSI TR 03110 v2.03 4.4. */
 			byte[] idPICC = new byte[documentNumber.length() + 1];
 			System.arraycopy(documentNumber.getBytes("ISO-8859-1"), 0, idPICC, 0, documentNumber.length());
-			idPICC[idPICC.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);			
+			idPICC[idPICC.length - 1] = (byte)MRZInfo.checkDigit(documentNumber);
 
 			ByteArrayOutputStream dtbs = new ByteArrayOutputStream();
 			dtbs.write(idPICC);

@@ -188,6 +188,8 @@ public class LDS {
 		return result;
 	}
 
+	/* ADDERS. */
+	
 	public void add(short fid, InputStream inputStream, int length) throws IOException {
 		fetchers.put(fid, new SplittableInputStream(inputStream, length));
 	}
@@ -231,6 +233,8 @@ public class LDS {
 		}
 	}
 
+	/* GETTERS. */
+	
 	public LDSFile getFile(short fid) throws IOException {
 		LDSFile file = files.get(fid);
 		if (file != null) {
@@ -240,25 +244,6 @@ public class LDS {
 		file = LDSFileUtil.getLDSFile(fid, getInputStream(fid));
 		files.put(fid, file);
 		return file;
-	}
-
-	public CardAccessFile getCardAccessFile() throws IOException {
-		return (CardAccessFile)getFile(PassportService.EF_CARD_ACCESS);
-	}
-	
-	public CVCAFile getCVCAFile() throws IOException {
-		/* Check DG14 for available CVCA file ids. */
-		short cvcaFID = PassportService.EF_CVCA;
-		DG14File dg14 = getDG14File();
-		if (dg14 == null) { throw new IOException("EF.DF14 not available in LDS"); }
-		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
-		LOGGER.warning("DEBUG: cvcaFIDs = " + cvcaFIDs);
-		if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
-			if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
-			cvcaFID = cvcaFIDs.get(0).shortValue();
-		}
-		CVCAFile cvca = (CVCAFile)getFile(cvcaFID); // FIXME: should we check for ClassCastException?
-		return cvca;
 	}
 
 	public InputStream getInputStream(short fid) throws IOException {
@@ -281,6 +266,27 @@ public class LDS {
 	public DG14File getDG14File() throws IOException { return (DG14File)getFile(PassportService.EF_DG14); }
 	public DG15File getDG15File() throws IOException { return (DG15File)getFile(PassportService.EF_DG15); }
 
+	/* FIXME: Both CVCA and CardAccess appear to use FID 0x011C. */
+
+	public CardAccessFile getCardAccessFile() throws IOException {
+		return (CardAccessFile)getFile(PassportService.EF_CARD_ACCESS);
+	}
+
+	public CVCAFile getCVCAFile() throws IOException {
+		/* Check DG14 for available CVCA file ids. */
+		short cvcaFID = PassportService.EF_CVCA;
+		DG14File dg14 = getDG14File();
+		if (dg14 == null) { throw new IOException("EF.DF14 not available in LDS"); }
+		List<Short> cvcaFIDs = dg14.getCVCAFileIds();
+		LOGGER.warning("DEBUG: cvcaFIDs = " + cvcaFIDs);
+		if (cvcaFIDs != null && cvcaFIDs.size() != 0) {
+			if (cvcaFIDs.size() > 1) { LOGGER.warning("More than one CVCA file id present in DG14."); }
+			cvcaFID = cvcaFIDs.get(0).shortValue();
+		}
+		CVCAFile cvca = (CVCAFile)getFile(cvcaFID); // FIXME: should we check for ClassCastException?
+		return cvca;
+	}
+	
 	private void put(short fid, LDSFile file) {
 		this.files.put(fid, file);
 		byte[] bytes = file.getEncoded();
