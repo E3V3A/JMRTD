@@ -141,8 +141,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	PKCS1_MD4_WITH_RSA_OID = "1.2.840.113549.1.1.3",
 	PKCS1_MD5_WITH_RSA_OID = "1.2.840.113549.1.1.4",
 	PKCS1_SHA1_WITH_RSA_OID = "1.2.840.113549.1.1.5",
-//	PKCS1_RSAOAEP_ENC_SET = "1.2.840.113549.1.1.6", // other identifier: ripemd160WithRSAEncryption
-//	PKCS1_RSAES_OAEP = "1.2.840.113549.1.1.7",
+	//	PKCS1_RSAOAEP_ENC_SET = "1.2.840.113549.1.1.6", // other identifier: ripemd160WithRSAEncryption
+	//	PKCS1_RSAES_OAEP = "1.2.840.113549.1.1.7",
 	PKCS1_SHA256_WITH_RSA_AND_MGF1 = "1.2.840.113549.1.1.8",
 	PKCS1_RSASSA_PSS_OID = "1.2.840.113549.1.1.10",
 	PKCS1_SHA256_WITH_RSA_OID = "1.2.840.113549.1.1.11",
@@ -310,7 +310,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		ASN1Primitive content = null;
 		int tagNo = -1;
 		ASN1Encodable asn1Encodable = sequence.getObjectAt(1);
-		
+
 		/*
 		 * Most EU passports have DERTaggedObject,
 		 * New Zealand has BERTaggedObject,
@@ -399,21 +399,40 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			return lookupMnemonicByOID(getLDSSecurityObject(signedData).getDigestAlgorithmIdentifier().getAlgorithm().getId());      
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
-			throw new IllegalStateException(nsae.toString());
+			return null; // throw new IllegalStateException(nsae.toString());
 		}
 	}
 
 	/**
-	 * Gets the name of the algorithm used in the signature.
+	 * Gets the name of the digest algorithm used in the signature.
+	 * 
+	 * @return an algorithm string such as "SHA-1" or "SHA-256"
+	 */
+	public String getSignerInfoDigestAlgorithm() {
+		try {
+			SignerInfo signerInfo = getSignerInfo(signedData);
+			String digestAlgOID = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
+			return lookupMnemonicByOID(digestAlgOID);
+		} catch (NoSuchAlgorithmException nsae) {
+			nsae.printStackTrace();
+			return null; // throw new IllegalStateException(nsae.toString());
+		}
+	}
+
+	/**
+	 * Gets the name of the digest encryption algorithm used in the signature.
 	 * 
 	 * @return an algorithm string such as "SHA256withRSA"
 	 */
 	public String getDigestEncryptionAlgorithm() {
 		try {
-			return lookupMnemonicByOID(getSignerInfo(signedData).getDigestEncryptionAlgorithm().getAlgorithm().getId());      
+			SignerInfo signerInfo = getSignerInfo(signedData);
+			String digestEncryptionAlgorithmOID = signerInfo.getDigestEncryptionAlgorithm().getAlgorithm().getId();
+			if (digestEncryptionAlgorithmOID == null) { return null; }
+			return lookupMnemonicByOID(digestEncryptionAlgorithmOID);      
 		} catch (NoSuchAlgorithmException nsae) {
 			nsae.printStackTrace();
-			throw new IllegalStateException(nsae.toString());
+			return null; // throw new IllegalStateException(nsae.toString());
 		}
 	}
 
@@ -470,7 +489,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		for (int i = 0; i < certs.size(); i++) {
 			org.bouncycastle.asn1.x509.Certificate certAsASN1Object = org.bouncycastle.asn1.x509.Certificate.getInstance((ASN1Sequence)certs.getObjectAt(i));
 			certObject = new X509CertificateObject(certAsASN1Object); // NOTE: >= BC 1.48
-//			certObject = new X509CertificateObject(X509CertificateStructure.getInstance(certAsASN1Object)); // NOTE: <= BC 1.47
+			//			certObject = new X509CertificateObject(X509CertificateStructure.getInstance(certAsASN1Object)); // NOTE: <= BC 1.47
 			certSpec = certObject.getEncoded();
 		}
 
@@ -506,19 +525,22 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 	 */
 	/* FIXME: move this out of lds package. */
 	public boolean checkDocSignature(Certificate docSigningCert) throws GeneralSecurityException {
-		byte[] eContent = getEContent(signedData);
-		byte[] signature = getEncryptedDigest(signedData);
+		byte[] eContent = getEContent();
+		byte[] signature = getEncryptedDigest();
 
-		SignerInfo signerInfo = getSignerInfo(signedData);
-		String encAlgOID = signerInfo.getDigestEncryptionAlgorithm().getAlgorithm().getId();
+		String digestEncryptionAlgorithm = null;
+		try {
+			digestEncryptionAlgorithm = getDigestEncryptionAlgorithm();
+		} catch (Exception e) {
+			digestEncryptionAlgorithm = null;
+		}
 
 		/*
 		 * For the cases where the signature is simply a digest (haven't seen a passport like this, 
 		 * thus this is guessing)
 		 */
-		if (encAlgOID == null) {
-			String digestAlgOID = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
-			String digestAlg = lookupMnemonicByOID(digestAlgOID);
+		if (digestEncryptionAlgorithm == null) {
+			String digestAlg = getSignerInfoDigestAlgorithm();
 			MessageDigest digest = null;
 			try {
 				digest = MessageDigest.getInstance(digestAlg);
@@ -530,32 +552,29 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			return Arrays.equals(digestBytes, signature);
 		}
 
-		String encAlg = lookupMnemonicByOID(encAlgOID);
 
-		
-		/* For the RSA_SA_PSS
+		/* For RSA_SA_PSS
 		 *    1. the default hash is SHA1,
 		 *    2. The hash id is not encoded in OID
 		 * So it has to be specified "manually".
 		 */
-		if (PKCS1_RSASSA_PSS_OID.equals(encAlgOID)) {
-			String digestAlg = lookupMnemonicByOID(signerInfo.getDigestAlgorithm().getAlgorithm().getId());
-			encAlg = digestAlg.replace("-", "") + "withRSA/PSS";
+		if ("SSAwithRSA/PSS".equals(digestEncryptionAlgorithm)) {
+			String digestAlg = getSignerInfoDigestAlgorithm();
+			digestEncryptionAlgorithm = digestAlg.replace("-", "") + "withRSA/PSS";
 		}
 
-		if (PKCS1_RSA_OID.equals(encAlgOID)) {
-			String digestJavaString = lookupMnemonicByOID(getSignerInfo(signedData).getDigestAlgorithm().getAlgorithm().getId());
-			encAlg = digestJavaString.replace("-", "") + "withRSA";
+		if ("RSA".equals(digestEncryptionAlgorithm)) {
+			String digestJavaString = getSignerInfoDigestAlgorithm();
+			digestEncryptionAlgorithm = digestJavaString.replace("-", "") + "withRSA";
 		}
 
-		LOGGER.info("OID = " + encAlgOID);
-		LOGGER.info("encAlg = " + encAlg);
+		LOGGER.info("digestEncryptionAlgorithm = " + digestEncryptionAlgorithm);
 
 		Signature sig = null;
 		try {
-			sig = Signature.getInstance(encAlg);
+			sig = Signature.getInstance(digestEncryptionAlgorithm);
 		} catch (Exception e) {
-			sig = Signature.getInstance(encAlg, BC_PROVIDER);
+			sig = Signature.getInstance(digestEncryptionAlgorithm, BC_PROVIDER);
 		}
 		sig.initVerify(docSigningCert);
 		sig.update(eContent);
@@ -645,8 +664,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			String contentType = encapContentInfo.getContentType().getId();
 			DEROctetString eContent = (DEROctetString)encapContentInfo.getContent();
 			if (!(ICAO_LDS_SOD_OID.equals(contentType)
-				|| SDU_LDS_SOD_OID.equals(contentType)
-				|| ICAO_LDS_SOD_ALT_OID.equals(contentType))) {
+					|| SDU_LDS_SOD_OID.equals(contentType)
+					|| ICAO_LDS_SOD_ALT_OID.equals(contentType))) {
 				LOGGER.warning("SignedData does not appear to contain an LDS SOd. (content type is " + contentType + ", was expecting " + ICAO_LDS_SOD_OID + ")");
 			}
 			ASN1InputStream inputStream = new ASN1InputStream(new ByteArrayInputStream(eContent.getOctets()));
@@ -661,309 +680,309 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 				LOGGER.warning("Ignoring extra object found after LDSSecurityObject...");
 			}
 			return sod;
-			} catch (IOException ioe) {
-				throw new IllegalStateException("Could not read security object in signedData");
-			}
-		}
-
-		/**
-		 * Gets the contents of the security object over which the
-		 * signature is to be computed. 
-		 * 
-		 * See RFC 3369, Cryptographic Message Syntax, August 2002,
-		 * Section 5.4 for details.
-		 * 
-		 * FIXME: Maybe throw an exception instead of issuing warnings
-		 * on stderr if signed attributes don't check out.
-		 *
-		 * @see #getDocSigningCertificate()
-		 * @see #getSignature()
-		 * 
-		 * @return the contents of the security object over which the
-		 *         signature is to be computed
-		 */
-		private static byte[] getEContent(SignedData signedData) {
-			SignerInfo signerInfo = getSignerInfo(signedData);
-			ASN1Set signedAttributesSet = signerInfo.getAuthenticatedAttributes();
-
-			ContentInfo contentInfo = signedData.getEncapContentInfo();
-			byte[] contentBytes = ((DEROctetString)contentInfo.getContent()).getOctets();
-
-			if (signedAttributesSet.size() == 0) {
-				/* Signed attributes absent, return content to be signed... */
-				return contentBytes;
-			} else {
-				/* Signed attributes present (i.e. a structure containing a hash of the content), return that structure to be signed... */
-				/* This option is taken by ICAO passports. */
-				byte[] attributesBytes = null;
-				String digAlg = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
-				try {
-					attributesBytes = signedAttributesSet.getEncoded(ASN1Encoding.DER);
-
-					/* We'd better check that the content actually digests to the hash value contained! ;) */
-					Enumeration<?> attributes = signedAttributesSet.getObjects();
-					byte[] storedDigestedContent = null;
-					while (attributes.hasMoreElements()) {
-						Attribute attribute = Attribute.getInstance((ASN1Sequence)attributes.nextElement());
-						ASN1ObjectIdentifier attrType = attribute.getAttrType();
-						if (RFC_3369_MESSAGE_DIGEST_OID.equals(attrType.getId())) {
-							ASN1Set attrValuesSet = attribute.getAttrValues();
-							if (attrValuesSet.size() != 1) {
-								LOGGER.warning("Expected only one attribute value in signedAttribute message digest in eContent!");
-							}
-							storedDigestedContent = ((DEROctetString)attrValuesSet.getObjectAt(0)).getOctets();
-						}
-					}
-					if (storedDigestedContent == null) {
-						LOGGER.warning("Error extracting signedAttribute message digest in eContent!");
-					}	
-					MessageDigest dig = MessageDigest.getInstance(digAlg);
-					byte[] computedDigestedContent = dig.digest(contentBytes);
-					if (!Arrays.equals(storedDigestedContent, computedDigestedContent)) {
-						LOGGER.warning("Error checking signedAttribute message digest in eContent!");
-					}
-				} catch (NoSuchAlgorithmException nsae) {
-					nsae.printStackTrace();
-					LOGGER.warning("Error checking signedAttributes in eContent! No such algorithm: \"" + digAlg + "\"");
-				} catch (IOException ioe) {
-					ioe.printStackTrace();
-					LOGGER.severe("Error getting signedAttributes: " + ioe.getMessage());
-				}
-				return attributesBytes;
-			}
-		}
-
-		private IssuerAndSerialNumber getIssuerAndSerialNumber() {
-			SignerInfo signerInfo = getSignerInfo(signedData);
-			SignerIdentifier signerIdentifier = signerInfo.getSID();
-			IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(signerIdentifier.getId());
-			X500Name issuer = issuerAndSerialNumber.getName();
-			BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
-			return new IssuerAndSerialNumber(issuer, serialNumber);
-		}
-
-		/**
-		 * Gets the stored signature of the security object.
-		 * 
-		 * @see #getDocSigningCertificate()
-		 * 
-		 * @return the signature
-		 */
-		private static byte[] getEncryptedDigest(SignedData signedData) {
-			SignerInfo signerInfo = getSignerInfo(signedData);
-			return signerInfo.getEncryptedDigest().getOctets();
-		}
-
-		/* METHODS BELOW ARE FOR CONSTRUCTING SOD STRUCTS */
-
-		private static SignedData createSignedData(String digestAlgorithm, String digestEncryptionAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes, byte[] encryptedDigest,
-				X509Certificate docSigningCertificate) throws NoSuchAlgorithmException, CertificateException, IOException {
-			ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
-			ContentInfo contentInfo = createContentInfo(digestAlgorithm, dataGroupHashes);
-			byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
-			ASN1Set certificates =  createSingletonSet(createCertificate(docSigningCertificate));
-			ASN1Set crls = null;
-			ASN1Set signerInfos = createSingletonSet(createSignerInfo(digestAlgorithm, digestEncryptionAlgorithm, content, encryptedDigest, docSigningCertificate).toASN1Object());
-			return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
-		}
-
-		private static SignedData createSignedData(String digestAlgorithm,
-				String digestEncryptionAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
-				X509Certificate docSigningCertificate, String provider)
-						throws NoSuchAlgorithmException, CertificateException, IOException {
-			return createSignedData(digestAlgorithm, digestEncryptionAlgorithm,
-					dataGroupHashes, privateKey, docSigningCertificate, provider,
-					null, null);
-		}
-
-		private static SignedData createSignedData(String digestAlgorithm,
-				String digestEncryptionAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
-				X509Certificate docSigningCertificate, String provider,
-				String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, CertificateException, IOException {
-			ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
-			ContentInfo contentInfo = createContentInfo(digestAlgorithm,
-					dataGroupHashes, ldsVersion, unicodeVersion);
-			byte[] content = ((DEROctetString) contentInfo.getContent()).getOctets();
-
-			byte[] encryptedDigest = null;
-			try {
-				byte[] dataToBeSigned = createAuthenticatedAttributes(digestAlgorithm, content).getEncoded(ASN1Encoding.DER);
-				Signature s = null;
-				if (provider != null) {
-					s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
-				} else {
-					s = Signature.getInstance(digestEncryptionAlgorithm);            	
-				}
-				s.initSign(privateKey);
-				s.update(dataToBeSigned);
-				encryptedDigest = s.sign();
-			} catch (Exception e) {
-				e.printStackTrace();
-				return null;
-			}
-			ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));
-			ASN1Set crls = null;
-			ASN1Set signerInfos = createSingletonSet(createSignerInfo(
-					digestAlgorithm, digestEncryptionAlgorithm, content,
-					encryptedDigest, docSigningCertificate).toASN1Object());
-			return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
-		}
-
-		private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
-			ASN1ObjectIdentifier algorithmIdentifier = new ASN1ObjectIdentifier(lookupOIDByMnemonic(digestAlgorithm));
-			//		ASN1Primitive[] result = { algorithmIdentifier };
-			ASN1EncodableVector v = new ASN1EncodableVector();
-			v.add(algorithmIdentifier);
-			return new DLSequence(v);
-		}
-
-		private static ASN1Sequence createCertificate(X509Certificate cert) throws CertificateException {
-			try {
-				byte[] certSpec = cert.getEncoded();
-				ASN1InputStream asn1In = new ASN1InputStream(certSpec);
-				try {
-					ASN1Sequence certSeq = (ASN1Sequence)asn1In.readObject();
-					return certSeq;
-				} finally {
-					asn1In.close();
-				}
-			} catch (IOException ioe) {
-				throw new CertificateException("Could not construct certificate byte stream");
-			}
-		}
-
-		private static ContentInfo createContentInfo(String digestAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes) throws NoSuchAlgorithmException, IOException {
-			return createContentInfo(digestAlgorithm, dataGroupHashes, null, null);
-		}
-
-		private static ContentInfo createContentInfo(
-				String digestAlgorithm,
-				Map<Integer, byte[]> dataGroupHashes,
-				String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, IOException {
-			DataGroupHash[] dataGroupHashesArray = new DataGroupHash[dataGroupHashes.size()];
-			int i = 0;
-			for (int dataGroupNumber: dataGroupHashes.keySet()) {
-				byte[] hashBytes = dataGroupHashes.get(dataGroupNumber);
-				DataGroupHash hash = new DataGroupHash(dataGroupNumber, new DEROctetString(hashBytes));
-				dataGroupHashesArray[i++] = hash;
-			}
-			AlgorithmIdentifier digestAlgorithmIdentifier = AlgorithmIdentifier.getInstance(lookupOIDByMnemonic(digestAlgorithm));
-			LDSVersionInfo ldsVersionInfo;
-			LDSSecurityObject securityObject = null;
-			if (ldsVersion == null) {
-				ldsVersionInfo = null;
-				securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray);
-			} else {
-				ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
-				securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
-			}
-			return new ContentInfo(new ASN1ObjectIdentifier(ICAO_LDS_SOD_OID), new DEROctetString(securityObject));
-		}
-
-		private static SignerInfo createSignerInfo(String digestAlgorithm,
-				String digestEncryptionAlgorithm, byte[] content,
-				byte[] encryptedDigest, X509Certificate docSigningCertificate) throws NoSuchAlgorithmException {
-			/* Get the issuer name (CN, O, OU, C) from the cert and put it in a SignerIdentifier struct. */
-			X500Principal docSignerPrincipal = ((X509Certificate)docSigningCertificate).getIssuerX500Principal();
-			X500Name docSignerName = new X500Name(docSignerPrincipal.getName(X500Principal.RFC2253));
-			BigInteger serial = ((X509Certificate)docSigningCertificate).getSerialNumber();
-			SignerIdentifier sid = new SignerIdentifier(new IssuerAndSerialNumber(docSignerName, serial));
-
-			AlgorithmIdentifier digestAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm)); 
-			AlgorithmIdentifier digestEncryptionAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestEncryptionAlgorithm));
-
-			ASN1Set authenticatedAttributes = createAuthenticatedAttributes(digestAlgorithm, content); // struct containing the hash of content
-			ASN1OctetString encryptedDigestObject = new DEROctetString(encryptedDigest); // this is the signature
-			ASN1Set unAuthenticatedAttributes = null; // should be empty set?
-			return new SignerInfo(sid, digestAlgorithmObject, authenticatedAttributes, digestEncryptionAlgorithmObject, encryptedDigestObject, unAuthenticatedAttributes);
-		}
-
-		private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes) throws NoSuchAlgorithmException {
-			/* Check bug found by Paulo Assumpco. */
-			if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; }
-			MessageDigest dig = MessageDigest.getInstance(digestAlgorithm);
-			byte[] digestedContentBytes = dig.digest(contentBytes);
-			ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
-			Attribute contentTypeAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_CONTENT_TYPE_OID), createSingletonSet(new ASN1ObjectIdentifier(ICAO_LDS_SOD_OID)));
-			Attribute messageDigestAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_MESSAGE_DIGEST_OID), createSingletonSet(digestedContent));
-			ASN1Object[] result = { contentTypeAttribute.toASN1Primitive(), messageDigestAttribute.toASN1Primitive() };
-			return new DLSet(result);
-		}
-
-		private static ASN1Set createSingletonSet(ASN1Object e) {
-			return new DLSet(new ASN1Encodable[] { e });
-		}
-
-		/**
-		 * Gets the common mnemonic string (such as "SHA1", "SHA256withRSA") given an OID.
-		 *
-		 * @param oid an OID
-		 *
-		 * @throws NoSuchAlgorithmException if the provided OID is not yet supported
-		 */
-		private static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {
-			if (oid == null) { return null; }
-			if (oid.equals(X509ObjectIdentifiers.organization.getId())) { return "O"; }
-			if (oid.equals(X509ObjectIdentifiers.organizationalUnitName.getId())) { return "OU"; }
-			if (oid.equals(X509ObjectIdentifiers.commonName.getId())) { return "CN"; }
-			if (oid.equals(X509ObjectIdentifiers.countryName.getId())) { return "C"; }
-			if (oid.equals(X509ObjectIdentifiers.stateOrProvinceName.getId())) { return "ST"; }
-			if (oid.equals(X509ObjectIdentifiers.localityName.getId())) { return "L"; }
-			if(oid.equals(X509ObjectIdentifiers.id_SHA1.getId())) { return "SHA-1"; }
-			if(oid.equals(NISTObjectIdentifiers.id_sha224.getId())) { return "SHA-224"; }
-			if(oid.equals(NISTObjectIdentifiers.id_sha256.getId())) { return "SHA-256"; }
-			if(oid.equals(NISTObjectIdentifiers.id_sha384.getId())) { return "SHA-384"; }
-			if(oid.equals(NISTObjectIdentifiers.id_sha512.getId())) { return "SHA-512"; }
-			if (oid.equals(X9_SHA1_WITH_ECDSA_OID)) { return "SHA1withECDSA"; }
-			if (oid.equals(X9_SHA224_WITH_ECDSA_OID)) { return "SHA224withECDSA"; }
-			if (oid.equals(X9_SHA256_WITH_ECDSA_OID)) { return "SHA256withECDSA"; }		
-			if (oid.equals(PKCS1_RSA_OID)) { return "RSA"; }
-			if (oid.equals(PKCS1_MD2_WITH_RSA_OID)) { return "MD2withRSA"; }
-			if (oid.equals(PKCS1_MD4_WITH_RSA_OID)) { return "MD4withRSA"; }
-			if (oid.equals(PKCS1_MD5_WITH_RSA_OID)) { return "MD5withRSA"; }
-			if (oid.equals(PKCS1_SHA1_WITH_RSA_OID)) { return "SHA1withRSA"; }
-			if (oid.equals(PKCS1_SHA256_WITH_RSA_OID)) { return "SHA256withRSA"; }
-			if (oid.equals(PKCS1_SHA384_WITH_RSA_OID)) { return "SHA384withRSA"; }
-			if (oid.equals(PKCS1_SHA512_WITH_RSA_OID)) { return "SHA512withRSA"; }
-			if (oid.equals(PKCS1_SHA224_WITH_RSA_OID)) { return "SHA224withRSA"; }
-			if (oid.equals(IEEE_P1363_SHA1_OID)) { return "SHA-1"; }
-			if (oid.equals(PKCS1_RSASSA_PSS_OID)) { return "SSAwithRSA/PSS"; }
-			if (oid.equals(PKCS1_SHA256_WITH_RSA_AND_MGF1)) { return "SHA256withRSAandMGF1"; }
-			throw new NoSuchAlgorithmException("Unknown OID " + oid);
-		}
-
-		private static String lookupOIDByMnemonic(String name) throws NoSuchAlgorithmException {
-			if (name.equals("O")) { return X509ObjectIdentifiers.organization.getId(); }
-			if (name.equals("OU")) { return X509ObjectIdentifiers.organizationalUnitName.getId(); }
-			if (name.equals("CN")) { return X509ObjectIdentifiers.commonName.getId(); }
-			if (name.equals("C")) { return X509ObjectIdentifiers.countryName.getId(); }
-			if (name.equals("ST")) { return X509ObjectIdentifiers.stateOrProvinceName.getId(); }
-			if (name.equals("L")) { return X509ObjectIdentifiers.localityName.getId(); }
-			if(name.equalsIgnoreCase("SHA-1") || name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1.getId(); }
-			if(name.equalsIgnoreCase("SHA-224") || name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224.getId(); }
-			if(name.equalsIgnoreCase("SHA-256") || name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256.getId(); }
-			if(name.equalsIgnoreCase("SHA-384") || name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384.getId(); }
-			if(name.equalsIgnoreCase("SHA-512") || name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512.getId(); }
-			if (name.equalsIgnoreCase("RSA")) { return PKCS1_RSA_OID; }
-			if (name.equalsIgnoreCase("MD2withRSA")) { return PKCS1_MD2_WITH_RSA_OID; } 
-			if (name.equalsIgnoreCase("MD4withRSA")) { return PKCS1_MD4_WITH_RSA_OID; } 
-			if (name.equalsIgnoreCase("MD5withRSA")) { return  PKCS1_MD5_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA1withRSA")) { return  PKCS1_SHA1_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA256withRSA")) { return PKCS1_SHA256_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA384withRSA")) { return PKCS1_SHA384_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA512withRSA")) { return PKCS1_SHA512_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA224withRSA")) { return PKCS1_SHA224_WITH_RSA_OID; }
-			if (name.equalsIgnoreCase("SHA1withECDSA")) { return X9_SHA1_WITH_ECDSA_OID; }
-			if (name.equalsIgnoreCase("SHA224withECDSA")) { return X9_SHA224_WITH_ECDSA_OID; }
-			if (name.equalsIgnoreCase("SHA256withECDSA")) { return X9_SHA256_WITH_ECDSA_OID; }
-			if (name.equalsIgnoreCase("SAwithRSA/PSS")) { return PKCS1_RSASSA_PSS_OID; }
-			if (name.equalsIgnoreCase("SSAwithRSA/PSS")) { return PKCS1_RSASSA_PSS_OID; }
-			if (name.equalsIgnoreCase("RSASSA-PSS")) { return PKCS1_RSASSA_PSS_OID; }
-			if (name.equalsIgnoreCase("SHA256withRSAandMGF1")) { return PKCS1_SHA256_WITH_RSA_AND_MGF1; }
-			throw new NoSuchAlgorithmException("Unknown name " + name);
+		} catch (IOException ioe) {
+			throw new IllegalStateException("Could not read security object in signedData");
 		}
 	}
+
+	/**
+	 * Gets the contents of the security object over which the
+	 * signature is to be computed. 
+	 * 
+	 * See RFC 3369, Cryptographic Message Syntax, August 2002,
+	 * Section 5.4 for details.
+	 * 
+	 * FIXME: Maybe throw an exception instead of issuing warnings
+	 * on stderr if signed attributes don't check out.
+	 *
+	 * @see #getDocSigningCertificate()
+	 * @see #getSignature()
+	 * 
+	 * @return the contents of the security object over which the
+	 *         signature is to be computed
+	 */
+	private static byte[] getEContent(SignedData signedData) {
+		SignerInfo signerInfo = getSignerInfo(signedData);
+		ASN1Set signedAttributesSet = signerInfo.getAuthenticatedAttributes();
+
+		ContentInfo contentInfo = signedData.getEncapContentInfo();
+		byte[] contentBytes = ((DEROctetString)contentInfo.getContent()).getOctets();
+
+		if (signedAttributesSet.size() == 0) {
+			/* Signed attributes absent, return content to be signed... */
+			return contentBytes;
+		} else {
+			/* Signed attributes present (i.e. a structure containing a hash of the content), return that structure to be signed... */
+			/* This option is taken by ICAO passports. */
+			byte[] attributesBytes = null;
+			String digAlg = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
+			try {
+				attributesBytes = signedAttributesSet.getEncoded(ASN1Encoding.DER);
+
+				/* We'd better check that the content actually digests to the hash value contained! ;) */
+				Enumeration<?> attributes = signedAttributesSet.getObjects();
+				byte[] storedDigestedContent = null;
+				while (attributes.hasMoreElements()) {
+					Attribute attribute = Attribute.getInstance((ASN1Sequence)attributes.nextElement());
+					ASN1ObjectIdentifier attrType = attribute.getAttrType();
+					if (RFC_3369_MESSAGE_DIGEST_OID.equals(attrType.getId())) {
+						ASN1Set attrValuesSet = attribute.getAttrValues();
+						if (attrValuesSet.size() != 1) {
+							LOGGER.warning("Expected only one attribute value in signedAttribute message digest in eContent!");
+						}
+						storedDigestedContent = ((DEROctetString)attrValuesSet.getObjectAt(0)).getOctets();
+					}
+				}
+				if (storedDigestedContent == null) {
+					LOGGER.warning("Error extracting signedAttribute message digest in eContent!");
+				}	
+				MessageDigest dig = MessageDigest.getInstance(digAlg);
+				byte[] computedDigestedContent = dig.digest(contentBytes);
+				if (!Arrays.equals(storedDigestedContent, computedDigestedContent)) {
+					LOGGER.warning("Error checking signedAttribute message digest in eContent!");
+				}
+			} catch (NoSuchAlgorithmException nsae) {
+				nsae.printStackTrace();
+				LOGGER.warning("Error checking signedAttributes in eContent! No such algorithm: \"" + digAlg + "\"");
+			} catch (IOException ioe) {
+				ioe.printStackTrace();
+				LOGGER.severe("Error getting signedAttributes: " + ioe.getMessage());
+			}
+			return attributesBytes;
+		}
+	}
+
+	private IssuerAndSerialNumber getIssuerAndSerialNumber() {
+		SignerInfo signerInfo = getSignerInfo(signedData);
+		SignerIdentifier signerIdentifier = signerInfo.getSID();
+		IssuerAndSerialNumber issuerAndSerialNumber = IssuerAndSerialNumber.getInstance(signerIdentifier.getId());
+		X500Name issuer = issuerAndSerialNumber.getName();
+		BigInteger serialNumber = issuerAndSerialNumber.getSerialNumber().getValue();
+		return new IssuerAndSerialNumber(issuer, serialNumber);
+	}
+
+	/**
+	 * Gets the stored signature of the security object.
+	 * 
+	 * @see #getDocSigningCertificate()
+	 * 
+	 * @return the signature
+	 */
+	private static byte[] getEncryptedDigest(SignedData signedData) {
+		SignerInfo signerInfo = getSignerInfo(signedData);
+		return signerInfo.getEncryptedDigest().getOctets();
+	}
+
+	/* METHODS BELOW ARE FOR CONSTRUCTING SOD STRUCTS */
+
+	private static SignedData createSignedData(String digestAlgorithm, String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes, byte[] encryptedDigest,
+			X509Certificate docSigningCertificate) throws NoSuchAlgorithmException, CertificateException, IOException {
+		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
+		ContentInfo contentInfo = createContentInfo(digestAlgorithm, dataGroupHashes);
+		byte[] content = ((DEROctetString)contentInfo.getContent()).getOctets();
+		ASN1Set certificates =  createSingletonSet(createCertificate(docSigningCertificate));
+		ASN1Set crls = null;
+		ASN1Set signerInfos = createSingletonSet(createSignerInfo(digestAlgorithm, digestEncryptionAlgorithm, content, encryptedDigest, docSigningCertificate).toASN1Object());
+		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
+	}
+
+	private static SignedData createSignedData(String digestAlgorithm,
+			String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
+			X509Certificate docSigningCertificate, String provider)
+					throws NoSuchAlgorithmException, CertificateException, IOException {
+		return createSignedData(digestAlgorithm, digestEncryptionAlgorithm,
+				dataGroupHashes, privateKey, docSigningCertificate, provider,
+				null, null);
+	}
+
+	private static SignedData createSignedData(String digestAlgorithm,
+			String digestEncryptionAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes, PrivateKey privateKey,
+			X509Certificate docSigningCertificate, String provider,
+			String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, CertificateException, IOException {
+		ASN1Set digestAlgorithmsSet = createSingletonSet(createDigestAlgorithms(digestAlgorithm));
+		ContentInfo contentInfo = createContentInfo(digestAlgorithm,
+				dataGroupHashes, ldsVersion, unicodeVersion);
+		byte[] content = ((DEROctetString) contentInfo.getContent()).getOctets();
+
+		byte[] encryptedDigest = null;
+		try {
+			byte[] dataToBeSigned = createAuthenticatedAttributes(digestAlgorithm, content).getEncoded(ASN1Encoding.DER);
+			Signature s = null;
+			if (provider != null) {
+				s = Signature.getInstance(digestEncryptionAlgorithm, provider);            	
+			} else {
+				s = Signature.getInstance(digestEncryptionAlgorithm);            	
+			}
+			s.initSign(privateKey);
+			s.update(dataToBeSigned);
+			encryptedDigest = s.sign();
+		} catch (Exception e) {
+			e.printStackTrace();
+			return null;
+		}
+		ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));
+		ASN1Set crls = null;
+		ASN1Set signerInfos = createSingletonSet(createSignerInfo(
+				digestAlgorithm, digestEncryptionAlgorithm, content,
+				encryptedDigest, docSigningCertificate).toASN1Object());
+		return new SignedData(digestAlgorithmsSet, contentInfo, certificates, crls, signerInfos);
+	}
+
+	private static ASN1Sequence createDigestAlgorithms(String digestAlgorithm) throws NoSuchAlgorithmException {
+		ASN1ObjectIdentifier algorithmIdentifier = new ASN1ObjectIdentifier(lookupOIDByMnemonic(digestAlgorithm));
+		//		ASN1Primitive[] result = { algorithmIdentifier };
+		ASN1EncodableVector v = new ASN1EncodableVector();
+		v.add(algorithmIdentifier);
+		return new DLSequence(v);
+	}
+
+	private static ASN1Sequence createCertificate(X509Certificate cert) throws CertificateException {
+		try {
+			byte[] certSpec = cert.getEncoded();
+			ASN1InputStream asn1In = new ASN1InputStream(certSpec);
+			try {
+				ASN1Sequence certSeq = (ASN1Sequence)asn1In.readObject();
+				return certSeq;
+			} finally {
+				asn1In.close();
+			}
+		} catch (IOException ioe) {
+			throw new CertificateException("Could not construct certificate byte stream");
+		}
+	}
+
+	private static ContentInfo createContentInfo(String digestAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes) throws NoSuchAlgorithmException, IOException {
+		return createContentInfo(digestAlgorithm, dataGroupHashes, null, null);
+	}
+
+	private static ContentInfo createContentInfo(
+			String digestAlgorithm,
+			Map<Integer, byte[]> dataGroupHashes,
+			String ldsVersion, String unicodeVersion) throws NoSuchAlgorithmException, IOException {
+		DataGroupHash[] dataGroupHashesArray = new DataGroupHash[dataGroupHashes.size()];
+		int i = 0;
+		for (int dataGroupNumber: dataGroupHashes.keySet()) {
+			byte[] hashBytes = dataGroupHashes.get(dataGroupNumber);
+			DataGroupHash hash = new DataGroupHash(dataGroupNumber, new DEROctetString(hashBytes));
+			dataGroupHashesArray[i++] = hash;
+		}
+		AlgorithmIdentifier digestAlgorithmIdentifier = AlgorithmIdentifier.getInstance(lookupOIDByMnemonic(digestAlgorithm));
+		LDSVersionInfo ldsVersionInfo;
+		LDSSecurityObject securityObject = null;
+		if (ldsVersion == null) {
+			ldsVersionInfo = null;
+			securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray);
+		} else {
+			ldsVersionInfo = new LDSVersionInfo(ldsVersion, unicodeVersion);
+			securityObject = new LDSSecurityObject(digestAlgorithmIdentifier, dataGroupHashesArray, ldsVersionInfo);
+		}
+		return new ContentInfo(new ASN1ObjectIdentifier(ICAO_LDS_SOD_OID), new DEROctetString(securityObject));
+	}
+
+	private static SignerInfo createSignerInfo(String digestAlgorithm,
+			String digestEncryptionAlgorithm, byte[] content,
+			byte[] encryptedDigest, X509Certificate docSigningCertificate) throws NoSuchAlgorithmException {
+		/* Get the issuer name (CN, O, OU, C) from the cert and put it in a SignerIdentifier struct. */
+		X500Principal docSignerPrincipal = ((X509Certificate)docSigningCertificate).getIssuerX500Principal();
+		X500Name docSignerName = new X500Name(docSignerPrincipal.getName(X500Principal.RFC2253));
+		BigInteger serial = ((X509Certificate)docSigningCertificate).getSerialNumber();
+		SignerIdentifier sid = new SignerIdentifier(new IssuerAndSerialNumber(docSignerName, serial));
+
+		AlgorithmIdentifier digestAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestAlgorithm)); 
+		AlgorithmIdentifier digestEncryptionAlgorithmObject = new AlgorithmIdentifier(lookupOIDByMnemonic(digestEncryptionAlgorithm));
+
+		ASN1Set authenticatedAttributes = createAuthenticatedAttributes(digestAlgorithm, content); // struct containing the hash of content
+		ASN1OctetString encryptedDigestObject = new DEROctetString(encryptedDigest); // this is the signature
+		ASN1Set unAuthenticatedAttributes = null; // should be empty set?
+		return new SignerInfo(sid, digestAlgorithmObject, authenticatedAttributes, digestEncryptionAlgorithmObject, encryptedDigestObject, unAuthenticatedAttributes);
+	}
+
+	private static ASN1Set createAuthenticatedAttributes(String digestAlgorithm, byte[] contentBytes) throws NoSuchAlgorithmException {
+		/* Check bug found by Paulo Assumpco. */
+		if ("SHA256".equals(digestAlgorithm)) { digestAlgorithm = "SHA-256"; }
+		MessageDigest dig = MessageDigest.getInstance(digestAlgorithm);
+		byte[] digestedContentBytes = dig.digest(contentBytes);
+		ASN1OctetString digestedContent = new DEROctetString(digestedContentBytes);
+		Attribute contentTypeAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_CONTENT_TYPE_OID), createSingletonSet(new ASN1ObjectIdentifier(ICAO_LDS_SOD_OID)));
+		Attribute messageDigestAttribute = new Attribute(new ASN1ObjectIdentifier(RFC_3369_MESSAGE_DIGEST_OID), createSingletonSet(digestedContent));
+		ASN1Object[] result = { contentTypeAttribute.toASN1Primitive(), messageDigestAttribute.toASN1Primitive() };
+		return new DLSet(result);
+	}
+
+	private static ASN1Set createSingletonSet(ASN1Object e) {
+		return new DLSet(new ASN1Encodable[] { e });
+	}
+
+	/**
+	 * Gets the common mnemonic string (such as "SHA1", "SHA256withRSA") given an OID.
+	 *
+	 * @param oid an OID
+	 *
+	 * @throws NoSuchAlgorithmException if the provided OID is not yet supported
+	 */
+	private static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {
+		if (oid == null) { return null; }
+		if (oid.equals(X509ObjectIdentifiers.organization.getId())) { return "O"; }
+		if (oid.equals(X509ObjectIdentifiers.organizationalUnitName.getId())) { return "OU"; }
+		if (oid.equals(X509ObjectIdentifiers.commonName.getId())) { return "CN"; }
+		if (oid.equals(X509ObjectIdentifiers.countryName.getId())) { return "C"; }
+		if (oid.equals(X509ObjectIdentifiers.stateOrProvinceName.getId())) { return "ST"; }
+		if (oid.equals(X509ObjectIdentifiers.localityName.getId())) { return "L"; }
+		if(oid.equals(X509ObjectIdentifiers.id_SHA1.getId())) { return "SHA-1"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha224.getId())) { return "SHA-224"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha256.getId())) { return "SHA-256"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha384.getId())) { return "SHA-384"; }
+		if(oid.equals(NISTObjectIdentifiers.id_sha512.getId())) { return "SHA-512"; }
+		if (oid.equals(X9_SHA1_WITH_ECDSA_OID)) { return "SHA1withECDSA"; }
+		if (oid.equals(X9_SHA224_WITH_ECDSA_OID)) { return "SHA224withECDSA"; }
+		if (oid.equals(X9_SHA256_WITH_ECDSA_OID)) { return "SHA256withECDSA"; }		
+		if (oid.equals(PKCS1_RSA_OID)) { return "RSA"; }
+		if (oid.equals(PKCS1_MD2_WITH_RSA_OID)) { return "MD2withRSA"; }
+		if (oid.equals(PKCS1_MD4_WITH_RSA_OID)) { return "MD4withRSA"; }
+		if (oid.equals(PKCS1_MD5_WITH_RSA_OID)) { return "MD5withRSA"; }
+		if (oid.equals(PKCS1_SHA1_WITH_RSA_OID)) { return "SHA1withRSA"; }
+		if (oid.equals(PKCS1_SHA256_WITH_RSA_OID)) { return "SHA256withRSA"; }
+		if (oid.equals(PKCS1_SHA384_WITH_RSA_OID)) { return "SHA384withRSA"; }
+		if (oid.equals(PKCS1_SHA512_WITH_RSA_OID)) { return "SHA512withRSA"; }
+		if (oid.equals(PKCS1_SHA224_WITH_RSA_OID)) { return "SHA224withRSA"; }
+		if (oid.equals(IEEE_P1363_SHA1_OID)) { return "SHA-1"; }
+		if (oid.equals(PKCS1_RSASSA_PSS_OID)) { return "SSAwithRSA/PSS"; }
+		if (oid.equals(PKCS1_SHA256_WITH_RSA_AND_MGF1)) { return "SHA256withRSAandMGF1"; }
+		throw new NoSuchAlgorithmException("Unknown OID " + oid);
+	}
+
+	private static String lookupOIDByMnemonic(String name) throws NoSuchAlgorithmException {
+		if (name.equals("O")) { return X509ObjectIdentifiers.organization.getId(); }
+		if (name.equals("OU")) { return X509ObjectIdentifiers.organizationalUnitName.getId(); }
+		if (name.equals("CN")) { return X509ObjectIdentifiers.commonName.getId(); }
+		if (name.equals("C")) { return X509ObjectIdentifiers.countryName.getId(); }
+		if (name.equals("ST")) { return X509ObjectIdentifiers.stateOrProvinceName.getId(); }
+		if (name.equals("L")) { return X509ObjectIdentifiers.localityName.getId(); }
+		if(name.equalsIgnoreCase("SHA-1") || name.equalsIgnoreCase("SHA1")) { return X509ObjectIdentifiers.id_SHA1.getId(); }
+		if(name.equalsIgnoreCase("SHA-224") || name.equalsIgnoreCase("SHA224")) { return NISTObjectIdentifiers.id_sha224.getId(); }
+		if(name.equalsIgnoreCase("SHA-256") || name.equalsIgnoreCase("SHA256")) { return NISTObjectIdentifiers.id_sha256.getId(); }
+		if(name.equalsIgnoreCase("SHA-384") || name.equalsIgnoreCase("SHA384")) { return NISTObjectIdentifiers.id_sha384.getId(); }
+		if(name.equalsIgnoreCase("SHA-512") || name.equalsIgnoreCase("SHA512")) { return NISTObjectIdentifiers.id_sha512.getId(); }
+		if (name.equalsIgnoreCase("RSA")) { return PKCS1_RSA_OID; }
+		if (name.equalsIgnoreCase("MD2withRSA")) { return PKCS1_MD2_WITH_RSA_OID; } 
+		if (name.equalsIgnoreCase("MD4withRSA")) { return PKCS1_MD4_WITH_RSA_OID; } 
+		if (name.equalsIgnoreCase("MD5withRSA")) { return  PKCS1_MD5_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA1withRSA")) { return  PKCS1_SHA1_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA256withRSA")) { return PKCS1_SHA256_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA384withRSA")) { return PKCS1_SHA384_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA512withRSA")) { return PKCS1_SHA512_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA224withRSA")) { return PKCS1_SHA224_WITH_RSA_OID; }
+		if (name.equalsIgnoreCase("SHA1withECDSA")) { return X9_SHA1_WITH_ECDSA_OID; }
+		if (name.equalsIgnoreCase("SHA224withECDSA")) { return X9_SHA224_WITH_ECDSA_OID; }
+		if (name.equalsIgnoreCase("SHA256withECDSA")) { return X9_SHA256_WITH_ECDSA_OID; }
+		if (name.equalsIgnoreCase("SAwithRSA/PSS")) { return PKCS1_RSASSA_PSS_OID; }
+		if (name.equalsIgnoreCase("SSAwithRSA/PSS")) { return PKCS1_RSASSA_PSS_OID; }
+		if (name.equalsIgnoreCase("RSASSA-PSS")) { return PKCS1_RSASSA_PSS_OID; }
+		if (name.equalsIgnoreCase("SHA256withRSAandMGF1")) { return PKCS1_SHA256_WITH_RSA_AND_MGF1; }
+		throw new NoSuchAlgorithmException("Unknown name " + name);
+	}
+}

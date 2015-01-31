@@ -36,7 +36,7 @@ import org.jmrtd.cbeff.BiometricDataBlock;
 import org.jmrtd.cbeff.ISO781611;
 
 /**
- * Datagroup containing list of biometric information templates (BITs).
+ * Datagroup containing a list of biometric information templates (BITs).
  * The {@link DG2File}, {@link DG3File}, and {@link DG4File} datagroups
  * are based on this type.
  * 
