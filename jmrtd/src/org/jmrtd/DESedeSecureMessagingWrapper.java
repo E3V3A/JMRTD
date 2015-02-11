@@ -58,7 +58,7 @@ import net.sf.scuba.tlv.TLVUtil;
  * 
  * @version $Revision: 1559 $
  */
-public class DESedeSecureMessagingWrapper implements APDUWrapper, Serializable {
+public class DESedeSecureMessagingWrapper extends SecureMessagingWrapper implements Serializable {
 
 	private static final long serialVersionUID = -2859033943345961793L;
 
@@ -114,15 +114,6 @@ public class DESedeSecureMessagingWrapper implements APDUWrapper, Serializable {
 		this.ssc = ssc;
 		cipher = Cipher.getInstance(cipherAlg);
 		mac = Mac.getInstance(macAlg);
-	}
-
-	/**
-	 * Gets the current value of the send sequence counter.
-	 * 
-	 * @return the current value of the send sequence counter.
-	 */
-	public long getSendSequenceCounter() {
-		return ssc;
 	}
 
 	/**
@@ -411,4 +402,14 @@ public class DESedeSecureMessagingWrapper implements APDUWrapper, Serializable {
 			return false;
 		}
 	}
+
+	/**
+	 * Gets the current value of the send sequence counter.
+	 * 
+	 * @return the current value of the send sequence counter.
+	 */
+	@Override
+	public long getSendSequenceCounter() {
+		return ssc;
+	}	
 }
