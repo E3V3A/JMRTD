@@ -214,7 +214,7 @@ public class PassportService extends PassportApduService implements Serializable
 	/**
 	 * @deprecated visibility will be set to private
 	 */
-	protected APDUWrapper wrapper;
+	protected SecureMessagingWrapper wrapper;
 
 	protected Random random;
 	private MRTDFileSystem fs;
@@ -585,7 +585,7 @@ public class PassportService extends PassportApduService implements Serializable
 			if (cipherAlg.startsWith("DESede")) {
 				wrapper = new DESedeSecureMessagingWrapper(encKey, macKey);
 			} else if (cipherAlg.startsWith("AES")) {
-				wrapper = new AESSecureMessagingWrapper(encKey, macKey);
+				wrapper = new AESSecureMessagingWrapper(encKey, macKey, wrapper.getSendSequenceCounter(), 0L);
 			}
 			LOGGER.info("DEBUG: Starting secure messaging based on PACE");
 		} catch (GeneralSecurityException gse) {
@@ -878,7 +878,7 @@ public class PassportService extends PassportApduService implements Serializable
 	 * 
 	 * @param wrapper wrapper
 	 */
-	public void setWrapper(APDUWrapper wrapper) {
+	public void setWrapper(SecureMessagingWrapper wrapper) {
 		this.wrapper = wrapper;
 	}
 

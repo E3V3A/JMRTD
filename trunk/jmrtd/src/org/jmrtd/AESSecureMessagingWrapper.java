@@ -51,10 +51,10 @@ import net.sf.scuba.tlv.TLVUtil;
  * FIXME: WORK IN PROGRESS
  *
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
- * 
+ * 	
  * @version $Revision: $
  */
-public class AESSecureMessagingWrapper implements APDUWrapper, Serializable {
+public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements Serializable {
 
 	private static final long serialVersionUID = 2086301081448345496L;
 
@@ -77,11 +77,7 @@ public class AESSecureMessagingWrapper implements APDUWrapper, Serializable {
 	 * 
 	 * @throws GeneralSecurityException when the available JCE providers cannot provide the necessary cryptographic primitives
 	 */
-	public AESSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac) throws GeneralSecurityException {
-		this(ksEnc, ksMac,  0L);
-	}
-
-	private AESSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long ssc) throws GeneralSecurityException {
+	public AESSecureMessagingWrapper(SecretKey ksEnc, SecretKey ksMac, long sscIV, long ssc) throws GeneralSecurityException {
 		this.ksEnc = ksEnc;
 		this.ksMac = ksMac;
 		this.ssc = ssc;
@@ -91,6 +87,7 @@ public class AESSecureMessagingWrapper implements APDUWrapper, Serializable {
 
 		String cipherAlg = "AES/CBC/NoPadding";		
 		cipher = Cipher.getInstance(cipherAlg);
+		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, getIV(cipher, sscIV));
 
 		String macAlg = "AESCMAC";
 		mac = Mac.getInstance(macAlg);
@@ -147,7 +144,7 @@ public class AESSecureMessagingWrapper implements APDUWrapper, Serializable {
 	}
 
 	/**
-	 * Unwraps the apdu buffer <code>rapdu</code> of a response apdu.
+	 * Unwraps the buffer of a response APDU.
 	 * 
 	 * @param responseAPDU buffer containing the response apdu
 	 * @param len length of the actual response apdu
@@ -203,8 +200,8 @@ public class AESSecureMessagingWrapper implements APDUWrapper, Serializable {
 			do97 = bOut.toByteArray();
 		}
 
-		cipher.init(Cipher.ENCRYPT_MODE, ksEnc);
-		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, getIV(cipher, ssc));
+//		cipher.init(Cipher.ENCRYPT_MODE, ksEnc);
+//		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, getIV(cipher, ssc));
 
 		if (lc > 0) {
 			/* If we have command data, encrypt it. */
