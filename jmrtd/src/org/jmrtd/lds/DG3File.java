@@ -50,7 +50,7 @@ public class DG3File extends CBEFFDataGroup<FingerInfo> {
 
 	private static final long serialVersionUID = -1037522331623814528L;
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private static final ISO781611Decoder DECODER = new ISO781611Decoder(new BiometricDataBlockDecoder<FingerInfo>() {
 		public FingerInfo decode(InputStream inputStream, StandardBiometricHeader sbh, int index, int length) throws IOException {

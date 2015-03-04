@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Logger;
 
 import net.sf.scuba.data.Gender;
 
@@ -43,6 +44,8 @@ import net.sf.scuba.data.Gender;
 public class MRZInfo extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = 7054965914471297804L;
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Unspecified document type (do not use, choose ID1 or ID3). */
 	public static final int DOC_TYPE_UNSPECIFIED = 0;
@@ -183,7 +186,7 @@ public class MRZInfo extends AbstractLDSInfo {
 		try {
 			readObject(inputStream, length);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
 	}
@@ -201,10 +204,10 @@ public class MRZInfo extends AbstractLDSInfo {
 			readObject(new ByteArrayInputStream(str.getBytes("UTF-8")), str.length());
 		} catch (UnsupportedEncodingException uee) {
 			/* NOTE: never happens, UTF-8 is supported. */
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 			throw new IllegalStateException(uee.getMessage());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
 	}
@@ -649,7 +652,7 @@ public class MRZInfo extends AbstractLDSInfo {
 				return str;
 			}
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 			throw new IllegalStateException(uee.getMessage());
 		}
 	}
@@ -1014,14 +1017,14 @@ public class MRZInfo extends AbstractLDSInfo {
 			return checkDigit;
 		} catch (NumberFormatException nfe) {
 			/* NOTE: never happens. */
-			nfe.printStackTrace();
+			LOGGER.severe("Exception: " + nfe.getMessage());
 			throw new IllegalStateException("Error in computing check digit.");
 		} catch (UnsupportedEncodingException usee) {
 			/* NOTE: never happens. */
-			usee.printStackTrace();
+			LOGGER.severe("Exception: " + usee.getMessage());
 			throw new IllegalStateException("Error in computing check digit.");
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException(e.toString());
 		}
 	}

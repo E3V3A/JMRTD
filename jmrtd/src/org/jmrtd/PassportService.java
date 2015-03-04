@@ -236,7 +236,7 @@ public class PassportService extends PassportApduService implements Serializable
 
 	/**
 	 * Opens a session to the card. As of 0.4.10 this no longer auto selects the passport application,
-	 * caller (for instance {@link Passport} is responsible to call selectApplet() now.
+	 * caller is responsible to call #sendSelectApplet(boolean) now.
 	 * 
 	 * @throws CardServiceException on error
 	 */
@@ -429,6 +429,7 @@ public class PassportService extends PassportApduService implements Serializable
 			staticPACECipher.init(Cipher.DECRYPT_MODE, staticPACEKey, new IvParameterSpec(new byte[16])); /* FIXME: iv length 16 is independent of keylength? */
 			piccNonce = staticPACECipher.doFinal(step1EncryptedNonce);
 		} catch (GeneralSecurityException gse) {
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new PACEException("PCD side exception in tranceiving nonce step: " + gse.getMessage());
 		} catch (CardServiceException cse) {
 			throw new PACEException("PICC side exception in tranceiving nonce step", cse.getSW());
@@ -480,7 +481,7 @@ public class PassportService extends PassportApduService implements Serializable
 					mappingAgreement.doPhase(piccMappingPublicKey, true);
 					mappingSharedSecretBytes = mappingAgreement.generateSecret();
 				} catch (GeneralSecurityException gse) {
-					gse.printStackTrace();
+					LOGGER.severe("Exception: " + gse.getMessage());
 					throw new PACEException("Error during mapping" + gse.getMessage());
 				}
 
@@ -545,7 +546,7 @@ public class PassportService extends PassportApduService implements Serializable
 			encKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.ENC_MODE);
 			macKey = Util.deriveKey(sharedSecretBytes, cipherAlg, keyLength, Util.MAC_MODE);
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new PACEException("Security exception during secure messaging key derivation: " + gse.getMessage());
 		}
 
@@ -585,11 +586,12 @@ public class PassportService extends PassportApduService implements Serializable
 			if (cipherAlg.startsWith("DESede")) {
 				wrapper = new DESedeSecureMessagingWrapper(encKey, macKey);
 			} else if (cipherAlg.startsWith("AES")) {
-				wrapper = new AESSecureMessagingWrapper(encKey, macKey, wrapper.getSendSequenceCounter(), 0L);
+				long ssc = wrapper == null ? 0L : wrapper.getSendSequenceCounter();
+				wrapper = new AESSecureMessagingWrapper(encKey, macKey, ssc, 0L);
 			}
 			LOGGER.info("DEBUG: Starting secure messaging based on PACE");
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalStateException("Security exception in secure messaging establishment: " + gse.getMessage());
 		}
 	}
@@ -846,7 +848,7 @@ public class PassportService extends PassportApduService implements Serializable
 			byte[] response = sendInternalAuthenticate(wrapper, challenge);			
 			return response;
 		} catch (IllegalArgumentException iae) {
-			// iae.printStackTrace();
+			LOGGER.severe("Exception: " + iae.getMessage());
 			throw new CardServiceException(iae.toString());
 		}
 	}

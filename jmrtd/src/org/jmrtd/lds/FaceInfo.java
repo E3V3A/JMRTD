@@ -47,7 +47,7 @@ public class FaceInfo extends AbstractListInfo<FaceImageInfo> implements Biometr
 
 	private static final long serialVersionUID = -6053206262773400725L;
 	
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Facial Record Header 'F', 'A', 'C', 0x00. Section 5.4, Table 2 of ISO/IEC 19794-5. */
 	private static final int FORMAT_IDENTIFIER = 0x46414300;

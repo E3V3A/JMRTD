@@ -44,7 +44,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 
 	private static final long serialVersionUID = -4761360877353069639L;
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private int dataGroupTag;
 	private int dataGroupLength;
@@ -156,7 +156,7 @@ public abstract class DataGroup extends AbstractLDSFile {
 			outputStream.close();
 			return outputStream.toByteArray();
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			return null;
 		}
 	}

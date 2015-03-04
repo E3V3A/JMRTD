@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 import org.jmrtd.io.SplittableInputStream;
 
@@ -43,6 +44,8 @@ abstract class AbstractImageInfo implements ImageInfo {
 
 	private static final long serialVersionUID = 2870092217269116309L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private int type;
 	private String mimeType;
 	private byte[] imageBytes;
@@ -186,7 +189,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 					&& (mimeType == null && otherImageInfo.mimeType == null || mimeType != null && mimeType.equals(otherImageInfo.mimeType))
 					&& type == otherImageInfo.type;
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			return false;
 		}
 	}
@@ -201,7 +204,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		try {
 			writeObject(out);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			return null;
 		}
 		return out.toByteArray();
@@ -286,7 +289,7 @@ abstract class AbstractImageInfo implements ImageInfo {
 		try {
 			readImage(new ByteArrayInputStream(imageBytes), imageBytes.length);
 		} catch (IOException e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 		}
 	}
 

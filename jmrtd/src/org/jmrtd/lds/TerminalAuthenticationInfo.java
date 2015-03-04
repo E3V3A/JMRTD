@@ -22,6 +22,8 @@
 
 package org.jmrtd.lds;
 
+import java.util.logging.Logger;
+
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -53,6 +55,8 @@ import org.bouncycastle.asn1.DLSequence;
 public class TerminalAuthenticationInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = 6220506985707094044L;
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	public static final int VERSION_NUM = 1;
 
@@ -206,7 +210,7 @@ public class TerminalAuthenticationInfo extends SecurityInfo {
 				}
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException("Malformed TerminalAuthenticationInfo.");
 		}
 	}

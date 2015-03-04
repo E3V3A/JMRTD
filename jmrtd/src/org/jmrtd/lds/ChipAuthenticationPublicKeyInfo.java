@@ -26,6 +26,7 @@ import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -61,6 +62,8 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = 5687291829854501771L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
 	private String oid;
@@ -153,7 +156,7 @@ public class ChipAuthenticationPublicKeyInfo extends SecurityInfo {
 				throw new IllegalArgumentException("Wrong identifier: " + oid);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException("Malformed ChipAuthenticationInfo.");
 		}
 	}

@@ -23,6 +23,7 @@
 package org.jmrtd.lds;
 
 import java.security.NoSuchAlgorithmException;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -57,6 +58,8 @@ import org.bouncycastle.asn1.DLSequence;
  */
 public class ActiveAuthenticationInfo extends SecurityInfo {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final long serialVersionUID = 6830847342039845308L;
 
 	public static final int VERSION_NUM = 1;
@@ -126,7 +129,6 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 		return signatureAlgorithmOID;
 	}
 
-
 	public String toString() {
 		StringBuffer result = new StringBuffer();
 		result.append("ActiveAuthenticationInfo");
@@ -183,11 +185,11 @@ public class ActiveAuthenticationInfo extends SecurityInfo {
 				throw new IllegalArgumentException("Wrong signature algorithm OID: " + signatureAlgorithmOID);
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException("Malformed ActiveAuthenticationInfo.");
 		}
 	}
-	
+
 	public static String lookupMnemonicByOID(String oid) throws NoSuchAlgorithmException {		
 		if (ECDSA_PLAIN_SHA1_OID.equals(oid)) { return "SHA1withECDSA"; }
 		if (ECDSA_PLAIN_SHA224_OID.equals(oid)) { return "SHA224withECDSA"; }

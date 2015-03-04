@@ -54,7 +54,7 @@ public class CardAccessFile {
 
 	private static final long serialVersionUID = -3536507558193769951L;
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	/** The security infos that make up this file. */
 	private Set<SecurityInfo> securityInfos;

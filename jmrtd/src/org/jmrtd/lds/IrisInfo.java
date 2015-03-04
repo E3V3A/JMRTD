@@ -52,7 +52,7 @@ public class IrisInfo extends AbstractListInfo<IrisBiometricSubtypeInfo> impleme
 
 	private static final long serialVersionUID = -3415309711643815511L;
 	
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Format identifier 'I', 'I', 'R', 0x00. */
 	private static final int FORMAT_IDENTIFIER = 0x49495200;
