@@ -110,12 +110,10 @@ public class WSQImageReader extends ImageReader {
 			BitmapWithMetadata bitmap = WSQDecoder.decode((ImageInputStream)getInput());
 			metadata = new WSQMetadata(); 
 			
-			for (Map.Entry<String, String> entry : bitmap.getMetadata().entrySet()) {
-				//System.out.println(entry.getKey() + ": " + entry.getValue());
+			for (Map.Entry<String, String> entry: bitmap.getMetadata().entrySet()) {
 				metadata.setProperty(entry.getKey(), entry.getValue());
 			}
-			for (String s:bitmap.getComments()) {
-				//System.out.println("//"+s);
+			for (String s: bitmap.getComments()) {
 				metadata.addComment(s);
 			}
 			

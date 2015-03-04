@@ -33,6 +33,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.logging.Logger;
 
 import org.jnbis.WSQHelper.Token;
 
@@ -45,6 +46,8 @@ import org.jnbis.WSQHelper.Token;
  */
 public class WSQDecoder implements WSQConstants, NISTConstants {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	public static BitmapWithMetadata decode(InputStream is) throws IOException {
 		if (is instanceof DataInput)
 			return decode((DataInput)is);
@@ -180,8 +183,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 
 	private static Map<String, String> stringToFet(String comment) {
 		try {
-			if (!comment.startsWith(NCM_HEADER))
-				throw new IllegalArgumentException("Not a NISTCOM header");
+			if (!comment.startsWith(NCM_HEADER)) { throw new IllegalArgumentException("Not a NISTCOM header"); }
 
 			Scanner in = new Scanner(comment);
 			Map<String, String> result = new LinkedHashMap<String, String>();
@@ -189,7 +191,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 				String line = in.nextLine();			
 				int split = line.indexOf(" ");
 				if (split < 0) {
-					System.err.println("Illegal NISTCOM header: Missing separator on line '" + line + "'");
+					LOGGER.warning("Illegal NISTCOM header: Missing separator on line '" + line + "'");
 					continue;
 				}
 				String key   = URLDecoder.decode(line.substring(0, split), "UTF-8");
@@ -513,7 +515,7 @@ public class WSQDecoder implements WSQConstants, NISTConstants {
 					throw new RuntimeException("ERROR: huffman_decode_data_mem : Invalid code (" + nodeptr + ")");
 				}
 			} catch (EOFException eof) {
-				System.out.println("DEBUG: MO - ignoring EOF in WSQDecoder");
+				LOGGER.warning("DEBUG: MO - ignoring EOF in WSQDecoder");
 				isPrematureEOF = true;
 			}
 		}
