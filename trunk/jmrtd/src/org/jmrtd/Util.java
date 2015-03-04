@@ -90,6 +90,7 @@ import org.jmrtd.lds.SecurityInfo;
  * 
  * @deprecated The visibility of this class will be changed to package.
  *
+ * @author Wojciech Mostowski
  * @author Cees-Bart Breunesse (ceesb@cs.ru.nl)
  * @author Engelbert Hubbers (hubbers@cs.ru.nl)
  * @author Martijn Oostdijk (martijn.oostdijk@gmail.com)
@@ -307,6 +308,7 @@ public class Util {
 	 * Pads the input <code>in</code> according to ISO9797-1 padding method 2.
 	 *
 	 * @param in input
+	 * @param blockSize block size
 	 *
 	 * @return padded output
 	 */
@@ -661,11 +663,11 @@ public class Util {
 				ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
 				return resultParams;
 			} else {
-				System.out.println("WARNING: could not make named EC param spec explicit");
+				LOGGER.warning("Could not make named EC param spec explicit");
 				return params;
 			}
 		} catch (Exception e) {
-			System.out.println("WARNING: could not make named EC param spec explicit");
+			LOGGER.warning("Could not make named EC param spec explicit");
 			return params;
 		}
 	}
@@ -776,7 +778,7 @@ public class Util {
 				throw new IllegalArgumentException("Unrecognized key type, found " + publicKey.getAlgorithm() + ", should be DH or ECDH");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			return null;
 		}
 	}
@@ -793,10 +795,10 @@ public class Util {
 				return factory.generatePublic(keySpec);
 			}
 		} catch (GeneralSecurityException gse2) {
-			gse2.printStackTrace();
+			LOGGER.severe("Exception: " + gse2.getMessage());
 			return null;
 		} catch (Exception ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			return null;
 		}
 	}
@@ -819,59 +821,10 @@ public class Util {
 			ECPublicKeySpec explicitPublicKeySpec = new ECPublicKeySpec(w, params);
 			return KeyFactory.getInstance("EC", BC_PROVIDER).generatePublic(explicitPublicKeySpec);
 		} catch (Exception e) {
-			System.out.println("WARNING: could not make public key param spec explicit");
+			LOGGER.warning("Could not make public key param spec explicit");
 			return publicKey;
 		}
 	}
-
-	//	/**
-	//	 * Reconstructs the public key to use explicit domain params for EC public keys
-	//	 * 
-	//	 * @param publicKey the public key
-	//	 * 
-	//	 * @return the same public key (if not EC), or a reconstructed one (if EC)
-	//	 */
-	//	public static PublicKey reconstructPublicKey(PublicKey publicKey) {
-	//		if (!(publicKey instanceof ECPublicKey)) { return publicKey; }
-	//		ECPublicKey ecPublicKey = (ECPublicKey)publicKey;
-	//		ECPoint w = ecPublicKey.getW();
-	//		ECParameterSpec params = ecPublicKey.getParams();
-	//		ECPoint g = params.getGenerator();
-	//		BigInteger n = params.getOrder(); // Order, order
-	//		int h = params.getCofactor(); // co-factor
-	//		EllipticCurve curve = params.getCurve();
-	//		BigInteger a = curve.getA();
-	//		BigInteger b = curve.getB();
-	//		ECField field = curve.getField();
-	//		if (field instanceof ECFieldFp) {
-	//			BigInteger p = ((ECFieldFp)field).getP();
-	//			ECField resultField = new ECFieldFp(p);
-	//			EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
-	//			ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
-	//			ECPublicKeySpec resultPublicKeySpec = new ECPublicKeySpec(w, resultParams);
-	//			try {
-	//				return KeyFactory.getInstance("EC", BC_PROVIDER).generatePublic(resultPublicKeySpec);
-	//			} catch (GeneralSecurityException gse) {
-	//				gse.printStackTrace();
-	//				return publicKey;
-	//			}
-	//		} else if (field instanceof ECFieldF2m) {
-	//			int m = ((ECFieldF2m)field).getM();
-	//			ECField resultField = new ECFieldF2m(m);
-	//			EllipticCurve resultCurve = new EllipticCurve(resultField, a, b);
-	//			ECParameterSpec resultParams = new ECParameterSpec(resultCurve, g, n, h);
-	//			ECPublicKeySpec resultPublicKeySpec = new ECPublicKeySpec(w, resultParams);
-	//			try {
-	//				return KeyFactory.getInstance("EC", BC_PROVIDER).generatePublic(resultPublicKeySpec);
-	//			} catch (GeneralSecurityException gse) {
-	//				gse.printStackTrace();
-	//				return publicKey;
-	//			}
-	//		} else {
-	//			return publicKey;
-	//		}
-	//	}
-
 
 	/**
 	 * Based on TR-SAC 1.01 4.5.1 and 4.5.2.
@@ -915,6 +868,7 @@ public class Util {
 				int l = params.getL();
 				BigInteger generator = params.getG();
 				BigInteger y = dhPublicKey.getY();
+
 				tlvOut.write(new ASN1ObjectIdentifier(oid).getEncoded()); /* Object Identifier, NOTE: encoding already contains 0x06 tag  */
 				if (!isContextKnown) {
 					tlvOut.writeTag(0x81); tlvOut.writeValue(i2os(p)); /* p: Prime modulus */
@@ -933,6 +887,7 @@ public class Util {
 				BigInteger order = params.getOrder();
 				int coFactor = params.getCofactor();
 				ECPoint publicPoint = ecPublicKey.getW();
+
 				tlvOut.write(new ASN1ObjectIdentifier(oid).getEncoded()); /* Object Identifier, NOTE: encoding already contains 0x06 tag */
 				if (!isContextKnown) {
 					tlvOut.writeTag(0x81); tlvOut.writeValue(i2os(p)); /* Prime modulus */
@@ -952,7 +907,7 @@ public class Util {
 			tlvOut.flush();
 			tlvOut.close();
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException("Error in encoding public key");
 		}
 		return bOut.toByteArray();
@@ -967,6 +922,8 @@ public class Util {
 	 * @param publicKey public key
 	 * 
 	 * @return encoding for smart card
+	 * 
+	 * @throws InvalidKeyException if the key type is not EC or DH
 	 */
 	public static byte[] encodePublicKeyForSmartCard(PublicKey publicKey) throws InvalidKeyException {
 		if (publicKey == null) {
@@ -1033,10 +990,10 @@ public class Util {
 			}
 			throw new IllegalArgumentException("Expected ECParameterSpec or DHParameterSpec, found " + params.getClass().getCanonicalName());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalArgumentException(gse.getMessage());
 		}
 	}
@@ -1171,7 +1128,7 @@ public class Util {
 			bytes = str.getBytes("UTF-8");
 		} catch (UnsupportedEncodingException use) {
 			/* NOTE: unlikely. */
-			use.printStackTrace();
+			LOGGER.severe("Exception: " + use.getMessage());
 		}
 		return bytes;
 	}

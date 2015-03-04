@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2014  The JMRTD team
+ * Copyright (C) 2006 - 2015  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -156,7 +156,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 
 	private static final Provider BC_PROVIDER = JMRTDSecurityProvider.getBouncyCastleProvider();
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private SignedData signedData;
 
@@ -184,7 +184,6 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 					encryptedDigest,
 					docSigningCertificate);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
@@ -215,7 +214,6 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 					privateKey,
 					docSigningCertificate, provider);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
@@ -249,7 +247,6 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 					privateKey,
 					docSigningCertificate, provider, ldsVersion, unicodeVersion);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
@@ -280,7 +277,6 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 					privateKey,
 					docSigningCertificate, null);
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			LOGGER.severe("Error creating signedData: " + ioe.getMessage());
 			throw new IllegalArgumentException(ioe.getMessage());
 		}
@@ -398,7 +394,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 		try {
 			return lookupMnemonicByOID(getLDSSecurityObject(signedData).getDigestAlgorithmIdentifier().getAlgorithm().getId());      
 		} catch (NoSuchAlgorithmException nsae) {
-			nsae.printStackTrace();
+			LOGGER.severe("Exception: " + nsae.getMessage());
 			return null; // throw new IllegalStateException(nsae.toString());
 		}
 	}
@@ -414,7 +410,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			String digestAlgOID = signerInfo.getDigestAlgorithm().getAlgorithm().getId();
 			return lookupMnemonicByOID(digestAlgOID);
 		} catch (NoSuchAlgorithmException nsae) {
-			nsae.printStackTrace();
+			LOGGER.severe("Exception: " + nsae.getMessage());
 			return null; // throw new IllegalStateException(nsae.toString());
 		}
 	}
@@ -431,7 +427,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			if (digestEncryptionAlgorithmOID == null) { return null; }
 			return lookupMnemonicByOID(digestEncryptionAlgorithmOID);      
 		} catch (NoSuchAlgorithmException nsae) {
-			nsae.printStackTrace();
+			LOGGER.severe("Exception: " + nsae.getMessage());
 			return null; // throw new IllegalStateException(nsae.toString());
 		}
 	}
@@ -593,7 +589,6 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			X500Principal x500Principal = new X500Principal(name.getEncoded(ASN1Encoding.DER));		
 			return x500Principal;
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
 			LOGGER.severe("Could not get issuer: " + ioe.getMessage());
 			return null;
 		}
@@ -742,10 +737,8 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 					LOGGER.warning("Error checking signedAttribute message digest in eContent!");
 				}
 			} catch (NoSuchAlgorithmException nsae) {
-				nsae.printStackTrace();
-				LOGGER.warning("Error checking signedAttributes in eContent! No such algorithm: \"" + digAlg + "\"");
+				LOGGER.warning("Error checking signedAttributes in eContent! No such algorithm: \"" + digAlg + "\": " + nsae.getMessage());
 			} catch (IOException ioe) {
-				ioe.printStackTrace();
 				LOGGER.severe("Error getting signedAttributes: " + ioe.getMessage());
 			}
 			return attributesBytes;
@@ -820,7 +813,7 @@ public class SODFile extends DataGroup { /* FIXME: strictly speaking this is not
 			s.update(dataToBeSigned);
 			encryptedDigest = s.sign();
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			return null;
 		}
 		ASN1Set certificates = createSingletonSet(createCertificate(docSigningCertificate));

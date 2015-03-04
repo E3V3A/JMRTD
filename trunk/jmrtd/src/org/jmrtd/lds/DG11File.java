@@ -95,7 +95,7 @@ public class DG11File extends DataGroup {
 
 	private static final SimpleDateFormat SDF = new SimpleDateFormat("yyyyMMdd");
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private String nameOfHolder;
 	private List<String> otherNames;
@@ -241,7 +241,7 @@ public class DG11File extends DataGroup {
 			//		custodyInformation = in.replace("<", " ").trim();
 			custodyInformation = field.trim();
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 			custodyInformation = new String(value).trim();
 		}
 	}
@@ -251,7 +251,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		otherValidTDNumbers = new ArrayList<String>();
 		StringTokenizer st = new StringTokenizer(field, "<");
@@ -271,7 +271,7 @@ public class DG11File extends DataGroup {
 			//		personalSummary = in.replace("<", " ").trim();
 			personalSummary = field.trim();
 		} catch (UnsupportedEncodingException usee) {
-			usee.printStackTrace();
+			LOGGER.severe("Exception: " + usee.getMessage());
 			personalSummary = new String(value).trim();
 		}
 	}
@@ -282,7 +282,7 @@ public class DG11File extends DataGroup {
 			//		title = in.replace("<", " ").trim();
 			title = field.trim();
 		} catch (UnsupportedEncodingException usee) {
-			usee.printStackTrace();
+			LOGGER.severe("Exception: " + usee.getMessage());
 			title = new String(value).trim();
 		}
 	}
@@ -292,7 +292,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		//		profession = in.replace("<", " ").trim();
 		profession = field.trim();
@@ -303,7 +303,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		//		telephone = in.replace("<", " ").trim();
 		telephone = field.replace("<", " ").trim();
@@ -314,7 +314,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		StringTokenizer st = new StringTokenizer(field, "<");
 		permanentAddress = new ArrayList<String>();
@@ -329,7 +329,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		StringTokenizer st = new StringTokenizer(field, "<");
 		placeOfBirth = new ArrayList<String>();
@@ -350,7 +350,7 @@ public class DG11File extends DataGroup {
 				try {
 					field = new String(value, "UTF-8");
 				} catch (UnsupportedEncodingException usee) {
-					usee.printStackTrace();
+					LOGGER.severe("Exception: " + usee.getMessage());
 				}
 			}
 			// in = in.replace("<", " ").trim();
@@ -366,7 +366,7 @@ public class DG11File extends DataGroup {
 			String field = new String(value, "UTF-8");
 			otherNames.add(field.trim());
 		} catch (UnsupportedEncodingException usee) {
-			usee.printStackTrace();
+			LOGGER.severe("Exception: " + usee.getMessage());
 			otherNames.add(new String(value).trim());
 		}
 	}
@@ -376,7 +376,7 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		personalNumber = field.trim();
 	}
@@ -386,44 +386,10 @@ public class DG11File extends DataGroup {
 		try {
 			field = new String(value, "UTF-8");
 		} catch (UnsupportedEncodingException uee) {
-			uee.printStackTrace();
+			LOGGER.severe("Exception: " + uee.getMessage());
 		}
 		nameOfHolder = field.trim();
 	}
-
-	//	private void parseFullName(byte[] value) {
-	//		String field = new String(value);
-	//		try {
-	//			field = new String(value, "UTF-8");
-	//		} catch (UnsupportedEncodingException uee) {
-	//			uee.printStackTrace();
-	//		}
-	//		String delim = "<<";
-	//		int delimIndex = field.indexOf(delim);
-	//		if (delimIndex < 0) {
-	//			LOGGER.warning("Input does not contain primary identifier delimited by \"<<\", input was \"" + field + "\"");
-	//			LOGGER.warning("Trying \"<\" (the Austrian way)");
-	//			delim = "<";
-	//			delimIndex = field.indexOf(delim);
-	//			if(delimIndex < 0) {
-	//				LOGGER.warning("Didn't work either. Trying spaces.");
-	//				delim = " "; /* NOTE: Some passports (Belgian 1st generation) uses space?!? */
-	//				delimIndex = field.indexOf(delim);
-	//				if(delimIndex < 0) {
-	//					LOGGER.warning("Giving up. Putting everything into the primary identifier.");
-	//					fullNamePrimaryIdentifier = field; 
-	//					return;
-	//				}
-	//			}
-	//		}
-	//		fullNamePrimaryIdentifier = field.substring(0, delimIndex);
-	//		StringTokenizer st = new StringTokenizer(field.substring(field.indexOf(delim) + delim.length()), "<");
-	//		fullNameSecondaryIdentifiers = new ArrayList<String>();
-	//		while (st.hasMoreTokens()) {
-	//			String secondaryIdentifier = st.nextToken().trim();
-	//			fullNameSecondaryIdentifiers.add(secondaryIdentifier);
-	//		}
-	//	}
 
 	/* Accessors below. */
 

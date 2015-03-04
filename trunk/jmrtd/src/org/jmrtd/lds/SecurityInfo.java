@@ -50,7 +50,7 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 
 	private static final long serialVersionUID = -7919854443619069808L;
 	
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 	
 	/**
 	 * Used in ECDSA based Active Authentication.
@@ -219,7 +219,7 @@ public abstract class SecurityInfo extends AbstractLDSInfo {
 			LOGGER.warning("Unsupported SecurityInfo, oid = " + oid);
 			return null;
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException("Malformed input stream.");
 		}
 	}

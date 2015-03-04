@@ -49,7 +49,7 @@ public class FingerInfo extends AbstractListInfo<FingerImageInfo> implements Bio
 
 	private static final long serialVersionUID = 5808625058034008176L;
 	
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** Format identifier 'F', 'I', 'R', 0x00. Specified in ISO/IEC 19794-4 Section 7.1, Table 2.  */
 	private static final int FORMAT_IDENTIFIER = 0x46495200;

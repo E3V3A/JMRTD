@@ -38,6 +38,7 @@ import java.security.cert.CertificateException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.Date;
+import java.util.logging.Logger;
 
 import net.sf.scuba.data.Country;
 
@@ -67,6 +68,8 @@ import org.ejbca.cvc.exception.ConstructionException;
 public class CardVerifiableCertificate extends Certificate {
 
 	private static final long serialVersionUID = -3585440601605666288L;
+	
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	/** The EJBCA CVC that we wrap. */
 	private org.ejbca.cvc.CVCertificate cvCertificate;
@@ -84,7 +87,7 @@ public class CardVerifiableCertificate extends Certificate {
 			rsaKeyFactory = KeyFactory.getInstance("RSA");
 		} catch (NoSuchAlgorithmException nsae) {
 			/* NOTE: never happens, RSA will be provided. */
-			nsae.printStackTrace();
+			LOGGER.severe("Exception: " + nsae.getMessage());
 		}
 		this.cvCertificate = cvCertificate;
 	}
@@ -190,7 +193,7 @@ public class CardVerifiableCertificate extends Certificate {
 				try {
 					return rsaKeyFactory.generatePublic(new RSAPublicKeySpec(rsaPublicKey.getModulus(), rsaPublicKey.getPublicExponent()));
 				} catch (GeneralSecurityException gse) {
-					gse.printStackTrace();
+					LOGGER.severe("Exception: " + gse.getMessage());
 					return publicKey;
 				}
 			}
@@ -198,7 +201,7 @@ public class CardVerifiableCertificate extends Certificate {
 			/* It's ECDSA... */
 			return publicKey;
 		} catch (NoSuchFieldException nsfe) {
-			nsfe.printStackTrace();
+			LOGGER.severe("Exception: " + nsfe.getMessage());
 			return null;
 		}
 	}

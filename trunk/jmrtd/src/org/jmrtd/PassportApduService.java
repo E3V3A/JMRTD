@@ -133,7 +133,7 @@ public class PassportApduService extends CardService {
 			mac = Mac.getInstance("ISO9797Alg3Mac", BC_PROVIDER);
 			cipher = Cipher.getInstance("DESede/CBC/NoPadding");
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new CardServiceException(gse.toString());
 		}
 	}
@@ -242,9 +242,8 @@ public class PassportApduService extends CardService {
 	/**
 	 * Sends a <code>SELECT APPLET</code> command to the card.
 	 * 
+	 * @param wrapper the secure messaging wrapper to use
 	 * @param aid the applet to select
-	 * 
-	 * @return status word
 	 * 
 	 * @throws CardServiceException on tranceive error
 	 */
@@ -678,8 +677,7 @@ public class PassportApduService extends CardService {
 			}
 		} catch (IOException ioe) {
 			/* NOTE: should never happen. */
-			LOGGER.severe("Error while copying data");
-			ioe.printStackTrace();
+			LOGGER.severe("Error while copying data: " + ioe.getMessage());
 			throw new IllegalStateException("Error while copying data");
 		}
 		byte[] data = dataOutputStream.toByteArray();

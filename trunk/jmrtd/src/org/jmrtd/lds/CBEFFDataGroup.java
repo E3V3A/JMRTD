@@ -51,7 +51,7 @@ abstract class CBEFFDataGroup<R extends BiometricDataBlock> extends DataGroup {
 
 	private static final long serialVersionUID = 2702959939408371946L;
 
-	protected static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	protected static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private Random random;
 	

@@ -1,7 +1,7 @@
 /*
  * JMRTD - A Java API for accessing machine readable travel documents.
  *
- * Copyright (C) 2006 - 2014  The JMRTD team
+ * Copyright (C) 2006 - 2015  The JMRTD team
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -38,12 +38,11 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import net.sf.scuba.smartcards.APDUWrapper;
 import net.sf.scuba.smartcards.CommandAPDU;
 import net.sf.scuba.smartcards.ISO7816;
 import net.sf.scuba.smartcards.ResponseAPDU;
-import net.sf.scuba.tlv.TLVOutputStream;
 import net.sf.scuba.tlv.TLVUtil;
+import net.sf.scuba.util.Hex;
 
 /**
  * An AES secure messaging wrapper for APDUs. Based on TR-SAC.
@@ -73,6 +72,7 @@ public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements
 	 * 
 	 * @param ksEnc the session key for encryption
 	 * @param ksMac the session key for macs
+	 * @param sscIV the send sequence counter to use as initialization vector
 	 * @param ssc the initial value of the send sequence counter
 	 * 
 	 * @throws GeneralSecurityException when the available JCE providers cannot provide the necessary cryptographic primitives
@@ -85,15 +85,40 @@ public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements
 		int keyLength = ksEnc.getEncoded().length;
 		LOGGER.info("DEBUG: AES with key length " + keyLength);
 
-		String cipherAlg = "AES/CBC/NoPadding";		
-		cipher = Cipher.getInstance(cipherAlg);
-		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, getIV(cipher, sscIV));
+		cipher = Cipher.getInstance("AES/ECB/NoPadding");
+		/* Initialize cipher to get IV. */
+		cipher.init(Cipher.ENCRYPT_MODE, ksEnc);
+		
+		LOGGER.info("DEBUG: cipher blocksize = " + cipher.getBlockSize());
+		
 
+		LOGGER.info("DEBUG: initial iv = " + Hex.bytesToHexString(cipher.getIV()));
+		
+		IvParameterSpec iv = getIV(cipher, sscIV);
+		LOGGER.info("DEBUG: iv = " + Hex.bytesToHexString(iv.getIV()));
+
+		/* Initialized cipher with IV. */
+		cipher = Cipher.getInstance("AES/CBC/NoPadding");
+		cipher.init(Cipher.ENCRYPT_MODE, ksEnc, iv);
+
+		LOGGER.info("DEBUG: cipher blocksize = " + cipher.getBlockSize());
+		
 		String macAlg = "AESCMAC";
 		mac = Mac.getInstance(macAlg);
 		mac.init(ksMac);
 	}
 
+	/**
+	 * Creates the IV by encrypting the SSC.
+	 * 
+	 * @param cipher the cipher to use, should already be initialized
+	 * @param ssc the send sequence counter
+	 * 
+	 * @return the IV param spec
+	 * 
+	 * @throws IllegalBlockSizeException on error
+	 * @throws BadPaddingException on error
+	 */
 	private IvParameterSpec getIV(Cipher cipher, long ssc) throws IllegalBlockSizeException, BadPaddingException {
 		try {
 			ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -108,7 +133,7 @@ public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements
 			LOGGER.info("DEBUG: sscBytes.length = " + sscBytes.length);
 			return new IvParameterSpec(cipher.doFinal(sscBytes));
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			return null;
 		}
 	}
@@ -135,10 +160,10 @@ public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements
 		try {
 			return wrapCommandAPDU(commandAPDU);
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalStateException(gse.toString());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException(ioe.toString());
 		}
 	}
@@ -161,10 +186,10 @@ public class AESSecureMessagingWrapper extends SecureMessagingWrapper implements
 			}
 			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalStateException(gse.toString());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException(ioe.toString());
 		}
 	}

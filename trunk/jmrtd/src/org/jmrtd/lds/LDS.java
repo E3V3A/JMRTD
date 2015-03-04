@@ -53,7 +53,7 @@ import org.jmrtd.io.SplittableInputStream;
  */
 public class LDS {
 
-	private static final Logger LOGGER = Logger.getLogger("org.jmrtd.lds");
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private Map<Short, LDSFile> files;
 	private Map<Short, SplittableInputStream> fetchers;

@@ -26,6 +26,7 @@ import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import org.jmrtd.cert.CVCPrincipal;
 import org.jmrtd.cert.CardVerifiableCertificate;
@@ -40,6 +41,8 @@ import org.jmrtd.cert.CardVerifiableCertificate;
  */
 public class TerminalAuthenticationResult  {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private ChipAuthenticationResult chipAuthenticationResult;
 	private CVCPrincipal caReference;
 	private List<CardVerifiableCertificate> terminalCertificates = new ArrayList<CardVerifiableCertificate>();
@@ -140,7 +143,7 @@ public class TerminalAuthenticationResult  {
 				}
 			} catch (CertificateException ce) {
 				result.append("holderReference = ???, ");
-				ce.printStackTrace();
+				LOGGER.severe("Exception: " + ce.getMessage());
 			}
 
 		}

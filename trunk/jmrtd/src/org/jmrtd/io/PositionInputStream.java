@@ -24,13 +24,16 @@ package org.jmrtd.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 public class PositionInputStream extends InputStream {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+
 	private static final long MARK_NOT_SET = -1L;
-	
+
 	private InputStream carrier;
-	
+
 	private long position;
 	private long markedPosition;
 
@@ -59,9 +62,7 @@ public class PositionInputStream extends InputStream {
 	public long skip(long n) throws IOException {
 		long skippedBytes = carrier.skip(n);
 		if (skippedBytes <= 0) {
-//			throw new IllegalStateException("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
-
-			System.out.println("DEBUG: WARNING carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
+			LOGGER.warning("Carrier (" + carrier.getClass().getCanonicalName() + ")'s skip(" + n + ") only skipped " + skippedBytes + ", position = " + position);
 		}
 
 		position += skippedBytes;

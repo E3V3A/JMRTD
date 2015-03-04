@@ -23,6 +23,7 @@
 package org.jmrtd.lds;
 
 import java.math.BigInteger;
+import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -54,6 +55,8 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 
 	private static final long serialVersionUID = 5591988305059068535L;
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	public static final int VERSION_NUM = 1;
 
 	private String oid;
@@ -125,7 +128,7 @@ public class ChipAuthenticationInfo extends SecurityInfo {
 				throw new IllegalArgumentException("Wrong version");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.severe("Exception: " + e.getMessage());
 			throw new IllegalArgumentException("Malformed ChipAuthenticationInfo.");
 		}
 	}

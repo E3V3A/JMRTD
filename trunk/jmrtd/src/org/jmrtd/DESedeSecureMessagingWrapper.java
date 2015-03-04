@@ -39,7 +39,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 
-import net.sf.scuba.smartcards.APDUWrapper;
 import net.sf.scuba.smartcards.CommandAPDU;
 import net.sf.scuba.smartcards.ISO7816;
 import net.sf.scuba.smartcards.ResponseAPDU;
@@ -129,10 +128,10 @@ public class DESedeSecureMessagingWrapper extends SecureMessagingWrapper impleme
 		try {
 			return wrapCommandAPDU(commandAPDU);
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalStateException(gse.toString());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException(ioe.toString());
 		}
 	}
@@ -155,10 +154,10 @@ public class DESedeSecureMessagingWrapper extends SecureMessagingWrapper impleme
 			}
 			return new ResponseAPDU(unwrapResponseAPDU(rapdu, len));
 		} catch (GeneralSecurityException gse) {
-			gse.printStackTrace();
+			LOGGER.severe("Exception: " + gse.getMessage());
 			throw new IllegalStateException(gse.toString());
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException(ioe.toString());
 		}
 	}

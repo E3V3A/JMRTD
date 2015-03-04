@@ -24,6 +24,7 @@ package org.jmrtd.io;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 /**
  * An input stream which will wrap another input stream (and yield the same bytes) and which can
@@ -36,6 +37,8 @@ import java.io.InputStream;
  */
 public class SplittableInputStream extends InputStream {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	public InputStreamBuffer inputStreamBuffer; // FIXME should be private
 	private InputStreamBuffer.SubInputStream carrier;
 
@@ -69,7 +72,7 @@ public class SplittableInputStream extends InputStream {
 			}
 			return inputStream;
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			throw new IllegalStateException(ioe.getMessage());
 		}
 	}

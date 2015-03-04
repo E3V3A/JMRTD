@@ -25,6 +25,7 @@ package org.jmrtd.lds;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Logger;
 
 /**
  * Base class for data structures that are contained in files in the LDS. 
@@ -35,6 +36,8 @@ import java.io.OutputStream;
  */
 abstract class AbstractLDSInfo implements LDSElement {
 
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
+	
 	private static final long serialVersionUID = -2340098256249194537L;
 
 	public byte[] getEncoded() {
@@ -44,7 +47,7 @@ abstract class AbstractLDSInfo implements LDSElement {
 			outputStream.flush();
 			return outputStream.toByteArray();
 		} catch (IOException ioe) {
-			ioe.printStackTrace();
+			LOGGER.severe("Exception: " + ioe.getMessage());
 			return null;
 		}
 	}
