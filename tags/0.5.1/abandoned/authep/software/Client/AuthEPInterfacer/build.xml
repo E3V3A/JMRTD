@@ -1,0 +1,97 @@
+<project name="AuthEPInterfacer" default="dist" basedir=".">
+	<description>
+      Auth EP Interfacer
+   </description>
+
+	<!-- Global properties for this build -->
+	<property name="jarname" value="authepinterfacer.jar"/>
+	<property name="src" location="src" />
+	<property name="build" location="build" />
+	<property name="dist" location="dist" />
+	<property name="distlib" location="${dist}/lib" />
+	<property name="lib" location="lib" />
+    <property name="arch" value="${os.arch}" />
+	
+	<property name="passporthostapi-src" location="${basedir}/../passporthostapi/src" />
+	<property name="sosshared-src" location="${basedir}/../sosshared/src" />
+
+	<property name="bcprov_dir" location="${basedir}/../passporthostapi/dist/lib" />
+	<property name="bcprov_jar" location="bcprov-jdk16-141.jar" />
+	
+	<property name="jmrtd_dir" location="${basedir}/../passporthostapi/dist/lib" />
+	
+	<mkdir dir="${distlib}" />
+	<path id="classpath">
+		<fileset dir="${jmrtd_dir}">
+	        <include name="**/jmrtd.jar"/>
+			<include name="**/bcprov*.jar"/>
+		</fileset>
+	</path>
+		
+	<manifestclasspath property="interfacer.classpath" jarfile="./${jarname}">
+		<classpath refid="classpath"/>		
+	</manifestclasspath>
+	
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp />
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+
+		<!-- Create the distribution directory structure -->
+		<mkdir dir="${distlib}" />
+	</target>
+
+	<target name="compile" depends="init" description="compile the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac srcdir="${src}" destdir="${build}" >
+			<classpath>
+				 <path refid="classpath" />
+			</classpath>
+		</javac>
+	</target>
+
+	<target name="dist" depends="compile" description="generate the distribution">
+		<!-- Copy license, libraries, etc. -->
+		<copy todir="${dist}">
+			<fileset dir="." includes="LICENSE, README, run.bat"  />
+		</copy>
+		<copy todir="${distlib}">
+			<fileset dir="${lib}" />
+		</copy>
+		
+		<!-- Create the distribution jar file -->
+		<jar jarfile="${dist}/${jarname}">
+			<fileset dir="${build}/" includes="**/*.class" />
+			
+			<manifest>
+				<attribute name="Main-Class" value="nl.telin.authep.Interfacer"/>
+				<attribute name="Class-Path" value="${interfacer.classpath}" />
+			</manifest>
+		</jar>
+		<!-- Sign the jar file -->
+		<!-- Use  keytool -genkey -alias codesigning
+				          keytool -selfcert -alias codesigning -->
+		<signjar jar="${dist}/${jarname}" alias="codesigning" storepass="javasucks" />
+	</target>
+	
+	<target name="doc" description="Generate API docs">
+		<javadoc destdir="apidocs" package="true" doctitle="Auth EP API" windowtitle="Auth EP API" packagenames="nl.telin.authep">
+			<classpath>
+				 <path refid="classpath" />
+			</classpath>
+			<link href="http://java.sun.com/javase/6/docs/api" />
+			<link href="http://www.bouncycastle.org/docs/docs1.6" />
+			<!-- link href="http://java.sun.com/products/javacard/htmldoc" / -->
+			<sourcepath path="src" />
+			<package name="nl.telin.authep" />
+		</javadoc>
+	</target>
+
+	<target name="clean" description="clean up">
+		<!-- Delete the ${build} and ${dist} directory trees -->
+		<delete dir="${build}" />
+		<delete dir="${dist}" />
+	</target>
+</project>

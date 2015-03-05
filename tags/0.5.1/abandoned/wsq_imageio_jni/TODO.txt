@@ -1,0 +1,3 @@
+- Don't read bytes greedy in Java WSQImageReader. Only WSQ image. Means we need to find length.
+- Throw exceptions in Java calling parts in j2wsq.c on failure (i.e. if IDs are not found)
+

@@ -1,0 +1,15 @@
+1: Instruction: 82	P1: 0	P2: 0
+2: C: 82 CommmandAPDU: 4 bytes, nc=0, ne=0	 R: 6E00(CLA NOT SUPPORTED)
+3: 
+4: Instruction: 88	P1: 0	P2: 0
+5: C: 88 CommmandAPDU: 4 bytes, nc=0, ne=0	 R: 6700(WRONG LENGTH)
+6: 
+7: Instruction: a4	P1: 0	P2: 0
+8: C: a4 CommmandAPDU: 4 bytes, nc=0, ne=0	 R: 6A86(INCORRECT P1P2)
+9: 
+10: Instruction: b0	P1: 0	P2: 0
+11: C: b0 CommmandAPDU: 4 bytes, nc=0, ne=0	 R: 6986(COMMAND NOT ALLOWED)
+12: 
+13: Instruction: b1	P1: 0	P2: 0
+14: C: b1 CommmandAPDU: 4 bytes, nc=0, ne=0	 R: 6700(WRONG LENGTH)
+15: 

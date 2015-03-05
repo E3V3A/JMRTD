@@ -1,0 +1,6 @@
+grant {
+   permission java.security.SecurityPermission "*", "*";
+   permission javax.smartcardio.CardPermission "*", "*";
+   permission java.net.SocketPermission "authep.nl:9303", "connect, accept";
+};
+

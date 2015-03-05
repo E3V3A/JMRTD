@@ -1,0 +1,97 @@
+About JMRTD
+
+   JMRTD is a free implementation in Java of the Machine
+   Readable Travel Document (MRTD) standards as specified
+   by the International Civil Aviation Organization (ICAO).
+
+   See the project's web site at http://jmrtd.org/.
+
+Contributors
+
+   Cees-Bart Breunesse
+   Dirk-Jan van Dijk
+   Peter Ebben
+   Tomas Gustavsson
+   Engelbert Hubbers
+   Adam Laurie
+   Wojciech Mostowski
+   Martijn Oostdijk
+   Erik Poll
+   Henning Richter
+   Julien Schmaltz
+   Jan Tretmans
+   Ronny Wichers Schreur
+   Max Guenther
+   Pim Vullers
+   (and others I forget to mention here, ... sorry)
+
+   Contact us via info@jmrtd.org.
+
+License
+
+   GNU Lesser General Public License
+
+Files
+
+   README - this file
+   LICENSE - copy of the LGPL license
+   jmrtd.jar - class files (use "java -jar jmrtd.jar" to run)
+   src/ - sources
+
+Dependencies (might be included in distribution)
+
+   * Requires jdk1.6 or above.
+   
+   * Project SCUBA:
+        This is the low level smart card reader library.
+        (http://scuba.sourceforge.net/)
+
+   * Bouncycastle for crypto and ASN1 decoding:
+        The jar needs to be in classpath.
+        (http://www.bouncycastle.org/)
+
+   * EJBCA Cert-CVC:
+        The cert-cvc.jar needs to be in classpath.
+        (http://ejbca.org/)
+
+Optional software (may be necessary for building the project)
+
+   * ImageIO:
+        Distribution may contain JAI ImageIO
+           (https://jai-imageio.dev.java.net/)
+        Distribution may contain results from the JJ2000 project
+           (http://code.google.com/p/jj2000/)
+        Distribution may contain the NIST WSQ library
+           (http://ffpis.sourceforge.net,
+           http://www.nist.gov/itl/iad/ig/nbis.cfm)
+
+   * ApduIO, Java Card simulator:
+        When making from source, expects a copy or link to
+        apduio.jar (or stub) in lib directory. The Java Card
+        Kit is closed source software from Sun Microsystems, Inc.
+        (http://java.sun.com/javacard/devkit/)
+
+   * JCOP toolset:
+        When making from source, expects a copy or link to
+        offcard.jar (or stub) in lib directory. The JCOP plugin for
+        Eclipse is proprietary software from NXP Semiconductors.
+
+   * GlobalPlatform
+        gpshell tool for installing to JCOP cards.
+        (http://sourceforge.net/projects/globalplatform/)
+
+   * RFIDIOt
+        mrpkey.py command line tool for testing/reading/writing/cloning.
+        (http://rfidiot.org/)
+
+Artwork
+
+   * The JMRTD logo is based on an AIGA DOT pictogram
+     (number 39, to be precise)
+   * Icons in the famfamfam set are by Mark James
+     (http://www.famfamfam.com/)
+   * The distribution may contain the OCR-B font by Matthew Skala
+     (http://ansuz.sooke.bc.ca/page/fonts)
+   * The passport stamps pictures in the installer are based on photos
+     by Jon Rawlinson
+     (http://www.flickr.com/people/london/)

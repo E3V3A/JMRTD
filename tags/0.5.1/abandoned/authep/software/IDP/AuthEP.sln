@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual C# Express 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthEPSTS", "AuthEPSTS\AuthEPSTS.csproj", "{93935CEC-A050-4953-9544-155C4334A430}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthEPNetworkLink", "AuthEPNetworkLink\AuthEPNetworkLink.csproj", "{B567CAFB-F56D-47B9-A41A-F831A32E8410}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthEPNetworkTest", "AuthEPNetworkTest\AuthEPNetworkTest.csproj", "{22A51C0D-36AB-4C1D-B622-AAD78918D84B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AuthEPLib", "AuthEPLib\AuthEPLib.csproj", "{4D7B8014-A39B-4E45-974A-2127BB866863}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{93935CEC-A050-4953-9544-155C4334A430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{93935CEC-A050-4953-9544-155C4334A430}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{93935CEC-A050-4953-9544-155C4334A430}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{93935CEC-A050-4953-9544-155C4334A430}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B567CAFB-F56D-47B9-A41A-F831A32E8410}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B567CAFB-F56D-47B9-A41A-F831A32E8410}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B567CAFB-F56D-47B9-A41A-F831A32E8410}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B567CAFB-F56D-47B9-A41A-F831A32E8410}.Release|Any CPU.Build.0 = Release|Any CPU
+		{22A51C0D-36AB-4C1D-B622-AAD78918D84B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{22A51C0D-36AB-4C1D-B622-AAD78918D84B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{22A51C0D-36AB-4C1D-B622-AAD78918D84B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{22A51C0D-36AB-4C1D-B622-AAD78918D84B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4D7B8014-A39B-4E45-974A-2127BB866863}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4D7B8014-A39B-4E45-974A-2127BB866863}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4D7B8014-A39B-4E45-974A-2127BB866863}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4D7B8014-A39B-4E45-974A-2127BB866863}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
