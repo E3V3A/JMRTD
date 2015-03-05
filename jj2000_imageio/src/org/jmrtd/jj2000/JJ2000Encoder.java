@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import jj2000.j2k.codestream.writer.FileCodestreamWriter;
 import jj2000.j2k.codestream.writer.HeaderEncoder;
@@ -35,6 +36,8 @@ import jj2000.j2k.wavelet.analysis.ForwardWT;
  * @version $Revision: $
  */
 public class JJ2000Encoder {
+
+	private static final Logger LOGGER = Logger.getLogger("org.jmrtd");
 
 	private final static String[][] ENCODER_PINFO = {
 		{ "debug", null, "", "off" },
@@ -133,7 +136,7 @@ public class JJ2000Encoder {
 		boolean pphMain = false;
 
 		if (pl.getParameter("tiles") == null) {
-			System.err.println("No tiles option specified");
+			LOGGER.warning("No tiles option specified");
 			return;
 		}
 
@@ -164,10 +167,10 @@ public class JJ2000Encoder {
 		}
 
 		if(pphTile && pphMain)
-			System.err.println("Can't have packed packet headers in both main and tile headers");
+			LOGGER.warning("Can't have packed packet headers in both main and tile headers");
 
 		if (pl.getParameter("rate") == null) {
-			System.err.println("Target bitrate not specified");
+			LOGGER.warning("Target bitrate not specified");
 			return;
 		}
 		try {
@@ -176,11 +179,11 @@ public class JJ2000Encoder {
 				rate = Float.MAX_VALUE;
 			}
 		} catch (NumberFormatException e) {
-			System.err.println("Invalid value in 'rate' option: " + pl.getParameter("rate"));
+			LOGGER.warning("Invalid value in 'rate' option: " + pl.getParameter("rate"));
 			if(pl.getParameter("debug").equals("on")) {
 				e.printStackTrace();
 			} else {
-				System.err.println("Use '-debug' option for more details");
+				LOGGER.warning("Use '-debug' option for more details");
 			}
 			return;
 		}
@@ -197,11 +200,11 @@ public class JJ2000Encoder {
 				}   
 			}               
 		} catch (NumberFormatException e) {
-			System.err.println("Invalid value in 'tile_parts' option: " + pl.getParameter("tile_parts"));
+			LOGGER.warning("Invalid value in 'tile_parts' option: " + pl.getParameter("tile_parts"));
 			if(pl.getParameter("debug").equals("on")) {
 				e.printStackTrace();
 			} else {
-				System.err.println("Use '-debug' option for more details");
+				LOGGER.warning("Use '-debug' option for more details");
 			}
 			return;
 		}
@@ -248,33 +251,6 @@ public class JJ2000Encoder {
 		// Tile-parts and packed packet headers
 		if(pktspertp > 0 || pphTile || pphMain) {
 			/* FIXME: Not supported. We don't have a memory only alternative for CodeStreamManipulator. */
-//			int headInc;
-//			try {
-//				CodestreamManipulator cm = new CodestreamManipulator(outname, ntiles, pktspertp, pphMain, pphTile, tempSop, tempEph);
-//				fileLength += cm.doCodestreamManipulation();
-//				String res="";
-//				if(pktspertp > 0) {
-//					FacilityManager.
-//					getMsgLogger().println("Created tile-parts containing at most "+ pktspertp+ " packets per tile.", 4, 6);
-//				}
-//				if(pphTile) {
-//					FacilityManager.getMsgLogger().
-//					println("Moved packet headers to tile headers", 4, 6);
-//				}
-//				if(pphMain) {
-//					FacilityManager.getMsgLogger().
-//					println("Moved packet headers "+
-//							"to main header",4,6);
-//				}
-//			} catch(IOException e) {
-//				System.err.println("Error while creating tileparts or packed packet headers" + ((e.getMessage() != null) ? (":\n"+e.getMessage()) : ""));
-//				if(pl.getParameter("debug").equals("on")) {
-//					e.printStackTrace();
-//				} else {
-//					System.err.println("Use '-debug' option for more details");
-//				}
-//				return;
-//			}
 		}
 
 		// File Format

@@ -84,11 +84,9 @@ public class JMRTDSecurityProvider extends Provider {
 
 	private JMRTDSecurityProvider() {
 		super("JMRTD", 0.1, "JMRTD Security Provider");
+		
+		/* Provide CVC certificates. */
 		put("CertificateFactory.CVC", "org.jmrtd.cert.CVCertificateFactorySpi");
-		put("CertStore.PKD", "org.jmrtd.cert.PKDCertStoreSpi");
-		put("CertStore.JKS", "org.jmrtd.cert.KeyStoreCertStoreSpi");
-		put("CertStore.BKS", "org.jmrtd.cert.KeyStoreCertStoreSpi");
-		put("CertStore.PKCS12", "org.jmrtd.cert.KeyStoreCertStoreSpi");
 
 		if (BC_PROVIDER != null) {
 			/* Replicate BC algorithms... */
