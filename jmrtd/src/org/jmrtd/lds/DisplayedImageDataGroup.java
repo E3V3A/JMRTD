@@ -160,7 +160,7 @@ abstract class DisplayedImageDataGroup extends DataGroup {
 				}
 				break;
 			case ImageInfo.TYPE_PORTRAIT:
-				if (displayedImageTagToUse == DisplayedImageInfo.DISPLAYED_PORTRAIT_TAG) {
+				if (displayedImageTagToUse != DisplayedImageInfo.DISPLAYED_PORTRAIT_TAG) {
 					throw new IllegalArgumentException("\'Signature or usual mark\' image cannot be part of a \'Portrait\' displayed image datagroup");
 				}
 			}
