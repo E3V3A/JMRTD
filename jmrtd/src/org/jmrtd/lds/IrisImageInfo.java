@@ -269,7 +269,7 @@ public class IrisImageInfo extends AbstractImageInfo {
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG:
 		case IrisInfo.IMAGEFORMAT_RGB_JPEG:
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG_LS:
-		case IrisInfo.IMAGEFORMAT_RGB_JPEG_LS:  return JPEG_MIME_TYPE;
+		case IrisInfo.IMAGEFORMAT_RGB_JPEG_LS: return JPEG_MIME_TYPE;
 		case IrisInfo.IMAGEFORMAT_MONO_JPEG2000:
 		case IrisInfo.IMAGEFORMAT_RGB_JPEG2000: return JPEG2000_MIME_TYPE;
 		}
