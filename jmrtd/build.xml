@@ -6,7 +6,7 @@
 
   <property name="groupId" value="org.jmrtd" />
   <property name="artifactId" value="jmrtd" />
-  <property name="version" value="0.5.1" />
+  <property name="version" value="0.5.2" />
 
   <property name="home" value="/Users/martijn" />
   <property name="software" value="${home}/software" />
@@ -18,7 +18,7 @@
 
   <property name="default_bcprov_lib" value="${software}/bc/jars/bcprov-jdk15on-152.jar" />
   <property name="default_certcvc_lib" value="${software}/cert-cvc-1.4.0/target/cert-cvc.jar" />
-  <property name="default_scuba_lib" value="../scuba_smartcards/dist/lib/scuba-smartcards-0.0.5.jar" />
+  <property name="default_scuba_lib" value="../scuba_smartcards/dist/lib/scuba-smartcards-0.0.6.jar" />
   
   <property environment="env" />
   
@@ -55,7 +55,7 @@
   <target name="jar" depends="compile" description="Generates the distribution .jar file">
 
     <!-- Create the distribution jar file -->
-    <jar jarfile="${jar}" basedir="${build}">
+    <jar jarfile="${jar}" basedir="${build}" duplicate="preserve">
       <manifest>
         <attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
         <attribute name="Built-Date" value="${TODAY}" />
