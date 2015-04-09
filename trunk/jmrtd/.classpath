@@ -2,8 +2,8 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="var" path="CERT_CVC_LIB"/>
-	<classpathentry kind="var" path="BC_PROV" sourcepath="/BC_PROV_SRC"/>
+	<classpathentry exported="true" kind="var" path="CERT_CVC_LIB"/>
+	<classpathentry exported="true" kind="var" path="BC_PROV" sourcepath="/BC_PROV_SRC"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_smartcards"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/scuba_util"/>
 	<classpathentry kind="output" path="bin"/>

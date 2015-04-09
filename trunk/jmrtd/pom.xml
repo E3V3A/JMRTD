@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.jmrtd</groupId>
   <artifactId>jmrtd</artifactId>
-  <version>0.5.1</version>
+  <version>0.5.2</version>
   <name>JMRTD</name>
   <description>Java Machine Readable Travel Documents API.</description>
   <url>http://jmrtd.org</url>
@@ -26,12 +26,12 @@
     <dependency>
       <groupId>net.sf.scuba</groupId>
       <artifactId>scuba-smartcards</artifactId>
-      <version>0.0.5</version>
+      <version>0.0.6</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
       <artifactId>bcprov-jdk15on</artifactId>
-      <version>1.51</version>
+      <version>1.52</version>
     </dependency>
   </dependencies>
 </project>
