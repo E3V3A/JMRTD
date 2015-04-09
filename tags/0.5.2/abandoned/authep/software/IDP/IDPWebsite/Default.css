@@ -1,0 +1,18 @@
+﻿.banner
+{
+    text-align: center;
+    font-family: System;
+    font-size: xx-large;
+}
+.content
+{
+    position:absolute;
+    left:100px;
+    top:200px;
+}
+.passportimage
+{
+    position:absolute;
+    left:500px;
+    top:150px;
+}

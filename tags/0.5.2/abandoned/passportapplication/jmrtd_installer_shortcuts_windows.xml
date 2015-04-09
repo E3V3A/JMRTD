@@ -1,0 +1,38 @@
+<shortcuts>
+
+  <skipIfNotSupported />
+
+  <programGroup defaultName="JMRTD"
+                location="applications" />
+
+  <shortcut
+    name="JMRTD"
+    target="$INSTALL_PATH\jmrtd.bat"
+    commandLine=""
+    workingDirectory="$INSTALL_PATH"
+    description="This starts JMRTD"
+    iconFile="$INSTALL_PATH\jmrtd_spiral.ico"
+    initialState="noShow"
+    programGroup="yes"
+    desktop="yes"
+    applications="no"
+    type="Application"
+    encoding="UTF-8">
+   </shortcut>
+
+   <shortcut
+     name="JMRTD - Uninstall"
+     programGroup="yes"
+     desktop="no"
+     applications="no"
+     target="$INSTALL_PATH\uninstall.bat"
+     initialState="noShow"
+     iconFile="$INSTALL_PATH\uninstall.ico"
+     iconIndex="0"
+     workingDirectory="$INSTALL_PATH"
+     type="Application"
+     encoding="UTF-8"
+     description="Uninstall the application">
+   </shortcut>
+
+</shortcuts>

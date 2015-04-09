@@ -1,0 +1,66 @@
+﻿<project schemaVersion="1.6.0.7">
+    <assemblies>
+        <assembly assemblyPath="..\AuthEPLib\bin\Release\AuthEPLib.dll" xmlCommentsPath="..\AuthEPLib\bin\Release\AuthEPLib.xml" commentsOnly="False" />
+        <assembly assemblyPath="..\AuthEPNetworkLink\bin\Release\AuthEPNetworkLink.dll" xmlCommentsPath="..\AuthEPNetworkLink\bin\Release\AuthEPNetworkLink.xml" commentsOnly="False" />
+        <assembly assemblyPath="..\AuthEPSTS\bin\Release\AuthEPSTS.exe" xmlCommentsPath="..\AuthEPSTS\bin\Release\AuthEPSTS.xml" commentsOnly="False" />
+    </assemblies>
+    <namespaceSummaries>
+        <namespaceSummaryItem name="" isDocumented="False" />
+        <namespaceSummaryItem name="nl.telin.authep.informationcards" isDocumented="True">Contains classes that assist dealing with information cards.</namespaceSummaryItem>
+        <namespaceSummaryItem name="nl.telin.authep.lib" isDocumented="True">AuthEPLib contains classes that are used throughout the entire AuthEP solution.</namespaceSummaryItem>
+        <namespaceSummaryItem name="nl.telin.authep.managedcardwriter" isDocumented="True">Managed card writer contains classes for writing managed information cards.</namespaceSummaryItem>
+        <namespaceSummaryItem name="nl.telin.authep.network" isDocumented="True">AuthEPNetworkLink contains classes that are used for the communication between the AuthEPInterfacer (Java program that's used for communicating between a RFID reader and elektronic passport). and the AuthEP STS.</namespaceSummaryItem>
+        <namespaceSummaryItem name="nl.telin.authep.sts" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants" isDocumented="True">Contains constant values to be used for the security token service.</namespaceSummaryItem>
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.Saml" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.WSIdentity" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.WSTrust" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.XmlCanonicalization" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.XmlDsig" isDocumented="True" />
+        <namespaceSummaryItem name="nl.telin.authep.sts.Constants.XmlEnc" isDocumented="True" />
+    </namespaceSummaries>
+    <dependencies>
+        <dependencyItem depPath="..\AuthEPLib\BouncyCastle.Crypto.dll" />
+    </dependencies>
+    <ProjectSummary />
+    <MissingTags>Summary, Parameter, Returns, AutoDocumentCtors, TypeParameter</MissingTags>
+    <VisibleItems>InheritedMembers, InheritedFrameworkMembers, Protected, SealedProtected</VisibleItems>
+    <HtmlHelp1xCompilerPath path="" />
+    <HtmlHelp2xCompilerPath path="" />
+    <OutputPath>.\Help\</OutputPath>
+    <SandcastlePath path="" />
+    <WorkingPath path="" />
+    <CleanIntermediates>True</CleanIntermediates>
+    <KeepLogFile>True</KeepLogFile>
+    <BuildLogFile path="" />
+    <HelpFileFormat>HtmlHelp1x</HelpFileFormat>
+    <CppCommentsFixup>False</CppCommentsFixup>
+    <FrameworkVersion>3.5</FrameworkVersion>
+    <IndentHtml>False</IndentHtml>
+    <Preliminary>False</Preliminary>
+    <RootNamespaceContainer>False</RootNamespaceContainer>
+    <RootNamespaceTitle />
+    <HelpTitle>Auth EP STS Help File</HelpTitle>
+    <HtmlHelpName>Documentation</HtmlHelpName>
+    <Language>en-US</Language>
+    <CopyrightHref />
+    <CopyrightText />
+    <FeedbackEMailAddress />
+    <FeedbackEMailLinkText />
+    <HeaderText />
+    <FooterText />
+    <ProjectLinkType>Local</ProjectLinkType>
+    <SdkLinkType>Msdn</SdkLinkType>
+    <SdkLinkTarget>Blank</SdkLinkTarget>
+    <PresentationStyle>Prototype</PresentationStyle>
+    <NamingMethod>Guid</NamingMethod>
+    <SyntaxFilters>Standard</SyntaxFilters>
+    <ShowFeedbackControl>False</ShowFeedbackControl>
+    <BinaryTOC>True</BinaryTOC>
+    <IncludeFavorites>False</IncludeFavorites>
+    <CollectionTocStyle>Hierarchical</CollectionTocStyle>
+    <IncludeStopWordList>True</IncludeStopWordList>
+    <PlugInNamespaces>ms.vsipcc+, ms.vsexpresscc+</PlugInNamespaces>
+    <HelpFileVersion>1.0.0.0</HelpFileVersion>
+    <ContentPlacement>AboveNamespaces</ContentPlacement>
+</project>

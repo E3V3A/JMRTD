@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!-- This builds JJ2000 ImageIO for j2se (and perhaps other platforms) -->
+<project name="jj2000_imageio" default="dist" basedir=".">
+
+	<description>
+		ImageIO provider for JPEG 2000 format based on JJ2000
+	</description>
+
+	<!-- Global properties for this build -->
+	<property name="src" location="src" />
+	<property name="build" location="bin" />
+	
+	<property environment="env" />
+	<property name="default_jj2000_lib" value="c:/Software/jj2000-read-only/target/jj2000-5.2-SNAPSHOT.jar" />
+	<condition property="jj2000_lib" value="${env.JJ2000_LIB}" else="${default_jj2000_lib}">
+    	<isset property="env.JJ2000_LIB" />
+	</condition>
+	
+	<property name="jj2000_jar" value="jj2000-5.2-SNAPSHOT.jar" />
+
+	<target name="compile" depends="" description="Compiles the source ">
+		<mkdir dir="${build}"  />
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac srcdir="${src}" classpath="${jj2000_lib}" destdir="${build}" target="1.6" />
+	</target>
+
+	<target name="dist" depends="" description="Generates the distribution .jar file">
+		
+		<mkdir dir="META-INF/services" />
+		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jmrtd.imageio.JJ2000ImageReaderSpi</echo>
+		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jmrtd.imageio.JJ2000ImageWriterSpi</echo>
+
+		<!-- Create the distribution jar file -->
+		<jar jarfile="jj2000_imageio.jar">
+			<manifest>
+				<attribute name="Class-path" value="${jj2000_jar}" />
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="JMRTD"/>
+				<attribute name="Implementation-Title" value="jj2000_imageio"/>
+				<attribute name="Implementation-Version" value="0.0.2"/>
+			</manifest>
+			<fileset dir="${build}/" includes="org/jmrtd/imageio/*.class" />
+			<fileset dir="${build}/" includes="org/jmrtd/jj2000/*.class" />
+			<fileset dir="" includes="META-INF/**/*" />
+
+			<!--  also copy (patched version of) JJ2000 -->
+			<fileset dir="../jj2000/bin" />
+						
+		</jar>	
+	</target>
+
+</project>

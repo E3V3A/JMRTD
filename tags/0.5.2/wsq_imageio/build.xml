@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<project name="wsq_imageio" default="dist" basedir=".">
+
+	<description>
+		ImageIO provider for WSQ format based on fork of JNBIS (http://code.google.com/p/jnbis)
+	</description>
+
+	<!-- Global properties for this build -->
+	<property name="src" location="src" />
+	<property name="build" location="bin" />
+
+	<target name="compile" depends="" description="Compiles the source ">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac target="1.6" srcdir="${src}" destdir="${build}" />
+	</target>
+	
+	<target name="dist" depends="" description="Generates the distribution .jar file">
+		
+		<mkdir dir="META-INF/services" />
+		<echo file="META-INF/services/javax.imageio.spi.ImageReaderSpi" append="false">org.jnbis.imageio.WSQImageReaderSpi</echo>
+		<echo file="META-INF/services/javax.imageio.spi.ImageWriterSpi" append="false">org.jnbis.imageio.WSQImageWriterSpi</echo>
+		
+		<!-- Create the distribution jar file -->
+		<jar jarfile="wsq_imageio.jar">
+			<manifest>
+				<attribute name="Built-By" value="${user.name} on ${os.name} ${os.arch}" />
+				<attribute name="Built-Date" value="${TODAY}" />
+				<attribute name="Implementation-Vendor" value="JMRTD"/>
+				<attribute name="Implementation-Title" value="wsq_imageio"/>
+				<attribute name="Implementation-Version" value="0.0.2"/>
+			</manifest>
+			<fileset dir="${build}" includes="org/jnbis/*.class" />
+			<fileset dir="${build}/" includes="org/jnbis/imageio/*.class" />
+			<fileset dir="" includes="META-INF/**/*" />					
+		</jar>	
+	</target>
+
+</project>
