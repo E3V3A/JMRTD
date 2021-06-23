@@ -9,11 +9,13 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
 import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataFormatImpl;
 import javax.imageio.spi.ImageWriterSpi;
 import javax.imageio.stream.ImageOutputStream;
 
 import org.jnbis.Bitmap;
 import org.jnbis.WSQEncoder;
+import org.w3c.dom.Node;
 
 public class WSQImageWriter extends ImageWriter {
 
@@ -58,18 +60,29 @@ public class WSQImageWriter extends ImageWriter {
 			double bitRate = DEFAULT_BITRATE;
 			double ppi = DEFAULT_PPI;
 
-			//Use default metadata if not available
-			WSQMetadata metadata = (WSQMetadata)image.getMetadata();
-			if (metadata == null)
-				metadata = new WSQMetadata();
+			IIOMetadata metadata = image.getMetadata();
+			WSQMetadata wsqMetadata;
+			if (metadata instanceof WSQMetadata) {
+				// Use specified WSQ metadata
+				wsqMetadata = (WSQMetadata) metadata;
+			} else {
+				wsqMetadata = new WSQMetadata();
+				if (metadata != null) {
+					// Try to convert different type of metadata using standard metadata format
+					Node standardMetadataTree = metadata.getAsTree(IIOMetadataFormatImpl.standardMetadataFormatName);
+					if (standardMetadataTree != null) {
+						wsqMetadata.setFromTree(IIOMetadataFormatImpl.standardMetadataFormatName, standardMetadataTree);
+					}
+				}
+			}
 
 			//Extract PPI from metadata
-			if (!Double.isNaN(metadata.getPPI())) 
-				ppi=metadata.getPPI();
+			if (!Double.isNaN(wsqMetadata.getPPI()))
+				ppi=wsqMetadata.getPPI();
 
 			//Extract Bitrate from metadata or WriteParam
-			if (!Double.isNaN(metadata.getBitrate())) 
-				bitRate=metadata.getBitrate();
+			if (!Double.isNaN(wsqMetadata.getBitrate()))
+				bitRate=wsqMetadata.getBitrate();
 			if (param instanceof WSQImageWriteParam) {
 				WSQImageWriteParam wsqParam = (WSQImageWriteParam)param;
 				if (!Double.isNaN(wsqParam.getBitRate()))
@@ -81,15 +94,18 @@ public class WSQImageWriter extends ImageWriter {
 			//TODO: Subsampling accordingly to ImageWriteParam
 
 			Object output = getOutput();
-			if (output == null || !(output instanceof ImageOutputStream)) { throw new IllegalStateException("bad output"); }			
-			
-			Bitmap bitmap = new Bitmap(
-					(byte[])bufferedImage.getRaster().getDataElements(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), null),
-					bufferedImage.getWidth(), 
-					bufferedImage.getHeight(),
-					(int)Math.round(ppi),
-					8, 1);					
-			WSQEncoder.encode( (ImageOutputStream)getOutput(), bitmap, bitRate, metadata.nistcom, "Made with JNBIS");
+			if (output == null || !(output instanceof ImageOutputStream)) {
+				throw new IllegalStateException("bad output");
+			}
+			try (ImageOutputStream imageOutput = (ImageOutputStream) output) {
+				Bitmap bitmap = new Bitmap(
+						(byte[]) bufferedImage.getRaster().getDataElements(0, 0, bufferedImage.getWidth(), bufferedImage.getHeight(), null),
+						bufferedImage.getWidth(),
+						bufferedImage.getHeight(),
+						(int) Math.round(ppi),
+						8, 1);
+				WSQEncoder.encode((ImageOutputStream) getOutput(), bitmap, bitRate, wsqMetadata.nistcom, "Encoded with JNBIS");
+			}
 		} catch (Throwable t) {
 			throw new IIOException(t.getMessage(), t);
 		}
